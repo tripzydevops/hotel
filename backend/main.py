@@ -225,14 +225,15 @@ async def trigger_monitor(
                     }).execute()
                     alerts_generated += 1
                     
-                    # Send notification if enabled
-                    if settings and settings.get("notifications_enabled") and settings.get("notification_email"):
-                        await notification_service.send_alert_email(
-                            to_email=settings["notification_email"],
+                    # Send notification via all enabled channels
+                    if settings:
+                        await notification_service.send_notifications(
+                            settings=settings,
                             hotel_name=hotel_name,
                             alert_message=threshold_alert["message"],
                             current_price=threshold_alert["new_price"],
-                            previous_price=threshold_alert["old_price"]
+                            previous_price=threshold_alert["old_price"],
+                            currency=currency
                         )
         
         except Exception as e:
@@ -269,10 +270,10 @@ async def trigger_monitor(
                 }).execute()
                 alerts_generated += 1
                 
-                # Send notification if enabled
-                if settings and settings.get("notifications_enabled") and settings.get("notification_email"):
-                    await notification_service.send_alert_email(
-                        to_email=settings["notification_email"],
+                # Send notification via all enabled channels
+                if settings:
+                    await notification_service.send_notifications(
+                        settings=settings,
                         hotel_name=hotel["name"],
                         alert_message=undercut["message"],
                         current_price=undercut["new_price"],
@@ -378,6 +379,84 @@ async def list_alerts(user_id: UUID, unread_only: bool = False, db: Client = Dep
 async def mark_alert_read(alert_id: UUID, db: Client = Depends(get_supabase)):
     db.table("alerts").update({"is_read": True}).eq("id", str(alert_id)).execute()
     return {"status": "marked_read"}
+
+
+# ===== Cron / Scheduler =====
+
+@app.get("/api/cron")
+async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depends(get_supabase)):
+    """
+    Cron endpoint triggered by Vercel Cron.
+    Iterates all users and checks if it's time to run their monitor.
+    """
+    # 1. Get all unique users with settings
+    # Note: In a real production app, we would paginate this or use a queue.
+    # For prototype, fetching all settings is fine.
+    settings_result = db.table("settings").select("*").execute()
+    all_settings = settings_result.data or []
+    
+    results = {
+        "triggered": 0,
+        "skipped": 0,
+        "errors": []
+    }
+    
+    for user_setting in all_settings:
+        user_id = user_setting["user_id"]
+        freq_minutes = user_setting.get("check_frequency_minutes", 1440) # Default daily
+        
+        # 0 means Manual Only
+        if freq_minutes <= 0:
+            results["skipped"] += 1
+            continue
+            
+        try:
+            # Check last update time for this user
+            # We check the most recent price log for ANY of their hotels
+            # (Assuming all hotels are updated together in a batch)
+            hotels_result = db.table("hotels").select("id").eq("user_id", user_id).execute()
+            hotel_ids = [h["id"] for h in (hotels_result.data or [])]
+            
+            if not hotel_ids:
+                continue
+                
+            last_log = db.table("price_logs") \
+                .select("recorded_at") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(1) \
+                .execute()
+                
+            should_run = False
+            if not last_log.data:
+                # No logs yet, run it
+                should_run = True
+            else:
+                last_run_iso = last_log.data[0]["recorded_at"]
+                last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
+                # Make naive for comparison if needed, or aware
+                if last_run.tzinfo is None:
+                    last_run = last_run.replace(tzinfo=None)
+                
+                minutes_since = (datetime.now() - last_run).total_seconds() / 60
+                
+                if minutes_since >= freq_minutes:
+                    should_run = True
+            
+            if should_run:
+                # Trigger monitor (we await it here, but could push to background)
+                # For Serverless with 10s timeout, best to run explicitly or spawn simple task
+                # Re-using the logic from trigger_monitor
+                await trigger_monitor(UUID(user_id), None, db)
+                results["triggered"] += 1
+            else:
+                results["skipped"] += 1
+                
+        except Exception as e:
+            print(f"Error in cron for user {user_id}: {e}")
+            results["errors"].append(str(e))
+            
+    return results
 
 
 if __name__ == "__main__":

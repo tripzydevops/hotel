@@ -23,6 +23,67 @@ class NotificationService:
         self.sender_email = os.getenv("SENDER_EMAIL", self.smtp_user)
         self.enabled = bool(self.smtp_user and self.smtp_password)
 
+    async def send_notifications(
+        self,
+        settings: dict,
+        hotel_name: str,
+        alert_message: str,
+        current_price: float,
+        previous_price: float,
+        currency: str = "USD"
+    ) -> dict:
+        """
+        Send notifications via all enabled channels.
+        """
+        results = {
+            "email": False,
+            "whatsapp": False,
+            "push": False
+        }
+
+        # Global kill switch
+        if not settings.get("notifications_enabled"):
+            return results
+
+        # 1. Email
+        if settings.get("notification_email"):
+            results["email"] = await self.send_alert_email(
+                settings["notification_email"],
+                hotel_name,
+                alert_message,
+                current_price,
+                previous_price,
+                currency
+            )
+
+        # 2. WhatsApp (Placeholder)
+        if settings.get("whatsapp_number"):
+            results["whatsapp"] = await self.send_whatsapp(
+                settings["whatsapp_number"],
+                alert_message
+            )
+
+        # 3. Push (Placeholder)
+        if settings.get("push_enabled"):
+            results["push"] = await self.send_push(
+                settings.get("user_id"), # Or specific push token
+                alert_message
+            )
+            
+        return results
+
+    async def send_whatsapp(self, number: str, message: str) -> bool:
+        """Placeholder for WhatsApp integration (e.g. Twilio)"""
+        # TODO: Implement Twilio/Meta API
+        print(f"[Notification] WOULD send WhatsApp to {number}: {message}")
+        return True
+
+    async def send_push(self, user_id: str, message: str) -> bool:
+        """Placeholder for Web Push integration"""
+        # TODO: Implement Web Push
+        print(f"[Notification] WOULD send Push to {user_id}: {message}")
+        return True
+
     async def send_alert_email(
         self,
         to_email: str,
