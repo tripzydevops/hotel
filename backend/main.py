@@ -332,6 +332,20 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(g
         **hotel.model_dump(),
     }).execute()
     
+    # TRACKING: Save to shared hotel directory for future auto-complete
+    if result.data:
+        try:
+            new_hotel = result.data[0]
+            db.table("hotel_directory").upsert({
+                "name": new_hotel["name"],
+                "location": new_hotel.get("location", ""),
+                "serp_api_id": new_hotel.get("serp_api_id"),
+                "last_verified_at": datetime.now().isoformat()
+            }, on_conflict="name,location").execute()
+            print(f"[Directory] Tracked new hotel: {new_hotel['name']}")
+        except Exception as e:
+            print(f"[Directory] Failed to track hotel: {e}")
+
     return result.data[0]
 
 
