@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
+/* ===== TRIPZY HOTEL - DESIGN SYSTEM ===== */
+/* Deep Ocean / Soft Gold / Glassmorphism Theme */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Deep Ocean Palette */
+  --deep-ocean: #042f2e;
+  --deep-ocean-card: #111240;
+  --deep-ocean-accent: #1f1a38;
+
+  /* Soft Gold Palette */
+  --soft-gold: #f1c700;
+  --soft-gold-hover: #d9c8a2;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 12px;
+
+  /* Typography */
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* Semantic Colors */
+  --background: var(--deep-ocean);
+  --foreground: var(--text-primary);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-deep-ocean: var(--deep-ocean);
+  --color-deep-ocean-card: var(--deep-ocean-card);
+  --color-deep-ocean-accent: var(--deep-ocean-accent);
+  --color-soft-gold: var(--soft-gold);
+  --color-soft-gold-hover: var(--soft-gold-hover);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===== BASE STYLES ===== */
+body {
+  background: var(--deep-ocean);
+  color: var(--text-primary);
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  min-height: 100vh;
+}
+
+/* ===== GLASSMORPHISM COMPONENTS ===== */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(17, 18, 64, 0.8) 0%,
+    rgba(31, 26, 56, 0.6) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== BUTTON VARIANTS ===== */
+.btn-gold {
+  background: linear-gradient(135deg, var(--soft-gold) 0%, #e6b800 100%);
+  color: var(--deep-ocean);
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, #ffe033 0%, var(--soft-gold) 100%);
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(241, 199, 0, 0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--glass-bg);
+  border-color: var(--soft-gold-hover);
+}
+
+/* ===== ANIMATION UTILITIES ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--deep-ocean-card) 25%,
+    var(--deep-ocean-accent) 50%,
+    var(--deep-ocean-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--deep-ocean);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--deep-ocean-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--soft-gold-hover);
 }

@@ -1,0 +1,18 @@
+# Backend models package
+from .schemas import (
+    Hotel, HotelCreate, HotelUpdate,
+    PriceLog, PriceLogCreate,
+    Settings, SettingsCreate, SettingsUpdate,
+    Alert, AlertCreate, AlertType,
+    HotelWithPrice, PriceWithTrend, DashboardResponse,
+    MonitorResult, TrendDirection, SerpApiHotelPrice
+)
+
+__all__ = [
+    "Hotel", "HotelCreate", "HotelUpdate",
+    "PriceLog", "PriceLogCreate",
+    "Settings", "SettingsCreate", "SettingsUpdate",
+    "Alert", "AlertCreate", "AlertType",
+    "HotelWithPrice", "PriceWithTrend", "DashboardResponse",
+    "MonitorResult", "TrendDirection", "SerpApiHotelPrice"
+]
