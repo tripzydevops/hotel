@@ -1,0 +1,32 @@
+services:
+  # Backend Service
+  - type: web
+    name: hotel-backend
+    env: python
+    runtime: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    numInstances: 1
+    region: oregon
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 8000
+    fromEnvVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_USER
+        sync: false
+
+  # Frontend Service (Optional, usually better via Vercel integration,
+  # but can be deployed here too if desired.
+  # We will stick to Vercel for Frontend as discussed.)
