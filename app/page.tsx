@@ -9,12 +9,12 @@ import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
 import { Bell, RefreshCw, Plus, Settings } from "lucide-react";
 import { api } from "@/lib/api";
-import { DashboardData, UserSettings } from "@/types";
-
-// Placeholder User ID for prototype
-const USER_ID = "00000000-0000-0000-0000-000000000000";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Dashboard() {
+  const supabase = createClient();
+  const [userId, setUserId] = useState<string | null>(null);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,11 +27,36 @@ export default function Dashboard() {
     undefined,
   );
 
+  useEffect(() => {
+    const getSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      } else {
+        // Redirect to login if no session
+        window.location.href = "/login";
+      }
+    };
+    getSession();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
+
   const fetchData = async () => {
+    if (!userId) return;
     try {
       setError(null);
-      const dashboardData = await api.getDashboard(USER_ID);
+      const dashboardData = await api.getDashboard(userId);
       setData(dashboardData);
+
+      const settings = await api.getSettings(userId);
+      setUserSettings(settings);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       setError("Failed to load dashboard data. Please check your connection.");
@@ -40,14 +65,11 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const handleRefresh = async () => {
+    if (!userId) return;
     setIsRefreshing(true);
     try {
-      await api.triggerMonitor(USER_ID);
+      await api.triggerMonitor(userId);
       await fetchData();
     } catch (error) {
       console.error("Failed to refresh monitor:", error);
@@ -61,12 +83,14 @@ export default function Dashboard() {
     location: string,
     isTarget: boolean,
   ) => {
-    await api.addHotel(USER_ID, name, location, isTarget);
+    if (!userId) return;
+    await api.addHotel(userId, name, location, isTarget);
     await fetchData();
   };
 
   const handleSaveSettings = async (settings: UserSettings) => {
-    await api.updateSettings(USER_ID, settings);
+    if (!userId) return;
+    await api.updateSettings(userId, settings);
     setUserSettings(settings);
     // Refresh to check if any immediate alerts
     handleRefresh();
