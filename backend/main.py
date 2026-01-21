@@ -35,7 +35,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -125,7 +125,11 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
         .eq("is_read", False) \
         .execute()
     
-    unread_count = alerts_result.count or 0
+    unread_count = 0
+    try:
+        unread_count = alerts_result.count if alerts_result.count is not None else 0
+    except:
+        pass
     
     return DashboardResponse(
         target_hotel=target_hotel,
@@ -152,8 +156,14 @@ async def trigger_monitor(
     alerts_generated = 0
     
     # Get user settings
-    settings_result = db.table("settings").select("*").eq("user_id", str(user_id)).single().execute()
-    settings = settings_result.data
+    settings = None
+    try:
+        settings_result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
+        if settings_result.data:
+            settings = settings_result.data[0]
+    except Exception as e:
+        print(f"Error fetching settings: {e}")
+        
     threshold = settings["threshold_percent"] if settings else 2.0
     
     # Get all hotels for user
@@ -330,18 +340,22 @@ async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase)):
 
 @app.get("/api/settings/{user_id}", response_model=Settings)
 async def get_settings(user_id: UUID, db: Client = Depends(get_supabase)):
-    result = db.table("settings").select("*").eq("user_id", str(user_id)).single().execute()
-    if not result.data:
-        # Create default settings if none exist
-        default_settings = {
-            "user_id": str(user_id),
-            "threshold_percent": 2.0,
-            "check_frequency_minutes": 144,
-            "notifications_enabled": True
-        }
-        result = db.table("settings").insert(default_settings).execute()
+    try:
+        result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
+        if not result.data:
+            # Create default settings if none exist
+            default_settings = {
+                "user_id": str(user_id),
+                "threshold_percent": 2.0,
+                "check_frequency_minutes": 144,
+                "notifications_enabled": True
+            }
+            result = db.table("settings").insert(default_settings).execute()
+            return result.data[0]
         return result.data[0]
-    return result.data
+    except Exception as e:
+        print(f"Error in get_settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.put("/api/settings/{user_id}", response_model=Settings)
