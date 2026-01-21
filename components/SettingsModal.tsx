@@ -60,6 +60,20 @@ export default function SettingsModal({
 
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
+
+      // Wait for the service worker to be ready (active)
+      let sw =
+        registration.installing || registration.waiting || registration.active;
+      if (sw) {
+        if (sw.state !== "activated") {
+          await new Promise<void>((resolve) => {
+            sw!.addEventListener("statechange", () => {
+              if (sw!.state === "activated") resolve();
+            });
+          });
+        }
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
