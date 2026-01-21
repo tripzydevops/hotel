@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Modals state
   const [isAddHotelOpen, setIsAddHotelOpen] = useState(false);
@@ -28,10 +29,12 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
+      setError(null);
       const dashboardData = await api.getDashboard(USER_ID);
       setData(dashboardData);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      setError("Failed to load dashboard data. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -73,6 +76,20 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--soft-gold)]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--deep-ocean)] text-white gap-4">
+        <p className="text-red-400">{error}</p>
+        <button
+          onClick={fetchData}
+          className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] rounded-lg font-bold hover:opacity-90 transition-opacity"
+        >
+          Retry
+        </button>
       </div>
     );
   }
