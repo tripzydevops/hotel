@@ -217,6 +217,17 @@ async def trigger_monitor(
             
             prices_updated += 1
             
+            # TRACKING: Save to shared hotel directory for future auto-complete
+            try:
+                db.table("hotel_directory").upsert({
+                    "name": hotel_name,
+                    "location": location,
+                    "serp_api_id": price_data.get("raw_data", {}).get("hotel_id"),
+                    "last_verified_at": datetime.now().isoformat()
+                }, on_conflict="name,location").execute()
+            except Exception as e:
+                print(f"[Directory] Failed to upsert hotel: {e}")
+            
             # Track target hotel price
             if hotel["is_target_hotel"]:
                 target_price = current_price
@@ -476,3 +487,17 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/api/hotels/search")
+async def search_hotel_directory(q: str, db: Client = Depends(get_supabase)):
+    """Search the shared hotel directory for auto-complete."""
+    try:
+        # We use a simple ilike for now, gin_trgm would be better for fuzzy but requires migration
+        result = db.table("hotel_directory") \
+            .select("name, location, serp_api_id") \
+            .ilike("name", f"%{q}%") \
+            .limit(10) \
+            .execute()
+        return result.data
+    except Exception as e:
+        print(f"Error searching directory: {e}")
+        return []

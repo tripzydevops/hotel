@@ -70,6 +70,12 @@ class ApiClient {
   async getSettings(userId: string): Promise<any> {
     return this.fetch<any>(`/api/settings/${userId}`);
   }
+
+  async searchDirectory(query: string): Promise<any[]> {
+    return this.fetch<any[]>(
+      `/api/hotels/search?q=${encodeURIComponent(query)}`,
+    );
+  }
 }
 
 export const api = new ApiClient();
