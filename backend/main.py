@@ -52,9 +52,15 @@ def get_supabase() -> Client:
 
 # ===== Health Check =====
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    has_key = bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+    return {
+        "status": "healthy", 
+        "supabase_configured": bool(url and has_key),
+        "timestamp": datetime.now().isoformat()
+    }
 
 
 # ===== Dashboard Endpoint =====
