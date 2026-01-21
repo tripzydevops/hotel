@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t, locale, setLocale } = useI18n();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass">
@@ -29,26 +31,33 @@ export default function Header() {
               href="/"
               className="text-white font-medium border-b-2 border-[var(--soft-gold)] pb-1"
             >
-              Dashboard
+              {t("common.dashboard")}
             </Link>
             <Link
               href="/analysis"
               className="text-[var(--text-secondary)] hover:text-white transition-colors hover:scale-105 transform duration-200"
             >
-              Analysis
+              {t("common.analysis")}
             </Link>
             <Link
               href="/reports"
               className="text-[var(--text-secondary)] hover:text-white transition-colors hover:scale-105 transform duration-200"
             >
-              Reports
+              {t("common.reports")}
             </Link>
           </nav>
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="btn-ghost text-sm">Sign In</button>
-            <button className="btn-gold text-sm">Get Started</button>
+            {/* Language Switcher */}
+            <button
+              onClick={() => setLocale(locale === "en" ? "tr" : "en")}
+              className="text-sm font-bold text-[var(--soft-gold)] border border-[var(--soft-gold)] rounded px-2 py-1 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] transition-all"
+            >
+              {locale === "en" ? "TR" : "EN"}
+            </button>
+
+            <button className="btn-ghost text-sm">{t("common.signOut")}</button>
           </div>
 
           {/* Mobile Menu Button */}

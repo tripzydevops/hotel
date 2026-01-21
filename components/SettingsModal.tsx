@@ -9,6 +9,7 @@ import {
   Save,
 } from "lucide-react";
 import { UserSettings } from "@/types";
+import { useI18n } from "@/lib/i18n";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function SettingsModal({
   settings,
   onSave,
 }: SettingsModalProps) {
+  const { t } = useI18n();
   const [threshold, setThreshold] = useState(
     settings?.threshold_percent || 2.0,
   );
@@ -31,6 +33,59 @@ export default function SettingsModal({
     settings?.notifications_enabled ?? true,
   );
   const [loading, setLoading] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(
+    settings?.push_enabled ?? false,
+  );
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, "+")
+      .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const togglePushNotifications = async (checked: boolean) => {
+    if (!checked) {
+      setPushEnabled(false);
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+        ),
+      });
+
+      // Send to backend
+      console.log("Push Subscription:", JSON.stringify(subscription));
+
+      // Save to backend immediately
+      await onSave({
+        ...settings,
+        push_enabled: true,
+        // @ts-ignore - The types need to be updated in frontend types.ts too
+        push_subscription: subscription.toJSON(),
+      } as any);
+
+      setPushEnabled(true);
+      alert(t("settings.pushEnabled") || "Push Notifications Enabled!");
+    } catch (error) {
+      console.error("Error subscribing to push:", error);
+      alert("Failed to enable push. " + error);
+      setPushEnabled(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -163,18 +218,20 @@ export default function SettingsModal({
               <div className="w-11 h-6 bg-white/10 rounded-full"></div>
             </div>
 
-            {/* Push Toggle (Placeholder) */}
-            <div
-              className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed"
-              title="Coming Soon"
-            >
-              <span className="text-sm text-[var(--text-secondary)] flex flex-col">
-                <span>Device Push Notifications</span>
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  Coming Soon
-                </span>
+            {/* Push Toggle */}
+            <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
+              <span className="text-sm text-[var(--text-secondary)]">
+                {t("settings.push")}
               </span>
-              <div className="w-11 h-6 bg-white/10 rounded-full"></div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pushEnabled}
+                  onChange={(e) => togglePushNotifications(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+              </label>
             </div>
           </div>
 

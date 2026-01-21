@@ -63,11 +63,12 @@ class NotificationService:
                 alert_message
             )
 
-        # 3. Push (Placeholder)
-        if settings.get("push_enabled"):
+        # 3. Push
+        if settings.get("push_enabled") and settings.get("push_subscription"):
             results["push"] = await self.send_push(
-                settings.get("user_id"), # Or specific push token
-                alert_message
+                settings.get("user_id"), 
+                alert_message,
+                subscription=settings.get("push_subscription")
             )
             
         return results
@@ -78,11 +79,42 @@ class NotificationService:
         print(f"[Notification] WOULD send WhatsApp to {number}: {message}")
         return True
 
-    async def send_push(self, user_id: str, message: str) -> bool:
-        """Placeholder for Web Push integration"""
-        # TODO: Implement Web Push
-        print(f"[Notification] WOULD send Push to {user_id}: {message}")
-        return True
+    async def send_push(self, user_id: str, message: str, subscription: dict = None) -> bool:
+        """
+        Send Web Push notification.
+        """
+        if not subscription:
+            print(f"[Notification] No subscription found for user {user_id}")
+            return False
+
+        try:
+            from pywebpush import webpush, WebPushException
+            
+            # Get VAPID private key from env
+            private_key = os.getenv("VAPID_PRIVATE_KEY")
+            if not private_key:
+                print("[Notification] VAPID_PRIVATE_KEY not set")
+                return False
+
+            claims = {
+                "sub": os.getenv("VAPID_SUBJECT", "mailto:admin@example.com")
+            }
+
+            webpush(
+                subscription_info=subscription,
+                data=message,
+                vapid_private_key=private_key,
+                vapid_claims=claims
+            )
+            print(f"[Notification] Push sent to {user_id}")
+            return True
+            
+        except ImportError:
+            print("[Notification] pywebpush not installed")
+            return False
+        except Exception as e:
+            print(f"[Notification] Push failed: {e}")
+            return False
 
     async def send_alert_email(
         self,

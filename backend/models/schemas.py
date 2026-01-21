@@ -4,7 +4,7 @@ Provides structured data validation for all API operations.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from uuid import UUID
 from enum import Enum
@@ -81,6 +81,7 @@ class SettingsBase(BaseModel):
     notification_email: Optional[str] = None
     whatsapp_number: Optional[str] = None
     push_enabled: bool = False
+    push_subscription: Optional[Dict[str, Any]] = None
     notifications_enabled: bool = True
 
 
