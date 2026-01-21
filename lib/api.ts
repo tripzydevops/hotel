@@ -66,6 +66,10 @@ class ApiClient {
       body: JSON.stringify(settings),
     });
   }
+
+  async getSettings(userId: string): Promise<any> {
+    return this.fetch<any>(`/api/settings/${userId}`);
+  }
 }
 
 export const api = new ApiClient();

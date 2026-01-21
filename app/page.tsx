@@ -10,6 +10,7 @@ import SettingsModal from "@/components/SettingsModal";
 import { Bell, RefreshCw, Plus, Settings } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
+import { DashboardData, UserSettings } from "@/types";
 
 export default function Dashboard() {
   const supabase = createClient();
