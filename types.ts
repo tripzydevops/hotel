@@ -1,5 +1,3 @@
-import { Database } from "./supabase";
-
 export interface Hotel {
   id: string;
   name: string;

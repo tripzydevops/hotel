@@ -91,13 +91,17 @@ export default function SettingsModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!settings) return;
+
     setLoading(true);
     try {
       await onSave({
+        ...settings,
         threshold_percent: threshold,
         check_frequency_minutes: 144, // Default (approx every 2.4 hours)
         notification_email: email,
         notifications_enabled: enabled,
+        push_enabled: pushEnabled,
       });
       onClose();
     } catch (error) {
