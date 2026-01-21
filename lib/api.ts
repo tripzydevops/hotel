@@ -1,6 +1,9 @@
 import { DashboardData, MonitorResult, Alert } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const isProduction = process.env.NODE_ENV === "production";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (isProduction ? "" : "http://localhost:8000");
 
 class ApiClient {
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
