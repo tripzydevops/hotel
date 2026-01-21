@@ -57,7 +57,10 @@ export default function LoginPage() {
           </div>
 
           <button
-            formAction={login}
+            formAction={async (formData) => {
+              "use server";
+              await login(formData);
+            }}
             className="w-full btn-gold py-3 flex items-center justify-center gap-2 group font-bold text-lg"
           >
             Sign In

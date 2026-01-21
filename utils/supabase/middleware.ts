@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  constsupabase = createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -46,6 +46,17 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Admin Route Protection
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    const adminEmail = "tripzydevops@gmail.com";
+    if (user?.email !== adminEmail) {
+      // Redirect unauthorized users to dashboard
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
