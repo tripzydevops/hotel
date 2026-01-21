@@ -35,7 +35,7 @@ export default function LoginPage() {
               type="email"
               required
               className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all"
-              placeholder="admin@tripzy.travel"
+              placeholder="tripzydevops@gmail.com"
             />
           </div>
 

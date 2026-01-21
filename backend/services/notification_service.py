@@ -97,7 +97,7 @@ class NotificationService:
                 return False
 
             claims = {
-                "sub": os.getenv("VAPID_SUBJECT", "mailto:admin@example.com")
+                "sub": os.getenv("VAPID_SUBJECT", "mailto:tripzydevops@gmail.com")
             }
 
             webpush(
