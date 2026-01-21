@@ -147,23 +147,36 @@ export default function SettingsModal({
                 )}
               </div>
 
-              {/* WhatsApp Toggle (Placeholder) */}
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed" title="Coming Soon">
-                 <span className="text-sm text-[var(--text-secondary)] flex flex-col">
-                    <span>WhatsApp Alerts</span>
-                    <span className="text-[10px] text-[var(--text-muted)]">Coming Soon</span>
-                 </span>
-                 <div className="w-11 h-6 bg-white/10 rounded-full"></div>
               </div>
 
-               {/* Push Toggle (Placeholder) */}
-               <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed" title="Coming Soon">
-                 <span className="text-sm text-[var(--text-secondary)] flex flex-col">
-                    <span>Device Push Notifications</span>
-                    <span className="text-[10px] text-[var(--text-muted)]">Coming Soon</span>
-                 </span>
-                 <div className="w-11 h-6 bg-white/10 rounded-full"></div>
+              {/* WhatsApp Toggle (Placeholder) */}
+              <div
+                className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed"
+                title="Coming Soon"
+              >
+                <span className="text-sm text-[var(--text-secondary)] flex flex-col">
+                  <span>WhatsApp Alerts</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Coming Soon
+                  </span>
+                </span>
+                <div className="w-11 h-6 bg-white/10 rounded-full"></div>
               </div>
+
+              {/* Push Toggle (Placeholder) */}
+              <div
+                className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed"
+                title="Coming Soon"
+              >
+                <span className="text-sm text-[var(--text-secondary)] flex flex-col">
+                  <span>Device Push Notifications</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    Coming Soon
+                  </span>
+                </span>
+                <div className="w-11 h-6 bg-white/10 rounded-full"></div>
+              </div>
+            </div>
 
           <div className="pt-2">
             <button
