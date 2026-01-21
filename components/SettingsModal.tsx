@@ -96,43 +96,74 @@ export default function SettingsModal({
 
           <div className="h-px bg-white/10" />
 
-          {/* Notifications Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-white flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[var(--soft-gold)]" />
-              Email Notifications
-            </h3>
-
-            <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
-              <span className="text-sm text-[var(--text-secondary)]">
-                Enable Alerts
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={(e) => setEnabled(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+            {/* Search Frequency */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-white flex items-center gap-2">
+                <SettingsIcon className="w-4 h-4 text-[var(--soft-gold)]" />
+                Scan Frequency
               </label>
+              <select
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
+                defaultValue="144"
+              >
+                <option value="0">Real-time (Manual Only)</option>
+                <option value="60">Every hour</option>
+                <option value="240">Every 4 hours (Recommended)</option>
+                <option value="1440">Daily</option>
+              </select>
             </div>
 
-            {enabled && (
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5 uppercase tracking-wider">
-                  Send to Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
-                  placeholder="admin@tripzy.travel"
-                />
+             <div className="h-px bg-white/10" />
+
+             {/* Notifications Section */}
+             <div className="space-y-4">
+              <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                <Bell className="w-4 h-4 text-[var(--soft-gold)]" />
+                Notification Channels
+              </h3>
+
+              {/* Email Toggle */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
+                  <span className="text-sm text-[var(--text-secondary)]">Email Alerts</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={(e) => setEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                     <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                  </label>
+                </div>
+                {enabled && (
+                   <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                    placeholder="admin@tripzy.travel"
+                  />
+                )}
               </div>
-            )}
-          </div>
+
+              {/* WhatsApp Toggle (Placeholder) */}
+              <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed" title="Coming Soon">
+                 <span className="text-sm text-[var(--text-secondary)] flex flex-col">
+                    <span>WhatsApp Alerts</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">Coming Soon</span>
+                 </span>
+                 <div className="w-11 h-6 bg-white/10 rounded-full"></div>
+              </div>
+
+               {/* Push Toggle (Placeholder) */}
+               <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed" title="Coming Soon">
+                 <span className="text-sm text-[var(--text-secondary)] flex flex-col">
+                    <span>Device Push Notifications</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">Coming Soon</span>
+                 </span>
+                 <div className="w-11 h-6 bg-white/10 rounded-full"></div>
+              </div>
 
           <div className="pt-2">
             <button

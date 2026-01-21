@@ -12,35 +12,36 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center shadow-lg shadow-[var(--soft-gold)]/20">
               <span className="text-[var(--deep-ocean)] font-bold text-xl">
-                T
+                R
               </span>
             </div>
-            <span className="text-xl font-bold text-white">
-              Tripzy<span className="text-[var(--soft-gold)]">Hotel</span>
+            <span className="text-xl font-bold text-white tracking-tight">
+              Tripzy{" "}
+              <span className="text-[var(--soft-gold)]">Rate Sentinel</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             <Link
-              href="/search"
-              className="text-[var(--text-secondary)] hover:text-white transition-colors"
+              href="/"
+              className="text-white font-medium border-b-2 border-[var(--soft-gold)] pb-1"
             >
-              Discover
+              Dashboard
             </Link>
             <Link
-              href="/deals"
-              className="text-[var(--text-secondary)] hover:text-white transition-colors"
+              href="/analysis"
+              className="text-[var(--text-secondary)] hover:text-white transition-colors hover:scale-105 transform duration-200"
             >
-              Deals
+              Analysis
             </Link>
             <Link
-              href="/favorites"
-              className="text-[var(--text-secondary)] hover:text-white transition-colors"
+              href="/reports"
+              className="text-[var(--text-secondary)] hover:text-white transition-colors hover:scale-105 transform duration-200"
             >
-              Favorites
+              Reports
             </Link>
           </nav>
 

@@ -148,15 +148,21 @@ export default function Dashboard() {
               <Settings className="w-5 h-5 text-white" />
             </button>
 
-            {/* Refresh */}
+            {/* Manual Search (Scan Now) */}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-3 glass rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50"
+              className={`
+                btn-gold flex items-center gap-2 px-6 shadow-lg shadow-[var(--soft-gold)]/20
+                ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
+              `}
             >
               <RefreshCw
-                className={`w-5 h-5 text-white ${isRefreshing ? "animate-spin" : ""}`}
+                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
+              <span className="font-bold">
+                {isRefreshing ? "Scanning..." : "Scan Now"}
+              </span>
             </button>
 
             {/* Add Competitor */}
