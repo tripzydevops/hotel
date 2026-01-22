@@ -1,10 +1,11 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Building2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Building2, Trash2 } from "lucide-react";
 
 export type TrendDirection = "up" | "down" | "stable";
 
 interface TargetHotelTileProps {
+  id: string;
   name: string;
   location?: string;
   currentPrice: number;
@@ -13,6 +14,7 @@ interface TargetHotelTileProps {
   trend: TrendDirection;
   changePercent: number;
   lastUpdated?: string;
+  onDelete?: (id: string) => void;
 }
 
 /**
@@ -20,6 +22,7 @@ interface TargetHotelTileProps {
  * Displays user's own hotel with prominent pricing
  */
 export default function TargetHotelTile({
+  id,
   name,
   location,
   currentPrice,
@@ -28,6 +31,7 @@ export default function TargetHotelTile({
   trend,
   changePercent,
   lastUpdated,
+  onDelete,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -77,7 +81,21 @@ export default function TargetHotelTile({
             )}
           </div>
         </div>
-        {getTrendIcon()}
+        <div className="flex items-center gap-2">
+          {onDelete && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id);
+              }}
+              className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all"
+              title="Delete Monitor"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          {getTrendIcon()}
+        </div>
       </div>
 
       {/* Price Display */}

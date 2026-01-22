@@ -78,6 +78,11 @@ class ApiClient {
       `/api/hotels/search?q=${encodeURIComponent(query)}`,
     );
   }
+  async deleteHotel(hotelId: string): Promise<void> {
+    return this.fetch<void>(`/api/hotels/${hotelId}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const api = new ApiClient();

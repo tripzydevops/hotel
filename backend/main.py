@@ -598,24 +598,27 @@ async def search_hotel_directory(
     user_id: Optional[UUID] = None, 
     db: Client = Depends(get_supabase)
 ):
-    """Search the shared hotel directory for auto-complete."""
+    if not q or len(q.strip()) < 2:
+        return []
+
     # Normalize input query
-    q_normalized = q.title().strip()
+    q_trimmed = q.strip()
     
     try:
         # Log the search event
         await log_query(
             db=db,
             user_id=user_id,
-            hotel_name=q_normalized,
+            hotel_name=q_trimmed,
             location=None,
             action_type="search"
         )
         
-        # We use a simple ilike for now, gin_trgm would be better for fuzzy but requires migration
+        # Search in both name and location
+        # Using or_ for better discovery
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
-            .ilike("name", f"%{q_normalized}%") \
+            .or_(f"name.ilike.%{q_trimmed}%,location.ilike.%{q_trimmed}%") \
             .limit(10) \
             .execute()
         return result.data

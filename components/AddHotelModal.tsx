@@ -29,7 +29,7 @@ export default function AddHotelModal({
   // Search logic
   useEffect(() => {
     const searchHotels = async () => {
-      if (name.length < 3) {
+      if (name.length < 2) {
         setSuggestions([]);
         return;
       }

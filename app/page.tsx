@@ -94,6 +94,17 @@ export default function Dashboard() {
     await fetchData();
   };
 
+  const handleDeleteHotel = async (hotelId: string) => {
+    if (!userId || !confirm("Are you sure you want to remove this hotel monitor?")) return;
+    try {
+      await api.deleteHotel(hotelId);
+      await fetchData();
+    } catch (error) {
+      console.error("Failed to delete hotel:", error);
+      alert("Failed to delete hotel monitor.");
+    }
+  };
+
   const handleQuickAdd = async (name: string, location: string) => {
     if (!userId) return;
     await handleAddHotel(name, location, false, userSettings?.currency || "USD");
@@ -247,6 +258,7 @@ export default function Dashboard() {
               {/* Target Hotel - Large Tile */}
               {data?.target_hotel && (
                 <TargetHotelTile
+                  id={data.target_hotel.id}
                   name={data.target_hotel.name}
                   location={data.target_hotel.location}
                   currentPrice={effectiveTargetPrice}
@@ -255,6 +267,7 @@ export default function Dashboard() {
                   trend={data.target_hotel.price_info?.trend || "stable"}
                   changePercent={data.target_hotel.price_info?.change_percent || 0}
                   lastUpdated={data.target_hotel.price_info ? "Updated just now" : "Pending initial scan"}
+                  onDelete={handleDeleteHotel}
                 />
               )}
 
@@ -269,6 +282,7 @@ export default function Dashboard() {
                   return (
                     <CompetitorTile
                       key={competitor.id}
+                      id={competitor.id}
                       name={competitor.name}
                       currentPrice={competitor.price_info?.current_price || 0}
                       previousPrice={competitor.price_info?.previous_price}
@@ -277,6 +291,7 @@ export default function Dashboard() {
                       changePercent={competitor.price_info?.change_percent || 0}
                       isUndercut={isUndercut}
                       rank={index + 1}
+                      onDelete={handleDeleteHotel}
                     />
                   );
                 })}

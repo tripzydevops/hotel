@@ -1,10 +1,11 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Hotel } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Hotel, Trash2 } from "lucide-react";
 
 export type TrendDirection = "up" | "down" | "stable";
 
 interface CompetitorTileProps {
+  id: string;
   name: string;
   currentPrice: number;
   previousPrice?: number;
@@ -13,6 +14,7 @@ interface CompetitorTileProps {
   changePercent: number;
   isUndercut?: boolean;
   rank?: number;
+  onDelete?: (id: string) => void;
 }
 
 /**
@@ -20,6 +22,7 @@ interface CompetitorTileProps {
  * Compact display for competitor hotels with trend arrows
  */
 export default function CompetitorTile({
+  id,
   name,
   currentPrice,
   previousPrice,
@@ -28,6 +31,7 @@ export default function CompetitorTile({
   changePercent,
   isUndercut = false,
   rank,
+  onDelete,
 }: CompetitorTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -107,15 +111,29 @@ export default function CompetitorTile({
           </div>
         </div>
 
-        {/* Trend Badge */}
-        <div
-          className={`px-2 py-1 rounded-md ${getTrendBgColor()} flex items-center gap-1`}
-        >
-          {getTrendIcon()}
-          <span className={`text-xs font-medium ${getTrendTextColor()}`}>
-            {changePercent > 0 ? "+" : ""}
-            {changePercent.toFixed(1)}%
-          </span>
+        {/* Trend Badge & Actions */}
+        <div className="flex items-center gap-2">
+          {onDelete && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id);
+              }}
+              className="p-1.5 rounded-md bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all"
+              title="Delete Monitor"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <div
+            className={`px-2 py-1 rounded-md ${getTrendBgColor()} flex items-center gap-1`}
+          >
+            {getTrendIcon()}
+            <span className={`text-xs font-medium ${getTrendTextColor()}`}>
+              {changePercent > 0 ? "+" : ""}
+              {changePercent.toFixed(1)}%
+            </span>
+          </div>
         </div>
       </div>
 
