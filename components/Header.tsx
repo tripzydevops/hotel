@@ -57,6 +57,13 @@ export default function Header() {
               {locale === "en" ? "TR" : "EN"}
             </button>
 
+            <Link 
+              href="/admin"
+              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] animate-pulse"></span>
+              Admin Panel
+            </Link>
             <button className="text-xs font-mono bg-white/10 text-[var(--soft-gold)] px-2 py-1 rounded border border-white/5">
               DEV MODE
             </button>
