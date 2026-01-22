@@ -488,28 +488,54 @@ async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase)):
 # ===== Settings CRUD =====
 
 @app.get("/api/settings/{user_id}", response_model=Settings)
-async def get_settings(user_id: UUID, db: Client = Depends(get_supabase)):
+async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     try:
+        if not db:
+             # Return strict default for Dev Mode if no DB
+             return {
+                "user_id": str(user_id),
+                "threshold_percent": 2.0,
+                "check_frequency_minutes": 1440,
+                "email_notifications_enabled": True,
+                "push_notifications_enabled": False,
+                "notifications_enabled": True,
+                "currency": "USD"
+            }
+            
         result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
         if not result.data:
             # Create default settings if none exist
             default_settings = {
                 "user_id": str(user_id),
                 "threshold_percent": 2.0,
-                "check_frequency_minutes": 144,
+                "check_frequency_minutes": 1440,
                 "notifications_enabled": True,
-                "currency": "USD"
+                "currency": "USD",
+                "email_notifications_enabled": True,
+                "push_notifications_enabled": False
             }
             result = db.table("settings").insert(default_settings).execute()
             return result.data[0]
         return result.data[0]
     except Exception as e:
         print(f"Error in get_settings: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return strict defaults instead of failing 500
+        return {
+            "user_id": str(user_id),
+            "threshold_percent": 2.0,
+            "check_frequency_minutes": 1440,
+            "email_notifications_enabled": True,
+            "push_notifications_enabled": False,
+            "notifications_enabled": True,
+            "currency": "USD"
+        }
 
 
 @app.put("/api/settings/{user_id}", response_model=Settings)
-async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Client = Depends(get_supabase)):
+async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[Client] = Depends(get_supabase)):
+    if not db:
+        return None
+        
     # Check if settings exist
     existing = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
     
