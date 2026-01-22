@@ -49,6 +49,7 @@ class ApiClient {
     name: string,
     location: string,
     isTarget: boolean,
+    currency: string = "USD",
   ): Promise<void> {
     return this.fetch<void>(`/api/hotels/${userId}`, {
       method: "POST",
@@ -56,6 +57,7 @@ class ApiClient {
         name,
         location,
         is_target_hotel: isTarget,
+        preferred_currency: currency,
       }),
     });
   }

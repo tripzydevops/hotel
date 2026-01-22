@@ -68,6 +68,7 @@ export interface DashboardData {
   target_hotel?: HotelWithPrice;
   competitors: HotelWithPrice[];
   recent_searches: QueryLog[];
+  scan_history: QueryLog[];
   unread_alerts_count: number;
   last_updated: string;
 }

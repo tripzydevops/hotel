@@ -122,10 +122,12 @@ export default function CompetitorTile({
       {/* Price */}
       <div className="flex-1 flex items-center group relative cursor-default">
         <div>
-          <p className="text-price-md text-white transition-colors group-hover:text-[var(--soft-gold)]">
-            {formatPrice(currentPrice)}
+          <p className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}>
+            {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
           </p>
-          <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">per night</p>
+          <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">
+            {currentPrice > 0 ? "per night" : "Pending Scan"}
+          </p>
         </div>
         
         {/* Progressive Disclosure: Hover Tooltip */}

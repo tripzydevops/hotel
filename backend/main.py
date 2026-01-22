@@ -154,15 +154,15 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
     except:
         pass
     
-    # Fetch recent searches
+    # Fetch recent activity (searches and manual additions)
     recent_result = db.table("query_logs") \
         .select("*") \
         .eq("user_id", str(user_id)) \
+        .in_("action_type", ["search", "create"]) \
         .order("created_at", desc=True) \
         .limit(20) \
         .execute()
     
-    # Filter for unique hotel names to avoid clutter
     seen_names = set()
     unique_recent = []
     for log in (recent_result.data or []):
@@ -173,10 +173,20 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
         if len(unique_recent) >= 5:
             break
 
+    # Fetch dedicated scan history (monitor events)
+    scan_result = db.table("query_logs") \
+        .select("*") \
+        .eq("user_id", str(user_id)) \
+        .eq("action_type", "monitor") \
+        .order("created_at", desc=True) \
+        .limit(10) \
+        .execute()
+
     return DashboardResponse(
         target_hotel=target_hotel,
-        competitors=competitors[:5],
+        competitors=competitors,
         recent_searches=unique_recent,
+        scan_history=scan_result.data or [],
         unread_alerts_count=unread_count,
         last_updated=datetime.now(),
     )

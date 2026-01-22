@@ -13,7 +13,6 @@ interface TargetHotelTileProps {
   trend: TrendDirection;
   changePercent: number;
   lastUpdated?: string;
-  isSimulated?: boolean;
 }
 
 /**
@@ -29,7 +28,6 @@ export default function TargetHotelTile({
   trend,
   changePercent,
   lastUpdated,
-  isSimulated = false,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -86,20 +84,22 @@ export default function TargetHotelTile({
       <div className="flex-1 flex flex-col justify-center py-4">
         <div className="text-center group relative">
           <p className="text-xs font-semibold tracking-tighter text-[var(--text-secondary)] mb-1 uppercase">
-            {isSimulated ? "Simulated Rate" : "Current Rate"}
+            Current Rate
           </p>
           <div className="relative inline-block">
-            <p className={`text-price-lg ${isSimulated ? "text-[var(--soft-gold)]" : "text-white"} transition-all`}>
-              {formatPrice(currentPrice)}
-            </p>
-            {isSimulated && (
-              <span className="absolute -top-2 -right-6 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--soft-gold)] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--soft-gold)]"></span>
-              </span>
+            {currentPrice > 0 ? (
+              <p className="text-price-lg text-white transition-all">
+                {formatPrice(currentPrice)}
+              </p>
+            ) : (
+              <p className="text-price-lg text-[var(--text-muted)] animate-pulse">
+                —
+              </p>
             )}
           </div>
-          <p className="text-sm font-medium text-[var(--text-muted)] mt-1">per night</p>
+          <p className="text-sm font-medium text-[var(--text-muted)] mt-1">
+            {currentPrice > 0 ? "per night" : "Scan required for live rate"}
+          </p>
           
           {/* Progressive Disclosure: Detail Tooltip on Hover */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-lg text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">

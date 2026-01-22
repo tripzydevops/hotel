@@ -162,6 +162,7 @@ class DashboardResponse(BaseModel):
     target_hotel: Optional[HotelWithPrice] = None
     competitors: List[HotelWithPrice] = []
     recent_searches: List[QueryLog] = []
+    scan_history: List[QueryLog] = []
     unread_alerts_count: int = 0
     last_updated: Optional[datetime] = None
 

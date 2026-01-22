@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 interface AddHotelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, location: string, isTarget: boolean) => Promise<void>;
+  onAdd: (name: string, location: string, isTarget: boolean, currency: string) => Promise<void>;
 }
 
 export default function AddHotelModal({
@@ -17,6 +17,7 @@ export default function AddHotelModal({
 }: AddHotelModalProps) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [isTarget, setIsTarget] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -75,11 +76,12 @@ export default function AddHotelModal({
     e.preventDefault();
     setLoading(true);
     try {
-      await onAdd(name, location, isTarget);
+      await onAdd(name, location, isTarget, currency);
       onClose();
       // Reset form
       setName("");
       setLocation("");
+      setCurrency("USD");
       setIsTarget(false);
     } catch (error) {
       console.error("Error adding hotel:", error);
@@ -159,20 +161,38 @@ export default function AddHotelModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Location
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-              <input
-                type="text"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
-                placeholder="e.g. Miami Beach, FL"
-              />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                Location
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  placeholder="e.g. Miami, FL"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                Currency
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="TRY">TRY (₺)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
             </div>
           </div>
 

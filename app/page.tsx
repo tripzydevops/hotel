@@ -13,7 +13,7 @@ import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
 import RecentSearches from "@/components/RecentSearches";
 import SkeletonTile from "@/components/SkeletonTile";
-import { Calculator } from "lucide-react";
+import ScanHistory from "@/components/ScanHistory";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -31,9 +31,6 @@ export default function Dashboard() {
     undefined,
   );
 
-  // What-If Simulation State
-  const [simulatedPrice, setSimulatedPrice] = useState<number | null>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -90,16 +87,16 @@ export default function Dashboard() {
     name: string,
     location: string,
     isTarget: boolean,
+    currency: string,
   ) => {
     if (!userId) return;
-    await api.addHotel(userId, name, location, isTarget);
+    await api.addHotel(userId, name, location, isTarget, currency);
     await fetchData();
   };
 
   const handleQuickAdd = async (name: string, location: string) => {
     if (!userId) return;
-    await api.addHotel(userId, name, location, false);
-    await fetchData();
+    await handleAddHotel(name, location, false, userSettings?.currency || "USD");
   };
 
   const handleSaveSettings = async (settings: UserSettings) => {
@@ -134,8 +131,7 @@ export default function Dashboard() {
 
   if (!data && loading) return null;
 
-  const realTargetPrice = data?.target_hotel?.price_info?.current_price || 0;
-  const effectiveTargetPrice = simulatedPrice ?? realTargetPrice;
+  const effectiveTargetPrice = data?.target_hotel?.price_info?.current_price || 0;
 
   return (
     <div className="min-h-screen pb-12">
@@ -174,13 +170,13 @@ export default function Dashboard() {
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Market Pulse</p>
                 <div className="flex items-center gap-2 justify-end">
                   <span className={`text-sm font-black ${
-                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length) > 0 
+                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)) > 0 
                     ? 'text-alert-red' : 'text-optimal-green'
                   }`}>
-                    {(data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length).toFixed(1)}%
+                    {(data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)).toFixed(1)}%
                   </span>
                   <div className={`w-1.5 h-1.5 rounded-full ${
-                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length) > 0 
+                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)) > 0 
                     ? 'bg-alert-red' : 'bg-optimal-green'
                   }`} />
                 </div>
@@ -188,31 +184,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* New: What-If Simulation Control */}
-          <div className="flex-1 max-w-xs mx-4 hidden md:block">
-            <div className={`glass flex items-center gap-2 px-3 py-2 transition-all ${isSimulating ? 'ring-1 ring-[var(--soft-gold)]' : ''}`}>
-              <Calculator className={`w-4 h-4 ${isSimulating ? 'text-[var(--soft-gold)]' : 'text-[var(--text-muted)]'}`} />
-              <input 
-                type="number"
-                placeholder="Simulate Price..."
-                className="bg-transparent text-sm text-white outline-none w-full"
-                value={simulatedPrice || ""}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setSimulatedPrice(isNaN(val) ? null : val);
-                  setIsSimulating(!isNaN(val));
-                }}
-              />
-              {simulatedPrice && (
-                <button 
-                  onClick={() => {setSimulatedPrice(null); setIsSimulating(false);}}
-                  className="text-[10px] uppercase font-bold text-[var(--soft-gold)] hover:text-white"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
@@ -274,17 +245,16 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Target Hotel - Large Tile */}
-              {data?.target_hotel && data.target_hotel.price_info && (
+              {data?.target_hotel && (
                 <TargetHotelTile
                   name={data.target_hotel.name}
                   location={data.target_hotel.location}
                   currentPrice={effectiveTargetPrice}
-                  previousPrice={data.target_hotel.price_info.previous_price}
-                  currency={data.target_hotel.price_info.currency}
-                  trend={simulatedPrice ? (simulatedPrice > realTargetPrice ? "up" : "down") : data.target_hotel.price_info.trend}
-                  changePercent={simulatedPrice ? ((simulatedPrice - realTargetPrice) / realTargetPrice * 100) : data.target_hotel.price_info.change_percent}
-                  lastUpdated="Updated just now"
-                  isSimulated={!!simulatedPrice}
+                  previousPrice={data.target_hotel.price_info?.previous_price}
+                  currency={data.target_hotel.price_info?.currency || userSettings?.currency || "USD"}
+                  trend={data.target_hotel.price_info?.trend || "stable"}
+                  changePercent={data.target_hotel.price_info?.change_percent || 0}
+                  lastUpdated={data.target_hotel.price_info ? "Updated just now" : "Pending initial scan"}
                 />
               )}
 
@@ -359,6 +329,9 @@ export default function Dashboard() {
             <p className="text-xs text-[var(--text-muted)]">Hotels Tracked</p>
           </div>
         </div>
+
+        {/* Scan History Row */}
+        <ScanHistory scans={data?.scan_history || []} />
 
         {/* Recent Searches Row */}
         <RecentSearches 
