@@ -126,6 +126,9 @@ export default function AddHotelModal({
                   setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
                   setShowSuggestions(true)
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setShowSuggestions(false);
+                }}
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 placeholder="e.g. Grand Plaza Hotel"
               />
@@ -199,7 +202,8 @@ export default function AddHotelModal({
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  onFocus={() => setShowSuggestions(false)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium"
                   placeholder="e.g. Miami, FL"
                 />
               </div>
