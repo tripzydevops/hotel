@@ -49,3 +49,6 @@ __pycache__/
 venv/
 ENV/
 env/
+
+.vercel
+.env*.local
