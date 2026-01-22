@@ -7,7 +7,7 @@ import os
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from uuid import UUID
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -195,7 +195,7 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
             recent_searches=unique_recent,
             scan_history=scan_history,
             unread_alerts_count=unread_count,
-            last_updated=datetime.now(),
+            last_updated=datetime.now(timezone.utc),
         )
         return resp
     except Exception as e:
