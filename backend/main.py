@@ -621,7 +621,7 @@ async def search_hotel_directory(
         # This directory is populated automatically after successful price scans.
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
-            .or_(f"name.ilike.%{q_trimmed}%,location.ilike.%{q_trimmed}%") \
+            .ilike("name", f"%{q_trimmed}%") \
             .limit(10) \
             .execute()
         
