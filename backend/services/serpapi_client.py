@@ -152,6 +152,11 @@ class SerpApiClient:
             "price": float(price),
             "currency": currency,
             "source": "serpapi",
+            "vendor": best_match.get("deal_description", "Unknown Vendor"), # e.g. "Booking.com"
+            "rating": best_match.get("overall_rating"), # e.g. 4.5
+            "stars": best_match.get("extracted_hotel_class"), # e.g. 5
+            "property_token": best_match.get("property_token"), # Unique ID
+            "image_url": best_match.get("images", [{}])[0].get("thumbnail"), # First image
             "raw_data": best_match,
         }
     

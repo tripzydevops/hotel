@@ -287,6 +287,10 @@ export default function Dashboard() {
                   changePercent={data.target_hotel.price_info?.change_percent || 0}
                   lastUpdated={data.target_hotel.price_info ? "Updated just now" : "Pending initial scan"}
                   onDelete={handleDeleteHotel}
+                  rating={data.target_hotel.rating}
+                  stars={data.target_hotel.stars}
+                  imageUrl={data.target_hotel.image_url}
+                  vendor={data.target_hotel.price_info?.vendor}
                 />
               )}
 
@@ -311,6 +315,10 @@ export default function Dashboard() {
                       isUndercut={isUndercut}
                       rank={index + 1}
                       onDelete={handleDeleteHotel}
+                      rating={competitor.rating}
+                      stars={competitor.stars}
+                      imageUrl={competitor.image_url}
+                      vendor={competitor.price_info?.vendor}
                     />
                   );
                 })}

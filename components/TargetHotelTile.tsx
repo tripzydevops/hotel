@@ -15,6 +15,10 @@ interface TargetHotelTileProps {
   changePercent: number;
   lastUpdated?: string;
   onDelete?: (id: string) => void;
+  rating?: number;
+  stars?: number;
+  imageUrl?: string;
+  vendor?: string;
 }
 
 /**
@@ -32,6 +36,10 @@ export default function TargetHotelTile({
   changePercent,
   lastUpdated,
   onDelete,
+  rating,
+  stars,
+  imageUrl,
+  vendor,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -64,64 +72,87 @@ export default function TargetHotelTile({
   };
 
   return (
-    <div className="glass-card p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2 flex flex-col">
+    <div className="glass-card p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2 flex flex-col group/card">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/20 flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-[var(--soft-gold)]" />
+        <div className="flex items-center gap-4">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5">
+            {imageUrl ? (
+                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+            ) : (
+                <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
+            )}
+            {stars && (
+                <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
+                    {stars}★
+                </div>
+            )}
           </div>
           <div>
-            <span className="text-xs uppercase tracking-wider text-[var(--soft-gold)] font-semibold">
-              Your Hotel
-            </span>
-            <h2 className="text-xl font-bold text-white">{name}</h2>
+            <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] uppercase tracking-widest text-[var(--soft-gold)] font-bold bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-full">
+                    Property Owner
+                </span>
+                {rating && (
+                    <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        ★ {rating.toFixed(1)}
+                    </span>
+                )}
+            </div>
+            <h2 className="text-2xl font-bold text-white leading-tight">{name}</h2>
             {location && (
-              <p className="text-sm text-[var(--text-muted)]">{location}</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">{location}</p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {onDelete && (
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(id);
               }}
-              className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all"
+              className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all border border-white/5"
               title="Delete Monitor"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4.5 h-4.5" />
             </button>
           )}
-          {getTrendIcon()}
+          <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}>
+            {getTrendIcon()}
+          </div>
         </div>
       </div>
 
       {/* Price Display */}
-      <div className="flex-1 flex flex-col justify-center py-4">
+      <div className="flex-1 flex flex-col justify-center py-6">
         <div className="text-center group relative">
-          <p className="text-xs font-semibold tracking-tighter text-[var(--text-secondary)] mb-1 uppercase">
-            Current Rate
+          <p className="text-[10px] font-bold tracking-widest text-[var(--soft-gold)] mb-2 uppercase flex items-center justify-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+            Live Market Rate
           </p>
-          <div className="relative inline-block">
+          <div className="relative inline-block mb-1">
             {currentPrice > 0 ? (
-              <p className="text-price-lg text-white transition-all">
-                {formatPrice(currentPrice)}
-              </p>
+              <div className="flex flex-col items-center">
+                <p className="text-6xl font-black text-white tracking-tighter transition-all">
+                  {formatPrice(currentPrice)}
+                </p>
+                {vendor && (
+                    <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
+                        via {vendor}
+                    </span>
+                )}
+              </div>
             ) : (
-              <p className="text-price-lg text-[var(--text-muted)] animate-pulse">
-                —
+              <p className="text-5xl font-bold text-[var(--text-muted)] animate-pulse">
+                SCAN REQUIRED
               </p>
             )}
           </div>
-          <p className="text-sm font-medium text-[var(--text-muted)] mt-1">
-            {currentPrice > 0 ? "per night" : "Scan required for live rate"}
-          </p>
           
           {/* Progressive Disclosure: Detail Tooltip on Hover */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-lg text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-            Verified via SerpApi • {lastUpdated || "Just now"}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-xl text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 pointer-events-none shadow-2xl backdrop-blur-md">
+            Verified via SerpApi Intelligence • {lastUpdated || "Just now"}
           </div>
         </div>
       </div>

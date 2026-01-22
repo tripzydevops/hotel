@@ -15,6 +15,10 @@ interface CompetitorTileProps {
   isUndercut?: boolean;
   rank?: number;
   onDelete?: (id: string) => void;
+  rating?: number;
+  stars?: number;
+  imageUrl?: string;
+  vendor?: string;
 }
 
 /**
@@ -32,6 +36,10 @@ export default function CompetitorTile({
   isUndercut = false,
   rank,
   onDelete,
+  rating,
+  stars,
+  imageUrl,
+  vendor,
 }: CompetitorTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -84,12 +92,21 @@ export default function CompetitorTile({
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-            <Hotel className="w-4 h-4 text-[var(--text-secondary)]" />
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5">
+            {imageUrl ? (
+                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+            ) : (
+                <Hotel className="w-5 h-5 text-[var(--text-secondary)]" />
+            )}
+            {stars && (
+                <div className="absolute bottom-0.5 right-0.5 bg-black/60 backdrop-blur-md px-1 rounded text-[7px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
+                    {stars}★
+                </div>
+            )}
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 mb-0.5">
               <h3
                 className="text-sm font-bold text-white line-clamp-1"
                 title={name}
@@ -102,12 +119,19 @@ export default function CompetitorTile({
                 </span>
               )}
             </div>
-            {isUndercut && (
-              <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
-                Aggressive Undercut
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+                {rating && (
+                    <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        ★ {rating.toFixed(1)}
+                    </span>
+                )}
+                {isUndercut && (
+                    <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
+                        Undercut
+                    </span>
+                )}
+            </div>
           </div>
         </div>
 
@@ -143,9 +167,16 @@ export default function CompetitorTile({
           <p className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}>
             {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
           </p>
-          <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">
-            {currentPrice > 0 ? "per night" : "Pending Scan"}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">
+                {currentPrice > 0 ? "per night" : "Pending Scan"}
+            </p>
+            {vendor && currentPrice > 0 && (
+                <span className="text-[9px] text-[var(--text-muted)] italic">
+                    via {vendor}
+                </span>
+            )}
+          </div>
         </div>
         
         {/* Progressive Disclosure: Hover Tooltip */}

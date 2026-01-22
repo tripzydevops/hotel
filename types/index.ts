@@ -15,6 +15,10 @@ export interface Hotel {
   location?: string;
   user_id: string;
   serp_api_id?: string;
+  rating?: number;
+  stars?: number;
+  image_url?: string;
+  property_token?: string;
   created_at: string;
 }
 
@@ -25,6 +29,7 @@ export interface PriceInfo {
   trend: TrendDirection;
   change_percent: number;
   recorded_at: string;
+  vendor?: string;
 }
 
 export interface HotelWithPrice extends Hotel {

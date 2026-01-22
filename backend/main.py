@@ -302,13 +302,29 @@ async def trigger_monitor(
             previous_price = prev_result.data[0]["price"] if prev_result.data else None
             
             # Log new price
+            # Log new price (Enriched with Vendor)
             db.table("price_logs").insert({
                 "hotel_id": hotel_id,
                 "price": current_price,
                 "currency": currency,
                 "check_in_date": (check_in or date.today()).isoformat(),
                 "source": "serpapi",
+                "vendor": price_data.get("vendor"), 
             }).execute()
+
+            # ENRICHMENT: Update hotel metadata (Stars, Rating, Image)
+            # We do this every scan to ensure we have the latest data
+            meta_update = {}
+            if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
+            if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
+            if price_data.get("property_token"): meta_update["property_token"] = price_data["property_token"]
+            if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+            
+            if meta_update:
+                try:
+                    db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+                except Exception as e:
+                    print(f"[Enrichment] Failed to update hotel metadata: {e}")
             
             prices_updated += 1
             
@@ -671,9 +687,6 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 @app.get("/api/hotels/search")
 async def search_hotel_directory(
     q: str, 
@@ -770,7 +783,6 @@ async def sync_directory_manual(db: Optional[Client] = Depends(get_supabase)):
         print(f"Sync error from real DB: {e}")
 
     # 2. If directory is still empty or few items, inject Seed Data
-    # This guarantees the user has SOMETHING to search for in Dev Mode
     if synced < 5 and db:
         for h in SEED_HOTELS:
             try:
@@ -786,11 +798,6 @@ async def sync_directory_manual(db: Optional[Client] = Depends(get_supabase)):
 
     return {"status": "success", "synced_count": synced, "total_scanned": total_scanned}
 
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
 @app.delete("/api/logs/{log_id}")
 async def delete_log(log_id: UUID, db: Client = Depends(get_supabase)):
     """Delete a specific query log entry."""
@@ -799,3 +806,8 @@ async def delete_log(log_id: UUID, db: Client = Depends(get_supabase)):
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

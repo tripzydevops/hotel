@@ -74,9 +74,9 @@ class ApiClient {
   }
 
   async searchDirectory(query: string): Promise<any[]> {
-    return this.fetch<any[]>(
-      `/api/hotels/search?q=${encodeURIComponent(query)}`,
-    );
+    const url = `/api/hotels/search?q=${encodeURIComponent(query)}`;
+    console.log("[API] Searching:", url);
+    return this.fetch<any[]>(url);
   }
   async addHotelToDirectory(name: string, location: string, serpApiId?: string): Promise<void> {
     return this.fetch<void>(`/api/admin/directory`, {

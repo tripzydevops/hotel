@@ -28,6 +28,10 @@ class HotelBase(BaseModel):
     is_target_hotel: bool = False
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
+    rating: Optional[float] = None
+    stars: Optional[int] = None
+    image_url: Optional[str] = None
+    property_token: Optional[str] = None
 
 
 class HotelCreate(HotelBase):
@@ -58,6 +62,7 @@ class PriceLogBase(BaseModel):
     currency: str = Field(default="USD", max_length=3)
     check_in_date: Optional[date] = None
     source: str = Field(default="serpapi")
+    vendor: Optional[str] = Field(default=None, description="The specific booking site (e.g. Booking.com)")
 
 
 class PriceLogCreate(PriceLogBase):
@@ -145,6 +150,9 @@ class HotelWithPrice(BaseModel):
     name: str
     is_target_hotel: bool
     location: Optional[str] = None
+    rating: Optional[float] = None
+    stars: Optional[int] = None
+    image_url: Optional[str] = None
     price_info: Optional[PriceWithTrend] = None
 
 

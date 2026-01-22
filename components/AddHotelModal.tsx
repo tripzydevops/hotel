@@ -111,7 +111,7 @@ export default function AddHotelModal({
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
               Hotel Name
             </label>
-            <div className="relative" ref={suggestionRef}>
+            <div className="relative z-50" ref={suggestionRef}>
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 type="text"
@@ -151,7 +151,7 @@ export default function AddHotelModal({
 
               {/* Suggestions Dropdown */}
               {showSuggestions && name.length >= 2 && !isSearching && (
-                <div className="absolute z-40 left-0 right-0 mt-2 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute z-[100] left-0 right-0 mt-2 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-black/20">
                   <div className="max-h-48 overflow-y-auto">
                     {suggestions.length > 0 ? (
                       suggestions.map((item, idx) => (
