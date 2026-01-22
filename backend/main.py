@@ -235,12 +235,14 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 async def trigger_monitor(
     user_id: UUID,
     check_in: Optional[date] = None,
-    db: Client = Depends(get_supabase)
+    db: Optional[Client] = Depends(get_supabase)
 ):
     """
     Trigger price monitoring for all hotels of a user.
-    Fetches current prices from SerpApi and compares against history.
     """
+    if not db:
+        return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=["DB_UNAVAILABLE"])
+        
     errors = []
     prices_updated = 0
     alerts_generated = 0
@@ -423,13 +425,19 @@ async def trigger_monitor(
 # ===== Hotels CRUD =====
 
 @app.get("/api/hotels/{user_id}", response_model=List[Hotel])
-async def list_hotels(user_id: UUID, db: Client = Depends(get_supabase)):
+async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    if not db:
+        return []
+        
     result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
     return result.data or []
 
 
 @app.post("/api/hotels/{user_id}", response_model=Hotel)
-async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(get_supabase)):
+async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] = Depends(get_supabase)):
+    if not db:
+        raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
+        
     # If this is a target hotel, unset any existing target
     if hotel.is_target_hotel:
         db.table("hotels") \
@@ -489,52 +497,61 @@ async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase)):
 
 @app.get("/api/settings/{user_id}", response_model=Settings)
 async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    now = datetime.now(timezone.utc)
+    # Default safe settings object that matches Pydantic Schema STRICTLY
+    safe_defaults = {
+        "user_id": str(user_id),
+        "threshold_percent": 2.0,
+        "check_frequency_minutes": 1440,
+        "notifications_enabled": True,
+        "push_enabled": False,
+        "currency": "USD",
+        "created_at": now,
+        "updated_at": now
+    }
+
     try:
         if not db:
-             # Return strict default for Dev Mode if no DB
-             return {
-                "user_id": str(user_id),
-                "threshold_percent": 2.0,
-                "check_frequency_minutes": 1440,
-                "email_notifications_enabled": True,
-                "push_notifications_enabled": False,
-                "notifications_enabled": True,
-                "currency": "USD"
-            }
+             return safe_defaults
             
         result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
         if not result.data:
             # Create default settings if none exist
-            default_settings = {
-                "user_id": str(user_id),
-                "threshold_percent": 2.0,
-                "check_frequency_minutes": 1440,
-                "notifications_enabled": True,
-                "currency": "USD",
-                "email_notifications_enabled": True,
-                "push_notifications_enabled": False
-            }
-            result = db.table("settings").insert(default_settings).execute()
-            return result.data[0]
+            # Note: insert usually returns the created object with timestamps
+            try:
+                # Prepare insert data (exclude readonly fields if needed, but here we explicitly set defaults)
+                insert_data = {
+                    "user_id": str(user_id),
+                    "threshold_percent": 2.0,
+                    "check_frequency_minutes": 1440,
+                    "notifications_enabled": True,
+                    "push_enabled": False,
+                    "currency": "USD"
+                }
+                result = db.table("settings").insert(insert_data).execute()
+                return result.data[0]
+            except:
+                return safe_defaults
         return result.data[0]
     except Exception as e:
         print(f"Error in get_settings: {e}")
-        # Return strict defaults instead of failing 500
-        return {
-            "user_id": str(user_id),
-            "threshold_percent": 2.0,
-            "check_frequency_minutes": 1440,
-            "email_notifications_enabled": True,
-            "push_notifications_enabled": False,
-            "notifications_enabled": True,
-            "currency": "USD"
-        }
+        return safe_defaults
 
 
 @app.put("/api/settings/{user_id}", response_model=Settings)
 async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[Client] = Depends(get_supabase)):
     if not db:
-        return None
+        # Return a mock response matching schema so UI doesn't crash
+        return {
+            "user_id": str(user_id),
+            "threshold_percent": settings.threshold_percent,
+            "check_frequency_minutes": settings.check_frequency_minutes,
+            "notifications_enabled": settings.notifications_enabled,
+            "push_enabled": settings.push_enabled,
+            "currency": settings.currency,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
+        }
         
     # Check if settings exist
     existing = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
@@ -557,12 +574,17 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
 # ===== Alerts =====
 
 @app.get("/api/alerts/{user_id}", response_model=List[Alert])
-async def list_alerts(user_id: UUID, unread_only: bool = False, db: Client = Depends(get_supabase)):
-    query = db.table("alerts").select("*").eq("user_id", str(user_id))
-    if unread_only:
-        query = query.eq("is_read", False)
-    result = query.order("created_at", desc=True).limit(50).execute()
-    return result.data or []
+async def list_alerts(user_id: UUID, unread_only: bool = False, db: Optional[Client] = Depends(get_supabase)):
+    if not db:
+        return []
+    try:
+        query = db.table("alerts").select("*").eq("user_id", str(user_id))
+        if unread_only:
+            query = query.eq("is_read", False)
+        result = query.order("created_at", desc=True).limit(50).execute()
+        return result.data or []
+    except:
+        return []
 
 
 @app.patch("/api/alerts/{alert_id}/read")
