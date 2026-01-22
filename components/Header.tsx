@@ -16,11 +16,11 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center shadow-lg shadow-[var(--soft-gold)]/20">
               <span className="text-[var(--deep-ocean)] font-bold text-xl">
-                R
+                H
               </span>
             </div>
             <span className="text-xl font-bold text-white tracking-tight">
-              Tripzy{" "}
+              Hotel{" "}
               <span className="text-[var(--soft-gold)]">Rate Sentinel</span>
             </span>
           </Link>

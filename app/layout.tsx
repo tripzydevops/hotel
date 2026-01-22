@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/* ===== HOTEL RATE MONITOR - DESIGN SYSTEM ===== */
 export const metadata: Metadata = {
-  title: "Tripzy Rate Sentinel",
+  title: "Hotel Rate Sentinel",
   description: "B2B Hotel Competitive Rate Monitor",
 };
 

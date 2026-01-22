@@ -13,6 +13,7 @@ interface TargetHotelTileProps {
   trend: TrendDirection;
   changePercent: number;
   lastUpdated?: string;
+  isSimulated?: boolean;
 }
 
 /**
@@ -28,6 +29,7 @@ export default function TargetHotelTile({
   trend,
   changePercent,
   lastUpdated,
+  isSimulated = false,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -40,9 +42,9 @@ export default function TargetHotelTile({
   const getTrendIcon = () => {
     switch (trend) {
       case "up":
-        return <TrendingUp className="w-8 h-8 text-[var(--soft-gold)]" />;
+        return <TrendingUp className="w-8 h-8 text-alert-red" />;
       case "down":
-        return <TrendingDown className="w-8 h-8 text-[#0ea5e9]" />; // Deep ocean blue
+        return <TrendingDown className="w-8 h-8 text-optimal-green" />;
       default:
         return <Minus className="w-8 h-8 text-[var(--text-muted)]" />;
     }
@@ -51,9 +53,9 @@ export default function TargetHotelTile({
   const getTrendColor = () => {
     switch (trend) {
       case "up":
-        return "text-[var(--soft-gold)]";
+        return "text-alert-red";
       case "down":
-        return "text-[#0ea5e9]";
+        return "text-optimal-green";
       default:
         return "text-[var(--text-muted)]";
     }
@@ -81,15 +83,28 @@ export default function TargetHotelTile({
       </div>
 
       {/* Price Display */}
-      <div className="flex-1 flex flex-col justify-center">
-        <div className="text-center">
-          <p className="text-sm text-[var(--text-secondary)] mb-2">
-            Current Rate
+      <div className="flex-1 flex flex-col justify-center py-4">
+        <div className="text-center group relative">
+          <p className="text-xs font-semibold tracking-tighter text-[var(--text-secondary)] mb-1 uppercase">
+            {isSimulated ? "Simulated Rate" : "Current Rate"}
           </p>
-          <p className="text-5xl sm:text-6xl font-bold text-white mb-2">
-            {formatPrice(currentPrice)}
-          </p>
-          <p className="text-lg text-[var(--text-muted)]">per night</p>
+          <div className="relative inline-block">
+            <p className={`text-price-lg ${isSimulated ? "text-[var(--soft-gold)]" : "text-white"} transition-all`}>
+              {formatPrice(currentPrice)}
+            </p>
+            {isSimulated && (
+              <span className="absolute -top-2 -right-6 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--soft-gold)] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--soft-gold)]"></span>
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-medium text-[var(--text-muted)] mt-1">per night</p>
+          
+          {/* Progressive Disclosure: Detail Tooltip on Hover */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-lg text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+            Verified via SerpApi • {lastUpdated || "Just now"}
+          </div>
         </div>
       </div>
 

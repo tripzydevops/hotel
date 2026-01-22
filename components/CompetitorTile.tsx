@@ -11,7 +11,8 @@ interface CompetitorTileProps {
   currency?: string;
   trend: TrendDirection;
   changePercent: number;
-  isUndercut?: boolean; // True if cheaper than target hotel
+  isUndercut?: boolean;
+  rank?: number;
 }
 
 /**
@@ -26,6 +27,7 @@ export default function CompetitorTile({
   trend,
   changePercent,
   isUndercut = false,
+  rank,
 }: CompetitorTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -39,9 +41,9 @@ export default function CompetitorTile({
     const size = "w-5 h-5";
     switch (trend) {
       case "up":
-        return <TrendingUp className={`${size} text-[var(--soft-gold)]`} />;
+        return <TrendingUp className={`${size} text-optimal-green`} />;
       case "down":
-        return <TrendingDown className={`${size} text-[#0ea5e9]`} />;
+        return <TrendingDown className={`${size} text-alert-red`} />;
       default:
         return <Minus className={`${size} text-[var(--text-muted)]`} />;
     }
@@ -50,9 +52,9 @@ export default function CompetitorTile({
   const getTrendBgColor = () => {
     switch (trend) {
       case "up":
-        return "bg-[var(--soft-gold)]/10";
+        return "bg-optimal-green-soft";
       case "down":
-        return "bg-[#0ea5e9]/10";
+        return "bg-alert-red-soft";
       default:
         return "bg-white/5";
     }
@@ -61,9 +63,9 @@ export default function CompetitorTile({
   const getTrendTextColor = () => {
     switch (trend) {
       case "up":
-        return "text-[var(--soft-gold)]";
+        return "text-optimal-green";
       case "down":
-        return "text-[#0ea5e9]";
+        return "text-alert-red";
       default:
         return "text-[var(--text-muted)]";
     }
@@ -83,15 +85,23 @@ export default function CompetitorTile({
             <Hotel className="w-4 h-4 text-[var(--text-secondary)]" />
           </div>
           <div>
-            <h3
-              className="text-sm font-semibold text-white line-clamp-1"
-              title={name}
-            >
-              {name}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3
+                className="text-sm font-bold text-white line-clamp-1"
+                title={name}
+              >
+                {name}
+              </h3>
+              {rank && (
+                <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-black text-[var(--text-secondary)] uppercase">
+                  #{rank}
+                </span>
+              )}
+            </div>
             {isUndercut && (
-              <span className="text-[10px] text-red-400 font-medium">
-                ⚠ Undercutting you
+              <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
+                Aggressive Undercut
               </span>
             )}
           </div>
@@ -110,12 +120,17 @@ export default function CompetitorTile({
       </div>
 
       {/* Price */}
-      <div className="flex-1 flex items-center">
+      <div className="flex-1 flex items-center group relative cursor-default">
         <div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-price-md text-white transition-colors group-hover:text-[var(--soft-gold)]">
             {formatPrice(currentPrice)}
           </p>
-          <p className="text-xs text-[var(--text-muted)]">per night</p>
+          <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">per night</p>
+        </div>
+        
+        {/* Progressive Disclosure: Hover Tooltip */}
+        <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+          Live Market Rate • Verified
         </div>
       </div>
 

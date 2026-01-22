@@ -12,6 +12,8 @@ import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
 import RecentSearches from "@/components/RecentSearches";
+import SkeletonTile from "@/components/SkeletonTile";
+import { Calculator } from "lucide-react";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -28,6 +30,10 @@ export default function Dashboard() {
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
+
+  // What-If Simulation State
+  const [simulatedPrice, setSimulatedPrice] = useState<number | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -126,9 +132,10 @@ export default function Dashboard() {
     );
   }
 
-  if (!data) return null;
+  if (!data && loading) return null;
 
-  const targetPrice = data.target_hotel?.price_info?.current_price || 0;
+  const realTargetPrice = data?.target_hotel?.price_info?.current_price || 0;
+  const effectiveTargetPrice = simulatedPrice ?? realTargetPrice;
 
   return (
     <div className="min-h-screen pb-12">
@@ -155,9 +162,56 @@ export default function Dashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
               Rate Monitor
             </h1>
-            <p className="text-[var(--text-secondary)] mt-1">
-              Track competitor pricing in real-time
+            <p className="text-[var(--text-secondary)] mt-1 text-xs">
+              Direct intelligence for revenue management
             </p>
+          </div>
+
+          {/* Market Pulse Summary */}
+          {data?.competitors?.length && (
+            <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
+              <div className="text-right">
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Market Pulse</p>
+                <div className="flex items-center gap-2 justify-end">
+                  <span className={`text-sm font-black ${
+                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length) > 0 
+                    ? 'text-alert-red' : 'text-optimal-green'
+                  }`}>
+                    {(data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length).toFixed(1)}%
+                  </span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / data.competitors.length) > 0 
+                    ? 'bg-alert-red' : 'bg-optimal-green'
+                  }`} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* New: What-If Simulation Control */}
+          <div className="flex-1 max-w-xs mx-4 hidden md:block">
+            <div className={`glass flex items-center gap-2 px-3 py-2 transition-all ${isSimulating ? 'ring-1 ring-[var(--soft-gold)]' : ''}`}>
+              <Calculator className={`w-4 h-4 ${isSimulating ? 'text-[var(--soft-gold)]' : 'text-[var(--text-muted)]'}`} />
+              <input 
+                type="number"
+                placeholder="Simulate Price..."
+                className="bg-transparent text-sm text-white outline-none w-full"
+                value={simulatedPrice || ""}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setSimulatedPrice(isNaN(val) ? null : val);
+                  setIsSimulating(!isNaN(val));
+                }}
+              />
+              {simulatedPrice && (
+                <button 
+                  onClick={() => {setSimulatedPrice(null); setIsSimulating(false);}}
+                  className="text-[10px] uppercase font-bold text-[var(--soft-gold)] hover:text-white"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Actions */}
@@ -165,9 +219,9 @@ export default function Dashboard() {
             {/* Alerts Badge */}
             <button className="relative p-3 glass rounded-xl hover:bg-white/10 transition-colors">
               <Bell className="w-5 h-5 text-white" />
-              {data.unread_alerts_count > 0 && (
+              {(data?.unread_alerts_count || 0) > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {data.unread_alerts_count}
+                  {data?.unread_alerts_count}
                 </span>
               )}
             </button>
@@ -210,78 +264,97 @@ export default function Dashboard() {
 
         {/* Bento Grid Dashboard */}
         <BentoGrid>
-          {/* Target Hotel - Large Tile */}
-          {data.target_hotel && data.target_hotel.price_info && (
-            <TargetHotelTile
-              name={data.target_hotel.name}
-              location={data.target_hotel.location}
-              currentPrice={data.target_hotel.price_info.current_price}
-              previousPrice={data.target_hotel.price_info.previous_price}
-              currency={data.target_hotel.price_info.currency}
-              trend={data.target_hotel.price_info.trend}
-              changePercent={data.target_hotel.price_info.change_percent}
-              lastUpdated="2 min ago"
-            />
+          {loading || isRefreshing ? (
+            <>
+              <SkeletonTile large />
+              <SkeletonTile />
+              <SkeletonTile />
+              <SkeletonTile />
+            </>
+          ) : (
+            <>
+              {/* Target Hotel - Large Tile */}
+              {data?.target_hotel && data.target_hotel.price_info && (
+                <TargetHotelTile
+                  name={data.target_hotel.name}
+                  location={data.target_hotel.location}
+                  currentPrice={effectiveTargetPrice}
+                  previousPrice={data.target_hotel.price_info.previous_price}
+                  currency={data.target_hotel.price_info.currency}
+                  trend={simulatedPrice ? (simulatedPrice > realTargetPrice ? "up" : "down") : data.target_hotel.price_info.trend}
+                  changePercent={simulatedPrice ? ((simulatedPrice - realTargetPrice) / realTargetPrice * 100) : data.target_hotel.price_info.change_percent}
+                  lastUpdated="Updated just now"
+                  isSimulated={!!simulatedPrice}
+                />
+              )}
+
+              {/* Competitor Tiles */}
+              {data?.competitors && [...data.competitors]
+                .sort((a, b) => (a.price_info?.current_price || 0) - (b.price_info?.current_price || 0))
+                .map((competitor, index) => {
+                  const isUndercut =
+                    competitor.price_info &&
+                    competitor.price_info.current_price < effectiveTargetPrice;
+
+                  return (
+                    <CompetitorTile
+                      key={competitor.id}
+                      name={competitor.name}
+                      currentPrice={competitor.price_info?.current_price || 0}
+                      previousPrice={competitor.price_info?.previous_price}
+                      currency={competitor.price_info?.currency || "USD"}
+                      trend={competitor.price_info?.trend || "stable"}
+                      changePercent={competitor.price_info?.change_percent || 0}
+                      isUndercut={isUndercut}
+                      rank={index + 1}
+                    />
+                  );
+                })}
+            </>
           )}
-
-          {/* Competitor Tiles */}
-          {data.competitors.map((competitor) => {
-            const isUndercut =
-              competitor.price_info &&
-              competitor.price_info.current_price < targetPrice;
-
-            return (
-              <CompetitorTile
-                key={competitor.id}
-                name={competitor.name}
-                currentPrice={competitor.price_info?.current_price || 0}
-                previousPrice={competitor.price_info?.previous_price}
-                currency={competitor.price_info?.currency || "USD"}
-                trend={competitor.price_info?.trend || "stable"}
-                changePercent={competitor.price_info?.change_percent || 0}
-                isUndercut={isUndercut}
-              />
-            );
-          })}
         </BentoGrid>
 
         {/* Quick Stats */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-[var(--soft-gold)]">
+            <p className="text-2xl font-bold text-alert-red">
               {
-                data.competitors.filter(
+                (data?.competitors || []).filter(
                   (c) =>
-                    c.price_info && c.price_info.current_price < targetPrice,
+                    c.price_info && c.price_info.current_price < effectiveTargetPrice,
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Undercutting You</p>
+            <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">Yield Risk Area</p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-[#0ea5e9]">
+          <div className="glass-card p-4 text-center group">
+            <p className="text-2xl font-bold text-optimal-green">
               {
-                data.competitors.filter((c) => c.price_info?.trend === "down")
+                (data?.competitors || []).filter((c) => c.price_info?.trend === "down")
                   .length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Prices Dropped</p>
+            <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">Market Opportunity</p>
           </div>
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-white">
-              $
-              {Math.round(
-                data.competitors.reduce(
-                  (sum, c) => sum + (c.price_info?.current_price || 0),
-                  0,
-                ) / data.competitors.length,
-              )}
+              {data?.competitors && data.competitors.length > 0 ? (
+                <>
+                  {data.target_hotel?.price_info?.currency === "TRY" ? "₺" : "$"}
+                  {Math.round(
+                    (data?.competitors || []).reduce(
+                      (sum, c) => sum + (c.price_info?.current_price || 0),
+                      0,
+                    ) / (data?.competitors?.length || 1),
+                  )}
+                </>
+              ) : "—"}
             </p>
             <p className="text-xs text-[var(--text-muted)]">Avg Competitor</p>
           </div>
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-white">
-              {data.competitors.length + 1}
+              {(data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)}
             </p>
             <p className="text-xs text-[var(--text-muted)]">Hotels Tracked</p>
           </div>
@@ -289,7 +362,7 @@ export default function Dashboard() {
 
         {/* Recent Searches Row */}
         <RecentSearches 
-          searches={data.recent_searches || []} 
+          searches={data?.recent_searches || []} 
           onAddHotel={handleQuickAdd}
         />
       </main>
