@@ -128,9 +128,38 @@ export default function AdminPage() {
         </form>
       </div>
 
-      <div className="mt-12 p-6 rounded-2xl bg-white/5 border border-white/10 text-sm text-[var(--text-muted)] leading-relaxed">
-        <p className="font-semibold text-[var(--text-secondary)] mb-2 uppercase tracking-wider text-xs">Admin Dashboard Note</p>
-        Hotels added here will immediately be available in the auto-complete search for all users. This tool is designed to bypass the "Cold Start" problem by manually seeding verified hotel names into the shared repository.
+      <div className="mt-12 space-y-6">
+        <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-sm text-[var(--text-muted)] leading-relaxed">
+          <p className="font-semibold text-[var(--text-secondary)] mb-2 uppercase tracking-wider text-xs">Admin Dashboard Note</p>
+          Hotels added here will immediately be available in the auto-complete search for all users. This tool is designed to bypass the "Cold Start" problem by manually seeding verified hotel names into the shared repository.
+        </div>
+
+        <div className="p-6 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 flex items-center justify-between">
+          <div>
+            <h3 className="text-white font-bold mb-1">Database Synchronization</h3>
+            <p className="text-xs text-[var(--text-muted)]">Populate the search directory from existing user monitors.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm("This will scan all existing user hotels and add them to the directory. Continue?")) {
+                setLoading(true);
+                try {
+                  const res = await api.syncDirectory();
+                  alert(`Sync Complete! Added/Verified ${res.synced_count} hotels in directory.`);
+                } catch (e) {
+                  alert("Sync failed: " + e);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+            disabled={loading}
+            className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold rounded-lg text-sm hover:opacity-90 transition-opacity"
+          >
+             Sync Now
+          </button>
+        </div>
       </div>
     </div>
   );

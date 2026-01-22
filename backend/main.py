@@ -651,6 +651,32 @@ async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supab
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/admin/sync")
+async def sync_directory_manual(db: Client = Depends(get_supabase)):
+    """Backfill hotel_directory from existing hotels table."""
+    try:
+        # Get all unique hotels from hotels table
+        # Note: Supabase-py doesn't support 'distinct' easily in select string, so we fetch all and dedupe in python
+        # or use a postgres function. For now, python dedupe is fine for small scale.
+        result = db.table("hotels").select("name, location, serp_api_id").execute()
+        hotels = result.data or []
+        
+        synced = 0
+        for h in hotels:
+            try:
+                db.table("hotel_directory").upsert({
+                    "name": h["name"],
+                    "location": h.get("location"),
+                    "serp_api_id": h.get("serp_api_id"),
+                }, on_conflict="name,location").execute()
+                synced += 1
+            except:
+                continue
+                
+        return {"status": "success", "synced_count": synced, "total_scanned": len(hotels)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/api/logs/{log_id}")
 async def delete_log(log_id: UUID, db: Client = Depends(get_supabase)):
     """Delete a specific query log entry."""

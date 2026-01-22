@@ -85,6 +85,10 @@ class ApiClient {
     });
   }
 
+  async syncDirectory(): Promise<{ synced_count: number }> {
+    return this.fetch<{ synced_count: number }>(`/api/admin/sync`);
+  }
+
   async deleteLog(logId: string): Promise<void> {
     return this.fetch<void>(`/api/logs/${logId}`, {
       method: "DELETE",
