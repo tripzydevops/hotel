@@ -44,9 +44,14 @@ app.add_middleware(
 def get_supabase() -> Client:
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    if not url or not key:
-        raise HTTPException(status_code=500, detail="Supabase not configured")
-    return create_client(url, key)
+    try:
+        if not url or not key:
+            print("WARNING: Supabase credentials missing. Returning None client.")
+            return None
+        return create_client(url, key)
+    except Exception as e:
+        print(f"Error creating Supabase client: {e}")
+        return None
 
 
 # ===== Helpers =====
@@ -88,8 +93,18 @@ async def health_check():
 # ===== Dashboard Endpoint =====
 
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
-async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
+async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     """Get dashboard data with target hotel and competitors."""
+    if not db:
+        return DashboardResponse(
+            target_hotel=None,
+            competitors=[],
+            recent_searches=[],
+            scan_history=[],
+            unread_alerts_count=0,
+            last_updated=datetime.now(timezone.utc),
+        )
+
     try:
         # Fetch all hotels for user
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
