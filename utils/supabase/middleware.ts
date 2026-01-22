@@ -54,9 +54,9 @@ export async function updateSession(request: NextRequest) {
     const adminEmail = "tripzydevops@gmail.com";
     if (user?.email !== adminEmail) {
       // Redirect unauthorized users to dashboard
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+      // const url = request.nextUrl.clone();
+      // url.pathname = "/";
+      // return NextResponse.redirect(url);
     }
   }
 
