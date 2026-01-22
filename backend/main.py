@@ -678,23 +678,30 @@ if __name__ == "__main__":
 async def search_hotel_directory(
     q: str, 
     user_id: Optional[UUID] = None, 
-    db: Client = Depends(get_supabase)
+    db: Optional[Client] = Depends(get_supabase)
 ):
     if not q or len(q.strip()) < 2:
         return []
 
     q_trimmed = q.strip()
+    print(f"DEBUG SEARCH: Received query '{q_trimmed}'")
+    
+    if not db:
+        print("DEBUG SEARCH: DB is None")
+        return []
     
     try:
         # Local Lookup (Primary)
         # We only search the local directory to avoid draining search API credits.
         # This directory is populated automatically after successful price scans.
+        print(f"DEBUG SEARCH: Executing DB query for '{q_trimmed}'")
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
             .ilike("name", f"%{q_trimmed}%") \
             .limit(10) \
             .execute()
         
+        print(f"DEBUG SEARCH: Found {len(result.data)} results")
         return result.data or []
     except Exception as e:
         print(f"Error searching directory: {e}")
