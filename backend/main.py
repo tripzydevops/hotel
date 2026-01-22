@@ -4,13 +4,15 @@ Main application with monitoring and API endpoints.
 """
 
 import os
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
 from datetime import date, datetime, timezone
 from uuid import UUID
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from backend.models.schemas import (
     Hotel, HotelCreate, HotelUpdate,
@@ -39,6 +41,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    print(f"VALIDATION ERROR: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
 
 # Supabase client
 def get_supabase() -> Client:
@@ -147,6 +157,9 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 name=hotel["name"],
                 is_target_hotel=hotel["is_target_hotel"],
                 location=hotel.get("location"),
+                rating=hotel.get("rating"),
+                stars=hotel.get("stars"),
+                image_url=hotel.get("image_url"),
                 price_info=price_info,
             )
             
@@ -518,12 +531,15 @@ async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabas
     safe_defaults = {
         "user_id": str(user_id),
         "threshold_percent": 2.0,
-        "check_frequency_minutes": 1440,
+        "check_frequency_minutes": 144,
         "notifications_enabled": True,
         "push_enabled": False,
         "currency": "USD",
-        "created_at": now,
-        "updated_at": now
+        "notification_email": None,
+        "whatsapp_number": None,
+        "push_subscription": None,
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat()
     }
 
     try:
@@ -690,7 +706,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
 @app.get("/api/hotels/search")
 async def search_hotel_directory(
     q: str, 
-    user_id: Optional[UUID] = None, 
+    user_id: Optional[UUID] = Query(None), 
     db: Optional[Client] = Depends(get_supabase)
 ):
     if not q or len(q.strip()) < 2:
