@@ -639,3 +639,12 @@ async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supab
         return {"status": "success", "hotel": name}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/logs/{log_id}")
+async def delete_log(log_id: UUID, db: Client = Depends(get_supabase)):
+    """Delete a specific query log entry."""
+    try:
+        db.table("query_logs").delete().eq("id", str(log_id)).execute()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

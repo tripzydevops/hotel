@@ -85,6 +85,12 @@ class ApiClient {
     });
   }
 
+  async deleteLog(logId: string): Promise<void> {
+    return this.fetch<void>(`/api/logs/${logId}`, {
+      method: "DELETE",
+    });
+  }
+
   async deleteHotel(hotelId: string): Promise<void> {
     return this.fetch<void>(`/api/hotels/${hotelId}`, {
       method: "DELETE",

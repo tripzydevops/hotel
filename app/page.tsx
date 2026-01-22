@@ -119,6 +119,22 @@ export default function Dashboard() {
     handleRefresh();
   };
 
+  const handleDeleteLog = async (logId: string) => {
+    try {
+      await api.deleteLog(logId);
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          recent_searches: prev.recent_searches.filter(s => s.id !== logId),
+          scan_history: prev.scan_history.filter(s => s.id !== logId),
+        };
+      });
+    } catch (error) {
+      console.error("Failed to delete log:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
@@ -347,12 +363,16 @@ export default function Dashboard() {
         </div>
 
         {/* Scan History Row */}
-        <ScanHistory scans={data?.scan_history || []} />
+        <ScanHistory 
+          scans={data?.scan_history || []} 
+          onDelete={handleDeleteLog}
+        />
 
         {/* Recent Searches Row */}
         <RecentSearches 
           searches={data?.recent_searches || []} 
           onAddHotel={handleQuickAdd}
+          onDelete={handleDeleteLog}
         />
 
         {/* Footer */}
