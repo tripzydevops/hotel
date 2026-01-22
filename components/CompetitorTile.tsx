@@ -25,22 +25,23 @@ interface CompetitorTileProps {
  * Competitor Tile (Small Format)
  * Compact display for competitor hotels with trend arrows
  */
-export default function CompetitorTile({
-  id,
-  name,
-  currentPrice,
-  previousPrice,
-  currency = "USD",
-  trend,
-  changePercent,
-  isUndercut = false,
-  rank,
-  onDelete,
-  rating,
-  stars,
-  imageUrl,
-  vendor,
-}: CompetitorTileProps) {
+export default function CompetitorTile(props: CompetitorTileProps) {
+  const {
+    id,
+    name,
+    currentPrice,
+    previousPrice,
+    currency = "USD",
+    trend,
+    changePercent,
+    isUndercut = false,
+    rank,
+    onDelete,
+    rating,
+    stars,
+    imageUrl: image_src,
+    vendor,
+  } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -94,8 +95,8 @@ export default function CompetitorTile({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5">
-            {imageUrl ? (
-                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+            {image_src ? (
+                <img src={image_src} alt={name} className="w-full h-full object-cover" />
             ) : (
                 <Hotel className="w-5 h-5 text-[var(--text-secondary)]" />
             )}

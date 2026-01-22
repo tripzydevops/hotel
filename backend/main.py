@@ -270,7 +270,7 @@ async def trigger_monitor(
         print(f"Error fetching settings: {e}")
         
     threshold = settings["threshold_percent"] if settings else 2.0
-    preferred_currency = settings.get("currency", "USD") if settings else "USD"
+    user_default_currency = settings.get("currency", "USD") if settings else "USD"
     
     # Get all hotels for user
     hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
@@ -288,13 +288,16 @@ async def trigger_monitor(
         hotel_name = hotel["name"].title().strip()
         location = (hotel.get("location") or "").title().strip()
         
+        # Determine currency: Hotel-specific first, then User-default
+        hotel_currency = hotel.get("preferred_currency") or user_default_currency
+        
         try:
             # Fetch current price from SerpApi
             price_data = await serpapi_client.fetch_hotel_price(
                 hotel_name=hotel_name,
                 location=location,
                 check_in=check_in,
-                currency=preferred_currency
+                currency=hotel_currency
             )
             
             if not price_data:
@@ -503,6 +506,7 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
                 "name": hotel_data["name"],
                 "location": hotel_data.get("location"),
                 "serp_api_id": hotel_data.get("serp_api_id"),
+                "last_verified_at": datetime.now().isoformat()
             }, on_conflict="name,location").execute()
         except Exception as e:
             print(f"Directory sync ignored: {e}") # Non-blocking

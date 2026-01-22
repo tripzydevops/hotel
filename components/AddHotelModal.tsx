@@ -151,37 +151,36 @@ export default function AddHotelModal({
 
               {/* Suggestions Dropdown */}
               {showSuggestions && name.length >= 2 && !isSearching && (
-                <div className="absolute z-[100] left-0 right-0 mt-2 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-black/20">
-                  <div className="max-h-48 overflow-y-auto">
+                <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 ring-1 ring-black/20">
+                  <div className="max-h-40 overflow-y-auto">
                     {suggestions.length > 0 ? (
                       suggestions.map((item, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => handleSelectSuggestion(item)}
-                          className="w-full px-4 py-3 text-left hover:bg-white/5 flex flex-col transition-colors border-b border-white/5 last:border-none"
+                          className="w-full px-3 py-2 text-left hover:bg-white/5 flex flex-col transition-colors border-b border-white/5 last:border-none"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-white font-medium text-sm">
+                            <span className="text-white font-medium text-xs">
                               {item.name}
                             </span>
                             {item.source === "serpapi" && (
-                              <span className="text-[10px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1.5 rounded uppercase tracking-widest font-bold">Global</span>
+                              <span className="text-[8px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1 rounded uppercase tracking-widest font-bold">Global</span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-[var(--text-muted)]" />
-                            <span className="text-[var(--text-muted)] text-xs">
+                            <MapPin className="w-2.5 h-2.5 text-[var(--text-muted)]" />
+                            <span className="text-[var(--text-muted)] text-[10px]">
                               {item.location}
                             </span>
                           </div>
                         </button>
                       ))
                     ) : name.length >= 2 && !isSearching ? (
-                      <div className="px-4 py-6 text-center">
-                        <Search className="w-8 h-8 text-white/10 mx-auto mb-2" />
-                        <p className="text-sm text-[var(--text-secondary)]">No direct matches found</p>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">Continue typing to add manually</p>
+                      <div className="px-3 py-4 text-center bg-white/[0.02]">
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mb-1">No database matches</p>
+                        <p className="text-[9px] text-[var(--text-muted)]">Checking location below to set manually</p>
                       </div>
                     ) : null}
                   </div>

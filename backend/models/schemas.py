@@ -32,6 +32,7 @@ class HotelBase(BaseModel):
     stars: Optional[int] = None
     image_url: Optional[str] = None
     property_token: Optional[str] = None
+    preferred_currency: Optional[str] = Field(default="USD", max_length=3)
 
 
 class HotelCreate(HotelBase):
