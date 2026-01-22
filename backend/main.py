@@ -12,14 +12,13 @@ from uuid import UUID
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-from backend.models import (
+from backend.models.schemas import (
     Hotel, HotelCreate, HotelUpdate,
     PriceLog, PriceLogCreate,
     Settings, SettingsUpdate,
     Alert, AlertCreate,
     DashboardResponse, HotelWithPrice, MonitorResult,
-    DashboardResponse, HotelWithPrice, MonitorResult,
-    TrendDirection
+    TrendDirection, QueryLog
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -91,105 +90,118 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
     """Get dashboard data with target hotel and competitors."""
-    
-    # Fetch all hotels for user
-    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-    hotels = hotels_result.data or []
-    
-    target_hotel = None
-    competitors = []
-    
-    for hotel in hotels:
-        # Get latest 2 prices for trend calculation
-        prices_result = db.table("price_logs") \
-            .select("*") \
-            .eq("hotel_id", hotel["id"]) \
-            .order("recorded_at", desc=True) \
-            .limit(2) \
+    try:
+        # Fetch all hotels for user
+        hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+        hotels = hotels_result.data or []
+        
+        target_hotel = None
+        competitors = []
+        
+        for hotel in hotels:
+            # Get latest 2 prices for trend calculation
+            prices_result = db.table("price_logs") \
+                .select("*") \
+                .eq("hotel_id", hotel["id"]) \
+                .order("recorded_at", desc=True) \
+                .limit(2) \
+                .execute()
+            
+            prices = prices_result.data or []
+            current_price = prices[0] if prices else None
+            previous_price = prices[1] if len(prices) > 1 else None
+            
+            # Build price info with trend
+            price_info = None
+            if current_price:
+                current = current_price["price"]
+                previous = previous_price["price"] if previous_price else None
+                trend, change = price_comparator.calculate_trend(current, previous)
+                
+                price_info = {
+                    "current_price": current,
+                    "previous_price": previous,
+                    "currency": current_price.get("currency", "USD"),
+                    "trend": trend.value,
+                    "change_percent": change,
+                    "recorded_at": current_price["recorded_at"],
+                }
+            
+            hotel_with_price = HotelWithPrice(
+                id=hotel["id"],
+                name=hotel["name"],
+                is_target_hotel=hotel["is_target_hotel"],
+                location=hotel.get("location"),
+                price_info=price_info,
+            )
+            
+            if hotel["is_target_hotel"]:
+                target_hotel = hotel_with_price
+            else:
+                competitors.append(hotel_with_price)
+        
+        # Count unread alerts
+        alerts_result = db.table("alerts") \
+            .select("id", count="exact") \
+            .eq("user_id", str(user_id)) \
+            .eq("is_read", False) \
             .execute()
         
-        prices = prices_result.data or []
-        current_price = prices[0] if prices else None
-        previous_price = prices[1] if len(prices) > 1 else None
+        unread_count = 0
+        try:
+            unread_count = alerts_result.count if alerts_result.count is not None else 0
+        except:
+            pass
         
-        # Build price info with trend
-        price_info = None
-        if current_price:
-            current = current_price["price"]
-            previous = previous_price["price"] if previous_price else None
-            trend, change = price_comparator.calculate_trend(current, previous)
+        # Fetch recent activity (searches and manual additions)
+        unique_recent = []
+        try:
+            recent_result = db.table("query_logs") \
+                .select("*") \
+                .eq("user_id", str(user_id)) \
+                .in_("action_type", ["search", "create"]) \
+                .order("created_at", desc=True) \
+                .limit(20) \
+                .execute()
             
-            price_info = {
-                "current_price": current,
-                "previous_price": previous,
-                "currency": current_price.get("currency", "USD"),
-                "trend": trend.value,
-                "change_percent": change,
-                "recorded_at": current_price["recorded_at"],
-            }
-        
-        hotel_with_price = HotelWithPrice(
-            id=hotel["id"],
-            name=hotel["name"],
-            is_target_hotel=hotel["is_target_hotel"],
-            location=hotel.get("location"),
-            price_info=price_info,
+            seen_names = set()
+            for log in (recent_result.data or []):
+                name = log["hotel_name"]
+                if name not in seen_names:
+                    unique_recent.append(log)
+                    seen_names.add(name)
+                if len(unique_recent) >= 5:
+                    break
+        except Exception as e:
+            print(f"Error fetching recent_searches: {e}")
+
+        # Fetch dedicated scan history (monitor events)
+        scan_history = []
+        try:
+            scan_result = db.table("query_logs") \
+                .select("*") \
+                .eq("user_id", str(user_id)) \
+                .eq("action_type", "monitor") \
+                .order("created_at", desc=True) \
+                .limit(10) \
+                .execute()
+            scan_history = scan_result.data or []
+        except Exception as e:
+            print(f"Error fetching scan_history: {e}")
+
+        return DashboardResponse(
+            target_hotel=target_hotel,
+            competitors=competitors,
+            recent_searches=unique_recent,
+            scan_history=scan_history,
+            unread_alerts_count=unread_count,
+            last_updated=datetime.now(),
         )
-        
-        if hotel["is_target_hotel"]:
-            target_hotel = hotel_with_price
-        else:
-            competitors.append(hotel_with_price)
-    
-    # Count unread alerts
-    alerts_result = db.table("alerts") \
-        .select("id", count="exact") \
-        .eq("user_id", str(user_id)) \
-        .eq("is_read", False) \
-        .execute()
-    
-    unread_count = 0
-    try:
-        unread_count = alerts_result.count if alerts_result.count is not None else 0
-    except:
-        pass
-    
-    # Fetch recent activity (searches and manual additions)
-    recent_result = db.table("query_logs") \
-        .select("*") \
-        .eq("user_id", str(user_id)) \
-        .in_("action_type", ["search", "create"]) \
-        .order("created_at", desc=True) \
-        .limit(20) \
-        .execute()
-    
-    seen_names = set()
-    unique_recent = []
-    for log in (recent_result.data or []):
-        name = log["hotel_name"]
-        if name not in seen_names:
-            unique_recent.append(log)
-            seen_names.add(name)
-        if len(unique_recent) >= 5:
-            break
-
-    # Fetch dedicated scan history (monitor events)
-    scan_result = db.table("query_logs") \
-        .select("*") \
-        .eq("user_id", str(user_id)) \
-        .eq("action_type", "monitor") \
-        .order("created_at", desc=True) \
-        .limit(10) \
-        .execute()
-
-    return DashboardResponse(
-        target_hotel=target_hotel,
-        competitors=competitors,
-        recent_searches=unique_recent,
-        scan_history=scan_result.data or [],
-        unread_alerts_count=unread_count,
-        last_updated=datetime.now(),
-    )
+    except Exception as e:
+        import traceback
+        print(f"CRITICAL Dashboard Error: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
 
 
 # ===== Monitor Endpoint =====
