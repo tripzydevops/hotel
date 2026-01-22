@@ -150,7 +150,7 @@ export default function AddHotelModal({
               )}
 
               {/* Suggestions Dropdown */}
-              {(showSuggestions || (name.length >= 2 && !isSearching && suggestions.length === 0)) && (
+              {showSuggestions && name.length >= 2 && !isSearching && (
                 <div className="absolute z-[60] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="max-h-48 overflow-y-auto">
                     {suggestions.length > 0 ? (

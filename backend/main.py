@@ -429,6 +429,7 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(g
     
     # Log the hotel creation as a query event too
     if result.data:
+        hotel_inserted = result.data[0]
         await log_query(
             db=db,
             user_id=user_id,
@@ -437,6 +438,16 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(g
             action_type="create"
         )
         
+        # Mirror to shared directory so it appears in autocomplete for everyone
+        try:
+            db.table("hotel_directory").upsert({
+                "name": hotel_data["name"],
+                "location": hotel_data.get("location"),
+                "serp_api_id": hotel_data.get("serp_api_id"),
+            }, on_conflict="name,location").execute()
+        except Exception as e:
+            print(f"Directory sync ignored: {e}") # Non-blocking
+            
     return result.data[0]
 
 
