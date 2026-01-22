@@ -204,7 +204,14 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
         print(f"CRITICAL Dashboard Error at step: {e}\n{err_msg}")
         # Return a partial response if possible instead of crashing everything, 
         # or at least raise a clearer error.
-        raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
+        return DashboardResponse(
+            target_hotel=None,
+            competitors=[],
+            recent_searches=[],
+            scan_history=[],
+            unread_alerts_count=0,
+            last_updated=datetime.now(timezone.utc),
+        )
 
 
 # ===== Monitor Endpoint =====
