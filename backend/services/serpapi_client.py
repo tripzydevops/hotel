@@ -23,12 +23,19 @@ class SerpApiClient:
         if not self.api_key:
             raise ValueError("SerpApi API key is required. Set SERPAPI_API_KEY env var.")
     
+    def _normalize_string(self, text: Optional[str]) -> str:
+        """Normalize string to Title Case and strip whitespace."""
+        if not text:
+            return ""
+        return " ".join(word.capitalize() for word in text.split())
+    
     async def fetch_hotel_price(
         self,
         hotel_name: str,
         location: str,
         check_in: Optional[date] = None,
         check_out: Optional[date] = None,
+        currency: str = "USD"
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch price for a specific hotel.
@@ -48,13 +55,17 @@ class SerpApiClient:
         if not check_out:
             check_out = check_in + timedelta(days=1)
         
+        # Normalize inputs for consistency
+        hotel_name = self._normalize_string(hotel_name)
+        location = self._normalize_string(location)
+        
         params = {
             "engine": "google_hotels",
             "q": f"{hotel_name} {location}",
             "check_in_date": check_in.isoformat(),
             "check_out_date": check_out.isoformat(),
             "adults": 2,
-            "currency": "USD",
+            "currency": currency,
             "gl": "us",
             "hl": "en",
             "api_key": self.api_key,
@@ -66,7 +77,7 @@ class SerpApiClient:
                 response.raise_for_status()
                 data = response.json()
                 
-                return self._parse_hotel_result(data, hotel_name)
+                return self._parse_hotel_result(data, hotel_name, currency)
                 
         except httpx.HTTPError as e:
             print(f"[SerpApi] HTTP error fetching {hotel_name}: {e}")
@@ -78,7 +89,8 @@ class SerpApiClient:
     def _parse_hotel_result(
         self, 
         data: Dict[str, Any], 
-        target_hotel: str
+        target_hotel: str,
+        default_currency: str = "USD"
     ) -> Optional[Dict[str, Any]]:
         """Parse SerpApi response to extract hotel price."""
         
@@ -111,9 +123,9 @@ class SerpApiClient:
             # Fall back to first result
             best_match = properties[0]
         
-        # Extract price
+        # Extract price and currency
         price = None
-        currency = "USD"
+        currency = default_currency
         
         # Try different price fields
         if "rate_per_night" in best_match:
@@ -136,7 +148,7 @@ class SerpApiClient:
             return None
         
         return {
-            "hotel_name": best_match.get("name", target_hotel),
+            "hotel_name": self._normalize_string(best_match.get("name", target_hotel)),
             "price": float(price),
             "currency": currency,
             "source": "serpapi",
@@ -148,6 +160,7 @@ class SerpApiClient:
         hotels: List[Dict[str, str]],
         check_in: Optional[date] = None,
         check_out: Optional[date] = None,
+        currency: str = "USD"
     ) -> Dict[str, Optional[Dict[str, Any]]]:
         """
         Fetch prices for multiple hotels.
@@ -174,6 +187,7 @@ class SerpApiClient:
                 location=location,
                 check_in=check_in,
                 check_out=check_out,
+                currency=currency
             )
             
             results[name] = result

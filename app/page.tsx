@@ -7,10 +7,11 @@ import TargetHotelTile from "@/components/TargetHotelTile";
 import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
-import { Bell, RefreshCw, Plus, Settings } from "lucide-react";
+import { Bell, RefreshCw, Plus, Settings, History } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
+import RecentSearches from "@/components/RecentSearches";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -86,6 +87,12 @@ export default function Dashboard() {
   ) => {
     if (!userId) return;
     await api.addHotel(userId, name, location, isTarget);
+    await fetchData();
+  };
+
+  const handleQuickAdd = async (name: string, location: string) => {
+    if (!userId) return;
+    await api.addHotel(userId, name, location, false);
     await fetchData();
   };
 
@@ -279,6 +286,12 @@ export default function Dashboard() {
             <p className="text-xs text-[var(--text-muted)]">Hotels Tracked</p>
           </div>
         </div>
+
+        {/* Recent Searches Row */}
+        <RecentSearches 
+          searches={data.recent_searches || []} 
+          onAddHotel={handleQuickAdd}
+        />
       </main>
     </div>
   );

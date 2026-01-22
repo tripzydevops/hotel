@@ -50,6 +50,29 @@ def get_supabase() -> Client:
     return create_client(url, key)
 
 
+# ===== Helpers =====
+
+async def log_query(
+    db: Client,
+    user_id: Optional[UUID],
+    hotel_name: str,
+    location: Optional[str],
+    action_type: str,
+    status: str = "success"
+):
+    """Log a search or monitor query for future reporting/analysis."""
+    try:
+        db.table("query_logs").insert({
+            "user_id": str(user_id) if user_id else None,
+            "hotel_name": hotel_name.title().strip(),
+            "location": location.title().strip() if location else None,
+            "action_type": action_type,
+            "status": status
+        }).execute()
+    except Exception as e:
+        print(f"[QueryLogs] Failed to log {action_type}: {e}")
+
+
 # ===== Health Check =====
 
 @app.get("/api/health")
@@ -131,9 +154,29 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
     except:
         pass
     
+    # Fetch recent searches
+    recent_result = db.table("query_logs") \
+        .select("*") \
+        .eq("user_id", str(user_id)) \
+        .order("created_at", desc=True) \
+        .limit(20) \
+        .execute()
+    
+    # Filter for unique hotel names to avoid clutter
+    seen_names = set()
+    unique_recent = []
+    for log in (recent_result.data or []):
+        name = log["hotel_name"]
+        if name not in seen_names:
+            unique_recent.append(log)
+            seen_names.add(name)
+        if len(unique_recent) >= 5:
+            break
+
     return DashboardResponse(
         target_hotel=target_hotel,
-        competitors=competitors[:5],  # Limit to 5 competitors
+        competitors=competitors[:5],
+        recent_searches=unique_recent,
         unread_alerts_count=unread_count,
         last_updated=datetime.now(),
     )
@@ -165,6 +208,7 @@ async def trigger_monitor(
         print(f"Error fetching settings: {e}")
         
     threshold = settings["threshold_percent"] if settings else 2.0
+    preferred_currency = settings.get("currency", "USD") if settings else "USD"
     
     # Get all hotels for user
     hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
@@ -178,8 +222,9 @@ async def trigger_monitor(
     
     for hotel in hotels:
         hotel_id = hotel["id"]
-        hotel_name = hotel["name"]
-        location = hotel.get("location", "")
+        # Normalize for database consistency
+        hotel_name = hotel["name"].title().strip()
+        location = (hotel.get("location") or "").title().strip()
         
         try:
             # Fetch current price from SerpApi
@@ -187,6 +232,7 @@ async def trigger_monitor(
                 hotel_name=hotel_name,
                 location=location,
                 check_in=check_in,
+                currency=preferred_currency
             )
             
             if not price_data:
@@ -257,8 +303,26 @@ async def trigger_monitor(
                             currency=currency
                         )
         
+            # Log the monitor attempt
+            await log_query(
+                db=db,
+                user_id=user_id,
+                hotel_name=hotel_name,
+                location=location,
+                action_type="monitor",
+                status="success" if price_data else "not_found"
+            )
+            
         except Exception as e:
             errors.append(f"Error processing {hotel_name}: {str(e)}")
+            await log_query(
+                db=db,
+                user_id=user_id,
+                hotel_name=hotel_name,
+                location=location,
+                action_type="monitor",
+                status="error"
+            )
     
     # Second pass: check competitor undercuts
     if target_price:
@@ -327,19 +391,35 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(g
             .eq("is_target_hotel", True) \
             .execute()
     
+    # Normalize before insert
+    hotel_data = hotel.model_dump()
+    hotel_data["name"] = hotel_data["name"].title().strip()
+    if "location" in hotel_data and hotel_data["location"]:
+        hotel_data["location"] = hotel_data["location"].title().strip()
+
     result = db.table("hotels").insert({
         "user_id": str(user_id),
-        **hotel.model_dump(),
+        **hotel_data,
     }).execute()
     
+    # Log the hotel creation as a query event too
+    if result.data:
+        await log_query(
+            db=db,
+            user_id=user_id,
+            hotel_name=hotel_data["name"],
+            location=hotel_data.get("location"),
+            action_type="create"
+        )
+        
     # TRACKING: Save to shared hotel directory for future auto-complete
     if result.data:
         try:
             new_hotel = result.data[0]
             db.table("hotel_directory").upsert({
-                "name": new_hotel["name"],
-                "location": new_hotel.get("location", ""),
-                "serp_api_id": new_hotel.get("serp_api_id"),
+                "name": result.data[0]["name"].title().strip(),
+                "location": (result.data[0].get("location") or "").title().strip(),
+                "serp_api_id": result.data[0].get("serp_api_id"),
                 "last_verified_at": datetime.now().isoformat()
             }, on_conflict="name,location").execute()
             print(f"[Directory] Tracked new hotel: {new_hotel['name']}")
@@ -373,7 +453,8 @@ async def get_settings(user_id: UUID, db: Client = Depends(get_supabase)):
                 "user_id": str(user_id),
                 "threshold_percent": 2.0,
                 "check_frequency_minutes": 144,
-                "notifications_enabled": True
+                "notifications_enabled": True,
+                "currency": "USD"
             }
             result = db.table("settings").insert(default_settings).execute()
             return result.data[0]
@@ -502,13 +583,29 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 @app.get("/api/hotels/search")
-async def search_hotel_directory(q: str, db: Client = Depends(get_supabase)):
+async def search_hotel_directory(
+    q: str, 
+    user_id: Optional[UUID] = None, 
+    db: Client = Depends(get_supabase)
+):
     """Search the shared hotel directory for auto-complete."""
+    # Normalize input query
+    q_normalized = q.title().strip()
+    
     try:
+        # Log the search event
+        await log_query(
+            db=db,
+            user_id=user_id,
+            hotel_name=q_normalized,
+            location=None,
+            action_type="search"
+        )
+        
         # We use a simple ilike for now, gin_trgm would be better for fuzzy but requires migration
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
-            .ilike("name", f"%{q}%") \
+            .ilike("name", f"%{q_normalized}%") \
             .limit(10) \
             .execute()
         return result.data

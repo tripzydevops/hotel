@@ -83,6 +83,7 @@ class SettingsBase(BaseModel):
     push_enabled: bool = False
     push_subscription: Optional[Dict[str, Any]] = None
     notifications_enabled: bool = True
+    currency: str = Field(default="USD", max_length=3)
 
 
 class SettingsCreate(SettingsBase):
@@ -147,10 +148,20 @@ class HotelWithPrice(BaseModel):
     price_info: Optional[PriceWithTrend] = None
 
 
+class QueryLog(BaseModel):
+    id: UUID
+    hotel_name: str
+    location: Optional[str] = None
+    action_type: str
+    status: str
+    created_at: datetime
+
+
 class DashboardResponse(BaseModel):
     """Response for the main dashboard Bento Grid."""
     target_hotel: Optional[HotelWithPrice] = None
     competitors: List[HotelWithPrice] = []
+    recent_searches: List[QueryLog] = []
     unread_alerts_count: int = 0
     last_updated: Optional[datetime] = None
 

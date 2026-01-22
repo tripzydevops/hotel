@@ -52,11 +52,22 @@ export interface UserSettings {
   whatsapp_number?: string;
   push_enabled?: boolean;
   push_subscription?: any; // JSONB
+  currency?: string;
+}
+
+export interface QueryLog {
+  id: string;
+  hotel_name: string;
+  location?: string;
+  action_type: string;
+  status: string;
+  created_at: string;
 }
 
 export interface DashboardData {
   target_hotel?: HotelWithPrice;
   competitors: HotelWithPrice[];
+  recent_searches: QueryLog[];
   unread_alerts_count: number;
   last_updated: string;
 }
