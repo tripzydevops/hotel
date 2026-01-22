@@ -57,7 +57,9 @@ export default function Header() {
               {locale === "en" ? "TR" : "EN"}
             </button>
 
-            <button className="btn-ghost text-sm">{t("common.signOut")}</button>
+            <button className="text-xs font-mono bg-white/10 text-[var(--soft-gold)] px-2 py-1 rounded border border-white/5">
+              DEV MODE
+            </button>
           </div>
 
           {/* Mobile Menu Button */}

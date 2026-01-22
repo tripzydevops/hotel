@@ -41,8 +41,10 @@ export default function Dashboard() {
       if (session?.user?.id) {
         setUserId(session.user.id);
       } else {
-        // Redirect to login if no session
-        window.location.href = "/login";
+        // DEV MODE: Bypass login as requested by user ("deactivate log in")
+        // We use a fixed UUID so data persists for this "Guest/Dev" user
+        console.warn("DEV MODE: Bypassing Login. Using Dev User ID.");
+        setUserId("123e4567-e89b-12d3-a456-426614174000"); 
       }
     };
     getSession();
