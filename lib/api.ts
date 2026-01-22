@@ -78,6 +78,13 @@ class ApiClient {
       `/api/hotels/search?q=${encodeURIComponent(query)}`,
     );
   }
+  async addHotelToDirectory(name: string, location: string, serpApiId?: string): Promise<void> {
+    return this.fetch<void>(`/api/admin/directory`, {
+      method: "POST",
+      body: JSON.stringify({ name, location, serp_api_id: serpApiId }),
+    });
+  }
+
   async deleteHotel(hotelId: string): Promise<void> {
     return this.fetch<void>(`/api/hotels/${hotelId}`, {
       method: "DELETE",

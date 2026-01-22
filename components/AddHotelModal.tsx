@@ -122,39 +122,65 @@ export default function AddHotelModal({
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
-                  name.length >= 3 &&
+                  name.length >= 2 &&
                   setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
                   setShowSuggestions(true)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 placeholder="e.g. Grand Plaza Hotel"
               />
+              {name.length > 0 && !isSearching && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setName("");
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                </button>
+              )}
               {isSearching && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] animate-spin" />
               )}
 
               {/* Suggestions Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
+              {(showSuggestions || (name.length >= 2 && !isSearching && suggestions.length === 0)) && (
                 <div className="absolute z-[60] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="max-h-48 overflow-y-auto">
-                    {suggestions.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSelectSuggestion(item)}
-                        className="w-full px-4 py-3 text-left hover:bg-white/5 flex flex-col transition-colors border-b border-white/5 last:border-none"
-                      >
-                        <span className="text-white font-medium text-sm">
-                          {item.name}
-                        </span>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3 text-[var(--text-muted)]" />
-                          <span className="text-[var(--text-muted)] text-xs">
-                            {item.location}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
+                    {suggestions.length > 0 ? (
+                      suggestions.map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(item)}
+                          className="w-full px-4 py-3 text-left hover:bg-white/5 flex flex-col transition-colors border-b border-white/5 last:border-none"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-white font-medium text-sm">
+                              {item.name}
+                            </span>
+                            {item.source === "serpapi" && (
+                              <span className="text-[10px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1.5 rounded uppercase tracking-widest font-bold">Global</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-[var(--text-muted)]" />
+                            <span className="text-[var(--text-muted)] text-xs">
+                              {item.location}
+                            </span>
+                          </div>
+                        </button>
+                      ))
+                    ) : name.length >= 2 && !isSearching ? (
+                      <div className="px-4 py-6 text-center">
+                        <Search className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                        <p className="text-sm text-[var(--text-secondary)]">No direct matches found</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">Continue typing to add manually</p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               )}

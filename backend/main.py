@@ -422,20 +422,6 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Client = Depends(g
             action_type="create"
         )
         
-    # TRACKING: Save to shared hotel directory for future auto-complete
-    if result.data:
-        try:
-            new_hotel = result.data[0]
-            db.table("hotel_directory").upsert({
-                "name": result.data[0]["name"].title().strip(),
-                "location": (result.data[0].get("location") or "").title().strip(),
-                "serp_api_id": result.data[0].get("serp_api_id"),
-                "last_verified_at": datetime.now().isoformat()
-            }, on_conflict="name,location").execute()
-            print(f"[Directory] Tracked new hotel: {new_hotel['name']}")
-        except Exception as e:
-            print(f"[Directory] Failed to track hotel: {e}")
-
     return result.data[0]
 
 
@@ -601,27 +587,40 @@ async def search_hotel_directory(
     if not q or len(q.strip()) < 2:
         return []
 
-    # Normalize input query
     q_trimmed = q.strip()
     
     try:
-        # Log the search event
-        await log_query(
-            db=db,
-            user_id=user_id,
-            hotel_name=q_trimmed,
-            location=None,
-            action_type="search"
-        )
-        
-        # Search in both name and location
-        # Using or_ for better discovery
+        # Local Lookup (Primary)
+        # We only search the local directory to avoid draining search API credits.
+        # This directory is populated automatically after successful price scans.
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
             .or_(f"name.ilike.%{q_trimmed}%,location.ilike.%{q_trimmed}%") \
             .limit(10) \
             .execute()
-        return result.data
+        
+        return result.data or []
     except Exception as e:
         print(f"Error searching directory: {e}")
         return []
+
+@app.post("/api/admin/directory")
+async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supabase)):
+    """Admin tool to manually add a hotel to the shared directory."""
+    name = hotel.get("name", "").title().strip()
+    location = hotel.get("location", "").title().strip()
+    serp_api_id = hotel.get("serp_api_id")
+    
+    if not name or not location:
+        raise HTTPException(status_code=400, detail="Name and location are required")
+        
+    try:
+        db.table("hotel_directory").upsert({
+            "name": name,
+            "location": location,
+            "serp_api_id": serp_api_id,
+            "last_verified_at": datetime.now().isoformat()
+        }, on_conflict="name,location").execute()
+        return {"status": "success", "hotel": name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -7,13 +7,14 @@ import TargetHotelTile from "@/components/TargetHotelTile";
 import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
-import { Bell, RefreshCw, Plus, Settings, History } from "lucide-react";
+import { Bell, RefreshCw, Plus, Settings, History, Database } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
 import RecentSearches from "@/components/RecentSearches";
 import SkeletonTile from "@/components/SkeletonTile";
 import ScanHistory from "@/components/ScanHistory";
+import Link from "next/link";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -353,6 +354,26 @@ export default function Dashboard() {
           searches={data?.recent_searches || []} 
           onAddHotel={handleQuickAdd}
         />
+
+        {/* Footer */}
+        <footer className="mt-20 py-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-[var(--text-muted)] text-sm">
+            © 2026 Hotel Rate Monitor. All rates fetched via SerpApi.
+          </p>
+          <div className="flex items-center gap-6">
+            <Link 
+              href="/admin" 
+              className="text-xs font-semibold uppercase tracking-widest text-[var(--soft-gold)] hover:text-[var(--optimal-green)] transition-colors flex items-center gap-2 group"
+            >
+              <Database className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              Admin Tool
+            </Link>
+            <div className="flex gap-4">
+              <a href="#" className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider">Privacy</a>
+              <a href="#" className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider">Terms</a>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   );
