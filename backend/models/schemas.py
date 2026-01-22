@@ -153,7 +153,7 @@ class QueryLog(BaseModel):
     hotel_name: str
     location: Optional[str] = None
     action_type: str
-    status: str
+    status: Optional[str] = "success"
     created_at: datetime
 
 

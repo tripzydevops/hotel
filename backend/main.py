@@ -6,7 +6,7 @@ Main application with monitoring and API endpoints.
 import os
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import date, datetime
 from uuid import UUID
 from dotenv import load_dotenv
@@ -189,7 +189,7 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
         except Exception as e:
             print(f"Error fetching scan_history: {e}")
 
-        return DashboardResponse(
+        resp = DashboardResponse(
             target_hotel=target_hotel,
             competitors=competitors,
             recent_searches=unique_recent,
@@ -197,10 +197,13 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase)):
             unread_alerts_count=unread_count,
             last_updated=datetime.now(),
         )
+        return resp
     except Exception as e:
         import traceback
-        print(f"CRITICAL Dashboard Error: {e}")
-        traceback.print_exc()
+        err_msg = traceback.format_exc()
+        print(f"CRITICAL Dashboard Error at step: {e}\n{err_msg}")
+        # Return a partial response if possible instead of crashing everything, 
+        # or at least raise a clearer error.
         raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
 
 
