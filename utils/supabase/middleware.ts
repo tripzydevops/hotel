@@ -42,10 +42,11 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
+    // DEV MODE: Login Redirect DISABLED
     // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    // const url = request.nextUrl.clone();
+    // url.pathname = "/login";
+    // return NextResponse.redirect(url);
   }
 
   // Admin Route Protection
