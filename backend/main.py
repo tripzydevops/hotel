@@ -11,6 +11,9 @@ from typing import List, Optional, Dict, Any
 from datetime import date, datetime, timezone
 from uuid import UUID
 from dotenv import load_dotenv
+# Load environment variables from .env and .env.local (Vercel style)
+load_dotenv()
+load_dotenv(".env.local", override=True)
 from supabase import create_client, Client
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -25,8 +28,6 @@ from backend.models.schemas import (
     MarketAnalysis, ReportsResponse, ScanSession
 )
 from backend.services import serpapi_client, price_comparator, notification_service
-
-load_dotenv()
 
 # Initialize FastAPI
 app = FastAPI(
@@ -967,33 +968,86 @@ async def get_analysis(user_id: UUID, db: Client = Depends(get_supabase)):
 
 @app.get("/api/reports/{user_id}", response_model=ReportsResponse)
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase)):
-    """Fetch data for reporting and historical audit."""
+    """Fetch data for reporting and historical audit, including legacy scans."""
     try:
-        # Fetch scan sessions
+        # 1. Fetch real sessions
         sessions_result = db.table("scan_sessions") \
             .select("*") \
             .eq("user_id", str(user_id)) \
             .order("created_at", desc=True) \
-            .limit(20) \
+            .limit(50) \
             .execute()
         
         sessions = sessions_result.data or []
         
-        # Simple weekly summary logic
+        # 2. Fetch orphaned logs (Legacy scans without sessions)
+        orphaned_result = db.table("query_logs") \
+            .select("*") \
+            .eq("user_id", str(user_id)) \
+            .eq("action_type", "monitor") \
+            .is_("session_id", "null") \
+            .order("created_at", desc=True) \
+            .limit(200) \
+            .execute()
+        
+        orphaned_logs = orphaned_result.data or []
+        
+        # 3. Group orphaned logs into "Legacy Sessions" (within 5min window)
+        legacy_sessions = []
+        if orphaned_logs:
+            current_group = []
+            for log in orphaned_logs:
+                log_time = datetime.fromisoformat(log["created_at"].replace("Z", "+00:00"))
+                
+                if not current_group:
+                    current_group.append(log)
+                else:
+                    last_log = current_group[-1]
+                    last_time = datetime.fromisoformat(last_log["created_at"].replace("Z", "+00:00"))
+                    
+                    if (last_time - log_time).total_seconds() < 300: # 5 min window
+                        current_group.append(log)
+                    else:
+                        # Close group
+                        legacy_sessions.append(synthesize_session(current_group))
+                        current_group = [log]
+            
+            if current_group:
+                legacy_sessions.append(synthesize_session(current_group))
+
+        # Combine and re-sort
+        all_sessions = sessions + legacy_sessions
+        all_sessions.sort(key=lambda x: x["created_at"], reverse=True)
+        
         summary = {
-            "total_scans": len(sessions),
+            "total_scans": len(all_sessions),
             "last_week_trend": "stable",
             "active_monitors": 5,
             "system_health": "100%"
         }
         
         return ReportsResponse(
-            sessions=sessions,
+            sessions=all_sessions[:50],
             weekly_summary=summary
         )
     except Exception as e:
         print(f"Reports error: {e}")
+        import traceback
+        traceback.print_exc()
         return ReportsResponse()
+
+def synthesize_session(logs: List[Dict]) -> Dict:
+    """Creates a mock session object from a group of logs."""
+    latest_log = logs[0]
+    return {
+        "id": latest_log["id"], # Proxy ID
+        "user_id": latest_log["user_id"],
+        "session_type": "legacy",
+        "status": "completed",
+        "hotels_count": len(logs),
+        "created_at": latest_log["created_at"],
+        "completed_at": latest_log["created_at"]
+    }
 
 @app.post("/api/reports/{user_id}/export")
 async def export_report(user_id: UUID, format: str = "csv"):
