@@ -106,6 +106,20 @@ class ApiClient {
   async getSessionLogs(sessionId: string): Promise<QueryLog[]> {
     return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
   }
+
+  async getAnalysis(userId: string): Promise<any> {
+    return this.fetch<any>(`/api/analysis/${userId}`);
+  }
+
+  async getReports(userId: string): Promise<any> {
+    return this.fetch<any>(`/api/reports/${userId}`);
+  }
+
+  async exportReport(userId: string, format: string = "csv"): Promise<any> {
+    return this.fetch<any>(`/api/reports/${userId}/export?format=${format}`, {
+      method: "POST",
+    });
+  }
 }
 
 export const api = new ApiClient();

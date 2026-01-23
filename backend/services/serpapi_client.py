@@ -83,7 +83,7 @@ class SerpApiClient:
                     results.append({
                         "name": self._clean_hotel_name(prop.get("name", "")),
                         "location": prop.get("description", "Unknown Location"), 
-                        "serp_api_id": prop.get("hotel_id"),
+                        "serp_api_id": prop.get("hotel_id") or prop.get("property_token"),
                         "source": "serpapi"
                     })
                 return results

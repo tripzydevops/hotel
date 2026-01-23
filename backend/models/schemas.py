@@ -184,6 +184,7 @@ class DashboardResponse(BaseModel):
     competitors: List[HotelWithPrice] = []
     recent_searches: List[QueryLog] = []
     scan_history: List[QueryLog] = []
+    recent_sessions: List[ScanSession] = []
     unread_alerts_count: int = 0
     last_updated: Optional[datetime] = None
 
@@ -195,6 +196,35 @@ class MonitorResult(BaseModel):
     alerts_generated: int
     session_id: Optional[UUID] = None
     errors: List[str] = []
+
+
+class ScanSession(BaseModel):
+    id: UUID
+    user_id: UUID
+    session_type: str = "manual"
+    status: str = "pending"
+    hotels_count: int = 0
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    logs: Optional[List[QueryLog]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MarketAnalysis(BaseModel):
+    market_average: float
+    market_min: float
+    market_max: float
+    target_price: Optional[float] = None
+    competitive_rank: int = 0
+    price_history: List[PricePoint] = []
+    competitors: List[HotelWithPrice] = []
+
+
+class ReportsResponse(BaseModel):
+    sessions: List[ScanSession] = []
+    weekly_summary: Dict[str, Any] = {}
 
 
 # ===== SerpApi Response Models =====
