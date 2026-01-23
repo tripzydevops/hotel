@@ -81,7 +81,10 @@ async def log_query(
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
-        db.table("query_logs").insert({
+        # Robustness: Only include user_id if it's not a mock ID that would fail FK constraints
+        # For this prototype, we'll try-except the insertion to ensure the log is created 
+        # even if the FK fails (by retrying without the user_id)
+        log_data = {
             "user_id": str(user_id) if user_id else None,
             "hotel_name": hotel_name.title().strip(),
             "location": location.title().strip() if location else None,
@@ -91,7 +94,18 @@ async def log_query(
             "currency": currency,
             "vendor": vendor,
             "session_id": str(session_id) if session_id else None
-        }).execute()
+        }
+        
+        try:
+            db.table("query_logs").insert(log_data).execute()
+        except Exception as e:
+            if "foreign key constraint" in str(e).lower() and user_id:
+                # Retry without user_id if it's a mock user
+                log_data["user_id"] = None
+                db.table("query_logs").insert(log_data).execute()
+            else:
+                raise e
+                
     except Exception as e:
         print(f"[QueryLogs] Failed to log {action_type}: {e}")
 
@@ -209,7 +223,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 if name not in seen_names:
                     unique_recent.append(log)
                     seen_names.add(name)
-                if len(unique_recent) >= 5:
+                if len(unique_recent) >= 10:
                     break
         except Exception as e:
             print(f"Error fetching recent_searches: {e}")
@@ -272,15 +286,64 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 @app.post("/api/monitor/{user_id}", response_model=MonitorResult)
 async def trigger_monitor(
     user_id: UUID,
+    background_tasks: BackgroundTasks,
     check_in: Optional[date] = None,
     db: Optional[Client] = Depends(get_supabase)
 ):
     """
-    Trigger price monitoring for all hotels of a user.
+    Trigger price monitoring for all hotels of a user (Asynchronous).
     """
     if not db:
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=["DB_UNAVAILABLE"])
         
+    # Get all hotels for user
+    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    hotels = hotels_result.data or []
+    
+    if not hotels:
+        return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
+        
+    # Create session immediately
+    session_id = None
+    try:
+        session_result = db.table("scan_sessions").insert({
+            "user_id": str(user_id),
+            "session_type": "manual",
+            "hotels_count": len(hotels),
+            "status": "pending"
+        }).execute()
+        if session_result.data:
+            session_id = session_result.data[0]["id"]
+    except Exception as e:
+        print(f"Failed to create session: {e}")
+
+    # Launch background task
+    background_tasks.add_task(
+        run_monitor_background,
+        user_id=user_id,
+        hotels=hotels,
+        check_in=check_in,
+        db=db,
+        session_id=session_id
+    )
+
+    return MonitorResult(
+        hotels_checked=len(hotels),
+        prices_updated=0, # Will be updated in background
+        alerts_generated=0,
+        session_id=session_id,
+        errors=[]
+    )
+
+
+async def run_monitor_background(
+    user_id: UUID,
+    hotels: List[Dict[str, Any]],
+    check_in: Optional[date],
+    db: Client,
+    session_id: Optional[UUID]
+):
+    """Background task to perform the actual scan."""
     errors = []
     prices_updated = 0
     alerts_generated = 0
@@ -297,35 +360,14 @@ async def trigger_monitor(
     threshold = settings["threshold_percent"] if settings else 2.0
     user_default_currency = settings.get("currency", "USD") if settings else "USD"
     
-    # Get all hotels for user
-    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-    hotels = hotels_result.data or []
-    
-    if not hotels:
-        return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
-    
-    # Find target hotel price for competitor comparison
-    target_price = None
-    
-    # 0. Create a Scan Session for this batch
-    session_id = None
-    try:
-        session_result = db.table("scan_sessions").insert({
-            "user_id": str(user_id),
-            "session_type": "manual",
-            "hotels_count": len(hotels),
-            "status": "pending"
-        }).execute()
-        if session_result.data:
-            session_id = session_result.data[0]["id"]
-    except Exception as e:
-        print(f"Failed to create session: {e}")
+    # Update session to 'running'
+    if session_id:
+        try:
+            db.table("scan_sessions").update({"status": "running"}).eq("id", session_id).execute()
+        except: pass
 
-    # Process all hotels in parallel to avoid Vercel timeouts
-    # Max concurrency: 5
-    semaphore = asyncio.Semaphore(5)
-    
-    # Store target price for second pass
+    # Max concurrency: 3 (reduced to avoid rate limits/timeouts in background)
+    semaphore = asyncio.Semaphore(3)
     target_price_ref = {"value": None}
 
     async def process_hotel(hotel):
@@ -347,14 +389,9 @@ async def trigger_monitor(
                 )
                 
                 if not price_data:
-                    errors.append(f"Could not fetch price for {hotel_name}")
                     await log_query(
-                        db=db,
-                        user_id=user_id,
-                        hotel_name=hotel_name,
-                        location=location,
-                        action_type="monitor",
-                        status="not_found",
+                        db=db, user_id=user_id, hotel_name=hotel_name,
+                        location=location, action_type="monitor", status="not_found",
                         session_id=session_id
                     )
                     return
@@ -362,7 +399,6 @@ async def trigger_monitor(
                 current_price = price_data["price"]
                 prices_updated += 1
                 
-                # Track target hotel price
                 if hotel["is_target_hotel"]:
                     target_price_ref["value"] = current_price
                 
@@ -376,7 +412,7 @@ async def trigger_monitor(
                 
                 previous_price = prev_result.data[0]["price"] if prev_result.data else None
                 
-                # Log new price (Enriched with Vendor)
+                # Log price
                 db.table("price_logs").insert({
                     "hotel_id": hotel_id,
                     "price": current_price,
@@ -386,7 +422,7 @@ async def trigger_monitor(
                     "vendor": price_data.get("vendor"), 
                 }).execute()
 
-                # ENRICHMENT: Update hotel metadata (Stars, Rating, Image)
+                # Update metadata
                 meta_update = {}
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
@@ -394,23 +430,9 @@ async def trigger_monitor(
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 
                 if meta_update:
-                    try:
-                        db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
-                    except Exception as e:
-                        print(f"[Enrichment] Failed to update hotel metadata: {e}")
+                    db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
                 
-                # TRACKING: Save to shared hotel directory for future auto-complete
-                try:
-                    db.table("hotel_directory").upsert({
-                        "name": price_data.get("hotel_name", hotel_name),
-                        "location": location,
-                        "serp_api_id": price_data.get("raw_data", {}).get("hotel_id"),
-                        "last_verified_at": datetime.now().isoformat()
-                    }, on_conflict="name,location").execute()
-                except Exception as e:
-                    print(f"[Directory] Failed to upsert hotel: {e}")
-                
-                # Check for threshold breach
+                # Alerts
                 if previous_price:
                     threshold_alert = price_comparator.check_threshold_breach(
                         current_price, previous_price, threshold
@@ -433,96 +455,50 @@ async def trigger_monitor(
                                 currency=hotel_currency
                             )
             
-                # Log the monitor attempt (Enriched)
+                # Log monitor log
                 await log_query(
-                    db=db,
-                    user_id=user_id,
-                    hotel_name=price_data.get("hotel_name", hotel_name) if price_data else hotel_name,
-                    location=location,
-                    action_type="monitor",
-                    status="success" if price_data else "not_found",
-                    price=current_price if price_data else None,
-                    currency=hotel_currency if price_data else None,
-                    vendor=price_data.get("vendor") if price_data else None,
-                    session_id=session_id
+                    db=db, user_id=user_id,
+                    hotel_name=price_data.get("hotel_name", hotel_name),
+                    location=location, action_type="monitor", status="success",
+                    price=current_price, currency=hotel_currency,
+                    vendor=price_data.get("vendor"), session_id=session_id
                 )
                 
             except Exception as e:
-                errors.append(f"Error processing {hotel_name}: {str(e)}")
-                await log_query(
-                    db=db,
-                    user_id=user_id,
-                    hotel_name=hotel_name,
-                    location=location,
-                    action_type="monitor",
-                    status="error",
-                    session_id=session_id
-                )
+                print(f"Error in background task for {hotel_name}: {e}")
+                errors.append(str(e))
 
-    # Run tasks concurrently
+    # Wait for all to finish
     await asyncio.gather(*[process_hotel(hotel) for hotel in hotels])
     
-    # Extract target price for second pass
+    # Second pass for competitor undercuts
     target_price = target_price_ref["value"]
-    
-    # Finalize Session
+    if target_price:
+        for hotel in hotels:
+            if hotel["is_target_hotel"]: continue
+            
+            latest = db.table("price_logs") \
+                .select("price") \
+                .eq("hotel_id", hotel["id"]) \
+                .order("recorded_at", desc=True) \
+                .limit(2).execute()
+            
+            if len(latest.data) >= 1:
+                current = latest.data[0]["price"]
+                previous = latest.data[1]["price"] if len(latest.data) > 1 else None
+                undercut = price_comparator.check_competitor_undercut(target_price, hotel["name"], current, previous)
+                if undercut:
+                    db.table("alerts").insert({"user_id": str(user_id), "hotel_id": hotel["id"], **undercut}).execute()
+                    alerts_generated += 1
+
+    # Finalize session
     if session_id:
         try:
             db.table("scan_sessions").update({
                 "status": "completed" if not errors else "partial",
                 "completed_at": datetime.now().isoformat()
             }).eq("id", session_id).execute()
-        except Exception as e:
-            print(f"Failed to finalize session: {e}")
-    
-    # Second pass: check competitor undercuts
-    if target_price:
-        for hotel in hotels:
-            if hotel["is_target_hotel"]:
-                continue
-            
-            # Get latest price for competitor
-            latest = db.table("price_logs") \
-                .select("price") \
-                .eq("hotel_id", hotel["id"]) \
-                .order("recorded_at", desc=True) \
-                .limit(2) \
-                .execute()
-            
-            if not latest.data:
-                continue
-            
-            current = latest.data[0]["price"]
-            previous = latest.data[1]["price"] if len(latest.data) > 1 else None
-            
-            undercut = price_comparator.check_competitor_undercut(
-                target_price, hotel["name"], current, previous
-            )
-            if undercut:
-                db.table("alerts").insert({
-                    "user_id": str(user_id),
-                    "hotel_id": hotel["id"],
-                    **undercut,
-                }).execute()
-                alerts_generated += 1
-                
-                # Send notification via all enabled channels
-                if settings:
-                    await notification_service.send_notifications(
-                        settings=settings,
-                        hotel_name=hotel["name"],
-                        alert_message=undercut["message"],
-                        current_price=undercut["new_price"],
-                        previous_price=undercut["old_price"] or 0
-                    )
-    
-    return MonitorResult(
-        hotels_checked=len(hotels),
-        prices_updated=prices_updated,
-        alerts_generated=alerts_generated,
-        errors=errors,
-    )
-
+        except: pass
 
 # ===== Hotels CRUD =====
 
@@ -550,8 +526,19 @@ async def search_hotel_directory(
         result = db.table("hotel_directory") \
             .select("name, location, serp_api_id") \
             .ilike("name", f"%{q_trimmed}%") \
-            .limit(10) \
+            .limit(5) \
             .execute()
+        
+        # Log this search if user_id is provided
+        if user_id:
+            await log_query(
+                db=db,
+                user_id=user_id,
+                hotel_name=q_trimmed,
+                location=None,
+                action_type="search",
+                status="success"
+            )
         
         print(f"DEBUG SEARCH: Found {len(result.data)} results")
         return result.data or []
@@ -574,9 +561,9 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
         
-    # Check hotel limit (Max 5 for demo)
-    existing_count = db.table("hotels").select("id", count="exact").eq("user_id", str(user_id)).execute()
-    if existing_count.count is not None and existing_count.count >= 5:
+    # Check hotel limit (Max 5 for demo) - STRICT ENFORCEMENT
+    existing = db.table("hotels").select("id").eq("user_id", str(user_id)).execute()
+    if existing.data and len(existing.data) >= 5:
         raise HTTPException(status_code=403, detail="Hotel limit reached (Max 5). Please upgrade to add more.")
         
     

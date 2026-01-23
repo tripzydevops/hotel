@@ -193,6 +193,7 @@ class MonitorResult(BaseModel):
     hotels_checked: int
     prices_updated: int
     alerts_generated: int
+    session_id: Optional[UUID] = None
     errors: List[str] = []
 
 

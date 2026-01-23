@@ -11,9 +11,10 @@ import { Bell, RefreshCw, Plus, Settings, History } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
-import RecentSearches from "@/components/RecentSearches";
+import SearchHistory from "@/components/SearchHistory";
 import SkeletonTile from "@/components/SkeletonTile";
 import ScanHistory from "@/components/ScanHistory";
+import RapidPulseHistory from "@/components/RapidPulseHistory";
 import ScanSessionModal from "@/components/ScanSessionModal";
 import { ScanSession } from "@/types";
 import Link from "next/link";
@@ -37,6 +38,10 @@ export default function Dashboard() {
   // Session Modal State
   const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+
+  // Re-search state
+  const [reSearchName, setReSearchName] = useState("");
+  const [reSearchLocation, setReSearchLocation] = useState("");
 
   const handleOpenSession = (session: ScanSession) => {
     setSelectedSession(session);
@@ -133,6 +138,12 @@ export default function Dashboard() {
     handleRefresh();
   };
 
+  const handleReSearch = (name: string, location?: string) => {
+    setReSearchName(name);
+    setReSearchLocation(location || "");
+    setIsAddHotelOpen(true);
+  };
+
   const handleDeleteLog = async (logId: string) => {
     try {
       await api.deleteLog(logId);
@@ -181,8 +192,14 @@ export default function Dashboard() {
 
       <AddHotelModal
         isOpen={isAddHotelOpen}
-        onClose={() => setIsAddHotelOpen(false)}
+        onClose={() => {
+          setIsAddHotelOpen(false);
+          setReSearchName("");
+          setReSearchLocation("");
+        }}
         onAdd={handleAddHotel}
+        initialName={reSearchName}
+        initialLocation={reSearchLocation}
       />
 
       <SettingsModal
@@ -398,11 +415,16 @@ export default function Dashboard() {
           onOpenSession={handleOpenSession}
         />
 
-        {/* Recent Searches Row */}
-        <RecentSearches 
+        {/* Search History Row */}
+        <SearchHistory 
+          searches={data?.recent_searches || []} 
+          onReSearch={handleReSearch}
+        />
+
+        {/* Rapid Pulse History Row */}
+        <RapidPulseHistory 
           sessions={data?.recent_sessions?.slice(0, 4) || []} 
           onOpenSession={handleOpenSession}
-          onAddHotel={handleQuickAdd}
         />
 
         {/* Footer */}

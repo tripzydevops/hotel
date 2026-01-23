@@ -8,19 +8,31 @@ interface AddHotelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, location: string, isTarget: boolean, currency: string, serpApiId?: string) => Promise<void>;
+  initialName?: string;
+  initialLocation?: string;
 }
 
 export default function AddHotelModal({
   isOpen,
   onClose,
   onAdd,
+  initialName = "",
+  initialLocation = "",
 }: AddHotelModalProps) {
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
+  const [name, setName] = useState(initialName);
+  const [location, setLocation] = useState(initialLocation);
   const [currency, setCurrency] = useState("USD");
   const [isTarget, setIsTarget] = useState(false);
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+
+  // Update state if initial values change
+  useEffect(() => {
+    if (isOpen) {
+      setName(initialName);
+      setLocation(initialLocation);
+    }
+  }, [isOpen, initialName, initialLocation]);
 
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
