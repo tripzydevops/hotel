@@ -116,10 +116,24 @@ class ApiClient {
     return this.fetch<any>(`/api/reports/${userId}`);
   }
 
-  async exportReport(userId: string, format: string = "csv"): Promise<any> {
-    return this.fetch<any>(`/api/reports/${userId}/export?format=${format}`, {
+  async exportReport(userId: string, format: string = "csv"): Promise<void> {
+    const url = `${API_BASE_URL}/api/reports/${userId}/export?format=${format}`;
+    const response = await fetch(url, {
       method: "POST",
+      headers: { "Content-Type": "application/json" }
     });
+
+    if (!response.ok) throw new Error("Export failed");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `report_${userId}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
   }
 
   async checkScheduledScan(userId: string): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {

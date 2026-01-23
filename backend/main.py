@@ -1255,10 +1255,56 @@ def synthesize_session(logs: List[Dict]) -> Dict:
         "completed_at": latest_log["created_at"]
     }
 
+from fastapi.responses import StreamingResponse
+import csv
+import io
+
 @app.post("/api/reports/{user_id}/export")
-async def export_report(user_id: UUID, format: str = "csv"):
-    """Mock report export trigger."""
-    return {"status": "success", "message": f"Report exported in {format} format", "download_url": "#"}
+async def export_report(user_id: UUID, format: str = "csv", db: Client = Depends(get_supabase)):
+    """Export report data as CSV."""
+    if format != "csv":
+        return {"status": "error", "message": "Only CSV supported currently"}
+        
+    # Fetch report data (reuse logic: last 30 days of logs)
+    # For MVP, we'll just dump the raw price_logs for this user's hotels
+    
+    # 1. Get user hotels
+    hotels = db.table("hotels").select("id, name").eq("user_id", str(user_id)).execute().data or []
+    if not hotels:
+        return {"status": "error", "message": "No hotels found"}
+        
+    hotel_map = {h["id"]: h["name"] for h in hotels}
+    hotel_ids = list(hotel_map.keys())
+    
+    # 2. Get logs
+    logs = db.table("price_logs") \
+        .select("*") \
+        .in_("hotel_id", hotel_ids) \
+        .order("recorded_at", desc=True) \
+        .limit(1000) \
+        .execute().data or []
+        
+    # 3. Generate CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Hotel Name", "Price", "Currency", "Source"])
+    
+    for log in logs:
+        writer.writerow([
+            log["recorded_at"],
+            hotel_map.get(log["hotel_id"], "Unknown"),
+            log["price"],
+            log.get("currency", "USD"),
+            log.get("source", "SerpApi")
+        ])
+        
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=report_{user_id}_{date.today()}.csv"}
+    )
 
 
 # ===== Admin Endpoints =====
