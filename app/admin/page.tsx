@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { 
   Building2, MapPin, Database, Users, Activity, Key, 
-  LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw 
+  LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw, Plus 
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -25,6 +25,12 @@ export default function AdminPage() {
   const [dirLocation, setDirLocation] = useState("");
   const [dirSerpId, setDirSerpId] = useState("");
   const [dirSuccess, setDirSuccess] = useState(false);
+
+  // User Form State
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPass, setNewUserPass] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [userSuccess, setUserSuccess] = useState(false);
 
   useEffect(() => {
     loadTabData();
@@ -61,6 +67,27 @@ export default function AdminPage() {
       loadTabData(); // Refresh
     } catch (err: any) {
       alert("Failed to delete user: " + err.message);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserEmail || !newUserPass) return;
+    
+    try {
+        await api.createAdminUser({
+            email: newUserEmail,
+            password: newUserPass,
+            display_name: newUserName || undefined
+        });
+        setUserSuccess(true);
+        setNewUserEmail("");
+        setNewUserPass("");
+        setNewUserName("");
+        loadTabData();
+        setTimeout(() => setUserSuccess(false), 3000);
+    } catch (err: any) {
+        alert("Failed to create user: " + err.message);
     }
   };
 
@@ -159,43 +186,73 @@ export default function AdminPage() {
 
         {/* USERS TAB */}
         {activeTab === "users" && (
-          <div className="glass-card border border-white/10 overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
-                <tr>
-                  <th className="p-4">User</th>
-                  <th className="p-4">Hotels</th>
-                  <th className="p-4">Scans</th>
-                  <th className="p-4">Created</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/5">
-                    <td className="p-4">
-                      <div className="font-medium text-white">{u.display_name || "Unknown"}</div>
-                      <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
-                      <div className="text-[var(--text-muted)] text-xs font-mono">{u.id}</div>
-                    </td>
-                    <td className="p-4 text-white">{u.hotel_count}</td>
-                    <td className="p-4 text-white">{u.scan_count}</td>
-                    <td className="p-4 text-[var(--text-muted)]">{new Date(u.created_at).toLocaleDateString()}</td>
-                    <td className="p-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteUser(u.id)}
-                        className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && !loading && (
-                    <tr><td colSpan={5} className="p-8 text-center text-[var(--text-muted)]">No users found.</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="space-y-8">
+            {/* Add User Form */}
+            <div className="glass-card p-6 border border-white/10">
+                <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-lg font-bold text-white">Create New User</h3>
+                    {userSuccess && <span className="text-[var(--optimal-green)] text-xs flex items-center"><CheckCircle2 className="w-3 h-3 mr-1"/> User created!</span>}
+                </div>
+                <form onSubmit={handleCreateUser} className="flex flex-col md:flex-row gap-4">
+                    <input 
+                        type="email" placeholder="Email" required
+                        value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                    <input 
+                        type="text" placeholder="Display Name (Opt)" 
+                        value={newUserName} onChange={e => setNewUserName(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                    <input 
+                        type="password" placeholder="Password" required minLength={6}
+                        value={newUserPass} onChange={e => setNewUserPass(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                    <button type="submit" className="bg-[var(--soft-gold)] text-black font-bold px-6 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 justify-center">
+                        <Plus className="w-4 h-4" /> Create User
+                    </button>
+                </form>
+            </div>
+
+            <div className="glass-card border border-white/10 overflow-hidden">
+                <table className="w-full text-left text-sm">
+                <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
+                    <tr>
+                    <th className="p-4">User</th>
+                    <th className="p-4">Hotels</th>
+                    <th className="p-4">Scans</th>
+                    <th className="p-4">Created</th>
+                    <th className="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                    {users.map((u) => (
+                    <tr key={u.id} className="hover:bg-white/5">
+                        <td className="p-4">
+                        <div className="font-medium text-white">{u.display_name || "Unknown"}</div>
+                        <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
+                        <div className="text-[var(--text-muted)] text-xs font-mono">{u.id}</div>
+                        </td>
+                        <td className="p-4 text-white">{u.hotel_count}</td>
+                        <td className="p-4 text-white">{u.scan_count}</td>
+                        <td className="p-4 text-[var(--text-muted)]">{new Date(u.created_at).toLocaleDateString()}</td>
+                        <td className="p-4 text-right">
+                        <button 
+                            onClick={() => handleDeleteUser(u.id)}
+                            className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                        </td>
+                    </tr>
+                    ))}
+                    {users.length === 0 && !loading && (
+                        <tr><td colSpan={5} className="p-8 text-center text-[var(--text-muted)]">No users found.</td></tr>
+                    )}
+                </tbody>
+                </table>
+            </div>
           </div>
         )}
 

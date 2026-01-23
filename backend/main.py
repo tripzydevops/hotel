@@ -27,7 +27,7 @@ from backend.models.schemas import (
     TrendDirection, QueryLog, PricePoint,
     MarketAnalysis, ReportsResponse, ScanSession,
     UserProfile, UserProfileUpdate,
-    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse
+    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -1341,6 +1341,38 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
         final_users.append(AdminUser(**udata))
         
     return final_users
+
+@app.post("/api/admin/users", response_model=dict)
+async def create_admin_user(user: AdminUserCreate, db: Client = Depends(get_supabase)):
+    """Create a new user manually."""
+    try:
+        # Create user in Supabase Auth via Admin API
+        # Using auto_confirm_email=True so they can login immediately
+        res = db.auth.admin.create_user({
+            "email": user.email,
+            "password": user.password,
+            "email_confirm": True
+        })
+        
+        new_user = res.user
+        if not new_user:
+            raise HTTPException(status_code=400, detail="Failed to create user")
+            
+        # Create profile entry
+        db.table("user_profiles").insert({
+            "user_id": str(new_user.id),
+            "display_name": user.display_name or user.email.split("@")[0],
+            "email": user.email
+        }).execute()
+        
+        return {
+            "status": "success", 
+            "user_id": str(new_user.id),
+            "message": f"User {user.email} created successfully"
+        }
+    except Exception as e:
+        print(f"Create User Error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.delete("/api/admin/users/{user_id}")
 async def delete_admin_user(user_id: UUID, db: Client = Depends(get_supabase)):

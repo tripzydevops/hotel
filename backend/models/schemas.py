@@ -249,6 +249,11 @@ class AdminStats(BaseModel):
     api_calls_today: int
     directory_size: int
 
+class AdminUserCreate(BaseModel):
+    email: str
+    password: str
+    display_name: Optional[str] = None
+
 class AdminUser(BaseModel):
     id: UUID
     display_name: Optional[str] = None

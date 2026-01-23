@@ -159,6 +159,13 @@ class ApiClient {
     });
   }
 
+  async createAdminUser(data: any): Promise<any> {
+    return this.fetch<any>("/api/admin/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
   async getAdminDirectory(limit = 100): Promise<any[]> {
     return this.fetch<any[]>(`/api/admin/directory?limit=${limit}`);
   }
