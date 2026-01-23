@@ -830,6 +830,93 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
+@app.post("/api/check-scheduled/{user_id}")
+async def check_scheduled_scan(
+    user_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Optional[Client] = Depends(get_supabase)
+):
+    """
+    Lazy cron workaround for Vercel free tier.
+    Called on dashboard load - checks if user's scan is due and triggers if needed.
+    """
+    if not db:
+        return {"triggered": False, "reason": "DB_UNAVAILABLE"}
+    
+    try:
+        # Get user settings
+        settings_result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
+        if not settings_result.data:
+            return {"triggered": False, "reason": "NO_SETTINGS"}
+        
+        settings = settings_result.data[0]
+        freq_minutes = settings.get("check_frequency_minutes", 0)
+        
+        if freq_minutes <= 0:
+            return {"triggered": False, "reason": "MANUAL_ONLY"}
+        
+        # Get user's hotels
+        hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+        hotels = hotels_result.data or []
+        
+        if not hotels:
+            return {"triggered": False, "reason": "NO_HOTELS"}
+        
+        hotel_ids = [h["id"] for h in hotels]
+        
+        # Check last scan time
+        last_log = db.table("price_logs") \
+            .select("recorded_at") \
+            .in_("hotel_id", hotel_ids) \
+            .order("recorded_at", desc=True) \
+            .limit(1) \
+            .execute()
+        
+        should_run = False
+        if not last_log.data:
+            should_run = True
+        else:
+            last_run_iso = last_log.data[0]["recorded_at"]
+            last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
+            minutes_since = (datetime.now(timezone.utc) - last_run).total_seconds() / 60
+            
+            if minutes_since >= freq_minutes:
+                should_run = True
+        
+        if should_run:
+            # Create session
+            session_id = None
+            try:
+                session_result = db.table("scan_sessions").insert({
+                    "user_id": str(user_id),
+                    "session_type": "scheduled",
+                    "hotels_count": len(hotels),
+                    "status": "pending"
+                }).execute()
+                if session_result.data:
+                    session_id = session_result.data[0]["id"]
+            except Exception as e:
+                print(f"LazyScheduler: Failed to create session: {e}")
+            
+            # Launch in background
+            background_tasks.add_task(
+                run_monitor_background,
+                user_id=user_id,
+                hotels=hotels,
+                check_in=None,
+                db=db,
+                session_id=session_id
+            )
+            
+            return {"triggered": True, "session_id": session_id}
+        
+        return {"triggered": False, "reason": "NOT_DUE"}
+        
+    except Exception as e:
+        print(f"LazyScheduler error: {e}")
+        return {"triggered": False, "reason": str(e)}
+
+
 
 @app.post("/api/admin/directory")
 async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supabase)):

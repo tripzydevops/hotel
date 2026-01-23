@@ -83,6 +83,17 @@ export default function Dashboard() {
 
       const settings = await api.getSettings(userId);
       setUserSettings(settings);
+
+      // Lazy cron: Check if scheduled scan is due (Vercel free tier workaround)
+      try {
+        const schedulerResult = await api.checkScheduledScan(userId);
+        if (schedulerResult.triggered) {
+          console.log("LazyScheduler: Triggered scan session", schedulerResult.session_id);
+        }
+      } catch (e) {
+        // Non-critical, don't block dashboard
+        console.warn("LazyScheduler check failed:", e);
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       setError("Failed to load dashboard data. Please check your connection.");

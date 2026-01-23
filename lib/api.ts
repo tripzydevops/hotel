@@ -120,6 +120,12 @@ class ApiClient {
       method: "POST",
     });
   }
+
+  async checkScheduledScan(userId: string): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
+    return this.fetch<{ triggered: boolean; session_id?: string; reason?: string }>(`/api/check-scheduled/${userId}`, {
+      method: "POST",
+    });
+  }
 }
 
 export const api = new ApiClient();
