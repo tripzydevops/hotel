@@ -1,0 +1,1739 @@
+{
+  "props": {
+    "pageProps": {
+      "monitoringServices": [
+        "GTM"
+      ],
+      "isDatesPromptBannerDismissed": false,
+      "initialState": {
+        "searchState": {
+          "base": {
+            "nsids": [
+              {
+                "ns": 200,
+                "id": 63698
+              }
+            ],
+            "stayPeriod": [
+              "2026-01-31",
+              "2026-02-01"
+            ],
+            "dateSource": 0,
+            "sortingId": 0,
+            "offset": 0,
+            "limit": 35,
+            "price": {
+              "range": [
+                0,
+                2147483647
+              ],
+              "isPerNight": true
+            },
+            "coordinates": null,
+            "distance": 0,
+            "freeSearch": [],
+            "version": 0
+          },
+          "changes": [
+            {
+              "op": "replace",
+              "path": [
+                "dateSource"
+              ],
+              "value": 0,
+              "origin": "!search-state-initializer!"
+            },
+            {
+              "op": "replace",
+              "path": [
+                "nsids"
+              ],
+              "value": [
+                {
+                  "ns": 200,
+                  "id": 63698
+                }
+              ],
+              "origin": "search-param-override"
+            },
+            {
+              "op": "replace",
+              "path": [
+                "nsids"
+              ],
+              "value": [
+                {
+                  "ns": 200,
+                  "id": 63698
+                }
+              ],
+              "origin": "search-param-override"
+            },
+            {
+              "op": "replace",
+              "path": [
+                "stayPeriod"
+              ],
+              "value": [
+                "2026-01-31",
+                "2026-02-01"
+              ],
+              "origin": "setup-stay-period-override"
+            },
+            {
+              "op": "replace",
+              "path": [
+                "stayPeriod"
+              ],
+              "value": [
+                "2026-01-31",
+                "2026-02-01"
+              ],
+              "origin": "setup-stay-period-override"
+            }
+          ],
+          "interactions": {}
+        },
+        "searchMeta": {
+          "target": {
+            "current": null,
+            "previous": null
+          }
+        },
+        "environment": {
+          "initialUrl": "http://www.trivago.com/en-US/srl/hotels-balikesir-turkey?extraWait=3000&search=200-63698",
+          "languageCode": "en-US",
+          "languageSource": 0,
+          "platformCode": "us",
+          "cTests": {
+            "control": [
+              "40983",
+              "57901",
+              "61126-1",
+              "61126-2",
+              "61126-3",
+              "70873",
+              "70928-1",
+              "71552",
+              "71549",
+              "71550",
+              "71553-1",
+              "71553-2",
+              "71557-1",
+              "71557-2",
+              "71622",
+              "71735",
+              "71737",
+              "71283",
+              "71937",
+              "71992",
+              "71551",
+              "72035",
+              "72054",
+              "72053",
+              "72074",
+              "72158-1",
+              "72158-2",
+              "72158-3",
+              "71975",
+              "71772",
+              "72079",
+              "71909-1",
+              "72189",
+              "71954-1",
+              "71478",
+              "72214-1",
+              "72214-2",
+              "72214-3",
+              "72214-4",
+              "72214-5",
+              "72009-1",
+              "72009-2",
+              "72221",
+              "72180",
+              "72122",
+              "72141",
+              "72167-1",
+              "72167-2",
+              "72108",
+              "72084-1",
+              "72211-2",
+              "72252",
+              "72224",
+              "72215",
+              "72194",
+              "71610",
+              "72226",
+              "71651",
+              "72110",
+              "72241"
+            ],
+            "test": [
+              "55622",
+              "46164",
+              "48405",
+              "51886",
+              "52345",
+              "70018-2",
+              "70136-2",
+              "70290",
+              "70332",
+              "70407",
+              "70773-2",
+              "70766",
+              "70830",
+              "70837",
+              "70806",
+              "71005",
+              "70916",
+              "71028-1",
+              "70798",
+              "71057-2",
+              "71230",
+              "71254",
+              "71285",
+              "71228-2",
+              "71393-1",
+              "71172",
+              "71475",
+              "71469",
+              "71460",
+              "71509",
+              "71428",
+              "71548",
+              "71554-1",
+              "71555-1",
+              "71556-1",
+              "71512",
+              "71498",
+              "71523",
+              "71565",
+              "71173",
+              "71569",
+              "71599",
+              "71591",
+              "71619",
+              "71466",
+              "71652",
+              "71674",
+              "71561",
+              "71479-1",
+              "71315",
+              "71734",
+              "71736",
+              "71576",
+              "71659",
+              "71621",
+              "71654",
+              "71755",
+              "71729",
+              "71693-2",
+              "71721",
+              "71691",
+              "71730",
+              "71600",
+              "71773",
+              "71677",
+              "71748",
+              "71796-1",
+              "71813",
+              "71709",
+              "71710",
+              "71107",
+              "70698",
+              "71717",
+              "71725-2",
+              "71606",
+              "71851",
+              "71794",
+              "71638-1",
+              "71848",
+              "71934",
+              "71948",
+              "71995",
+              "71503",
+              "71947",
+              "71844",
+              "71628",
+              "71969",
+              "71809",
+              "71968",
+              "71980",
+              "71768",
+              "70620-2",
+              "71852",
+              "71881",
+              "71727",
+              "72005",
+              "71987",
+              "71960",
+              "72034-1",
+              "72002-1",
+              "71935",
+              "72076",
+              "72052",
+              "71407",
+              "72008",
+              "72092",
+              "71949",
+              "72003",
+              "71916",
+              "72043",
+              "71605-2",
+              "72176-2",
+              "71917",
+              "71912",
+              "72026",
+              "71694",
+              "72193-2",
+              "71894-2",
+              "71861",
+              "71985-1",
+              "72206-1",
+              "72181",
+              "72082",
+              "72170",
+              "72105-2",
+              "72216",
+              "72127-1",
+              "72138",
+              "72106",
+              "72068",
+              "71718",
+              "71986",
+              "72099-2",
+              "72192",
+              "72113",
+              "72213-2",
+              "72190",
+              "71944",
+              "72121",
+              "72218-2",
+              "72185",
+              "72004",
+              "72036",
+              "72196-2",
+              "72175",
+              "72083",
+              "72246",
+              "72058-6",
+              "72202-1",
+              "72149-2",
+              "72077",
+              "72177",
+              "71530",
+              "72130",
+              "72013",
+              "72101",
+              "72179-1",
+              "71999",
+              "72210",
+              "72128",
+              "72201",
+              "71232-2",
+              "72209",
+              "72112",
+              "72253",
+              "72242",
+              "72159",
+              "72156",
+              "72173"
+            ],
+            "ineligible": [
+              "56034",
+              "70405-1",
+              "70405-2",
+              "71111",
+              "71142",
+              "71127",
+              "71235",
+              "71342-1",
+              "71342-2",
+              "71342-3",
+              "71342-4",
+              "71342-5",
+              "71344",
+              "71481-2",
+              "71508-1",
+              "71508-2",
+              "71508-3",
+              "71665",
+              "71237",
+              "71661-1",
+              "71661-2",
+              "71588",
+              "71618",
+              "71507-1",
+              "71870",
+              "71617",
+              "71840",
+              "71686",
+              "71823-3",
+              "71769",
+              "71892",
+              "71771",
+              "71227",
+              "71900",
+              "72047",
+              "72048",
+              "72046",
+              "71854",
+              "72017-1",
+              "72017-2",
+              "72017-3",
+              "72107",
+              "72093",
+              "71945",
+              "72133",
+              "72139",
+              "71973",
+              "72132",
+              "71959",
+              "72045",
+              "71965",
+              "72006-2",
+              "72050-1",
+              "72160",
+              "71970",
+              "72144",
+              "72126-2",
+              "72207",
+              "72187",
+              "72091",
+              "72125-1",
+              "72125-2",
+              "72125-3",
+              "72188",
+              "72198",
+              "72089",
+              "72124-1",
+              "72124-4",
+              "72071",
+              "72247",
+              "72162",
+              "72150",
+              "72184",
+              "72260",
+              "72239",
+              "72244",
+              "72222",
+              "70883",
+              "71683"
+            ],
+            "logging": {
+              "activeCTests": [
+                {
+                  "ctest_id": 9618,
+                  "mantis_id": 55622,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 10331,
+                  "mantis_id": 46164,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 10333,
+                  "mantis_id": 48405,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 10340,
+                  "mantis_id": 51886,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 10341,
+                  "mantis_id": 52345,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 15578,
+                  "mantis_id": 70018,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 16894,
+                  "mantis_id": 70136,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 18326,
+                  "mantis_id": 70290,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 18551,
+                  "mantis_id": 70332,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 19739,
+                  "mantis_id": 70407,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 22699,
+                  "mantis_id": 70773,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 23528,
+                  "mantis_id": 70766,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 23714,
+                  "mantis_id": 70830,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 24122,
+                  "mantis_id": 70837,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 24296,
+                  "mantis_id": 70806,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 24570,
+                  "mantis_id": 71005,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 24768,
+                  "mantis_id": 70916,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 25669,
+                  "mantis_id": 71028,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 26043,
+                  "mantis_id": 70798,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 26192,
+                  "mantis_id": 71057,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 27045,
+                  "mantis_id": 71230,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 27261,
+                  "mantis_id": 71254,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 27464,
+                  "mantis_id": 71285,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 28311,
+                  "mantis_id": 71228,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 28409,
+                  "mantis_id": 71393,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 28990,
+                  "mantis_id": 71172,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29023,
+                  "mantis_id": 71475,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29024,
+                  "mantis_id": 71469,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29259,
+                  "mantis_id": 71460,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29366,
+                  "mantis_id": 71509,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29369,
+                  "mantis_id": 71428,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29565,
+                  "mantis_id": 71548,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29571,
+                  "mantis_id": 71554,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 29572,
+                  "mantis_id": 71555,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 29573,
+                  "mantis_id": 71556,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 29574,
+                  "mantis_id": 71512,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29593,
+                  "mantis_id": 71498,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29705,
+                  "mantis_id": 71523,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29808,
+                  "mantis_id": 71565,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 29929,
+                  "mantis_id": 71173,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30024,
+                  "mantis_id": 71569,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30128,
+                  "mantis_id": 71599,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30332,
+                  "mantis_id": 71591,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30353,
+                  "mantis_id": 71619,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30487,
+                  "mantis_id": 71466,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30553,
+                  "mantis_id": 71652,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30897,
+                  "mantis_id": 71674,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 30927,
+                  "mantis_id": 71561,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31166,
+                  "mantis_id": 71479,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 31283,
+                  "mantis_id": 71315,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31411,
+                  "mantis_id": 71734,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31413,
+                  "mantis_id": 71736,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31509,
+                  "mantis_id": 71576,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31618,
+                  "mantis_id": 71659,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31710,
+                  "mantis_id": 71621,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31720,
+                  "mantis_id": 71654,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31884,
+                  "mantis_id": 71755,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 31922,
+                  "mantis_id": 71729,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32042,
+                  "mantis_id": 71693,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 32068,
+                  "mantis_id": 71721,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32581,
+                  "mantis_id": 71691,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32835,
+                  "mantis_id": 71730,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32836,
+                  "mantis_id": 71600,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32922,
+                  "mantis_id": 71773,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32923,
+                  "mantis_id": 71677,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 32924,
+                  "mantis_id": 71748,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 33237,
+                  "mantis_id": 71796,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 33260,
+                  "mantis_id": 71813,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 33467,
+                  "mantis_id": 71709,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 33468,
+                  "mantis_id": 71710,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 33491,
+                  "mantis_id": 71107,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 34077,
+                  "mantis_id": 70698,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 34221,
+                  "mantis_id": 71717,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 34224,
+                  "mantis_id": 71725,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 34636,
+                  "mantis_id": 71606,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 34852,
+                  "mantis_id": 71851,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35089,
+                  "mantis_id": 71794,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35451,
+                  "mantis_id": 71638,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 35453,
+                  "mantis_id": 71848,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35637,
+                  "mantis_id": 71934,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35675,
+                  "mantis_id": 71948,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35792,
+                  "mantis_id": 71995,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35820,
+                  "mantis_id": 71503,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 35859,
+                  "mantis_id": 71947,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36084,
+                  "mantis_id": 71844,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36294,
+                  "mantis_id": 71628,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36295,
+                  "mantis_id": 71969,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36303,
+                  "mantis_id": 71809,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36315,
+                  "mantis_id": 71968,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36342,
+                  "mantis_id": 71980,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36381,
+                  "mantis_id": 71768,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36386,
+                  "mantis_id": 70620,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 36545,
+                  "mantis_id": 71852,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36560,
+                  "mantis_id": 71881,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36562,
+                  "mantis_id": 71727,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36688,
+                  "mantis_id": 72005,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 36905,
+                  "mantis_id": 71987,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37012,
+                  "mantis_id": 71960,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37033,
+                  "mantis_id": 72034,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 37185,
+                  "mantis_id": 72002,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 37218,
+                  "mantis_id": 71935,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37229,
+                  "mantis_id": 72076,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37354,
+                  "mantis_id": 72052,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37427,
+                  "mantis_id": 71407,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37428,
+                  "mantis_id": 72008,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37512,
+                  "mantis_id": 72092,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37625,
+                  "mantis_id": 71949,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37689,
+                  "mantis_id": 72003,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37690,
+                  "mantis_id": 71916,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37692,
+                  "mantis_id": 72043,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37713,
+                  "mantis_id": 71605,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 37918,
+                  "mantis_id": 72176,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 37946,
+                  "mantis_id": 71917,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37947,
+                  "mantis_id": 71912,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37948,
+                  "mantis_id": 72026,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 37974,
+                  "mantis_id": 71694,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 38099,
+                  "mantis_id": 72193,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 38986,
+                  "mantis_id": 71894,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 38987,
+                  "mantis_id": 71861,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39083,
+                  "mantis_id": 71985,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 39093,
+                  "mantis_id": 72206,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 39096,
+                  "mantis_id": 72181,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39125,
+                  "mantis_id": 72082,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39346,
+                  "mantis_id": 72170,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39357,
+                  "mantis_id": 72105,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 39359,
+                  "mantis_id": 72216,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39472,
+                  "mantis_id": 72127,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 39497,
+                  "mantis_id": 72138,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39540,
+                  "mantis_id": 72106,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39541,
+                  "mantis_id": 72068,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39544,
+                  "mantis_id": 71718,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39550,
+                  "mantis_id": 71986,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39551,
+                  "mantis_id": 72099,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 39555,
+                  "mantis_id": 72192,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39650,
+                  "mantis_id": 72113,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39750,
+                  "mantis_id": 72213,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 39755,
+                  "mantis_id": 72190,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39784,
+                  "mantis_id": 71944,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 39785,
+                  "mantis_id": 72121,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40085,
+                  "mantis_id": 72218,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 40093,
+                  "mantis_id": 72185,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40104,
+                  "mantis_id": 72004,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40115,
+                  "mantis_id": 72036,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40117,
+                  "mantis_id": 72196,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 40135,
+                  "mantis_id": 72175,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40138,
+                  "mantis_id": 72083,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40156,
+                  "mantis_id": 72246,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40157,
+                  "mantis_id": 72058,
+                  "variant_id": 6
+                },
+                {
+                  "ctest_id": 40170,
+                  "mantis_id": 72202,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 40171,
+                  "mantis_id": 72149,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 40172,
+                  "mantis_id": 72077,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40176,
+                  "mantis_id": 72177,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40177,
+                  "mantis_id": 71530,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40180,
+                  "mantis_id": 72130,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40274,
+                  "mantis_id": 72013,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40278,
+                  "mantis_id": 72101,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40295,
+                  "mantis_id": 72179,
+                  "variant_id": 1
+                },
+                {
+                  "ctest_id": 40296,
+                  "mantis_id": 71999,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40315,
+                  "mantis_id": 72210,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40320,
+                  "mantis_id": 72128,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40321,
+                  "mantis_id": 72201,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40345,
+                  "mantis_id": 71232,
+                  "variant_id": 2
+                },
+                {
+                  "ctest_id": 40365,
+                  "mantis_id": 72209,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40377,
+                  "mantis_id": 72112,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40384,
+                  "mantis_id": 72253,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40396,
+                  "mantis_id": 72242,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40527,
+                  "mantis_id": 72159,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40529,
+                  "mantis_id": 72156,
+                  "variant_id": 0
+                },
+                {
+                  "ctest_id": 40531,
+                  "mantis_id": 72173,
+                  "variant_id": 0
+                }
+              ],
+              "controlCTests": [
+                {
+                  "ctest_id": 13082,
+                  "mantis_id": 57901,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 29807,
+                  "mantis_id": 71557,
+                  "variants": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "ctest_id": 36261,
+                  "mantis_id": 72053,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 34887,
+                  "mantis_id": 71937,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39098,
+                  "mantis_id": 71478,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40362,
+                  "mantis_id": 72224,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40179,
+                  "mantis_id": 72211,
+                  "variants": [
+                    2
+                  ]
+                },
+                {
+                  "ctest_id": 38093,
+                  "mantis_id": 71909,
+                  "variants": [
+                    1
+                  ]
+                },
+                {
+                  "ctest_id": 31414,
+                  "mantis_id": 71737,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40300,
+                  "mantis_id": 72252,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40090,
+                  "mantis_id": 72141,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40383,
+                  "mantis_id": 72194,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39017,
+                  "mantis_id": 71954,
+                  "variants": [
+                    1
+                  ]
+                },
+                {
+                  "ctest_id": 29564,
+                  "mantis_id": 71552,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 29567,
+                  "mantis_id": 71550,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 29566,
+                  "mantis_id": 71549,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39342,
+                  "mantis_id": 72214,
+                  "variants": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ]
+                },
+                {
+                  "ctest_id": 35814,
+                  "mantis_id": 71992,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 36260,
+                  "mantis_id": 72054,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40139,
+                  "mantis_id": 72084,
+                  "variants": [
+                    1
+                  ]
+                },
+                {
+                  "ctest_id": 40530,
+                  "mantis_id": 72241,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39552,
+                  "mantis_id": 72221,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 23735,
+                  "mantis_id": 70928,
+                  "variants": [
+                    1
+                  ]
+                },
+                {
+                  "ctest_id": 29570,
+                  "mantis_id": 71553,
+                  "variants": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "ctest_id": 33269,
+                  "mantis_id": 71283,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 37017,
+                  "mantis_id": 72074,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 38097,
+                  "mantis_id": 72189,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40367,
+                  "mantis_id": 72215,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 30657,
+                  "mantis_id": 71622,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40512,
+                  "mantis_id": 71610,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 31412,
+                  "mantis_id": 71735,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 10330,
+                  "mantis_id": 40983,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 37764,
+                  "mantis_id": 71975,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 23603,
+                  "mantis_id": 70873,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40518,
+                  "mantis_id": 72110,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 36075,
+                  "mantis_id": 71551,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39759,
+                  "mantis_id": 72122,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40091,
+                  "mantis_id": 72167,
+                  "variants": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "ctest_id": 14607,
+                  "mantis_id": 61126,
+                  "variants": [
+                    1,
+                    2,
+                    3
+                  ]
+                },
+                {
+                  "ctest_id": 37942,
+                  "mantis_id": 71772,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 38088,
+                  "mantis_id": 72079,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39749,
+                  "mantis_id": 72180,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40514,
+                  "mantis_id": 72226,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40515,
+                  "mantis_id": 71651,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 40103,
+                  "mantis_id": 72108,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 39376,
+                  "mantis_id": 72009,
+                  "variants": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "ctest_id": 36256,
+                  "mantis_id": 72035,
+                  "variants": []
+                },
+                {
+                  "ctest_id": 37707,
+                  "mantis_id": 72158,
+                  "variants": [
+                    1,
+                    2,
+                    3
+                  ]
+                }
+              ]
+            },
+            "meta": null,
+            "error": null
+          },
+          "currencyCode": "USD",
+          "platformSources": {
+            "query": null,
+            "cookie": null,
+            "geo": "us",
+            "host": "us"
+          },
+          "runtimeEnv": "server",
+          "trafficInfo": {
+            "trafficChannelId": -1,
+            "cip": null,
+            "cipTc": null,
+            "trafficChannelName": "branded",
+            "trafficChannelLiteId": 0
+          },
+          "agentId": 1,
+          "browserType": "CHROME",
+          "isBotUserAgent": false,
+          "deviceCategory": "desktop",
+          "userUsRegion": "IL",
+          "userCountry": "US",
+          "tid": "c40023a491eb1d0545b06fa04a",
+          "applicationGroup": 4,
+          "clientConnectionId": "C9P3oQVUDoTKPBtOUpanqEpixFJ",
+          "releaseNumber": "68e449ab",
+          "deploymentGroup": "main",
+          "isTrvOfficeIp": false,
+          "deviceBreakpoint": "4xl",
+          "host": "www.trivago.com"
+        },
+        "user": {
+          "status": "active",
+          "isAuthenticated": false,
+          "surveyNotification": null,
+          "personalInfoUpdateStatus": "default",
+          "isAppUser": false,
+          "hasJustAnsweredSurvey": false,
+          "isUserBlockAds": false,
+          "hasSeenWelcomeBackMessage": false,
+          "isFirstTimeVisitor": true,
+          "hasAppliedBudgetPreferenceFilter": false
+        },
+        "view": {
+          "currentPage": "srl",
+          "showCityCentreBoundaries": false,
+          "isPlatformNotificationDismissed": false,
+          "isAppInstallNotificationDismissed": false,
+          "banners": [],
+          "mapSurface": "roadmap",
+          "dfCarouselsCounter": 0,
+          "splitviewState": {
+            "viewport": "medium",
+            "start": null,
+            "center": "list",
+            "end": "map"
+          },
+          "mapBounds": null,
+          "isInteractionLocked": false
+        },
+        "urlEffects": [],
+        "translations": {
+          "showKeys": false,
+          "clientTranslationHash": "ad0756bfbda666bd88bb70016f31ae6d7b68451b36d79f8d3c32f7fd5c8de7f9"
+        },
+        "seo": {
+          "minMaxForecastedPrice": null,
+          "shouldNotBeIndexed": false,
+          "firstResultImage": {
+            "md": null,
+            "sm": null
+          },
+          "refinementPriceRange": {
+            "min": 0,
+            "max": null
+          },
+          "dTestStatus": false
+        },
+        "debug": {
+          "cTestLiveId": null,
+          "enableCTestLive": false
+        },
+        "router": {
+          "route": "/[languageCode]/srl/[slug]",
+          "query": {
+            "extraWait": "3000",
+            "search": "200-63698",
+            "languageCode": "en-US",
+            "slug": "hotels-balikesir-turkey"
+          },
+          "path": "/en-US/srl/hotels-balikesir-turkey",
+          "isDataRequest": false,
+          "fragment": ""
+        },
+        "consents": {
+          "consent": null,
+          "services": [],
+          "categories": []
+        },
+        "suggestions": {
+          "source": null,
+          "query": null,
+          "highlighted": null,
+          "ids": [],
+          "entities": {}
+        },
+        "sharedState": {
+          "popularCities": {
+            "highlightedCity": null
+          },
+          "poiList": {
+            "cityCenter": null
+          },
+          "lastInteractedItem": {
+            "accommodationNsId": null,
+            "sourceId": null
+          },
+          "searchDisplayInformation": {
+            "filters": [],
+            "totalAccommodationCount": 0,
+            "personalized": false
+          },
+          "polling": {
+            "requestId": null,
+            "alternativeRequestId": null
+          },
+          "loading": {
+            "mainLoadingStatus": "idle",
+            "alternativeLoadingStatus": "idle"
+          }
+        },
+        "gqlApi": {
+          "queries": {
+            "conceptMeta({\"input\":{\"nsids\":[{\"id\":63698,\"ns\":200}]}})": {
+              "status": "fulfilled",
+              "endpointName": "conceptMeta",
+              "requestId": "4r5ptn-SIdWRGiIxjoJ47",
+              "originalArgs": {
+                "input": {
+                  "nsids": [
+                    {
+                      "ns": 200,
+                      "id": 63698
+                    }
+                  ]
+                }
+              },
+              "startedTimeStamp": 1769174644933,
+              "data": [],
+              "fulfilledTimeStamp": 1769174644951
+            }
+          },
+          "mutations": {},
+          "provided": {},
+          "subscriptions": {},
+          "config": {
+            "online": true,
+            "focused": true,
+            "middlewareRegistered": true,
+            "refetchOnFocus": false,
+            "refetchOnReconnect": false,
+            "refetchOnMountOrArgChange": false,
+            "keepUnusedDataFor": 60,
+            "reducerPath": "gqlApi",
+            "invalidationBehavior": "delayed"
+          }
+        }
+      }
+    },
+    "__N_SSP": true
+  },
+  "page": "/[languageCode]/srl/[slug]",
+  "query": {
+    "extraWait": "3000",
+    "search": "200-63698",
+    "languageCode": "en-US",
+    "slug": "hotels-balikesir-turkey"
+  },
+  "buildId": "fiNcnjV2yqows7dCJ6IHJ",
+  "isFallback": false,
+  "isExperimentalCompile": false,
+  "dynamicIds": [
+    74538,
+    6062
+  ],
+  "gssp": true,
+  "scriptLoader": []
+}

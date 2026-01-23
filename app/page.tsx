@@ -102,9 +102,10 @@ export default function Dashboard() {
     location: string,
     isTarget: boolean,
     currency: string,
+    serpApiId?: string,
   ) => {
     if (!userId) return;
-    await api.addHotel(userId, name, location, isTarget, currency);
+    await api.addHotel(userId, name, location, isTarget, currency, serpApiId);
     await fetchData();
   };
 

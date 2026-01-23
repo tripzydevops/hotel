@@ -50,6 +50,7 @@ class ApiClient {
     location: string,
     isTarget: boolean,
     currency: string = "USD",
+    serpApiId?: string,
   ): Promise<void> {
     return this.fetch<void>(`/api/hotels/${userId}`, {
       method: "POST",
@@ -58,6 +59,7 @@ class ApiClient {
         location,
         is_target_hotel: isTarget,
         preferred_currency: currency,
+        serp_api_id: serpApiId,
       }),
     });
   }

@@ -97,7 +97,8 @@ class SerpApiClient:
         location: str,
         check_in: Optional[date] = None,
         check_out: Optional[date] = None,
-        currency: str = "USD"
+        currency: str = "USD",
+        serp_api_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch price for a specific hotel.
@@ -107,6 +108,8 @@ class SerpApiClient:
             location: City/region for the search
             check_in: Check-in date (defaults to tonight)
             check_out: Check-out date (defaults to tomorrow)
+            currency: Preferred currency
+            serp_api_id: ID to match against properties (optional)
         
         Returns:
             Dict with price info or None if not found
@@ -139,7 +142,7 @@ class SerpApiClient:
                 response.raise_for_status()
                 data = response.json()
                 
-                return self._parse_hotel_result(data, hotel_name, currency)
+                return self._parse_hotel_result(data, hotel_name, currency, serp_api_id)
                 
         except httpx.HTTPError as e:
             print(f"[SerpApi] HTTP error fetching {hotel_name}: {e}")
@@ -148,11 +151,13 @@ class SerpApiClient:
             print(f"[SerpApi] Error fetching {hotel_name}: {e}")
             return None
     
+    
     def _parse_hotel_result(
         self, 
         data: Dict[str, Any], 
         target_hotel: str,
-        default_currency: str = "USD"
+        default_currency: str = "USD",
+        target_serp_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Parse SerpApi response to extract hotel price."""
         
@@ -173,6 +178,11 @@ class SerpApiClient:
         best_score = 0
         
         for prop in properties:
+            # Prio 1: ID Match
+            if target_serp_id and str(prop.get("hotel_id")) == str(target_serp_id):
+                best_match = prop
+                break
+
             name = prop.get("name", "").lower()
             # Simple matching score
             score = sum(1 for word in target_lower.split() if word in name)

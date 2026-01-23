@@ -320,134 +320,149 @@ async def trigger_monitor(
     except Exception as e:
         print(f"Failed to create session: {e}")
 
-    for hotel in hotels:
-        hotel_id = hotel["id"]
-        # Normalize for database consistency
-        hotel_name = hotel["name"].title().strip()
-        location = (hotel.get("location") or "").title().strip()
-        
-        # Determine currency: Hotel-specific first, then User-default
-        hotel_currency = hotel.get("preferred_currency") or user_default_currency
-        
-        try:
-            # Fetch current price from SerpApi
-            price_data = await serpapi_client.fetch_hotel_price(
-                hotel_name=hotel_name,
-                location=location,
-                check_in=check_in,
-                currency=hotel_currency
-            )
-            
-            if not price_data:
-                errors.append(f"Could not fetch price for {hotel_name}")
-                continue
-            
-            current_price = price_data["price"]
-            currency = price_data.get("currency", "USD")
-            
-            # Get previous price
-            prev_result = db.table("price_logs") \
-                .select("price") \
-                .eq("hotel_id", hotel_id) \
-                .order("recorded_at", desc=True) \
-                .limit(1) \
-                .execute()
-            
-            previous_price = prev_result.data[0]["price"] if prev_result.data else None
-            
-            # Log new price
-            # Log new price (Enriched with Vendor)
-            db.table("price_logs").insert({
-                "hotel_id": hotel_id,
-                "price": current_price,
-                "currency": currency,
-                "check_in_date": (check_in or date.today()).isoformat(),
-                "source": "serpapi",
-                "vendor": price_data.get("vendor"), 
-            }).execute()
+    # Process all hotels in parallel to avoid Vercel timeouts
+    # Max concurrency: 5
+    semaphore = asyncio.Semaphore(5)
+    
+    # Store target price for second pass
+    target_price_ref = {"value": None}
 
-            # ENRICHMENT: Update hotel metadata (Stars, Rating, Image)
-            # We do this every scan to ensure we have the latest data
-            meta_update = {}
-            if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
-            if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
-            if price_data.get("property_token"): meta_update["property_token"] = price_data["property_token"]
-            if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+    async def process_hotel(hotel):
+        nonlocal prices_updated, alerts_generated
+        async with semaphore:
+            hotel_id = hotel["id"]
+            hotel_name = hotel["name"].title().strip()
+            location = (hotel.get("location") or "").title().strip()
+            serp_api_id = hotel.get("serp_api_id")
+            hotel_currency = hotel.get("preferred_currency") or user_default_currency
             
-            if meta_update:
-                try:
-                    db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
-                except Exception as e:
-                    print(f"[Enrichment] Failed to update hotel metadata: {e}")
-            
-            prices_updated += 1
-            
-            # TRACKING: Save to shared hotel directory for future auto-complete
             try:
-                # Use cleaned name from SerpApi if available
-                db.table("hotel_directory").upsert({
-                    "name": price_data.get("hotel_name", hotel_name),
-                    "location": location,
-                    "serp_api_id": price_data.get("raw_data", {}).get("hotel_id"),
-                    "last_verified_at": datetime.now().isoformat()
-                }, on_conflict="name,location").execute()
-            except Exception as e:
-                print(f"[Directory] Failed to upsert hotel: {e}")
-            
-            # Track target hotel price
-            if hotel["is_target_hotel"]:
-                target_price = current_price
-            
-            # Check for threshold breach
-            if previous_price:
-                threshold_alert = price_comparator.check_threshold_breach(
-                    current_price, previous_price, threshold
+                # Fetch Real Price
+                price_data = await serpapi_client.fetch_hotel_price(
+                    hotel_name=hotel_name,
+                    location=location,
+                    currency=hotel_currency,
+                    serp_api_id=serp_api_id
                 )
-                if threshold_alert:
-                    # Save alert
-                    db.table("alerts").insert({
-                        "user_id": str(user_id),
-                        "hotel_id": hotel_id,
-                        **threshold_alert,
-                    }).execute()
-                    alerts_generated += 1
-                    
-                    # Send notification via all enabled channels
-                    if settings:
-                        await notification_service.send_notifications(
-                            settings=settings,
-                            hotel_name=hotel_name,
-                            alert_message=threshold_alert["message"],
-                            current_price=threshold_alert["new_price"],
-                            previous_price=threshold_alert["old_price"],
-                            currency=currency
-                        )
-        
-            # Log the monitor attempt (Enriched)
-            await log_query(
-                db=db,
-                user_id=user_id,
-                hotel_name=price_data.get("hotel_name", hotel_name) if price_data else hotel_name,
-                location=location,
-                action_type="monitor",
-                status="success" if price_data else "not_found",
-                price=current_price if price_data else None,
-                currency=currency if price_data else None,
-                vendor=price_data.get("vendor") if price_data else None,
-                session_id=session_id
-            )
+                
+                if not price_data:
+                    errors.append(f"Could not fetch price for {hotel_name}")
+                    await log_query(
+                        db=db,
+                        user_id=user_id,
+                        hotel_name=hotel_name,
+                        location=location,
+                        action_type="monitor",
+                        status="not_found",
+                        session_id=session_id
+                    )
+                    return
+
+                current_price = price_data["price"]
+                prices_updated += 1
+                
+                # Track target hotel price
+                if hotel["is_target_hotel"]:
+                    target_price_ref["value"] = current_price
+                
+                # Get previous price
+                prev_result = db.table("price_logs") \
+                    .select("price") \
+                    .eq("hotel_id", hotel_id) \
+                    .order("recorded_at", desc=True) \
+                    .limit(1) \
+                    .execute()
+                
+                previous_price = prev_result.data[0]["price"] if prev_result.data else None
+                
+                # Log new price (Enriched with Vendor)
+                db.table("price_logs").insert({
+                    "hotel_id": hotel_id,
+                    "price": current_price,
+                    "currency": hotel_currency,
+                    "check_in_date": (check_in or date.today()).isoformat(),
+                    "source": "serpapi",
+                    "vendor": price_data.get("vendor"), 
+                }).execute()
+
+                # ENRICHMENT: Update hotel metadata (Stars, Rating, Image)
+                meta_update = {}
+                if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
+                if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
+                if price_data.get("property_token"): meta_update["property_token"] = price_data["property_token"]
+                if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+                
+                if meta_update:
+                    try:
+                        db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+                    except Exception as e:
+                        print(f"[Enrichment] Failed to update hotel metadata: {e}")
+                
+                # TRACKING: Save to shared hotel directory for future auto-complete
+                try:
+                    db.table("hotel_directory").upsert({
+                        "name": price_data.get("hotel_name", hotel_name),
+                        "location": location,
+                        "serp_api_id": price_data.get("raw_data", {}).get("hotel_id"),
+                        "last_verified_at": datetime.now().isoformat()
+                    }, on_conflict="name,location").execute()
+                except Exception as e:
+                    print(f"[Directory] Failed to upsert hotel: {e}")
+                
+                # Check for threshold breach
+                if previous_price:
+                    threshold_alert = price_comparator.check_threshold_breach(
+                        current_price, previous_price, threshold
+                    )
+                    if threshold_alert:
+                        db.table("alerts").insert({
+                            "user_id": str(user_id),
+                            "hotel_id": hotel_id,
+                            **threshold_alert,
+                        }).execute()
+                        alerts_generated += 1
+                        
+                        if settings:
+                            await notification_service.send_notifications(
+                                settings=settings,
+                                hotel_name=hotel_name,
+                                alert_message=threshold_alert["message"],
+                                current_price=threshold_alert["new_price"],
+                                previous_price=threshold_alert["old_price"],
+                                currency=hotel_currency
+                            )
             
-        except Exception as e:
-            errors.append(f"Error processing {hotel_name}: {str(e)}")
-            await log_query(
-                db=db,
-                user_id=user_id,
-                hotel_name=hotel_name,
-                location=location,
-                action_type="monitor",
-                status="error",
-                session_id=session_id
-            )
+                # Log the monitor attempt (Enriched)
+                await log_query(
+                    db=db,
+                    user_id=user_id,
+                    hotel_name=price_data.get("hotel_name", hotel_name) if price_data else hotel_name,
+                    location=location,
+                    action_type="monitor",
+                    status="success" if price_data else "not_found",
+                    price=current_price if price_data else None,
+                    currency=hotel_currency if price_data else None,
+                    vendor=price_data.get("vendor") if price_data else None,
+                    session_id=session_id
+                )
+                
+            except Exception as e:
+                errors.append(f"Error processing {hotel_name}: {str(e)}")
+                await log_query(
+                    db=db,
+                    user_id=user_id,
+                    hotel_name=hotel_name,
+                    location=location,
+                    action_type="monitor",
+                    status="error",
+                    session_id=session_id
+                )
+
+    # Run tasks concurrently
+    await asyncio.gather(*[process_hotel(hotel) for hotel in hotels])
+    
+    # Extract target price for second pass
+    target_price = target_price_ref["value"]
     
     # Finalize Session
     if session_id:
@@ -558,6 +573,24 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
         
+    # Check hotel limit (Max 5 for demo)
+    existing_count = db.table("hotels").select("id", count="exact").eq("user_id", str(user_id)).execute()
+    if existing_count.count is not None and existing_count.count >= 5:
+        raise HTTPException(status_code=403, detail="Hotel limit reached (Max 5). Please upgrade to add more.")
+        
+    
+    # Check for duplicates via SerpApi ID
+    if hotel.serp_api_id:
+        existing = db.table("hotels") \
+            .select("*") \
+            .eq("user_id", str(user_id)) \
+            .eq("serp_api_id", hotel.serp_api_id) \
+            .execute()
+            
+        if existing.data:
+            print(f"Duplicate prevented: Hotel {hotel.name} (ID: {hotel.serp_api_id}) already exists.")
+            return existing.data[0]
+
     # If this is a target hotel, unset any existing target
     if hotel.is_target_hotel:
         db.table("hotels") \

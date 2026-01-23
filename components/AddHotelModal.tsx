@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 interface AddHotelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, location: string, isTarget: boolean, currency: string) => Promise<void>;
+  onAdd: (name: string, location: string, isTarget: boolean, currency: string, serpApiId?: string) => Promise<void>;
 }
 
 export default function AddHotelModal({
@@ -19,6 +19,7 @@ export default function AddHotelModal({
   const [location, setLocation] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [isTarget, setIsTarget] = useState(false);
+  const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -67,6 +68,7 @@ export default function AddHotelModal({
   const handleSelectSuggestion = (suggestion: any) => {
     setName(suggestion.name);
     setLocation(suggestion.location);
+    setSerpApiId(suggestion.serp_api_id);
     setShowSuggestions(false);
   };
 
@@ -76,13 +78,14 @@ export default function AddHotelModal({
     e.preventDefault();
     setLoading(true);
     try {
-      await onAdd(name, location, isTarget, currency);
+      await onAdd(name, location, isTarget, currency, serpApiId);
       onClose();
       // Reset form
       setName("");
       setLocation("");
       setCurrency("USD");
       setIsTarget(false);
+      setSerpApiId(undefined);
     } catch (error) {
       console.error("Error adding hotel:", error);
     } finally {
@@ -119,6 +122,7 @@ export default function AddHotelModal({
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
+                  setSerpApiId(undefined); // Reset ID if user types manually
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
@@ -138,6 +142,7 @@ export default function AddHotelModal({
                   onClick={() => {
                     setName("");
                     setSuggestions([]);
+                    setSerpApiId(undefined);
                     setShowSuggestions(false);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
