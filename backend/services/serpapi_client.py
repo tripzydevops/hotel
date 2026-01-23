@@ -137,7 +137,7 @@ class SerpApiClient:
         }
         
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=8.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
                 response.raise_for_status()
                 data = response.json()

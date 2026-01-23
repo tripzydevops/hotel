@@ -4,6 +4,7 @@ Main application with monitoring and API endpoints.
 """
 
 import os
+import asyncio
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
