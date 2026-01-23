@@ -165,6 +165,18 @@ export default function AdminPage() {
 
       {/* Content */}
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {error && (
+            <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-lg flex items-center gap-3 text-red-200 mb-6">
+                <AlertCircle className="w-5 h-5 text-red-400" />
+                <div>
+                    <p className="font-bold">Error Loading Data</p>
+                    <p className="text-xs opacity-80">{error}</p>
+                </div>
+                <button onClick={loadTabData} className="ml-auto hover:bg-red-500/20 p-2 rounded">
+                    <RefreshCw className="w-4 h-4" />
+                </button>
+            </div>
+        )}
         {loading && <div className="text-[var(--soft-gold)] flex items-center gap-2 mb-4"><Loader2 className="w-4 h-4 animate-spin"/> Loading...</div>}
         
         {/* OVERVIEW TAB */}

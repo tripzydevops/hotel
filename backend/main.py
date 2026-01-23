@@ -1312,6 +1312,8 @@ async def export_report(user_id: UUID, format: str = "csv", db: Client = Depends
 @app.get("/api/admin/stats", response_model=AdminStats)
 async def get_admin_stats(db: Client = Depends(get_supabase)):
     """Get system-wide statistics."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:
         # Count Users (approx via settings or profiles)
         users_count = db.table("settings").select("user_id", count="exact").execute().count or 0
@@ -1348,6 +1350,8 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
 @app.get("/api/admin/users", response_model=List[AdminUser])
 async def get_admin_users(db: Client = Depends(get_supabase)):
     """List all users with stats."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing. Admin access unavailable.")
     try:
         # Get base user info from profiles
         profiles = db.table("user_profiles").select("*").execute().data or []
@@ -1403,6 +1407,8 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
 @app.get("/api/admin/directory", response_model=List[AdminDirectoryEntry])
 async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabase)):
     """List directory entries."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:
         result = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit).execute()
         entries = []
