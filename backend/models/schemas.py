@@ -178,6 +178,20 @@ class QueryLog(BaseModel):
     vendor: Optional[str] = None
 
 
+class ScanSession(BaseModel):
+    id: UUID
+    user_id: UUID
+    session_type: str = "manual"
+    status: str = "pending"
+    hotels_count: int = 0
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    logs: Optional[List[QueryLog]] = None
+
+    class Config:
+        from_attributes = True
+
+
 class DashboardResponse(BaseModel):
     """Response for the main dashboard Bento Grid."""
     target_hotel: Optional[HotelWithPrice] = None
@@ -196,20 +210,6 @@ class MonitorResult(BaseModel):
     alerts_generated: int
     session_id: Optional[UUID] = None
     errors: List[str] = []
-
-
-class ScanSession(BaseModel):
-    id: UUID
-    user_id: UUID
-    session_type: str = "manual"
-    status: str = "pending"
-    hotels_count: int = 0
-    created_at: datetime
-    completed_at: Optional[datetime] = None
-    logs: Optional[List[QueryLog]] = None
-
-    class Config:
-        from_attributes = True
 
 
 class MarketAnalysis(BaseModel):
