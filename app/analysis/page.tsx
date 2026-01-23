@@ -15,6 +15,7 @@ import {
   LayoutGrid
 } from "lucide-react";
 import { api } from "@/lib/api";
+import Link from "next/link";
 
 const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -166,9 +167,9 @@ export default function AnalysisPage() {
               </div>
             </div>
 
-            <button className="btn-gold w-full mt-8 font-black text-xs uppercase tracking-widest py-4">
+            <Link href="/reports" className="btn-gold w-full mt-8 font-black text-xs uppercase tracking-widest py-4 text-center block">
               Detailed History Repo
-            </button>
+            </Link>
           </div>
         </div>
       </main>
