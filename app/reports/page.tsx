@@ -11,11 +11,13 @@ import {
   AlertCircle,
   FileSpreadsheet,
   FileType,
-  ArrowRight,
   Activity,
-  History
+  History,
+  ArrowRight
 } from "lucide-react";
 import { api } from "@/lib/api";
+import ScanSessionModal from "@/components/ScanSessionModal";
+import { ScanSession } from "@/types";
 
 const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -24,6 +26,8 @@ export default function ReportsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -51,6 +55,11 @@ export default function ReportsPage() {
     }
   };
 
+  const handleOpenSession = (session: ScanSession) => {
+    setSelectedSession(session);
+    setIsSessionModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
@@ -65,6 +74,12 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen pb-12 bg-[var(--deep-ocean)]">
       <Header />
+      
+      <ScanSessionModal 
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        session={selectedSession}
+      />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
@@ -183,7 +198,10 @@ export default function ReportsPage() {
                       <span className="text-[10px] text-[var(--text-muted)] ml-1 font-bold uppercase">Properties</span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 rounded-lg bg-white/5 group-hover:bg-[var(--soft-gold)] group-hover:text-[var(--deep-ocean)] transition-all">
+                      <button 
+                        onClick={() => handleOpenSession(session)}
+                        className="p-2 rounded-lg bg-white/5 group-hover:bg-[var(--soft-gold)] group-hover:text-[var(--deep-ocean)] transition-all"
+                      >
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </td>

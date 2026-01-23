@@ -83,9 +83,6 @@ async def log_query(
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
-        # Robustness: Only include user_id if it's not a mock ID that would fail FK constraints
-        # For this prototype, we'll try-except the insertion to ensure the log is created 
-        # even if the FK fails (by retrying without the user_id)
         log_data = {
             "user_id": str(user_id) if user_id else None,
             "hotel_name": hotel_name.title().strip(),
@@ -98,15 +95,7 @@ async def log_query(
             "session_id": str(session_id) if session_id else None
         }
         
-        try:
-            db.table("query_logs").insert(log_data).execute()
-        except Exception as e:
-            if "foreign key constraint" in str(e).lower() and user_id:
-                # Retry without user_id if it's a mock user
-                log_data["user_id"] = None
-                db.table("query_logs").insert(log_data).execute()
-            else:
-                raise e
+        db.table("query_logs").insert(log_data).execute()
                 
     except Exception as e:
         print(f"[QueryLogs] Failed to log {action_type}: {e}")
@@ -803,11 +792,34 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
                     should_run = True
             
             if should_run:
-                # Trigger monitor (we await it here, but could push to background)
-                # For Serverless with 10s timeout, best to run explicitly or spawn simple task
-                # Re-using the logic from trigger_monitor
-                await trigger_monitor(UUID(user_id), None, db)
-                results["triggered"] += 1
+                # Call run_monitor_background directly (not via HTTP endpoint)
+                # Create session first
+                hotels_result = db.table("hotels").select("*").eq("user_id", user_id).execute()
+                hotels = hotels_result.data or []
+                
+                if hotels:
+                    session_id = None
+                    try:
+                        session_result = db.table("scan_sessions").insert({
+                            "user_id": user_id,
+                            "session_type": "scheduled",
+                            "hotels_count": len(hotels),
+                            "status": "pending"
+                        }).execute()
+                        if session_result.data:
+                            session_id = session_result.data[0]["id"]
+                    except Exception as e:
+                        print(f"Cron: Failed to create session for {user_id}: {e}")
+                    
+                    # Run directly (async)
+                    await run_monitor_background(
+                        user_id=UUID(user_id),
+                        hotels=hotels,
+                        check_in=None,
+                        db=db,
+                        session_id=session_id
+                    )
+                    results["triggered"] += 1
             else:
                 results["skipped"] += 1
                 
