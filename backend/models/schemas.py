@@ -248,6 +248,7 @@ class AdminStats(BaseModel):
     total_scans: int
     api_calls_today: int
     directory_size: int
+    service_role_active: bool = False
 
 class AdminUserCreate(BaseModel):
     email: str

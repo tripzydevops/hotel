@@ -1336,7 +1336,8 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
         total_hotels=hotels_count,
         total_scans=scans_count,
         api_calls_today=api_calls,
-        directory_size=directory_count
+        directory_size=directory_count,
+        service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ
     )
 
 @app.get("/api/admin/users", response_model=List[AdminUser])

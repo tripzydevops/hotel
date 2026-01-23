@@ -170,6 +170,15 @@ export default function AdminPage() {
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {!stats.service_role_active && (
+                <div className="col-span-full bg-red-500/10 border border-red-500/50 p-4 rounded-lg flex items-center gap-3 text-red-200">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    <div>
+                        <p className="font-bold">Service Role Key Missing</p>
+                        <p className="text-xs opacity-80">Admin data requires SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.</p>
+                    </div>
+                </div>
+            )}
             <StatCard label="Total Users" value={stats.total_users} icon={Users} />
             <StatCard label="Total Hotels" value={stats.total_hotels} icon={Building2} />
             <StatCard label="Total Scans" value={stats.total_scans} icon={Activity} />
