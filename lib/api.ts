@@ -100,6 +100,10 @@ class ApiClient {
       method: "DELETE",
     });
   }
+
+  async getSessionLogs(sessionId: string): Promise<QueryLog[]> {
+    return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
+  }
 }
 
 export const api = new ApiClient();

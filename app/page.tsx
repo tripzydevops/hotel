@@ -14,6 +14,8 @@ import { DashboardData, UserSettings } from "@/types";
 import RecentSearches from "@/components/RecentSearches";
 import SkeletonTile from "@/components/SkeletonTile";
 import ScanHistory from "@/components/ScanHistory";
+import ScanSessionModal from "@/components/ScanSessionModal";
+import { ScanSession } from "@/types";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -31,6 +33,15 @@ export default function Dashboard() {
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
+
+  // Session Modal State
+  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+
+  const handleOpenSession = (session: ScanSession) => {
+    setSelectedSession(session);
+    setIsSessionModalOpen(true);
+  };
 
 
   useEffect(() => {
@@ -178,6 +189,12 @@ export default function Dashboard() {
         onClose={() => setIsSettingsOpen(false)}
         settings={userSettings}
         onSave={handleSaveSettings}
+      />
+
+      <ScanSessionModal 
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        session={selectedSession}
       />
 
       {/* Main Content */}
@@ -374,15 +391,15 @@ export default function Dashboard() {
 
         {/* Scan History Row */}
         <ScanHistory 
-          scans={data?.scan_history || []} 
-          onDelete={handleDeleteLog}
+          sessions={data?.recent_sessions || []} 
+          onOpenSession={handleOpenSession}
         />
 
         {/* Recent Searches Row */}
         <RecentSearches 
-          searches={data?.recent_searches || []} 
+          sessions={data?.recent_sessions?.slice(0, 4) || []} 
+          onOpenSession={handleOpenSession}
           onAddHotel={handleQuickAdd}
-          onDelete={handleDeleteLog}
         />
 
         {/* Footer */}

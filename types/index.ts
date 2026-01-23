@@ -60,16 +60,20 @@ export interface UserSettings {
   currency?: string;
 }
 
-export interface QueryLog {
-  id: string;
-  hotel_name: string;
-  location?: string;
-  action_type: string;
-  status: string;
-  created_at: string;
-  price?: number;
-  currency?: string;
   vendor?: string;
+  session_id?: string;
+}
+
+export interface ScanSession {
+  id: string;
+  user_id: string;
+  session_type: "manual" | "scheduled";
+  status: "pending" | "completed" | "failed";
+  hotels_count: number;
+  created_at: string;
+  completed_at?: string;
+  // Enriched with logs
+  logs?: QueryLog[];
 }
 
 export interface DashboardData {
@@ -77,6 +81,7 @@ export interface DashboardData {
   competitors: HotelWithPrice[];
   recent_searches: QueryLog[];
   scan_history: QueryLog[];
+  recent_sessions: ScanSession[];
   unread_alerts_count: number;
   last_updated: string;
 }

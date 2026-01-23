@@ -66,16 +66,12 @@ def get_supabase() -> Client:
 
 # ===== Helpers =====
 
-async def log_query(
-    db: Client,
-    user_id: Optional[UUID],
-    hotel_name: str,
-    location: Optional[str],
     action_type: str,
     status: str = "success",
     price: Optional[float] = None,
     currency: Optional[str] = None,
-    vendor: Optional[str] = None
+    vendor: Optional[str] = None,
+    session_id: Optional[UUID] = None
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
@@ -87,7 +83,8 @@ async def log_query(
             "status": status,
             "price": price,
             "currency": currency,
-            "vendor": vendor
+            "vendor": vendor,
+            "session_id": str(session_id) if session_id else None
         }).execute()
     except Exception as e:
         print(f"[QueryLogs] Failed to log {action_type}: {e}")
@@ -223,11 +220,25 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         except Exception as e:
             print(f"Error fetching scan_history: {e}")
 
+        # Fetch recent sessions (The new grouping layer)
+        recent_sessions = []
+        try:
+            sessions_result = db.table("scan_sessions") \
+                .select("*") \
+                .eq("user_id", str(user_id)) \
+                .order("created_at", desc=True) \
+                .limit(10) \
+                .execute()
+            recent_sessions = sessions_result.data or []
+        except Exception as e:
+            print(f"Error fetching sessions: {e}")
+
         resp = DashboardResponse(
             target_hotel=target_hotel,
             competitors=competitors,
             recent_searches=unique_recent,
             scan_history=scan_history,
+            recent_sessions=recent_sessions,
             unread_alerts_count=unread_count,
             last_updated=datetime.now(timezone.utc),
         )
@@ -288,6 +299,20 @@ async def trigger_monitor(
     # Find target hotel price for competitor comparison
     target_price = None
     
+    # 0. Create a Scan Session for this batch
+    session_id = None
+    try:
+        session_result = db.table("scan_sessions").insert({
+            "user_id": str(user_id),
+            "session_type": "manual",
+            "hotels_count": len(hotels),
+            "status": "pending"
+        }).execute()
+        if session_result.data:
+            session_id = session_result.data[0]["id"]
+    except Exception as e:
+        print(f"Failed to create session: {e}")
+
     for hotel in hotels:
         hotel_id = hotel["id"]
         # Normalize for database consistency
@@ -401,7 +426,8 @@ async def trigger_monitor(
                 status="success" if price_data else "not_found",
                 price=current_price if price_data else None,
                 currency=currency if price_data else None,
-                vendor=price_data.get("vendor") if price_data else None
+                vendor=price_data.get("vendor") if price_data else None,
+                session_id=session_id
             )
             
         except Exception as e:
@@ -412,8 +438,19 @@ async def trigger_monitor(
                 hotel_name=hotel_name,
                 location=location,
                 action_type="monitor",
-                status="error"
+                status="error",
+                session_id=session_id
             )
+    
+    # Finalize Session
+    if session_id:
+        try:
+            db.table("scan_sessions").update({
+                "status": "completed" if not errors else "partial",
+                "completed_at": datetime.now().isoformat()
+            }).eq("id", session_id).execute()
+        except Exception as e:
+            print(f"Failed to finalize session: {e}")
     
     # Second pass: check competitor undercuts
     if target_price:
@@ -828,15 +865,19 @@ async def sync_directory_manual(db: Optional[Client] = Depends(get_supabase)):
 
     return {"status": "success", "synced_count": synced, "total_scanned": total_scanned}
 
-@app.delete("/api/logs/{log_id}")
-async def delete_log(log_id: UUID, db: Client = Depends(get_supabase)):
-    """Delete a specific query log entry."""
+@app.get("/api/sessions/{session_id}/logs", response_model=List[QueryLog])
+async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase)):
+    """Fetch all query logs linked to a specific scan session."""
     try:
-        db.table("query_logs").delete().eq("id", str(log_id)).execute()
-        return {"status": "success"}
+        result = db.table("query_logs") \
+            .select("*") \
+            .eq("session_id", str(session_id)) \
+            .order("created_at", desc=True) \
+            .execute()
+        return result.data or []
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        print(f"Error fetching session logs: {e}")
+        return []
 
 if __name__ == "__main__":
     import uvicorn

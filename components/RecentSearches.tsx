@@ -1,71 +1,75 @@
 "use client";
 
-import { QueryLog } from "@/types";
-import { Search, MapPin, Plus, History, Trash2 } from "lucide-react";
+import { ScanSession } from "@/types";
+import { History, Plus, ChevronRight, Activity, Zap } from "lucide-react";
 
 interface RecentSearchesProps {
-  searches: QueryLog[];
+  sessions: ScanSession[];
+  onOpenSession: (session: ScanSession) => void;
   onAddHotel: (name: string, location: string) => void;
-  onDelete: (id: string) => void;
 }
 
-export default function RecentSearches({ searches, onAddHotel, onDelete }: RecentSearchesProps) {
-  if (searches.length === 0) return null;
+export default function RecentSearches({ sessions, onOpenSession, onAddHotel }: RecentSearchesProps) {
+  if (sessions.length === 0) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
-    <div className="mt-8">
-      <div className="flex items-center gap-2 mb-4">
-        <History className="w-5 h-5 text-[var(--soft-gold)]" />
-        <h2 className="text-xl font-bold text-white">Recent Activity</h2>
+    <div className="mt-12">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+             <Zap className="w-5 h-5" />
+          </div>
+          <h2 className="text-xl font-black text-white tracking-tight">Rapid Pulse History</h2>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {searches.map((search) => (
-          <div 
-            key={search.id}
-            className="glass-card p-4 flex items-center justify-between group hover:border-[var(--soft-gold)]/50 transition-all"
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {sessions.map((session) => (
+          <button 
+            key={session.id}
+            onClick={() => onOpenSession(session)}
+            className="group glass-card p-5 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[var(--soft-gold)]/30 text-left relative overflow-hidden"
           >
-            <div 
-              className="flex items-center gap-3 overflow-hidden cursor-pointer flex-1"
-              onClick={() => onAddHotel(search.hotel_name, search.location || "")}
-            >
-              <div className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors shrink-0">
-                <Search className="w-4 h-4" />
+            {/* Background Glow */}
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[var(--soft-gold)]/5 blur-2xl group-hover:bg-[var(--soft-gold)]/10 transition-all rounded-full" />
+            
+            <div className="flex flex-col gap-4 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-white uppercase tracking-widest">
+                  {formatDate(session.created_at)}
+                </span>
               </div>
-              <div className="overflow-hidden">
-                <p className="text-sm font-bold text-white truncate">{search.hotel_name}</p>
-                {search.location && (
-                  <div className="flex items-center gap-1 text-[var(--text-muted)] text-[10px]">
-                    <MapPin className="w-2 h-2" />
-                    <span className="truncate">{search.location}</span>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddHotel(search.hotel_name, search.location || "");
-                }}
-                className="p-2 rounded-lg bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] transition-all sm:opacity-0 sm:group-hover:opacity-100"
-                title="Add as Competitor"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(search.id);
-                }}
-                className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100"
-                title="Remove from history"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div>
+                <p className="text-sm font-black text-white mb-1 group-hover:text-[var(--soft-gold)] transition-colors">
+                   {session.hotels_count} Properties Batch
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    session.status === 'completed' ? 'bg-optimal-green' : 'bg-amber-500'
+                  }`} />
+                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">
+                    {session.status} Scan
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                <span className="text-[10px] font-bold text-[var(--text-muted)]">View Details</span>
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
