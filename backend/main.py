@@ -72,7 +72,10 @@ async def log_query(
     hotel_name: str,
     location: Optional[str],
     action_type: str,
-    status: str = "success"
+    status: str = "success",
+    price: Optional[float] = None,
+    currency: Optional[str] = None,
+    vendor: Optional[str] = None
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
@@ -81,7 +84,10 @@ async def log_query(
             "hotel_name": hotel_name.title().strip(),
             "location": location.title().strip() if location else None,
             "action_type": action_type,
-            "status": status
+            "status": status,
+            "price": price,
+            "currency": currency,
+            "vendor": vendor
         }).execute()
     except Exception as e:
         print(f"[QueryLogs] Failed to log {action_type}: {e}")
@@ -346,8 +352,9 @@ async def trigger_monitor(
             
             # TRACKING: Save to shared hotel directory for future auto-complete
             try:
+                # Use cleaned name from SerpApi if available
                 db.table("hotel_directory").upsert({
-                    "name": hotel_name,
+                    "name": price_data.get("hotel_name", hotel_name),
                     "location": location,
                     "serp_api_id": price_data.get("raw_data", {}).get("hotel_id"),
                     "last_verified_at": datetime.now().isoformat()
@@ -384,14 +391,17 @@ async def trigger_monitor(
                             currency=currency
                         )
         
-            # Log the monitor attempt
+            # Log the monitor attempt (Enriched)
             await log_query(
                 db=db,
                 user_id=user_id,
-                hotel_name=hotel_name,
+                hotel_name=price_data.get("hotel_name", hotel_name) if price_data else hotel_name,
                 location=location,
                 action_type="monitor",
-                status="success" if price_data else "not_found"
+                status="success" if price_data else "not_found",
+                price=current_price if price_data else None,
+                currency=currency if price_data else None,
+                vendor=price_data.get("vendor") if price_data else None
             )
             
         except Exception as e:

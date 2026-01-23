@@ -47,12 +47,29 @@ export default function ScanHistory({ scans, onDelete }: ScanHistoryProps) {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white capitalize">
-                    {scan.action_type} Pulse
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-white capitalize">
+                      {scan.action_type} Pulse
+                    </p>
+                    {scan.price && (
+                      <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded leading-none">
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: scan.currency || "USD",
+                          minimumFractionDigits: 0,
+                        }).format(scan.price)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] mt-0.5">
                     <Clock className="w-2 h-2" />
                     <span>{formatDate(scan.created_at)}</span>
+                    {scan.vendor && (
+                      <>
+                        <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                        <span className="italic">via {scan.vendor}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

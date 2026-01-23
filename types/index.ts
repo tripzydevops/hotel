@@ -67,6 +67,9 @@ export interface QueryLog {
   action_type: string;
   status: string;
   created_at: string;
+  price?: number;
+  currency?: string;
+  vendor?: string;
 }
 
 export interface DashboardData {

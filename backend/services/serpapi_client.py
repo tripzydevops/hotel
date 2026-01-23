@@ -28,6 +28,35 @@ class SerpApiClient:
         if not text:
             return ""
         return " ".join(word.capitalize() for word in text.split())
+
+    def _clean_hotel_name(self, name: str) -> str:
+        """
+        Clean hotel name by removing promotional noise often found in SerpApi results.
+        e.g. "Ramada by Wyndham - Best Price Guaranteed" -> "Ramada By Wyndham"
+        """
+        if not name:
+            return ""
+            
+        cleaned = name.split(" - ")[0] # Split by dash
+        cleaned = cleaned.split(" | ")[0] # Split by pipe
+        cleaned = cleaned.split(" (")[0] # Remove parentheticals
+        
+        # Remove common marketing phrases
+        phrases_to_remove = [
+            "Best Price Guaranteed",
+            "Special Offer",
+            "Official Site",
+            "Low Price",
+            "Book Now",
+            "Free Cancellation"
+        ]
+        
+        for phrase in phrases_to_remove:
+            # Case insensitive replacement
+            import re
+            cleaned = re.sub(re.escape(phrase), "", cleaned, flags=re.IGNORECASE).strip()
+            
+        return self._normalize_string(cleaned)
     
     async def fetch_hotel_price(
         self,
@@ -148,7 +177,7 @@ class SerpApiClient:
             return None
         
         return {
-            "hotel_name": self._normalize_string(best_match.get("name", target_hotel)),
+            "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": float(price),
             "currency": currency,
             "source": "serpapi",

@@ -14,12 +14,15 @@ def test_normalization():
         ("  hilton   london  ", "Hilton London"),
         ("MARRIOTT HOTELS", "Marriott Hotels"),
         ("le grand hotel", "Le Grand Hotel"),
+        ("Ramada by Wyndham - Best Price Guaranteed", "Ramada By Wyndham"),
+        ("Hilton Paris | Official Site", "Hilton Paris"),
+        ("Marriott (Special Offer)", "Marriott"),
     ]
     
-    print("Testing string normalization in SerpApiClient...")
+    print("Testing string cleaning in SerpApiClient...")
     passed = 0
     for input_str, expected in test_cases:
-        result = serpapi_client._normalize_string(input_str)
+        result = serpapi_client._clean_hotel_name(input_str)
         if result == expected:
             print(f"PASS: '{input_str}' -> '{result}'")
             passed += 1
