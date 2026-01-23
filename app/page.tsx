@@ -16,6 +16,7 @@ import SkeletonTile from "@/components/SkeletonTile";
 import ScanHistory from "@/components/ScanHistory";
 import RapidPulseHistory from "@/components/RapidPulseHistory";
 import ScanSessionModal from "@/components/ScanSessionModal";
+import AlertsModal from "@/components/AlertsModal";
 import { ScanSession } from "@/types";
 import Link from "next/link";
 
@@ -31,6 +32,7 @@ export default function Dashboard() {
   // Modals state
   const [isAddHotelOpen, setIsAddHotelOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
@@ -215,6 +217,13 @@ export default function Dashboard() {
         session={selectedSession}
       />
 
+      <AlertsModal
+        isOpen={isAlertsOpen}
+        onClose={() => setIsAlertsOpen(false)}
+        userId={userId || ""}
+        onUpdate={fetchData}
+      />
+
       {/* Main Content */}
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Dashboard Header */}
@@ -253,7 +262,10 @@ export default function Dashboard() {
           {/* Actions */}
           <div className="flex items-center gap-3">
             {/* Alerts Badge */}
-            <button className="relative p-3 glass rounded-xl hover:bg-white/10 transition-colors">
+            <button 
+              onClick={() => setIsAlertsOpen(true)}
+              className="relative p-3 glass rounded-xl hover:bg-white/10 transition-colors"
+            >
               <Bell className="w-5 h-5 text-white" />
               {(data?.unread_alerts_count || 0) > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
