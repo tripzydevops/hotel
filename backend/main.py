@@ -508,7 +508,7 @@ async def trigger_monitor(
 
 # ===== Hotels CRUD =====
 
-@app.get("/api/hotels/search")
+@app.get("/api/v1/directory/search")
 async def search_hotel_directory(
     q: str, 
     user_id: Optional[UUID] = Query(None), 

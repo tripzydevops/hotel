@@ -7,7 +7,7 @@
 - Initialized `findings.md` with competitive research results.
 - **Goal**: Transition from ephemeral chat memory to persistent file-based memory.
 
-## [2026-01-23 11:55] - Committing Project Memory
+## [2026-01-23 12:04] - Supabase CLI Troubleshooting
 
-- Committed and pushed `.agent/memory/` files to remote.
-- Goal: Systematize persistence and shared state between AI sessions.
+- `supabase` command not found in PATH.
+- Investigating `npx supabase` and local binary search.
