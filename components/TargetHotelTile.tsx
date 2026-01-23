@@ -1,6 +1,8 @@
 "use client";
 
 import { TrendingUp, TrendingDown, Minus, Building2, Trash2 } from "lucide-react";
+import TrendChart from "./TrendChart";
+import { PricePoint } from "@/types";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -19,6 +21,7 @@ interface TargetHotelTileProps {
   stars?: number;
   imageUrl?: string;
   vendor?: string;
+  priceHistory?: PricePoint[];
 }
 
 /**
@@ -40,6 +43,7 @@ export default function TargetHotelTile({
   stars,
   imageUrl,
   vendor,
+  priceHistory,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -155,6 +159,18 @@ export default function TargetHotelTile({
             Verified via SerpApi Intelligence • {lastUpdated || "Just now"}
           </div>
         </div>
+        
+        {/* Trend Chart Background */}
+        {priceHistory && priceHistory.length > 1 && (
+            <div className="absolute inset-x-8 bottom-0 h-24 opacity-30 pointer-events-none mask-linear-fade">
+                <TrendChart 
+                    data={priceHistory} 
+                    color={trend === "up" ? "#EF4444" : trend === "down" ? "#10B981" : "#94A3B8"} 
+                    width={400} 
+                    height={96} 
+                />
+            </div>
+        )}
       </div>
 
       {/* Footer Stats */}

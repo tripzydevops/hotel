@@ -20,7 +20,7 @@ from backend.models.schemas import (
     Settings, SettingsUpdate,
     Alert, AlertCreate,
     DashboardResponse, HotelWithPrice, MonitorResult,
-    TrendDirection, QueryLog
+    TrendDirection, QueryLog, PricePoint
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -137,7 +137,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 .select("*") \
                 .eq("hotel_id", hotel["id"]) \
                 .order("recorded_at", desc=True) \
-                .limit(2) \
+                .limit(10) \
                 .execute()
             
             prices = prices_result.data or []
@@ -158,6 +158,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                     "trend": trend.value,
                     "change_percent": change,
                     "recorded_at": current_price["recorded_at"],
+                    "vendor": current_price.get("vendor"),
                 }
             
             hotel_with_price = HotelWithPrice(
@@ -169,6 +170,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 stars=hotel.get("stars"),
                 image_url=hotel.get("image_url"),
                 price_info=price_info,
+                price_history=[PricePoint(price=p["price"], recorded_at=p["recorded_at"]) for p in prices]
             )
             
             if hotel["is_target_hotel"]:

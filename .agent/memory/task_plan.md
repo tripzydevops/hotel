@@ -8,7 +8,8 @@
 - [x] Link Project to Remote (`ztwkdawfdfbgusskqbns`)
 - [x] Database Health Reconciliation (Manual SQL Applied)
 - [x] Database Health Audit (Verified Healthy)
-- [x] Install & Configure Docker Desktop (Restart Required to start service)
+- [x] Install Docker Desktop (Restart Required)
+- [/] Authenticate Docker CLI (Logging in with PAT)
 - [ ] Review existing Pydantic models for consistency with research findings
 
 ## Phase 2: UI Refinement - Insights Visualization [TODO]

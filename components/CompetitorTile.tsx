@@ -1,6 +1,8 @@
 "use client";
 
 import { TrendingUp, TrendingDown, Minus, Hotel, Trash2 } from "lucide-react";
+import TrendChart from "./TrendChart";
+import { PricePoint } from "@/types";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -19,6 +21,7 @@ interface CompetitorTileProps {
   stars?: number;
   imageUrl?: string;
   vendor?: string;
+  priceHistory?: PricePoint[];
 }
 
 /**
@@ -41,6 +44,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     stars,
     imageUrl: image_src,
     vendor,
+    priceHistory,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -162,8 +166,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
         </div>
       </div>
 
-      {/* Price */}
-      <div className="flex-1 flex items-center group relative cursor-default">
+      <div className="flex-1 flex items-center justify-between group relative cursor-default">
         <div>
           <p className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}>
             {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
@@ -179,6 +182,18 @@ export default function CompetitorTile(props: CompetitorTileProps) {
             )}
           </div>
         </div>
+
+        {/* Trend Chart */}
+        {priceHistory && priceHistory.length > 1 && (
+            <div className="w-20 h-10 opacity-60 group-hover:opacity-100 transition-opacity">
+                <TrendChart 
+                    data={priceHistory} 
+                    color={trend === "up" ? "#EF4444" : trend === "down" ? "#10B981" : "#94A3B8"} 
+                    width={80} 
+                    height={40} 
+                />
+            </div>
+        )}
         
         {/* Progressive Disclosure: Hover Tooltip */}
         <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">

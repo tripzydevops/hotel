@@ -143,6 +143,13 @@ class PriceWithTrend(BaseModel):
     trend: TrendDirection = TrendDirection.STABLE
     change_percent: float = 0.0
     recorded_at: datetime
+    vendor: Optional[str] = None
+
+
+
+class PricePoint(BaseModel):
+    price: float
+    recorded_at: datetime
 
 
 class HotelWithPrice(BaseModel):
@@ -155,6 +162,8 @@ class HotelWithPrice(BaseModel):
     stars: Optional[int] = None
     image_url: Optional[str] = None
     price_info: Optional[PriceWithTrend] = None
+    price_history: List[PricePoint] = []
+
 
 
 class QueryLog(BaseModel):
@@ -164,6 +173,9 @@ class QueryLog(BaseModel):
     action_type: str
     status: Optional[str] = "success"
     created_at: datetime
+    price: Optional[float] = None
+    currency: Optional[str] = None
+    vendor: Optional[str] = None
 
 
 class DashboardResponse(BaseModel):

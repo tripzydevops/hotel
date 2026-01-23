@@ -32,8 +32,14 @@ export interface PriceInfo {
   vendor?: string;
 }
 
+export interface PricePoint {
+  price: number;
+  recorded_at: string;
+}
+
 export interface HotelWithPrice extends Hotel {
   price_info?: PriceInfo;
+  price_history?: PricePoint[];
 }
 
 export interface Alert {
@@ -59,7 +65,15 @@ export interface UserSettings {
   push_subscription?: any; // JSONB
   currency?: string;
 }
-
+export interface QueryLog {
+  id: string;
+  hotel_name: string;
+  location?: string;
+  action_type: string;
+  status: string;
+  created_at: string;
+  price?: number;
+  currency?: string;
   vendor?: string;
   session_id?: string;
 }
