@@ -8,6 +8,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 
 from backend.services.serpapi_client import SerpApiClient
 
+import pytest
+
+@pytest.mark.asyncio
 async def test_currency_passing():
     client = SerpApiClient(api_key="test_key")
     

@@ -58,6 +58,39 @@ class SerpApiClient:
             
         return self._normalize_string(cleaned)
     
+    async def search_hotels(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Broad search for hotels to support autocomplete/discovery.
+        """
+        params = {
+            "engine": "google_hotels",
+            "q": query,
+            "gl": "us",
+            "hl": "en",
+            "api_key": self.api_key,
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(SERPAPI_BASE_URL, params=params)
+                response.raise_for_status()
+                data = response.json()
+                
+                properties = data.get("properties", [])
+                
+                results = []
+                for prop in properties[:5]: # Top 5 only
+                    results.append({
+                        "name": self._clean_hotel_name(prop.get("name", "")),
+                        "location": prop.get("description", "Unknown Location"), 
+                        "serp_api_id": prop.get("hotel_id"),
+                        "source": "serpapi"
+                    })
+                return results
+        except Exception as e:
+            print(f"[SerpApi] Search Error: {e}")
+            return []
+    
     async def fetch_hotel_price(
         self,
         hotel_name: str,

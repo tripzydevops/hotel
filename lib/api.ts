@@ -1,4 +1,4 @@
-import { DashboardData, MonitorResult, Alert } from "@/types";
+import { DashboardData, MonitorResult, Alert, QueryLog } from "@/types";
 
 const isProduction = process.env.NODE_ENV === "production";
 const API_BASE_URL =
