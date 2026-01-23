@@ -66,6 +66,11 @@ def get_supabase() -> Client:
 
 # ===== Helpers =====
 
+async def log_query(
+    db: Client,
+    user_id: Optional[UUID],
+    hotel_name: str,
+    location: Optional[str],
     action_type: str,
     status: str = "success",
     price: Optional[float] = None,
@@ -503,6 +508,40 @@ async def trigger_monitor(
 
 # ===== Hotels CRUD =====
 
+@app.get("/api/hotels/search")
+async def search_hotel_directory(
+    q: str, 
+    user_id: Optional[UUID] = Query(None), 
+    db: Optional[Client] = Depends(get_supabase)
+):
+    if not q or len(q.strip()) < 2:
+        return []
+
+    q_trimmed = q.strip()
+    print(f"DEBUG SEARCH: Received query '{q_trimmed}'")
+    
+    if not db:
+        print("DEBUG SEARCH: DB is None")
+        return []
+    
+    try:
+        # Local Lookup (Primary)
+        # We only search the local directory to avoid draining search API credits.
+        # This directory is populated automatically after successful price scans.
+        print(f"DEBUG SEARCH: Executing DB query for '{q_trimmed}'")
+        result = db.table("hotel_directory") \
+            .select("name, location, serp_api_id") \
+            .ilike("name", f"%{q_trimmed}%") \
+            .limit(10) \
+            .execute()
+        
+        print(f"DEBUG SEARCH: Found {len(result.data)} results")
+        return result.data or []
+    except Exception as e:
+        print(f"Error searching directory: {e}")
+        return []
+
+
 @app.get("/api/hotels/{user_id}", response_model=List[Hotel])
 async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     if not db:
@@ -754,38 +793,6 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-@app.get("/api/hotels/search")
-async def search_hotel_directory(
-    q: str, 
-    user_id: Optional[UUID] = Query(None), 
-    db: Optional[Client] = Depends(get_supabase)
-):
-    if not q or len(q.strip()) < 2:
-        return []
-
-    q_trimmed = q.strip()
-    print(f"DEBUG SEARCH: Received query '{q_trimmed}'")
-    
-    if not db:
-        print("DEBUG SEARCH: DB is None")
-        return []
-    
-    try:
-        # Local Lookup (Primary)
-        # We only search the local directory to avoid draining search API credits.
-        # This directory is populated automatically after successful price scans.
-        print(f"DEBUG SEARCH: Executing DB query for '{q_trimmed}'")
-        result = db.table("hotel_directory") \
-            .select("name, location, serp_api_id") \
-            .ilike("name", f"%{q_trimmed}%") \
-            .limit(10) \
-            .execute()
-        
-        print(f"DEBUG SEARCH: Found {len(result.data)} results")
-        return result.data or []
-    except Exception as e:
-        print(f"Error searching directory: {e}")
-        return []
 
 @app.post("/api/admin/directory")
 async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supabase)):
