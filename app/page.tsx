@@ -7,7 +7,8 @@ import TargetHotelTile from "@/components/TargetHotelTile";
 import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
-import { Bell, RefreshCw, Plus, Settings, History } from "lucide-react";
+import ProfileModal from "@/components/ProfileModal";
+import { Bell, RefreshCw, Plus, Settings, History, User } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [isAddHotelOpen, setIsAddHotelOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
@@ -235,6 +237,12 @@ export default function Dashboard() {
         onUpdate={fetchData}
       />
 
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userId={userId || ""}
+      />
+
       {/* Main Content */}
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Dashboard Header */}
@@ -283,6 +291,14 @@ export default function Dashboard() {
                   {data?.unread_alerts_count}
                 </span>
               )}
+            </button>
+
+            {/* Profile */}
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="p-3 glass rounded-xl hover:bg-white/10 transition-colors"
+            >
+              <User className="w-5 h-5 text-white" />
             </button>
 
             {/* Settings */}

@@ -1,166 +1,347 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Building2, MapPin, Database, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { 
+  Building2, MapPin, Database, Users, Activity, Key, 
+  LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw 
+} from "lucide-react";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 
 export default function AdminPage() {
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [serpApiId, setSerpApiId] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  
+  // Data States
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [directory, setDirectory] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Directory Form State
+  const [dirName, setDirName] = useState("");
+  const [dirLocation, setDirLocation] = useState("");
+  const [dirSerpId, setDirSerpId] = useState("");
+  const [dirSuccess, setDirSuccess] = useState(false);
+
+  useEffect(() => {
+    loadTabData();
+  }, [activeTab]);
+
+  const loadTabData = async () => {
     setLoading(true);
     setError("");
-    setSuccess(false);
-
     try {
-      await api.addHotelToDirectory(name, location, serpApiId || undefined);
-      setSuccess(true);
-      setName("");
-      setLocation("");
-      setSerpApiId("");
+      if (activeTab === "overview") {
+        const data = await api.getAdminStats();
+        setStats(data);
+      } else if (activeTab === "users") {
+        const data = await api.getAdminUsers();
+        setUsers(data);
+      } else if (activeTab === "directory") {
+        const data = await api.getAdminDirectory();
+        setDirectory(data);
+      } else if (activeTab === "logs") {
+        const data = await api.getAdminLogs();
+        setLogs(data);
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to add hotel to directory");
+      setError(err.message || "Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure? This will delete ALL user data including hotels and logs.")) return;
+    try {
+      await api.deleteAdminUser(userId);
+      loadTabData(); // Refresh
+    } catch (err: any) {
+      alert("Failed to delete user: " + err.message);
+    }
+  };
+
+  const handleDeleteDirectory = async (id: number) => {
+    if (!confirm("Remove this hotel from shared directory?")) return;
+    try {
+      await api.deleteAdminDirectory(id);
+      loadTabData(); // Refresh
+    } catch (err: any) {
+      alert("Failed to delete entry: " + err.message);
+    }
+  };
+
+  const handleAddDirectory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.addHotelToDirectory(dirName, dirLocation, dirSerpId || undefined);
+      setDirSuccess(true);
+      setDirName("");
+      setDirLocation("");
+      setDirSerpId("");
+      loadTabData(); // Refresh list
+      setTimeout(() => setDirSuccess(false), 3000);
+    } catch (err: any) {
+      alert("Failed to add: " + err.message);
+    }
+  };
+
+  const handleSyncDirectory = async () => {
+    if (!confirm("Scan all user hotels and add to directory?")) return;
+    try {
+      const res = await api.syncDirectory();
+      alert(`Synced ${res.synced_count} hotels.`);
+      loadTabData();
+    } catch (err: any) {
+      alert("Sync failed: " + err.message);
+    }
+  };
+
+  const TabButton = ({ id, label, icon: Icon }: any) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+        activeTab === id 
+          ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" 
+          : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
+
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-7xl mx-auto py-8 px-4">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/20 flex items-center justify-center">
           <Database className="w-6 h-6 text-[var(--soft-gold)]" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Directory Management</h1>
-          <p className="text-[var(--text-muted)] mt-1">Add hotels to the shared search directory</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">System Administration</h1>
+          <p className="text-[var(--text-muted)] mt-1">Manage users, directory, and monitor system health</p>
         </div>
       </div>
 
-      <div className="glass-card p-8 border border-white/10 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--soft-gold)] to-[var(--optimal-green)] opacity-50" />
+      {/* Navigation */}
+      <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
+        <TabButton id="overview" label="Overview" icon={LayoutDashboard} />
+        <TabButton id="users" label="Users" icon={Users} />
+        <TabButton id="directory" label="Directory" icon={Building2} />
+        <TabButton id="logs" label="System Logs" icon={Activity} />
+        <TabButton id="keys" label="API Keys" icon={Key} />
+      </div>
+
+      {/* Content */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {loading && <div className="text-[var(--soft-gold)] flex items-center gap-2 mb-4"><Loader2 className="w-4 h-4 animate-spin"/> Loading...</div>}
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                Hotel Name
-              </label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium"
-                  placeholder="e.g. Hilton London Metropole"
-                />
+        {/* OVERVIEW TAB */}
+        {activeTab === "overview" && stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Total Users" value={stats.total_users} icon={Users} />
+            <StatCard label="Total Hotels" value={stats.total_hotels} icon={Building2} />
+            <StatCard label="Total Scans" value={stats.total_scans} icon={Activity} />
+            <StatCard label="Directory Size" value={stats.directory_size} icon={Database} />
+            <div className="col-span-full mt-4 p-6 glass-card border border-white/10">
+              <h3 className="text-lg font-bold text-white mb-2">System Health</h3>
+              <div className="flex items-center gap-2 text-[var(--optimal-green)]">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>All systems operational. API calls today: {stats.api_calls_today}</span>
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                Location (City, Country)
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  required
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium"
-                  placeholder="e.g. London, UK"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                SerpApi Hotel ID (Optional)
-              </label>
-              <input
-                type="text"
-                value={serpApiId}
-                onChange={(e) => setSerpApiId(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-3.5 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium"
-                placeholder="e.g. ChIJP3Sa8ziYEmsRUKgyFOm9llM"
-              />
-            </div>
           </div>
+        )}
 
-          {error && (
-            <div className="bg-alert-red/10 border border-alert-red/20 text-alert-red p-4 rounded-lg text-sm flex items-center gap-3">
-              <span className="shrink-0">⚠️</span>
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-[var(--optimal-green)]/10 border border-[var(--optimal-green)]/20 text-[var(--optimal-green)] p-4 rounded-lg text-sm flex items-center gap-3 animate-in fade-in zoom-in-95 duration-300">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              Hotel added to shared directory successfully!
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-[var(--soft-gold)] to-[#D4AF37] text-black font-bold py-4 rounded-lg shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Add to Directory"
-            )}
-          </button>
-        </form>
-      </div>
-
-      <div className="mt-12 space-y-6">
-        <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-sm text-[var(--text-muted)] leading-relaxed">
-          <p className="font-semibold text-[var(--text-secondary)] mb-2 uppercase tracking-wider text-xs">Admin Dashboard Note</p>
-          Hotels added here will immediately be available in the auto-complete search for all users. This tool is designed to bypass the "Cold Start" problem by manually seeding verified hotel names into the shared repository.
-        </div>
-
-        <div className="p-6 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 flex items-center justify-between">
-          <div>
-            <h3 className="text-white font-bold mb-1">Database Synchronization</h3>
-            <p className="text-xs text-[var(--text-muted)]">Populate the search directory from existing user monitors.</p>
+        {/* USERS TAB */}
+        {activeTab === "users" && (
+          <div className="glass-card border border-white/10 overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
+                <tr>
+                  <th className="p-4">User</th>
+                  <th className="p-4">Hotels</th>
+                  <th className="p-4">Scans</th>
+                  <th className="p-4">Created</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-white/5">
+                    <td className="p-4">
+                      <div className="font-medium text-white">{u.display_name || "Unknown"}</div>
+                      <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
+                      <div className="text-[var(--text-muted)] text-xs font-mono">{u.id}</div>
+                    </td>
+                    <td className="p-4 text-white">{u.hotel_count}</td>
+                    <td className="p-4 text-white">{u.scan_count}</td>
+                    <td className="p-4 text-[var(--text-muted)]">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="p-4 text-right">
+                      <button 
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && !loading && (
+                    <tr><td colSpan={5} className="p-8 text-center text-[var(--text-muted)]">No users found.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              if (confirm("This will scan all existing user hotels and add them to the directory. Continue?")) {
-                setLoading(true);
-                try {
-                  const res = await api.syncDirectory();
-                  alert(`Sync Complete! Added/Verified ${res.synced_count} hotels in directory.`);
-                } catch (e) {
-                  alert("Sync failed: " + e);
-                } finally {
-                  setLoading(false);
-                }
-              }
-            }}
-            disabled={loading}
-            className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold rounded-lg text-sm hover:opacity-90 transition-opacity"
-          >
-             Sync Now
-          </button>
-        </div>
+        )}
+
+        {/* DIRECTORY TAB */}
+        {activeTab === "directory" && (
+          <div className="space-y-8">
+             {/* Add New Form */}
+             <div className="glass-card p-6 border border-white/10">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-white">Add New Entry</h3>
+                    <button onClick={handleSyncDirectory} className="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded flex items-center gap-2 text-[var(--soft-gold)]">
+                        <RefreshCw className="w-3 h-3" /> Sync DB
+                    </button>
+                </div>
+                
+                <form onSubmit={handleAddDirectory} className="flex flex-col md:flex-row gap-4">
+                    <input 
+                        placeholder="Hotel Name" 
+                        value={dirName} onChange={e => setDirName(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                        required
+                    />
+                    <input 
+                        placeholder="Location" 
+                        value={dirLocation} onChange={e => setDirLocation(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                        required
+                    />
+                    <input 
+                        placeholder="SerpApi ID (Opt)" 
+                        value={dirSerpId} onChange={e => setDirSerpId(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                    <button type="submit" className="bg-[var(--soft-gold)] text-black font-bold px-6 py-2 rounded-lg hover:opacity-90">
+                        Add
+                    </button>
+                </form>
+                {dirSuccess && <div className="text-[var(--optimal-green)] mt-2 text-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Added!</div>}
+             </div>
+
+             {/* List */}
+             <div className="glass-card border border-white/10 overflow-hidden">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
+                    <tr>
+                      <th className="p-4">Name</th>
+                      <th className="p-4">Location</th>
+                      <th className="p-4">SerpApi ID</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {directory.map((d) => (
+                      <tr key={d.id} className="hover:bg-white/5">
+                        <td className="p-4 text-white font-medium">{d.name}</td>
+                        <td className="p-4 text-[var(--text-muted)]">{d.location}</td>
+                        <td className="p-4 font-mono text-xs text-[var(--text-muted)]">{d.serp_api_id || "-"}</td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={() => handleDeleteDirectory(d.id)}
+                            className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+             </div>
+          </div>
+        )}
+
+        {/* LOGS TAB */}
+        {activeTab === "logs" && (
+            <div className="glass-card border border-white/10 overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
+                  <tr>
+                    <th className="p-4">Time</th>
+                    <th className="p-4">Level</th>
+                    <th className="p-4">Action</th>
+                    <th className="p-4">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-white/5">
+                      <td className="p-4 text-[var(--text-muted)] whitespace-nowrap">
+                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            log.level === 'ERROR' ? 'bg-red-500/20 text-red-400' : 
+                            log.level === 'SUCCESS' ? 'bg-green-500/20 text-green-400' : 
+                            'bg-blue-500/20 text-blue-400'
+                        }`}>
+                            {log.level}
+                        </span>
+                      </td>
+                      <td className="p-4 text-white">{log.action}</td>
+                      <td className="p-4 text-[var(--text-muted)] text-xs font-mono">{log.details}</td>
+                    </tr>
+                  ))}
+                  {logs.length === 0 && !loading && (
+                      <tr><td colSpan={4} className="p-8 text-center text-[var(--text-muted)]">No logs found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+        )}
+
+        {/* API KEYS TAB */}
+        {activeTab === "keys" && (
+            <div className="glass-card p-8 border border-white/10 text-center">
+                <Key className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">API Key Management</h3>
+                <p className="text-[var(--text-muted)] mb-6">Manage external service keys and quotas.</p>
+                
+                <div className="max-w-md mx-auto bg-black/20 p-4 rounded-lg text-left mb-6">
+                    <div className="text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">SerpApi Key</div>
+                    <div className="font-mono text-white flex justify-between items-center">
+                        <span>••••••••••••••••••••••••••••</span>
+                        <span className="text-[var(--optimal-green)] text-xs">Active</span>
+                    </div>
+                </div>
+                
+                <button className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors">
+                    Check Quota (Coming Soon)
+                </button>
+            </div>
+        )}
+
       </div>
     </div>
   );
 }
+
+const StatCard = ({ label, value, icon: Icon }: any) => (
+  <div className="glass-card p-6 border border-white/10 flex items-center gap-4">
+    <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center shrink-0">
+      <Icon className="w-6 h-6 text-[var(--soft-gold)]" />
+    </div>
+    <div>
+      <p className="text-[var(--text-muted)] text-xs uppercase font-bold tracking-wider">{label}</p>
+      <p className="text-2xl font-bold text-white">{value?.toLocaleString() || 0}</p>
+    </div>
+  </div>
+);

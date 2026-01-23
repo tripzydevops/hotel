@@ -35,6 +35,10 @@
   /* Semantic Colors */
   --background: var(--deep-ocean);
   --foreground: var(--text-primary);
+
+  /* Tailwind v4 required variables (prevents pink default) */
+  --border: rgba(255, 255, 255, 0.1);
+  --ring: var(--soft-gold);
 }
 
 @theme {

@@ -127,6 +127,51 @@ class ApiClient {
       method: "POST",
     });
   }
+
+  async getProfile(userId: string): Promise<any> {
+    return this.fetch<any>(`/api/profile/${userId}`);
+  }
+
+  async updateProfile(userId: string, profile: {
+    display_name?: string;
+    company_name?: string;
+    job_title?: string;
+    phone?: string;
+    avatar_url?: string;
+    timezone?: string;
+  }): Promise<any> {
+    return this.fetch<any>(`/api/profile/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    });
+  }
+  async getAdminStats(): Promise<any> {
+    return this.fetch<any>("/api/admin/stats");
+  }
+
+  async getAdminUsers(): Promise<any[]> {
+    return this.fetch<any[]>("/api/admin/users");
+  }
+
+  async deleteAdminUser(userId: string): Promise<void> {
+    return this.fetch<void>(`/api/admin/users/${userId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async getAdminDirectory(limit = 100): Promise<any[]> {
+    return this.fetch<any[]>(`/api/admin/directory?limit=${limit}`);
+  }
+
+  async deleteAdminDirectory(entryId: number): Promise<void> {
+    return this.fetch<void>(`/api/admin/directory/${entryId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async getAdminLogs(limit = 50): Promise<any[]> {
+    return this.fetch<any[]>(`/api/admin/logs?limit=${limit}`);
+  }
 }
 
 export const api = new ApiClient();

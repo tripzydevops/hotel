@@ -25,7 +25,9 @@ from backend.models.schemas import (
     Alert, AlertCreate,
     DashboardResponse, HotelWithPrice, MonitorResult,
     TrendDirection, QueryLog, PricePoint,
-    MarketAnalysis, ReportsResponse, ScanSession
+    MarketAnalysis, ReportsResponse, ScanSession,
+    UserProfile, UserProfileUpdate,
+    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -726,6 +728,64 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
     return result.data[0] if result.data else None
 
 
+# ===== User Profile =====
+
+@app.get("/api/profile/{user_id}", response_model=UserProfile)
+async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    """Get user profile information."""
+    if not db:
+        # Return default mock profile for dev mode
+        return UserProfile(
+            user_id=user_id,
+            display_name="Demo User",
+            company_name="My Hotel",
+            job_title="Manager",
+            timezone="UTC",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+    
+    result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
+    
+    if result.data:
+        return result.data[0]
+    
+    # Return a default profile if none exists
+    return UserProfile(
+        user_id=user_id,
+        display_name=None,
+        company_name=None,
+        job_title=None,
+        timezone="UTC",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )
+
+
+@app.put("/api/profile/{user_id}", response_model=UserProfile)
+async def update_profile(user_id: UUID, profile: UserProfileUpdate, db: Optional[Client] = Depends(get_supabase)):
+    """Update user profile (upsert)."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    
+    update_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+    
+    # Check if profile exists
+    existing = db.table("user_profiles").select("user_id").eq("user_id", str(user_id)).execute()
+    
+    if not existing.data:
+        # Insert new profile
+        result = db.table("user_profiles").insert({
+            "user_id": str(user_id),
+            **update_data
+        }).execute()
+    else:
+        # Update existing profile
+        result = db.table("user_profiles").update(update_data).eq("user_id", str(user_id)).execute()
+    
+    return result.data[0] if result.data else None
+
+
 # ===== Alerts =====
 
 @app.get("/api/alerts/{user_id}", response_model=List[Alert])
@@ -1199,6 +1259,143 @@ def synthesize_session(logs: List[Dict]) -> Dict:
 async def export_report(user_id: UUID, format: str = "csv"):
     """Mock report export trigger."""
     return {"status": "success", "message": f"Report exported in {format} format", "download_url": "#"}
+
+
+# ===== Admin Endpoints =====
+
+@app.get("/api/admin/stats", response_model=AdminStats)
+async def get_admin_stats(db: Client = Depends(get_supabase)):
+    """Get system-wide statistics."""
+    # Count Users (approx via settings or profiles)
+    users_count = db.table("settings").select("user_id", count="exact").execute().count or 0
+    
+    # Count Hotels
+    hotels_count = db.table("hotels").select("id", count="exact").execute().count or 0
+    
+    # Count Scans
+    scans_count = db.table("scan_sessions").select("id", count="exact").execute().count or 0
+    
+    # Count Directory
+    directory_count = db.table("hotel_directory").select("id", count="exact").execute().count or 0
+    
+    # API Calls (Today) - approximation from scan sessions or logs
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    api_calls = 0
+    recent_scans = db.table("scan_sessions").select("hotels_count").gte("created_at", today_start.isoformat()).execute()
+    if recent_scans.data:
+        api_calls = sum(s.get("hotels_count", 0) for s in recent_scans.data)
+        
+    return AdminStats(
+        total_users=users_count,
+        total_hotels=hotels_count,
+        total_scans=scans_count,
+        api_calls_today=api_calls,
+        directory_size=directory_count
+    )
+
+@app.get("/api/admin/users", response_model=List[AdminUser])
+async def get_admin_users(db: Client = Depends(get_supabase)):
+    """List all users with stats."""
+    # Get base user info from profiles
+    profiles = db.table("user_profiles").select("*").execute().data or []
+    settings_data = db.table("settings").select("user_id, created_at, email").execute().data or []
+    
+    # Merge data (naive join since no FK strictness in some mock data)
+    users_map = {}
+    for s in settings_data:
+        users_map[s["user_id"]] = {
+            "id": s["user_id"],
+            "created_at": s["created_at"],
+            "email": s.get("email"),
+            "display_name": "Unknown",
+            "company_name": None,
+            "hotel_count": 0,
+            "scan_count": 0
+        }
+        
+    for p in profiles:
+        uid = p["user_id"]
+        if uid not in users_map:
+            users_map[uid] = {
+                "id": uid,
+                "created_at": p["created_at"],
+                "email": None,
+                "display_name": p.get("display_name"),
+                "company_name": p.get("company_name"),
+                "hotel_count": 0,
+                "scan_count": 0
+            }
+        else:
+            users_map[uid]["display_name"] = p.get("display_name")
+            users_map[uid]["company_name"] = p.get("company_name")
+            
+    # Enrich with counts (this could be slow with many users, optimize later)
+    final_users = []
+    for uid, udata in users_map.items():
+        # Count hotels
+        h_count = db.table("hotels").select("id", count="exact").eq("user_id", uid).execute().count or 0
+        s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
+        
+        udata["hotel_count"] = h_count
+        udata["scan_count"] = s_count
+        final_users.append(AdminUser(**udata))
+        
+    return final_users
+
+@app.delete("/api/admin/users/{user_id}")
+async def delete_admin_user(user_id: UUID, db: Client = Depends(get_supabase)):
+    """Delete a user and their data."""
+    # Helper to delete from tables
+    for table in ["hotels", "scan_sessions", "user_profiles", "settings", "notifications"]:
+        db.table(table).delete().eq("user_id", str(user_id)).execute()
+    return {"status": "success"}
+
+@app.get("/api/admin/directory", response_model=List[AdminDirectoryEntry])
+async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabase)):
+    """List directory entries."""
+    result = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit).execute()
+    entries = []
+    if result.data:
+        for item in result.data:
+            entries.append(AdminDirectoryEntry(
+                id=item["id"],
+                name=item["hotel_name"],
+                location=item["location"] or "Unknown",
+                serp_api_id=item.get("serp_api_id"),
+                created_at=item["created_at"]
+            ))
+    return entries
+
+@app.delete("/api/admin/directory/{entry_id}")
+async def delete_admin_directory(entry_id: int, db: Client = Depends(get_supabase)):
+    """Delete a directory entry."""
+    db.table("hotel_directory").delete().eq("id", entry_id).execute()
+    return {"status": "success"}
+
+@app.get("/api/admin/logs", response_model=List[AdminLog])
+async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase)):
+    """Get system logs (from scan sessions for now)."""
+    # Fetch recent sessions
+    result = db.table("scan_sessions").select("*").order("created_at", desc=True).limit(limit).execute()
+    logs = []
+    if result.data:
+        for session in result.data:
+            # Determine level based on status
+            level = "INFO"
+            if session["status"] == "failed":
+                level = "ERROR"
+            elif session["status"] == "completed":
+                level = "SUCCESS"
+                
+            logs.append(AdminLog(
+                id=session["id"],
+                timestamp=session["created_at"],
+                level=level,
+                action=f"Scan Session ({session['session_type']})",
+                details=f"Checked {session.get('hotels_count', 0)} hotels",
+                user_id=session["user_id"]
+            ))
+    return logs
 
 if __name__ == "__main__":
     import uvicorn

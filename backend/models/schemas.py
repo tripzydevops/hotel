@@ -109,6 +109,34 @@ class Settings(SettingsBase):
         from_attributes = True
 
 
+# ===== User Profile Models =====
+
+class UserProfileBase(BaseModel):
+    display_name: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+    timezone: str = Field(default="UTC")
+
+
+class UserProfileCreate(UserProfileBase):
+    pass
+
+
+class UserProfileUpdate(UserProfileBase):
+    pass
+
+
+class UserProfile(UserProfileBase):
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
 # ===== Alert Models =====
 
 class AlertBase(BaseModel):
@@ -210,6 +238,48 @@ class MonitorResult(BaseModel):
     alerts_generated: int
     session_id: Optional[UUID] = None
     errors: List[str] = []
+
+
+# ===== Admin Models =====
+
+class AdminStats(BaseModel):
+    total_users: int
+    total_hotels: int
+    total_scans: int
+    api_calls_today: int
+    directory_size: int
+
+class AdminUser(BaseModel):
+    id: UUID
+    display_name: Optional[str] = None
+    email: Optional[str] = None  # From auth/settings
+    company_name: Optional[str] = None
+    hotel_count: int
+    scan_count: int
+    created_at: datetime
+    last_active: Optional[datetime] = None
+
+class AdminDirectoryEntry(BaseModel):
+    id: int
+    name: str
+    location: str
+    serp_api_id: Optional[str] = None
+    created_at: datetime
+    
+class AdminLog(BaseModel):
+    id: UUID
+    timestamp: datetime
+    level: str  # INFO, ERROR, WARN
+    action: str
+    details: Optional[str] = None
+    user_id: Optional[UUID] = None
+    user_name: Optional[str] = None
+
+class AdminDataResponse(BaseModel):
+    stats: AdminStats
+    users: List[AdminUser] = []
+    directory: List[AdminDirectoryEntry] = []
+    logs: List[AdminLog] = []
 
 
 class MarketAnalysis(BaseModel):
