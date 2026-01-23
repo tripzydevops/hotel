@@ -1312,82 +1312,113 @@ async def export_report(user_id: UUID, format: str = "csv", db: Client = Depends
 @app.get("/api/admin/stats", response_model=AdminStats)
 async def get_admin_stats(db: Client = Depends(get_supabase)):
     """Get system-wide statistics."""
-    # Count Users (approx via settings or profiles)
-    users_count = db.table("settings").select("user_id", count="exact").execute().count or 0
-    
-    # Count Hotels
-    hotels_count = db.table("hotels").select("id", count="exact").execute().count or 0
-    
-    # Count Scans
-    scans_count = db.table("scan_sessions").select("id", count="exact").execute().count or 0
-    
-    # Count Directory
-    directory_count = db.table("hotel_directory").select("id", count="exact").execute().count or 0
-    
-    # API Calls (Today) - approximation from scan sessions or logs
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    api_calls = 0
-    recent_scans = db.table("scan_sessions").select("hotels_count").gte("created_at", today_start.isoformat()).execute()
-    if recent_scans.data:
-        api_calls = sum(s.get("hotels_count", 0) for s in recent_scans.data)
+    try:
+        # Count Users (approx via settings or profiles)
+        users_count = db.table("settings").select("user_id", count="exact").execute().count or 0
         
-    return AdminStats(
-        total_users=users_count,
-        total_hotels=hotels_count,
-        total_scans=scans_count,
-        api_calls_today=api_calls,
-        directory_size=directory_count,
-        service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ
-    )
+        # Count Hotels
+        hotels_count = db.table("hotels").select("id", count="exact").execute().count or 0
+        
+        # Count Scans
+        scans_count = db.table("scan_sessions").select("id", count="exact").execute().count or 0
+        
+        # Count Directory
+        directory_count = db.table("hotel_directory").select("id", count="exact").execute().count or 0
+        
+        # API Calls (Today) - approximation from scan sessions or logs
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        api_calls = 0
+        recent_scans = db.table("scan_sessions").select("hotels_count").gte("created_at", today_start.isoformat()).execute()
+        if recent_scans.data:
+            api_calls = sum(s.get("hotels_count", 0) for s in recent_scans.data)
+            
+        return AdminStats(
+            total_users=users_count,
+            total_hotels=hotels_count,
+            total_scans=scans_count,
+            api_calls_today=api_calls,
+            directory_size=directory_count,
+            service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ
+        )
+    except Exception as e:
+        print(f"Admin Stats Error: {e}")
+        # Build "Empty" stats with error indicator if needed, or raise HTTP error
+        raise HTTPException(status_code=500, detail=f"Admin Data Error: {str(e)}")
 
 @app.get("/api/admin/users", response_model=List[AdminUser])
 async def get_admin_users(db: Client = Depends(get_supabase)):
     """List all users with stats."""
-    # Get base user info from profiles
-    profiles = db.table("user_profiles").select("*").execute().data or []
-    settings_data = db.table("settings").select("user_id, created_at, email").execute().data or []
-    
-    # Merge data (naive join since no FK strictness in some mock data)
-    users_map = {}
-    for s in settings_data:
-        users_map[s["user_id"]] = {
-            "id": s["user_id"],
-            "created_at": s["created_at"],
-            "email": s.get("email"),
-            "display_name": "Unknown",
-            "company_name": None,
-            "hotel_count": 0,
-            "scan_count": 0
-        }
+    try:
+        # Get base user info from profiles
+        profiles = db.table("user_profiles").select("*").execute().data or []
+        settings_data = db.table("settings").select("user_id, created_at, email").execute().data or []
         
-    for p in profiles:
-        uid = p["user_id"]
-        if uid not in users_map:
-            users_map[uid] = {
-                "id": uid,
-                "created_at": p["created_at"],
-                "email": None,
-                "display_name": p.get("display_name"),
-                "company_name": p.get("company_name"),
+        # Merge data (naive join since no FK strictness in some mock data)
+        users_map = {}
+        for s in settings_data:
+            users_map[s["user_id"]] = {
+                "id": s["user_id"],
+                "created_at": s["created_at"],
+                "email": s.get("email"),
+                "display_name": "Unknown",
+                "company_name": None,
                 "hotel_count": 0,
                 "scan_count": 0
             }
-        else:
-            users_map[uid]["display_name"] = p.get("display_name")
-            users_map[uid]["company_name"] = p.get("company_name")
             
-    # Enrich with counts (this could be slow with many users, optimize later)
-    final_users = []
-    for uid, udata in users_map.items():
-        # Count hotels
-        h_count = db.table("hotels").select("id", count="exact").eq("user_id", uid).execute().count or 0
-        s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
-        
-        udata["hotel_count"] = h_count
-        udata["scan_count"] = s_count
-        final_users.append(AdminUser(**udata))
-        
-    return final_users
+        for p in profiles:
+            uid = p["user_id"]
+            if uid not in users_map:
+                users_map[uid] = {
+                    "id": uid,
+                    "created_at": p["created_at"],
+                    "email": None,
+                    "display_name": p.get("display_name"),
+                    "company_name": p.get("company_name"),
+                    "hotel_count": 0,
+                    "scan_count": 0
+                }
+            else:
+                users_map[uid]["display_name"] = p.get("display_name")
+                users_map[uid]["company_name"] = p.get("company_name")
+                
+        # Enrich with counts (this could be slow with many users, optimize later)
+        final_users = []
+        for uid, udata in users_map.items():
+            # Count hotels
+            h_count = db.table("hotels").select("id", count="exact").eq("user_id", uid).execute().count or 0
+            s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
+            
+            udata["hotel_count"] = h_count
+            udata["scan_count"] = s_count
+            final_users.append(AdminUser(**udata))
+            
+        return final_users
+    except Exception as e:
+        print(f"Admin Users Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
+
+# ... create_admin_user ... skipped for snippet ...
+
+@app.get("/api/admin/directory", response_model=List[AdminDirectoryEntry])
+async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabase)):
+    """List directory entries."""
+    try:
+        result = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit).execute()
+        entries = []
+        if result.data:
+            for item in result.data:
+                entries.append(AdminDirectoryEntry(
+                    id=item["id"],
+                    name=item["hotel_name"],
+                    location=item["location"] or "Unknown",
+                    serp_api_id=item.get("serp_api_id"),
+                    created_at=item["created_at"]
+                ))
+        return entries
+    except Exception as e:
+        print(f"Admin Directory Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch directory: {str(e)}")
 
 @app.post("/api/admin/users", response_model=dict)
 async def create_admin_user(user: AdminUserCreate, db: Client = Depends(get_supabase)):
