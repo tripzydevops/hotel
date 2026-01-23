@@ -18,17 +18,25 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 
 const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", TRY: "₺" };
 
 export default function AnalysisPage() {
   const { t } = useI18n();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<string>("USD");
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
-        const result = await api.getAnalysis(MOCK_USER_ID);
+        const result = await api.getAnalysis(MOCK_USER_ID, currency);
         setData(result);
+        // Update currency from response (may differ from request if using user settings)
+        if (result.display_currency) {
+          setCurrency(result.display_currency);
+        }
       } catch (err) {
         console.error("Failed to load analysis:", err);
       } finally {
@@ -36,7 +44,7 @@ export default function AnalysisPage() {
       }
     }
     loadData();
-  }, []);
+  }, [currency]);
 
   if (loading) {
     return (
@@ -60,11 +68,26 @@ export default function AnalysisPage() {
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-              <Zap className="w-5 h-5" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+                <Zap className="w-5 h-5" />
+              </div>
+              <h1 className="text-3xl font-black text-white tracking-tight">Market Intelligence</h1>
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tight">Market Intelligence</h1>
+            
+            {/* Currency Selector */}
+            <select 
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] cursor-pointer"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c} className="bg-[var(--deep-ocean)] text-white">
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
           <p className="text-[var(--text-secondary)] font-medium">
             Real-time competitor spread and predictive price analysis.
@@ -75,20 +98,20 @@ export default function AnalysisPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <KPICard 
             title="Market Average" 
-            value={data?.market_average ? `$${data.market_average}` : "N/A"}
+            value={data?.market_average ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.market_average}` : "N/A"}
             subtitle="Current active inventory"
             icon={<BarChart className="w-5 h-5" />}
           />
           <KPICard 
             title="Target Price" 
-            value={data?.target_price ? `$${data.target_price}` : "N/A"}
+            value={data?.target_price ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.target_price}` : "N/A"}
             subtitle="Your current rate"
             icon={<Target className="w-5 h-5" />}
             highlight
           />
           <KPICard 
             title="Market Spread" 
-            value={data?.market_min && data?.market_max ? `$${data.market_min} - $${data.market_max}` : "N/A"}
+            value={data?.market_min && data?.market_max ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.market_min} - ${CURRENCY_SYMBOLS[currency] || "$"}${data.market_max}` : "N/A"}
             subtitle="Inventory range"
             icon={<LayoutGrid className="w-5 h-5" />}
           />
@@ -115,8 +138,8 @@ export default function AnalysisPage() {
               {/* Range Bar */}
               <div className="h-3 w-full bg-white/5 rounded-full relative">
                 {/* Visual Indicators */}
-                <div className="absolute left-0 -top-6 text-[10px] font-black text-[var(--optimal-green)]">$ {data?.market_min} (Min)</div>
-                <div className="absolute right-0 -top-6 text-[10px] font-black text-[var(--alert-red)]">$ {data?.market_max} (Max)</div>
+                <div className="absolute left-0 -top-6 text-[10px] font-black text-[var(--optimal-green)]">{CURRENCY_SYMBOLS[currency] || "$"}{data?.market_min} (Min)</div>
+                <div className="absolute right-0 -top-6 text-[10px] font-black text-[var(--alert-red)]">{CURRENCY_SYMBOLS[currency] || "$"}{data?.market_max} (Max)</div>
                 
                 {/* Target Marker */}
                 <div 
@@ -124,7 +147,7 @@ export default function AnalysisPage() {
                   style={{ left: `${spreadPercentage}%` }}
                 >
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black shadow-lg">
-                    YOU: ${data?.target_price}
+                    YOU: {CURRENCY_SYMBOLS[currency] || "$"}{data?.target_price}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--soft-gold)] rotate-45" />
                   </div>
                 </div>
@@ -135,13 +158,13 @@ export default function AnalysisPage() {
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">Price Gap (To Min)</span>
                 <span className="text-xl font-black text-white">
-                  {data?.target_price && data?.market_min ? `+$${(data.target_price - data.market_min).toFixed(2)}` : "N/A"}
+                  {data?.target_price && data?.market_min ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min).toFixed(2)}` : "N/A"}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">Inventory Spread</span>
                 <span className="text-xl font-black text-white">
-                  {data?.market_max && data?.market_min ? `$${(data.market_max - data.market_min).toFixed(2)}` : "N/A"}
+                  {data?.market_max && data?.market_min ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min).toFixed(2)}` : "N/A"}
                 </span>
               </div>
             </div>
@@ -161,7 +184,7 @@ export default function AnalysisPage() {
                         {new Date(point.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
-                    <div className="text-sm font-black text-white">${point.price}</div>
+                    <div className="text-sm font-black text-white">{CURRENCY_SYMBOLS[currency] || "$"}{point.price}</div>
                   </div>
                 ))}
               </div>

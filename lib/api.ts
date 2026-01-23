@@ -107,8 +107,9 @@ class ApiClient {
     return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
   }
 
-  async getAnalysis(userId: string): Promise<any> {
-    return this.fetch<any>(`/api/analysis/${userId}`);
+  async getAnalysis(userId: string, currency?: string): Promise<any> {
+    const params = currency ? `?currency=${currency}` : "";
+    return this.fetch<any>(`/api/analysis/${userId}${params}`);
   }
 
   async getReports(userId: string): Promise<any> {

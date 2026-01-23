@@ -220,6 +220,7 @@ class MarketAnalysis(BaseModel):
     competitive_rank: int = 0
     price_history: List[PricePoint] = []
     competitors: List[HotelWithPrice] = []
+    display_currency: str = "USD"  # The currency all values are displayed in
 
 
 class ReportsResponse(BaseModel):

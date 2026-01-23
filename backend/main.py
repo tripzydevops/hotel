@@ -69,6 +69,25 @@ def get_supabase() -> Client:
 
 # ===== Helpers =====
 
+# Exchange rates to USD (approximate, update periodically or use API)
+EXCHANGE_RATES_TO_USD = {
+    "USD": 1.0,
+    "EUR": 1.08,      # 1 EUR = 1.08 USD
+    "GBP": 1.26,      # 1 GBP = 1.26 USD
+    "TRY": 0.029,     # 1 TRY = 0.029 USD
+}
+
+def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
+    """Convert amount from one currency to another via USD."""
+    if from_currency == to_currency:
+        return amount
+    # Convert to USD first
+    usd_rate = EXCHANGE_RATES_TO_USD.get(from_currency, 1.0)
+    usd_amount = amount * usd_rate
+    # Convert from USD to target
+    target_rate = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
+    return round(usd_amount / target_rate, 2)
+
 async def log_query(
     db: Client,
     user_id: Optional[UUID],
@@ -1011,15 +1030,29 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
         return []
 
 @app.get("/api/analysis/{user_id}", response_model=MarketAnalysis)
-async def get_analysis(user_id: UUID, db: Client = Depends(get_supabase)):
-    """Predictive market analysis and aggregated trends."""
+async def get_analysis(
+    user_id: UUID, 
+    currency: Optional[str] = Query(None, description="Display currency (USD, EUR, GBP, TRY). Defaults to user settings."),
+    db: Client = Depends(get_supabase)
+):
+    """Predictive market analysis with currency normalization."""
     try:
+        # Get user's preferred currency from settings if not specified
+        display_currency = currency
+        if not display_currency:
+            settings_result = db.table("settings").select("currency").eq("user_id", str(user_id)).execute()
+            if settings_result.data and settings_result.data[0].get("currency"):
+                display_currency = settings_result.data[0]["currency"]
+            else:
+                display_currency = "USD"
+        
         # Fetch all hotels
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         hotels = hotels_result.data or []
         
-        current_prices = []
+        current_prices = []  # Tuple of (converted_price, original_price, currency, hotel)
         target_price = None
+        target_currency = None
         target_history = []
         
         for hotel in hotels:
@@ -1032,38 +1065,52 @@ async def get_analysis(user_id: UUID, db: Client = Depends(get_supabase)):
             
             prices = price_result.data or []
             if prices:
-                current_val = prices[0]["price"]
-                current_prices.append(current_val)
+                orig_price = float(prices[0]["price"])
+                orig_currency = prices[0].get("currency", "USD")
+                
+                # Convert to display currency
+                converted_price = convert_currency(orig_price, orig_currency, display_currency)
+                current_prices.append(converted_price)
+                
                 if hotel["is_target_hotel"]:
-                    target_price = current_val
-                    target_history = [PricePoint(price=p["price"], recorded_at=p["recorded_at"]) for p in prices]
+                    target_price = converted_price
+                    target_currency = orig_currency
+                    # Convert history too
+                    target_history = [
+                        PricePoint(
+                            price=convert_currency(float(p["price"]), p.get("currency", "USD"), display_currency), 
+                            recorded_at=p["recorded_at"]
+                        ) for p in prices
+                    ]
 
         if not current_prices:
             return MarketAnalysis(
                 market_average=0, market_min=0, market_max=0,
-                target_price=target_price, competitive_rank=0
+                target_price=target_price, competitive_rank=0,
+                display_currency=display_currency
             )
 
-        # Basic Stats
+        # Basic Stats (all in display currency now)
         market_avg = sum(current_prices) / len(current_prices)
         market_min = min(current_prices)
         market_max = max(current_prices)
         
         # Rank (1 = cheapest)
         sorted_prices = sorted(current_prices)
-        rank = sorted_prices.index(target_price) + 1 if target_price is not None else 0
+        rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
         
         return MarketAnalysis(
             market_average=round(market_avg, 2),
-            market_min=market_min,
-            market_max=market_max,
-            target_price=target_price,
+            market_min=round(market_min, 2),
+            market_max=round(market_max, 2),
+            target_price=round(target_price, 2) if target_price else None,
             competitive_rank=rank,
-            price_history=target_history
+            price_history=target_history,
+            display_currency=display_currency
         )
     except Exception as e:
         print(f"Analysis error: {e}")
-        return MarketAnalysis(market_average=0, market_min=0, market_max=0)
+        return MarketAnalysis(market_average=0, market_min=0, market_max=0, display_currency="USD")
 
 @app.get("/api/reports/{user_id}", response_model=ReportsResponse)
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase)):
