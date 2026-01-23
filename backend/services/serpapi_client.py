@@ -173,26 +173,53 @@ class SerpApiClient:
             return None
         
         # Find the best matching hotel
+        # Find the best matching hotel
         target_lower = target_hotel.lower()
         best_match = None
-        best_score = 0
         
-        for prop in properties:
-            # Prio 1: ID Match
-            if target_serp_id and str(prop.get("hotel_id")) == str(target_serp_id):
-                best_match = prop
-                break
-
-            name = prop.get("name", "").lower()
-            # Simple matching score
-            score = sum(1 for word in target_lower.split() if word in name)
+        # Prio 0: Look for exact ID match first
+        if target_serp_id:
+            for prop in properties:
+                if str(prop.get("hotel_id")) == str(target_serp_id) or prop.get("property_token") == target_serp_id:
+                    best_match = prop
+                    break
+        
+        # Prio 1: Fuzzy Name Matching
+        if not best_match:
+            # Simple Jaccard similarity for better accuracy than pure word count
+            # words = set(target_lower.split())
+            best_score = 0.0
             
-            if score > best_score:
-                best_score = score
-                best_match = prop
+            for prop in properties:
+                name = prop.get("name", "").lower()
+                
+                # Check for direct inclusion
+                if target_lower in name:
+                    best_match = prop
+                    break
+                
+                # Calculate intersection over union of words
+                target_words = set(target_lower.split())
+                prop_words = set(name.split())
+                
+                if not target_words or not prop_words:
+                    continue
+                    
+                intersection = len(target_words.intersection(prop_words))
+                union = len(target_words.union(prop_words))
+                score = intersection / union if union > 0 else 0
+                
+                # Boost score if location also matches (if available in prop)
+                # But properties usually just have 'name'
+                
+                if score > best_score and score > 0.3: # Threshold
+                    best_score = score
+                    best_match = prop
         
         if not best_match:
-            # Fall back to first result
+            # Fall back to first result if it seems relevant enough (optional)
+            # For now, let's pick the first one if the query was specific enough
+            print(f"[SerpApi] No confident match for {target_hotel}. Using first result.")
             best_match = properties[0]
         
         # Extract price and currency
@@ -203,17 +230,43 @@ class SerpApiClient:
         if "rate_per_night" in best_match:
             rate = best_match["rate_per_night"]
             if isinstance(rate, dict):
-                price = rate.get("lowest", rate.get("extracted_lowest"))
+                # Prefer extracted numeric value, otherwise handle text
+                price = rate.get("extracted_lowest", rate.get("lowest"))
             else:
                 price = rate
         elif "price" in best_match:
             price = best_match["price"]
         elif "prices" in best_match and best_match["prices"]:
-            price = best_match["prices"][0].get("rate_per_night", {}).get("lowest")
-        
-        # Clean up price if it's a string
+            # Check price sources
+            price_obj = best_match["prices"][0]
+            rate = price_obj.get("rate_per_night", {})
+            if isinstance(rate, dict):
+                price = rate.get("extracted_lowest", rate.get("lowest"))
+            else:
+                price = rate
+                
+        # Clean up price if it's a string, removing currency codes like "TRY" or symbols
         if isinstance(price, str):
-            price = float(price.replace("$", "").replace(",", "").strip())
+            # Remove non-numeric chars except dot and comma
+            import re
+            # If "TRY 10,249", clean strip letters
+            clean_str = re.sub(r'[^\d.,]', '', price)
+            
+            # Handle comma as thousand separator if dot exists, or if format is 10,000
+            # Heuristic: if comma matches 3 digits at end, it's separator?
+            # Safer: remove commas if they are thousand separators
+            if "," in clean_str and "." not in clean_str:
+                 # "10,249" -> 10249
+                 clean_str = clean_str.replace(",", "")
+            elif "," in clean_str and "." in clean_str:
+                 # "10,249.00" -> 10249.00
+                 clean_str = clean_str.replace(",", "")
+            
+            try:
+                price = float(clean_str)
+            except ValueError:
+                print(f"[SerpApi] Failed to parse price string: {price}")
+                price = None
         
         if price is None:
             print(f"[SerpApi] Could not extract price for {target_hotel}")
