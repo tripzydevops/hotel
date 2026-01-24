@@ -830,16 +830,19 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         return p
     
     # Return a default profile if none exists
+    # Force PRO for the Dev/Demo User ID
+    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
+    
     return UserProfile(
         user_id=user_id,
-        display_name=None,
-        company_name=None,
+        display_name="Demo User" if is_dev_user else None,
+        company_name="My Hotel" if is_dev_user else None,
         job_title=None,
         timezone="UTC",
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        plan_type=plan,
-        subscription_status=status
+        plan_type="pro" if is_dev_user else plan,
+        subscription_status="active" if is_dev_user else status
     )
 
 
@@ -1031,6 +1034,21 @@ async def check_scheduled_scan(
             .order("recorded_at", desc=True) \
             .limit(1) \
             .execute()
+            
+        # [Fix: Scan Spam] Check if a scan is ALREADY pending or running in the last 60 mins
+        # This prevents loop triggers if the background task is slow or failed silently.
+        pending_scan = db.table("scan_sessions") \
+            .select("created_at") \
+            .eq("user_id", str(user_id)) \
+            .in_("status", ["pending", "running"]) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+            
+        if pending_scan.data:
+            pending_time = datetime.fromisoformat(pending_scan.data[0]["created_at"].replace("Z", "+00:00"))
+            if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600: # 1 hour timeout
+                 return {"triggered": False, "reason": "ALREADY_PENDING"}
         
         should_run = False
         if not last_log.data:
