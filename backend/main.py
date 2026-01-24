@@ -653,7 +653,23 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
 
 @app.patch("/api/hotels/{hotel_id}")
 async def update_hotel(hotel_id: UUID, hotel: HotelUpdate, db: Client = Depends(get_supabase)):
+    """Update hotel details."""
     update_data = {k: v for k, v in hotel.model_dump().items() if v is not None}
+    
+    if not update_data:
+        return None
+
+    # Logic: If setting as target, unset other targets for this user
+    if update_data.get("is_target_hotel"):
+        try:
+            # Check ownership first to get user_id
+            current_res = db.table("hotels").select("user_id").eq("id", str(hotel_id)).single().execute()
+            if current_res.data:
+                uid = current_res.data["user_id"]
+                db.table("hotels").update({"is_target_hotel": False}).eq("user_id", uid).execute()
+        except:
+             pass # Fail silent if check fails, logic below will still update this one
+
     result = db.table("hotels").update(update_data).eq("id", str(hotel_id)).execute()
     return result.data[0] if result.data else None
 

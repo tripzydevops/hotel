@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Hotel, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Hotel, Trash2, Edit2 } from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
 
@@ -24,12 +24,9 @@ interface CompetitorTileProps {
   priceHistory?: PricePoint[];
   checkIn?: string;
   adults?: number;
+  onEdit?: (id: string, hotel: any) => void;
 }
 
-/**
- * Competitor Tile (Small Format)
- * Compact display for competitor hotels with trend arrows
- */
 export default function CompetitorTile(props: CompetitorTileProps) {
   const {
     id,
@@ -49,6 +46,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     priceHistory,
     checkIn,
     adults,
+    onEdit,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {

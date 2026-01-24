@@ -44,6 +44,7 @@ class HotelUpdate(BaseModel):
     is_target_hotel: Optional[bool] = None
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
+    preferred_currency: Optional[str] = None
 
 
 class Hotel(HotelBase):

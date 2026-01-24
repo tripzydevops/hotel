@@ -19,7 +19,8 @@ import RapidPulseHistory from "@/components/RapidPulseHistory";
 import ScanSessionModal from "@/components/ScanSessionModal";
 import AlertsModal from "@/components/AlertsModal";
 import ScanSettingsModal from "@/components/ScanSettingsModal";
-import { ScanSession, ScanOptions } from "@/types";
+import EditHotelModal from "@/components/EditHotelModal";
+import { ScanSession, ScanOptions, Hotel } from "@/types";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -39,6 +40,10 @@ export default function Dashboard() {
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
+  
+  // Edit State
+  const [isEditHotelOpen, setIsEditHotelOpen] = useState(false);
+  const [hotelToEdit, setHotelToEdit] = useState<Hotel | null>(null);
 
   // Session Modal State
   const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
@@ -52,6 +57,25 @@ export default function Dashboard() {
   const handleOpenSession = (session: ScanSession) => {
     setSelectedSession(session);
     setIsSessionModalOpen(true);
+  };
+  
+  const handleEditHotel = (id: string, hotel: any) => {
+    // Ensure we have a valid hotel object. If passed from tile, it might be partial.
+    // Ideally we find it in our data.
+    const fullHotel = data?.competitors.find(h => h.id === id) || (data?.target_hotel?.id === id ? data.target_hotel : null);
+    if (fullHotel) {
+        setHotelToEdit(fullHotel);
+        setIsEditHotelOpen(true);
+    } else {
+        // Fallback if we can't find it (rare)
+        console.warn("Could not find full hotel data for edit", id);
+        // We could just set what we have? 
+        // Typescript needs full Hotel. Let's cast or fetch? 
+        // Tiles pass what they have. CompetitorTile actually constructs a partial obj in onEdit? 
+        // No, in my previous edit I tried to pass object but commented it out. 
+        // The tile only receives flat props. 
+        // So finding it in `data` is the best way.
+    }
   };
 
 
@@ -255,6 +279,15 @@ export default function Dashboard() {
         onScan={handleScan}
         initialValues={scanDefaults}
       />
+      
+      {hotelToEdit && (
+        <EditHotelModal 
+            isOpen={isEditHotelOpen}
+            onClose={() => { setIsEditHotelOpen(false); setHotelToEdit(null); }}
+            hotel={hotelToEdit}
+            onUpdate={fetchData}
+        />
+      )}
 
       <AlertsModal
         isOpen={isAlertsOpen}

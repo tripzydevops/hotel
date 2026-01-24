@@ -224,6 +224,14 @@ class ApiClient {
     });
   }
 
+  // User Hotel Update
+  async updateHotel(hotelId: string, updates: any): Promise<any> {
+    return this.fetch<any>(`/api/hotels/${hotelId}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+  }
+
   async deleteAdminHotel(hotelId: string): Promise<void> {
     return this.fetch<void>(`/api/admin/hotels/${hotelId}`, {
       method: "DELETE",

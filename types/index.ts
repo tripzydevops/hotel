@@ -19,6 +19,7 @@ export interface Hotel {
   stars?: number;
   image_url?: string;
   property_token?: string;
+  preferred_currency?: string;
   created_at: string;
 }
 

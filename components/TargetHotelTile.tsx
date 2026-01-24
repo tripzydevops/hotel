@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Building2, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Building2, Trash2, Edit2 } from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
 
@@ -24,6 +24,7 @@ interface TargetHotelTileProps {
   priceHistory?: PricePoint[];
   checkIn?: string;
   adults?: number;
+  onEdit?: (id: string, hotel: any) => void;
 }
 
 /**
@@ -48,6 +49,7 @@ export default function TargetHotelTile({
   priceHistory,
   checkIn,
   adults,
+  onEdit,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
