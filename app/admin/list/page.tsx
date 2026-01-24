@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { 
   List, Building2, MapPin, RefreshCw, Loader2, AlertCircle, 
-  Search, Filter, ChevronDown, ExternalLink, TrendingUp, TrendingDown
+  Search, Edit2, Trash2, X, Save, TrendingUp, TrendingDown
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -13,12 +13,12 @@ interface HotelEntry {
   name: string;
   location: string;
   user_id: string;
-  user_email?: string;
+  user_display?: string;
   serp_api_id?: string;
   is_target_hotel: boolean;
+  preferred_currency?: string;
   last_price?: number;
-  last_price_change?: number;
-  currency?: string;
+  last_currency?: string;
   last_scanned?: string;
   created_at: string;
 }
@@ -33,6 +33,11 @@ export default function AdminMasterListPage() {
   const [sortBy, setSortBy] = useState<"created" | "name" | "price">("created");
   const [showTargetOnly, setShowTargetOnly] = useState(false);
 
+  // Edit modal state
+  const [editingHotel, setEditingHotel] = useState<HotelEntry | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", location: "", serp_api_id: "", is_target_hotel: false });
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     loadHotels();
   }, []);
@@ -41,65 +46,47 @@ export default function AdminMasterListPage() {
     setLoading(true);
     setError("");
     try {
-      // Fetch all hotels across all users (admin endpoint)
-      const response = await fetch("/api/admin/hotels");
-      
-      // If endpoint doesn't exist yet, use mock data
-      if (!response.ok) {
-        // Fallback: generate sample entries for demo
-        setHotels([
-          {
-            id: "1",
-            name: "Hilton Garden Inn Balikesir",
-            location: "Balikesir, Turkey",
-            user_id: "user-1",
-            user_email: "demo@example.com",
-            serp_api_id: "ChkItfPTzbCr0O8sGg0vZy8xMXNfNWZrdzdzEAE",
-            is_target_hotel: true,
-            last_price: 1250,
-            currency: "TRY",
-            last_scanned: new Date().toISOString(),
-            created_at: new Date(Date.now() - 86400000 * 5).toISOString()
-          },
-          {
-            id: "2",
-            name: "Ramada Residences by Wyndham",
-            location: "Balikesir, Turkey",
-            user_id: "user-1",
-            user_email: "demo@example.com",
-            serp_api_id: "ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB",
-            is_target_hotel: false,
-            last_price: 980,
-            last_price_change: -5.2,
-            currency: "TRY",
-            last_scanned: new Date().toISOString(),
-            created_at: new Date(Date.now() - 86400000 * 3).toISOString()
-          },
-          {
-            id: "3",
-            name: "Venus Thermal Boutique Hotel & Spa",
-            location: "Balikesir, Turkey",
-            user_id: "user-2",
-            user_email: "hotel@example.com",
-            is_target_hotel: false,
-            last_price: 1800,
-            last_price_change: 12.5,
-            currency: "TRY",
-            last_scanned: new Date(Date.now() - 3600000).toISOString(),
-            created_at: new Date(Date.now() - 86400000 * 7).toISOString()
-          }
-        ]);
-        return;
-      }
-      
-      const data = await response.json();
+      const data = await api.getAdminHotels(100);
       setHotels(data);
     } catch (err: any) {
-      // Use fallback mock data on error
+      setError(err.message || "Could not load hotels.");
       setHotels([]);
-      setError("Could not load hotels. Backend endpoint may not be available yet.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = (hotel: HotelEntry) => {
+    setEditingHotel(hotel);
+    setEditForm({
+      name: hotel.name,
+      location: hotel.location || "",
+      serp_api_id: hotel.serp_api_id || "",
+      is_target_hotel: hotel.is_target_hotel
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editingHotel) return;
+    setSaving(true);
+    try {
+      await api.updateAdminHotel(editingHotel.id, editForm);
+      setEditingHotel(null);
+      loadHotels(); // Refresh
+    } catch (err: any) {
+      alert("Failed to update hotel: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (hotelId: string, hotelName: string) => {
+    if (!confirm(`Delete "${hotelName}"? This will also delete all price logs and alerts for this hotel.`)) return;
+    try {
+      await api.deleteAdminHotel(hotelId);
+      loadHotels(); // Refresh
+    } catch (err: any) {
+      alert("Failed to delete hotel: " + err.message);
     }
   };
 
@@ -108,8 +95,8 @@ export default function AdminMasterListPage() {
     .filter(h => {
       const matchesSearch = !search || 
         h.name.toLowerCase().includes(search.toLowerCase()) ||
-        h.location.toLowerCase().includes(search.toLowerCase()) ||
-        h.user_email?.toLowerCase().includes(search.toLowerCase());
+        (h.location || "").toLowerCase().includes(search.toLowerCase()) ||
+        (h.user_display || "").toLowerCase().includes(search.toLowerCase());
       const matchesTarget = !showTargetOnly || h.is_target_hotel;
       return matchesSearch && matchesTarget;
     })
@@ -118,6 +105,15 @@ export default function AdminMasterListPage() {
       if (sortBy === "price") return (b.last_price || 0) - (a.last_price || 0);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+
+  const getCurrencySymbol = (currency?: string) => {
+    switch(currency) {
+      case 'TRY': return '₺';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      default: return '$';
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
@@ -145,10 +141,10 @@ export default function AdminMasterListPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-yellow-500/10 border border-yellow-500/50 p-4 rounded-lg flex items-center gap-3 text-yellow-200 mb-6">
-          <AlertCircle className="w-5 h-5 text-yellow-400" />
+        <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-lg flex items-center gap-3 text-red-200 mb-6">
+          <AlertCircle className="w-5 h-5 text-red-400" />
           <div>
-            <p className="font-medium">Note</p>
+            <p className="font-medium">Error</p>
             <p className="text-sm opacity-80">{error}</p>
           </div>
         </div>
@@ -209,13 +205,8 @@ export default function AdminMasterListPage() {
           <div className="text-2xl font-bold text-white">{new Set(hotels.map(h => h.user_id)).size}</div>
         </div>
         <div className="glass-card p-4 border border-white/10">
-          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Avg. Price</div>
-          <div className="text-2xl font-bold text-white">
-            {hotels.length > 0 
-              ? `₺${Math.round(hotels.filter(h => h.last_price).reduce((sum, h) => sum + (h.last_price || 0), 0) / hotels.filter(h => h.last_price).length).toLocaleString()}`
-              : '-'
-            }
-          </div>
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">With Prices</div>
+          <div className="text-2xl font-bold text-white">{hotels.filter(h => h.last_price).length}</div>
         </div>
       </div>
 
@@ -235,6 +226,7 @@ export default function AdminMasterListPage() {
                 <th className="p-4">Last Price</th>
                 <th className="p-4">Last Scanned</th>
                 <th className="p-4">Type</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -256,35 +248,20 @@ export default function AdminMasterListPage() {
                         </div>
                         <div className="flex items-center gap-1 text-[var(--text-muted)] text-xs mt-0.5">
                           <MapPin className="w-3 h-3" />
-                          {hotel.location}
+                          {hotel.location || "Unknown"}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="text-white text-xs font-mono">{hotel.user_email || hotel.user_id.slice(0, 8) + '...'}</div>
+                    <div className="text-white text-xs">{hotel.user_display || hotel.user_id.slice(0, 8) + '...'}</div>
                   </td>
                   <td className="p-4">
                     {hotel.last_price ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-medium">
-                          {hotel.currency === 'TRY' ? '₺' : hotel.currency === 'EUR' ? '€' : '$'}
-                          {hotel.last_price.toLocaleString()}
-                        </span>
-                        {hotel.last_price_change && (
-                          <span className={`flex items-center gap-0.5 text-xs ${
-                            hotel.last_price_change > 0 
-                              ? 'text-red-400' 
-                              : 'text-[var(--optimal-green)]'
-                          }`}>
-                            {hotel.last_price_change > 0 
-                              ? <TrendingUp className="w-3 h-3" /> 
-                              : <TrendingDown className="w-3 h-3" />
-                            }
-                            {Math.abs(hotel.last_price_change)}%
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-white font-medium">
+                        {getCurrencySymbol(hotel.last_currency)}
+                        {hotel.last_price.toLocaleString()}
+                      </span>
                     ) : (
                       <span className="text-[var(--text-muted)]">-</span>
                     )}
@@ -306,11 +283,29 @@ export default function AdminMasterListPage() {
                       </span>
                     )}
                   </td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleEdit(hotel)}
+                        className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] hover:text-white transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(hotel.id, hotel.name)}
+                        className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {filteredHotels.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-[var(--text-muted)]">
+                  <td colSpan={6} className="p-12 text-center text-[var(--text-muted)]">
                     {search ? 'No hotels match your search.' : 'No hotels found.'}
                   </td>
                 </tr>
@@ -319,6 +314,78 @@ export default function AdminMasterListPage() {
           </table>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingHotel && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-card p-6 border border-white/10 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Edit Hotel</h3>
+              <button onClick={() => setEditingHotel(null)} className="text-[var(--text-muted)] hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Hotel Name</label>
+                <input 
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Location</label>
+                <input 
+                  type="text"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm(f => ({ ...f, location: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">SerpApi ID</label>
+                <input 
+                  type="text"
+                  value={editForm.serp_api_id}
+                  onChange={(e) => setEditForm(f => ({ ...f, serp_api_id: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-mono text-xs"
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <input 
+                  type="checkbox"
+                  id="is_target"
+                  checked={editForm.is_target_hotel}
+                  onChange={(e) => setEditForm(f => ({ ...f, is_target_hotel: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="is_target" className="text-white">This is a target hotel (not competitor)</label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => setEditingHotel(null)}
+                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

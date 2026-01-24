@@ -193,6 +193,42 @@ class ApiClient {
   async getAdminLogs(limit = 50): Promise<any[]> {
     return this.fetch<any[]>(`/api/admin/logs?limit=${limit}`);
   }
+
+  // ===== Admin Edit Operations =====
+  
+  async updateAdminUser(userId: string, updates: any): Promise<any> {
+    return this.fetch<any>(`/api/admin/users/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async updateAdminDirectory(entryId: string, updates: any): Promise<any> {
+    return this.fetch<any>(`/api/admin/directory/${entryId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+  }
+
+  // ===== Admin Hotels CRUD =====
+
+  async getAdminHotels(limit = 100): Promise<any[]> {
+    return this.fetch<any[]>(`/api/admin/hotels?limit=${limit}`);
+  }
+
+  async updateAdminHotel(hotelId: string, updates: any): Promise<any> {
+    return this.fetch<any>(`/api/admin/hotels/${hotelId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteAdminHotel(hotelId: string): Promise<void> {
+    return this.fetch<void>(`/api/admin/hotels/${hotelId}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const api = new ApiClient();
+
