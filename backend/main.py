@@ -804,8 +804,18 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     # Fetch base profile
     result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
     
-    # Fetch subscription info (truth source)
-    sub_data = db.table("profiles").select("plan_type, subscription_status").eq("id", str(user_id)).execute().data
+    # Fetch subscription info (truth source) - Use Service Role to bypass RLS
+    try:
+        admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        viewer_db = db
+        if admin_key and url:
+             viewer_db = create_client(url, admin_key)
+        
+        sub_data = viewer_db.table("profiles").select("plan_type, subscription_status").eq("id", str(user_id)).execute().data
+    except Exception as e:
+        print(f"Profile Sync Error: {e}")
+        sub_data = []
     
     plan = "trial"
     status = "trial"
