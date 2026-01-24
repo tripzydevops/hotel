@@ -32,15 +32,7 @@ export default function Header({
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center shadow-lg shadow-[var(--soft-gold)]/20">
-              <span className="text-[var(--deep-ocean)] font-bold text-lg">
-                H
-              </span>
-            </div>
-            <span className="text-lg font-bold text-white tracking-tight">
-              Hotel{" "}
-              <span className="text-[var(--soft-gold)]">Rate Sentinel</span>
-            </span>
+            <img src="/logo.png" alt="Hotel Plus" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
