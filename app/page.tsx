@@ -427,6 +427,7 @@ export default function Dashboard() {
                   priceHistory={data.target_hotel.price_history}
                   checkIn={data.target_hotel.price_info?.check_in}
                   adults={data.target_hotel.price_info?.adults}
+                  onEdit={handleEditHotel}
                 />
               )}
 
@@ -458,6 +459,7 @@ export default function Dashboard() {
                       priceHistory={competitor.price_history}
                       checkIn={competitor.price_info?.check_in}
                       adults={competitor.price_info?.adults}
+                      onEdit={handleEditHotel}
                     />
                   );
                 })}
