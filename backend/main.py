@@ -1491,7 +1491,7 @@ async def add_admin_directory_entry(entry: dict, db: Client = Depends(get_supaba
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/admin/directory/{entry_id}")
-async def delete_admin_directory(entry_id: int, db: Client = Depends(get_supabase)):
+async def delete_admin_directory(entry_id: str, db: Client = Depends(get_supabase)):
     """Delete a directory entry."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")

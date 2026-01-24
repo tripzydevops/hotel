@@ -266,7 +266,7 @@ class AdminUser(BaseModel):
     last_active: Optional[datetime] = None
 
 class AdminDirectoryEntry(BaseModel):
-    id: int
+    id: Any  # Can be UUID string or int depending on DB
     name: str
     location: str
     serp_api_id: Optional[str] = None
