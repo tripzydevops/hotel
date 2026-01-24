@@ -797,7 +797,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             timezone="UTC",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
-            plan_type="trial",
+            plan_type="pro",
             subscription_status="active"
         )
     
