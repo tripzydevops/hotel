@@ -91,7 +91,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
   return (
     <div
       className={`
-        glass-card p-5 flex flex-col justify-between
+        glass-card p-5 flex flex-col justify-between relative overflow-hidden
         ${isUndercut ? "ring-2 ring-red-500/50" : ""}
       `}
     >
