@@ -17,7 +17,14 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      let errorMessage = response.statusText;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+      } catch (e) {
+        // Ignore JSON parse error, stick to statusText
+      }
+      throw new Error(`API Error: ${errorMessage}`);
     }
 
     return response.json();
