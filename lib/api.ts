@@ -225,15 +225,20 @@ class ApiClient {
 
   // ===== Admin Hotels CRUD =====
 
-  async getAdminHotels(limit = 100): Promise<any[]> {
-    return this.fetch<any[]>(`/api/admin/hotels?limit=${limit}`);
+  async getAdminHotels(limit = 100) {
+    const res = await fetch(`${API_BASE_URL}/api/admin/hotels?limit=${limit}`);
+    if (!res.ok) throw new Error("Failed to fetch hotels");
+    return res.json();
   }
 
-  async updateAdminHotel(hotelId: string, updates: any): Promise<any> {
-    return this.fetch<any>(`/api/admin/hotels/${hotelId}`, {
+  async updateAdminHotel(hotelId: string, updates: any) {
+    const res = await fetch(`${API_BASE_URL}/api/admin/hotels/${hotelId}`, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
+    if (!res.ok) throw new Error("Failed to update hotel");
+    return res.json();
   }
 
   // User Hotel Update
@@ -244,12 +249,29 @@ class ApiClient {
     });
   }
 
-  async deleteAdminHotel(hotelId: string): Promise<void> {
-    return this.fetch<void>(`/api/admin/hotels/${hotelId}`, {
+  async deleteAdminHotel(hotelId: string) {
+    const res = await fetch(`${API_BASE_URL}/api/admin/hotels/${hotelId}`, {
       method: "DELETE",
     });
+    if (!res.ok) throw new Error("Failed to delete hotel");
+    return res.json();
+  }
+
+  async getAdminSettings() {
+    const res = await fetch(`${API_BASE_URL}/api/admin/settings`);
+    if (!res.ok) throw new Error("Failed to fetch settings");
+    return res.json();
+  }
+
+  async updateAdminSettings(updates: any) {
+    const res = await fetch(`${API_BASE_URL}/api/admin/settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error("Failed to update settings");
+    return res.json();
   }
 }
 
 export const api = new ApiClient();
-

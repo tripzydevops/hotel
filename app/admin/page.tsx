@@ -303,7 +303,7 @@ export default function AdminPage() {
                     {users.map((u) => (
                     <tr key={u.id} className="hover:bg-white/5">
                         <td className="p-4">
-                        <div className="font-medium text-white">{u.display_name || "Unknown"}</div>
+                        <div className="font-medium text-white">{u.display_name || u.email?.split('@')[0] || "Unknown"}</div>
                         <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
                         <div className="text-[var(--text-muted)] text-xs font-mono">{u.id}</div>
                         </td>

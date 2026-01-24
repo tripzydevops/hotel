@@ -338,3 +338,21 @@ class SerpApiHotelPrice(BaseModel):
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     source: str = "serpapi"
+
+
+class AdminSettings(BaseModel):
+    id: UUID
+    maintenance_mode: bool
+    signup_enabled: bool
+    default_currency: str
+    system_alert_message: Optional[str] = None
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class AdminSettingsUpdate(BaseModel):
+    maintenance_mode: Optional[bool] = None
+    signup_enabled: Optional[bool] = None
+    default_currency: Optional[str] = None
+    system_alert_message: Optional[str] = None

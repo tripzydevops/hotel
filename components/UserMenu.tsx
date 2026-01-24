@@ -78,7 +78,12 @@ export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSet
           
           {/* Header */}
           <div className="px-4 py-3 border-b border-white/5">
-            <p className="text-sm font-bold text-white">{profile?.display_name || "Guest User"}</p>
+            <p className="text-sm font-bold text-white flex items-center gap-2">
+                {profile?.display_name || "Guest User"}
+                {profile?.plan_type === 'enterprise' && profile?.display_name === 'Demo User' && (
+                    <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded uppercase">Dev</span>
+                )}
+            </p>
             <p className="text-xs text-[var(--text-muted)] truncate">{profile?.email || "No email"}</p>
           </div>
 

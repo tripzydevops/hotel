@@ -19,10 +19,12 @@ import { api } from "@/lib/api";
 import ScanSessionModal from "@/components/ScanSessionModal";
 import { ScanSession } from "@/types";
 
-const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ReportsPage() {
   const { t } = useI18n();
+  const supabase = createClient();
+  const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -30,9 +32,23 @@ export default function ReportsPage() {
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
   useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      } else {
+        // DEV MODE: Bypass
+        setUserId("123e4567-e89b-12d3-a456-426614174000"); 
+      }
+    };
+    getSession();
+  }, []);
+
+  useEffect(() => {
     async function loadData() {
+      if (!userId) return;
       try {
-        const result = await api.getReports(MOCK_USER_ID);
+        const result = await api.getReports(userId);
         setData(result);
       } catch (err) {
         console.error("Failed to load reports:", err);
@@ -44,9 +60,10 @@ export default function ReportsPage() {
   }, []);
 
   const handleExport = async (format: string) => {
+    if (!userId) return;
     setExporting(format);
     try {
-      await api.exportReport(MOCK_USER_ID, format);
+      await api.exportReport(userId, format);
       alert(`Report exported as ${format.toUpperCase()} successfully!`);
     } catch (err) {
       console.error("Export failed:", err);

@@ -17,21 +17,38 @@ import {
 import { api } from "@/lib/api";
 import Link from "next/link";
 
-const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+import { createClient } from "@/utils/supabase/client";
+
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", TRY: "₺" };
 
 export default function AnalysisPage() {
   const { t } = useI18n();
+  const supabase = createClient();
+  const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<string>("USD");
 
   useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      } else {
+        // DEV MODE: Bypass
+        setUserId("123e4567-e89b-12d3-a456-426614174000"); 
+      }
+    };
+    getSession();
+  }, []);
+
+  useEffect(() => {
     async function loadData() {
+      if (!userId) return;
       setLoading(true);
       try {
-        const result = await api.getAnalysis(MOCK_USER_ID, currency);
+        const result = await api.getAnalysis(userId, currency);
         setData(result);
         // Update currency from response (may differ from request if using user settings)
         if (result.display_currency) {

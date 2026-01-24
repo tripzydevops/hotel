@@ -28,7 +28,8 @@ from backend.models.schemas import (
     MarketAnalysis, ReportsResponse, ScanSession,
     UserProfile, UserProfileUpdate,
     AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate,
-    ScanOptions
+    ScanOptions,
+    AdminSettings, AdminSettingsUpdate
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -797,7 +798,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             timezone="UTC",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
-            plan_type="pro",
+            plan_type="enterprise",
             subscription_status="active"
         )
     
@@ -824,9 +825,8 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         status = sub_data[0].get("subscription_status") or "trial"
     
     # Force PRO for Dev/Demo User (since it can't rely on profiles join due to FK)
-    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
     if is_dev_user:
-        plan = "pro"
+        plan = "enterprise"
         status = "active"
 
     if result.data:
@@ -847,7 +847,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         timezone="UTC",
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        plan_type="pro" if is_dev_user else plan,
+        plan_type="enterprise" if is_dev_user else plan,
         subscription_status="active" if is_dev_user else status
     )
 
@@ -1898,6 +1898,105 @@ async def update_admin_directory(entry_id: str, updates: dict, db: Client = Depe
 @app.get("/api/admin/hotels")
 async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase)):
     """List all hotels across all users with user info."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+        
+    try:
+        # Join logic manual since we are using simple queries
+        start = time.time()
+        
+        hotels = db.table("hotels").select("*").limit(limit).execute().data or []
+        users = db.table("user_profiles").select("user_id, display_name, email").execute().data or []
+        
+        user_map = {u["user_id"]: u for u in users}
+        
+        results = []
+        for h in hotels:
+            user = user_map.get(h["user_id"], {})
+            
+            # Fetch last price
+            last_price = None
+            last_currency = "USD"
+            last_scanned = None
+            
+            # Optimization: This N+1 query is bad but valid for MVP with low data
+            # Real fix: Fetch latest prices in bulk or use a view
+            prices = db.table("price_logs").select("price, currency, recorded_at").eq("hotel_id", h["id"]).order("recorded_at", desc=True).limit(1).execute().data
+            if prices:
+                last_price = prices[0]["price"]
+                last_currency = prices[0]["currency"]
+                last_scanned = prices[0]["recorded_at"]
+                
+            results.append({
+                "id": h["id"],
+                "name": h["name"],
+                "location": h["location"],
+                "user_id": h["user_id"],
+                "user_display": user.get("display_name") or user.get("email"),
+                "serp_api_id": h.get("serp_api_id"),
+                "is_target_hotel": h["is_target_hotel"],
+                "preferred_currency": h.get("preferred_currency"),
+                "last_price": last_price,
+                "last_currency": last_currency,
+                "last_scanned": last_scanned,
+                "created_at": h["created_at"]
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Admin Hotels Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+
+# ===== Admin Global Settings =====
+
+import time
+import json
+
+SETTINGS_FILE = "admin_settings.json"
+
+def load_admin_settings() -> AdminSettings:
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, "r") as f:
+                data = json.load(f)
+                return AdminSettings(**data)
+        except Exception as e:
+            print(f"Error loading admin settings: {e}")
+            
+    # Default
+    return AdminSettings(
+        id=UUID("00000000-0000-0000-0000-000000000000"),
+        maintenance_mode=False,
+        signup_enabled=True,
+        default_currency="USD",
+        system_alert_message=None,
+        updated_at=datetime.now(timezone.utc)
+    )
+
+def save_admin_settings(settings: AdminSettings):
+    with open(SETTINGS_FILE, "w") as f:
+        # Convert datetime to ISO string manually if needed, or use pydantic json
+        f.write(settings.model_dump_json())
+
+@app.get("/api/admin/settings", response_model=AdminSettings)
+async def get_admin_settings():
+    """Get global system settings."""
+    return load_admin_settings()
+
+@app.put("/api/admin/settings")
+async def update_admin_settings(updates: AdminSettingsUpdate):
+    """Update global system settings."""
+    current = load_admin_settings()
+    
+    # Apply updates
+    update_data = updates.model_dump(exclude_unset=True)
+    updated_settings = current.model_copy(update=update_data)
+    updated_settings.updated_at = datetime.now(timezone.utc)
+    
+    save_admin_settings(updated_settings)
+    
+    return updated_settings
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:
