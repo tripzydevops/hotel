@@ -255,7 +255,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pb-12 relative">
       {isLocked && <PaywallOverlay reason={profile?.subscription_status === 'canceled' ? "Subscription Canceled" : "Trial Expired"} />}
-      <Header userProfile={profile} hotelCount={currentHotelCount} />
+      <Header userProfile={profile} hotelCount={currentHotelCount} onOpenProfile={() => setIsProfileOpen(true)} />
 
       <AddHotelModal
         isOpen={isAddHotelOpen}
@@ -362,13 +362,7 @@ export default function Dashboard() {
               )}
             </button>
 
-            {/* Profile */}
-            <button
-              onClick={() => setIsProfileOpen(true)}
-              className="p-3 glass rounded-xl hover:bg-white/10 transition-colors"
-            >
-              <User className="w-5 h-5 text-white" />
-            </button>
+
 
             {/* Settings */}
             <button

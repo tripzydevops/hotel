@@ -8,9 +8,10 @@ import UserMenu from "./UserMenu";
 interface HeaderProps {
   userProfile?: any;
   hotelCount?: number;
+  onOpenProfile?: () => void;
 }
 
-export default function Header({ userProfile, hotelCount = 0 }: HeaderProps) {
+export default function Header({ userProfile, hotelCount = 0, onOpenProfile }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
 
@@ -64,7 +65,7 @@ export default function Header({ userProfile, hotelCount = 0 }: HeaderProps) {
             </button>
 
             {userProfile ? (
-                 <UserMenu profile={userProfile} hotelCount={hotelCount} />
+                 <UserMenu profile={userProfile} hotelCount={hotelCount} onOpenProfile={onOpenProfile || (() => {})} />
             ) : (
                 <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
             )}
@@ -125,7 +126,7 @@ export default function Header({ userProfile, hotelCount = 0 }: HeaderProps) {
               </Link>
                {userProfile && (
                    <div className="pt-4 border-t border-white/10">
-                       <UserMenu profile={userProfile} hotelCount={hotelCount} />
+                       <UserMenu profile={userProfile} hotelCount={hotelCount} onOpenProfile={onOpenProfile || (() => {})} />
                    </div>
                )}
             </nav>
