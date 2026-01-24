@@ -356,3 +356,32 @@ class AdminSettingsUpdate(BaseModel):
     signup_enabled: Optional[bool] = None
     default_currency: Optional[str] = None
     system_alert_message: Optional[str] = None
+
+
+# ===== Membership Plan Models =====
+
+class PlanBase(BaseModel):
+    name: str
+    price_monthly: float
+    hotel_limit: int
+    scan_frequency_limit: str = "daily" # hourly, daily, weekly
+    features: List[str] = []
+    is_active: bool = True
+
+class PlanCreate(PlanBase):
+    pass
+
+class PlanUpdate(BaseModel):
+    name: Optional[str] = None
+    price_monthly: Optional[float] = None
+    hotel_limit: Optional[int] = None
+    scan_frequency_limit: Optional[str] = None
+    features: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class MembershipPlan(PlanBase):
+    id: UUID
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
