@@ -1,4 +1,4 @@
-"""
+a"""
 Hotel Rate Monitor - FastAPI Backend
 Main application with monitoring and API endpoints.
 """
@@ -1442,6 +1442,9 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 "email": s.get("notification_email"),  # Use notification_email 
                 "display_name": "Unknown",
                 "company_name": None,
+                "job_title": None,
+                "phone": None,
+                "timezone": None,
                 "hotel_count": 0,
                 "scan_count": 0
             }
@@ -1455,12 +1458,18 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                     "email": None,
                     "display_name": p.get("display_name"),
                     "company_name": p.get("company_name"),
+                    "job_title": p.get("job_title"),
+                    "phone": p.get("phone"),
+                    "timezone": p.get("timezone"),
                     "hotel_count": 0,
                     "scan_count": 0
                 }
             else:
                 users_map[uid]["display_name"] = p.get("display_name")
                 users_map[uid]["company_name"] = p.get("company_name")
+                users_map[uid]["job_title"] = p.get("job_title")
+                users_map[uid]["phone"] = p.get("phone")
+                users_map[uid]["timezone"] = p.get("timezone")
                 
         # Enrich with counts (this could be slow with many users, optimize later)
         final_users = []

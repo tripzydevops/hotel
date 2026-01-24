@@ -132,6 +132,10 @@ export interface AdminUser {
   email: string;
   display_name?: string;
   created_at: string;
+  company_name?: string;
+  job_title?: string;
+  phone?: string;
+  timezone?: string;
   hotel_count: number;
   scan_count: number;
 }

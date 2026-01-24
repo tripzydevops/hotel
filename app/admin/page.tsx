@@ -36,7 +36,15 @@ export default function AdminPage() {
 
   // Edit User State
   const [userToEdit, setUserToEdit] = useState<AdminUser | null>(null);
-  const [editUserForm, setEditUserForm] = useState({ email: "", display_name: "", password: "" });
+  const [editUserForm, setEditUserForm] = useState({ 
+    email: "", 
+    display_name: "", 
+    password: "",
+    company_name: "",
+    job_title: "",
+    phone: "",
+    timezone: "UTC"
+  });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
   useEffect(() => {
@@ -48,7 +56,11 @@ export default function AdminPage() {
       setEditUserForm({
         email: userToEdit.email || "",
         display_name: userToEdit.display_name || "",
-        password: "" 
+        password: "",
+        company_name: userToEdit.company_name || "",
+        job_title: userToEdit.job_title || "",
+        phone: userToEdit.phone || "",
+        timezone: userToEdit.timezone || "UTC"
       });
     }
   }, [userToEdit]);
@@ -84,7 +96,11 @@ export default function AdminPage() {
         await api.updateAdminUser(userToEdit.id, {
             email: editUserForm.email,
             display_name: editUserForm.display_name,
-            password: editUserForm.password || undefined
+            password: editUserForm.password || undefined,
+            company_name: editUserForm.company_name,
+            job_title: editUserForm.job_title,
+            phone: editUserForm.phone,
+            timezone: editUserForm.timezone
         });
         setUserToEdit(null);
         loadTabData();
@@ -484,6 +500,47 @@ export default function AdminPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
                   placeholder="Leave blank to keep current"
                 />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Company / Hotel</label>
+                <input 
+                  type="text"
+                  value={editUserForm.company_name}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, company_name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Job Title</label>
+                    <input 
+                      type="text"
+                      value={editUserForm.job_title}
+                      onChange={(e) => setEditUserForm(f => ({ ...f, job_title: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Phone</label>
+                    <input 
+                      type="text"
+                      value={editUserForm.phone}
+                      onChange={(e) => setEditUserForm(f => ({ ...f, phone: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                    />
+                  </div>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Timezone</label>
+                <select
+                  value={editUserForm.timezone}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, timezone: e.target.value }))}
+                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white [&>option]:bg-[#0f172a]"
+                >
+                    {["UTC", "Europe/Istanbul", "Europe/London", "Europe/Paris", "America/New_York", "America/Los_Angeles", "Asia/Tokyo", "Asia/Dubai"].map(tz => (
+                        <option key={tz} value={tz}>{tz}</option>
+                    ))}
+                </select>
               </div>
             </div>
 

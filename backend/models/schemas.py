@@ -270,6 +270,9 @@ class AdminUser(BaseModel):
     display_name: Optional[str] = None
     email: Optional[str] = None  # From auth/settings
     company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    timezone: Optional[str] = None
     hotel_count: int
     scan_count: int
     created_at: datetime
