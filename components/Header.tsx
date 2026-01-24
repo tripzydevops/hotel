@@ -181,8 +181,8 @@ export default function Header({
                            hotelCount={hotelCount || 0} 
                            onOpenProfile={onOpenProfile} 
                            onOpenSettings={onOpenSettings}
-                           onOpenUpgrade={() => setIsUpgradeOpen(true)}
-                           onOpenBilling={onOpenBilling}
+                           onOpenUpgrade={handleOpenBilling}
+                           onOpenBilling={handleOpenBilling}
                        />
                    </div>
                )}
@@ -191,8 +191,6 @@ export default function Header({
         )}
       </div>
 
-      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
-      
       <SubscriptionModal
         isOpen={isBillingOpen}
         onClose={() => setIsBillingOpen(false)}
