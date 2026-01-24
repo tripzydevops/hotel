@@ -12,9 +12,10 @@ interface UserMenuProps {
   onOpenProfile: () => void;
   onOpenSettings: () => void;
   onOpenUpgrade?: () => void;
+  onOpenBilling?: () => void;
 }
 
-export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSettings, onOpenUpgrade }: UserMenuProps) {
+export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSettings, onOpenUpgrade, onOpenBilling }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -149,6 +150,7 @@ export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSet
                   Admin Panel
               </Link>
               <button 
+                  onClick={() => { setIsOpen(false); onOpenBilling?.(); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
               >
                   <CreditCard className="w-4 h-4" />

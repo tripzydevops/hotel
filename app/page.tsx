@@ -20,6 +20,7 @@ import ScanSessionModal from "@/components/ScanSessionModal";
 import AlertsModal from "@/components/AlertsModal";
 import ScanSettingsModal from "@/components/ScanSettingsModal";
 import EditHotelModal from "@/components/EditHotelModal";
+import SubscriptionModal from "@/components/SubscriptionModal"; // New Import
 import { ScanSession, ScanOptions, Hotel } from "@/types";
 import Link from "next/link";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isBillingOpen, setIsBillingOpen] = useState(false); // New State
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
@@ -265,6 +267,7 @@ export default function Dashboard() {
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenAlerts={() => setIsAlertsOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenBilling={() => setIsBillingOpen(true)}
       />
 
       <AddHotelModal
@@ -320,6 +323,21 @@ export default function Dashboard() {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         userId={userId || ""}
+      />
+
+      <SubscriptionModal
+        isOpen={isBillingOpen}
+        onClose={() => setIsBillingOpen(false)}
+        currentPlan={profile?.plan_type || "trial"}
+        onUpgrade={async (plan) => {
+             // Mock upgrade for now
+             if (!userId) return;
+             // Update local state to reflect change immediately (optimistic UI)
+             setProfile({...profile, plan_type: plan, subscription_status: 'active'});
+             // Call API eventually
+             alert(`Upgraded to ${plan} plan successfully!`);
+             setIsBillingOpen(false);
+        }}
       />
 
       {/* Main Content */}

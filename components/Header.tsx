@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { Bell } from "lucide-react";
+import { Bell, Crown } from "lucide-react";
 import UserMenu from "./UserMenu";
 import UpgradeModal from "./UpgradeModal";
 
@@ -11,18 +11,20 @@ interface HeaderProps {
   userProfile?: any;
   hotelCount?: number;
   unreadCount?: number;
-  onOpenProfile?: () => void;
-  onOpenAlerts?: () => void;
-  onOpenSettings?: () => void;
+  onOpenProfile: () => void;
+  onOpenAlerts: () => void;
+  onOpenSettings: () => void;
+  onOpenBilling?: () => void; // New Prop
 }
 
 export default function Header({ 
   userProfile, 
-  hotelCount = 0, 
+  hotelCount, 
   unreadCount = 0,
   onOpenProfile, 
   onOpenAlerts,
-  onOpenSettings 
+  onOpenSettings,
+  onOpenBilling
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
@@ -77,26 +79,40 @@ export default function Header({
               {locale === "en" ? "TR" : "EN"}
             </button>
 
+            {/* Upgrade Button (Mobile hidden) */}
+            {(userProfile?.plan_type === 'trial' || !userProfile?.plan_type) && (
+                 <button 
+                    onClick={onOpenBilling}
+                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-lg text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all"
+                 >
+                    <Crown className="w-3 h-3" />
+                    Upgrade
+                 </button>
+            )}
+
+            <div className="h-6 w-px bg-white/10 hidden sm:block" />
+
             {/* Notifications */}
             <button 
-              onClick={onOpenAlerts}
-              className="relative p-2 rounded-lg hover:bg-white/10 transition-colors group"
+                onClick={onOpenAlerts}
+                className="relative p-2 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-full transition-all"
             >
-              <Bell className="w-5 h-5 text-[var(--soft-gold)] group-hover:text-white transition-colors" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
-              )}
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                )}
             </button>
 
-            {userProfile ? (
-                 <UserMenu 
-                    profile={userProfile} 
-                    hotelCount={hotelCount} 
-                    onOpenProfile={onOpenProfile || (() => {})} 
-                    onOpenSettings={onOpenSettings || (() => {})}
-                    onOpenUpgrade={() => setIsUpgradeOpen(true)}
-                 />
-            ) : (
+            {/* User Menu */}
+            <UserMenu 
+                profile={userProfile} 
+                hotelCount={hotelCount || 0}
+                onOpenProfile={onOpenProfile}
+                onOpenSettings={onOpenSettings}
+                onOpenUpgrade={onOpenBilling} // Reuse billing modal for upgrade
+                onOpenBilling={onOpenBilling}
+            />
+            {userProfile ? null : (
                 <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
             )}
           </div>
@@ -158,10 +174,11 @@ export default function Header({
                    <div className="pt-4 border-t border-white/10">
                        <UserMenu 
                            profile={userProfile} 
-                           hotelCount={hotelCount} 
+                           hotelCount={hotelCount || 0} 
                            onOpenProfile={onOpenProfile || (() => {})} 
                            onOpenSettings={onOpenSettings || (() => {})}
                            onOpenUpgrade={() => setIsUpgradeOpen(true)}
+                           onOpenBilling={onOpenBilling}
                        />
                    </div>
                )}
