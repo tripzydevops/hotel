@@ -19,7 +19,7 @@ interface HeaderProps {
 
 export default function Header({ 
   userProfile, 
-  hotelCount, 
+  hotelCount = 0, 
   unreadCount = 0,
   onOpenProfile, 
   onOpenAlerts,
