@@ -359,6 +359,11 @@ class SerpApiClient:
             "api_key": self.api_key,
         }
         
+        # Optimization: Use direct ID if available
+        if serp_api_id:
+            print(f"[SerpApi] Optimizing search with ID: {serp_api_id}")
+            params["ht_id"] = serp_api_id
+        
         try:
             async with httpx.AsyncClient(timeout=8.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)

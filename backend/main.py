@@ -446,7 +446,9 @@ async def run_monitor_background(
                 meta_update = {}
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
-                if price_data.get("property_token"): meta_update["property_token"] = price_data["property_token"]
+                if price_data.get("property_token"): 
+                    meta_update["serp_api_id"] = price_data["property_token"]
+                    meta_update["property_token"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 
                 if meta_update:
