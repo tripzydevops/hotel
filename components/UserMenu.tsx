@@ -9,8 +9,8 @@ import { useRouter } from "next/navigation";
 interface UserMenuProps {
   profile: any; // Ideally typed
   hotelCount: number;
-  onOpenProfile: () => void;
-  onOpenSettings: () => void;
+  onOpenProfile?: () => void;
+  onOpenSettings?: () => void;
   onOpenUpgrade?: () => void;
   onOpenBilling?: () => void;
 }
@@ -128,14 +128,14 @@ export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSet
           {/* Actions */}
           <div className="px-2">
               <button 
-                  onClick={() => { setIsOpen(false); onOpenProfile(); }}
+                  onClick={() => { setIsOpen(false); onOpenProfile?.(); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
               >
                   <User className="w-4 h-4" />
                   My Profile
               </button>
               <button 
-                  onClick={() => { setIsOpen(false); onOpenSettings(); }}
+                  onClick={() => { setIsOpen(false); onOpenSettings?.(); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
               >
                   <Settings className="w-4 h-4" />

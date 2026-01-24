@@ -11,20 +11,20 @@ interface HeaderProps {
   userProfile?: any;
   hotelCount?: number;
   unreadCount?: number;
-  onOpenProfile: () => void;
-  onOpenAlerts: () => void;
-  onOpenSettings: () => void;
-  onOpenBilling?: () => void; // New Prop
+  onOpenProfile?: () => void;
+  onOpenAlerts?: () => void;
+  onOpenSettings?: () => void;
+  onOpenBilling?: () => void;
 }
 
 export default function Header({ 
   userProfile, 
   hotelCount = 0, 
   unreadCount = 0,
-  onOpenProfile, 
-  onOpenAlerts,
-  onOpenSettings,
-  onOpenBilling
+  onOpenProfile = () => {}, 
+  onOpenAlerts = () => {},
+  onOpenSettings = () => {},
+  onOpenBilling = () => {}
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
@@ -107,7 +107,7 @@ export default function Header({
             <UserMenu 
                 profile={userProfile} 
                 hotelCount={hotelCount || 0}
-                onOpenProfile={onOpenProfile}
+                onOpenProfile={onOpenProfile} 
                 onOpenSettings={onOpenSettings}
                 onOpenUpgrade={onOpenBilling} // Reuse billing modal for upgrade
                 onOpenBilling={onOpenBilling}
@@ -175,8 +175,8 @@ export default function Header({
                        <UserMenu 
                            profile={userProfile} 
                            hotelCount={hotelCount || 0} 
-                           onOpenProfile={onOpenProfile || (() => {})} 
-                           onOpenSettings={onOpenSettings || (() => {})}
+                           onOpenProfile={onOpenProfile} 
+                           onOpenSettings={onOpenSettings}
                            onOpenUpgrade={() => setIsUpgradeOpen(true)}
                            onOpenBilling={onOpenBilling}
                        />
