@@ -139,6 +139,8 @@ class UserProfile(UserProfileBase):
     user_id: UUID
     created_at: datetime
     updated_at: datetime
+    plan_type: Optional[str] = "trial"
+    subscription_status: Optional[str] = "trial"
     
     class Config:
         from_attributes = True

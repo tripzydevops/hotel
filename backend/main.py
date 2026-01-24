@@ -796,13 +796,28 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             job_title="Manager",
             timezone="UTC",
             created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            updated_at=datetime.now(timezone.utc),
+            plan_type="trial",
+            subscription_status="active"
         )
     
+    # Fetch base profile
     result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
     
+    # Fetch subscription info (truth source)
+    sub_data = db.table("profiles").select("plan_type, subscription_status").eq("id", str(user_id)).execute().data
+    
+    plan = "trial"
+    status = "trial"
+    if sub_data:
+        plan = sub_data[0].get("plan_type") or "trial"
+        status = sub_data[0].get("subscription_status") or "trial"
+    
     if result.data:
-        return result.data[0]
+        p = result.data[0]
+        p["plan_type"] = plan
+        p["subscription_status"] = status
+        return p
     
     # Return a default profile if none exists
     return UserProfile(
@@ -812,7 +827,9 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         job_title=None,
         timezone="UTC",
         created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        updated_at=datetime.now(timezone.utc),
+        plan_type=plan,
+        subscription_status=status
     )
 
 
