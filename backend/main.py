@@ -1740,8 +1740,7 @@ async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Clie
         # 3. Handle Email Update (Auth)
         if "email" in update_data and update_data["email"]:
             admin_db.auth.admin.update_user_by_id(str(user_id), {"email": update_data["email"]})
-            # Also update profile for display
-            admin_db.table("user_profiles").update({"email": update_data["email"]}).eq("user_id", str(user_id)).execute()
+            # Skip updating "user_profiles" email as the column doesn't exist there.
             
         # 4. Handle Password Update (Auth)
         if "password" in update_data and update_data["password"]:
