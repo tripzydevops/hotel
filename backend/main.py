@@ -1416,7 +1416,7 @@ async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabas
             for item in result.data:
                 entries.append(AdminDirectoryEntry(
                     id=item["id"],
-                    name=item["hotel_name"],
+                    name=item["name"],
                     location=item["location"] or "Unknown",
                     serp_api_id=item.get("serp_api_id"),
                     created_at=item["created_at"]
@@ -1466,72 +1466,33 @@ async def delete_admin_user(user_id: UUID, db: Client = Depends(get_supabase)):
         db.table(table).delete().eq("user_id", str(user_id)).execute()
     return {"status": "success"}
 
-@app.get("/api/admin/directory", response_model=List[AdminDirectoryEntry])
-async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabase)):
-    """List directory entries."""
-    result = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit).execute()
-    entries = []
-    if result.data:
-        for item in result.data:
-            entries.append(AdminDirectoryEntry(
-                id=item["id"],
-                name=item["hotel_name"],
-                location=item["location"] or "Unknown",
-                serp_api_id=item.get("serp_api_id"),
-                created_at=item["created_at"]
-            ))
-    return entries
-
 @app.post("/api/admin/directory", response_model=dict)
 async def add_admin_directory_entry(entry: dict, db: Client = Depends(get_supabase)):
     """Add a directory entry manually."""
-    db.table("hotel_directory").insert({
-        "hotel_name": entry["name"],
-        "location": entry["location"],
-        "serp_api_id": entry.get("serp_api_id")
-    }).execute()
-    return {"status": "success"}
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+    try:
+        db.table("hotel_directory").insert({
+            "name": entry["name"],
+            "location": entry["location"],
+            "serp_api_id": entry.get("serp_api_id")
+        }).execute()
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Admin Add Directory Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/admin/directory/{entry_id}")
 async def delete_admin_directory(entry_id: int, db: Client = Depends(get_supabase)):
     """Delete a directory entry."""
-    db.table("hotel_directory").delete().eq("id", entry_id).execute()
-    return {"status": "success"}
-
-@app.get("/api/admin/sync", response_model=dict)
-async def sync_admin_directory(db: Client = Depends(get_supabase)):
-    """Sync existing user hotels to the directory."""
-    # 1. Get all unique hotels from users' lists
-    # Note: In a real large-scale app, we'd do this via complex SQL or batch jobs.
-    # Here we'll fetch all hotels and dedup in python for simplicity (MVP).
-    all_hotels = db.table("hotels").select("name, location, serp_api_id").execute().data or []
-    
-    synced_count = 0
-    for h in all_hotels:
-        # Check if exists (fuzzy check on name/location or exact on serpid)
-        exists = False
-        if h.get("serp_api_id"):
-            check = db.table("hotel_directory").select("id").eq("serp_api_id", h["serp_api_id"]).execute()
-            if check.data: exists = True
-            
-        if not exists:
-            # Try name match
-            check = db.table("hotel_directory").select("id") \
-                .ilike("hotel_name", h["name"]) \
-                .ilike("location", h["location"] if h["location"] else "%") \
-                .execute()
-            if check.data: exists = True
-            
-        if not exists:
-            # Add to directory
-            db.table("hotel_directory").insert({
-                "hotel_name": h["name"],
-                "location": h["location"] or "Unknown",
-                "serp_api_id": h.get("serp_api_id")
-            }).execute()
-            synced_count += 1
-            
-    return {"status": "success", "synced_count": synced_count}
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+    try:
+        db.table("hotel_directory").delete().eq("id", entry_id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Admin Delete Directory Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/logs", response_model=List[AdminLog])
 async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase)):
