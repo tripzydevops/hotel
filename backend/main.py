@@ -1408,7 +1408,8 @@ async def reset_api_keys():
 async def reload_api_keys():
     """Force reload API keys from environment."""
     try:
-        return serpapi_client.serpapi_client.reload()
+        # serpapi_client imported from services is the INSTANCE, not module
+        return serpapi_client.reload()
     except Exception as e:
         print(f"API Key Reload Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
