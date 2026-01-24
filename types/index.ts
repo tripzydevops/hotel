@@ -63,7 +63,7 @@ export interface UserSettings {
   notifications_enabled: boolean;
   whatsapp_number?: string;
   push_enabled?: boolean;
-  push_subscription?: any; // JSONB
+  push_subscription?: Record<string, unknown>; // JSONB
   currency?: string;
 }
 export interface QueryLog {
@@ -106,4 +106,51 @@ export interface MonitorResult {
   prices_updated: number;
   alerts_generated: number;
   errors: string[];
+}
+
+export interface AdminStats {
+  total_users: number;
+  total_hotels: number;
+  total_scans: number;
+  directory_size: number;
+  api_calls_today: number;
+  service_role_active: boolean;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  display_name?: string;
+  created_at: string;
+  hotel_count: number;
+  scan_count: number;
+}
+
+export interface DirectoryEntry {
+  id: number;
+  name: string;
+  location?: string;
+  serp_api_id?: string;
+}
+
+export interface AdminLog {
+  id: number;
+  timestamp: string;
+  level: string;
+  action: string;
+  details: string;
+}
+
+export interface KeyStatus {
+  total_keys: number;
+  active_keys: number;
+  current_key_index: number;
+  quota_per_key: number;
+  keys_status: {
+    index: number;
+    key_suffix: string;
+    is_current: boolean;
+    is_exhausted: boolean;
+    exhausted_at: string | null;
+  }[];
 }

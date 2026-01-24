@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { 
   Building2, MapPin, Database, Users, Activity, Key, 
-  LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw, Plus 
+  LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw, Plus,
+  Edit2, List, X, Save
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { AdminStats, AdminUser, DirectoryEntry, AdminLog, KeyStatus } from "@/types";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -15,10 +17,10 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   
   // Data States
-  const [stats, setStats] = useState<any>(null);
-  const [users, setUsers] = useState<any[]>([]);
-  const [directory, setDirectory] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
+  const [logs, setLogs] = useState<AdminLog[]>([]);
 
   // Directory Form State
   const [dirName, setDirName] = useState("");
@@ -32,9 +34,24 @@ export default function AdminPage() {
   const [newUserName, setNewUserName] = useState("");
   const [userSuccess, setUserSuccess] = useState(false);
 
+  // Edit User State
+  const [userToEdit, setUserToEdit] = useState<AdminUser | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ email: "", display_name: "", password: "" });
+  const [userSaveLoading, setUserSaveLoading] = useState(false);
+
   useEffect(() => {
     loadTabData();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (userToEdit) {
+      setEditUserForm({
+        email: userToEdit.email || "",
+        display_name: userToEdit.display_name || "",
+        password: "" 
+      });
+    }
+  }, [userToEdit]);
 
   const loadTabData = async () => {
     setLoading(true);
@@ -57,6 +74,24 @@ export default function AdminPage() {
       setError(err.message || "Failed to load data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!userToEdit) return;
+    setUserSaveLoading(true);
+    try {
+        await api.updateAdminUser(userToEdit.id, {
+            email: editUserForm.email,
+            display_name: editUserForm.display_name,
+            password: editUserForm.password || undefined
+        });
+        setUserToEdit(null);
+        loadTabData();
+    } catch (err: any) {
+        alert("Failed to update: " + err.message);
+    } finally {
+        setUserSaveLoading(false);
     }
   };
 
@@ -127,7 +162,7 @@ export default function AdminPage() {
     }
   };
 
-  const TabButton = ({ id, label, icon: Icon }: any) => (
+  const TabButton = ({ id, label, icon: Icon }: { id: string; label: string; icon: React.ElementType }) => (
     <button
       onClick={() => setActiveTab(id)}
       className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
@@ -259,12 +294,20 @@ export default function AdminPage() {
                         <td className="p-4 text-white">{u.scan_count}</td>
                         <td className="p-4 text-[var(--text-muted)]">{new Date(u.created_at).toLocaleDateString()}</td>
                         <td className="p-4 text-right">
-                        <button 
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-2">
+                            <button 
+                                onClick={() => setUserToEdit(u)}
+                                className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
                         </td>
                     </tr>
                     ))}
@@ -280,6 +323,16 @@ export default function AdminPage() {
         {/* DIRECTORY TAB */}
         {activeTab === "directory" && (
           <div className="space-y-8">
+             <div className="flex items-center justify-between p-4 bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <List className="w-5 h-5 text-[var(--soft-gold)]" />
+                    <span className="text-white text-sm font-medium">Looking to edit specific hotel monitors?</span>
+                </div>
+                <Link href="/admin/list" className="bg-[var(--soft-gold)] text-black px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90">
+                    Go to Master Hotel List
+                </Link>
+             </div>
+
              {/* Add New Form */}
              <div className="glass-card p-6 border border-white/10">
                 <div className="flex justify-between items-center mb-4">
@@ -394,7 +447,7 @@ export default function AdminPage() {
   );
 }
 
-const StatCard = ({ label, value, icon: Icon }: any) => (
+const StatCard = ({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) => (
   <div className="glass-card p-6 border border-white/10 flex items-center gap-4">
     <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center shrink-0">
       <Icon className="w-6 h-6 text-[var(--soft-gold)]" />
@@ -408,7 +461,7 @@ const StatCard = ({ label, value, icon: Icon }: any) => (
 
 
 const ApiKeysPanel = () => {
-  const [keyStatus, setKeyStatus] = useState<any>(null);
+  const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -507,7 +560,7 @@ const ApiKeysPanel = () => {
 
         {/* Keys List */}
         <div className="space-y-3">
-          {keyStatus?.keys_status?.map((key: any) => (
+          {keyStatus?.keys_status?.map((key) => (
             <div 
               key={key.index}
               className={`flex items-center justify-between p-4 rounded-lg border ${
@@ -580,6 +633,68 @@ const ApiKeysPanel = () => {
           Reset All Keys (New Month)
         </button>
       </div>
+      {/* Edit User Modal */}
+      {userToEdit && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-card p-6 border border-white/10 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Edit User</h3>
+              <button onClick={() => setUserToEdit(null)} className="text-[var(--text-muted)] hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Email</label>
+                <input 
+                  type="email"
+                  value={editUserForm.email}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Display Name</label>
+                <input 
+                  type="text"
+                  value={editUserForm.display_name}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, display_name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">New Password (Opt)</label>
+                <input 
+                  type="password"
+                  value={editUserForm.password}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                  placeholder="Leave blank to keep current"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => setUserToEdit(null)}
+                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleUpdateUser}
+                disabled={userSaveLoading}
+                className="flex-1 px-4 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {userSaveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
