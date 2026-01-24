@@ -1052,6 +1052,47 @@ async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supab
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/admin/users")
+async def admin_list_users(db: Client = Depends(get_supabase)):
+    """Admin: List all users and their subscription status."""
+    # Start with a secure check (TODO: Add 'is_admin' check to get_current_user or similar)
+    try:
+        # Fetch profiles with hotel counts
+        # Supabase doesn't support easy JOIN count in one API call usually, so we fetch profiles
+        result = db.table("profiles").select("id, email, subscription_status, plan_type, current_period_end").execute()
+        users = result.data
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/admin/users/{user_id}/subscription")
+async def admin_update_subscription(user_id: str, payload: Dict[str, Any], db: Client = Depends(get_supabase)):
+    """Admin: Manually update user subscription."""
+    valid_plans = ["trial", "starter", "pro", "enterprise"]
+    valid_statuses = ["active", "trial", "past_due", "canceled"]
+    
+    plan_type = payload.get("plan_type")
+    subscription_status = payload.get("subscription_status")
+    
+    update_data = {}
+    if plan_type in valid_plans: update_data["plan_type"] = plan_type
+    if subscription_status in valid_statuses: update_data["subscription_status"] = subscription_status
+    
+    # Optional extensions
+    if payload.get("extend_trial_days"):
+        days = int(payload.get("extend_trial_days"))
+        new_end = datetime.now(timezone.utc) + timedelta(days=days)
+        update_data["current_period_end"] = new_end.isoformat()
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields provided")
+
+    try:
+        db.table("profiles").update(update_data).eq("id", user_id).execute()
+        return {"status": "success", "updated": update_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/admin/sync")
 async def sync_directory_manual(db: Optional[Client] = Depends(get_supabase)):
     """Backfill hotel_directory from existing hotels table."""

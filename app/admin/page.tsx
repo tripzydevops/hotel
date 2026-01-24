@@ -292,6 +292,7 @@ export default function AdminPage() {
                 <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
                     <tr>
                     <th className="p-4">User</th>
+                    <th className="p-4">Plan / Status</th>
                     <th className="p-4">Hotels</th>
                     <th className="p-4">Scans</th>
                     <th className="p-4">Created</th>
@@ -306,6 +307,14 @@ export default function AdminPage() {
                         <div className="text-[var(--text-muted)] text-xs">{u.email}</div>
                         <div className="text-[var(--text-muted)] text-xs font-mono">{u.id}</div>
                         </td>
+                        <td className="p-4">
+                            <div className="flex flex-col">
+                                <span className="uppercase text-[10px] font-bold text-white">{u.plan_type || "TRIAL"}</span>
+                                <span className={`text-xs ${u.subscription_status === 'active' ? 'text-[var(--optimal-green)]' : 'text-[var(--alert-red)]'}`}>
+                                    {u.subscription_status || "trial"}
+                                </span>
+                            </div>
+                        </td>
                         <td className="p-4 text-white">{u.hotel_count}</td>
                         <td className="p-4 text-white">{u.scan_count}</td>
                         <td className="p-4 text-[var(--text-muted)]">{new Date(u.created_at).toLocaleDateString()}</td>
@@ -316,6 +325,21 @@ export default function AdminPage() {
                                 className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
                             >
                                 <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                               onClick={() => {
+                                   if(confirm("Promote user to PRO for 30 days?")) {
+                                       api.updateAdminUser(u.id, {
+                                           plan_type: "pro", 
+                                           subscription_status: "active",
+                                           extend_trial_days: 30
+                                       }).then(loadTabData);
+                                   }
+                               }}
+                               className="p-2 hover:bg-white/10 rounded text-blue-400 transition-colors"
+                               title="Quick Upgrade"
+                            >
+                               <RefreshCw className="w-4 h-4" />
                             </button>
                             <button 
                                 onClick={() => handleDeleteUser(u.id)}
@@ -482,6 +506,36 @@ export default function AdminPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
                 />
               </div>
+
+               {/* Admin Override Subscription */}
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Plan Type</label>
+                    <select
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white [&>option]:bg-black"
+                        onChange={(e) => api.updateAdminUser(userToEdit.id, { plan_type: e.target.value })}
+                        defaultValue={userToEdit.plan_type || "trial"}
+                    >
+                        <option value="trial">Trial</option>
+                        <option value="starter">Starter</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Status</label>
+                    <select
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white [&>option]:bg-black"
+                        onChange={(e) => api.updateAdminUser(userToEdit.id, { subscription_status: e.target.value })}
+                         defaultValue={userToEdit.subscription_status || "trial"}
+                    >
+                        <option value="active">Active</option>
+                        <option value="trial">Trial</option>
+                        <option value="past_due">Past Due</option>
+                        <option value="canceled">Canceled</option>
+                    </select>
+                  </div>
+               </div>
               <div>
                 <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Display Name</label>
                 <input 

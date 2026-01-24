@@ -139,6 +139,9 @@ export interface AdminUser {
   timezone?: string;
   hotel_count: number;
   scan_count: number;
+  plan_type?: "trial" | "starter" | "pro" | "enterprise";
+  subscription_status?: "active" | "trial" | "past_due" | "canceled";
+  current_period_end?: string;
 }
 
 export interface DirectoryEntry {
