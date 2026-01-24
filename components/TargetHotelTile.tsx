@@ -116,6 +116,18 @@ export default function TargetHotelTile({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {onEdit && (
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(id, { id, name, location, is_target_hotel: true });
+                }}
+                className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                title="Edit Hotel"
+            >
+                <Edit2 className="w-4.5 h-4.5" />
+            </button>
+          )}
           {onDelete && (
             <button 
               onClick={(e) => {

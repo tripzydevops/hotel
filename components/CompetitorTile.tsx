@@ -138,6 +138,30 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                         Undercut
                     </span>
                 )}
+            {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(id, { id, name }); 
+                  }}
+                  className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--soft-gold)] hover:text-white transition-colors"
+                  title="Edit Hotel"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+            )}
+            {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(id);
+                  }}
+                  className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-500/50 hover:text-red-400 transition-colors"
+                  title="Remove Monitor"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            )}
             </div>
           </div>
         </div>
