@@ -76,6 +76,10 @@ class ApiClient {
     return this.fetch<any>(`/api/settings/${userId}`);
   }
 
+  async getProfile(userId: string): Promise<any> {
+    return this.fetch<any>(`/api/profile/${userId}`);
+  }
+
 
 
   async searchDirectory(query: string): Promise<any[]> {
