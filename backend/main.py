@@ -434,7 +434,7 @@ async def run_monitor_background(
                     "hotel_id": hotel_id,
                     "price": current_price,
                     "currency": hotel_currency,
-                    "check_in_date": (check_in or date.today()).isoformat(),
+                    "check_in_date": (options.check_in if options and options.check_in else date.today()).isoformat(),
                     "source": "serpapi",
                     "vendor": price_data.get("vendor"), 
                 }).execute()
@@ -1752,82 +1752,7 @@ async def delete_admin_hotel(hotel_id: UUID, db: Client = Depends(get_supabase))
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ===== Cron Jobs =====
 
-@app.get("/api/cron")
-async def daily_scan_cron(
-    background_tasks: BackgroundTasks,
-    request: Request,
-    db: Optional[Client] = Depends(get_supabase)
-):
-    """
-    Vercel Cron Job Endpoint.
-    Triggers daily scans for all active users.
-    Protected by CRON_SECRET if configured.
-    """
-    try:
-        # Verify Vercel Cron Secret (Recommended)
-        cron_secret = os.getenv("CRON_SECRET")
-        auth_header = request.headers.get("Authorization")
-        if cron_secret and auth_header != f"Bearer {cron_secret}":
-             # Also allow if header "x-vercel-cron" is present (Vercel specific)
-             # But for now, let's keep it simple or Vercel might just hit it openly if we don't config protection.
-             # We'll just log it.
-             print("Cron warning: Unauthorized attempt or missing secret")
-             # return {"status": "unauthorized"}
-
-        if not db:
-            return {"status": "error", "message": "Database not available"}
-
-        # Get all unique user_ids from settings
-        result = db.table("settings").select("user_id").execute()
-        users = result.data or []
-        user_ids = list(set(u["user_id"] for u in users))
-        
-        triggered_count = 0
-        
-        for uid in user_ids:
-            # Fetch user's hotels
-            hotels_res = db.table("hotels").select("*").eq("user_id", uid).execute()
-            hotels = hotels_res.data or []
-            
-            if not hotels:
-                continue
-                
-            # Create Session
-            session_id = None
-            try:
-                session_result = db.table("scan_sessions").insert({
-                    "user_id": uid,
-                    "session_type": "scheduled",
-                    "hotels_count": len(hotels),
-                    "status": "pending"
-                }).execute()
-                if session_result.data:
-                    session_id = session_result.data[0]["id"]
-            except Exception as e:
-                print(f"Cron: Failed to create session for {uid}: {e}")
-                
-            # Launch Background Task
-            background_tasks.add_task(
-                run_monitor_background,
-                user_id=uid,
-                hotels=hotels,
-                options=None, # Use defaults
-                db=db,
-                session_id=session_id
-            )
-            triggered_count += 1
-            
-        return {
-            "status": "success", 
-            "triggered_scans": triggered_count, 
-            "timestamp": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        print(f"Cron Error: {e}")
-        return {"status": "error", "detail": str(e)}
 
 
 if __name__ == "__main__":
