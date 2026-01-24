@@ -788,6 +788,9 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
 @app.get("/api/profile/{user_id}", response_model=UserProfile)
 async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     """Get user profile information."""
+    # Define check early
+    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
+
     if not db:
         # Return default mock profile for dev mode
         return UserProfile(
@@ -837,7 +840,6 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     
     # Return a default profile if none exists
     # Force PRO for the Dev/Demo User ID
-    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
     
     return UserProfile(
         user_id=user_id,
