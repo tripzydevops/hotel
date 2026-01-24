@@ -208,7 +208,12 @@ class SerpApiClient:
         return self._key_manager.current_key
     
     def get_key_status(self) -> Dict[str, Any]:
-        """Get status of all API keys."""
+        """Get status of all API keys. Refreshes from ENV to handle serverless cold starts."""
+        # Force reload from env to ensure we see current vars
+        current_keys = load_api_keys()
+        if len(current_keys) != self._key_manager.total_keys:
+             self._key_manager.reload_keys(current_keys)
+             
         status = self._key_manager.get_status()
         # Add debugging info about what was checked
         status["debug_env_check"] = {

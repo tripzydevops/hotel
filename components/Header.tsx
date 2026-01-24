@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Bell, Crown } from "lucide-react";
 import UserMenu from "./UserMenu";
-import UpgradeModal from "./UpgradeModal";
+import SubscriptionModal from "./SubscriptionModal";
 
 interface HeaderProps {
   userProfile?: any;
@@ -14,7 +14,7 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   onOpenAlerts?: () => void;
   onOpenSettings?: () => void;
-  onOpenBilling?: () => void;
+  onOpenBilling?: () => void; // Optional: Parent can still override if needed
 }
 
 export default function Header({ 
@@ -24,11 +24,15 @@ export default function Header({
   onOpenProfile = () => {}, 
   onOpenAlerts = () => {},
   onOpenSettings = () => {},
-  onOpenBilling = () => {}
+  onOpenBilling // Optional prop
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false); // We can reuse this or rename to isBillingOpen
+  const [isBillingOpen, setIsBillingOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
+
+  // Prefer internal handler if prop not provided
+  const handleOpenBilling = onOpenBilling || (() => setIsBillingOpen(true));
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5">
@@ -82,7 +86,7 @@ export default function Header({
             {/* Upgrade Button (Mobile hidden) */}
             {(userProfile?.plan_type === 'trial' || !userProfile?.plan_type) && (
                  <button 
-                    onClick={onOpenBilling}
+                    onClick={handleOpenBilling}
                     className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-lg text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all"
                  >
                     <Crown className="w-3 h-3" />
@@ -109,8 +113,8 @@ export default function Header({
                 hotelCount={hotelCount || 0}
                 onOpenProfile={onOpenProfile} 
                 onOpenSettings={onOpenSettings}
-                onOpenUpgrade={onOpenBilling} // Reuse billing modal for upgrade
-                onOpenBilling={onOpenBilling}
+                onOpenUpgrade={handleOpenBilling} 
+                onOpenBilling={handleOpenBilling}
             />
             {userProfile ? null : (
                 <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
@@ -188,6 +192,17 @@ export default function Header({
       </div>
 
       <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
+      
+      <SubscriptionModal
+        isOpen={isBillingOpen}
+        onClose={() => setIsBillingOpen(false)}
+        currentPlan={userProfile?.plan_type || "trial"}
+        onUpgrade={async () => {
+             // Mock upgrade in header context - usually would need refresh
+             setIsBillingOpen(false);
+             window.location.reload(); // Simple way to refresh state for now
+        }}
+      />
     </header>
   );
 }
