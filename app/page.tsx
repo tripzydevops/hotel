@@ -22,6 +22,7 @@ import ScanSettingsModal from "@/components/ScanSettingsModal";
 import EditHotelModal from "@/components/EditHotelModal";
 import { ScanSession, ScanOptions, Hotel } from "@/types";
 import Link from "next/link";
+import { PaywallOverlay } from "@/components/PaywallOverlay";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
+  const [profile, setProfile] = useState<any>(null); // Store full profile including subscription
   
   // Edit State
   const [isEditHotelOpen, setIsEditHotelOpen] = useState(false);
@@ -111,6 +113,9 @@ export default function Dashboard() {
 
       const settings = await api.getSettings(userId);
       setUserSettings(settings);
+
+      const userProfile = await api.getProfile(userId);
+      setProfile(userProfile);
 
       // Lazy cron: Check if scheduled scan is due (Vercel free tier workaround)
       try {
@@ -243,8 +248,11 @@ export default function Dashboard() {
 
   const effectiveTargetPrice = data?.target_hotel?.price_info?.current_price || 0;
 
+  const isLocked = profile?.subscription_status === 'past_due' || profile?.subscription_status === 'canceled' || profile?.subscription_status === 'unpaid';
+
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 relative">
+      {isLocked && <PaywallOverlay reason={profile?.subscription_status === 'canceled' ? "Subscription Canceled" : "Trial Expired"} />}
       <Header />
 
       <AddHotelModal
