@@ -175,3 +175,14 @@ export interface KeyStatus {
     exhausted_at: string | null;
   }[];
 }
+
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  price_monthly: number;
+  hotel_limit: number;
+  scan_frequency_limit: "hourly" | "daily" | "weekly";
+  features: string[]; // JSONB
+  is_active: boolean;
+  created_at?: string;
+}

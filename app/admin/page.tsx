@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { 
   Building2, MapPin, Database, Users, Activity, Key, 
   LayoutDashboard, Trash2, CheckCircle2, Loader2, AlertCircle, RefreshCw, Plus,
-  Edit2, List, X, Save
+  Edit2, List, X, Save, Crown
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -212,6 +212,7 @@ export default function AdminPage() {
         <TabButton id="directory" label="Directory" icon={Building2} />
         <TabButton id="logs" label="System Logs" icon={Activity} />
         <TabButton id="keys" label="API Keys" icon={Key} />
+        <TabButton id="plans" label="Memberships" icon={Crown} />
       </div>
 
       {/* Content */}
@@ -481,6 +482,9 @@ export default function AdminPage() {
 
         {/* API KEYS TAB */}
         {activeTab === "keys" && <ApiKeysPanel />}
+
+        {/* MEMBERSHIPS TAB */}
+        {activeTab === "plans" && <MembershipPlansPanel />}
 
       </div>
 
@@ -850,3 +854,174 @@ const ApiKeysPanel = () => {
   );
 };
 
+  );
+};
+
+
+const MembershipPlansPanel = () => {
+    const [plans, setPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<any>(null);
+    const [formData, setFormData] = useState({
+        name: "",
+        price_monthly: 0,
+        hotel_limit: 1,
+        scan_frequency_limit: "daily",
+        features: "" // comma separated for simple editing
+    });
+
+    useEffect(() => {
+        loadPlans();
+    }, []);
+
+    const loadPlans = async () => {
+        setLoading(true);
+        try {
+            const data = await api.getAdminPlans();
+            setPlans(data);
+        } catch (err) {
+            console.error("Failed to load plans", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const payload = {
+            ...formData,
+            features: formData.features.split(',').map(s => s.trim()).filter(Boolean)
+        };
+
+        try {
+            if (editingPlan) {
+                await api.updateAdminPlan(editingPlan.id, payload);
+            } else {
+                await api.createAdminPlan(payload);
+            }
+            setIsModalOpen(false);
+            setEditingPlan(null);
+            setFormData({ name: "", price_monthly: 0, hotel_limit: 1, scan_frequency_limit: "daily", features: "" });
+            loadPlans();
+        } catch (err: any) {
+            alert("Failed to save: " + err.message);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this plan? Users on this plan might be affected.")) return;
+        try {
+            await api.deleteAdminPlan(id);
+            loadPlans();
+        } catch (err: any) {
+            alert("Delete failed: " + err.message);
+        }
+    };
+
+    const openEdit = (plan: any) => {
+        setEditingPlan(plan);
+        setFormData({
+            name: plan.name,
+            price_monthly: plan.price_monthly,
+            hotel_limit: plan.hotel_limit,
+            scan_frequency_limit: plan.scan_frequency_limit,
+            features: Array.isArray(plan.features) ? plan.features.join(", ") : ""
+        });
+        setIsModalOpen(true);
+    };
+
+    return (
+        <div className="space-y-6">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Crown className="w-6 h-6 text-[var(--soft-gold)]" />
+                    <h3 className="text-xl font-bold text-white">Membership Plans</h3>
+                </div>
+                <button 
+                    onClick={() => {
+                        setEditingPlan(null);
+                        setFormData({ name: "", price_monthly: 0, hotel_limit: 1, scan_frequency_limit: "daily", features: "" });
+                        setIsModalOpen(true);
+                    }}
+                    className="bg-[var(--soft-gold)] text-black font-bold px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2"
+                >
+                    <Plus className="w-4 h-4" /> Add Plan
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plans.map(plan => (
+                     <div key={plan.id} className="glass-card p-6 border border-white/10 relative group">
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button onClick={() => openEdit(plan)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white"><Edit2 className="w-3 h-3"/></button>
+                             <button onClick={() => handleDelete(plan.id)} className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded text-red-200"><Trash2 className="w-3 h-3"/></button>
+                        </div>
+                        
+                        <h4 className="text-lg font-bold text-white mb-1">{plan.name}</h4>
+                        <div className="text-2xl font-bold text-[var(--soft-gold)] mb-4">${plan.price_monthly}<span className="text-xs text-[var(--text-muted)] font-normal">/mo</span></div>
+                        
+                        <div className="space-y-2 text-sm text-[var(--text-muted)]">
+                            <div className="flex justify-between border-b border-white/5 pb-1">
+                                <span>Monitors</span>
+                                <span className="text-white">{plan.hotel_limit} Hotels</span>
+                            </div>
+                             <div className="flex justify-between border-b border-white/5 pb-1">
+                                <span>Frequency</span>
+                                <span className="text-white capitalize">{plan.scan_frequency_limit}</span>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-4 flex flex-wrap gap-2">
+                             {Array.isArray(plan.features) && plan.features.map((f: string, i: number) => (
+                                 <span key={i} className="text-[10px] bg-white/5 px-2 py-1 rounded text-[var(--text-secondary)]">{f}</span>
+                             ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                     <div className="glass-card p-6 border border-white/10 w-full max-w-md">
+                        <h3 className="text-xl font-bold text-white mb-4">{editingPlan ? "Edit Plan" : "Create Plan"}</h3>
+                        <form onSubmit={handleSave} className="space-y-4">
+                            <div>
+                                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">Plan Name</label>
+                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white" placeholder="e.g. Gold" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">Price ($)</label>
+                                    <input required type="number" step="0.01" value={formData.price_monthly} onChange={e => setFormData({...formData, price_monthly: parseFloat(e.target.value)})} className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">Hotel Limit</label>
+                                    <input required type="number" value={formData.hotel_limit} onChange={e => setFormData({...formData, hotel_limit: parseInt(e.target.value)})} className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white" />
+                                </div>
+                            </div>
+                             <div>
+                                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">Scan Frequency</label>
+                                <select value={formData.scan_frequency_limit} onChange={e => setFormData({...formData, scan_frequency_limit: e.target.value})} className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white [&>option]:bg-black">
+                                    <option value="daily">Daily</option>
+                                    <option value="hourly">Hourly</option>
+                                    <option value="weekly">Weekly</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">Features (Comma separated)</label>
+                                <textarea value={formData.features} onChange={e => setFormData({...formData, features: e.target.value})} className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white h-20" placeholder="Feature 1, Feature 2..." />
+                            </div>
+                            
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg">Cancel</button>
+                                <button type="submit" className="flex-1 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90">Save</button>
+                            </div>
+                        </form>
+                     </div>
+                </div>
+            )}
+        </div>
+    );
+};

@@ -29,7 +29,8 @@ from backend.models.schemas import (
     UserProfile, UserProfileUpdate,
     AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate,
     ScanOptions,
-    AdminSettings, AdminSettingsUpdate
+    AdminSettings, AdminSettingsUpdate,
+    PlanCreate, PlanUpdate
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -2104,3 +2105,48 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+
+# ===== Admin Plans CRUD =====
+
+# ===== Admin Plans CRUD =====
+
+@app.get("/api/admin/plans")
+async def get_admin_plans(db: Optional[Client] = Depends(get_supabase)):
+    if not db: return []
+    try:
+        res = db.table("membership_plans").select("*").order("price_monthly", desc=False).execute()
+        return res.data or []
+    except Exception as e:
+        print(f"Error getting plans: {e}")
+        return []
+
+@app.post("/api/admin/plans")
+async def create_admin_plan(plan: PlanCreate, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(503, "DB unavailable")
+    try:
+        data = plan.model_dump()
+        res = db.table("membership_plans").insert(data).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(400, f"Failed to create plan: {str(e)}")
+
+@app.put("/api/admin/plans/{plan_id}")
+async def update_admin_plan(plan_id: UUID, plan: PlanUpdate, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(503, "DB unavailable")
+    try:
+        data = {k: v for k, v in plan.model_dump().items() if v is not None}
+        if not data: return {"status": "no_change"}
+        res = db.table("membership_plans").update(data).eq("id", str(plan_id)).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(400, f"Failed to update plan: {str(e)}")
+
+@app.delete("/api/admin/plans/{plan_id}")
+async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(503, "DB unavailable")
+    try:
+        # Check usage before delete? For now, just delete.
+        db.table("membership_plans").delete().eq("id", str(plan_id)).execute()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(400, f"Failed to delete plan: {str(e)}")
