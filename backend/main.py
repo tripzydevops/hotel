@@ -1355,7 +1355,7 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
     try:
         # Get base user info from profiles
         profiles = db.table("user_profiles").select("*").execute().data or []
-        settings_data = db.table("settings").select("user_id, created_at, email").execute().data or []
+        settings_data = db.table("settings").select("user_id, created_at, notification_email").execute().data or []
         
         # Merge data (naive join since no FK strictness in some mock data)
         users_map = {}
@@ -1363,7 +1363,7 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
             users_map[s["user_id"]] = {
                 "id": s["user_id"],
                 "created_at": s["created_at"],
-                "email": s.get("email"),
+                "email": s.get("notification_email"),  # Use notification_email 
                 "display_name": "Unknown",
                 "company_name": None,
                 "hotel_count": 0,
@@ -1389,18 +1389,26 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
         # Enrich with counts (this could be slow with many users, optimize later)
         final_users = []
         for uid, udata in users_map.items():
-            # Count hotels
-            h_count = db.table("hotels").select("id", count="exact").eq("user_id", uid).execute().count or 0
-            s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
-            
-            udata["hotel_count"] = h_count
-            udata["scan_count"] = s_count
-            final_users.append(AdminUser(**udata))
+            try:
+                # Count hotels
+                h_count = db.table("hotels").select("id", count="exact").eq("user_id", uid).execute().count or 0
+                s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
+                
+                udata["hotel_count"] = h_count
+                udata["scan_count"] = s_count
+                final_users.append(AdminUser(**udata))
+            except Exception as user_err:
+                print(f"Error processing user {uid}: {user_err}")
+                # Still include user with 0 counts
+                final_users.append(AdminUser(**udata))
             
         return final_users
     except Exception as e:
         print(f"Admin Users Error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
+
 
 # ... create_admin_user ... skipped for snippet ...
 
