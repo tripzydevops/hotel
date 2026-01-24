@@ -1631,10 +1631,18 @@ async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabas
 @app.post("/api/admin/users", response_model=dict)
 async def create_admin_user(user: AdminUserCreate, db: Client = Depends(get_supabase)):
     """Create a new user manually."""
+    # Use Service Role Key for Admin Actions
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not admin_key or not url:
+        raise HTTPException(status_code=500, detail="Service Role Key missing")
+    
+    admin_db = create_client(url, admin_key)
+
     try:
         # Create user in Supabase Auth via Admin API
         # Using auto_confirm_email=True so they can login immediately
-        res = db.auth.admin.create_user({
+        res = admin_db.auth.admin.create_user({
             "email": user.email,
             "password": user.password,
             "email_confirm": True
@@ -1645,7 +1653,7 @@ async def create_admin_user(user: AdminUserCreate, db: Client = Depends(get_supa
             raise HTTPException(status_code=400, detail="Failed to create user")
             
         # Create profile entry
-        db.table("user_profiles").insert({
+        admin_db.table("user_profiles").insert({
             "user_id": str(new_user.id),
             "display_name": user.display_name or user.email.split("@")[0],
             "email": user.email
@@ -1663,15 +1671,40 @@ async def create_admin_user(user: AdminUserCreate, db: Client = Depends(get_supa
 @app.delete("/api/admin/users/{user_id}")
 async def delete_admin_user(user_id: UUID, db: Client = Depends(get_supabase)):
     """Delete a user and their data."""
+    # Use Service Role Key for Admin Actions
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not admin_key or not url:
+        raise HTTPException(status_code=500, detail="Service Role Key missing")
+    
+    admin_db = create_client(url, admin_key)
+
     # Helper to delete from tables
     for table in ["hotels", "scan_sessions", "user_profiles", "settings", "notifications"]:
-        db.table(table).delete().eq("user_id", str(user_id)).execute()
+        admin_db.table(table).delete().eq("user_id", str(user_id)).execute()
+    
+    # Delete from Auth
+    try:
+        admin_db.auth.admin.delete_user(str(user_id))
+    except:
+        pass # Ignore if auth user already gone
+        
     return {"status": "success"}
 
 
 @app.patch("/api/admin/users/{user_id}")
 async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Client = Depends(get_supabase)):
     """Update user profile or subscription details."""
+    
+    # Use Service Role Key for Admin Actions
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not admin_key or not url:
+        # Fallback to provided DB if env missing (dev mode), but likely fails RLS
+        admin_db = db
+    else:
+        admin_db = create_client(url, admin_key)
+
     try:
         # 1. Separate profile vs subscription fields
         profile_fields = ["display_name", "company_name", "job_title", "phone", "timezone"]
@@ -1692,27 +1725,27 @@ async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Clie
         if sub_update:
             # Check if profile exists in 'profiles' table first
             try:
-                exists = db.table("profiles").select("id").eq("id", str(user_id)).execute().data
+                exists = admin_db.table("profiles").select("id").eq("id", str(user_id)).execute().data
                 if exists:
-                    db.table("profiles").update(sub_update).eq("id", str(user_id)).execute()
+                    admin_db.table("profiles").update(sub_update).eq("id", str(user_id)).execute()
                 else:
                     sub_update["id"] = str(user_id)
-                    db.table("profiles").insert(sub_update).execute()
+                    admin_db.table("profiles").insert(sub_update).execute()
             except Exception as e:
                 print(f"Failed to update profiles table: {e}")
         
         if profile_update:
-            db.table("user_profiles").update(profile_update).eq("user_id", str(user_id)).execute()
+            admin_db.table("user_profiles").update(profile_update).eq("user_id", str(user_id)).execute()
             
         # 3. Handle Email Update (Auth)
         if "email" in update_data and update_data["email"]:
-            db.auth.admin.update_user_by_id(str(user_id), {"email": update_data["email"]})
+            admin_db.auth.admin.update_user_by_id(str(user_id), {"email": update_data["email"]})
             # Also update profile for display
-            db.table("user_profiles").update({"email": update_data["email"]}).eq("user_id", str(user_id)).execute()
+            admin_db.table("user_profiles").update({"email": update_data["email"]}).eq("user_id", str(user_id)).execute()
             
         # 4. Handle Password Update (Auth)
         if "password" in update_data and update_data["password"]:
-             db.auth.admin.update_user_by_id(str(user_id), {"password": update_data["password"]})
+             admin_db.auth.admin.update_user_by_id(str(user_id), {"password": update_data["password"]})
 
         # 5. Handle Extend Trial
         if "extend_trial_days" in update_data:
