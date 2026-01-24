@@ -136,12 +136,16 @@ export default function AlertsModal({
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col">
                           <span className="text-[8px] uppercase font-black text-[var(--text-muted)]">Previous</span>
-                          <span className="text-xs font-bold text-white/40 line-through">${alert.old_price}</span>
+                          <span className="text-xs font-bold text-white/40 line-through">
+                            {alert.currency === 'TRY' ? '₺' : alert.currency === 'EUR' ? '€' : alert.currency === 'GBP' ? '£' : '$'}{alert.old_price.toLocaleString()}
+                          </span>
                         </div>
                         <div className="w-4 h-[1px] bg-white/10 mt-2" />
                         <div className="flex flex-col">
                           <span className="text-[8px] uppercase font-black text-[var(--text-muted)]">Current</span>
-                          <span className="text-sm font-black text-[var(--soft-gold)]">${alert.new_price}</span>
+                          <span className="text-sm font-black text-[var(--soft-gold)]">
+                            {alert.currency === 'TRY' ? '₺' : alert.currency === 'EUR' ? '€' : alert.currency === 'GBP' ? '£' : '$'}{alert.new_price.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     )}

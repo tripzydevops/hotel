@@ -50,6 +50,7 @@ export interface Alert {
   message: string;
   old_price?: number;
   new_price?: number;
+  currency?: string;
   is_read: boolean;
   created_at: string;
 }

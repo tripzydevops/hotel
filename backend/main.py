@@ -453,6 +453,7 @@ async def run_monitor_background(
                         db.table("alerts").insert({
                             "user_id": str(user_id),
                             "hotel_id": hotel_id,
+                            "currency": hotel_currency,  # Store currency with alert
                             **threshold_alert,
                         }).execute()
                         alerts_generated += 1
@@ -500,7 +501,14 @@ async def run_monitor_background(
                 previous = latest.data[1]["price"] if len(latest.data) > 1 else None
                 undercut = price_comparator.check_competitor_undercut(target_price, hotel["name"], current, previous)
                 if undercut:
-                    db.table("alerts").insert({"user_id": str(user_id), "hotel_id": hotel["id"], **undercut}).execute()
+                    # Get hotel currency for alert
+                    comp_currency = hotel.get("preferred_currency") or "USD"
+                    db.table("alerts").insert({
+                        "user_id": str(user_id), 
+                        "hotel_id": hotel["id"], 
+                        "currency": comp_currency,
+                        **undercut
+                    }).execute()
                     alerts_generated += 1
 
     # Finalize session
