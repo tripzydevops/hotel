@@ -566,11 +566,23 @@ const ApiKeysPanel = () => {
     try {
       const res = await fetch("/api/admin/api-keys/reload", { method: "POST" });
       const data = await res.json();
+      
+      if (data.status === "error" || !res.ok) {
+        throw new Error(data.error || data.detail || "Unknown error");
+      }
+
       setKeyStatus(curr => curr ? ({ ...curr, total_keys: data.total_keys }) : null);
       loadKeyStatus();
-      alert(`Reloaded! Found ${data.total_keys} keys.\nDebug: ${data.keys_found?.join(", ")}`);
+      
+      const debugMsg = [
+        `Reloaded! Found ${data.total_keys} keys.`,
+        `Keys: ${data.keys_found?.join(", ")}`,
+        `Env Check: ${JSON.stringify(data.env_debug, null, 2)}`
+      ].join("\n");
+      
+      alert(debugMsg);
     } catch (err: any) {
-      alert("Failed: " + err.message);
+      alert("Reload Failed: " + err.message);
     } finally {
       setActionLoading(false);
     }

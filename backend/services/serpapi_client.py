@@ -177,13 +177,30 @@ class SerpApiClient:
     
     def reload(self):
         """Force reload keys from environment."""
-        keys = load_api_keys()
-        self._key_manager.reload_keys(keys)
-        print(f"[SerpApi] Reloaded from environment: {len(keys)} keys found")
-        return {
-            "total_keys": len(keys),
-            "keys_found": [k[:4] + "..." for k in keys] # Debug info
-        }
+        try:
+            # Re-import to ensure we see fresh env vars if something weird is happening
+            import os
+            
+            keys = load_api_keys()
+            self._key_manager.reload_keys(keys)
+            print(f"[SerpApi] Reloaded from environment: {len(keys)} keys found")
+            return {
+                "status": "success",
+                "total_keys": len(keys),
+                "keys_found": [str(k)[:4] + "..." for k in keys if k], # Safe string conversion
+                "env_debug": {
+                    "SERPAPI_API_KEY_EXISTS": bool(os.getenv("SERPAPI_API_KEY")),
+                    "SERPAPI_API_KEY_VAL_LEN": len(os.getenv("SERPAPI_API_KEY") or "")
+                }
+            }
+        except Exception as e:
+            print(f"[SerpApi] Reload crash: {e}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "total_keys": 0,
+                "keys_found": []
+            }
 
     @property
     def api_key(self) -> str:
