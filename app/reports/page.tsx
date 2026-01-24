@@ -57,7 +57,7 @@ export default function ReportsPage() {
       }
     }
     loadData();
-  }, []);
+  }, [userId]);
 
   const handleExport = async (format: string) => {
     if (!userId) return;

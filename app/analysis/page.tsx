@@ -61,7 +61,7 @@ export default function AnalysisPage() {
       }
     }
     loadData();
-  }, [currency]);
+  }, [currency, userId]);
 
   if (loading) {
     return (
