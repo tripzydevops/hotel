@@ -1,4 +1,4 @@
-a"""
+"""
 Hotel Rate Monitor - FastAPI Backend
 Main application with monitoring and API endpoints.
 """
