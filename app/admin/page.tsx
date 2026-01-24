@@ -443,6 +443,70 @@ export default function AdminPage() {
         {activeTab === "keys" && <ApiKeysPanel />}
 
       </div>
+
+      
+      {/* Edit User Modal */}
+      {userToEdit && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-card p-6 border border-white/10 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Edit User</h3>
+              <button onClick={() => setUserToEdit(null)} className="text-[var(--text-muted)] hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Email</label>
+                <input 
+                  type="email"
+                  value={editUserForm.email}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Display Name</label>
+                <input 
+                  type="text"
+                  value={editUserForm.display_name}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, display_name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">New Password (Opt)</label>
+                <input 
+                  type="password"
+                  value={editUserForm.password}
+                  onChange={(e) => setEditUserForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                  placeholder="Leave blank to keep current"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => setUserToEdit(null)}
+                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleUpdateUser}
+                disabled={userSaveLoading}
+                className="flex-1 px-4 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {userSaveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -634,66 +698,7 @@ const ApiKeysPanel = () => {
         </button>
       </div>
       {/* Edit User Modal */}
-      {userToEdit && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-card p-6 border border-white/10 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Edit User</h3>
-              <button onClick={() => setUserToEdit(null)} className="text-[var(--text-muted)] hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Email</label>
-                <input 
-                  type="email"
-                  value={editUserForm.email}
-                  onChange={(e) => setEditUserForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Display Name</label>
-                <input 
-                  type="text"
-                  value={editUserForm.display_name}
-                  onChange={(e) => setEditUserForm(f => ({ ...f, display_name: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-1 block">New Password (Opt)</label>
-                <input 
-                  type="password"
-                  value={editUserForm.password}
-                  onChange={(e) => setEditUserForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-                  placeholder="Leave blank to keep current"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button 
-                onClick={() => setUserToEdit(null)}
-                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleUpdateUser}
-                disabled={userSaveLoading}
-                className="flex-1 px-4 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {userSaveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
