@@ -1,27 +1,174 @@
 """
 SerpApi Client for Hotel Price Fetching
 Fetches real-time hotel prices from Google Hotels via SerpApi.
+
+Features:
+- Rotating API keys with automatic failover on quota exhaustion
+- Rate limiting awareness
+- Connection pooling
 """
 
 import os
 import httpx
 from typing import Optional, List, Dict, Any
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from dotenv import load_dotenv
+import threading
 
 load_dotenv()
 
 SERPAPI_BASE_URL = "https://serpapi.com/search"
-SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
+# Load multiple API keys from environment
+# Primary key: SERPAPI_API_KEY
+# Secondary keys: SERPAPI_API_KEY_2, SERPAPI_API_KEY_3, etc.
+
+def load_api_keys() -> List[str]:
+    """Load all available SerpApi keys from environment."""
+    keys = []
+    
+    # Primary key
+    primary = os.getenv("SERPAPI_API_KEY")
+    if primary:
+        keys.append(primary)
+    
+    # Check for numbered backup keys (up to 10)
+    for i in range(2, 11):
+        key = os.getenv(f"SERPAPI_API_KEY_{i}")
+        if key:
+            keys.append(key)
+    
+    return keys
+
+
+class ApiKeyManager:
+    """
+    Manages rotating API keys with automatic failover.
+    Thread-safe for concurrent requests.
+    """
+    
+    def __init__(self, keys: List[str]):
+        if not keys:
+            raise ValueError("At least one SerpApi API key is required.")
+        
+        self._keys = keys
+        self._current_index = 0
+        self._lock = threading.Lock()
+        self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
+        self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
+    
+    @property
+    def current_key(self) -> str:
+        """Get the current active API key."""
+        with self._lock:
+            return self._keys[self._current_index]
+    
+    @property
+    def total_keys(self) -> int:
+        """Total number of API keys available."""
+        return len(self._keys)
+    
+    @property
+    def active_keys(self) -> int:
+        """Number of non-exhausted keys."""
+        now = datetime.now()
+        active = 0
+        for key in self._keys:
+            if key not in self._exhausted_keys:
+                active += 1
+            elif now - self._exhausted_keys[key] > self._exhaustion_cooldown:
+                active += 1  # Cooldown expired
+        return active
+    
+    def rotate_key(self, reason: str = "quota_exhausted") -> bool:
+        """
+        Mark current key as exhausted and rotate to next available key.
+        
+        Returns:
+            True if successfully rotated, False if all keys exhausted
+        """
+        with self._lock:
+            current_key = self._keys[self._current_index]
+            
+            # Mark current key as exhausted
+            self._exhausted_keys[current_key] = datetime.now()
+            print(f"[SerpApi] Key {self._current_index + 1}/{len(self._keys)} marked as exhausted. Reason: {reason}")
+            
+            # Try to find next available key
+            attempts = 0
+            while attempts < len(self._keys):
+                self._current_index = (self._current_index + 1) % len(self._keys)
+                next_key = self._keys[self._current_index]
+                
+                # Check if this key is still in cooldown
+                if next_key in self._exhausted_keys:
+                    exhaust_time = self._exhausted_keys[next_key]
+                    if datetime.now() - exhaust_time > self._exhaustion_cooldown:
+                        # Cooldown expired, key is available again
+                        del self._exhausted_keys[next_key]
+                        print(f"[SerpApi] Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)")
+                        return True
+                else:
+                    # Key is not exhausted
+                    print(f"[SerpApi] Rotated to key {self._current_index + 1}/{len(self._keys)}")
+                    return True
+                
+                attempts += 1
+            
+            print("[SerpApi] WARNING: All API keys are exhausted!")
+            return False
+    
+    def reset_all(self):
+        """Reset all keys (e.g., at start of new billing period)."""
+        with self._lock:
+            self._exhausted_keys.clear()
+            self._current_index = 0
+            print("[SerpApi] All keys reset to active status")
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current status of all API keys."""
+        with self._lock:
+            status = {
+                "total_keys": len(self._keys),
+                "current_key_index": self._current_index + 1,
+                "exhausted_keys": len(self._exhausted_keys),
+                "active_keys": self.active_keys,
+                "keys_status": []
+            }
+            
+            for i, key in enumerate(self._keys):
+                key_info = {
+                    "index": i + 1,
+                    "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
+                    "is_current": i == self._current_index,
+                    "is_exhausted": key in self._exhausted_keys
+                }
+                if key in self._exhausted_keys:
+                    key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
+                status["keys_status"].append(key_info)
+            
+            return status
 
 
 class SerpApiClient:
-    """Client for fetching hotel prices from SerpApi."""
+    """Client for fetching hotel prices from SerpApi with rotating keys."""
     
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or SERPAPI_API_KEY
-        if not self.api_key:
+    def __init__(self, api_keys: Optional[List[str]] = None):
+        keys = api_keys or load_api_keys()
+        if not keys:
             raise ValueError("SerpApi API key is required. Set SERPAPI_API_KEY env var.")
+        
+        self._key_manager = ApiKeyManager(keys)
+        print(f"[SerpApi] Initialized with {self._key_manager.total_keys} API key(s)")
+    
+    @property
+    def api_key(self) -> str:
+        """Get current active API key."""
+        return self._key_manager.current_key
+    
+    def get_key_status(self) -> Dict[str, Any]:
+        """Get status of all API keys."""
+        return self._key_manager.get_status()
     
     def _normalize_string(self, text: Optional[str]) -> str:
         """Normalize string to Title Case and strip whitespace."""
@@ -58,6 +205,22 @@ class SerpApiClient:
             
         return self._normalize_string(cleaned)
     
+    def _is_quota_error(self, response: httpx.Response) -> bool:
+        """Check if response indicates quota exhaustion."""
+        if response.status_code == 429:
+            return True
+        
+        # Some APIs return 200 with error in body
+        try:
+            data = response.json()
+            error = data.get("error", "").lower()
+            if "quota" in error or "limit" in error or "exceeded" in error:
+                return True
+        except:
+            pass
+        
+        return False
+    
     async def search_hotels(self, query: str) -> List[Dict[str, Any]]:
         """
         Broad search for hotels to support autocomplete/discovery.
@@ -73,6 +236,17 @@ class SerpApiClient:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
+                
+                # Check for quota exhaustion
+                if self._is_quota_error(response):
+                    if self._key_manager.rotate_key("quota_exhausted"):
+                        # Retry with new key
+                        params["api_key"] = self.api_key
+                        response = await client.get(SERPAPI_BASE_URL, params=params)
+                    else:
+                        print("[SerpApi] All keys exhausted, cannot retry")
+                        return []
+                
                 response.raise_for_status()
                 data = response.json()
                 
@@ -139,6 +313,17 @@ class SerpApiClient:
         try:
             async with httpx.AsyncClient(timeout=8.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
+                
+                # Check for quota exhaustion and retry with next key
+                if self._is_quota_error(response):
+                    print(f"[SerpApi] Quota exhausted for key, rotating...")
+                    if self._key_manager.rotate_key("quota_exhausted"):
+                        params["api_key"] = self.api_key
+                        response = await client.get(SERPAPI_BASE_URL, params=params)
+                    else:
+                        print("[SerpApi] All keys exhausted!")
+                        return None
+                
                 response.raise_for_status()
                 data = response.json()
                 

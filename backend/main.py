@@ -1347,6 +1347,54 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
         # Build "Empty" stats with error indicator if needed, or raise HTTP error
         raise HTTPException(status_code=500, detail=f"Admin Data Error: {str(e)}")
 
+
+@app.get("/api/admin/api-keys/status")
+async def get_api_key_status():
+    """Get status of SerpApi keys for monitoring quota usage."""
+    try:
+        status = serpapi_client.serpapi_client.get_key_status()
+        # Add quota info
+        status["quota_per_key"] = 250  # Monthly limit
+        status["quota_period"] = "monthly"
+        return status
+    except Exception as e:
+        print(f"API Key Status Error: {e}")
+        return {
+            "error": str(e),
+            "total_keys": 0,
+            "active_keys": 0
+        }
+
+
+@app.post("/api/admin/api-keys/rotate")
+async def force_rotate_api_key():
+    """Force rotate to next API key (for testing or manual intervention)."""
+    try:
+        success = serpapi_client.serpapi_client._key_manager.rotate_key("manual_rotation")
+        return {
+            "status": "success" if success else "failed",
+            "message": "Rotated to next key" if success else "No available keys to rotate to",
+            "current_status": serpapi_client.serpapi_client.get_key_status()
+        }
+    except Exception as e:
+        print(f"API Key Rotate Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/api-keys/reset")
+async def reset_api_keys():
+    """Reset all API keys to active status (e.g., at new billing period)."""
+    try:
+        serpapi_client.serpapi_client._key_manager.reset_all()
+        return {
+            "status": "success",
+            "message": "All keys reset to active",
+            "current_status": serpapi_client.serpapi_client.get_key_status()
+        }
+    except Exception as e:
+        print(f"API Key Reset Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/admin/users", response_model=List[AdminUser])
 async def get_admin_users(db: Client = Depends(get_supabase)):
     """List all users with stats."""
