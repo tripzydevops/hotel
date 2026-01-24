@@ -272,6 +272,31 @@ class ApiClient {
     if (!res.ok) throw new Error("Failed to update settings");
     return res.json();
   }
+
+  // Membership Plans
+  async getAdminPlans() {
+    return this.fetch<any[]>(`/api/admin/plans`);
+  }
+
+  async createAdminPlan(data: any) {
+    return this.fetch<any>(`/api/admin/plans`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAdminPlan(id: string, data: any) {
+    return this.fetch<any>(`/api/admin/plans/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminPlan(id: string) {
+    return this.fetch<void>(`/api/admin/plans/${id}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const api = new ApiClient();
