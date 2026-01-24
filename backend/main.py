@@ -30,7 +30,7 @@ from backend.models.schemas import (
     AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate,
     ScanOptions,
     AdminSettings, AdminSettingsUpdate,
-    PlanCreate, PlanUpdate
+    PlanCreate, PlanUpdate, MembershipPlan
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -2150,3 +2150,30 @@ async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_su
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(400, f"Failed to delete plan: {str(e)}")
+# ===== Admin Membership Plans =====
+
+@app.get("/api/admin/plans", response_model=List[MembershipPlan])
+async def get_admin_plans(db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(500, "DB Error")
+    res = db.table("membership_plans").select("*").order("price_monthly").execute()
+    return res.data or []
+
+@app.post("/api/admin/plans", response_model=MembershipPlan)
+async def create_admin_plan(plan: PlanCreate, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(500, "DB Error")
+    res = db.table("membership_plans").insert(plan.dict(exclude_unset=True)).execute()
+    if not res.data: raise HTTPException(400, "Failed to create plan")
+    return res.data[0]
+
+@app.put("/api/admin/plans/{plan_id}", response_model=MembershipPlan)
+async def update_admin_plan(plan_id: UUID, plan: PlanUpdate, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(500, "DB Error")
+    res = db.table("membership_plans").update(plan.dict(exclude_unset=True)).eq("id", str(plan_id)).execute()
+    if not res.data: raise HTTPException(404, "Plan not found")
+    return res.data[0]
+
+@app.delete("/api/admin/plans/{plan_id}")
+async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    if not db: raise HTTPException(500, "DB Error")
+    db.table("membership_plans").delete().eq("id", str(plan_id)).execute()
+    return {"message": "Plan deleted"}
