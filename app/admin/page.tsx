@@ -854,8 +854,7 @@ const ApiKeysPanel = () => {
   );
 };
 
-  );
-};
+
 
 
 const MembershipPlansPanel = () => {
