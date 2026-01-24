@@ -215,6 +215,7 @@ export default function Dashboard() {
         onAdd={handleAddHotel}
         initialName={reSearchName}
         initialLocation={reSearchLocation}
+        currentHotelCount={(data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)}
       />
 
       <SettingsModal

@@ -10,6 +10,7 @@ interface AddHotelModalProps {
   onAdd: (name: string, location: string, isTarget: boolean, currency: string, serpApiId?: string) => Promise<void>;
   initialName?: string;
   initialLocation?: string;
+  currentHotelCount?: number;
 }
 
 export default function AddHotelModal({
@@ -18,6 +19,7 @@ export default function AddHotelModal({
   onAdd,
   initialName = "",
   initialLocation = "",
+  currentHotelCount = 0,
 }: AddHotelModalProps) {
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
@@ -25,6 +27,8 @@ export default function AddHotelModal({
   const [isTarget, setIsTarget] = useState(false);
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+
+  const isLimitReached = currentHotelCount >= 5;
 
   // Update state if initial values change
   useEffect(() => {
@@ -88,6 +92,8 @@ export default function AddHotelModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLimitReached) return;
+    
     setLoading(true);
     try {
       await onAdd(name, location, isTarget, currency, serpApiId);
@@ -107,8 +113,17 @@ export default function AddHotelModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative overflow-hidden">
+        
+        {/* Limit Warning Banner */}
+        {isLimitReached && (
+          <div className="absolute top-0 left-0 right-0 bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2 justify-center">
+            <Loader2 className="w-4 h-4 text-red-400 animate-pulse hidden" /> 
+            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Hotel Limit Reached (Max 5)</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mb-6 mt-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
             Add New Hotel
@@ -122,6 +137,17 @@ export default function AddHotelModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+            
+          {/* Form Disabled Overlay if Limit Reached */}
+          {isLimitReached && (
+            <div className="absolute inset-0 z-10 bg-[var(--deep-ocean-card)]/50 backdrop-blur-[1px] flex items-center justify-center top-[80px]">
+              <div className="bg-black/80 px-4 py-3 rounded-lg border border-white/10 text-center shadow-2xl">
+                <p className="text-white font-bold mb-1">Limit Reached</p>
+                <p className="text-xs text-[var(--text-muted)]">Upgrade to add more hotels.</p>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
               Hotel Name
@@ -132,23 +158,24 @@ export default function AddHotelModal({
                 type="text"
                 required
                 value={name}
+                disabled={isLimitReached}
                 onChange={(e) => {
                   setName(e.target.value);
                   setSerpApiId(undefined); // Reset ID if user types manually
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
-                  name.length >= 2 &&
+                  !isLimitReached && name.length >= 2 &&
                   setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
                   setShowSuggestions(true)
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Escape") setShowSuggestions(false);
                 }}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="e.g. Grand Plaza Hotel"
               />
-              {name.length > 0 && !isSearching && (
+              {name.length > 0 && !isSearching && !isLimitReached && (
                 <button
                   type="button"
                   onClick={() => {
@@ -217,9 +244,10 @@ export default function AddHotelModal({
                   type="text"
                   required
                   value={location}
+                  disabled={isLimitReached}
                   onChange={(e) => setLocation(e.target.value)}
                   onFocus={() => setShowSuggestions(false)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="e.g. Miami, FL"
                 />
               </div>
@@ -231,8 +259,9 @@ export default function AddHotelModal({
               </label>
               <select
                 value={currency}
+                disabled={isLimitReached}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
@@ -247,12 +276,13 @@ export default function AddHotelModal({
               type="checkbox"
               id="isTarget"
               checked={isTarget}
+              disabled={isLimitReached}
               onChange={(e) => setIsTarget(e.target.checked)}
-              className="w-4 h-4 rounded border-white/10 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0"
+              className="w-4 h-4 rounded border-white/10 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <label
               htmlFor="isTarget"
-              className="text-sm text-[var(--text-secondary)] cursor-pointer select-none"
+              className="text-sm text-[var(--text-secondary)] cursor-pointer select-none disabled:opacity-50"
             >
               This is my hotel (Target Hotel)
             </label>
@@ -261,15 +291,15 @@ export default function AddHotelModal({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
-              className="w-full btn-gold py-3 flex items-center justify-center gap-2 group"
+              disabled={loading || isLimitReached}
+              className="w-full btn-gold py-3 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-[var(--deep-ocean)] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>Add Hotel Monitor</span>
+                  <span>{isLimitReached ? "Limit Reached" : "Add Hotel Monitor"}</span>
                 </>
               )}
             </button>
