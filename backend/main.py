@@ -396,15 +396,35 @@ async def run_monitor_background(
             hotel_currency = hotel.get("preferred_currency") or user_default_currency
             
             try:
+                # Determine Check-in/out and Adults
+                # Priority: Manual Options > Hotel Fixed > Default (None/2)
+                check_in_date = None
+                if options and options.check_in:
+                    check_in_date = options.check_in
+                elif hotel.get("fixed_check_in"):
+                    check_in_date = date.fromisoformat(hotel["fixed_check_in"]) if isinstance(hotel["fixed_check_in"], str) else hotel["fixed_check_in"]
+
+                check_out_date = None
+                if options and options.check_out:
+                    check_out_date = options.check_out
+                elif hotel.get("fixed_check_out"):
+                    check_out_date = date.fromisoformat(hotel["fixed_check_out"]) if isinstance(hotel["fixed_check_out"], str) else hotel["fixed_check_out"]
+
+                adults_count = 2
+                if options and options.adults:
+                    adults_count = options.adults
+                elif hotel.get("default_adults"):
+                    adults_count = hotel["default_adults"]
+
                 # Fetch Real Price
                 price_data = await serpapi_client.fetch_hotel_price(
                     hotel_name=hotel_name,
                     location=location,
                     currency=hotel_currency,
                     serp_api_id=serp_api_id,
-                    check_in=options.check_in if options else None,
-                    check_out=options.check_out if options else None,
-                    adults=options.adults if options else 2
+                    check_in=check_in_date,
+                    check_out=check_out_date,
+                    adults=adults_count
                 )
 
                 

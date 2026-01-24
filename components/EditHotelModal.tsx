@@ -27,6 +27,12 @@ export default function EditHotelModal({
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // New Fields
+  const [fixedCheckIn, setFixedCheckIn] = useState(hotel.fixed_check_in || "");
+  const [fixedCheckOut, setFixedCheckOut] = useState(hotel.fixed_check_out || "");
+  const [defaultAdults, setDefaultAdults] = useState(hotel.default_adults || 2);
+
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   // Sync state when hotel prop changes
@@ -37,6 +43,9 @@ export default function EditHotelModal({
       setCurrency(hotel.preferred_currency || "USD");
       setIsTarget(hotel.is_target_hotel || false);
       setSerpApiId(hotel.serp_api_id);
+      setFixedCheckIn(hotel.fixed_check_in || "");
+      setFixedCheckOut(hotel.fixed_check_out || "");
+      setDefaultAdults(hotel.default_adults || 2);
     }
   }, [isOpen, hotel]);
 
@@ -81,6 +90,9 @@ export default function EditHotelModal({
         preferred_currency: currency,
         is_target_hotel: isTarget,
         serp_api_id: serpApiId,
+        fixed_check_in: fixedCheckIn || null,
+        fixed_check_out: fixedCheckOut || null,
+        default_adults: defaultAdults,
       });
       await onUpdate();
       onClose();
@@ -184,6 +196,52 @@ export default function EditHotelModal({
               </select>
             </div>
           </div>
+
+          <div className="h-px bg-white/5 my-2" />
+          
+          <div className="space-y-3">
+              <p className="text-xs font-semibold text-[var(--soft-gold)] uppercase tracking-wider">Default Scan Settings (Optional)</p>
+              
+              <div className="grid grid-cols-3 gap-3">
+                 <div className="col-span-1">
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">Adults</label>
+                    <input 
+                        type="number" 
+                        min={1} 
+                        max={10}
+                        value={defaultAdults}
+                        onChange={(e) => setDefaultAdults(parseInt(e.target.value))}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                    />
+                 </div>
+                 <div className="col-span-2">
+                     {/* Spacer or CheckIn/Out split below */}
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Fixed Check-in</label>
+                        <input 
+                            type="date"
+                            value={fixedCheckIn}
+                            onChange={(e) => setFixedCheckIn(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Fixed Check-out</label>
+                        <input 
+                            type="date"
+                            value={fixedCheckOut}
+                            onChange={(e) => setFixedCheckOut(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                        />
+                    </div>
+              </div>
+          </div>
+          
+          <div className="h-px bg-white/5 my-2" />
 
           <div className="flex items-center gap-2 py-2">
             <input

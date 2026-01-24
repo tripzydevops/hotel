@@ -20,6 +20,9 @@ export interface Hotel {
   image_url?: string;
   property_token?: string;
   preferred_currency?: string;
+  fixed_check_in?: string; // "YYYY-MM-DD"
+  fixed_check_out?: string; // "YYYY-MM-DD"
+  default_adults?: number;
   created_at: string;
 }
 

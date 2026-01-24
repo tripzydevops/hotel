@@ -33,6 +33,9 @@ class HotelBase(BaseModel):
     image_url: Optional[str] = None
     property_token: Optional[str] = None
     preferred_currency: Optional[str] = Field(default="USD", max_length=3)
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = 2
 
 
 class HotelCreate(HotelBase):
@@ -45,6 +48,9 @@ class HotelUpdate(BaseModel):
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
     preferred_currency: Optional[str] = None
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = None
 
 
 class Hotel(HotelBase):

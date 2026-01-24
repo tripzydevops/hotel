@@ -250,10 +250,12 @@ export default function Dashboard() {
 
   const isLocked = profile?.subscription_status === 'past_due' || profile?.subscription_status === 'canceled' || profile?.subscription_status === 'unpaid';
 
+  const currentHotelCount = (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
+
   return (
     <div className="min-h-screen pb-12 relative">
       {isLocked && <PaywallOverlay reason={profile?.subscription_status === 'canceled' ? "Subscription Canceled" : "Trial Expired"} />}
-      <Header />
+      <Header userProfile={profile} hotelCount={currentHotelCount} />
 
       <AddHotelModal
         isOpen={isAddHotelOpen}
