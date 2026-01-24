@@ -48,10 +48,8 @@ class ApiKeyManager:
     """
     
     def __init__(self, keys: List[str]):
-        if not keys:
-            raise ValueError("At least one SerpApi API key is required.")
-        
-        self._keys = keys
+        # Allow empty keys for initialization (will fail on usage)
+        self._keys = keys or []
         self._current_index = 0
         self._lock = threading.Lock()
         self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
@@ -61,7 +59,10 @@ class ApiKeyManager:
     def current_key(self) -> str:
         """Get the current active API key."""
         with self._lock:
+            if not self._keys:
+                raise ValueError("No API keys configured")
             return self._keys[self._current_index]
+
     
     @property
     def total_keys(self) -> int:
@@ -88,11 +89,11 @@ class ApiKeyManager:
             True if successfully rotated, False if all keys exhausted
         """
         with self._lock:
+            if not self._keys:
+                return False
+
             current_key = self._keys[self._current_index]
-            
-            # Mark current key as exhausted
-            self._exhausted_keys[current_key] = datetime.now()
-            print(f"[SerpApi] Key {self._current_index + 1}/{len(self._keys)} marked as exhausted. Reason: {reason}")
+
             
             # Try to find next available key
             attempts = 0
@@ -156,10 +157,11 @@ class SerpApiClient:
     def __init__(self, api_keys: Optional[List[str]] = None):
         keys = api_keys or load_api_keys()
         if not keys:
-            raise ValueError("SerpApi API key is required. Set SERPAPI_API_KEY env var.")
+            print("[SerpApi] WARNING: No API keys found in environment. Usage will fail until keys are added.")
         
         self._key_manager = ApiKeyManager(keys)
         print(f"[SerpApi] Initialized with {self._key_manager.total_keys} API key(s)")
+
     
     @property
     def api_key(self) -> str:
