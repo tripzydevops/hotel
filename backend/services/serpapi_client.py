@@ -218,6 +218,7 @@ class SerpApiClient:
         }
         return status
 
+    def _normalize_string(self, text: Optional[str]) -> str:
         """Normalize string to Title Case and strip whitespace."""
         if not text:
             return ""
