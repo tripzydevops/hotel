@@ -11,9 +11,10 @@ interface UserMenuProps {
   hotelCount: number;
   onOpenProfile: () => void;
   onOpenSettings: () => void;
+  onOpenUpgrade?: () => void;
 }
 
-export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSettings }: UserMenuProps) {
+export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSettings, onOpenUpgrade }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -105,11 +106,14 @@ export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSet
                       style={{ width: `${usagePercent}%` }}
                    />
                </div>
-               {!isPro && (
-                   <button className="w-full mt-3 py-1.5 text-xs bg-[var(--soft-gold)] text-black font-bold rounded hover:opacity-90 transition-opacity">
-                       Upgrade to Pro
-                   </button>
-               )}
+                {!isPro && (
+                    <button 
+                        onClick={() => { setIsOpen(false); onOpenUpgrade?.(); }}
+                        className="w-full mt-3 py-1.5 text-xs bg-[var(--soft-gold)] text-black font-bold rounded hover:opacity-90 transition-opacity"
+                    >
+                        Upgrade to Pro
+                    </button>
+                )}
             </div>
           </div>
 

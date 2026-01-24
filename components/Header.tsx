@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Bell } from "lucide-react";
 import UserMenu from "./UserMenu";
+import UpgradeModal from "./UpgradeModal";
 
 interface HeaderProps {
   userProfile?: any;
@@ -24,6 +25,7 @@ export default function Header({
   onOpenSettings 
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
 
   return (
@@ -92,6 +94,7 @@ export default function Header({
                     hotelCount={hotelCount} 
                     onOpenProfile={onOpenProfile || (() => {})} 
                     onOpenSettings={onOpenSettings || (() => {})}
+                    onOpenUpgrade={() => setIsUpgradeOpen(true)}
                  />
             ) : (
                 <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
@@ -158,6 +161,7 @@ export default function Header({
                            hotelCount={hotelCount} 
                            onOpenProfile={onOpenProfile || (() => {})} 
                            onOpenSettings={onOpenSettings || (() => {})}
+                           onOpenUpgrade={() => setIsUpgradeOpen(true)}
                        />
                    </div>
                )}
@@ -165,6 +169,8 @@ export default function Header({
           </div>
         )}
       </div>
+
+      <UpgradeModal isOpen={isUpgradeOpen} onClose={() => setIsUpgradeOpen(false)} />
     </header>
   );
 }

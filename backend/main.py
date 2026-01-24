@@ -823,6 +823,12 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
     
+    # Force PRO for Dev/Demo User (since it can't rely on profiles join due to FK)
+    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
+    if is_dev_user:
+        plan = "pro"
+        status = "active"
+
     if result.data:
         p = result.data[0]
         p["plan_type"] = plan
