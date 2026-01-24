@@ -284,6 +284,8 @@ class AdminUser(BaseModel):
     scan_count: int
     created_at: datetime
     last_active: Optional[datetime] = None
+    plan_type: Optional[str] = "trial"
+    subscription_status: Optional[str] = "trial"
 
 class AdminDirectoryEntry(BaseModel):
     id: Any  # Can be UUID string or int depending on DB

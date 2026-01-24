@@ -1511,6 +1511,10 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
         # Get base user info from profiles
         profiles = db.table("user_profiles").select("*").execute().data or []
         settings_data = db.table("settings").select("user_id, created_at, notification_email").execute().data or []
+        sub_profiles = db.table("profiles").select("*").execute().data or []
+        
+        # Create map of sub profiles
+        sub_map = {s["id"]: s for s in sub_profiles}
         
         # Merge data (naive join since no FK strictness in some mock data)
         users_map = {}
@@ -1525,7 +1529,9 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 "phone": None,
                 "timezone": None,
                 "hotel_count": 0,
-                "scan_count": 0
+                "scan_count": 0,
+                "plan_type": "trial",
+                "subscription_status": "trial"
             }
             
         for p in profiles:
@@ -1541,7 +1547,9 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                     "phone": p.get("phone"),
                     "timezone": p.get("timezone"),
                     "hotel_count": 0,
-                    "scan_count": 0
+                    "scan_count": 0,
+                    "plan_type": p.get("plan_type") or "trial",
+                    "subscription_status": p.get("subscription_status") or "trial"
                 }
             else:
                 users_map[uid]["display_name"] = p.get("display_name")
@@ -1549,6 +1557,11 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 users_map[uid]["job_title"] = p.get("job_title")
                 users_map[uid]["phone"] = p.get("phone")
                 users_map[uid]["timezone"] = p.get("timezone")
+                # Get subscription info from profiles table
+                sub_data = sub_map.get(uid, {})
+                
+                users_map[uid]["plan_type"] = sub_data.get("plan_type") or p.get("plan_type") or "trial"
+                users_map[uid]["subscription_status"] = sub_data.get("subscription_status") or p.get("subscription_status") or "trial"
                 
         # Enrich with counts (this could be slow with many users, optimize later)
         final_users = []
@@ -1654,9 +1667,22 @@ async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Clie
         # For now, let's try updating user_profiles.
         
         sub_fields = ["plan_type", "subscription_status"]
+        sub_update = {}
         for f in sub_fields:
             if f in update_data:
-                profile_update[f] = update_data[f]
+                sub_update[f] = update_data[f]
+                
+        if sub_update:
+            # Check if profile exists in 'profiles' table first
+            try:
+                exists = db.table("profiles").select("id").eq("id", str(user_id)).execute().data
+                if exists:
+                    db.table("profiles").update(sub_update).eq("id", str(user_id)).execute()
+                else:
+                    sub_update["id"] = str(user_id)
+                    db.table("profiles").insert(sub_update).execute()
+            except Exception as e:
+                print(f"Failed to update profiles table: {e}")
         
         if profile_update:
             db.table("user_profiles").update(profile_update).eq("user_id", str(user_id)).execute()
