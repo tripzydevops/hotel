@@ -121,7 +121,19 @@ export default function Dashboard() {
 
   // Keep handleRefresh for backward compatibility or simple refresh if needed, 
   // but now we use handleScan mostly.
-  const handleRefresh = () => setIsScanSettingsOpen(true);
+  const [scanDefaults, setScanDefaults] = useState<{checkIn?: string; checkOut?: string; adults?: number} | undefined>(undefined);
+
+  const handleRefresh = () => {
+    // defaults from last scan if available
+    if (data?.target_hotel?.price_info) {
+        setScanDefaults({
+            checkIn: data.target_hotel.price_info.check_in,
+            checkOut: data.target_hotel.price_info.check_out,
+            adults: data.target_hotel.price_info.adults
+        });
+    }
+    setIsScanSettingsOpen(true);
+  };
 
   const handleAddHotel = async (
     name: string,
@@ -241,6 +253,7 @@ export default function Dashboard() {
         isOpen={isScanSettingsOpen}
         onClose={() => setIsScanSettingsOpen(false)}
         onScan={handleScan}
+        initialValues={scanDefaults}
       />
 
       <AlertsModal

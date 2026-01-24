@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Calendar, Users, Loader2, Play } from "lucide-react";
 import { ScanOptions } from "@/types";
 
@@ -8,17 +8,31 @@ interface ScanSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onScan: (options: ScanOptions) => Promise<void>;
+  initialValues?: {
+    checkIn?: string;
+    checkOut?: string;
+    adults?: number;
+  };
 }
 
 export default function ScanSettingsModal({
   isOpen,
   onClose,
   onScan,
+  initialValues,
 }: ScanSettingsModalProps) {
   const [loading, setLoading] = useState(false);
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [adults, setAdults] = useState(2);
+  const [checkIn, setCheckIn] = useState(initialValues?.checkIn || "");
+  const [checkOut, setCheckOut] = useState(initialValues?.checkOut || "");
+  const [adults, setAdults] = useState(initialValues?.adults || 2);
+
+  useEffect(() => {
+    if (isOpen && initialValues) {
+        setCheckIn(initialValues.checkIn || "");
+        setCheckOut(initialValues.checkOut || "");
+        setAdults(initialValues.adults || 2);
+    }
+  }, [isOpen, initialValues]);
 
   if (!isOpen) return null;
 
