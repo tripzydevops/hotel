@@ -561,6 +561,21 @@ const ApiKeysPanel = () => {
     }
   };
 
+  const handleReload = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/api-keys/reload", { method: "POST" });
+      const data = await res.json();
+      setKeyStatus(curr => curr ? ({ ...curr, total_keys: data.total_keys }) : null);
+      loadKeyStatus();
+      alert(`Reloaded! Found ${data.total_keys} keys.\nDebug: ${data.keys_found?.join(", ")}`);
+    } catch (err: any) {
+      alert("Failed: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleReset = async () => {
     if (!confirm("Reset all keys to active? (Use at new billing period)")) return;
     setActionLoading(true);
@@ -687,6 +702,14 @@ const ApiKeysPanel = () => {
         >
           {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Force Rotate to Next Key
+        </button>
+        <button 
+          onClick={handleReload}
+          disabled={actionLoading}
+          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] font-bold rounded-lg hover:bg-[var(--soft-gold)]/30 disabled:opacity-50"
+        >
+          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Reload from Env
         </button>
         <button 
           onClick={handleReset}

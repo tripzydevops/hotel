@@ -126,18 +126,30 @@ class ApiKeyManager:
             self._current_index = 0
             print("[SerpApi] All keys reset to active status")
     
+    def reload_keys(self, new_keys: List[str]):
+        """Reload API keys (e.g., after environment update)."""
+        with self._lock:
+            self._keys = new_keys or []
+            self._current_index = 0
+            self._exhausted_keys.clear()
+            print(f"[SerpApi] Reloaded keys. Total: {len(self._keys)}")
+
     def get_status(self) -> Dict[str, Any]:
         """Get current status of all API keys."""
         with self._lock:
+            # Handle empty keys gracefully
+            idx = self._current_index + 1 if self._keys else 0
+            
             status = {
                 "total_keys": len(self._keys),
-                "current_key_index": self._current_index + 1,
+                "current_key_index": idx,
                 "exhausted_keys": len(self._exhausted_keys),
                 "active_keys": self.active_keys,
                 "keys_status": []
             }
             
             for i, key in enumerate(self._keys):
+
                 key_info = {
                     "index": i + 1,
                     "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
@@ -163,6 +175,16 @@ class SerpApiClient:
         print(f"[SerpApi] Initialized with {self._key_manager.total_keys} API key(s)")
 
     
+    def reload(self):
+        """Force reload keys from environment."""
+        keys = load_api_keys()
+        self._key_manager.reload_keys(keys)
+        print(f"[SerpApi] Reloaded from environment: {len(keys)} keys found")
+        return {
+            "total_keys": len(keys),
+            "keys_found": [k[:4] + "..." for k in keys] # Debug info
+        }
+
     @property
     def api_key(self) -> str:
         """Get current active API key."""
@@ -170,9 +192,15 @@ class SerpApiClient:
     
     def get_key_status(self) -> Dict[str, Any]:
         """Get status of all API keys."""
-        return self._key_manager.get_status()
-    
-    def _normalize_string(self, text: Optional[str]) -> str:
+        status = self._key_manager.get_status()
+        # Add debugging info about what was checked
+        status["debug_env_check"] = {
+            "SERPAPI_API_KEY": "FOUND" if os.getenv("SERPAPI_API_KEY") else "MISSING",
+            "SERPAPI_API_KEY_2": "FOUND" if os.getenv("SERPAPI_API_KEY_2") else "MISSING",
+            "cwd": os.getcwd()
+        }
+        return status
+
         """Normalize string to Title Case and strip whitespace."""
         if not text:
             return ""

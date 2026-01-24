@@ -1403,6 +1403,17 @@ async def reset_api_keys():
         print(f"API Key Reset Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/api/admin/api-keys/reload")
+async def reload_api_keys():
+    """Force reload API keys from environment."""
+    try:
+        return serpapi_client.serpapi_client.reload()
+    except Exception as e:
+        print(f"API Key Reload Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/users", response_model=List[AdminUser])
 async def get_admin_users(db: Client = Depends(get_supabase)):
     """List all users with stats."""
