@@ -22,6 +22,8 @@ interface CompetitorTileProps {
   imageUrl?: string;
   vendor?: string;
   priceHistory?: PricePoint[];
+  checkIn?: string;
+  adults?: number;
 }
 
 /**
@@ -45,6 +47,8 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     imageUrl: image_src,
     vendor,
     priceHistory,
+    checkIn,
+    adults,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -178,6 +182,11 @@ export default function CompetitorTile(props: CompetitorTileProps) {
             {vendor && currentPrice > 0 && (
                 <span className="text-[9px] text-[var(--text-muted)] italic">
                     via {vendor}
+                </span>
+            )}
+            {(checkIn || (adults && adults !== 2)) && (
+                <span className="text-[9px] text-[var(--soft-gold)] font-bold ml-1 border border-[var(--soft-gold)]/20 px-1.5 py-0.5 rounded-full bg-[var(--soft-gold)]/5">
+                • {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today'}{adults && adults !== 2 ? ` • ${adults} G` : ''}
                 </span>
             )}
           </div>

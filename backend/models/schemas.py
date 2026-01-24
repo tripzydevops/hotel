@@ -172,6 +172,9 @@ class PriceWithTrend(BaseModel):
     change_percent: float = 0.0
     recorded_at: datetime
     vendor: Optional[str] = None
+    check_in: Optional[date] = None
+    check_out: Optional[date] = None
+    adults: Optional[int] = None
 
 
 

@@ -379,6 +379,8 @@ export default function Dashboard() {
                   imageUrl={data.target_hotel.image_url}
                   vendor={data.target_hotel.price_info?.vendor}
                   priceHistory={data.target_hotel.price_history}
+                  checkIn={data.target_hotel.price_info?.check_in}
+                  adults={data.target_hotel.price_info?.adults}
                 />
               )}
 
@@ -408,6 +410,8 @@ export default function Dashboard() {
                       imageUrl={competitor.image_url}
                       vendor={competitor.price_info?.vendor}
                       priceHistory={competitor.price_history}
+                      checkIn={competitor.price_info?.check_in}
+                      adults={competitor.price_info?.adults}
                     />
                   );
                 })}

@@ -22,6 +22,8 @@ interface TargetHotelTileProps {
   imageUrl?: string;
   vendor?: string;
   priceHistory?: PricePoint[];
+  checkIn?: string;
+  adults?: number;
 }
 
 /**
@@ -44,6 +46,8 @@ export default function TargetHotelTile({
   imageUrl,
   vendor,
   priceHistory,
+  checkIn,
+  adults,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -145,6 +149,11 @@ export default function TargetHotelTile({
                     <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
                         via {vendor}
                     </span>
+                )}
+                {(checkIn || (adults && adults !== 2)) && (
+                     <span className="mt-2 text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5">
+                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today'}{adults && adults !== 2 ? ` • ${adults} Guests` : ''}
+                     </span>
                 )}
               </div>
             ) : (

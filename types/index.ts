@@ -30,6 +30,9 @@ export interface PriceInfo {
   change_percent: number;
   recorded_at: string;
   vendor?: string;
+  check_in?: string; // ISO Date "YYYY-MM-DD"
+  check_out?: string; // ISO Date "YYYY-MM-DD"
+  adults?: number;
 }
 
 export interface PricePoint {

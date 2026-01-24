@@ -187,6 +187,9 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                     "change_percent": change,
                     "recorded_at": current_price["recorded_at"],
                     "vendor": current_price.get("vendor"),
+                    "check_in": current_price.get("check_in_date"),
+                    "check_out": current_price.get("check_out_date"),
+                    "adults": current_price.get("adults"),
                 }
             
             hotel_with_price = HotelWithPrice(
