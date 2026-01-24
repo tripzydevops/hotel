@@ -204,7 +204,7 @@ class ApiClient {
   
   async updateAdminUser(userId: string, updates: any): Promise<any> {
     return this.fetch<any>(`/api/admin/users/${userId}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(updates),
     });
   }
