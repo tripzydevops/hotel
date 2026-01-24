@@ -101,6 +101,13 @@ export interface DashboardData {
   last_updated: string;
 }
 
+export interface ScanOptions {
+  check_in?: string;
+  check_out?: string;
+  adults?: number;
+  currency?: string;
+}
+
 export interface MonitorResult {
   hotels_checked: number;
   prices_updated: number;

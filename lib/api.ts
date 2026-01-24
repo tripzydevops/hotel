@@ -26,9 +26,10 @@ class ApiClient {
     return this.fetch<DashboardData>(`/api/dashboard/${userId}`);
   }
 
-  async triggerMonitor(userId: string): Promise<MonitorResult> {
+  async triggerMonitor(userId: string, options?: { check_in?: string; check_out?: string; adults?: number; currency?: string }): Promise<MonitorResult> {
     return this.fetch<MonitorResult>(`/api/monitor/${userId}`, {
       method: "POST",
+      body: options ? JSON.stringify(options) : undefined,
     });
   }
 

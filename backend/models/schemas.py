@@ -231,6 +231,13 @@ class DashboardResponse(BaseModel):
     last_updated: Optional[datetime] = None
 
 
+class ScanOptions(BaseModel):
+    check_in: Optional[date] = None
+    check_out: Optional[date] = None
+    adults: int = Field(default=2, ge=1, le=10)
+    currency: Optional[str] = "USD"
+
+
 class MonitorResult(BaseModel):
     """Result of a monitoring run."""
     hotels_checked: int

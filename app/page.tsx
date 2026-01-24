@@ -18,7 +18,8 @@ import ScanHistory from "@/components/ScanHistory";
 import RapidPulseHistory from "@/components/RapidPulseHistory";
 import ScanSessionModal from "@/components/ScanSessionModal";
 import AlertsModal from "@/components/AlertsModal";
-import { ScanSession } from "@/types";
+import ScanSettingsModal from "@/components/ScanSettingsModal";
+import { ScanSession, ScanOptions } from "@/types";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -42,6 +43,7 @@ export default function Dashboard() {
   // Session Modal State
   const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isScanSettingsOpen, setIsScanSettingsOpen] = useState(false);
 
   // Re-search state
   const [reSearchName, setReSearchName] = useState("");
@@ -104,11 +106,11 @@ export default function Dashboard() {
     }
   };
 
-  const handleRefresh = async () => {
+  const handleScan = async (options: ScanOptions) => {
     if (!userId) return;
     setIsRefreshing(true);
     try {
-      await api.triggerMonitor(userId);
+      await api.triggerMonitor(userId, options);
       await fetchData();
     } catch (error) {
       console.error("Failed to refresh monitor:", error);
@@ -116,6 +118,10 @@ export default function Dashboard() {
       setIsRefreshing(false);
     }
   };
+
+  // Keep handleRefresh for backward compatibility or simple refresh if needed, 
+  // but now we use handleScan mostly.
+  const handleRefresh = () => setIsScanSettingsOpen(true);
 
   const handleAddHotel = async (
     name: string,
@@ -229,6 +235,12 @@ export default function Dashboard() {
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
         session={selectedSession}
+      />
+
+      <ScanSettingsModal
+        isOpen={isScanSettingsOpen}
+        onClose={() => setIsScanSettingsOpen(false)}
+        onScan={handleScan}
       />
 
       <AlertsModal

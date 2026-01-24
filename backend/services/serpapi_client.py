@@ -318,6 +318,7 @@ class SerpApiClient:
         location: str,
         check_in: Optional[date] = None,
         check_out: Optional[date] = None,
+        adults: int = 2,
         currency: str = "USD",
         serp_api_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
@@ -329,6 +330,7 @@ class SerpApiClient:
             location: City/region for the search
             check_in: Check-in date (defaults to tonight)
             check_out: Check-out date (defaults to tomorrow)
+            adults: Number of adults (defaults to 2)
             currency: Preferred currency
             serp_api_id: ID to match against properties (optional)
         
@@ -350,7 +352,7 @@ class SerpApiClient:
             "q": f"{hotel_name} {location}",
             "check_in_date": check_in.isoformat(),
             "check_out_date": check_out.isoformat(),
-            "adults": 2,
+            "adults": adults,
             "currency": currency,
             "gl": "us",
             "hl": "en",

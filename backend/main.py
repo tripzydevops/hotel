@@ -27,7 +27,8 @@ from backend.models.schemas import (
     TrendDirection, QueryLog, PricePoint,
     MarketAnalysis, ReportsResponse, ScanSession,
     UserProfile, UserProfileUpdate,
-    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate
+    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate,
+    ScanOptions
 )
 from backend.services import serpapi_client, price_comparator, notification_service
 
@@ -299,7 +300,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 async def trigger_monitor(
     user_id: UUID,
     background_tasks: BackgroundTasks,
-    check_in: Optional[date] = None,
+    options: ScanOptions = None,
     db: Optional[Client] = Depends(get_supabase)
 ):
     """
@@ -334,7 +335,7 @@ async def trigger_monitor(
         run_monitor_background,
         user_id=user_id,
         hotels=hotels,
-        check_in=check_in,
+        options=options,
         db=db,
         session_id=session_id
     )
@@ -351,7 +352,7 @@ async def trigger_monitor(
 async def run_monitor_background(
     user_id: UUID,
     hotels: List[Dict[str, Any]],
-    check_in: Optional[date],
+    options: Optional[ScanOptions],
     db: Client,
     session_id: Optional[UUID]
 ):
@@ -397,8 +398,12 @@ async def run_monitor_background(
                     hotel_name=hotel_name,
                     location=location,
                     currency=hotel_currency,
-                    serp_api_id=serp_api_id
+                    serp_api_id=serp_api_id,
+                    check_in=options.check_in if options else None,
+                    check_out=options.check_out if options else None,
+                    adults=options.adults if options else 2
                 )
+
                 
                 if not price_data:
                     await log_query(
