@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, LogOut, Shield, CreditCard, ChevronDown, Sparkles } from "lucide-react";
+import { User, LogOut, Shield, CreditCard, ChevronDown, Sparkles, Settings } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,9 +10,10 @@ interface UserMenuProps {
   profile: any; // Ideally typed
   hotelCount: number;
   onOpenProfile: () => void;
+  onOpenSettings: () => void;
 }
 
-export default function UserMenu({ profile, hotelCount, onOpenProfile }: UserMenuProps) {
+export default function UserMenu({ profile, hotelCount, onOpenProfile, onOpenSettings }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -122,6 +123,13 @@ export default function UserMenu({ profile, hotelCount, onOpenProfile }: UserMen
               >
                   <User className="w-4 h-4" />
                   My Profile
+              </button>
+              <button 
+                  onClick={() => { setIsOpen(false); onOpenSettings(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
+              >
+                  <Settings className="w-4 h-4" />
+                  Alert Settings
               </button>
               <Link 
                 href="/admin"  

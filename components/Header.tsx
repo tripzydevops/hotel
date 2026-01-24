@@ -3,15 +3,26 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { Bell } from "lucide-react";
 import UserMenu from "./UserMenu";
 
 interface HeaderProps {
   userProfile?: any;
   hotelCount?: number;
+  unreadCount?: number;
   onOpenProfile?: () => void;
+  onOpenAlerts?: () => void;
+  onOpenSettings?: () => void;
 }
 
-export default function Header({ userProfile, hotelCount = 0, onOpenProfile }: HeaderProps) {
+export default function Header({ 
+  userProfile, 
+  hotelCount = 0, 
+  unreadCount = 0,
+  onOpenProfile, 
+  onOpenAlerts,
+  onOpenSettings 
+}: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
 
@@ -64,8 +75,24 @@ export default function Header({ userProfile, hotelCount = 0, onOpenProfile }: H
               {locale === "en" ? "TR" : "EN"}
             </button>
 
+            {/* Notifications */}
+            <button 
+              onClick={onOpenAlerts}
+              className="relative p-2 rounded-lg hover:bg-white/10 transition-colors group"
+            >
+              <Bell className="w-5 h-5 text-[var(--soft-gold)] group-hover:text-white transition-colors" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+              )}
+            </button>
+
             {userProfile ? (
-                 <UserMenu profile={userProfile} hotelCount={hotelCount} onOpenProfile={onOpenProfile || (() => {})} />
+                 <UserMenu 
+                    profile={userProfile} 
+                    hotelCount={hotelCount} 
+                    onOpenProfile={onOpenProfile || (() => {})} 
+                    onOpenSettings={onOpenSettings || (() => {})}
+                 />
             ) : (
                 <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
             )}
@@ -126,7 +153,12 @@ export default function Header({ userProfile, hotelCount = 0, onOpenProfile }: H
               </Link>
                {userProfile && (
                    <div className="pt-4 border-t border-white/10">
-                       <UserMenu profile={userProfile} hotelCount={hotelCount} onOpenProfile={onOpenProfile || (() => {})} />
+                       <UserMenu 
+                           profile={userProfile} 
+                           hotelCount={hotelCount} 
+                           onOpenProfile={onOpenProfile || (() => {})} 
+                           onOpenSettings={onOpenSettings || (() => {})}
+                       />
                    </div>
                )}
             </nav>

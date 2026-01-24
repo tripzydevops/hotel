@@ -255,7 +255,14 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pb-12 relative">
       {isLocked && <PaywallOverlay reason={profile?.subscription_status === 'canceled' ? "Subscription Canceled" : "Trial Expired"} />}
-      <Header userProfile={profile} hotelCount={currentHotelCount} onOpenProfile={() => setIsProfileOpen(true)} />
+      <Header 
+        userProfile={profile} 
+        hotelCount={currentHotelCount} 
+        unreadCount={data?.unread_alerts_count}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       <AddHotelModal
         isOpen={isAddHotelOpen}
@@ -349,29 +356,6 @@ export default function Dashboard() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            {/* Alerts Badge */}
-            <button 
-              onClick={() => setIsAlertsOpen(true)}
-              className="relative p-3 glass rounded-xl hover:bg-white/10 transition-colors"
-            >
-              <Bell className="w-5 h-5 text-white" />
-              {(data?.unread_alerts_count || 0) > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {data?.unread_alerts_count}
-                </span>
-              )}
-            </button>
-
-
-
-            {/* Settings */}
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-3 glass rounded-xl hover:bg-white/10 transition-colors"
-            >
-              <Settings className="w-5 h-5 text-white" />
-            </button>
-
             {/* Manual Search (Scan Now) */}
             <button
               onClick={handleRefresh}
