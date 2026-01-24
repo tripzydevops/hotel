@@ -62,11 +62,75 @@ export default function ReportsPage() {
   const handleExport = async (format: string) => {
     if (!userId) return;
     setExporting(format);
+    
     try {
-      await api.exportReport(userId, format);
-      alert(`Report exported as ${format.toUpperCase()} successfully!`);
+      if (format === 'pdf') {
+        // Dynamic import to avoid SSR issues
+        const { default: jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text("Hotel Rate Sentinel - Intelligence Report", 14, 22);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+        
+        // Weekly Summary
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Weekly Summary", 14, 40);
+        
+        const summaryData = [
+           ["Total Scans", data?.weekly_summary?.total_scans || 0],
+           ["Active Monitors", data?.weekly_summary?.active_monitors || 0],
+           ["Trend", data?.weekly_summary?.last_week_trend || "N/A"],
+           ["System Health", data?.weekly_summary?.system_health || "N/A"]
+        ];
+        
+        autoTable(doc, {
+            startY: 45,
+            head: [['Metric', 'Value']],
+            body: summaryData,
+            theme: 'grid',
+            headStyles: { fillColor: [255, 215, 0], textColor: [0, 0, 0] }, // Soft Gold
+            styles: { fontSize: 10 }
+        });
+        
+        // Sessions Table
+        const lastY = (doc as any).lastAutoTable.finalY || 60;
+        doc.setFontSize(14);
+        doc.text("Recent Scan Sessions", 14, lastY + 15);
+        
+        const tableData = data?.sessions?.map((s: any) => [
+            new Date(s.created_at).toLocaleString(),
+            s.session_type?.toUpperCase(),
+            s.status?.toUpperCase(),
+            s.hotels_count
+        ]) || [];
+
+        autoTable(doc, {
+            startY: lastY + 20,
+            head: [['Timestamp', 'Type', 'Status', 'Hotels']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [40, 40, 40] }
+        });
+
+        doc.save(`hotel-reports-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+      } else {
+        // Keep existing CSV logic
+        await api.exportReport(userId, format);
+        alert(`Report exported as ${format.toUpperCase()} successfully!`);
+      }
     } catch (err) {
       console.error("Export failed:", err);
+      alert("Failed to generate export.");
     } finally {
       setExporting(null);
     }

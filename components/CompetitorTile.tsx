@@ -168,18 +168,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
 
         {/* Trend Badge & Actions */}
         <div className="flex items-center gap-2">
-          {onDelete && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className="p-1.5 rounded-md bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all"
-              title="Delete Monitor"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
+
           <div
             className={`px-2 py-1 rounded-md ${getTrendBgColor()} flex items-center gap-1`}
           >
