@@ -143,15 +143,20 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     """Get dashboard data with target hotel and competitors."""
+    """Get dashboard data with target hotel and competitors."""
+    # Default empty response
+    fallback_resp = DashboardResponse(
+        target_hotel=None,
+        competitors=[],
+        recent_searches=[],
+        scan_history=[],
+        recent_sessions=[],
+        unread_alerts_count=0,
+        last_updated=datetime.now(timezone.utc),
+    )
+
     if not db:
-        return DashboardResponse(
-            target_hotel=None,
-            competitors=[],
-            recent_searches=[],
-            scan_history=[],
-            unread_alerts_count=0,
-            last_updated=datetime.now(timezone.utc),
-        )
+        return fallback_resp
 
     try:
         # Fetch all hotels for user
@@ -176,9 +181,9 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             
             # Build price info with trend
             price_info = None
-            if current_price:
-                current = current_price["price"]
-                previous = previous_price["price"] if previous_price else None
+            if current_price and current_price.get("price") is not None:
+                current = float(current_price["price"])
+                previous = float(previous_price["price"]) if (previous_price and previous_price.get("price") is not None) else None
                 trend, change = price_comparator.calculate_trend(current, previous)
                 
                 price_info = {
@@ -203,7 +208,10 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 stars=hotel.get("stars"),
                 image_url=hotel.get("image_url"),
                 price_info=price_info,
-                price_history=[PricePoint(price=p["price"], recorded_at=p["recorded_at"]) for p in prices]
+                price_history=[
+                    PricePoint(price=float(p["price"]), recorded_at=p["recorded_at"]) 
+                    for p in prices if p.get("price") is not None
+                ]
             )
             
             if hotel["is_target_hotel"]:
@@ -212,19 +220,18 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 competitors.append(hotel_with_price)
         
         # Count unread alerts
-        alerts_result = db.table("alerts") \
-            .select("id", count="exact") \
-            .eq("user_id", str(user_id)) \
-            .eq("is_read", False) \
-            .execute()
-        
         unread_count = 0
         try:
+            alerts_result = db.table("alerts") \
+                .select("id", count="exact") \
+                .eq("user_id", str(user_id)) \
+                .eq("is_read", False) \
+                .execute()
             unread_count = alerts_result.count if alerts_result.count is not None else 0
-        except:
-            pass
+        except Exception:
+            pass # Ignore alert count errors
         
-        # Fetch recent activity (searches and manual additions)
+        # Fetch activity
         unique_recent = []
         try:
             recent_result = db.table("query_logs") \
@@ -237,16 +244,15 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             
             seen_names = set()
             for log in (recent_result.data or []):
-                name = log["hotel_name"]
-                if name not in seen_names:
+                name = log.get("hotel_name")
+                if name and name not in seen_names:
                     unique_recent.append(log)
                     seen_names.add(name)
-                if len(unique_recent) >= 10:
-                    break
-        except Exception as e:
-            print(f"Error fetching recent_searches: {e}")
+                if len(unique_recent) >= 10: break
+        except Exception:
+            pass
 
-        # Fetch dedicated scan history (monitor events)
+        # Fetch scan history
         scan_history = []
         try:
             scan_result = db.table("query_logs") \
@@ -257,10 +263,10 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 .limit(10) \
                 .execute()
             scan_history = scan_result.data or []
-        except Exception as e:
-            print(f"Error fetching scan_history: {e}")
+        except Exception:
+            pass
 
-        # Fetch recent sessions (The new grouping layer)
+        # Fetch sessions
         recent_sessions = []
         try:
             sessions_result = db.table("scan_sessions") \
@@ -269,11 +275,14 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 .order("created_at", desc=True) \
                 .limit(10) \
                 .execute()
-            recent_sessions = sessions_result.data or []
-        except Exception as e:
-            print(f"Error fetching sessions: {e}")
+            # Ensure valid structure
+            for s in (sessions_result.data or []):
+                # Basic validation or defaults if needed
+                recent_sessions.append(s)
+        except Exception:
+            pass # Ignore sessions errors (missing table etc)
 
-        resp = DashboardResponse(
+        return DashboardResponse(
             target_hotel=target_hotel,
             competitors=competitors,
             recent_searches=unique_recent,
@@ -282,21 +291,13 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             unread_alerts_count=unread_count,
             last_updated=datetime.now(timezone.utc),
         )
-        return resp
+
     except Exception as e:
         import traceback
         err_msg = traceback.format_exc()
-        print(f"CRITICAL Dashboard Error at step: {e}\n{err_msg}")
-        # Return a partial response if possible instead of crashing everything, 
-        # or at least raise a clearer error.
-        return DashboardResponse(
-            target_hotel=None,
-            competitors=[],
-            recent_searches=[],
-            scan_history=[],
-            unread_alerts_count=0,
-            last_updated=datetime.now(timezone.utc),
-        )
+        print(f"CRITICAL Dashboard Error: {e}\n{err_msg}")
+        # RETURN FALLBACK INSTEAD OF CRASHING
+        return fallback_resp
 
 
 # ===== Monitor Endpoint =====
