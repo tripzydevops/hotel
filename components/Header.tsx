@@ -38,38 +38,42 @@ export default function Header({
     <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-10 h-10">
+          {/* Logo */ }
+          <Link href="/" className="flex items-center gap-3">
+            <div className="h-10 w-auto">
               <img 
                 src="/logo.png" 
                 alt="Hotel Plus Logo" 
-                className="w-full h-full object-contain"
+                className="h-full w-auto object-contain"
               />
             </div>
-            <span className="text-lg font-bold text-white tracking-tight">
-              Hotel{" "}
-              <span className="text-[var(--soft-gold)]">Plus</span>
-            </span>
+            <div className="flex flex-col">
+                <span className="text-xl font-bold text-[var(--navy-primary)] tracking-tight leading-none">
+                Hotel Plus
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-[var(--gold-dark)] font-bold">
+                    Rate Sentinel
+                </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className="text-white text-sm font-medium border-b-2 border-[var(--soft-gold)] pb-1"
+              className="text-[var(--navy-primary)] text-sm font-semibold border-b-2 border-[var(--gold-primary)] pb-1"
             >
               {t("common.dashboard")}
             </Link>
             <Link
               href="/analysis"
-              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
+              className="text-slate-500 text-sm hover:text-[var(--navy-primary)] transition-colors font-medium"
             >
               {t("common.analysis")}
             </Link>
             <Link
               href="/reports"
-              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
+              className="text-slate-500 text-sm hover:text-[var(--navy-primary)] transition-colors font-medium"
             >
               {t("common.reports")}
             </Link>
@@ -125,7 +129,7 @@ export default function Header({
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-white"
+            className="md:hidden p-2 text-[var(--navy-primary)] hover:bg-slate-100 rounded-lg"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >

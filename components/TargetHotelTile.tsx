@@ -166,7 +166,7 @@ export default function TargetHotelTile({
                 )}
                 {(checkIn || (adults && adults !== 2)) && (
                      <span className="mt-2 text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5">
-                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today'}{adults && adults !== 2 ? ` • ${adults} Guests` : ''}
+                        {checkIn ? `Check-in ${new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Check-in Today'}{adults && adults !== 2 ? ` • ${adults} Guests` : ''}
                      </span>
                 )}
               </div>
@@ -216,7 +216,7 @@ export default function TargetHotelTile({
         <div className="text-right">
           <p className="text-xs text-[var(--text-muted)]">Updated</p>
           <p className="text-sm text-[var(--text-secondary)]">
-            {lastUpdated || "Just now"}
+            {lastUpdated || "Pending"}
           </p>
         </div>
       </div>

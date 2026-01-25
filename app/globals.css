@@ -62,10 +62,11 @@
 
 /* ===== BASE STYLES ===== */
 body {
-  background: var(--background-canvas);
-  color: var(--text-primary);
+  background: #F8FAFC; /* Slate-50 */
+  color: #475569; /* Slate-600 - Much better readability than Navy */
   font-family: var(--font-inter), system-ui, sans-serif; /* Body gets Inter */
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -75,42 +76,36 @@ h4,
 h5,
 h6 {
   font-family: var(--font-montserrat), sans-serif; /* Headings get Montserrat */
-  font-weight: 600; /* SemiBold preference */
-  color: var(--navy-primary);
+  font-weight: 700;
+  color: var(--navy-primary); /* Keep Navy for Headings */
+  letter-spacing: -0.025em; /* Tight tracking for headings */
 }
 
 /* ===== GLASSMORPHISM COMPONENTS ===== */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(11, 31, 59, 0.05);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.9); /* Opaque white for cards on light bg */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(11, 31, 59, 0.08); /* Navy border tint */
-  border-radius: 12px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Soft shadow */
-  transition: all 0.2s ease;
+  background: #FFFFFF;
+  border: 1px solid rgba(11, 31, 59, 0.04);
+  border-radius: 16px; 
+  box-shadow: 0 2px 8px -2px rgba(11, 31, 59, 0.05), 0 1px 4px -1px rgba(11, 31, 59, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.08),
-    0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  border-color: rgba(11, 31, 59, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -6px rgba(11, 31, 59, 0.1), 0 4px 8px -4px rgba(11, 31, 59, 0.05);
+  border-color: rgba(212, 175, 55, 0.3); /* Gold hint on hover */
 }
 
 .card-navy {
-  background: var(--navy-primary);
-  color: var(--surface-white);
+    background: var(--navy-primary);
+    color: var(--surface-white);
 }
 
 /* ===== HIGH DENSITY UTILITIES ===== */
@@ -123,8 +118,8 @@ h6 {
   font-family: var(--font-inter);
   font-size: 2.25rem;
   line-height: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--navy-primary);
 }
 
@@ -138,45 +133,47 @@ h6 {
 
 /* ===== BUTTON VARIANTS ===== */
 .btn-gold {
-  background: linear-gradient(
-    135deg,
-    var(--gold-primary) 0%,
-    var(--gold-dark) 100%
-  );
-  color: #ffffff; /* White text on Gold button usually looks better, or Navy? User said: "Metinlerde altın sınırlı". Gold background -> Navy text is classic high contrast. Let's try Navy text on Gold button. */
-  color: var(--navy-primary);
+  background: linear-gradient(135deg, #D4AF37 0%, #B49020 100%); /* More muted/metallic gold */
+  color: #FFFFFF;
   font-weight: 600;
   padding: 12px 24px;
-  border-radius: 8px; /* Slightly sharper than 12px for "Modern/Premium" structure */
-  border: none;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gold::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0.5;
 }
 
 .btn-gold:hover {
-  background: linear-gradient(
-    135deg,
-    var(--gold-light) 0%,
-    var(--gold-primary) 100%
-  );
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 8px 16px rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, #E5C55D 0%, #C5A028 100%);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--navy-primary);
-  font-weight: 500;
+  color: var(--navy-light);
+  font-weight: 600;
   padding: 12px 24px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  border-radius: 10px;
+  border: 1px solid rgba(11, 31, 59, 0.1);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
-  background: rgba(11, 31, 59, 0.05);
+  background: rgba(11, 31, 59, 0.03);
+  color: var(--navy-primary);
   border-color: var(--navy-primary);
 }
 
