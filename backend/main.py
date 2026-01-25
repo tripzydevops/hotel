@@ -181,9 +181,19 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             
             # Build price info with trend
             price_info = None
-            if current_price and current_price.get("price") is not None:
+                if current_price and current_price.get("price") is not None:
                 current = float(current_price["price"])
-                previous = float(previous_price["price"]) if (previous_price and previous_price.get("price") is not None) else None
+                curr_currency = current_price.get("currency", "USD")
+                
+                previous = None
+                if previous_price and previous_price.get("price") is not None:
+                     raw_prev = float(previous_price["price"])
+                     prev_currency = previous_price.get("currency", "USD")
+                     if curr_currency != prev_currency:
+                         previous = convert_currency(raw_prev, prev_currency, curr_currency)
+                     else:
+                         previous = raw_prev
+                
                 trend, change = price_comparator.calculate_trend(current, previous)
                 
                 price_info = {
@@ -447,13 +457,22 @@ async def run_monitor_background(
                 
                 # Get previous price
                 prev_result = db.table("price_logs") \
-                    .select("price") \
+                    .select("price, currency") \
                     .eq("hotel_id", hotel_id) \
                     .order("recorded_at", desc=True) \
                     .limit(1) \
                     .execute()
                 
-                previous_price = prev_result.data[0]["price"] if prev_result.data else None
+                previous_price = None
+                previous_currency = "USD"
+                
+                if prev_result.data:
+                    previous_price = prev_result.data[0]["price"]
+                    previous_currency = prev_result.data[0].get("currency", "USD")
+                    
+                    # Normalize if currencies differ
+                    if hotel_currency != previous_currency:
+                        previous_price = convert_currency(previous_price, previous_currency, hotel_currency)
                 
                 # Log price
                 db.table("price_logs").insert({
