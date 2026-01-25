@@ -48,7 +48,7 @@ export default function Header({
               />
             </div>
             <div className="flex flex-col">
-                <span className="text-xl font-bold text-[var(--navy-primary)] tracking-tight leading-none">
+                <span className="text-xl font-bold text-white tracking-tight leading-none">
                 Hotel Plus
                 </span>
                 <span className="text-[10px] uppercase tracking-widest text-[var(--gold-dark)] font-bold">
@@ -61,19 +61,19 @@ export default function Header({
           <nav className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className="text-[var(--navy-primary)] text-sm font-semibold border-b-2 border-[var(--gold-primary)] pb-1"
+              className="text-white text-sm font-medium border-b-2 border-[var(--soft-gold)] pb-1"
             >
               {t("common.dashboard")}
             </Link>
             <Link
               href="/analysis"
-              className="text-slate-500 text-sm hover:text-[var(--navy-primary)] transition-colors font-medium"
+              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
             >
               {t("common.analysis")}
             </Link>
             <Link
               href="/reports"
-              className="text-slate-500 text-sm hover:text-[var(--navy-primary)] transition-colors font-medium"
+              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
             >
               {t("common.reports")}
             </Link>
@@ -129,7 +129,7 @@ export default function Header({
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-[var(--navy-primary)] hover:bg-slate-100 rounded-lg"
+            className="md:hidden p-2 text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >

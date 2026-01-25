@@ -1,139 +1,85 @@
-@import "tailwindcss";
-
-/* ===== TRIPZY HOTEL - DESIGN SYSTEM ===== */
-/* Deep Ocean / Soft Gold / Glassmorphism Theme */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  /* Premium Navy Palette (Trust, Authority) */
-  --navy-primary: #0b1f3b;
-  --navy-dark: #061224;
-  --navy-light: #153259;
+  /* ===== COLOR PALETTE (ORIGINAL DEEP OCEAN) ===== */
+  --deep-ocean: #0B1F3B; /* Main Background */
+  --deep-ocean-card: #15294A; /* Card Background */
+  --deep-ocean-accent: #1E3A5F; /* Hover/Accent */
+  
+  --soft-gold: #D4AF37; /* Primary Gold Accent */
+  --soft-gold-hover: #E5C55D;
+  --soft-gold-dim: rgba(212, 175, 55, 0.1);
 
-  /* Premium Gold Palette (Luxury, Accent) */
-  --gold-primary: #d4af37;
-  --gold-light: #e5c55d;
-  --gold-dark: #a88620;
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8; /* Slate-400 */
+  --text-muted: #64748B; /* Slate-500 */
 
-  /* Neutrals */
-  --background-canvas: #f6f6f6; /* Light gray/white alternative */
-  --surface-white: #ffffff;
-  --text-primary: #0b1f3b; /* Navy for main text */
-  --text-secondary: #475569; /* Slate 600 */
-  --text-muted: #94a3b8; /* Slate 400 */
+  --danger: #EF4444;
+  --success: #10B981;
+  --warning: #F59E0B;
 
-  /* Glassmorphism - Adjusted for light background */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(11, 31, 59, 0.05); /* Navy tint */
-  --glass-blur: 16px;
+  /* ===== GLASSMORPHISM VARS ===== */
+  --glass-bg: rgba(21, 41, 74, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 12px;
 
-  /* Semantic Colors */
-  --alert-red: #dc2626;
-  --optimal-green: #16a34a;
-  --warning-amber: #d97706;
-
-  /* Semantic Variables Mapped */
-  --background: var(--background-canvas);
-  --foreground: var(--text-primary);
-
-  /* Tailwind v4 Defaults */
-  --border: rgba(11, 31, 59, 0.1);
-  --ring: var(--navy-primary);
-}
-
-@theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-navy: var(--navy-primary);
-  --color-navy-dark: var(--navy-dark);
-  --color-navy-light: var(--navy-light);
-
-  --color-gold: var(--gold-primary);
-  --color-gold-light: var(--gold-light);
-  --color-gold-dark: var(--gold-dark);
-
-  --color-alert-red: var(--alert-red);
-  --color-optimal-green: var(--optimal-green);
-  --color-warning-amber: var(--warning-amber);
-
-  --font-montserrat: var(--font-montserrat);
-  --font-inter: var(--font-inter);
+  /* ===== FONTS (RETAINING NEW FONTS AS IMPROVEMENT) ===== */
+  --font-montserrat: 'Montserrat', sans-serif;
+  --font-inter: 'Inter', sans-serif;
 }
 
 /* ===== BASE STYLES ===== */
 body {
-  background: #F8FAFC; /* Slate-50 */
-  color: #475569; /* Slate-600 - Much better readability than Navy */
-  font-family: var(--font-inter), system-ui, sans-serif; /* Body gets Inter */
+  background: var(--deep-ocean);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, sans-serif; 
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-montserrat), sans-serif; /* Headings get Montserrat */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-montserrat), sans-serif; 
   font-weight: 700;
-  color: var(--navy-primary); /* Keep Navy for Headings */
-  letter-spacing: -0.025em; /* Tight tracking for headings */
+  color: #FFFFFF; /* Headings White in Dark Mode */
+  letter-spacing: -0.025em; 
 }
 
-/* ===== GLASSMORPHISM COMPONENTS ===== */
+/* ===== COMPONENTS ===== */
 .glass {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(11, 31, 59, 0.05);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .glass-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(11, 31, 59, 0.04);
+  background: var(--deep-ocean-card);
+  border: 1px solid var(--glass-border);
   border-radius: 16px; 
-  box-shadow: 0 2px 8px -2px rgba(11, 31, 59, 0.05), 0 1px 4px -1px rgba(11, 31, 59, 0.02);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -6px rgba(11, 31, 59, 0.1), 0 4px 8px -4px rgba(11, 31, 59, 0.05);
-  border-color: rgba(212, 175, 55, 0.3); /* Gold hint on hover */
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.3), 0 4px 8px -4px rgba(0, 0, 0, 0.2);
+  border-color: var(--soft-gold-dim); 
 }
 
-.card-navy {
-    background: var(--navy-primary);
-    color: var(--surface-white);
-}
-
-/* ===== HIGH DENSITY UTILITIES ===== */
-.density-compact {
-  padding: 1rem !important;
-  gap: 0.5rem !important;
-}
-
+/* ===== UTILITIES ===== */
 .text-price-lg {
   font-family: var(--font-inter);
   font-size: 2.25rem;
   line-height: 2.5rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--navy-primary);
+  color: #FFFFFF;
 }
 
-.text-price-md {
-  font-family: var(--font-inter);
-  font-size: 1.5rem;
-  line-height: 2rem;
-  font-weight: 700;
-  color: var(--navy-primary);
-}
-
-/* ===== BUTTON VARIANTS ===== */
 .btn-gold {
-  background: linear-gradient(135deg, #D4AF37 0%, #B49020 100%); /* More muted/metallic gold */
+  background: linear-gradient(135deg, #D4AF37 0%, #B49020 100%);
   color: #FFFFFF;
   font-weight: 600;
   padding: 12px 24px;
@@ -146,14 +92,6 @@ h6 {
   overflow: hidden;
 }
 
-.btn-gold::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
-    opacity: 0.5;
-}
-
 .btn-gold:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 16px rgba(212, 175, 55, 0.3);
@@ -162,40 +100,30 @@ h6 {
 
 .btn-ghost {
   background: transparent;
-  color: var(--navy-light);
+  color: var(--text-secondary);
   font-weight: 600;
   padding: 12px 24px;
   border-radius: 10px;
-  border: 1px solid rgba(11, 31, 59, 0.1);
+  border: 1px solid var(--glass-border);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
-  background: rgba(11, 31, 59, 0.03);
-  color: var(--navy-primary);
-  border-color: var(--navy-primary);
+  background: var(--glass-bg);
+  color: #FFFFFF;
+  border-color: var(--soft-gold);
 }
 
-/* ===== ANIMATION UTILITIES ===== */
+/* ===== ANIMATIONS & SCROLLBAR ===== */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .animate-fade-in {
@@ -203,31 +131,20 @@ h6 {
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    #E2E8F0 25%,
-    #F1F5F9 50%,
-    #E2E8F0 75%
-  );
+  background: linear-gradient(90deg, var(--deep-ocean-card) 25%, var(--deep-ocean-accent) 50%, var(--deep-ocean-card) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* ===== SCROLLBAR STYLING ===== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--deep-ocean); }
+::-webkit-scrollbar-thumb { background: var(--deep-ocean-accent); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--soft-gold-hover); }
 
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1; /* Slate 300 for subtle scrollbar */
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--navy-light);
+/* V4 COMPATIBILITY - Ignore IDE Warning */
+@theme {
+  --color-deep-ocean: #0B1F3B;
+  --color-soft-gold: #D4AF37;
+  --color-alert-red: #EF4444;
+  --color-optimal-green: #10B981;
 }
