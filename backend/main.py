@@ -1624,14 +1624,21 @@ async def reset_api_keys():
 
 
 @app.post("/api/admin/api-keys/reload")
-async def reload_api_keys():
-    """Force reload API keys from environment."""
-    try:
-        # serpapi_client imported from services is the INSTANCE, not module
-        return serpapi_client.reload()
-    except Exception as e:
-        print(f"API Key Reload Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def reload_api_keys(db: Client = Depends(get_supabase)):
+    """Force reload API keys from env."""
+    # Check auth/admin permissions here if strict
+    
+    # Reload logic
+    reload_result = serpapi_client.reload()
+    
+    # Fetch full status for UI
+    full_status = serpapi_client.serpapi_client.get_key_status()
+    
+    return {
+        "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
+        "reload_details": reload_result,
+        "current_status": full_status  # Pass this to frontend
+    }
 
 
 @app.get("/api/admin/users", response_model=List[AdminUser])
@@ -2321,27 +2328,34 @@ async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_su
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(400, f"Failed to delete plan: {str(e)}")
-# ===== Admin Membership Plans =====
+@app.get("/api/admin/scans/{session_id}")
+async def get_admin_scan_details(session_id: UUID, db: Client = Depends(get_supabase)):
+    """Get full details for a specific scan session including logs."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+        
+    try:
+        # Fetch session
+        session_res = db.table("scan_sessions").select("*").eq("id", str(session_id)).single().execute()
+        if not session_res.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+            
+        session = session_res.data
+        
+        # Fetch logs
+        logs_res = db.table("query_logs").select("*").eq("session_id", str(session_id)).order("created_at", desc=True).execute()
+        
+        return {
+            "session": session,
+            "logs": logs_res.data or []
+        }
+    except Exception as e:
+        print(f"Admin Scan Details Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/admin/plans", response_model=List[MembershipPlan])
-async def get_admin_plans(db: Optional[Client] = Depends(get_supabase)):
-    if not db: raise HTTPException(500, "DB Error")
-    res = db.table("membership_plans").select("*").order("price_monthly").execute()
-    return res.data or []
 
-@app.post("/api/admin/plans", response_model=MembershipPlan)
-async def create_admin_plan(plan: PlanCreate, db: Optional[Client] = Depends(get_supabase)):
-    if not db: raise HTTPException(500, "DB Error")
-    res = db.table("membership_plans").insert(plan.dict(exclude_unset=True)).execute()
-    if not res.data: raise HTTPException(400, "Failed to create plan")
-    return res.data[0]
-
-@app.put("/api/admin/plans/{plan_id}", response_model=MembershipPlan)
-async def update_admin_plan(plan_id: UUID, plan: PlanUpdate, db: Optional[Client] = Depends(get_supabase)):
-    if not db: raise HTTPException(500, "DB Error")
-    res = db.table("membership_plans").update(plan.dict(exclude_unset=True)).eq("id", str(plan_id)).execute()
-    if not res.data: raise HTTPException(404, "Plan not found")
-    return res.data[0]
+# ===== Admin Plans CRUD =====
+# (Consolidated - removed duplicates)
 
 @app.delete("/api/admin/plans/{plan_id}")
 async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_supabase)):

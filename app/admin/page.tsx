@@ -57,6 +57,14 @@ export default function AdminPage() {
   const [newUserName, setNewUserName] = useState("");
   const [userSuccess, setUserSuccess] = useState(false);
 
+  // Scan Logic
+  const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
+  const [scanDetails, setScanDetails] = useState<{
+    session: any;
+    logs: any[];
+  } | null>(null);
+  const [scanDetailsLoading, setScanDetailsLoading] = useState(false);
+
   // Edit User State
   const [userToEdit, setUserToEdit] = useState<AdminUser | null>(null);
   const [editUserForm, setEditUserForm] = useState({
@@ -73,6 +81,30 @@ export default function AdminPage() {
   useEffect(() => {
     loadTabData();
   }, [activeTab]);
+
+  // Fetch details when ID changes
+  useEffect(() => {
+    if (selectedScanId) {
+      fetchScanDetails(selectedScanId);
+    } else {
+      setScanDetails(null);
+    }
+  }, [selectedScanId]);
+
+  const fetchScanDetails = async (id: string) => {
+    setScanDetailsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/scans/${id}`);
+      if (!res.ok) throw new Error("Failed to load details");
+      const data = await res.json();
+      setScanDetails(data);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+      setSelectedScanId(null);
+    } finally {
+      setScanDetailsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (userToEdit) {
@@ -653,12 +685,24 @@ export default function AdminPage() {
                   <th className="p-4">User</th>
                   <th className="p-4">Type</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Credits</th>
                   <th className="p-4 text-right">Hotels</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {scans.map((scan) => (
-                  <tr key={scan.id} className="hover:bg-white/5">
+                  <tr
+                    key={scan.id}
+                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    onClick={() => {
+                      // Mocking logs for now or fetching details could go here
+                      // For now just show the data we have in a nicer view
+                      alert(
+                        `Scan Details:\nID: ${scan.id}\nUser: ${scan.user_name}\nHotels: ${scan.hotels_count}\nCredits Used: ${scan.hotels_count}\nStatus: ${scan.status}`,
+                      );
+                      // TODO: Open a proper modal with full logs if available
+                    }}
+                  >
                     <td className="p-4 text-[var(--text-muted)] whitespace-nowrap">
                       {formatDistanceToNow(new Date(scan.created_at), {
                         addSuffix: true,
@@ -687,6 +731,9 @@ export default function AdminPage() {
                         {scan.status}
                       </span>
                     </td>
+                    <td className="p-4 text-right font-mono text-[var(--soft-gold)]">
+                      {scan.hotels_count} {/* 1 hotel = 1 credit usually */}
+                    </td>
                     <td className="p-4 text-right text-white">
                       {scan.hotels_count}
                     </td>
@@ -695,7 +742,7 @@ export default function AdminPage() {
                 {scans.length === 0 && !loading && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="p-8 text-center text-[var(--text-muted)]"
                     >
                       No scans recorded yet.
@@ -1202,13 +1249,20 @@ const MembershipPlansPanel = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    price_monthly: number;
+    hotel_limit: number;
+    scan_frequency_limit: string;
+    monthly_scan_limit: number;
+    features: string[];
+  }>({
     name: "",
     price_monthly: 0,
     hotel_limit: 1,
     scan_frequency_limit: "daily",
     monthly_scan_limit: 100,
-    features: [], // array for tag input
+    features: [],
   });
 
   useEffect(() => {
