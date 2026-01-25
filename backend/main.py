@@ -332,6 +332,49 @@ async def trigger_monitor(
     if not hotels:
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
         
+    # ===== ENFORCE LIMITS =====
+    try:
+        # 1. Get User Plan Limits
+        # We need to fetch the user profile to know the plan, and then the plan details
+        # For optimization, we might join or cache, but here we do sequential fetch for safety
+        
+        # Default limit
+        limit = 100 
+        
+        profile_res = db.table("profiles").select("plan_type").eq("user_id", str(user_id)).execute()
+        if profile_res.data:
+            plan_type = profile_res.data[0].get("plan_type", "trial")
+            # Fetch plan limit
+            plan_res = db.table("plans").select("monthly_scan_limit").eq("name", plan_type).execute()
+            if plan_res.data:
+                limit = plan_res.data[0].get("monthly_scan_limit", 100)
+        
+        # 2. Count Monthly Usage
+        now = datetime.now()
+        first_day = datetime(now.year, now.month, 1).isoformat()
+        
+        count_res = db.table("scan_sessions") \
+            .select("id", count="exact") \
+            .eq("user_id", str(user_id)) \
+            .gte("created_at", first_day) \
+            .execute()
+            
+        current_usage = count_res.count if count_res.count is not None else 0
+        
+        if current_usage >= limit:
+            print(f"Limit reached for user {user_id}: {current_usage}/{limit}")
+            return MonitorResult(
+                hotels_checked=0, 
+                prices_updated=0, 
+                alerts_generated=0, 
+                errors=[f"LIMIT_REACHED: You have used {current_usage}/{limit} scans for this month. Please upgrade your plan."]
+            )
+            
+    except Exception as e:
+        print(f"Limit check failed (allowing pass): {e}")
+        # Fail open to avoid blocking legitimate users on DB error, but log it
+    # ==========================
+        
     # Create session immediately
     session_id = None
     try:

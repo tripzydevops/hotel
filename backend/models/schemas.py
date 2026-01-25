@@ -365,6 +365,7 @@ class PlanBase(BaseModel):
     price_monthly: float
     hotel_limit: int
     scan_frequency_limit: str = "daily" # hourly, daily, weekly
+    monthly_scan_limit: int = 100
     features: List[str] = []
     is_active: bool = True
 
@@ -376,6 +377,7 @@ class PlanUpdate(BaseModel):
     price_monthly: Optional[float] = None
     hotel_limit: Optional[int] = None
     scan_frequency_limit: Optional[str] = None
+    monthly_scan_limit: Optional[int] = None
     features: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
