@@ -28,7 +28,7 @@ export default function SettingsModal({
     settings?.threshold_percent || 2.0,
   );
   const [frequency, setFrequency] = useState(
-    settings?.check_frequency_minutes ?? 1440, // Default daily if not set
+    settings?.check_frequency_minutes ?? 0, // Default Manual Only if not set
   );
   const [email, setEmail] = useState(settings?.notification_email || "");
   const [enabled, setEnabled] = useState(

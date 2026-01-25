@@ -1001,7 +1001,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     
     for user_setting in all_settings:
         user_id = user_setting["user_id"]
-        freq_minutes = user_setting.get("check_frequency_minutes", 1440) # Default daily
+        freq_minutes = user_setting.get("check_frequency_minutes", 0) # Default Manual Only
         
         # 0 means Manual Only
         if freq_minutes <= 0:
