@@ -694,14 +694,7 @@ export default function AdminPage() {
                   <tr
                     key={scan.id}
                     className="hover:bg-white/5 cursor-pointer transition-colors"
-                    onClick={() => {
-                      // Mocking logs for now or fetching details could go here
-                      // For now just show the data we have in a nicer view
-                      alert(
-                        `Scan Details:\nID: ${scan.id}\nUser: ${scan.user_name}\nHotels: ${scan.hotels_count}\nCredits Used: ${scan.hotels_count}\nStatus: ${scan.status}`,
-                      );
-                      // TODO: Open a proper modal with full logs if available
-                    }}
+                    onClick={() => setSelectedScanId(scan.id)}
                   >
                     <td className="p-4 text-[var(--text-muted)] whitespace-nowrap">
                       {formatDistanceToNow(new Date(scan.created_at), {
@@ -760,6 +753,102 @@ export default function AdminPage() {
         {/* MEMBERSHIPS TAB */}
         {activeTab === "plans" && <MembershipPlansPanel />}
       </div>
+
+      {/* Scan Details Modal */}
+      {selectedScanId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-card p-6 border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <h3 className="text-xl font-bold text-white">Scan Details</h3>
+              <button
+                onClick={() => setSelectedScanId(null)}
+                className="text-[var(--text-muted)] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {scanDetailsLoading ? (
+              <div className="flex-1 flex items-center justify-center py-12 text-[var(--soft-gold)]">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading
+                details...
+              </div>
+            ) : scanDetails ? (
+              <div className="overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white/5 p-3 rounded">
+                    <div className="text-xs text-[var(--text-muted)] uppercase">
+                      Status
+                    </div>
+                    <div className="text-white font-bold capitalize">
+                      {scanDetails.session.status}
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded">
+                    <div className="text-xs text-[var(--text-muted)] uppercase">
+                      Hotels Found
+                    </div>
+                    <div className="text-white font-bold">
+                      {scanDetails.session.hotels_count}
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded">
+                    <div className="text-xs text-[var(--text-muted)] uppercase">
+                      Created
+                    </div>
+                    <div className="text-white font-bold text-xs">
+                      {new Date(
+                        scanDetails.session.created_at,
+                      ).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <h4 className="text-white font-bold mb-2">Result Logs</h4>
+                {scanDetails.logs.length === 0 ? (
+                  <div className="text-[var(--text-muted)] italic">
+                    No detailed logs available.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {scanDetails.logs.map((log: any) => (
+                      <div
+                        key={log.id}
+                        className="bg-white/5 p-3 rounded flex justify-between items-center text-sm"
+                      >
+                        <div>
+                          <div className="text-white font-medium">
+                            {log.hotel_name}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)]">
+                            {log.location || "No location"}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {log.price ? (
+                            <div className="text-[var(--optimal-green)] font-bold">
+                              {log.currency} {log.price}
+                            </div>
+                          ) : (
+                            <div className="text-[var(--alert-red)] text-xs">
+                              No Price
+                            </div>
+                          )}
+                          <div className="text-[10px] text-[var(--text-muted)]">
+                            {log.vendor || "Unknown Source"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-red-400">Failed to load data.</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {userToEdit && (
