@@ -2054,10 +2054,11 @@ async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase)):
         users_map = {}
         
         if user_ids:
-            profiles = db.table("user_profiles").select("user_id, display_name, email").in_("user_id", user_ids).execute()
+            # Fix: "email" column does not exist in user_profiles. Removed from select.
+            profiles = db.table("user_profiles").select("user_id, display_name").in_("user_id", user_ids).execute()
             # Fallback to profiles logic if email is stored there or just use display_name
             for p in (profiles.data or []):
-                users_map[p["user_id"]] = p.get("display_name") or p.get("email") or "Unknown"
+                users_map[p["user_id"]] = p.get("display_name") or "Unknown"
                 
         # Enrich sessions
         results = []
