@@ -1,49 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   /* ===== COLOR PALETTE (ORIGINAL DEEP OCEAN) ===== */
-  --deep-ocean: #0B1F3B; /* Main Background */
-  --deep-ocean-card: #15294A; /* Card Background */
-  --deep-ocean-accent: #1E3A5F; /* Hover/Accent */
+  --deep-ocean: #0B1F3B; 
+  --deep-ocean-card: #15294A;
+  --deep-ocean-accent: #1E3A5F;
   
-  --soft-gold: #D4AF37; /* Primary Gold Accent */
+  --soft-gold: #D4AF37; 
   --soft-gold-hover: #E5C55D;
   --soft-gold-dim: rgba(212, 175, 55, 0.1);
 
   --text-primary: #FFFFFF;
-  --text-secondary: #94A3B8; /* Slate-400 */
-  --text-muted: #64748B; /* Slate-500 */
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 
   --danger: #EF4444;
   --success: #10B981;
   --warning: #F59E0B;
 
   /* ===== GLASSMORPHISM VARS ===== */
-  --glass-bg: rgba(21, 41, 74, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: 12px;
+  --glass-bg: rgba(21, 41, 74, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 16px;
 
-  /* ===== FONTS (RETAINING NEW FONTS AS IMPROVEMENT) ===== */
+  /* ===== FONTS ===== */
   --font-montserrat: 'Montserrat', sans-serif;
   --font-inter: 'Inter', sans-serif;
 }
 
 /* ===== BASE STYLES ===== */
 body {
-  background: var(--deep-ocean);
+  background-color: var(--deep-ocean);
   color: var(--text-primary);
-  font-family: var(--font-inter), system-ui, sans-serif; 
+  font-family: var(--font-inter), system-ui, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-montserrat), sans-serif; 
+  font-family: var(--font-montserrat), sans-serif;
   font-weight: 700;
-  color: #FFFFFF; /* Headings White in Dark Mode */
-  letter-spacing: -0.025em; 
+  color: #FFFFFF;
+  letter-spacing: -0.025em;
 }
 
 /* ===== COMPONENTS ===== */
@@ -140,11 +138,3 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-track { background: var(--deep-ocean); }
 ::-webkit-scrollbar-thumb { background: var(--deep-ocean-accent); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--soft-gold-hover); }
-
-/* V4 COMPATIBILITY - Ignore IDE Warning */
-@theme {
-  --color-deep-ocean: #0B1F3B;
-  --color-soft-gold: #D4AF37;
-  --color-alert-red: #EF4444;
-  --color-optimal-green: #10B981;
-}

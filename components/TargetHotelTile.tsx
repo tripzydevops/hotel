@@ -62,9 +62,9 @@ export default function TargetHotelTile({
   const getTrendIcon = () => {
     switch (trend) {
       case "up":
-        return <TrendingUp className="w-8 h-8 text-alert-red" />;
+        return <TrendingUp className="w-8 h-8 text-[var(--danger)]" />;
       case "down":
-        return <TrendingDown className="w-8 h-8 text-optimal-green" />;
+        return <TrendingDown className="w-8 h-8 text-[var(--success)]" />;
       default:
         return <Minus className="w-8 h-8 text-[var(--text-muted)]" />;
     }
@@ -73,9 +73,9 @@ export default function TargetHotelTile({
   const getTrendColor = () => {
     switch (trend) {
       case "up":
-        return "text-alert-red";
+        return "text-[var(--danger)]";
       case "down":
-        return "text-optimal-green";
+        return "text-[var(--success)]";
       default:
         return "text-[var(--text-muted)]";
     }
@@ -134,7 +134,7 @@ export default function TargetHotelTile({
                 e.stopPropagation();
                 onDelete(id);
               }}
-              className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-alert-red/10 hover:text-alert-red transition-all border border-white/5"
+              className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-all border border-white/5"
               title="Delete Monitor"
             >
               <Trash2 className="w-4.5 h-4.5" />

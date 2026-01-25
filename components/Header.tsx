@@ -40,7 +40,7 @@ export default function Header({
         <div className="flex items-center justify-between h-16">
           {/* Logo */ }
           <Link href="/" className="flex items-center gap-3">
-            <div className="h-10 w-auto">
+            <div className="h-10 w-auto" style={{ height: '40px', width: 'auto' }}>
               <img 
                 src="/logo.png" 
                 alt="Hotel Plus Logo" 
