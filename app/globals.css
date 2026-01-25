@@ -4,64 +4,79 @@
 /* Deep Ocean / Soft Gold / Glassmorphism Theme */
 
 :root {
-  /* Deep Ocean Palette */
-  --deep-ocean: #042f2e;
-  --deep-ocean-card: #111240;
-  --deep-ocean-accent: #1f1a38;
+  /* Premium Navy Palette (Trust, Authority) */
+  --navy-primary: #0b1f3b;
+  --navy-dark: #061224;
+  --navy-light: #153259;
 
-  /* Soft Gold Palette */
-  --soft-gold: #f1c700;
-  --soft-gold-hover: #d9c8a2;
+  /* Premium Gold Palette (Luxury, Accent) */
+  --gold-primary: #d4af37;
+  --gold-light: #e5c55d;
+  --gold-dark: #a88620;
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: 12px;
+  /* Neutrals */
+  --background-canvas: #f6f6f6; /* Light gray/white alternative */
+  --surface-white: #ffffff;
+  --text-primary: #0b1f3b; /* Navy for main text */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted: #94a3b8; /* Slate 400 */
 
-  /* Typography */
-  --text-primary: #ededed;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-
-  /* Semantic Revenue Colors (OKLCH for perceptual uniformity) */
-  --alert-red: oklch(0.65 0.25 20);
-  --alert-red-soft: oklch(0.65 0.25 20 / 0.1);
-  --optimal-green: oklch(0.7 0.2 150);
-  --optimal-green-soft: oklch(0.7 0.2 150 / 0.1);
-  --warning-amber: oklch(0.8 0.15 80);
-  --warning-amber-soft: oklch(0.8 0.15 80 / 0.1);
-  --simulated-gold: oklch(0.85 0.15 90);
+  /* Glassmorphism - Adjusted for light background */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(11, 31, 59, 0.05); /* Navy tint */
+  --glass-blur: 16px;
 
   /* Semantic Colors */
-  --background: var(--deep-ocean);
+  --alert-red: #dc2626;
+  --optimal-green: #16a34a;
+  --warning-amber: #d97706;
+
+  /* Semantic Variables Mapped */
+  --background: var(--background-canvas);
   --foreground: var(--text-primary);
 
-  /* Tailwind v4 required variables (prevents pink default) */
-  --border: rgba(255, 255, 255, 0.1);
-  --ring: var(--soft-gold);
+  /* Tailwind v4 Defaults */
+  --border: rgba(11, 31, 59, 0.1);
+  --ring: var(--navy-primary);
 }
 
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-deep-ocean: var(--deep-ocean);
-  --color-deep-ocean-card: var(--deep-ocean-card);
-  --color-deep-ocean-accent: var(--deep-ocean-accent);
-  --color-soft-gold: var(--soft-gold);
-  --color-soft-gold-hover: var(--soft-gold-hover);
+
+  --color-navy: var(--navy-primary);
+  --color-navy-dark: var(--navy-dark);
+  --color-navy-light: var(--navy-light);
+
+  --color-gold: var(--gold-primary);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+
   --color-alert-red: var(--alert-red);
   --color-optimal-green: var(--optimal-green);
   --color-warning-amber: var(--warning-amber);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-montserrat: var(--font-montserrat);
+  --font-inter: var(--font-inter);
 }
 
 /* ===== BASE STYLES ===== */
 body {
-  background: var(--deep-ocean);
+  background: var(--background-canvas);
   color: var(--text-primary);
-  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-family: var(--font-inter), system-ui, sans-serif; /* Body gets Inter */
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-montserrat), sans-serif; /* Headings get Montserrat */
+  font-weight: 600; /* SemiBold preference */
+  color: var(--navy-primary);
 }
 
 /* ===== GLASSMORPHISM COMPONENTS ===== */
@@ -74,25 +89,28 @@ body {
 }
 
 .glass-card {
-  background: linear-gradient(
-    135deg,
-    oklch(0.2 0.05 250 / 0.9) 0%,
-    oklch(0.15 0.05 260 / 0.7) 100%
-  );
+  background: rgba(255, 255, 255, 0.9); /* Opaque white for cards on light bg */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px; /* Sharper edges for professional look */
-  transition:
-    transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  border: 1px solid rgba(11, 31, 59, 0.08); /* Navy border tint */
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Soft shadow */
+  transition: all 0.2s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  border-color: rgba(11, 31, 59, 0.15);
+}
+
+.card-navy {
+  background: var(--navy-primary);
+  color: var(--surface-white);
 }
 
 /* ===== HIGH DENSITY UTILITIES ===== */
@@ -102,50 +120,64 @@ body {
 }
 
 .text-price-lg {
+  font-family: var(--font-inter);
   font-size: 2.25rem;
   line-height: 2.5rem;
   font-weight: 800;
   letter-spacing: -0.025em;
+  color: var(--navy-primary);
 }
 
 .text-price-md {
+  font-family: var(--font-inter);
   font-size: 1.5rem;
   line-height: 2rem;
   font-weight: 700;
+  color: var(--navy-primary);
 }
 
 /* ===== BUTTON VARIANTS ===== */
 .btn-gold {
-  background: linear-gradient(135deg, var(--soft-gold) 0%, #e6b800 100%);
-  color: var(--deep-ocean);
+  background: linear-gradient(
+    135deg,
+    var(--gold-primary) 0%,
+    var(--gold-dark) 100%
+  );
+  color: #ffffff; /* White text on Gold button usually looks better, or Navy? User said: "Metinlerde altın sınırlı". Gold background -> Navy text is classic high contrast. Let's try Navy text on Gold button. */
+  color: var(--navy-primary);
   font-weight: 600;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 8px; /* Slightly sharper than 12px for "Modern/Premium" structure */
   border: none;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
   transition: all 0.2s ease;
 }
 
 .btn-gold:hover {
-  background: linear-gradient(135deg, #ffe033 0%, var(--soft-gold) 100%);
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(241, 199, 0, 0.3);
+  background: linear-gradient(
+    135deg,
+    var(--gold-light) 0%,
+    var(--gold-primary) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--navy-primary);
   font-weight: 500;
   padding: 12px 24px;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
-  background: var(--glass-bg);
-  border-color: var(--soft-gold-hover);
+  background: rgba(11, 31, 59, 0.05);
+  border-color: var(--navy-primary);
 }
 
 /* ===== ANIMATION UTILITIES ===== */
@@ -176,9 +208,9 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--deep-ocean-card) 25%,
-    var(--deep-ocean-accent) 50%,
-    var(--deep-ocean-card) 75%
+    #E2E8F0 25%,
+    #F1F5F9 50%,
+    #E2E8F0 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -191,14 +223,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--deep-ocean);
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--deep-ocean-accent);
+  background: #CBD5E1; /* Slate 300 for subtle scrollbar */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--soft-gold-hover);
+  background: var(--navy-light);
 }
