@@ -2085,50 +2085,92 @@ async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase)):
 import time
 import json
 
-SETTINGS_FILE = "admin_settings.json"
 
-def load_admin_settings() -> AdminSettings:
-    if os.path.exists(SETTINGS_FILE):
-        try:
-            with open(SETTINGS_FILE, "r") as f:
-                data = json.load(f)
-                return AdminSettings(**data)
-        except Exception as e:
-            print(f"Error loading admin settings: {e}")
+# Remove local file storage
+# SETTINGS_FILE = "admin_settings.json"
+
+def get_admin_settings_db(db_client: Client = None) -> AdminSettings:
+    """Helper to fetch settings from DB."""
+    if not db_client:
+        db_client = get_supabase()
+        if not db_client:
+            # Fallback default
+            return AdminSettings(
+                id=UUID("00000000-0000-0000-0000-000000000000"),
+                maintenance_mode=False,
+                signup_enabled=True,
+                default_currency="USD",
+                system_alert_message=None,
+                updated_at=datetime.now(timezone.utc)
+            )
             
-    # Default
-    return AdminSettings(
-        id=UUID("00000000-0000-0000-0000-000000000000"),
-        maintenance_mode=False,
-        signup_enabled=True,
-        default_currency="USD",
-        system_alert_message=None,
-        updated_at=datetime.now(timezone.utc)
-    )
-
-def save_admin_settings(settings: AdminSettings):
-    with open(SETTINGS_FILE, "w") as f:
-        # Convert datetime to ISO string manually if needed, or use pydantic json
-        f.write(settings.model_dump_json())
+    try:
+        # Try to fetch singleton row
+        # ID is fixed 0s from migration, or just take first
+        res = db_client.table("admin_settings").select("*").limit(1).execute()
+        if res.data:
+            return AdminSettings(**res.data[0])
+            
+        # If empty (shouldn't happen due to migration), return default
+        return AdminSettings(
+            id=UUID("00000000-0000-0000-0000-000000000000"),
+            maintenance_mode=False,
+            signup_enabled=True,
+            default_currency="USD",
+            system_alert_message=None,
+            updated_at=datetime.now(timezone.utc)
+        )
+    except Exception as e:
+        print(f"DB Settings Load Error: {e}")
+        # Default fallback
+        return AdminSettings(
+            id=UUID("00000000-0000-0000-0000-000000000000"),
+            maintenance_mode=False,
+            signup_enabled=True,
+            default_currency="USD",
+            system_alert_message=None,
+            updated_at=datetime.now(timezone.utc)
+        )
 
 @app.get("/api/admin/settings", response_model=AdminSettings)
-async def get_admin_settings():
+async def get_admin_settings(db: Client = Depends(get_supabase)):
     """Get global system settings."""
-    return load_admin_settings()
+    return get_admin_settings_db(db)
 
 @app.put("/api/admin/settings")
-async def update_admin_settings(updates: AdminSettingsUpdate):
+async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depends(get_supabase)):
     """Update global system settings."""
-    current = load_admin_settings()
-    
-    # Apply updates
-    update_data = updates.model_dump(exclude_unset=True)
-    updated_settings = current.model_copy(update=update_data)
-    updated_settings.updated_at = datetime.now(timezone.utc)
-    
-    save_admin_settings(updated_settings)
-    
-    return updated_settings
+    if not db:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+        
+    try:
+        # Get current ID (usually the 0000... one)
+        current = get_admin_settings_db(db)
+        
+        # Prepare updates
+        update_data = updates.model_dump(exclude_unset=True)
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        # Update in DB
+        # We assume the row exists per migration, but upsert is safer
+        data_to_upsert = {
+            "id": str(current.id),
+            **current.model_dump(exclude={"id", "updated_at"}), # baseline
+            **update_data
+        }
+        
+        res = db.table("admin_settings").upsert(data_to_upsert).execute()
+        
+        if res.data:
+            return AdminSettings(**res.data[0])
+        else:
+            # If no data returned, return estimated state
+            return current.model_copy(update=update_data)
+            
+    except Exception as e:
+        print(f"Settings Update Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
+
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:

@@ -1208,7 +1208,7 @@ const MembershipPlansPanel = () => {
     hotel_limit: 1,
     scan_frequency_limit: "daily",
     monthly_scan_limit: 100,
-    features: "", // comma separated for simple editing
+    features: [], // array for tag input
   });
 
   useEffect(() => {
@@ -1231,10 +1231,8 @@ const MembershipPlansPanel = () => {
     e.preventDefault();
     const payload = {
       ...formData,
-      features: formData.features
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      // Features is already an array from TagInput
+      features: Array.isArray(formData.features) ? formData.features : [],
     };
 
     try {
@@ -1278,7 +1276,7 @@ const MembershipPlansPanel = () => {
       hotel_limit: plan.hotel_limit,
       scan_frequency_limit: plan.scan_frequency_limit,
       monthly_scan_limit: plan.monthly_scan_limit || 100,
-      features: Array.isArray(plan.features) ? plan.features.join(", ") : "",
+      features: Array.isArray(plan.features) ? plan.features : [],
     });
     setIsModalOpen(true);
   };
@@ -1299,7 +1297,7 @@ const MembershipPlansPanel = () => {
               hotel_limit: 1,
               scan_frequency_limit: "daily",
               monthly_scan_limit: 100,
-              features: "",
+              features: [],
             });
             setIsModalOpen(true);
           }}
@@ -1471,14 +1469,59 @@ const MembershipPlansPanel = () => {
                 <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
                   Features (Comma separated)
                 </label>
-                <textarea
-                  value={formData.features}
-                  onChange={(e) =>
-                    setFormData({ ...formData, features: e.target.value })
-                  }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white h-20"
-                  placeholder="Feature 1, Feature 2..."
-                />
+                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
+                  Features (Press Enter to add)
+                </label>
+                <div className="bg-black/30 border border-white/10 rounded px-3 py-2 min-h-[50px] flex flex-wrap gap-2">
+                  {(Array.isArray(formData.features)
+                    ? formData.features
+                    : []
+                  ).map((feat: string, i: number) => (
+                    <span
+                      key={i}
+                      className="bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] px-2 py-1 rounded text-xs flex items-center gap-1"
+                    >
+                      {feat}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFeats = [
+                            ...(formData.features as unknown as string[]),
+                          ];
+                          newFeats.splice(i, 1);
+                          setFormData({
+                            ...formData,
+                            features: newFeats as any,
+                          });
+                        }}
+                        className="hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    className="bg-transparent outline-none flex-1 text-white min-w-[100px]"
+                    placeholder="Add feature..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const val = e.currentTarget.value.trim();
+                        if (val) {
+                          const current = Array.isArray(formData.features)
+                            ? formData.features
+                            : [];
+                          setFormData({
+                            ...formData,
+                            features: [...current, val] as any,
+                          });
+                          e.currentTarget.value = "";
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                {/* Hidden textarea for compatibility if needed, but we handle state directly above */}
               </div>
 
               <div className="flex gap-3 pt-2">
