@@ -1250,6 +1250,7 @@ const MembershipPlansPanel = () => {
         price_monthly: 0,
         hotel_limit: 1,
         scan_frequency_limit: "daily",
+        monthly_scan_limit: 100,
         features: "",
       });
       loadPlans();
