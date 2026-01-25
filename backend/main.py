@@ -1629,7 +1629,7 @@ async def reload_api_keys(db: Client = Depends(get_supabase)):
     # Check auth/admin permissions here if strict
     
     # Reload logic
-    reload_result = serpapi_client.reload()
+    reload_result = serpapi_client.serpapi_client.reload()
     
     # Fetch full status for UI
     full_status = serpapi_client.serpapi_client.get_key_status()
