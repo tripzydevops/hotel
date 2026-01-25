@@ -104,6 +104,8 @@ export default function SettingsModal({
     }
   };
 
+  if (!isOpen) return null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settings) return;
