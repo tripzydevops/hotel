@@ -1303,7 +1303,7 @@ const MembershipPlansPanel = () => {
         hotel_limit: 1,
         scan_frequency_limit: "daily",
         monthly_scan_limit: 100,
-        features: "",
+        features: [],
       });
       loadPlans();
     } catch (err: any) {
