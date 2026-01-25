@@ -24,6 +24,7 @@ export default function SettingsModal({
   settings,
   onSave,
 }: SettingsModalProps) {
+  const { t } = useI18n();
   const [threshold, setThreshold] = useState(
     settings?.threshold_percent || 2.0,
   );
@@ -39,7 +40,69 @@ export default function SettingsModal({
     settings?.push_enabled ?? false,
   );
 
-  // ... (keep helper functions)
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, "+")
+      .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const togglePushNotifications = async (checked: boolean) => {
+    if (!checked) {
+      setPushEnabled(false);
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+
+      // Wait for the service worker to be ready (active)
+      let sw =
+        registration.installing || registration.waiting || registration.active;
+      if (sw) {
+        if (sw.state !== "activated") {
+          await new Promise<void>((resolve) => {
+            sw!.addEventListener("statechange", () => {
+              if (sw!.state === "activated") resolve();
+            });
+          });
+        }
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+        ),
+      });
+
+      // Send to backend
+      console.log("Push Subscription:", JSON.stringify(subscription));
+
+      // Save to backend immediately
+      await onSave({
+        ...settings,
+        push_enabled: true,
+        // @ts-ignore - The types need to be updated in frontend types.ts too
+        push_subscription: subscription.toJSON(),
+      } as any);
+
+      setPushEnabled(true);
+      alert(t("settings.pushEnabled") || "Push Notifications Enabled!");
+    } catch (error) {
+      console.error("Error subscribing to push:", error);
+      alert("Failed to enable push. " + error);
+      setPushEnabled(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
