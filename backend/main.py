@@ -183,14 +183,19 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             price_info = None
                 if current_price and current_price.get("price") is not None:
                 current = float(current_price["price"])
-                curr_currency = current_price.get("currency", "USD")
+                curr_currency = current_price.get("currency") or "USD"
                 
                 previous = None
                 if previous_price and previous_price.get("price") is not None:
                      raw_prev = float(previous_price["price"])
-                     prev_currency = previous_price.get("currency", "USD")
+                     prev_currency = previous_price.get("currency") or "USD"
+                     
                      if curr_currency != prev_currency:
-                         previous = convert_currency(raw_prev, prev_currency, curr_currency)
+                         try:
+                            previous = convert_currency(raw_prev, prev_currency, curr_currency)
+                         except Exception:
+                            # Fallback if conversion fails (e.g. key missing)
+                            previous = raw_prev
                      else:
                          previous = raw_prev
                 
@@ -199,7 +204,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 price_info = {
                     "current_price": current,
                     "previous_price": previous,
-                    "currency": current_price.get("currency", "USD"),
+                    "currency": curr_currency,
                     "trend": trend.value,
                     "change_percent": change,
                     "recorded_at": current_price["recorded_at"],
