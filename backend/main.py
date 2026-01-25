@@ -2013,7 +2013,57 @@ async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase))
         print(f"Admin Hotels Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
         
+    except Exception as e:
+        print(f"Admin Hotels Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/admin/scans")
+async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase)):
+    """List recent scan sessions with user info."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+        
+    try:
+        # Fetch sessions
+        sessions_result = db.table("scan_sessions") \
+            .select("*") \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+        
+        sessions = sessions_result.data or []
+        
+        # Fetch user info
+        user_ids = list(set(s["user_id"] for s in sessions))
+        users_map = {}
+        
+        if user_ids:
+            profiles = db.table("user_profiles").select("user_id, display_name, email").in_("user_id", user_ids).execute()
+            # Fallback to profiles logic if email is stored there or just use display_name
+            for p in (profiles.data or []):
+                users_map[p["user_id"]] = p.get("display_name") or p.get("email") or "Unknown"
+                
+        # Enrich sessions
+        results = []
+        for s in sessions:
+            results.append({
+                "id": s["id"],
+                "user_id": s["user_id"],
+                "user_name": users_map.get(s["user_id"], "Unknown"),
+                "session_type": s["session_type"],
+                "status": s["status"],
+                "hotels_count": s["hotels_count"],
+                "created_at": s["created_at"],
+                "completed_at": s["completed_at"]
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Admin Scans Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+        
 # ===== Admin Global Settings =====
 
 import time

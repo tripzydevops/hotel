@@ -207,6 +207,10 @@ class ApiClient {
     return this.fetch<any[]>(`/api/admin/logs?limit=${limit}`);
   }
 
+  async getAdminScans(limit = 50): Promise<any[]> {
+    return this.fetch<any[]>(`/api/admin/scans?limit=${limit}`);
+  }
+
   // ===== Admin Edit Operations =====
   
   async updateAdminUser(userId: string, updates: any): Promise<any> {
