@@ -143,7 +143,6 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     """Get dashboard data with target hotel and competitors."""
-    """Get dashboard data with target hotel and competitors."""
     # Default empty response
     fallback_resp = DashboardResponse(
         target_hotel=None,
@@ -181,7 +180,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             
             # Build price info with trend
             price_info = None
-                if current_price and current_price.get("price") is not None:
+            if current_price and current_price.get("price") is not None:
                 current = float(current_price["price"])
                 curr_currency = current_price.get("currency") or "USD"
                 
@@ -199,14 +198,26 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                      else:
                          previous = raw_prev
                 
-                # Fix: Access the singleton instance inside the module
-                trend, change = price_comparator.price_comparator.calculate_trend(current, previous)
-                
+                # Dynamic check for price_comparator (module vs instance)
+                trend, change = None, 0.0
+                try:
+                    if hasattr(price_comparator, "price_comparator"):
+                        # If module, access instance inside
+                        trend, change = price_comparator.price_comparator.calculate_trend(current, previous)
+                    else:
+                        # Direct instance (or if we fixed import)
+                        trend, change = price_comparator.calculate_trend(current, previous)
+                except Exception as e:
+                    print(f"Trend Calc Error: {e}")
+                    # Ultimate fallback
+                    from backend.models.schemas import TrendDirection
+                    trend, change = TrendDirection.STABLE, 0.0
+
                 price_info = {
                     "current_price": current,
                     "previous_price": previous,
                     "currency": curr_currency,
-                    "trend": trend.value,
+                    "trend": trend.value if hasattr(trend, "value") else "stable",
                     "change_percent": change,
                     "recorded_at": current_price["recorded_at"],
                     "vendor": current_price.get("vendor"),
@@ -245,7 +256,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 .execute()
             unread_count = alerts_result.count if alerts_result.count is not None else 0
         except Exception:
-            pass # Ignore alert count errors
+            pass 
         
         # Fetch activity
         unique_recent = []
@@ -268,7 +279,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         except Exception:
             pass
 
-        # Fetch scan history
+        # Fetch scan history (safe)
         scan_history = []
         try:
             scan_result = db.table("query_logs") \
@@ -282,21 +293,18 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         except Exception:
             pass
 
-        # Fetch sessions
+        # Fetch sessions (safe)
         recent_sessions = []
         try:
             sessions_result = db.table("scan_sessions") \
                 .select("*") \
                 .eq("user_id", str(user_id)) \
                 .order("created_at", desc=True) \
-                .limit(10) \
+                .limit(5) \
                 .execute()
-            # Ensure valid structure
-            for s in (sessions_result.data or []):
-                # Basic validation or defaults if needed
-                recent_sessions.append(s)
+            recent_sessions = sessions_result.data or []
         except Exception:
-            pass # Ignore sessions errors (missing table etc)
+            pass
 
         return DashboardResponse(
             target_hotel=target_hotel,
@@ -310,10 +318,11 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 
     except Exception as e:
         import traceback
-        err_msg = traceback.format_exc()
-        print(f"CRITICAL Dashboard Error: {e}\n{err_msg}")
-        # RETURN FALLBACK INSTEAD OF CRASHING
-        return fallback_resp
+        traceback.print_exc()
+        print(f"DASHBOARD ERROR: {e}")
+        # Raising 500 with details for the user to see
+        raise HTTPException(status_code=500, detail=f"Dashboard Crash Details: {str(e)}")
+
 
 
 # ===== Monitor Endpoint =====
