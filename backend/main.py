@@ -119,8 +119,8 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         raise he
     except Exception as e:
         print(f"Admin Auth Error: {e}")
-        # Only raise 403/401, careful not to leak internal errors
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        # DEBUG: Return actual error to client to debug 401
+        raise HTTPException(status_code=401, detail=f"Auth Failed: {str(e)}")
 
 async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
     """
