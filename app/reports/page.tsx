@@ -13,17 +13,25 @@ import {
   Activity,
   History,
   ArrowRight,
+  TrendingDown,
+  TrendingUp,
+  BarChart3,
+  Lightbulb,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import ScanSessionModal from "@/components/ScanSessionModal";
-import { ScanSession } from "@/types";
+import { ScanSession, MarketAnalysis } from "@/types";
 import { createClient } from "@/utils/supabase/client";
+import MarketPositionChart from "@/components/analytics/MarketPositionChart";
+import PriceTrendChart from "@/components/analytics/PriceTrendChart";
+import { PaywallOverlay } from "@/components/PaywallOverlay";
 
 export default function ReportsPage() {
   const { t, locale } = useI18n();
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<ScanSession | null>(
@@ -37,7 +45,7 @@ export default function ReportsPage() {
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
-  const hotelCount = 0;
+  const hotelCount = 0; // Updated dynamically if needed via context or separate fetch
 
   useEffect(() => {
     const getSession = async () => {
@@ -63,8 +71,12 @@ export default function ReportsPage() {
     async function loadData() {
       if (!userId) return;
       try {
-        const result = await api.getReports(userId);
-        setData(result);
+        const [reportsResult, analysisResult] = await Promise.all([
+          api.getReports(userId),
+          api.getAnalysis(userId),
+        ]);
+        setData(reportsResult);
+        setAnalysis(analysisResult);
       } catch (err) {
         console.error("Failed to load reports:", err);
       } finally {
@@ -168,6 +180,11 @@ export default function ReportsPage() {
     setIsSessionModalOpen(true);
   };
 
+  const isLocked =
+    profile?.subscription_status === "past_due" ||
+    profile?.subscription_status === "canceled" ||
+    profile?.subscription_status === "unpaid";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
@@ -182,7 +199,16 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-12 bg-[var(--deep-ocean)]">
+    <div className="min-h-screen pb-12 bg-[var(--deep-ocean)] transition-all">
+      {isLocked && (
+        <PaywallOverlay
+          reason={
+            profile?.subscription_status === "canceled"
+              ? "Subscription Canceled"
+              : "Trial Expired"
+          }
+        />
+      )}
       <Header
         userProfile={profile}
         hotelCount={hotelCount}
@@ -205,7 +231,7 @@ export default function ReportsPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-                <FileText className="w-5 h-5" />
+                <BarChart3 className="w-6 h-6" />
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">
                 {t("reports.title")}
@@ -244,29 +270,169 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Weekly Summary Brief */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <SummaryCard
-            title={t("reports.totalPulses")}
-            value={data?.weekly_summary?.total_scans || 0}
-            icon={<Activity className="w-5 h-5" />}
-          />
-          <SummaryCard
-            title={t("reports.activeIntelligence")}
-            value={data?.weekly_summary?.active_monitors || 0}
-            icon={<Activity className="w-5 h-5" />}
-          />
-          <SummaryCard
-            title={t("reports.weeklyTrend")}
-            value={data?.weekly_summary?.last_week_trend || "Stable"}
-            icon={<Calendar className="w-5 h-5" />}
-          />
-          <SummaryCard
-            title={t("reports.systemHealth")}
-            value={data?.weekly_summary?.system_health || "100%"}
-            icon={<CheckCircle2 className="w-5 h-5" />}
-          />
-        </div>
+        {/* --- ANALYTICS DASHBOARD --- */}
+        {analysis && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 animate-in slide-in-from-bottom-5 duration-500">
+            {/* 1. Market Position Chart */}
+            <div className="lg:col-span-1 glass-card p-6 flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
+                  {t("reports.marketPosition")}
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-1">
+                  {t("reports.positionDesc")}
+                </p>
+              </div>
+              <div className="flex-1 min-h-[250px]">
+                <MarketPositionChart
+                  data={{
+                    min: analysis.market_min,
+                    avg: analysis.market_average,
+                    max: analysis.market_max,
+                    myPrice: analysis.target_price || null,
+                  }}
+                  currency={analysis.display_currency}
+                />
+              </div>
+            </div>
+
+            {/* 2. Price Trend Chart */}
+            <div className="lg:col-span-2 glass-card p-6 flex flex-col">
+              <div className="mb-6 flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[var(--soft-gold)]" />
+                    {t("reports.priceVelocity")}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
+                    {t("reports.velocityDesc")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-white">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: analysis.display_currency,
+                      minimumFractionDigits: 0,
+                    }).format(analysis.target_price || 0)}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
+                    {t("hotelDetails.current")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 min-h-[250px]">
+                <PriceTrendChart
+                  history={analysis.price_history}
+                  currency={analysis.display_currency}
+                />
+              </div>
+            </div>
+
+            {/* 3. Insight Cards */}
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Rank Card */}
+              <div className="glass-card p-6 border-l-4 border-l-[var(--soft-gold)]">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] rounded-lg">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
+                    {t("reports.competitiveRank")}
+                  </h4>
+                </div>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {analysis.target_price
+                    ? t("reports.rankMsg")
+                        .replace("{0}", analysis.competitive_rank.toString())
+                        .replace(
+                          "{1}",
+                          (analysis.competitors.length + 1).toString(),
+                        )
+                    : t("reports.noData")}
+                </p>
+              </div>
+
+              {/* Price vs Market Card */}
+              <div
+                className={`glass-card p-6 border-l-4 ${
+                  (analysis.target_price || 0) < analysis.market_average
+                    ? "border-l-[var(--optimal-green)]"
+                    : "border-l-alert-red"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      (analysis.target_price || 0) < analysis.market_average
+                        ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)]"
+                        : "bg-alert-red/10 text-alert-red"
+                    }`}
+                  >
+                    {(analysis.target_price || 0) < analysis.market_average ? (
+                      <TrendingDown className="w-5 h-5" />
+                    ) : (
+                      <TrendingUp className="w-5 h-5" />
+                    )}
+                  </div>
+                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
+                    {t("reports.marketComparison")}
+                  </h4>
+                </div>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {(analysis.target_price || 0) < analysis.market_average
+                    ? "You are positioned below the market average. Consider raising rates to capture more yield."
+                    : "You are positioned above the market average. Monitor occupancy levels closely."}
+                </p>
+              </div>
+
+              {/* Action Tip Card */}
+              <div className="glass-card p-6 border-l-4 border-l-blue-500">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
+                    <Lightbulb className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-white uppercase text-xs tracking-wider">
+                    {t("reports.proTip")}
+                  </h4>
+                </div>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {analysis.market_max - analysis.market_min >
+                  analysis.market_average * 0.5
+                    ? "High market volatility detected. Review rates daily."
+                    : "Market variances are low. Stable pricing strategy recommended."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weekly Summary Brief (Legacy) */}
+        {!analysis && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <SummaryCard
+              title={t("reports.totalPulses")}
+              value={data?.weekly_summary?.total_scans || 0}
+              icon={<Activity className="w-5 h-5" />}
+            />
+            <SummaryCard
+              title={t("reports.activeIntelligence")}
+              value={data?.weekly_summary?.active_monitors || 0}
+              icon={<Activity className="w-5 h-5" />}
+            />
+            <SummaryCard
+              title={t("reports.weeklyTrend")}
+              value={data?.weekly_summary?.last_week_trend || "Stable"}
+              icon={<Calendar className="w-5 h-5" />}
+            />
+            <SummaryCard
+              title={t("reports.systemHealth")}
+              value={data?.weekly_summary?.system_health || "100%"}
+              icon={<CheckCircle2 className="w-5 h-5" />}
+            />
+          </div>
+        )}
 
         {/* Scan History Log Table */}
         <div className="glass-card overflow-hidden">
@@ -277,8 +443,10 @@ export default function ReportsPage() {
                 {t("reports.fullHistoryLog")}
               </h2>
             </div>
-            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic">
-              {t("reports.recent20Sessions")}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic">
+                {t("reports.recent20Sessions")}
+              </div>
             </div>
           </div>
 

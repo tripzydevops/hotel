@@ -190,3 +190,14 @@ export interface MembershipPlan {
   is_active: boolean;
   created_at?: string;
 }
+
+export interface MarketAnalysis {
+  market_average: number;
+  market_min: number;
+  market_max: number;
+  target_price?: number;
+  competitive_rank: number;
+  price_history: PricePoint[];
+  competitors: HotelWithPrice[];
+  display_currency: string;
+}
