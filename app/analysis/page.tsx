@@ -30,6 +30,16 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export default function AnalysisPage() {
   const { t } = useI18n();
   const supabase = createClient();
+  /* New: Profile State for Header */
+  const [profile, setProfile] = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBillingOpen, setIsBillingOpen] = useState(false);
+  // Replicate hotel count logic roughly or use 0
+  const hotelCount = 0;
+  /* End New State */
+
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +52,13 @@ export default function AnalysisPage() {
       } = await supabase.auth.getSession();
       if (session?.user?.id) {
         setUserId(session.user.id);
+        // Fetch Profile for Header
+        try {
+          const userProfile = await api.getProfile(session.user.id);
+          setProfile(userProfile);
+        } catch (e) {
+          console.error("Failed to fetch profile", e);
+        }
       } else {
         // Redirect to login if not authenticated
         window.location.href = "/login";
@@ -92,7 +109,15 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen pb-12 bg-[var(--deep-ocean)]">
-      <Header />
+      <Header
+        userProfile={profile}
+        hotelCount={hotelCount}
+        unreadCount={0}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenBilling={() => setIsBillingOpen(true)}
+      />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
