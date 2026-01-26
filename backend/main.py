@@ -917,7 +917,16 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
     
-    # Force PRO for Dev/Demo User (since it can't rely on profiles join due to FK)
+    
+    # 3. Fallback logic: Use user_profiles data if profiles sync failed
+    if not sub_data and result.data:
+        # Check if the base profile has the data (from migration backfill or double-write)
+        base_plan = result.data[0].get("plan_type")
+        base_status = result.data[0].get("subscription_status")
+        if base_plan: plan = base_plan
+        if base_status: status = base_status
+
+    # Force PRO for Dev/Demo User
     if is_dev_user:
         plan = "enterprise"
         status = "active"
@@ -1872,6 +1881,8 @@ async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Clie
         for f in sub_fields:
             if f in update_data:
                 sub_update[f] = update_data[f]
+                # CRITICAL FIX: Also update the user_profiles table so simple fetches work
+                profile_update[f] = update_data[f]
                 
         if sub_update:
             # Check if profile exists in 'profiles' table first
