@@ -179,7 +179,8 @@ async def health_check():
     return {
         "status": "healthy", 
         "supabase_configured": bool(url and has_key),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.3-hotfix"
     }
 
 
@@ -286,22 +287,26 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 except (ValueError, TypeError):
                     continue
 
-            hotel_with_price = HotelWithPrice(
-                id=hotel["id"],
-                name=hotel["name"],
-                is_target_hotel=hotel["is_target_hotel"],
-                location=hotel.get("location"),
-                rating=hotel.get("rating"),
-                stars=hotel.get("stars"),
-                image_url=hotel.get("image_url"),
-                price_info=price_info,
-                price_history=valid_history
-            )
-            
-            if hotel["is_target_hotel"]:
-                target_hotel = hotel_with_price
-            else:
-                competitors.append(hotel_with_price)
+            try:
+                hotel_with_price = HotelWithPrice(
+                    id=hotel["id"],
+                    name=hotel["name"],
+                    is_target_hotel=hotel["is_target_hotel"],
+                    location=hotel.get("location"),
+                    rating=hotel.get("rating"),
+                    stars=hotel.get("stars"),
+                    image_url=hotel.get("image_url"),
+                    price_info=price_info,
+                    price_history=valid_history
+                )
+                
+                if hotel["is_target_hotel"]:
+                    target_hotel = hotel_with_price
+                else:
+                    competitors.append(hotel_with_price)
+            except Exception as e:
+                print(f"Skipping invalid hotel record {hotel.get('id')}: {e}")
+                continue
         
         # Count unread alerts
         unread_count = 0
