@@ -27,7 +27,6 @@ export default function Header({
   onOpenBilling, // Optional prop
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false); // We can reuse this or rename to isBillingOpen
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
 

@@ -49,33 +49,32 @@ export default function HotelDetailsModal({
 
       <div className="relative w-full max-w-4xl bg-[var(--deep-ocean)] border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="p-6 border-b border-white/10 flex items-start justify-between bg-white/5">
-          <div className="flex items-center gap-4">
+        <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-start justify-between bg-white/5 gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
             {hotel.image_url ? (
               <img
                 src={hotel.image_url}
                 alt={hotel.name}
-                className="w-16 h-16 rounded-lg object-cover border border-white/10"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover border border-white/10"
               />
             ) : (
-              <div className="w-16 h-16 rounded-lg bg-white/5 flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-white/20" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-white/5 flex items-center justify-center">
+                <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-white/20" />
               </div>
             )}
             <div>
-              <h2 className="text-2xl font-bold text-white max-w-lg truncate">
+              <h2 className="text-lg sm:text-2xl font-bold text-white max-w-[200px] sm:max-w-lg truncate leading-tight">
                 {hotel.name}
               </h2>
-              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-[var(--text-muted)] mt-1">
                 <span>{hotel.location}</span>
                 {hotel.stars && <span>• {hotel.stars} Stars</span>}
-                {hotel.rating && <span>• {hotel.rating} Rating</span>}
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors"
+            className="self-end sm:self-start p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors order-1 sm:order-2"
           >
             <X className="w-6 h-6" />
           </button>

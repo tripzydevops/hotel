@@ -115,17 +115,17 @@ export default function ScanSessionModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all">
       <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="p-8 border-b border-white/5 bg-white/[0.02]">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner">
-                <Database className="w-8 h-8" />
+        <div className="p-4 sm:p-8 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner">
+                <Database className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                  Pulse Intelligence Report
+                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  Pulse Intelligence
                   <span
-                    className={`text-[10px] uppercase tracking-[0.2em] px-2 py-1 rounded-full font-bold ${
+                    className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
                       session.status === "completed"
                         ? "bg-optimal-green/20 text-optimal-green"
                         : "bg-amber-500/20 text-amber-500"
@@ -134,57 +134,43 @@ export default function ScanSessionModal({
                     {session.status}
                   </span>
                 </h2>
-                <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-muted)] font-medium">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-muted)] font-medium">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" />
+                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>{formatDate(session.created_at)}</span>
-                  </div>
-                  <div className="w-1 h-1 rounded-full bg-white/20" />
-                  <div className="flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5" />
-                    <span className="text-white">
-                      {session.hotels_count} Properties Analyzed
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 mr-4">
+
+            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={exportToCSV}
                   disabled={loading || logs.length === 0}
-                  className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
-                  <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                  Export CSV
-                </button>
-                <button
-                  onClick={exportToJSON}
-                  disabled={loading || logs.length === 0}
-                  className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                  JSON
+                  <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                  CSV
                 </button>
               </div>
               <button
                 onClick={onClose}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-[var(--text-muted)] hover:text-white"
+                className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-[var(--text-muted)] hover:text-white"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
 
           {/* Summary Row */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 Average Rate
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-2xl font-black text-white">
+                <span className="text-xl sm:text-2xl font-black text-white">
                   {logs.length > 0
                     ? (
                         logs.reduce((acc, l) => acc + (l.price || 0), 0) /
@@ -192,17 +178,17 @@ export default function ScanSessionModal({
                       ).toFixed(0)
                     : "—"}
                 </span>
-                <span className="text-[10px] text-[var(--text-muted)] mb-1.5">
+                <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)] mb-1 sm:mb-1.5">
                   {logs[0]?.currency || "USD"}
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 Success Rate
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-2xl font-black text-optimal-green">
+                <span className="text-xl sm:text-2xl font-black text-optimal-green">
                   {session.hotels_count > 0
                     ? (
                         (logs.filter((l) => l.status === "success").length /
@@ -214,25 +200,22 @@ export default function ScanSessionModal({
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 Vendors
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-2xl font-black text-white">
+                <span className="text-xl sm:text-2xl font-black text-white">
                   {new Set(logs.map((l) => l.vendor).filter(Boolean)).size}
-                </span>
-                <span className="text-[10px] text-[var(--text-muted)] mb-1.5">
-                  Sourced
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 Session ID
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-sm font-mono text-[var(--text-muted)] mb-1">
+                <span className="text-xs sm:text-sm font-mono text-[var(--text-muted)] mb-1">
                   {session.id.slice(0, 8)}...
                 </span>
               </div>

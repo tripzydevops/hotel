@@ -72,6 +72,51 @@ def get_supabase() -> Client:
         return None
 
 
+# ===== Security Dependencies =====
+
+async def get_current_admin_user(request: Request, db: Client = Depends(get_supabase)):
+    """
+    Verify that the request is made by an Admin.
+    We check the Authorization header (JWT) via Supabase Auth.
+    Then we check the 'role' claim or a whitelist in metadata.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+         raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    
+    try:
+        # Expected format: "Bearer <token>"
+        token_parts = auth_header.split(" ")
+        if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
+             raise HTTPException(status_code=401, detail="Invalid Token Format")
+             
+        token = token_parts[1]
+        user = db.auth.get_user(token)
+        
+        if not user or not user.user:
+            raise HTTPException(status_code=401, detail="Invalid Token")
+            
+        user_id = user.user.id
+        email = user.user.email
+        
+        # 1. Check strict whitelist (Hardcoded for MVP safety)
+        if email in ["admin@hotel.plus", "elif@tripzy.travel"] or (email and email.endswith("@tripzy.travel")):
+            return user.user
+            
+        # 2. Check Database Role
+        profile = db.table("user_profiles").select("role").eq("user_id", user_id).single().execute()
+        if profile.data and profile.data.get("role") == "admin":
+            return user.user
+            
+        raise HTTPException(status_code=403, detail="Admin Access Required")
+        
+    except Exception as e:
+        print(f"Auth Error: {e}")
+        # Only raise 403/401, careful not to leak internal errors
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=401, detail="Authentication Failed")
+
 # ===== Helpers =====
 
 # Exchange rates to USD (approximate, update periodically or use API)
@@ -1920,7 +1965,7 @@ async def update_admin_user(user_id: UUID, update_data: Dict[str, Any], db: Clie
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/admin/directory", response_model=dict)
-async def add_admin_directory_entry(entry: dict, db: Client = Depends(get_supabase)):
+async def add_admin_directory_entry(entry: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Add a directory entry manually."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
@@ -1936,7 +1981,7 @@ async def add_admin_directory_entry(entry: dict, db: Client = Depends(get_supaba
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/admin/directory/{entry_id}")
-async def delete_admin_directory(entry_id: str, db: Client = Depends(get_supabase)):
+async def delete_admin_directory(entry_id: str, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Delete a directory entry."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
@@ -1948,7 +1993,7 @@ async def delete_admin_directory(entry_id: str, db: Client = Depends(get_supabas
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/logs", response_model=List[AdminLog])
-async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase)):
+async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Get system logs (from scan sessions for now)."""
     # Fetch recent sessions
     result = db.table("scan_sessions").select("*").order("created_at", desc=True).limit(limit).execute()
@@ -1976,7 +2021,7 @@ async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase)):
 # ===== Admin User Edit =====
 
 @app.put("/api/admin/users/{user_id}")
-async def update_admin_user(user_id: UUID, updates: dict, db: Client = Depends(get_supabase)):
+async def update_admin_user(user_id: UUID, updates: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Update user profile data."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
@@ -1999,7 +2044,7 @@ async def update_admin_user(user_id: UUID, updates: dict, db: Client = Depends(g
 
 
 @app.put("/api/admin/directory/{entry_id}")
-async def update_admin_directory(entry_id: str, updates: dict, db: Client = Depends(get_supabase)):
+async def update_admin_directory(entry_id: str, updates: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Update a directory entry."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
@@ -2024,7 +2069,7 @@ async def update_admin_directory(entry_id: str, updates: dict, db: Client = Depe
 # ===== Admin Hotels CRUD =====
 
 @app.get("/api/admin/hotels")
-async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase)):
+async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """List all hotels across all users with user info."""
     # Force Service Role for Admin Actions (Bypass RLS)
     admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -2087,7 +2132,7 @@ async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase))
 
 
 @app.get("/api/admin/scans")
-async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase)):
+async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """List recent scan sessions with user info."""
     # Force Service Role for Admin Actions (Bypass RLS)
     admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -2192,12 +2237,12 @@ def get_admin_settings_db(db_client: Client = None) -> AdminSettings:
         )
 
 @app.get("/api/admin/settings", response_model=AdminSettings)
-async def get_admin_settings(db: Client = Depends(get_supabase)):
+async def get_admin_settings(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Get global system settings."""
     return get_admin_settings_db(db)
 
 @app.put("/api/admin/settings")
-async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depends(get_supabase)):
+async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Update global system settings."""
     # Force Service Role for Admin Actions (Bypass RLS)
     admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -2293,7 +2338,7 @@ async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depen
 
 
 @app.put("/api/admin/hotels/{hotel_id}")
-async def update_admin_hotel(hotel_id: UUID, updates: dict, db: Client = Depends(get_supabase)):
+async def update_admin_hotel(hotel_id: UUID, updates: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """Update a hotel's details."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")

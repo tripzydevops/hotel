@@ -93,14 +93,7 @@ export default function Dashboard() {
       setHotelToEdit(fullHotel);
       setIsEditHotelOpen(true);
     } else {
-      // Fallback if we can't find it (rare)
       console.warn("Could not find full hotel data for edit", id);
-      // We could just set what we have?
-      // Typescript needs full Hotel. Let's cast or fetch?
-      // Tiles pass what they have. CompetitorTile actually constructs a partial obj in onEdit?
-      // No, in my previous edit I tried to pass object but commented it out.
-      // The tile only receives flat props.
-      // So finding it in `data` is the best way.
     }
   };
 
@@ -138,6 +131,7 @@ export default function Dashboard() {
       const userProfile = await api.getProfile(userId);
       setProfile(userProfile);
 
+      /*
       // Lazy cron: Check if scheduled scan is due (Vercel free tier workaround)
       // DISABLED per user request (was causing spam due to useEffect loop)
       /*
