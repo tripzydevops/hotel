@@ -17,14 +17,14 @@ interface HeaderProps {
   onOpenBilling?: () => void; // Optional: Parent can still override if needed
 }
 
-export default function Header({ 
-  userProfile, 
-  hotelCount = 0, 
+export default function Header({
+  userProfile,
+  hotelCount = 0,
   unreadCount = 0,
-  onOpenProfile = () => {}, 
+  onOpenProfile = () => {},
   onOpenAlerts = () => {},
   onOpenSettings = () => {},
-  onOpenBilling // Optional prop
+  onOpenBilling, // Optional prop
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false); // We can reuse this or rename to isBillingOpen
@@ -38,22 +38,25 @@ export default function Header({
     <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */ }
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="h-10 w-auto" style={{ height: '40px', width: 'auto' }}>
-              <img 
-                src="/logo.png" 
-                alt="Hotel Plus Logo" 
+            <div
+              className="h-10 w-auto"
+              style={{ height: "40px", width: "auto" }}
+            >
+              <img
+                src="/logo.png"
+                alt="Hotel Plus Logo"
                 className="h-full w-auto object-contain"
               />
             </div>
             <div className="flex flex-col">
-                <span className="text-xl font-bold text-white tracking-tight leading-none">
+              <span className="text-xl font-bold text-white tracking-tight leading-none">
                 Hotel Plus
-                </span>
-                <span className="text-[10px] uppercase tracking-widest text-[var(--gold-dark)] font-bold">
-                    Rate Sentinel
-                </span>
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[var(--gold-dark)] font-bold">
+                Rate Sentinel
+              </span>
             </div>
           </Link>
 
@@ -90,40 +93,43 @@ export default function Header({
             </button>
 
             {/* Upgrade Button (Mobile hidden) */}
-            {(userProfile?.plan_type === 'trial' || !userProfile?.plan_type) && (
-                 <button 
-                    onClick={handleOpenBilling}
-                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-lg text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all"
-                 >
-                    <Crown className="w-3 h-3" />
-                    Upgrade
-                 </button>
+            {(userProfile?.plan_type === "trial" ||
+              !userProfile?.plan_type) && (
+              <button
+                onClick={handleOpenBilling}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-lg text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all"
+              >
+                <Crown className="w-3 h-3" />
+                Upgrade
+              </button>
             )}
 
             <div className="h-6 w-px bg-white/10 hidden sm:block" />
 
             {/* Notifications */}
-            <button 
-                onClick={onOpenAlerts}
-                className="relative p-2 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-full transition-all"
+            <button
+              onClick={onOpenAlerts}
+              className="relative p-2 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-full transition-all"
             >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                )}
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+              )}
             </button>
 
             {/* User Menu */}
-            <UserMenu 
-                profile={userProfile} 
-                hotelCount={hotelCount || 0}
-                onOpenProfile={onOpenProfile} 
-                onOpenSettings={onOpenSettings}
-                onOpenUpgrade={handleOpenBilling} 
-                onOpenBilling={handleOpenBilling}
+            <UserMenu
+              profile={userProfile}
+              hotelCount={hotelCount || 0}
+              onOpenProfile={onOpenProfile}
+              onOpenSettings={onOpenSettings}
+              onOpenUpgrade={handleOpenBilling}
+              onOpenBilling={handleOpenBilling}
             />
             {userProfile ? null : (
-                <Link href="/login" className="btn-gold text-xs px-4 py-2">Sign In</Link>
+              <Link href="/login" className="btn-gold text-xs px-4 py-2">
+                Sign In
+              </Link>
             )}
           </div>
 
@@ -176,22 +182,31 @@ export default function Header({
               </Link>
               <Link
                 href="/reports"
-                 className="text-[var(--text-secondary)] hover:text-white"
+                className="text-[var(--text-secondary)] hover:text-white"
               >
                 Reports
               </Link>
-               {userProfile && (
-                   <div className="pt-4 border-t border-white/10">
-                       <UserMenu 
-                           profile={userProfile} 
-                           hotelCount={hotelCount || 0} 
-                           onOpenProfile={onOpenProfile} 
-                           onOpenSettings={onOpenSettings}
-                           onOpenUpgrade={handleOpenBilling}
-                           onOpenBilling={handleOpenBilling}
-                       />
-                   </div>
-               )}
+              {userProfile && (
+                <div className="pt-4 border-t border-white/10">
+                  <UserMenu
+                    profile={userProfile}
+                    hotelCount={hotelCount || 0}
+                    onOpenProfile={onOpenProfile}
+                    onOpenSettings={onOpenSettings}
+                    onOpenUpgrade={handleOpenBilling}
+                    onOpenBilling={handleOpenBilling}
+                  />
+                </div>
+              )}
+
+              {!userProfile && (
+                <Link
+                  href="/login"
+                  className="mt-4 w-full text-center py-3 rounded-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold mb-2"
+                >
+                  Sign In
+                </Link>
+              )}
             </nav>
           </div>
         )}
@@ -202,9 +217,9 @@ export default function Header({
         onClose={() => setIsBillingOpen(false)}
         currentPlan={userProfile?.plan_type || "trial"}
         onUpgrade={async () => {
-             // Mock upgrade in header context - usually would need refresh
-             setIsBillingOpen(false);
-             window.location.reload(); // Simple way to refresh state for now
+          // Mock upgrade in header context - usually would need refresh
+          setIsBillingOpen(false);
+          window.location.reload(); // Simple way to refresh state for now
         }}
       />
     </header>

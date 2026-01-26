@@ -112,10 +112,8 @@ export default function Dashboard() {
       if (session?.user?.id) {
         setUserId(session.user.id);
       } else {
-        // DEV MODE: Bypass login as requested by user ("deactivate log in")
-        // We use a fixed UUID so data persists for this "Guest/Dev" user
-        console.warn("DEV MODE: Bypassing Login. Using Dev User ID.");
-        setUserId("123e4567-e89b-12d3-a456-426614174000");
+        // Redirect to login if not authenticated
+        window.location.href = "/login";
       }
     };
     getSession();
@@ -410,7 +408,7 @@ export default function Dashboard() {
       />
 
       {/* Main Content */}
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Dashboard Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>

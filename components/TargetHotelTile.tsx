@@ -91,11 +91,11 @@ export default function TargetHotelTile({
   };
 
   return (
-    <div className="glass-card p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2 flex flex-col group/card relative overflow-hidden">
+    <div className="glass-card p-5 sm:p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2 flex flex-col group/card relative overflow-hidden">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5">
             {imageUrl ? (
               <img
                 src={imageUrl}
@@ -122,7 +122,7 @@ export default function TargetHotelTile({
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">
               {name}
             </h2>
             {location && (
