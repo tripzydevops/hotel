@@ -17,12 +17,22 @@ create table if not exists public.profiles (
 -- 2. Enable RLS
 alter table public.profiles enable row level security;
 -- 3. Create policies (if they don't exist)
-create policy "Public profiles are viewable by everyone." on public.profiles for
+-- 3. Create policies (Idempotent)
+do $$ begin create policy "Public profiles are viewable by everyone." on public.profiles for
 select using (true);
-create policy "Users can insert their own profile." on public.profiles for
+exception
+when duplicate_object then null;
+end $$;
+do $$ begin create policy "Users can insert their own profile." on public.profiles for
 insert with check (auth.uid() = id);
-create policy "Users can update own profile." on public.profiles for
+exception
+when duplicate_object then null;
+end $$;
+do $$ begin create policy "Users can update own profile." on public.profiles for
 update using (auth.uid() = id);
+exception
+when duplicate_object then null;
+end $$;
 -- 4. Create a trigger to auto-create profile on signup
 -- This ensures new users get a profile row immediately
 create or replace function public.handle_new_user() returns trigger as $$ begin
@@ -36,13 +46,20 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after
 insert on auth.users for each row execute procedure public.handle_new_user();
--- 5. Backfill existing users (Optional but recommended)
--- If you have users in auth.users but no profiles, this fixes them.
-insert into public.profiles (id, email)
+-- 5.1 Backfill user_profiles (The legacy table used by Admin Panel)
+-- Ensure column exists first
+do $$ begin
+alter table public.user_profiles
+add column if not exists email text;
+exception
+when others then null;
+end $$;
+insert into public.user_profiles (user_id, email, display_name)
 select id,
-    email
+    email,
+    split_part(email, '@', 1)
 from auth.users
 where id not in (
-        select id
-        from public.profiles
+        select user_id
+        from public.user_profiles
     );

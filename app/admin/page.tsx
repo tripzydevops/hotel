@@ -32,8 +32,10 @@ import {
   AdminLog,
   KeyStatus,
 } from "@/types";
+import { useToast } from "@/components/ui/ToastContext";
 
 export default function AdminPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -99,7 +101,7 @@ export default function AdminPage() {
       const data = await res.json();
       setScanDetails(data);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      toast.error("Error: " + err.message);
       setSelectedScanId(null);
     } finally {
       setScanDetailsLoading(false);
@@ -163,7 +165,7 @@ export default function AdminPage() {
       setUserToEdit(null);
       loadTabData();
     } catch (err: any) {
-      alert("Failed to update: " + err.message);
+      toast.error("Failed to update: " + err.message);
     } finally {
       setUserSaveLoading(false);
     }
@@ -180,7 +182,7 @@ export default function AdminPage() {
       await api.deleteAdminUser(userId);
       loadTabData(); // Refresh
     } catch (err: any) {
-      alert("Failed to delete user: " + err.message);
+      toast.error("Failed to delete user: " + err.message);
     }
   };
 
@@ -201,7 +203,7 @@ export default function AdminPage() {
       loadTabData();
       setTimeout(() => setUserSuccess(false), 3000);
     } catch (err: any) {
-      alert("Failed to create user: " + err.message);
+      toast.error("Failed to create user: " + err.message);
     }
   };
 
@@ -211,7 +213,7 @@ export default function AdminPage() {
       await api.deleteAdminDirectory(id);
       loadTabData(); // Refresh
     } catch (err: any) {
-      alert("Failed to delete entry: " + err.message);
+      toast.error("Failed to delete entry: " + err.message);
     }
   };
 
@@ -230,7 +232,7 @@ export default function AdminPage() {
       loadTabData(); // Refresh list
       setTimeout(() => setDirSuccess(false), 3000);
     } catch (err: any) {
-      alert("Failed to add: " + err.message);
+      toast.error("Failed to add: " + err.message);
     }
   };
 
@@ -238,10 +240,10 @@ export default function AdminPage() {
     if (!confirm("Scan all user hotels and add to directory?")) return;
     try {
       const res = await api.syncDirectory();
-      alert(`Synced ${res.synced_count} hotels.`);
+      toast.success(`Synced ${res.synced_count} hotels.`);
       loadTabData();
     } catch (err: any) {
-      alert("Sync failed: " + err.message);
+      toast.error("Sync failed: " + err.message);
     }
   };
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
+import { ToastProvider } from "@/components/ui/ToastContext";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -26,12 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${montserrat.variable} ${inter.variable} antialiased`}
-      >
-        <I18nProvider>{children}</I18nProvider>
+      <body className={`${montserrat.variable} ${inter.variable} antialiased`}>
+        <I18nProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </I18nProvider>
       </body>
-
     </html>
   );
 }

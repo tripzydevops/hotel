@@ -25,9 +25,12 @@ import { ScanSession, ScanOptions, Hotel } from "@/types";
 import Link from "next/link";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
 import HotelDetailsModal from "@/components/HotelDetailsModal";
+import { useToast } from "@/components/ui/ToastContext";
+import ZeroState from "@/components/ZeroState";
 
 export default function Dashboard() {
   const supabase = createClient();
+  const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -209,10 +212,11 @@ export default function Dashboard() {
       return;
     try {
       await api.deleteHotel(hotelId);
+      toast.success("Hotel removed from watch list");
       await fetchData();
     } catch (error) {
       console.error("Failed to delete hotel:", error);
-      alert("Failed to delete hotel monitor.");
+      toast.error("Failed to delete hotel monitor");
     }
   };
 
@@ -386,7 +390,8 @@ export default function Dashboard() {
             subscription_status: "active",
           });
           // Call API eventually
-          alert(`Upgraded to ${plan} plan successfully!`);
+          // Call API eventually
+          toast.success(`Upgraded to ${plan} plan successfully!`);
           setIsBillingOpen(false);
         }}
       />
@@ -501,6 +506,11 @@ export default function Dashboard() {
               <SkeletonTile />
               <SkeletonTile />
             </>
+          ) : !data?.target_hotel &&
+            (!data?.competitors || data.competitors.length === 0) ? (
+            <div className="col-span-full">
+              <ZeroState onAddHotel={() => setIsAddHotelOpen(true)} />
+            </div>
           ) : (
             <>
               {/* Target Hotel - Large Tile */}
