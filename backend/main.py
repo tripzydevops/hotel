@@ -363,12 +363,27 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         except Exception:
             pass
 
+        # Helper for safe parsing
+        def safe_parse_models(model_class, data_list):
+            valid_items = []
+            for item in data_list:
+                try:
+                    # Handle specific field conversions if needed
+                    if "price" in item and item["price"] is None:
+                        item["price"] = 0.0 # Default fallback
+                    valid_items.append(model_class(**item))
+                except Exception as e:
+                    # converting UUIDs or Dates might fail
+                    print(f"Skipping invalid {model_class.__name__}: {e} | Data: {item.get('id', 'unknown')}")
+                    continue
+            return valid_items
+
         return DashboardResponse(
             target_hotel=target_hotel,
             competitors=competitors,
-            recent_searches=unique_recent,
-            scan_history=scan_history,
-            recent_sessions=recent_sessions,
+            recent_searches=safe_parse_models(QueryLog, unique_recent),
+            scan_history=safe_parse_models(QueryLog, scan_history),
+            recent_sessions=safe_parse_models(ScanSession, recent_sessions),
             unread_alerts_count=unread_count,
             last_updated=datetime.now(timezone.utc),
         )
