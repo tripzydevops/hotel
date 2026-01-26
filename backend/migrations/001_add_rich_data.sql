@@ -1,0 +1,10 @@
+-- Migration: Add Rich Data Columns
+-- Run this in Supabase SQL Editor
+ALTER TABLE hotels
+ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]'::JSONB;
+ALTER TABLE hotels
+ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::JSONB;
+ALTER TABLE price_logs
+ADD COLUMN IF NOT EXISTS offers JSONB DEFAULT '[]'::JSONB;
+ALTER TABLE price_logs
+ADD COLUMN IF NOT EXISTS room_types JSONB DEFAULT '[]'::JSONB;

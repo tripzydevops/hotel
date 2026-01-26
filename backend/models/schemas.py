@@ -36,6 +36,8 @@ class HotelBase(BaseModel):
     fixed_check_in: Optional[date] = None
     fixed_check_out: Optional[date] = None
     default_adults: Optional[int] = 2
+    amenities: Optional[List[str]] = Field(default_factory=list)
+    images: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 
 class HotelCreate(HotelBase):
@@ -71,6 +73,8 @@ class PriceLogBase(BaseModel):
     check_in_date: Optional[date] = None
     source: str = Field(default="serpapi")
     vendor: Optional[str] = Field(default=None, description="The specific booking site (e.g. Booking.com)")
+    offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 
 class PriceLogCreate(PriceLogBase):

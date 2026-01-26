@@ -2,64 +2,91 @@ import asyncio
 import sys
 import os
 import json
+from dotenv import load_dotenv
 
 # Add backend to path
 sys.path.append(os.path.join(os.getcwd(), "backend"))
 
 from services.serpapi_client import SerpApiClient
 
+# Load .env.local explicitly to get the Vercel keys
+load_dotenv(".env.local")
+
 async def main():
+    # Use the token provided by the user
+    token = "ChkItfPTzbCr0O8sGg0vZy8xMXNfNWZrdzdzEAE"
+    name = "Hilton Garden Inn Balikesir (Test)"
+    
+    print(f"\n[INFO] Starting Deep Scan for {name}...")
+    print(f"[INFO] Token: {token}")
+    
+    # Check if we have key now
+    api_key_2 = os.getenv("SERPAPI_API_KEY_2")
+    if api_key_2:
+        print(f"Using Secondary Key: {api_key_2[:5]}...")
+        # Monkey patch environment or init client with specific key list
+        os.environ["SERPAPI_API_KEY"] = api_key_2
+    else:
+        print("Warning: SERPAPI_API_KEY_2 not found.")
+
     client = SerpApiClient()
+    # Force reload to pick up the new env vars we just loaded
+    client.reload()
     
-    print("\n--- STEP 1: Find Hilton Balikesir Token ---")
-    # First search to get the token
-    result1 = await client.fetch_hotel_price(
-        hotel_name="Hilton Garden Inn Balikesir", 
-        location="Balikesir, Turkey", 
-        currency="USD"
-    )
-    
-    if not result1:
-        print("Could not find hotel.")
-        return
-
-    token = result1.get("property_token")
-    print(f"Found Token: {token}")
-    
-    if not token:
-        print("No token returned in basic search. Cannot proceed to Step 2.")
-        return
-
-    print("\n--- STEP 2: Search BY TOKEN (Deep Search) ---")
-    # Second search using the token
-    # We modify the client to print the raw result if we can, or just inspect what comes back
-    # The client._parse_hotel_result returns "raw_data" key now if I recall correctly from my read
-    
-    result2 = await client.fetch_hotel_price(
-        hotel_name="Hilton Garden Inn Balikesir", 
-        location="Balikesir, Turkey", 
-        currency="USD",
-        serp_api_id=token
-    )
-    
-    if result2 and "raw_data" in result2:
-        print("\n--- RAW DATA PREVIEW (First 2000 chars) ---")
-        raw_json = json.dumps(result2["raw_data"], indent=2)
-        print(raw_json[:2000])
-        print("...\n(Truncated)")
+    try:
+        result = await client.fetch_hotel_price(
+            hotel_name=name, 
+            location="Balikesir, Turkey", 
+            currency="USD",
+            serp_api_id=token
+        )
         
-        # Check for specific fields of interest
-        print("\n--- DATA ANALYSIS ---")
-        data = result2["raw_data"]
-        print(f"Amenities: {len(data.get('amenities', []))} found")
-        print(f"Images: {len(data.get('images', []))} found")
-        print(f"Description: {bool(data.get('description'))}")
-        print(f"Prices List: {len(data.get('prices', []))} offers found")
-        
-        if data.get('prices'):
-            print("Offers:")
-            for p in data['prices'][:3]:
-                print(f" - {p.get('source')}: {p.get('rate_per_night', {}).get('lowest')}")
+        if result:
+            print("\n[SUCCESS] SCAN SUCCESS!")
+            print(f"Price: {result.get('price')} {result.get('currency')}")
+            print(f"Source: {result.get('source')}")
+            
+            # Verify Rich Data
+            amenities = result.get('raw_data', {}).get('amenities', [])
+            images = result.get('raw_data', {}).get('images', [])
+            offers = result.get('raw_data', {}).get('prices', [])
+            
+            print(f"\n[RICH DATA CHECK]")
+            print(f" - Amenities Header Found: {len(amenities)} items")
+            print(f" - Images Header Found: {len(images)} items")
+            print(f" - Offers Header Found: {len(offers)} items")
+            
+            if "raw_data" in result:
+                data = result["raw_data"]
+                print("\n--- RICH DATA DEMO ---")
+                
+                # Amenities
+                amenities = data.get('amenities', [])
+                print(f"Amenities ({len(amenities)}):")
+                for a in amenities[:5]:
+                    print(f" - {a}")
+                
+                # Images
+                images = data.get('images', [])
+                print(f"\nImages ({len(images)}):")
+                if images:
+                    print(f" - Thumbnail: {images[0].get('thumbnail')}")
+                
+                # Offers
+                prices = data.get('prices', [])
+                print(f"\nCompetitor Offers ({len(prices)}):")
+                if not prices:
+                     print("No competitor list found in raw_data['prices'].")
+                
+                print("\n[INFO] Dumping FULL RAW DATA to inspect Room Types...")
+                print(json.dumps(data, indent=2))
+            else:
+                print("Warning: No 'raw_data' field returned.")
+        else:
+            print("Error: Scan returned None (Check inputs or Quota).")
+            
+    except Exception as e:
+        print(f"Exception: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -464,6 +464,11 @@ async def run_monitor_background(
             hotel_name = hotel["name"].title().strip()
             location = (hotel.get("location") or "").title().strip()
             serp_api_id = hotel.get("serp_api_id")
+            # Explicitly clear falsy values to None to trigger acquisition logic in client
+            if not serp_api_id:
+                serp_api_id = None
+                print(f"[Monitor] No token for {hotel_name}. Running acquisition search...")
+
             hotel_currency = hotel.get("preferred_currency") or user_default_currency
             
             try:
@@ -539,7 +544,9 @@ async def run_monitor_background(
                     "currency": hotel_currency,
                     "check_in_date": (options.check_in if options and options.check_in else date.today()).isoformat(),
                     "source": "serpapi",
-                    "vendor": price_data.get("vendor"), 
+                    "vendor": price_data.get("vendor"),
+                    "offers": price_data.get("offers", []),
+                    "room_types": price_data.get("room_types", [])
                 }).execute()
 
                 # Update metadata
@@ -550,6 +557,10 @@ async def run_monitor_background(
                     meta_update["serp_api_id"] = price_data["property_token"]
                     meta_update["property_token"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+
+                # Save Rich Data
+                if price_data.get("amenities"): meta_update["amenities"] = price_data["amenities"]
+                if price_data.get("images"): meta_update["images"] = price_data["images"]
                 
                 if meta_update:
                     db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
@@ -1626,19 +1637,31 @@ async def reset_api_keys():
 @app.post("/api/admin/api-keys/reload")
 async def reload_api_keys(db: Client = Depends(get_supabase)):
     """Force reload API keys from env."""
-    # Check auth/admin permissions here if strict
-    
-    # Reload logic
-    reload_result = serpapi_client.serpapi_client.reload()
-    
-    # Fetch full status for UI
-    full_status = serpapi_client.serpapi_client.get_key_status()
-    
-    return {
-        "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
-        "reload_details": reload_result,
-        "current_status": full_status  # Pass this to frontend
-    }
+    try:
+        # Check auth/admin permissions here if strict
+        
+        # Reload logic
+        reload_result = serpapi_client.serpapi_client.reload()
+        
+        # Fetch full status for UI
+        full_status = serpapi_client.serpapi_client.get_key_status()
+        
+        return {
+            "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
+            "reload_details": reload_result,
+            "current_status": full_status  # Pass this to frontend
+        }
+    except Exception as e:
+        print(f"API Key Reload Error: {e}")
+        # Return cleanly so frontend doesn't choke on 500 HTML
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Failed to reload keys: {str(e)}",
+                "error": str(e)
+            }
+        )
 
 
 @app.get("/api/admin/users", response_model=List[AdminUser])

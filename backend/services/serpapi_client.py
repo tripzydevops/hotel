@@ -527,6 +527,24 @@ class SerpApiClient:
             "stars": best_match.get("extracted_hotel_class"), # e.g. 5
             "property_token": best_match.get("property_token"), # Unique ID
             "image_url": best_match.get("images", [{}])[0].get("thumbnail"), # First image
+            
+            # Rich Data Fields
+            "amenities": best_match.get("amenities", []),
+            "images": [
+                {"thumbnail": img.get("thumbnail"), "original": img.get("original")} 
+                for img in best_match.get("images", [])[:10]
+            ],
+            "offers": [
+                {
+                    "vendor": p.get("source"),
+                    "price": p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+                }
+                for p in best_match.get("prices", [])
+            ],
+            # Room types are tricky in basic hotel search, usually requires deep search.
+            # We capture what we can from 'options' if available in this endpoint (rare) or raw data.
+            "room_types": [], 
+            
             "raw_data": best_match,
         }
     
