@@ -287,7 +287,7 @@ class SerpApiClient:
         }
         
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
                 
                 # Check for quota exhaustion
@@ -370,8 +370,17 @@ class SerpApiClient:
             print(f"[SerpApi] Optimizing search with ID: {serp_api_id}")
             params["ht_id"] = serp_api_id
         
+        # Localization: Match country to currency for better results
+        if currency == "TRY":
+            params["gl"] = "tr"
+            params["hl"] = "tr"
+        elif currency == "GBP":
+            params["gl"] = "uk"
+        elif currency == "EUR":
+            params["gl"] = "fr" # Generic EU
+            
         try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
                 
                 # Check for quota exhaustion and retry with next key
