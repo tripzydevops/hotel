@@ -373,10 +373,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                     # Dynamic check for price_comparator (module vs instance)
                     trend, change = None, 0.0
                     try:
-                        if hasattr(price_comparator, "price_comparator"):
-                            trend, change = price_comparator.price_comparator.calculate_trend(current, previous)
-                        else:
-                            trend, change = price_comparator.calculate_trend(current, previous)
+                        trend, change = price_comparator.calculate_trend(current, previous)
                     except Exception as e:
                         print(f"Trend Calc Error: {e}")
                         from backend.models.schemas import TrendDirection
@@ -774,7 +771,7 @@ async def run_monitor_background(
                 
                 # Alerts (Only if price exists)
                 if not is_partial and previous_price:
-                    threshold_alert = price_comparator.price_comparator.check_threshold_breach(
+                    threshold_alert = price_comparator.check_threshold_breach(
                         current_price, previous_price, threshold
                     )
                     if threshold_alert:
@@ -828,7 +825,7 @@ async def run_monitor_background(
             if len(latest.data) >= 1:
                 current = latest.data[0]["price"]
                 previous = latest.data[1]["price"] if len(latest.data) > 1 else None
-                undercut = price_comparator.price_comparator.check_competitor_undercut(target_price, hotel["name"], current, previous)
+                undercut = price_comparator.check_competitor_undercut(target_price, hotel["name"], current, previous)
                 if undercut:
                     # Get hotel currency for alert
                     comp_currency = hotel.get("preferred_currency") or "USD"
