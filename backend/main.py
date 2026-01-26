@@ -2020,27 +2020,7 @@ async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase), ad
 
 # ===== Admin User Edit =====
 
-@app.put("/api/admin/users/{user_id}")
-async def update_admin_user(user_id: UUID, updates: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
-    """Update user profile data."""
-    if not db:
-        raise HTTPException(status_code=503, detail="Database credentials missing.")
-    try:
-        # Update user_profiles table
-        profile_fields = ["display_name", "company_name", "job_title", "phone", "timezone", "plan_type", "subscription_status", "trial_ends_at", "subscription_end_date"]
-        profile_update = {k: v for k, v in updates.items() if k in profile_fields and v is not None}
-        
-        if profile_update:
-            db.table("user_profiles").update(profile_update).eq("user_id", str(user_id)).execute()
-        
-        # Update settings table for notification_email
-        if "notification_email" in updates:
-            db.table("settings").update({"notification_email": updates["notification_email"]}).eq("user_id", str(user_id)).execute()
-        
-        return {"status": "success", "user_id": str(user_id)}
-    except Exception as e:
-        print(f"Admin Update User Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.put("/api/admin/directory/{entry_id}")
@@ -2281,60 +2261,7 @@ async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depen
         print(f"Settings Update Error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
 
-    if not db:
-        raise HTTPException(status_code=503, detail="Database credentials missing.")
-    try:
-        # Get all hotels
-        hotels_result = db.table("hotels").select("*").order("created_at", desc=True).limit(limit).execute()
-        hotels = hotels_result.data or []
-        
-        # Get user info for each hotel
-        user_ids = list(set(h["user_id"] for h in hotels))
-        users_map = {}
-        
-        if user_ids:
-            profiles = db.table("user_profiles").select("user_id, display_name").in_("user_id", user_ids).execute()
-            for p in (profiles.data or []):
-                users_map[p["user_id"]] = p.get("display_name", "Unknown")
-            
-            settings = db.table("settings").select("user_id, notification_email").in_("user_id", user_ids).execute()
-            for s in (settings.data or []):
-                if s["user_id"] not in users_map:
-                    users_map[s["user_id"]] = s.get("notification_email", "Unknown")
-        
-        # Get latest price for each hotel
-        result = []
-        for hotel in hotels:
-            price_log = db.table("price_logs").select("price, currency, recorded_at").eq("hotel_id", hotel["id"]).order("recorded_at", desc=True).limit(1).execute()
-            
-            hotel_data = {
-                "id": hotel["id"],
-                "name": hotel["name"],
-                "location": hotel.get("location"),
-                "user_id": hotel["user_id"],
-                "user_display": users_map.get(hotel["user_id"], "Unknown"),
-                "serp_api_id": hotel.get("serp_api_id"),
-                "is_target_hotel": hotel.get("is_target_hotel", False),
-                "preferred_currency": hotel.get("preferred_currency", "USD"),
-                "created_at": hotel["created_at"],
-                "last_price": None,
-                "last_currency": None,
-                "last_scanned": None
-            }
-            
-            if price_log.data:
-                hotel_data["last_price"] = price_log.data[0]["price"]
-                hotel_data["last_currency"] = price_log.data[0].get("currency", "USD")
-                hotel_data["last_scanned"] = price_log.data[0]["recorded_at"]
-            
-            result.append(hotel_data)
-        
-        return result
-    except Exception as e:
-        print(f"Admin Hotels Error: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.put("/api/admin/hotels/{hotel_id}")

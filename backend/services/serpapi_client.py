@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import threading
 
 load_dotenv()
+load_dotenv(".env.local", override=True)
 
 SERPAPI_BASE_URL = "https://serpapi.com/search"
 

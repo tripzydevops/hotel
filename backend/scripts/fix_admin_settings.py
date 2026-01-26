@@ -6,6 +6,7 @@ from supabase import create_client
 # Load env from .env file if needed, or assume they are set
 from dotenv import load_dotenv
 load_dotenv()
+load_dotenv(".env.local", override=True)
 
 URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -67,7 +68,7 @@ SQL_COMMANDS = [
 ]
 
 async def run_migration():
-    print("🚀 Starting Admin Settings Migration...")
+    print("Starting Admin Settings Migration...")
     
     # We can't execute raw SQL easily with the JS/Python client without a stored procedure or special permissions usually.
     # But let's try the 'rpc' method if a generic sql exec function exists, or use the 'pg' library if we had connection string.
@@ -78,9 +79,9 @@ async def run_migration():
     try:
         print("Checking if table exists...")
         res = supabase.table("admin_settings").select("*").limit(1).execute()
-        print("✅ Table accessesible.")
+        print("Table accessesible.")
     except Exception as e:
-        print(f"⚠️ Table access failed: {e}. (This script can't create tables without raw SQL access).")
+        print(f"Table access failed: {e}. (This script can't create tables without raw SQL access).")
         print("Please run the SQL commands manually in your Supabase Dashboard SQL Editor.")
         for sql in SQL_COMMANDS:
              print(f"--- \n{sql}\n ---")
@@ -96,9 +97,9 @@ async def run_migration():
             "default_currency": "USD"
         }
         res = supabase.table("admin_settings").upsert(data).execute()
-        print("✅ Default row upserted.")
+        print("Default row upserted.")
     except Exception as e:
-        print(f"❌ Upsert failed: {e}")
+        print(f"Upsert failed: {e}")
 
 if __name__ == "__main__":
     asyncio.run(run_migration())

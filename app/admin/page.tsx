@@ -355,16 +355,38 @@ export default function AdminPage() {
               value={stats.directory_size}
               icon={Database}
             />
-            <div className="col-span-full mt-4 p-6 glass-card border border-white/10">
-              <h3 className="text-lg font-bold text-white mb-2">
-                System Health
-              </h3>
-              <div className="flex items-center gap-2 text-[var(--optimal-green)]">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>
-                  All systems operational. API calls today:{" "}
-                  {stats.api_calls_today}
-                </span>
+            <div className="col-span-full mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 glass-card border border-white/10">
+                <h3 className="text-lg font-bold text-white mb-2">
+                  System Health
+                </h3>
+                <div className="flex items-center gap-2 text-[var(--optimal-green)]">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>
+                    All systems operational. API calls today:{" "}
+                    {stats.api_calls_today}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 glass-card border border-white/10">
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Quick Actions
+                </h3>
+                <div className="flex gap-3">
+                  <Link
+                    href="/admin/list"
+                    className="bg-[var(--soft-gold)] text-black px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 inline-flex items-center gap-2"
+                  >
+                    <List className="w-4 h-4" /> Master Hotel List
+                  </Link>
+                  <button
+                    onClick={() => setActiveTab("users")}
+                    className="bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/20 inline-flex items-center gap-2"
+                  >
+                    <Users className="w-4 h-4" /> Manage Users
+                  </button>
+                </div>
               </div>
             </div>
           </div>
