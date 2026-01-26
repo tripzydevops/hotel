@@ -117,14 +117,16 @@ export default function Header({
             </button>
 
             {/* User Menu */}
-            <UserMenu
-              profile={userProfile}
-              hotelCount={hotelCount || 0}
-              onOpenProfile={onOpenProfile}
-              onOpenSettings={onOpenSettings}
-              onOpenUpgrade={handleOpenBilling}
-              onOpenBilling={handleOpenBilling}
-            />
+            {userProfile && (
+              <UserMenu
+                profile={userProfile}
+                hotelCount={hotelCount || 0}
+                onOpenProfile={onOpenProfile}
+                onOpenSettings={onOpenSettings}
+                onOpenUpgrade={handleOpenBilling}
+                onOpenBilling={handleOpenBilling}
+              />
+            )}
             {userProfile ? null : (
               <Link href="/login" className="btn-gold text-xs px-4 py-2">
                 Sign In

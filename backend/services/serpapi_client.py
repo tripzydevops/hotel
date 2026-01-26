@@ -502,20 +502,51 @@ class SerpApiClient:
                 
         # Clean up price if it's a string, removing currency codes like "TRY" or symbols
         if isinstance(price, str):
-            # Remove non-numeric chars except dot and comma
             import re
-            # If "TRY 10,249", clean strip letters
+            # Remove currency codes and whitespace
+            # Keep digits, dot, comma
             clean_str = re.sub(r'[^\d.,]', '', price)
             
-            # Handle comma as thousand separator if dot exists, or if format is 10,000
-            # Heuristic: if comma matches 3 digits at end, it's separator?
-            # Safer: remove commas if they are thousand separators
-            if "," in clean_str and "." not in clean_str:
-                 # "10,249" -> 10249
-                 clean_str = clean_str.replace(",", "")
-            elif "," in clean_str and "." in clean_str:
-                 # "10,249.00" -> 10249.00
-                 clean_str = clean_str.replace(",", "")
+            # Heuristic Parsing for International Formats
+            # Case A: 1.234,56 (EU/TR style) -> 1234.56
+            # Case B: 1,234.56 (US/UK style) -> 1234.56
+            # Case C: 1.234 (EU/TR thousands) -> 1234
+            # Case D: 1,234 (US/UK thousands) -> 1234
+            
+            if "," in clean_str and "." in clean_str:
+                last_comma = clean_str.rfind(",")
+                last_dot = clean_str.rfind(".")
+                
+                if last_comma > last_dot:
+                    # Case A: Dot is thousands, Comma is decimal
+                    clean_str = clean_str.replace(".", "").replace(",", ".")
+                else:
+                    # Case B: Comma is thousands, Dot is decimal
+                    clean_str = clean_str.replace(",", "")
+            elif "," in clean_str:
+                # Ambiguous: 1,234 Could be 1.234 (decimal) or 1234 (thousands)
+                # Usually SerpApi returns integers for high values without decimals if exact
+                # But prices > 999 usually use thousands separator.
+                # If it has 3 digits after comma, it's likely thousands (1,000)
+                # If it has 2 digits, likely decimal (1,50) - though rarely used with comma alone in US
+                
+                parts = clean_str.split(",")
+                if len(parts[-1]) == 3 and len(parts) > 1:
+                     # Assume thousands
+                     clean_str = clean_str.replace(",", "")
+                else:
+                     # Assume decimal (replace with dot)
+                     clean_str = clean_str.replace(",", ".")
+            elif "." in clean_str:
+                # Ambiguous: 1.234 Could be 1234 (thousands TR) or 1.234 (decimal US)
+                # Same logic: 3 digits after dot -> likely thousands in TR context if currency is TRY/EUR
+                parts = clean_str.split(".")
+                if len(parts[-1]) == 3 and len(parts) > 1:
+                     # Check currency to hint
+                     if currency in ["TRY", "EUR", "IDR", "VND"]:
+                         clean_str = clean_str.replace(".", "")
+                     else:
+                         pass # Assume decimal for USD/GBP
             
             try:
                 price = float(clean_str)

@@ -7,13 +7,32 @@ const API_BASE_URL =
 
 class ApiClient {
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    
+    // Get session token safely
+    let token = null;
+    try {
+        const { createClient } = await import("@/utils/supabase/client");
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        token = data.session?.access_token;
+    } catch (e) {
+        // Warning: This might run on server side where createClient behaves differently
+        // but this ApiClient is mostly used on client side.
+    }
+
+    const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...options?.headers,
+    };
+
+    if (token) {
+        (headers as any)["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {
