@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import {
   FileText,
-  Download,
   Calendar,
   CheckCircle2,
   AlertCircle,
@@ -18,11 +17,10 @@ import {
 import { api } from "@/lib/api";
 import ScanSessionModal from "@/components/ScanSessionModal";
 import { ScanSession } from "@/types";
-
 import { createClient } from "@/utils/supabase/client";
 
 export default function ReportsPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
@@ -33,15 +31,13 @@ export default function ReportsPage() {
   );
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
-  /* New: Profile State for Header */
+  /* Profile State for Header */
   const [profile, setProfile] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
-  // Replicate hotel count logic or use 0
   const hotelCount = 0;
-  /* End New State */
 
   useEffect(() => {
     const getSession = async () => {
@@ -50,7 +46,6 @@ export default function ReportsPage() {
       } = await supabase.auth.getSession();
       if (session?.user?.id) {
         setUserId(session.user.id);
-        // Fetch Profile for Header
         try {
           const userProfile = await api.getProfile(session.user.id);
           setProfile(userProfile);
@@ -58,7 +53,6 @@ export default function ReportsPage() {
           console.error("Failed to fetch profile", e);
         }
       } else {
-        // Redirect to login if not authenticated, do NOT fallback to dev user
         window.location.href = "/login";
       }
     };
@@ -86,7 +80,6 @@ export default function ReportsPage() {
 
     try {
       if (format === "pdf") {
-        // Dynamic import to avoid SSR issues
         const { default: jsPDF } = await import("jspdf");
         const { default: autoTable } = await import("jspdf-autotable");
 
@@ -104,28 +97,37 @@ export default function ReportsPage() {
         // Weekly Summary
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
-        doc.text("Weekly Summary", 14, 40);
+        doc.text(t("reports.weeklySummary"), 14, 40);
 
         const summaryData = [
-          ["Total Scans", data?.weekly_summary?.total_scans || 0],
-          ["Active Monitors", data?.weekly_summary?.active_monitors || 0],
-          ["Trend", data?.weekly_summary?.last_week_trend || "N/A"],
-          ["System Health", data?.weekly_summary?.system_health || "N/A"],
+          [t("reports.totalPulses"), data?.weekly_summary?.total_scans || 0],
+          [
+            t("reports.activeIntelligence"),
+            data?.weekly_summary?.active_monitors || 0,
+          ],
+          [
+            t("reports.weeklyTrend"),
+            data?.weekly_summary?.last_week_trend || "N/A",
+          ],
+          [
+            t("reports.systemHealth"),
+            data?.weekly_summary?.system_health || "N/A",
+          ],
         ];
 
         autoTable(doc, {
           startY: 45,
-          head: [["Metric", "Value"]],
+          head: [[t("reports.timestamp"), "Value"]],
           body: summaryData,
           theme: "grid",
-          headStyles: { fillColor: [255, 215, 0], textColor: [0, 0, 0] }, // Soft Gold
+          headStyles: { fillColor: [255, 215, 0], textColor: [0, 0, 0] },
           styles: { fontSize: 10 },
         });
 
         // Sessions Table
         const lastY = (doc as any).lastAutoTable.finalY || 60;
         doc.setFontSize(14);
-        doc.text("Recent Scan Sessions", 14, lastY + 15);
+        doc.text(t("reports.fullHistoryLog"), 14, lastY + 15);
 
         const tableData =
           data?.sessions?.map((s: any) => [
@@ -137,7 +139,14 @@ export default function ReportsPage() {
 
         autoTable(doc, {
           startY: lastY + 20,
-          head: [["Timestamp", "Type", "Status", "Hotels"]],
+          head: [
+            [
+              t("reports.timestamp"),
+              t("reports.sessionType"),
+              t("reports.status"),
+              t("reports.hotelsScanned"),
+            ],
+          ],
           body: tableData,
           theme: "striped",
           headStyles: { fillColor: [40, 40, 40] },
@@ -145,13 +154,10 @@ export default function ReportsPage() {
 
         doc.save(`hotel-reports-${new Date().toISOString().split("T")[0]}.pdf`);
       } else {
-        // Keep existing CSV logic
         await api.exportReport(userId, format);
-        alert(`Report exported as ${format.toUpperCase()} successfully!`);
       }
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to generate export.");
     } finally {
       setExporting(null);
     }
@@ -168,7 +174,7 @@ export default function ReportsPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
           <p className="text-[var(--soft-gold)] font-black uppercase tracking-widest text-[10px]">
-            Compiling Audit Logs...
+            {t("reports.compiling")}
           </p>
         </div>
       </div>
@@ -202,11 +208,11 @@ export default function ReportsPage() {
                 <FileText className="w-5 h-5" />
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">
-                Audit & Intelligence Reports
+                {t("reports.title")}
               </h1>
             </div>
             <p className="text-[var(--text-secondary)] font-medium">
-              Historical scan logs and exportable intelligence summaries.
+              {t("reports.subtitle")}
             </p>
           </div>
 
@@ -218,7 +224,9 @@ export default function ReportsPage() {
             >
               <FileSpreadsheet className="w-4 h-4 group-hover:text-[var(--soft-gold)] transition-colors" />
               <span className="text-xs font-black uppercase tracking-widest">
-                {exporting === "csv" ? "Exporting..." : "Export CSV"}
+                {exporting === "csv"
+                  ? t("reports.exporting")
+                  : t("reports.exportCsv")}
               </span>
             </button>
             <button
@@ -228,7 +236,9 @@ export default function ReportsPage() {
             >
               <FileType className="w-4 h-4" />
               <span className="text-xs font-black uppercase tracking-widest">
-                {exporting === "pdf" ? "Exporting..." : "Export PDF"}
+                {exporting === "pdf"
+                  ? t("reports.exporting")
+                  : t("reports.exportPdf")}
               </span>
             </button>
           </div>
@@ -237,22 +247,22 @@ export default function ReportsPage() {
         {/* Weekly Summary Brief */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <SummaryCard
-            title="Total Pulse Scans"
+            title={t("reports.totalPulses")}
             value={data?.weekly_summary?.total_scans || 0}
             icon={<Activity className="w-5 h-5" />}
           />
           <SummaryCard
-            title="Active Intelligence"
+            title={t("reports.activeIntelligence")}
             value={data?.weekly_summary?.active_monitors || 0}
             icon={<Activity className="w-5 h-5" />}
           />
           <SummaryCard
-            title="Weekly Trend"
+            title={t("reports.weeklyTrend")}
             value={data?.weekly_summary?.last_week_trend || "Stable"}
             icon={<Calendar className="w-5 h-5" />}
           />
           <SummaryCard
-            title="System Health"
+            title={t("reports.systemHealth")}
             value={data?.weekly_summary?.system_health || "100%"}
             icon={<CheckCircle2 className="w-5 h-5" />}
           />
@@ -264,11 +274,11 @@ export default function ReportsPage() {
             <div className="flex items-center gap-3">
               <History className="w-5 h-5 text-[var(--soft-gold)]" />
               <h2 className="text-lg font-black text-white">
-                Full Intelligence History
+                {t("reports.fullHistoryLog")}
               </h2>
             </div>
             <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic">
-              Displaying recent 20 sessions
+              {t("reports.recent20Sessions")}
             </div>
           </div>
 
@@ -277,19 +287,19 @@ export default function ReportsPage() {
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/5">
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                    Timestamp
+                    {t("reports.timestamp")}
                   </th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                    Session Type
+                    {t("reports.sessionType")}
                   </th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                    Status
+                    {t("reports.status")}
                   </th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                    Hotels Scanned
+                    {t("reports.hotelsScanned")}
                   </th>
                   <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">
-                    Actions
+                    {t("reports.actions")}
                   </th>
                 </tr>
               </thead>
@@ -301,10 +311,14 @@ export default function ReportsPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="text-sm font-bold text-white">
-                        {new Date(session.created_at).toLocaleDateString()}
+                        {new Date(session.created_at).toLocaleDateString(
+                          locale === "en" ? "en-US" : "tr-TR",
+                        )}
                       </div>
                       <div className="text-[10px] text-[var(--text-muted)] font-medium">
-                        {new Date(session.created_at).toLocaleTimeString()}
+                        {new Date(session.created_at).toLocaleTimeString(
+                          locale === "en" ? "en-US" : "tr-TR",
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -329,7 +343,7 @@ export default function ReportsPage() {
                         {session.hotels_count}
                       </span>
                       <span className="text-[10px] text-[var(--text-muted)] ml-1 font-bold uppercase">
-                        Properties
+                        {t("reports.propertiesLabel")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">

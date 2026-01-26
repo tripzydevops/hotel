@@ -1,0 +1,2372 @@
+{
+  "search_metadata": {
+    "id": "6977a1bd0676dc7a1aa8e1ea",
+    "status": "Success",
+    "json_endpoint": "https://serpapi.com/searches/df2aea76f474e48f/6977a1bd0676dc7a1aa8e1ea.json",
+    "created_at": "2026-01-26T17:17:49.137Z",
+    "processed_at": "2026-01-26T17:17:49.138Z",
+    "google_hotels_url": "https://www.google.com/_/TravelFrontendUi/data/batchexecute?rpcids=AtySUc&source-path=/travel/search&hl=tr&gl=tr&rt=c&soc-app=162&soc-platform=1&soc-device=1",
+    "raw_html_file": "https://serpapi.com/searches/df2aea76f474e48f/6977a1bd0676dc7a1aa8e1ea.html",
+    "prettify_html_file": "https://serpapi.com/searches/df2aea76f474e48f/6977a1bd0676dc7a1aa8e1ea.prettify",
+    "total_time_taken": {
+      "float": 4.792790174484253
+    }
+  },
+  "search_parameters": {
+    "engine": "google_hotels",
+    "q": "The Marmara Taksim",
+    "gl": "tr",
+    "hl": "tr",
+    "currency": "TRY",
+    "check_in_date": "2026-02-10",
+    "check_out_date": "2026-02-11",
+    "adults": 2,
+    "children": 0
+  },
+  "search_information": {
+    "hotels_results_state": "Showing results for property details"
+  },
+  "type": "hotel",
+  "name": "The Marmara Taksim",
+  "description": "Canl\u0131 \u015fehir merkezindeki bu \u00e7ok katl\u0131 l\u00fcks otel en yak\u0131n metro dura\u011f\u0131na bir dakikal\u0131k y\u00fcr\u00fcme mesafesinde ve orta \u00e7a\u011fdan kalma Galata Kulesi'ne 2 km uzakl\u0131ktad\u0131r.\nKonforlu ve modern odalarda \u00fccretsiz Wi-Fi, d\u00fcz ekran televizyon, mini bar ve \u00e7ay-kahve se\u00e7enekleri vard\u0131r. Kul\u00fcp odalar\u0131nda ek olarak Nespresso makinesi vard\u0131r ve odalar \u00fccretsiz at\u0131\u015ft\u0131rmal\u0131klar ve i\u00e7ecekler servis edilen salona eri\u015fim sunar. S\u00fcitlerde mini mutfak ve/veya jakuzi ile salon bulunur.\nT\u00fcrk ve d\u00fcnya mutfa\u011f\u0131ndan lezzetler sunan; birinde \u015f\u0131k bir bar, di\u011ferinde ise \u015fehir manzaral\u0131 teras olan 2 l\u00fcks restoran vard\u0131r. Ayr\u0131ca lobi salonu, \u00e7ikolata d\u00fckkan\u0131, sezonluk teras havuzu, spor salonu ve \u015f\u0131k bir sa\u011fl\u0131kl\u0131 ya\u015fam-spa merkezi bulunur.",
+  "link": "https://www.themarmarahotels.com/taksim?utm_source=google&utm_medium=Local&utm_campaign=Google+My+Business",
+  "property_token": "ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ",
+  "serpapi_property_details_link": "https://serpapi.com/search.json?adults=2&check_in_date=2026-02-10&check_out_date=2026-02-11&children=0&currency=TRY&engine=google_hotels&gl=tr&hl=tr&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ&q=The+Marmara+Taksim",
+  "address": "G\u00fcm\u00fc\u015fsuyu, Tak-\u0131 Zafer Cd. No:3, 34437 Beyo\u011flu/\u0130stanbul, T\u00fcrkiye",
+  "directions": "https://maps.google.com/maps?hl=tr&gl=ZZ&um=1&ie=UTF-8&fb=1&sa=X&geocode=KZFmO-hkt8oUMT6n0gY5e0pC&daddr=The+Marmara+Taksim,+G%C3%BCm%C3%BC%C5%9Fsuyu,+Tak-%C4%B1+Zafer+Cd.+No:3,+34437+Beyo%C4%9Flu/%C4%B0stanbul,+T%C3%BCrkiye",
+  "phone": "+90 212 334 83 00",
+  "phone_link": "tel:+902123348300",
+  "gps_coordinates": {
+    "latitude": 41.036434199999995,
+    "longitude": 28.986090500000003
+  },
+  "check_in_time": "15:00",
+  "check_out_time": "12:00",
+  "rate_per_night": {
+    "lowest": "\u20ba6.820",
+    "extracted_lowest": 6820,
+    "before_taxes_fees": "\u20ba6.111",
+    "extracted_before_taxes_fees": 6111
+  },
+  "total_rate": {
+    "lowest": "\u20ba6.820",
+    "extracted_lowest": 6820,
+    "before_taxes_fees": "\u20ba6.111",
+    "extracted_before_taxes_fees": 6111
+  },
+  "featured_prices": [
+    {
+      "source": "Booking.com",
+      "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQMxoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYASABEgISTPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_0LHgzN4pKi3NTdLVM3AwJgJ387hA&adurl",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/icon_184.png",
+      "rooms": [
+        {
+          "name": "\u00c7ift Ki\u015filik Oda - K\u00f6\u015fe - \u015eehir Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xD6uv-31JjGPEYRjsTLoeah-pwitpXno9eB4TRVJwAaz86W_EbReq4X8fqL6nTeWaxTNHDHxJ3MmY6v54rjtGX-iAcRsGak3SHuEyduvRuhAz8_0VnlE4s94-fTgpg5pskphckBBDHDp2QjFD8GM7VuUQvxB1zroXrjYThyCJQGrtuLpTI4Ya1LwxEWotf7tIFsetcmInhttzBbovLvInPub76MWwOdvo",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yF2CVKqpdkKrcvQCWneXI1J5tOpJC6vW793ftVG-0au1UbnVkMfQC4xjjbYEmk-dobzf6E7G_5eFmNmlvd9J_k-LmJMu6TP41gYNtQ7Bgl8oRiAcbPYPv0A9g4xZmoJ2Q4Muf1Hf7wYVlTcPafdtqD6k3ZAmoIzxRMs-i497uU5mDXNaqTw7vzeqCr5i7U-X8ZNttDBCJxRENIEnMR47xIKHE0RA5o6Oo",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_z-R5hvHid3Ij0AJTG8SQA5CiKKgjnSPnQ5aqiVRK3IF4eAO0dHoX__NMddAzZ984ArR1d4LextA74hF_7Ckl-j73XLRm8rdn1M2ArnKas6wpc5Gv_bn2an1LNudhqH4YTT4hAFRy8xs-ULeNn80V4cB85BY5d-xO97bkprkLNQC2QCNxz0PaCN1IMFyXdYhYMiaS1JGjDl_8OMUMRccB0Vrd3Vc7qmYcA",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x2DG29soDHoELSTjRWVtZKh4xYnSIH0QZnNQzYWGEuOYRVSDQvD6JM2NhP4l14hT3pJrj-U9Vdzlnus_FBSX8n1zD04DR-v5DK-SD4Ezfxzfhx47tn5W3KpoLtDCh6uDkfeElRsEVJCnSU4NHG0lFg8zSs2mzdZ_K1r2P-sYhC8XRiOCoxNFmwxym21lCg5IO4b_fTIT9mTcWBSq9fcx2FsATMyKCxWg",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yYwig1mHV8X5d5J52MB3qBO7y370LLyEsXkmyi8uaZAgy49tKhEORwPhJukNvggAi6RQXL4VftmVPBYZOUDfNcmaR6dEeGN1XKeE9DUO4uU3SVdpqDX0ptsJLcSOvFG5IAEBCNTa9Rm-jSCfsG0WbO_jqm99GbO0PjmJv4CrmDbFK6zvVj109lW9Bz6gB6o21UUV7pWccJN5j1X3LEPZs38dfP5i7MgVE",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xJxJUXpxgVmVp9b6u0TDqjMiGxJ61Skl3buMzGie-8o1nrjjt0GAIh2faEhVURVT5a1CF-dtb5_kv54F0eIozqIKo5-UJjFjLCGjOyK3hx2GfeKk2CqTY6E7ZZPK_NfSwyz0xDBsTTi4XDgo-aL53npCNiI_eEClrUK57LIj-5daxUspENKh7cL2Kzxyv0vEAJWugYji6RSBSSTDJFxkcfDI9hEyYV_w"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQNhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYASAEEgL5ufD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3qbTbn1kvJW_S3y9ELYziRVSO6eQ&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba8.561",
+            "extracted_lowest": 8561,
+            "before_taxes_fees": "\u20ba7.644",
+            "extracted_before_taxes_fees": 7644
+          },
+          "total_rate": {
+            "lowest": "\u20ba8.561",
+            "extracted_lowest": 8561,
+            "before_taxes_fees": "\u20ba7.644",
+            "extracted_before_taxes_fees": 7644
+          }
+        },
+        {
+          "name": "Deluxe \u00c7ift Ki\u015filik veya \u0130ki Yatakl\u0131 Oda - \u015eehir Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yWpm9qWdXcaa3iazZ_CGpRoP4s5MzoNg3wS5a8uDTeB0TFX5m5D9Rz55NmvDgLxvaI53KHN-pyHkwXHv4fUFKKv2uixsEE9CUaRINUkzXLUg2gEh_j7SyyEPDka-3UXIf8ocpkrQ3ua3krbLCvCPJCkiEgLakojHVIeXQIlg5v7StKVD8wD8fibXpXIpZ5PU7BObBgAWwkXQ1-CvmFJuKnHPlhhfDu-g",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_y_lN5fMS_JSx7R9A0axKZgj6bQWfdVSf7nG-JKlghB80FhdaV7h2wprMxOhK1Bz20l-EXb35YIoXnfSqy9JIkBk2g9MwwfBmVxwjiiQWXVvcl-H8H9SXjgUu6TfimievLDWkTsSSImAM7pCrsf-H_f-uhqWLTEgDraVfDq12zneV41ucUPC4aQqiHtVIItyI-LXYXvDmdomxVzZOgl1dIXoHXcbOGiE8o",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xrxgFc_PMD8SVtAajuC4ffUEZYdDrIieonpEGqEhBvMviwzuxlD1YeEd9u9OsiWQYrdE_QpV-1XsTK99wKLldhbcqXDeXW9TAF48P4qi6xZN9dDmQTP0VIEqZth0SaeTntXjFti4HkO1NmQBRSIiKzOTskSuYSbkDj1Df00DmtmW-S5RjrJYYbXEl4AR38m6Axicfoh4wprF8RRqvYyrWZGA9eI2T6Lg",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wQWrtX9ybPWkWvEGYAca5iqvVFz2SDGEZcNE2C_uFXWrWfje-6GL47C38scOomrpehR0FK9sR4t1iPAc61ASkVhms64EXPyY4hRC-eS3uNKsVj_SH7sqrEjIwQ2jgIuVcDU9ar-4n7vWlSllxj7vto9pQ67gvssFl0I-j_UOCxiZzgHT12J42R9e6guj_5dLaXdfuBYGZ9f6otF0Rd1muXXk6yKQiv6g",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zB9SLt0oktEn73S1VLEdsS6Z_DVYO61BweDxGj3zldjwYscxBodfRvKPmFouz37ZXQNRQri2X-O99LJ9DSY7WS7-p4SKydfsl4ZQyM6RqHkrPxQEJXRqIoNW6_x23n2QaQ9hP0DJMrGz-aWTjINnFf1Og00yfNqZsF8y4gzNW7nWFZi6mic_i9t_xH_LUhWVq5lPjcnoZ5H71UtBZQDU3Au0Spg-3mStc"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQOhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYASAIEgK6-fD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_1-8nQ5DP5cz-3DaLyRZmOpNTNPNA&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba10.273",
+            "extracted_lowest": 10273,
+            "before_taxes_fees": "\u20ba9.172",
+            "extracted_before_taxes_fees": 9172
+          },
+          "total_rate": {
+            "lowest": "\u20ba10.273",
+            "extracted_lowest": 10273,
+            "before_taxes_fees": "\u20ba9.172",
+            "extracted_before_taxes_fees": 9172
+          }
+        },
+        {
+          "name": "Deluxe \u00c7ift Ki\u015filik veya \u0130ki Yatakl\u0131 Oda - Bo\u011faz Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wvF632-GAApRGJo8WmCXYZqeKfVEzgFmXFBcvGCFpuRX1eiauWHgFMIIoFz4gfpITkmZjl662pIMjjuVMbOi53pPw0O1RJeKQ1eSSP06bVzHMGwdlKNAYxSg64W_bgFLOE3q2qCghJYD24Sx7KRts8KXhbthWOehNDg5ELAYi0zXqZivZADCnqQ0b4LkWZUfOeuuLzlFQ7Ok__pgqVON6kstXUZzoCu8s",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_w0dpzr_zPJMw8CCmeeWIsea_2W5oMApXY4T93Ylqp0GbLaQaGj6VRlY-mtpSsvSxIEGqSEnW9Al6V9pIttwjF9XxWS6ggH8RVYTSIzn1wd1UvM-IKN5XOcghu9omj6zLVTDQd226UBI43GT6gmWzLxByJROuK3Jxjm4-E1nymmEvKSMYVCohjf2ie0K7mWi-s129HwsMY90VkacHqOd1e4bikKM18YpJE",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zbliM8_HyRE7YApZqEiGpXU5lNQlVbxh6T3iQ0lhaR4HGQ9Bl41I5YDVaVwSc2_6BXAfgVQEQDB5AuOncM52O2J1fiajcwiGVavYdj-UPXkLafYmtj9uprgn0TrP5_nPIf9ihxxgPAMowsgIhvlUu0VKzQsYZ0h7hN6RYedaBuVbFvgJTIJH-FCq9KCfv36YUkSL-cj7Ertvo6cGDnVrfIdCyUkGUNf_w",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xYdAH378qCX2lD5DPjaHPOvHSRLCjZdhHdzwFUv0NaAWWd0fO7FcfJTrctmrOxT4z2wx_FIW_lwlhQfSbBF0KUcPCCUwpcrVFplZW8M-mwOGEeCyOQmOZRWh8bNBBE7QiggxSm2b5k6ErHJou2sme1Nk_H0hBwffWRcYuV-q_BnHDQqjqAyb8nRISFT310efuUsFZyF_mSQCCIqaFZMgLbxWLFIm8XA98",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xsr5_1f-ehBeTg3t0U0hEZfyBnG2dfBeQltNI6rAzoR_h5mPzYvPHtgGGtJdiiCZw1yO6-eqM8sOw6SiCEZiulrxmgKmNw3XKLvFsWUVxVIta3SbaghtOX7dW4MAbnIx8xtAq8jWx2n4CkCmU7fF7VNaYsQrXSEZSbuYaxCDskcTybqQ6HfdN8FKTZ6puKLfXsKI2Zamj2eTzQ0-LoEIHoRcK2hw1HPvI",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yP0Qs2UGIOaM-awTLuPeXVkxhixwkrb56KSMyPlS-hSr4hg-B85zyhz71LjbwpOWTZdhB6yl1JFAWtQOht56nEDNel7j2orchhqt9iUox9VaRZTiEgrmduOu5rrMpnOAaPKQO5KHseVdkiHiuOjHn608EDRMwS9oNo8fq6qEudfYM3Fe2pm3a8Py9UDcwTM73rFNS7u-aYejP5p_gw0G_PaQz9mk3oltY",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xPkmiVnL5e2pCSIIA-6IP_xtssWmp_5_rwNdIvklChxLEpDYEFnWRncpf9vfHNplT1b3BzFGUhMJKPCJpx6q-Dr6CNTCyLNSqcfosI6VPLOcOvOannaRgyHyAFfK5t6YbtD8dyV-YkFUkTMu00P7oszUEmVpaJxoYx_2VxooKM7Nh1z2EC-2ls54T-2QB1BbSrNxLj4_j4_-cdFdj56polZTmHjU13IA",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xjTM2jWoE9PuIiFndY2D-oBlB6p8SvXNg9UL4ol4CXBYnqOTJx1duzdL4IuzYUU5TqF60mTBf83o97TF-hani-q2Jk1LSaFm2lilN-5tRC3Mo0SbJJbdlGrAva51CG4ws15dMWBmJxfsy7CF00j1aOdWAm2U_qxaTLhSUubjlAqkdQyogGWcWtwgs-6usL7JRwsJumY-G-Ch27git0NaE5g2TmHLGGn_4",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xh9akTCw2x5CVAMXGF5vyh-qkBYuGWyDy7oSt2DG7zgnx6p1Z9hpcrlR2Q-0xu2mIFxiQD6vay_MuI2VobywI5WYiNJZomGI10px0HsPZZxIObj5TPaxqKDiEsByi9WfGaWzuokzeZ6srY5XRfu5PtTuQhz4HVjnw5aY1cuUi-px5b9GySQhhbWb4P6EgRpXTskHMuDDVfCuJSfUJOR_zkBSii2stBY3s"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQQBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYASAOEgKFyfD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3BOwk5UDGt4uLcHEtjHBS0fw4T7A&adurl",
+          "num_guests": 3,
+          "rate_per_night": {
+            "lowest": "\u20ba15.838",
+            "extracted_lowest": 15838,
+            "before_taxes_fees": "\u20ba14.141",
+            "extracted_before_taxes_fees": 14141
+          },
+          "total_rate": {
+            "lowest": "\u20ba15.838",
+            "extracted_lowest": 15838,
+            "before_taxes_fees": "\u20ba14.141",
+            "extracted_before_taxes_fees": 14141
+          }
+        }
+      ],
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba7.638",
+        "extracted_lowest": 7638,
+        "before_taxes_fees": "\u20ba6.819",
+        "extracted_before_taxes_fees": 6819
+      },
+      "total_rate": {
+        "lowest": "\u20ba7.638",
+        "extracted_lowest": 7638,
+        "before_taxes_fees": "\u20ba6.819",
+        "extracted_before_taxes_fees": 6819
+      }
+    },
+    {
+      "source": "Travelocity.com",
+      "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQARoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiABEgJBl_D_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_14NoOi_ar-UmyQFgHcjkfnRbI3Cg&adurl",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/icon_185.png",
+      "rooms": [
+        {
+          "name": "Deluxe Oda, \u015eehir Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xYjvQcMQjZp2JIoLPE9zzhSIrS5l4HH2McaHrWYjhe2EMt3T1KjRkk4wB_43JYlcKueqL7CW_guXORbc5axhCsLoyF5_wF468VMjO-NGgfQctPzy-vefUqzw-bctfRtozgEuzcMhMUa9AsPBk-AZw"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQAhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiACEgKphvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_0qmRsFR5X2w7Jw--PYLHxevMevHA&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba10.217",
+            "extracted_lowest": 10217,
+            "before_taxes_fees": "\u20ba9.122",
+            "extracted_before_taxes_fees": 9122
+          },
+          "total_rate": {
+            "lowest": "\u20ba10.217",
+            "extracted_lowest": 10217,
+            "before_taxes_fees": "\u20ba9.122",
+            "extracted_before_taxes_fees": 9122
+          }
+        },
+        {
+          "name": "K\u00f6\u015fe Bo\u011faz Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zFoHtaV2HvnhTf5Bs3SYlGMzCU6lWHinv4wP8fSjHJzmsawgXMKjbfZeu_SRqnp0vuZivu3mvCQljo9c3P8TTLYvpKyvI6t7VRPB0ckaxt7QN52ej18miw8Heel8jaZ8XxDfBe-6aQO4_3szOySA"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQBhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAGEgIzpvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3170Q6MXqrLkD7X6E3ItTd90TweA&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba11.495",
+            "extracted_lowest": 11495,
+            "before_taxes_fees": "\u20ba10.263",
+            "extracted_before_taxes_fees": 10263
+          },
+          "total_rate": {
+            "lowest": "\u20ba11.495",
+            "extracted_lowest": 11495,
+            "before_taxes_fees": "\u20ba10.263",
+            "extracted_before_taxes_fees": 10263
+          }
+        },
+        {
+          "name": "Deluxe Oda - Bo\u011faz Manzaral\u0131 ",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yx_SUVW2qDrJai7uj6FVvE1puMdATz_1Ru0NkUK7xMjAp53jL3p77vcUWbTR8WONDk_LIttDgo9snQcRPbQTJ2xMfnSu0OI8ebqKz8HIzxbNVL4B56stVn0nZUUEtAWqwNlqHcftYVCLuKY4-wpGU",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wj1XjDbMK_QmGN2fk9lci1fHXfx_gsoPTd7kJkZs_xiyRdH7y3IOqTEyQEKeecSccwB6IfmovAYjSdArBtFjyR6UUed6sM82oln4qJPTbMK20Zz49mwGHRY53G1gx9aZZrwxrgXpFclmZeXSGlErU"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQChoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAKEgLkEfD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_0uP9QjaXgq3qMOa4nOa4E6ixxIsw&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba13.197",
+            "extracted_lowest": 13197,
+            "before_taxes_fees": "\u20ba11.783",
+            "extracted_before_taxes_fees": 11783
+          },
+          "total_rate": {
+            "lowest": "\u20ba13.197",
+            "extracted_lowest": 13197,
+            "before_taxes_fees": "\u20ba11.783",
+            "extracted_before_taxes_fees": 11783
+          }
+        },
+        {
+          "name": "Club K\u00f6\u015fe \u015eehir Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zNqFApun3wzADut2-9kdfIMR9MGR-ir8Ot2F5Z1YVIzMMIQxSjaLwzsvmIWMELEAMcJMaTavHy6Hlm-hN7AvtFIWqm9k3w9TAFhFsOJhvVC51wllLsylWL8Ysi3EUPom3Ij2hoaexu3JORbL9BX_8"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQDhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAOEgJGq_D_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_13KsDTEVxMQcjBNQOpFOuSHgxpeQ&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba13.623",
+            "extracted_lowest": 13623,
+            "before_taxes_fees": "\u20ba12.163",
+            "extracted_before_taxes_fees": 12163
+          },
+          "total_rate": {
+            "lowest": "\u20ba13.623",
+            "extracted_lowest": 13623,
+            "before_taxes_fees": "\u20ba12.163",
+            "extracted_before_taxes_fees": 12163
+          }
+        },
+        {
+          "name": "Club Oda, \u015eehir Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xYjvQcMQjZp2JIoLPE9zzhSIrS5l4HH2McaHrWYjhe2EMt3T1KjRkk4wB_43JYlcKueqL7CW_guXORbc5axhCsLoyF5_wF468VMjO-NGgfQctPzy-vefUqzw-bctfRtozgEuzcMhMUa9AsPBk-AZw"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQEBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAQEgIdGPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_372ebUlQD_fbtzy9xuKyK4LgzE5Q&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba15.326",
+            "extracted_lowest": 15326,
+            "before_taxes_fees": "\u20ba13.684",
+            "extracted_before_taxes_fees": 13684
+          },
+          "total_rate": {
+            "lowest": "\u20ba15.326",
+            "extracted_lowest": 15326,
+            "before_taxes_fees": "\u20ba13.684",
+            "extracted_before_taxes_fees": 13684
+          }
+        },
+        {
+          "name": "Club Corner Bo\u011faz Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zFoHtaV2HvnhTf5Bs3SYlGMzCU6lWHinv4wP8fSjHJzmsawgXMKjbfZeu_SRqnp0vuZivu3mvCQljo9c3P8TTLYvpKyvI6t7VRPB0ckaxt7QN52ej18miw8Heel8jaZ8XxDfBe-6aQO4_3szOySA"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQEhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiASEgI50_D_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3iuE-0fvMfhtfWQ24sqNLiK2QLkQ&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba16.603",
+            "extracted_lowest": 16603,
+            "before_taxes_fees": "\u20ba14.824",
+            "extracted_before_taxes_fees": 14824
+          },
+          "total_rate": {
+            "lowest": "\u20ba16.603",
+            "extracted_lowest": 16603,
+            "before_taxes_fees": "\u20ba14.824",
+            "extracted_before_taxes_fees": 14824
+          }
+        },
+        {
+          "name": "Club Oda - Bo\u011faz Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yx_SUVW2qDrJai7uj6FVvE1puMdATz_1Ru0NkUK7xMjAp53jL3p77vcUWbTR8WONDk_LIttDgo9snQcRPbQTJ2xMfnSu0OI8ebqKz8HIzxbNVL4B56stVn0nZUUEtAWqwNlqHcftYVCLuKY4-wpGU",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wj1XjDbMK_QmGN2fk9lci1fHXfx_gsoPTd7kJkZs_xiyRdH7y3IOqTEyQEKeecSccwB6IfmovAYjSdArBtFjyR6UUed6sM82oln4qJPTbMK20Zz49mwGHRY53G1gx9aZZrwxrgXpFclmZeXSGlErU"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQFBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAUEgJ8AvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_2f7pdEIeDKTAIvlqyOJL_WGsJ7pQ&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba18.306",
+            "extracted_lowest": 18306,
+            "before_taxes_fees": "\u20ba16.345",
+            "extracted_before_taxes_fees": 16345
+          },
+          "total_rate": {
+            "lowest": "\u20ba18.306",
+            "extracted_lowest": 18306,
+            "before_taxes_fees": "\u20ba16.345",
+            "extracted_before_taxes_fees": 16345
+          }
+        },
+        {
+          "name": "Family S\u00fcit, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wjzbxe0K45SlP05hihSa17GnXM0tU9UaEznvr11TaFRi0uUf7pB28PHZjT-oecJ5iputFtDpAXE0dicUvgFkeif_R389WME317_VRf49PdZIkAcjrkIgEl83dsNEJLUETF1RCoKgJzbHRsQ17U7TE",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xMkaixiPFRke8nJsd7626ezu4AfmeaCQ0eMTuvgWgJVJqA2Eo76o7ccvOd9dhLQkf4CP05vYtIhi7_HVALrzErAqjU0J3zUduX_IpF7-L-eCfty-2KLKqVaUuyDZv2wq_YitzL6NVnBNTij-yoCQ"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQFhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAWEgLwNfD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_2Y_FfcIfp-1pHk05qTFe_BJVIO6A&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba22.138",
+            "extracted_lowest": 22138,
+            "before_taxes_fees": "\u20ba19.766",
+            "extracted_before_taxes_fees": 19766
+          },
+          "total_rate": {
+            "lowest": "\u20ba22.138",
+            "extracted_lowest": 22138,
+            "before_taxes_fees": "\u20ba19.766",
+            "extracted_before_taxes_fees": 19766
+          }
+        },
+        {
+          "name": "Bosphorus S\u00fcit, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zNh6zL0H2UZXyk0rSWes5Q6--_CsIbp3IjkZvthP3bJ4Qg9nxVyUKQkvKVdHvA2vc4YtLwKPLLrlzg1Dg7r3rFBt_cEqhbECr7pPVLJbIi0zn_ZS-u6HV_je4x5Jx3GWrGxuOIndszbiGyMTLOeRk",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zYPbAdR_mkGyuVRTT5b9Jpiv3u_aj--b_ql3cB-Mhl986i3CF1Uetg53CrGBiR1ck34crpTbm2YXPpa2__QaNL0dfRf1D_oGbi38NJE4pJE5yaH7xzr8f38gNMH2IuTAd1nxVj3SeDOBVR9fWYIcY"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQGBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAiAYEgJJKfD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_36tufymlrPAsp7X1PhksMHtw_Wyg&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba24.266",
+            "extracted_lowest": 24266,
+            "before_taxes_fees": "\u20ba21.666",
+            "extracted_before_taxes_fees": 21666
+          },
+          "total_rate": {
+            "lowest": "\u20ba24.266",
+            "extracted_lowest": 24266,
+            "before_taxes_fees": "\u20ba21.666",
+            "extracted_before_taxes_fees": 21666
+          }
+        }
+      ],
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      }
+    },
+    {
+      "source": "Vio.com",
+      "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQQxoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYAyABEgKDIvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3I75zCpdEgyapdwbGiufUWCU0R1Q&adurl",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/0a94aea5-2080-4e1a-971b-c5da9d06fc63.png",
+      "remarks": [
+        "En iyi fiyat g\u00fcvencesi",
+        "Rakipsiz teklifler"
+      ],
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      },
+      "total_rate": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      }
+    },
+    {
+      "source": "eDreams",
+      "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQGxoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCABEgIiHvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3TuCaSuGAbzUPPk2Gn2L5i5DCw9g&adurl",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/05208793-cd83-4e8b-b76c-7ff346e093e3.png",
+      "rooms": [
+        {
+          "name": "Deluxe Oda, \u015eehir Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xYjvQcMQjZp2JIoLPE9zzhSIrS5l4HH2McaHrWYjhe2EMt3T1KjRkk4wB_43JYlcKueqL7CW_guXORbc5axhCsLoyF5_wF468VMjO-NGgfQctPzy-vefUqzw-bctfRtozgEuzcMhMUa9AsPBk-AZw"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQHBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCACEgLl0PD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3ohlzUxerq8YDiTya0anX1aVFGug&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba10.217",
+            "extracted_lowest": 10217,
+            "before_taxes_fees": "\u20ba9.122",
+            "extracted_before_taxes_fees": 9122
+          },
+          "total_rate": {
+            "lowest": "\u20ba10.217",
+            "extracted_lowest": 10217,
+            "before_taxes_fees": "\u20ba9.122",
+            "extracted_before_taxes_fees": 9122
+          }
+        },
+        {
+          "name": "K\u00f6\u015fe Bo\u011faz Manzaral\u0131",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zFoHtaV2HvnhTf5Bs3SYlGMzCU6lWHinv4wP8fSjHJzmsawgXMKjbfZeu_SRqnp0vuZivu3mvCQljo9c3P8TTLYvpKyvI6t7VRPB0ckaxt7QN52ej18miw8Heel8jaZ8XxDfBe-6aQO4_3szOySA"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQIBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAGEgIfIPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_01seh8V9r6SD-jScqEAOu-lk9PSw&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba11.495",
+            "extracted_lowest": 11495,
+            "before_taxes_fees": "\u20ba10.263",
+            "extracted_before_taxes_fees": 10263
+          },
+          "total_rate": {
+            "lowest": "\u20ba11.495",
+            "extracted_lowest": 11495,
+            "before_taxes_fees": "\u20ba10.263",
+            "extracted_before_taxes_fees": 10263
+          }
+        },
+        {
+          "name": "Deluxe Oda - Bo\u011faz Manzaral\u0131 ",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yx_SUVW2qDrJai7uj6FVvE1puMdATz_1Ru0NkUK7xMjAp53jL3p77vcUWbTR8WONDk_LIttDgo9snQcRPbQTJ2xMfnSu0OI8ebqKz8HIzxbNVL4B56stVn0nZUUEtAWqwNlqHcftYVCLuKY4-wpGU",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wj1XjDbMK_QmGN2fk9lci1fHXfx_gsoPTd7kJkZs_xiyRdH7y3IOqTEyQEKeecSccwB6IfmovAYjSdArBtFjyR6UUed6sM82oln4qJPTbMK20Zz49mwGHRY53G1gx9aZZrwxrgXpFclmZeXSGlErU"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQJBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAKEgJW-fD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_06nLL0PaLXVzea_rPX6X9o15FRNw&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba13.197",
+            "extracted_lowest": 13197,
+            "before_taxes_fees": "\u20ba11.783",
+            "extracted_before_taxes_fees": 11783
+          },
+          "total_rate": {
+            "lowest": "\u20ba13.197",
+            "extracted_lowest": 13197,
+            "before_taxes_fees": "\u20ba11.783",
+            "extracted_before_taxes_fees": 11783
+          }
+        },
+        {
+          "name": "Club K\u00f6\u015fe \u015eehir Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zNqFApun3wzADut2-9kdfIMR9MGR-ir8Ot2F5Z1YVIzMMIQxSjaLwzsvmIWMELEAMcJMaTavHy6Hlm-hN7AvtFIWqm9k3w9TAFhFsOJhvVC51wllLsylWL8Ysi3EUPom3Ij2hoaexu3JORbL9BX_8"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQKBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAOEgL5e_D_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_1o_8H09RvQ81zYmt3eMgVhlNqcUA&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba13.623",
+            "extracted_lowest": 13623,
+            "before_taxes_fees": "\u20ba12.163",
+            "extracted_before_taxes_fees": 12163
+          },
+          "total_rate": {
+            "lowest": "\u20ba13.623",
+            "extracted_lowest": 13623,
+            "before_taxes_fees": "\u20ba12.163",
+            "extracted_before_taxes_fees": 12163
+          }
+        },
+        {
+          "name": "Club Oda, \u015eehir Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xYjvQcMQjZp2JIoLPE9zzhSIrS5l4HH2McaHrWYjhe2EMt3T1KjRkk4wB_43JYlcKueqL7CW_guXORbc5axhCsLoyF5_wF468VMjO-NGgfQctPzy-vefUqzw-bctfRtozgEuzcMhMUa9AsPBk-AZw"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQKhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAQEgKlFvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_2Xnk8j5rm3BwblDjc2FFBHtLA8fg&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba15.326",
+            "extracted_lowest": 15326,
+            "before_taxes_fees": "\u20ba13.684",
+            "extracted_before_taxes_fees": 13684
+          },
+          "total_rate": {
+            "lowest": "\u20ba15.326",
+            "extracted_lowest": 15326,
+            "before_taxes_fees": "\u20ba13.684",
+            "extracted_before_taxes_fees": 13684
+          }
+        },
+        {
+          "name": "Club Corner Bo\u011faz Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_x4TlhrbPNRisKy3N6Owd9KmkeSEO40g93B4FZQC0qHMC9OU_HV-p-1i0UeuqDeF8oX_gNnmrDqW6dpj4kAPhTvdVRFCwonfiqv1EvBYOpGXwLEXtiFGQd21rr6S73q4MrXUYFt9JmfhrAItsEoug",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_zFoHtaV2HvnhTf5Bs3SYlGMzCU6lWHinv4wP8fSjHJzmsawgXMKjbfZeu_SRqnp0vuZivu3mvCQljo9c3P8TTLYvpKyvI6t7VRPB0ckaxt7QN52ej18miw8Heel8jaZ8XxDfBe-6aQO4_3szOySA"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQLBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCASEgLXFvD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_1KeUT41xHZjWuv1Ez-7HwX-qFb7A&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba16.603",
+            "extracted_lowest": 16603,
+            "before_taxes_fees": "\u20ba14.824",
+            "extracted_before_taxes_fees": 14824
+          },
+          "total_rate": {
+            "lowest": "\u20ba16.603",
+            "extracted_lowest": 16603,
+            "before_taxes_fees": "\u20ba14.824",
+            "extracted_before_taxes_fees": 14824
+          }
+        },
+        {
+          "name": "Club Oda - Bo\u011faz Manzaral\u0131, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_yx_SUVW2qDrJai7uj6FVvE1puMdATz_1Ru0NkUK7xMjAp53jL3p77vcUWbTR8WONDk_LIttDgo9snQcRPbQTJ2xMfnSu0OI8ebqKz8HIzxbNVL4B56stVn0nZUUEtAWqwNlqHcftYVCLuKY4-wpGU",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wj1XjDbMK_QmGN2fk9lci1fHXfx_gsoPTd7kJkZs_xiyRdH7y3IOqTEyQEKeecSccwB6IfmovAYjSdArBtFjyR6UUed6sM82oln4qJPTbMK20Zz49mwGHRY53G1gx9aZZrwxrgXpFclmZeXSGlErU"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQLhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAUEgLnGfD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3HNtwl_87CkLR9eSb4KqtCv8AGqA&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba18.306",
+            "extracted_lowest": 18306,
+            "before_taxes_fees": "\u20ba16.345",
+            "extracted_before_taxes_fees": 16345
+          },
+          "total_rate": {
+            "lowest": "\u20ba18.306",
+            "extracted_lowest": 18306,
+            "before_taxes_fees": "\u20ba16.345",
+            "extracted_before_taxes_fees": 16345
+          }
+        },
+        {
+          "name": "Family S\u00fcit, Lounge Eri\u015fimi",
+          "images": [
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_wjzbxe0K45SlP05hihSa17GnXM0tU9UaEznvr11TaFRi0uUf7pB28PHZjT-oecJ5iputFtDpAXE0dicUvgFkeif_R389WME317_VRf49PdZIkAcjrkIgEl83dsNEJLUETF1RCoKgJzbHRsQ17U7TE",
+            "https://lh3.googleusercontent.com/hrppk/ANjXD_xMkaixiPFRke8nJsd7626ezu4AfmeaCQ0eMTuvgWgJVJqA2Eo76o7ccvOd9dhLQkf4CP05vYtIhi7_HVALrzErAqjU0J3zUduX_IpF7-L-eCfty-2KLKqVaUuyDZv2wq_YitzL6NVnBNTij-yoCQ"
+          ],
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQMBoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBCAWEgITmPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3QSEusAU4bwA5Yan6AxVevjmBeOw&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba22.138",
+            "extracted_lowest": 22138,
+            "before_taxes_fees": "\u20ba19.766",
+            "extracted_before_taxes_fees": 19766
+          },
+          "total_rate": {
+            "lowest": "\u20ba22.138",
+            "extracted_lowest": 22138,
+            "before_taxes_fees": "\u20ba19.766",
+            "extracted_before_taxes_fees": 19766
+          }
+        }
+      ],
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      }
+    },
+    {
+      "source": "ZenHotels.com",
+      "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQRRoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBSABEgI0aPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3RdlxGcpjZRk7VvHsL-MGrTVQ3oQ&adurl",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/4183134106872331441.png",
+      "rooms": [
+        {
+          "name": "Corner Double room with city view (\u00e7ift ki\u015filik yatak) (k\u00f6\u015fe ba\u015f\u0131 oda) - Fiyat \u00fccretsiz iptal yok, Yemek dahil de\u011fil. \u00d6demeyi otelde yap.",
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQRhoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBSACEgLy-fD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_351whwbOGJBlxDilsvLlxDFHsvAg&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba8.500",
+            "extracted_lowest": 8500
+          },
+          "total_rate": {
+            "lowest": "\u20ba8.500",
+            "extracted_lowest": 8500
+          }
+        },
+        {
+          "name": "Corner Double room with city view (\u00e7ift ki\u015filik yatak) (k\u00f6\u015fe ba\u015f\u0131 oda) - Fiyat \u00fccretsiz iptal yok, Yemek dahil de\u011fil. \u015eimdi \u00f6de.",
+          "link": "https://www.google.com/aclk?sa=l&ai=DChsSEwiI4of_2qmSAxWFpGYCHeipNWEYACICCAEQRxoCc20&co=1&gclid=EAIaIQobChMIiOKH_9qpkgMVhaRmAh3oqTVhEAoYBSADEgIpJPD_BwE&cid=CAASuwHkaL_int-Kv6dmEUpb4l1ji8qXLIPFg1DoWIscn51gfNjdoDrHBTEjSXyNgpONbZHrtqSheyZArEEMn9NfK_n10MaeQQ9tcoKh96zLK2fRLWMEMHG7Urm5G_vv7lJCsUNYaBUxUqJP8u-jqF5X6C-F1se99Wfvocsyup1V9NMYy0ofjtPIpu07kibDZjLTf5C4WDe4SBe94VVWf2hSO7CKLatYT1EsmnsHN_ZkF3G47oJrdxUNsWCfHaoR&sig=AOD64_3X5THbnPceHKkn1w71bss1Z4nX9A&adurl",
+          "num_guests": 2,
+          "rate_per_night": {
+            "lowest": "\u20ba8.515",
+            "extracted_lowest": 8515
+          },
+          "total_rate": {
+            "lowest": "\u20ba8.515",
+            "extracted_lowest": 8515
+          }
+        }
+      ],
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.500",
+        "extracted_lowest": 8500
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.500",
+        "extracted_lowest": 8500
+      }
+    }
+  ],
+  "prices": [
+    {
+      "source": "Vio.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsxNNmEjX-07pG6cT0AJI_-faC4C8ilzzJ-NcIAf_20NJRxTcIalKZiSuEKOpRYQXDY3PERBJCH21aVcMudAJgcSdYvvKr7jXZFpzFK7aDHvPtVI1fIAAB_iMEpm-26jDfOgjHg4m3WGQM81ckVi-hkAmuXrLrTII3Px-laO8NUWwE455LO0dW7w&pcurl=https://deals.vio.com/?sig%3D73aca13c7f952d2641c156f3e69125e1eb497c325f122828ee5aa8797168b9a12d32303331333438363233%26turl%3Dhttps%253A%252F%252Fwww.vio.com%252FHotel%252FSearch%253FcheckIn%253D2026-02-10%2526checkOut%253D2026-02-11%2526currency%253DTRY%2526forceCurrencyChange%253D1%2526lang%253Dtr%2526forceLanguageChange%253D1%2526rooms%253D2%253A%2526utm_source%253Dgha%2526utm_medium%253Dcpc%2526hotelId%253D1053231%2526userCountry%253DUS%2526profile%253Dr2d2m73kn8%2526preferredRate%253D6819.54%2526label%253Dsrc%25253Dgha%252526cltype%25253Dhotel%252526datype%25253Dselected%252526gsite%25253Dlocaluniversal%252526vf%25253D0%252526ucountry%25253DUS%252526udevice%25253Ddesktop%252526hotel%25253D1053231%252526day%25253D10%252526month%25253D02%252526year%25253D2026%252526los%25253D1%252526price%25253D6819.54%252526currency%25253DTRY%252526cid%25253D%252526listid%25253D%252526rateid%25253DUS_D%252526closerateid%25253D%252526promo%25253D0%252526isPrivateRate%25253D0%252526isAudienceUser%25253D0%252526isPaidClick%25253D0%252526%2526cp%253Df2ODjfgUbWwCgtDcDAyTUFXWVNJMBisqN7LBiAEOPrX48QDQhYI4MTwr5KZ5NfRARCLbiDiDCoDVVNE&s=AD1XQnmeNxbzOQPqnZ6Jf9P9D_HD&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/0a94aea5-2080-4e1a-971b-c5da9d06fc63.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      },
+      "total_rate": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      }
+    },
+    {
+      "source": "Etrip.net",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsyA0FhOhL7EtVDEgm3vPZPYUnpBsedDqMlSq84C8MP1O79pkO3yIYRphvEraL32VQtr3UFxKzrkU9bt-BrN5ZhuvpkG79rd2dla5TYnJpxcT2SoAom-Uslf2Osb2lqwlnqIQND3q5atxJv4GhyBcVOD-pW74B01VL3jdlSlaxpr0dhtbL4&pcurl=https://deals.etrip.net/?sig%3De9cc68956712e1e5d60f579a67e54afadd83f5d631dc9782cc50d47864de2f2c2d32303330363031313335%26turl%3Dhttps%253A%252F%252Fsearch.etrip.net%252FHotel%252FSearch%253FcheckIn%253D2026-02-10%2526checkOut%253D2026-02-11%2526currency%253DTRY%2526forceCurrencyChange%253D1%2526lang%253Dtr%2526forceLanguageChange%253D1%2526rooms%253D2%253A%2526utm_source%253Dgha%2526utm_medium%253Dcpc%2526hotelId%253D1053231%2526userCountry%253DUS%2526profile%253Dr2d2m73kn8%2526preferredRate%253D6819.54%2526label%253Dsrc%25253Dgha%252526cltype%25253Dhotel%252526datype%25253Dselected%252526gsite%25253Dlocaluniversal%252526vf%25253D0%252526ucountry%25253DUS%252526udevice%25253Ddesktop%252526hotel%25253D1053231%252526day%25253D10%252526month%25253D02%252526year%25253D2026%252526los%25253D1%252526price%25253D6819.54%252526currency%25253DTRY%252526cid%25253D%252526listid%25253D%252526rateid%25253DUS_D%252526closerateid%25253D%252526promo%25253D0%252526isPrivateRate%25253D0%252526isAudienceUser%25253D0%252526isPaidClick%25253D0%252526%2526cp%253Df2ODjfgUbWwCgtDcDAyTUFXWVNJMBisqN7LBiAEOPrX48QDQhYI4MTwr5KZ5NfRARCLbiDiDCoDVVNE&s=AD1XQnm3vIoxNUBLLhIPP-wBwJk7&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/10384618555932340059.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      },
+      "total_rate": {
+        "lowest": "\u20ba6.820",
+        "extracted_lowest": 6820,
+        "before_taxes_fees": "\u20ba6.111",
+        "extracted_before_taxes_fees": 6111
+      }
+    },
+    {
+      "source": "Stayforlong.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OszhZmMnzM9Nax4F9qKmUTEoD_E-_6GGN58vY_pcJOX8oN_iJ-I4yuk0Xwxo46sfErnS3Y8EJGKNr292bqEaTGsSMCDlcNZ0x6_YIfDyHeLevb2bLAYiEMaTfj-o1m9fxqoHJTNunJ2jUq8rTs-Jfh-uNFInqYeoqCk_aQHq2SM6gfu3IIQ_eqbpytjpXw&pcurl=https://www.stayforlong.com/hotel-detail/39500?checkin%3D2026-02-10%26checkout%3D2026-02-11%26adults%3D2%26metadevice%3Ddesktop%26aid%3Dgha%26market%3Dus%26lang%3Dtr%26total%3D159%26query_type%3Dpull%26ch%3D0%26adclick%3Dfree%26defaultdate%3Dfalse%26googlesite%3Dlocaluniversal%26p%3Dc2f4f3399e96cc130f4332741477025b%26r%3Dd26bd7943b44bb4b392ebe07df52ee0c%26source%3Dmeta&s=AD1XQnmWbCZovbCP94_BXlrqVFQb&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/b322e53d-e0bf-472d-a84a-9109628ca027.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba6.895",
+        "extracted_lowest": 6895
+      },
+      "total_rate": {
+        "lowest": "\u20ba6.895",
+        "extracted_lowest": 6895
+      }
+    },
+    {
+      "source": "Trip.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OszIBfIHzDyF0cOP2uPiVJ7TwVaUlczsZupX1mBfLaJMPydss_f_hqbNvVXY83u21YABhch7UTLcO_vp3txvXRAFlTp4yYH2p0HM0kAt8P_OdOH_2FZSeRFGrpz_zHVdi4mMMMQ06pEzPskiuiFqGrOuItT-yjAvgimV2bMZcOTlxFNmEGI&pcurl=https://us.trip.com/hotels/redirect?hotelid%3D744495%26city%3D532%26shoppingid%3DMDUfxIb677XS%26adult%3D2%26children%3D0%26ages%3D%26checkin%3D2026-02-10%26checkout%3D2026-02-11%26curr%3DTRY%26Allianceid%3D15214%26Sid%3D1209572%26prid%3DLANG_US%26trip_sub1%3D10_02_2026_1_localuniversal_744495_US_desktop_selected___0_0-LANG_US-landing%26hpaopts%3Dstand%5BH4sIAAAAAAAA_-Ny4mKSYBJi4mCUsuBoeHJ0MZsQo5FBv6hFTxtjAMcMxvU7dHcwMl1kPHsGCLYkOTxkfBO4Q671c4rDC8blezs2My5gYZTi8XUJTavwTDIzN48IVmDUeDnr3mk2D8YgNhNjZwNL1ygZLmZPvyDB3LDadduSNttLMYcGuyjmN7Ic7b8o7ZDEmpqnGxqcsVSki5HJg3EVIzsXs4GRoQDTJ0Z-ZHPjjUwA83Pema0AAAA%5Dfgt%5B1%5D%26br%3D7268.83%26tf%3D778.88%26display%3Dexavg%26locale%3Den_us%26crn%3D1%26roomid%3D1685156352%26allianceid%3D15214%26sid%3D1209572&s=AD1XQnnL-LTF-lnDuA807pmaUY1Z&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/b8089cb0-34b4-458c-8749-9bc4614baba4.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba7.269",
+        "extracted_lowest": 7269,
+        "before_taxes_fees": "\u20ba6.490",
+        "extracted_before_taxes_fees": 6490
+      },
+      "total_rate": {
+        "lowest": "\u20ba7.269",
+        "extracted_lowest": 7269,
+        "before_taxes_fees": "\u20ba6.490",
+        "extracted_before_taxes_fees": 6490
+      }
+    },
+    {
+      "source": "Prestigia.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OszphC7wLi6D3XMTxWIzS7aCpOjg8-MnNsB776zYzDOjNlGA_gZAXGv4IPNHQD7j-C9q57fIHe0mxkLS-SSiDlUAiQvhiYg-W8cEPPh8DdJIYu8k2WHx4fPSFjmVbVgui8yMfYU-qdZwVhwrCaZyg6XGb0y7rPx6FWSJgQNiRL-FkuvMDNaQi5VR&pcurl=https://www.prestigia.com/de/produit.php?idTarget%3D18872%26arrivee%3D2026-02-10%26depart%3D2026-02-11%26pid%3D15%26a%3D1000129%26guestsParams%3DW3siYWR1bHRzIjoyLCJjaGlsZHJlbiI6MCwiYWdlcyI6W119XQ%3D%3D%26dev%3D3%26pv%3DMTUwLjMwfDE3Ljc4fDAuMDB8ZmFsc2U%3D%26curr%3DTRY%26verif%3Dfalse%26ad_click%3Dfalse%26campaign_id%3D%26src%3D&s=AD1XQnnZ2nYh4rj4UxmMNVOG_lXo&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/icon_101283631.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba7.289",
+        "extracted_lowest": 7289,
+        "before_taxes_fees": "\u20ba6.518",
+        "extracted_before_taxes_fees": 6518
+      },
+      "total_rate": {
+        "lowest": "\u20ba7.289",
+        "extracted_lowest": 7289,
+        "before_taxes_fees": "\u20ba6.518",
+        "extracted_before_taxes_fees": 6518
+      }
+    },
+    {
+      "source": "Wego",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsxW-HnbpNMcAhlrQjCjO0ryMHGlKTUxVMk2QqMLH3JVKoXoOYwEGjVHavfPF8i439NyH7skZw0OWM-Dc-yhRASmKN9s4N3L2PlcphaYSiLwW49wjg1rL7-hD-FOeEieDSF99mv9pLBIqS0BpA-uUXXvuj4DESG2Ebeh8Pt816WxV-XC0A&pcurl=https://www.wego.com/hotels-handoff/searches/IST/2026-02-10/2026-02-11?guests%3D2%26wego_hotel_id%3D857650%26bow_only%3Dtrue%26ts_code%3D2f2fc%26wg_source%3Dmeta_distribution%26wg_medium%3Dgha%26wg_campaign%3Dfbl%26wego_currency%3DTRY%26ulang%3Dtr%26wego_price%3DVVNEOjE3MC4zNjowZGVjYWZmZWFjZTE4NTY3ZDc0MjhhMzY5ZjE0MDAwY2JiMzUyNTdjNjBhN2JhMDQ5YmI4OWM5NmU3YTdmNzc5OmFweWFjd2dwYXdxOjE3Njk0MTc3MjA6RDpVUzphODE1YWM0ZjRiMDliZTc5OjI6MDp0cnVlOmZhbHNlOlI%253D%26provider%3DaG90ZWxzLndlZ28uY29t%26no_app_links%3Dtrue&s=AD1XQnmdWyu2O8QGqseWaBVk_KXt&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/056bc8ad-af15-4ca3-b777-4ad816966428.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba7.388",
+        "extracted_lowest": 7388
+      },
+      "total_rate": {
+        "lowest": "\u20ba7.388",
+        "extracted_lowest": 7388
+      }
+    },
+    {
+      "source": "rehlat.co_en",
+      "link": "https://www.google.com/travel/clk?pc=AA80Oszvj7mkhwZoNNOHFVh77QyFiyCeA4n8louZ0G-KvP-iD-tIgJiGmkKAW3oFRR5DcoG65O5VfWeiJm84TA644xIJMYY93l3R8qqxmXx3RMXTrJhRnsD5HpRrOU6G1kgdkpuBZMm4m6X5wo6acb_AH1Nq6Pv_I3K4PMtMtLbW0TJ7ZOMEaU7j&pcurl=https://www.rehlat.co/en/cheap-hotels/profile/The-Marmara-Taksim-1079232?encrypted_payload%3DBAtaxAHI6M61LIAbaseAHI165M138LIAgpfAHI0LIAcAHI403LIAciAHIA2026K02K10ALIAcoAHIA2026K02K11ALIAhcAHI1079232LIAshcAHIA10c359ALIArAHIEBAaAHI2LIAcdAHI0LIAcdaAHIEFLIAtpAHI1CFLIAsiAHI1LIAskAHIA20260210J1J2J0J1Jzene1cf754e6192424482ad96a35fc1e586J1769441010ALIAcldAHIAGoogleALIAspAHI162M64LIAfpAHI171M748LIAmpAHI178M904LIAscAHIAusdALIAdtAHIA202601261523AC%26CustomerCountry%3DUS%26Currency%3DTRY%26Device%3Ddesktop%26identifier%3D768c8188-353f-4d1e-86b1-7f6cc7721e8e__2026-01-26T15:23:30%26utm_source%3DGoogleHotel%26utm_medium%3DMetaHotels%26utm_campaign%3DGoogleMetaHotels&s=AD1XQnnheP83XP0CNLB15kOt7GLt&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/300x300-221195557-%5BUngrouped%5D-20200625.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba7.448",
+        "extracted_lowest": 7448,
+        "before_taxes_fees": "\u20ba7.162",
+        "extracted_before_taxes_fees": 7162
+      },
+      "total_rate": {
+        "lowest": "\u20ba7.448",
+        "extracted_lowest": 7448,
+        "before_taxes_fees": "\u20ba7.162",
+        "extracted_before_taxes_fees": 7162
+      }
+    },
+    {
+      "source": "obilet.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80Oszz-EkX3C2jmVsBdkn08Yu3um79az6mJFtA6tgfUEoqGQ6OZwvKd1bW82r6KGYy4gUIy-pTJflXF3GYrqGJ2ZVvBMHB8nwKNBCwMbzMjmOb3KSXSW80Umk_0qhVr09y3Rb01rEYfWZ0SVqlv57ZNTo8AT6YUsVnp418UFe7Vgze6mGEE-m0cH0xkw&pcurl=https://www.obilet.com/otel-detay/the-marmara-taksim-101970/20260210-20260211/2ad?cur%3DTRY%26utm_source%3Dgoogle%26utm_medium%3Dmetasearch%26utm_content%3D693&s=AD1XQnmMyW_05-3powpI0Ykpdawz&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/d7e3285c-9ad8-4907-bd9f-755a69d4244b.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba9.263",
+        "extracted_lowest": 9263
+      },
+      "total_rate": {
+        "lowest": "\u20ba9.263",
+        "extracted_lowest": 9263
+      }
+    },
+    {
+      "source": "Travelocity.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsyZYJWY4vEPFnwfz4jYja-XXY76ZgZzSfG_8Cq8IUWOcnN4eX3BFgEz6u8tkJl5yuLi10Hr7ciM7ay6t2vt3SOGdPBZvfUd1E1Ddbjs1uELqZYj8zfqTlD6qF0LVcYzFbxqla5XQ_jP9m62JXZfyB_22vPJ5_UZq01c5MOTbrMICD2X5wpBU9DozH9XUtRd&pcurl=https://www.travelocity.com/Hotel-Search?selected%3D26048%26startDate%3D2026-02-10%26endDate%3D2026-02-11%26adults%3D2%26children%3D%26MDPCID%3Dtravelocity-US.META.HPA.ORGANIC.HOTEL%26MDPDTL%3DHTL.26048.20260210.20260211.DDF.15.CID..AUDID..localuniversal%26exp_curr%3DTRY%26exp_dp%3D8514.78%26exp_tx%3D912.45%26mctc%3D10%26rateplanid%3D206361100%26mpm%3D24%26mpn%3D201311773%26mpo%3DEC%26mpp%3D1&s=AD1XQnn8anMiBOilRwkvfILz3Kzm&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/icon_185.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      }
+    },
+    {
+      "source": "Qantas Hotels",
+      "link": "https://www.google.com/travel/clk?pc=AA80OswMdC7gL_R-No9k75rNBVEdd8YDJs7RAziP4OdzPBwRfYDzD92HGiIUWfXBmWZ3GIIxPWiY6M2pnSuoW90KfM4sJFPX97h35eqy0YlMn3QGkyuqt6shGnzTbQ34GWityo-J4IYZ2s9DQsxWwMmxFsW_5u0GAnnxJL8t4EZXUGf0fjb7LNra&pcurl=https://www.qantas.com/hotels/properties/32553?adults%3D2%26children%3D0%26infants%3D0%26checkIn%3D2026-02-10%26checkOut%3D2026-02-11%26utm_campaign%3DGoogleHotels%26adType%3D0%26utm_medium%3Dorganic-search%26utm_source%3DGoogle-Hotels%26utm_term%3D32553%26hotelID%3D32553%26hotel_campaign%3D&s=AD1XQnm0GcKu5mEFJP80YtLCaadt&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/icon_660369587.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.561",
+        "extracted_lowest": 8561
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.561",
+        "extracted_lowest": 8561
+      }
+    },
+    {
+      "source": "ZenHotels.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OszRzC-SoHem3_ZjJ9BCCMHmrt1UDy23jSw2t8H2B7JaMPrrgTjGLD4aySKE7hERy9UZGdNEYkxMu0Hcsdu4Z9GGjjcckm0Xm5dCSqZDn4w9o4mLAPv0r4OPjfkjsvQIfpEGreuIWXfdtXzi5ACsyl-dXk7SNIvjcJHq_W72LvUliubldaEA26oW&pcurl=https://www.zenhotels.com/go/rooms/7479272/?dates%3D10.02.2026-11.02.2026%26cur%3DTRY%26lang%3Dtr%26utm_source%3Dgoogle_hotelads%26utm_medium%3Dcpc-metasearch%26partner_slug%3Dgoogle%26guests%3D2%26from%3Dthe_marmara_taksim.196.USD.sr-019bfae8-019d-7773-b744-22c74dbce698%26utm_campaign%3Dtr-US%26price%3Done%26scroll%3Dprices%26partner_data%3DMXULH8HbC5-ZdG8w4dVWvPnmFFs8ad3dn43RQidz5exc-gzZVB7Zx9AXQx1oX4PeUnVfdaK5rgLMoaShuNO3Hczl-h4Yiiq3d4FGtOzS-fk2RkxRihkL9BHWh9y-1ZZSLOYq_MfwmyaVlBkBnpAtwPTOdc38JgfNh-ClvhUYljc46Xa_%26utm_content%3DGoogleCPC%26utm_term%3Dgacid_.bw_15.los_1.dow_Tuesday.dtype_selected.hid_7479272.rid_20591412.aud_.d_desktop.ad_0.ctype_hotel.promo_0.apireqtype_deals%3Ddisabled%26showed_price%3D8500.03%26showed_taxes%3D0.00%26member_deals%3Dtrue%26rateruleid%3DInt_common_EN-US-USD_zenhotels&s=AD1XQnkjaEdym0ecyhlkgV2N-9q8&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/4183134106872331441.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.500",
+        "extracted_lowest": 8500
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.500",
+        "extracted_lowest": 8500
+      }
+    },
+    {
+      "source": "eDreams",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsxTFryU9k694-mj8UF-5TLZXABzBfWzxaJkDkf1I1rkEkeD5nkhofKzi89lrAYOyrsuXYYe4Tsi8gTfY9WxnM7Tn8vPnR9H9LkA5IDXwb_rzFNpXAaPBWUB847ZjW3V-jhhBfz0luOCFHcsvWRCHjQXQlfH_PDcp5LgG9tVu68yP581Ix3H&pcurl=https://accommodation.edreams.net/Hotel-Search?selected%3D26048%26startDate%3D2026-02-10%26endDate%3D2026-02-11%26adults%3D2%26children%3D%26mpf%3D8514.78%26cur%3DTRY%26mpj%3D912.45%26wapb3%3D%7Cc.506950%7Cl.en_US%7Ct.meta%7Cs.ghs%26MDPCID%3DeDreams-US.DPS.Edreams.MetaSearch-GHA.HOTEL%26mpl%3DUSD%26numberOfRooms%3D1%26locale%3Den_US%26rffrid%3Dh4p.hcom.US.ghaodigeo.000.000.kwrd%3D%26pos%3DEDREAMS_US%26rateplanid%3D206361100%26mctc%3D10%26utm_medium%3Dmetasearch%26utm_campaign%3D125637%26utm_term%3Dhotel%26utm_source%3DFREEBOOKING&s=AD1XQnl7J8bJZIJvWOAIVYnbOjg3&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/05208793-cd83-4e8b-b76c-7ff346e093e3.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      }
+    },
+    {
+      "source": "My Luxury Hotel",
+      "link": "https://www.google.com/travel/clk?pc=AA80Osx3AnMtWtV2x-4-uKm2Om-k88Nc5USExEpUxies5xbfsorpRmgV-Ehg6gkvVruuRQH3PknFc7eExXSTsJFqwsqmLDaQOe5gt1LN8tD3vGZv9UxHns-GGfZ9EEnHpqJ8Q5ZQKAf5YVyYZ1Yq8roav8hA_NdYvCIP_HIzZollnkhZfe3FSN5lTegVnnIrpHkAr5hZmjSBJodlD4s&pcurl=https://www.myluxuryhotel.com/en-us/hotel/2596070/?ppc%3Dtrue%26isHotel%3Dtrue%26checkin%3D2026-02-10%26checkout%3D2026-02-11%26nights%3D1%26rooms%3D%255B%257B%2522adults%2522:2,%2522children%2522:%255B%255D,%2522kidsAge%2522:%255B%255D%257D%255D%26utm_source%3DGoogleHC%26utm_medium%3Dpaid%26utm_campaign%3D%26utm_content%3Dlocaluniversal%26utm_term%3D2596070%26pv%3D1769443915116%26sourceToken%3DeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJib29raW5nX2NvbSIsImV4cCI6MTc2OTUzMDMxNSwiaWF0IjoxNzY5NDQzOTE1fQ.9zlp17i4PWYMD5qZgGOtuXhrV33xswZ5LnlTPJn8QUo&s=AD1XQnlbbxmrv_HVAGhFqW0Ormhv&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/11153979922261788882.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.552",
+        "extracted_lowest": 8552,
+        "before_taxes_fees": "\u20ba7.635",
+        "extracted_before_taxes_fees": 7635
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.552",
+        "extracted_lowest": 8552,
+        "before_taxes_fees": "\u20ba7.635",
+        "extracted_before_taxes_fees": 7635
+      }
+    },
+    {
+      "source": "Zzzello",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsxIUkVJRg2cH3rQ5tHdaMnEPk3mkyNtX7tHM26vd_1ilIFiGr7930vd5HQprHTrH-UIH0bYPMnT5JOsviCeEsYf67BcA_EtULpmxuNPDVroErTcSFqeBzvZYJUbHd8Rvwh26flzzzBuDZLem7CnFn0Vhm_ws1Y-YrPvFg2NtEOvz-8OW8iWUZe761Z6-gL0Z23Vpi6-cdY&pcurl=https://zzzello.com/google-hotels?hotelID%3Dlp1eac5%26checkinDay%3D10%26checkinMonth%3D02%26checkinYear%3D2026%26nights%3D1%26adults%3D2%26children%3D0&s=AD1XQnnpPuaTsNj55eekhbP6AIR3&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/4959433487713394378.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.339",
+        "extracted_lowest": 8339
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.339",
+        "extracted_lowest": 8339
+      }
+    },
+    {
+      "source": "HomeToGo",
+      "link": "https://www.google.com/travel/clk?pc=AA80OswT1gz_dJST9FjimD45Yq_7s5Huoz76cdaktRSNFHs8E8tbNZ9mK0BkhyAPpArFCy_ov2Uj4RDcAhJHMUgfJ2FmjC3POlMczc3Q5SZSqQUYL4fBVkZNamD8BcYA-QduGio2kpu45jvGvo9F2bJD-zZ7rXrcGuwhLGTcoA6Crxuxm6ebs7F-xBo&pcurl=https://www.hometogo.com/search/5460aeabe835e?arrival%3D2026-02-10%26duration%3D1%26id%3Dzc0ea282db8a4a129%2540f%2540s%26adults%3D2%26tpp%3Dzcrcmhfq.69778128%26adword%3Dghf/us/zc0ea282db8a4a129/ct%3Dhs/n-a/n-a/5460aeabe835e%26utm_source%3Dghf%26hl%3Dtr_US%26ghf_acc%3Dhtg_ghf%26c%3DTRY%26type%5B%5D%3Dhotel%26gValidation%3Dfalse%26gSite%3Dlocaluniversal&s=AD1XQnlNvjIW8up4tGiveH7AN0eu&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/5bde3665-f4fd-4468-b4bf-dee085aaacce.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.719",
+        "extracted_lowest": 8719
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.719",
+        "extracted_lowest": 8719
+      }
+    },
+    {
+      "source": "LateRooms.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80OszUu_vVMDqUoEccakMCjOhsILhbwMvsNrsJF5eMv9KytzoaUFlflN4SlpBp-VkzsPLjeFUW8uEcySYP74-1UuwZQ15z5J6lUu1tX6Q7LbHYJ0qhOWAtGNDLdEVICNZLQ1kf4vGYJk-Oe5-UUKNMEshWHK-t-VwuicMD1KxNAvQRKiFR8v77qr5FU-LnFBw9aqL9xLo&pcurl=https://www.laterooms.com/en-us/hotel/2596070/?ppc%3Dtrue%26isHotel%3Dtrue%26checkin%3D2026-02-10%26checkout%3D2026-02-11%26nights%3D1%26rooms%3D%255B%257B%2522adults%2522:2,%2522children%2522:%255B%255D,%2522kidsAge%2522:%255B%255D%257D%255D%26utm_source%3DGoogleHC%26utm_medium%3Dpaid%26utm_campaign%3D%26utm_content%3Dlocaluniversal%26utm_term%3D2596070%26pv%3D1769441936572%26sourceToken%3DeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJib29raW5nX2NvbSIsImV4cCI6MTc2OTUyODMzNiwiaWF0IjoxNzY5NDQxOTM2fQ.UBTkXWs8MgEXekhTi07-yFAI0_1SeJ4rnou5utMdUTk&s=AD1XQnlodkSQRTcPKKZ_X53UdXYL&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/10344278261224262221.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.552",
+        "extracted_lowest": 8552,
+        "before_taxes_fees": "\u20ba7.635",
+        "extracted_before_taxes_fees": 7635
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.552",
+        "extracted_lowest": 8552,
+        "before_taxes_fees": "\u20ba7.635",
+        "extracted_before_taxes_fees": 7635
+      }
+    },
+    {
+      "source": "Closest Hotel",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsyOvuIjaMNDXXun6B6JM3WNZ0znaaumikBdrEmLOI6awX8j7vBaP3EQ4ftEWadhg_XWPkIe2J9abA-Yll6d2lJypm2XXsnTDzqT6zV4SwpX6qK83AXO_eOU036tW6Rxt-JXd3q_4CKakt_cKsB_vVSPb2_9GZXmik_8zYpOhRxNEHcp3jwAuPFW5cZXwHoBg6uJEIKzJgLSqdk04Hh0&pcurl=https://closesthotel.com/googleRedirMainSearch.php?checkInYear%3D2026%26checkInMonth%3D02%26checkInDay%3D10%26checkOutYear%3D2026%26checkOutMonth%3D02%26checkOutDay%3D11%26numberOfNights%3D1%26numberOfAdults%3D2%26numberOfChildren%3D0%26numberOfGuests%3D2%26hotelID%3D26048%26roomID%3D201311773%26currency%3DTRY%26deviceType%3Ddesktop&s=AD1XQnnkDDIM8Hr_FDIS0jfBlcVt&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/15292798194442829381.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.515",
+        "extracted_lowest": 8515,
+        "before_taxes_fees": "\u20ba7.602",
+        "extracted_before_taxes_fees": 7602
+      }
+    },
+    {
+      "source": "Traveloka.com",
+      "link": "https://www.google.com/travel/clk?pc=AA80Oswqh7_hHm1rpRL22hiqWVtw3MkKeRm2nToGRetIeSmCNdvquYZNsljbkiTS2Nlr9uJMeiZ_jvrItCdgi9ULv0fURaRht4twE8SvTxNnz7P8a25IRTtUo0CAYWDlpyElHzUomGoy46e4T9mMdM7RzgoorSjPKGvNXdrc81iCsuaM0_Zs-repPb17&pcurl=https://www.traveloka.com/en-en/hotel/search?spec%3D10-02-2026.11-02-2026.1.1.HOTEL_GEO.4000745042.Istanbul.2%26hotelId%3D1000000125637%26contexts%3D%257B%2522accessCode%2522:%252290975GHAD1305desktop%2522%252C%2522metasearchRequestId%2522%253A%2522af338c1f-69ad-44b6-901f-9f2b2174d377%2522%252C%2522plc%2522%253A%2522cPz4P0gLFqZJ40HAzr2g4gDEzIVYTBfRzyspLYRnHTRXZMhPhXFtEOr3gnQDz2DUt%252BvtSVP7tX9D7oF00RDQxw%253D%253D%2522%257D%26metasearchId%3DGoogleHotelAdsUser%26metasearchRateId%3Ddesktop%26metasearchRatekey%3DsgyUU2M0LrnnpXh1LPwoI%26priceDisplay%3DTOTAL%26metasearchRefid%3D12345678910abcdefghijk@-%26adType%3D0%26PPA%3D0%26hotelCampaign%3D1%26currency%3DTRY&s=AD1XQnk-XUXtI7_eHjkZCvS8oVK9&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/cc46874d-c374-4a99-83c7-b6f79d0b19d3.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.554",
+        "extracted_lowest": 8554
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.554",
+        "extracted_lowest": 8554
+      }
+    },
+    {
+      "source": "Reserving",
+      "link": "https://www.google.com/travel/clk?pc=AA80OsxI59sk2j0wy8uMYQtlq7o-O-UBTINTZspYhlBv6V-5Xbnp5Rcr1KuHYXbSx5BresIjMnrJDSsgVi1_SWNfEnCe43RZ50KOdaWoJfGF0FBtgF5dXxtStaD6UwdeQgK2e5zOBirqfNFmPpS9cYvh6njcMfTle5vMB3m9Bc35Aoc7TibrY8Dd-YTM3qTq6aQ6dQ&pcurl=https://h-en.reserving.com/search?i%3D7103%26rf%3DGOOGLEHOTELS%26portal%3Drsvcom%26lang%3Dtr%26auto%3D1%26tipo%3DS%26id%3D54181%26numero_habs%3D1%26no_adultos_hab1%3D2%26no_ninos_hab1%3D0%26fecha_entrada%3D10%252F02%252F2026%26fecha_salida%3D11%252F02%252F2026%26refp%3D8513.47%26campaing-id%3D%26tp%3D%26moneda%3DTRY%26device%3Ddesktop%26pais_dom%3DUS%26sg%3Db%3D162.13,bclx%3D8,bhab%3D4,big%3D2026-02-02,bmid%3D13,bpd%3Dgb,bpt%3D14.74,breg%3D12,bt%3D2.95,bwp%3Dm3sh_v4I0EQ,ts%3D2026-01-26T16:50:07%2B01:00/B:48FDBA5AF551F4646E1F0ABB3FA28D1D6571327D63661504ACBF53C9%26c3%3Dmode%3DP,d%3D2,ts_id%3D442607649309235%26r%3DCAMPAIGN-ID%3D;TRACKING-PARAM%3D;CUSTOM1%3D;PRICE-DISPLAYED-TOTAL%3D8513.47;DEFAULT-DATE%3D0;CLICK-TYPE%3Dhotel;USER-COUNTRY%3DUS;DEVICE%3Ddesktop;SITE%3Dlocaluniversal;USER-LANGUAGE%3Dtr;USER-CURRENCY%3DTRY;POS%3DALL-ALL-ALL-RSVCOM;AD-CLICK%3D0;PAYMENT-ID%3Dfree;C2%3Db%3D162.13,bclx%3D8,bhab%3D4,big%3D2026-02-02,bmid%3D13,bpd%3Dgb,bpt%3D14.74,breg%3D12,bt%3D2.95,bwp%3Dm3sh_v4I0EQ,ts%3D2026-01-26T16:50:07%2B01:00/B:48FDBA5AF551F4646E1F0ABB3FA28D1D6571327D63661504ACBF53C9;C3%3Dmode%3DP,d%3D2,ts_id%3D442607649309235&s=AD1XQnm3_640FpRVEEY8fjw4e-Wq&ap=1",
+      "logo": "https://www.gstatic.com/travel-hotels/branding/6610968879149230366.png",
+      "num_guests": 2,
+      "rate_per_night": {
+        "lowest": "\u20ba8.513",
+        "extracted_lowest": 8513,
+        "before_taxes_fees": "\u20ba8.361",
+        "extracted_before_taxes_fees": 8361
+      },
+      "total_rate": {
+        "lowest": "\u20ba8.513",
+        "extracted_lowest": 8513,
+        "before_taxes_fees": "\u20ba8.361",
+        "extracted_before_taxes_fees": 8361
+      }
+    }
+  ],
+  "nearby_places": [
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Ayasofya-i Kebir Cami-i \u015eerifi",
+      "link": "https://www.google.com/search?q=Ayasofya-i+Kebir+Cami-i+%C5%9Eerifi&stick=H4sIAAAAAAAAAONgFmJQ4tDP1TdIKjIt1FLMTrbSz8lPTizJzM-DM6wSS0qKEpNBzGIADQomzzEAAAA#fpstate=trskp&trifp=kpq%253DAyasofya-i%252BKebir%252BCami-i%252B%2525C5%25259Eerifi%2526skpm%253D/m/0br5q%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSTkyoirNFdRunl52_QKX1euMv2NHfpspW3JPbqjRFQJWAzOqXN",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "18 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "29 dk."
+        }
+      ],
+      "rating": 4.8,
+      "reviews": 134063,
+      "description": "\u00d6nceden Bizans kilisesi olan b\u00fcy\u00fck, kubbeli bir yap\u0131n\u0131n i\u00e7inde yer alan, vitrayl\u0131 camlar\u0131 bulunan \u00fcnl\u00fc, tarihi cami.",
+      "gps_coordinates": {
+        "latitude": 41.008583,
+        "longitude": 28.980175
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Topkap\u0131 Saray\u0131 M\u00fczesi",
+      "link": "https://www.google.com/search?q=Topkap%C4%B1+Saray%C4%B1+M%C3%BCzesi&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwzElPLtdSzE620s_JT04syczPgzOsEktKihKTQcxiADjagQwyAAAA#fpstate=trskp&trifp=kpq%253DTopkap%2525C4%2525B1%252BSaray%2525C4%2525B1%252BM%2525C3%2525BCzesi%2526skpm%253D/m/01lgcw%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTiFGjdxmMJJnT9eVRNkLKnzCAIe2KQxc0zOmgjLt1UhO56Romk",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "17 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "29 dk."
+        }
+      ],
+      "rating": 4.6,
+      "reviews": 113556,
+      "description": "400 y\u0131l boyunca sultanlar\u0131n ya\u015fad\u0131\u011f\u0131, Osmanl\u0131 hazinelerini bar\u0131nd\u0131ran devasa ve zengin 15. y\u00fczy\u0131l saray\u0131.",
+      "gps_coordinates": {
+        "latitude": 41.0115195,
+        "longitude": 28.983378899999998
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Galata Kulesi",
+      "link": "https://www.google.com/search?q=Galata+Kulesi&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwTMuoSNJSzE620s_JT04syczPgzOsEktKihKTQcxiAKa964EyAAAA#fpstate=trskp&trifp=kpq%253DGalata%252BKulesi%2526skpm%253D/m/01fhxb%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRh4szZW6dwaqtzcH1mCidm-1ruvruzE4AVese6h69gfY6zBn-K",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "15 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "15 dk."
+        }
+      ],
+      "rating": 4.6,
+      "reviews": 201577,
+      "description": "En \u00fcst kat\u0131ndaki restoran\u0131yla bo\u011faza tepeden bakan, restore edilmi\u015f 14. y\u00fczy\u0131l kulesi ve eski zindan.",
+      "gps_coordinates": {
+        "latitude": 41.025569,
+        "longitude": 28.9741286
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Sultanahmet Camii",
+      "link": "https://www.google.com/search?q=Sultanahmet+Camii&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwrEwri9dSzE620s_JT04syczPgzOsEktKihKTQcxiAErFr_gyAAAA#fpstate=trskp&trifp=kpq%253DSultanahmet%252BCamii%2526skpm%253D/m/01yfv_%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcR7Zm8-Qz9Rl6jRRq5yZ0k5XFMBXS4HBoXuib2DnIB81-t0EsF2",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "19 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "27 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 114197,
+      "description": "1616'da in\u015fa edilen, mimar\u0131n\u0131n t\u00fcrbesinin de i\u00e7inde bulundu\u011fu \u00fcnl\u00fc cami.",
+      "gps_coordinates": {
+        "latitude": 41.0054096,
+        "longitude": 28.9768138
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Kapal\u0131 \u00c7ar\u015f\u0131",
+      "link": "https://www.google.com/search?q=Kapal%C4%B1+%C3%87ar%C5%9F%C4%B1&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwrMyNt9BSzE620s_JT04syczPgzOsEktKihKTQcxiAMJYrOwyAAAA#fpstate=trskp&trifp=kpq%253DKapal%2525C4%2525B1%252B%2525C3%252587ar%2525C5%25259F%2525C4%2525B1%2526skpm%253D/m/01ym_8%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcR8IEjMGFCGmVLItmwoj203DRtZ3yOKqYzb6cN3r8tQ-APmSELQ",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "15 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "29 dk."
+        }
+      ],
+      "rating": 4.4,
+      "reviews": 176922,
+      "description": "Deri, m\u00fccevher ve hediyelik e\u015fya sat\u0131lan b\u00fcy\u00fck, tarihi, \u00fcst\u00fc kapal\u0131 pazar sokaklar\u0131 a\u011f\u0131.",
+      "gps_coordinates": {
+        "latitude": 41.0106848,
+        "longitude": 28.9680681
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Dolmabah\u00e7e Saray\u0131",
+      "link": "https://www.google.com/search?q=Dolmabah%C3%A7e+Saray%C4%B1&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwKkxKy9VSzE620s_JT04syczPgzOsEktKihKTQcxiAHGMZvsyAAAA#fpstate=trskp&trifp=kpq%253DDolmabah%2525C3%2525A7e%252BSaray%2525C4%2525B1%2526skpm%253D/m/02qbfm%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQMSk4Q2x9_IcPMM-fw5cFlHC51KEX7eq0hXbXmX8cnNPhvxKJL",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "9 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "17 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 88550,
+      "description": "\u015eimdi m\u00fcze olan ve sanat eserleri, kaligrafi \u00f6rnekleri ve hal\u0131lar\u0131n bulundu\u011fu, kubbeli b\u00fcy\u00fck padi\u015fah saray\u0131.",
+      "gps_coordinates": {
+        "latitude": 41.039164299999996,
+        "longitude": 29.0004594
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Yerebatan Sarn\u0131c\u0131",
+      "link": "https://www.google.com/search?q=Yerebatan+Sarn%C4%B1c%C4%B1&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwqTC0sNBSzE620s_JT04syczPgzOsEktKihKTQcxiACQVEZwyAAAA#fpstate=trskp&trifp=kpq%253DYerebatan%252BSarn%2525C4%2525B1c%2525C4%2525B1%2526skpm%253D/m/04x188%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRtKO_aDLa07LB7rMVeqWoreRthSI5Z59GWFZVfv3DuVFaiKplY",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "18 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "27 dk."
+        }
+      ],
+      "rating": 4.6,
+      "reviews": 89404,
+      "description": "9800 metrekare alana yay\u0131lm\u0131\u015f 336 mermer s\u00fctunla ta\u015f\u0131nan dev yer alt\u0131 Roma sarn\u0131c\u0131.",
+      "gps_coordinates": {
+        "latitude": 41.008384,
+        "longitude": 28.977877999999997
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "S\u00fcleymaniye Camii",
+      "link": "https://www.google.com/search?q=S%C3%BCleymaniye+Camii&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwKjTLTdJSzE620s_JT04syczPgzOsEktKihKTQcxiAHlF6wQyAAAA#fpstate=trskp&trifp=kpq%253DS%2525C3%2525BCleymaniye%252BCamii%2526skpm%253D/m/02q6mb%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQ7HVpnR--TV48ta9FWsYOJNenbCnEA2ZMFdOZFCM3czGMWW1Pp",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "14 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "19 dk."
+        }
+      ],
+      "rating": 4.9,
+      "reviews": 62341,
+      "description": "Bah\u00e7eleri ve Hali\u00e7 manzaral\u0131 teras\u0131 olan, 16. y\u00fczy\u0131ldan kalma g\u00f6steri\u015fli cami.",
+      "gps_coordinates": {
+        "latitude": 41.016047,
+        "longitude": 28.9639711
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "M\u0131s\u0131r \u00c7ar\u015f\u0131s\u0131",
+      "link": "https://www.google.com/search?q=M%C4%B1s%C4%B1r+%C3%87ar%C5%9F%C4%B1s%C4%B1&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwrSwsM9VSzE620s_JT04syczPgzOsEktKihKTQcxiAJrR4CAyAAAA#fpstate=trskp&trifp=kpq%253DM%2525C4%2525B1s%2525C4%2525B1r%252B%2525C3%252587ar%2525C5%25259F%2525C4%2525B1s%2525C4%2525B1%2526skpm%253D/m/05yqv5%2526t%253Dd",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwrKrj0mQN52SshRfvjuXUllKhRMBzS-zm4G9D9VRU7M_LSAzBLgaLAb_CUsuGg16TzrKo3Agxl5FGYlD7rYE4f_M49aOLPQDAA3qImXbRejkwmMafx5q1T-5ob_Ug_Egq7U36T=w160-h120-k-no",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "13 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "16 dk."
+        }
+      ],
+      "rating": 4.5,
+      "reviews": 185751,
+      "description": "M\u0131s\u0131r \u00c7ar\u015f\u0131s\u0131 olarak bilinen, 17. y\u00fczy\u0131ldan kalma kapal\u0131 \u00e7ar\u015f\u0131da baharat, g\u0131da ve giysi sat\u0131l\u0131r.",
+      "gps_coordinates": {
+        "latitude": 41.016500099999995,
+        "longitude": 28.970519399999997
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "\u00c7\u0131ra\u011fan Palace Kempinski",
+      "link": "https://www.google.com/search?q=%C3%87%C4%B1ra%C4%9Fan+Palace+Kempinski&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TewMDBMT9NSzE620s_JT04syczPgzOsEktKihKTQcxiAAJxDFMyAAAA#fpstate=trskp&trifp=kpq%253D%2525C3%252587%2525C4%2525B1ra%2525C4%25259Fan%252BPalace%252BKempinski%2526skpm%253D/m/0801gf%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRAeEpre36CWq8wRUWcMOin7_ryV8XlTRXD79Vhpx6YkiDTrvlO",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "9 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "11 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 12557,
+      "description": "Eski bir saray olan g\u00f6steri\u015fli binada restoran, spa, sonsuzluk havuzu ve helikopter pisti sunan l\u00fcks otel.",
+      "gps_coordinates": {
+        "latitude": 41.0439752,
+        "longitude": 29.0161433
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "K\u0131z Kulesi",
+      "link": "https://www.google.com/search?q=K%C4%B1z+Kulesi&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TdIKcwxKdNSzE620s_JT04syczPgzOsEktKihKTQcxiAEa_Gw0yAAAA#fpstate=trskp&trifp=kpq%253DK%2525C4%2525B1z%252BKulesi%2526skpm%253D/m/0dql4v%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWP2tgg9BH1ohLi-Hbw4ScZ_OtSIyFyLw7lP93vborPAL1rOBw",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "13 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "14 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 26109,
+      "description": "Efsaneye konu olan, eskiden deniz feneri olarak kullan\u0131lan ve k\u00fc\u00e7\u00fck bir m\u00fcze ile restoran\u0131n yer ald\u0131\u011f\u0131 yap\u0131.",
+      "gps_coordinates": {
+        "latitude": 41.0211216,
+        "longitude": 29.0041105
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Sultanahmet Meydan\u0131",
+      "link": "https://www.google.com/search?q=Sultanahmet+Meydan%C4%B1&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TcwrCixMNJSzE620s_JT04syczPgzOsEktKihKTQcxiACcdhA8yAAAA#fpstate=trskp&trifp=kpq%253DSultanahmet%252BMeydan%2525C4%2525B1%2526skpm%253D/m/01xt82%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRpRyeVm_aYC7IOUGc01Fu-3UPn-fyCaHYokRuRjpp9p36rAwMp",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "18 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "25 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 35121,
+      "description": "Tarihi hipodrom kal\u0131nt\u0131lar\u0131n\u0131n yan\u0131 s\u0131ra \u00fcnl\u00fc tarihi yap\u0131lar\u0131n da yer ald\u0131\u011f\u0131 meydan.",
+      "gps_coordinates": {
+        "latitude": 41.006328599999996,
+        "longitude": 28.9757051
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "\u0130stanbul Modern Sanat M\u00fczesi",
+      "link": "https://www.google.com/search?q=%C4%B0stanbul+Modern+Sanat+M%C3%BCzesi&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TdIKiuzKNBSzE620s_JT04syczPgzOsEktKihKTQcxiAAsSKtMyAAAA#fpstate=trskp&trifp=kpq%253D%2525C4%2525B0stanbul%252BModern%252BSanat%252BM%2525C3%2525BCzesi%2526skpm%253D/m/0bvv8p%2526t%253Dd",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSzuyepuhrOFt-P262mBxBCxyIfnTSfBqlLT0a9CffTT-dJHy4TVXdC8BA_OgppcKUjBspy3lbtW2n8xCoz1c0Xn4mQVan32J7SwnBaWnLIQYv3fDqtVcBZbmjmCRfx05INbxzGH6Q=w180-h120-k-no",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "8 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "16 dk."
+        }
+      ],
+      "rating": 4.4,
+      "reviews": 10517,
+      "description": "T\u00fcrk yap\u0131m\u0131 ve uluslararas\u0131 modern/\u00e7a\u011fda\u015f sanat koleksiyonlar\u0131 ve sinemaya ev sahipli\u011fi yapan m\u00fcze.",
+      "gps_coordinates": {
+        "latitude": 41.025919599999995,
+        "longitude": 28.982838299999997
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "\u0130stanbul Arkeoloji M\u00fczeleri",
+      "link": "https://www.google.com/search?q=%C4%B0stanbul+Arkeoloji+M%C3%BCzeleri&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TdIzjMztNBSzE620s_JT04syczPgzOsEktKihKTQcxiABsxSvIyAAAA#fpstate=trskp&trifp=kpq%253D%2525C4%2525B0stanbul%252BArkeoloji%252BM%2525C3%2525BCzeleri%2526skpm%253D/m/0cn618%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSb4rb9WcmaN_GcRP5dFI47jMOwHhuf2Zme63OV8EGdVXUAAzWx",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "17 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "24 dk."
+        }
+      ],
+      "rating": 4.6,
+      "reviews": 19730,
+      "description": "Peyzajl\u0131 bah\u00e7elerde \u00fclkenin zengin arkeolojik miras\u0131n\u0131n sergilendi\u011fi, neoklasik tarzdaki m\u00fcze.",
+      "gps_coordinates": {
+        "latitude": 41.0116855,
+        "longitude": 28.9813305
+      }
+    },
+    {
+      "category": "\u0130lgi \u00c7ekici Yer",
+      "name": "Kariye Camii",
+      "link": "https://www.google.com/search?q=Kariye+Camii&stick=H4sIAAAAAAAAAONgFmJQ4tTP1TewyDY0MddSzE620s_JT04syczPgzOsEktKihKTQcxiAG8NK0gyAAAA#fpstate=trskp&trifp=kpq%253DKariye%252BCamii%2526skpm%253D/m/08k147%2526t%253Dd",
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4OqW50ZKLY8EyNl1QOE9K6Xogg7GjWlHqmTlVYmm1SEI7x9hw",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "21 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "22 dk."
+        }
+      ],
+      "rating": 4.5,
+      "reviews": 10657,
+      "description": "Milattan sonra 6. y\u00fczy\u0131lda in\u015fa edilmi\u015f bir kilise binas\u0131nda sergilenen dini sanat eserlerinin bulundu\u011fu m\u00fcze.",
+      "gps_coordinates": {
+        "latitude": 41.031205,
+        "longitude": 28.939188299999998
+      }
+    },
+    {
+      "category": "Tren \u0130stasyonu",
+      "name": "\u00dcsk\u00fcdar",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "32 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "40 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 41.0256111,
+        "longitude": 29.0149996
+      }
+    },
+    {
+      "category": "Tren \u0130stasyonu",
+      "name": "Yenikap\u0131",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "18 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "1 sa. 18 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 41.0055645,
+        "longitude": 28.9513392
+      }
+    },
+    {
+      "category": "Metro \u0130stasyonu",
+      "name": "Taksim",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "3 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 41.0381682,
+        "longitude": 28.9858659
+      }
+    },
+    {
+      "category": "Otob\u00fcs Terminali",
+      "name": "Taksim T\u00fcnel",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "3 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 41.0378313,
+        "longitude": 28.985155199999998
+      }
+    },
+    {
+      "category": "Havaliman\u0131",
+      "name": "Istanbul Airport",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "44 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "1 sa. 5 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 41.2602778,
+        "longitude": 28.741944399999998
+      }
+    },
+    {
+      "category": "Havaliman\u0131",
+      "name": "\u0130stanbul Sabiha G\u00f6k\u00e7en Uluslararas\u0131 Havaliman\u0131",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "1 sa. 1 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "1 sa. 36 dk."
+        }
+      ],
+      "gps_coordinates": {
+        "latitude": 40.8983333,
+        "longitude": 29.3091667
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "G\u00f6nen Rooftop Ocakba\u015f\u0131 Terrace Restaurant & Roof Bar",
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipOZdoAvy1pxIKqkDvNc6pLDq8GgwOgOW8NK2Fo=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "5 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "10 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "11 dk."
+        }
+      ],
+      "rating": 4.8,
+      "reviews": 1713,
+      "gps_coordinates": {
+        "latitude": 41.038535599999996,
+        "longitude": 28.983932
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Taksim Anatolia Seafood Steak Kebap House",
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipMl_CgeWY9ch5OI3RhFrdWX3tZsIlpWEf7eJpb5=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "5 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "8 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "12 dk."
+        }
+      ],
+      "rating": 4.9,
+      "reviews": 1845,
+      "gps_coordinates": {
+        "latitude": 41.0388289,
+        "longitude": 28.9853731
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "\u0130stiklal Kebap Restaurant",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSxSC3eCRvmfMbRzmy_u3PiM0eIokGdF5AIfhx1XVESFB8Nv0bT0QNeTy3k5c2vyFYRfTtR63nWsEZKqQA7l7pRAormV1sw-b5T8MXvbNLpyt_P48mZhxj_C7c4e-f4ZlOqkt_c=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "7 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "7 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "9 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 925,
+      "gps_coordinates": {
+        "latitude": 41.035115999999995,
+        "longitude": 28.981026999999997
+      }
+    },
+    {
+      "category": "Aile restoran\u0131",
+      "name": "Tablac\u0131 Brothers Kebap Restoran",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSz4Fr6TQzSMZ0a_d_naUqDMG2FV_QCvWS-xWg6wyQJe_rRTEZQU4QC80lQKYwEzAYAJGDBP0YyJ3e9iEstNSllp9PnOYOVt-6Xwx9QirZDGCDDO39_jqa9pmXD2xIYImVTEutB04boJwNOC=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "2 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "6 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "7 dk."
+        }
+      ],
+      "rating": 4.9,
+      "reviews": 100,
+      "gps_coordinates": {
+        "latitude": 41.035464999999995,
+        "longitude": 28.985529999999997
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Garden 34 Restaurant",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSzbp1o68B_s6k4xRHn6Zj7tTfGmh_jMdL7ji0yEOTSdnapBkWX1LxK4f9vdJYMAFdfYEJnLZ_q9AgSjGHWB88oT2BXddDja3jDUx-fRNCT0sMC_Bz9H2_67zjr6pvJpd68-iFSWBcZjlNo=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "6 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "8 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "13 dk."
+        }
+      ],
+      "rating": 4.8,
+      "reviews": 951,
+      "gps_coordinates": {
+        "latitude": 41.0396372,
+        "longitude": 28.985790299999998
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Midway Restaurant & Cafe",
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipMK-b_mYqnJtjOCY6EkPqmKggMYgScvtYX1gBD2=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "5 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "10 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "11 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 287,
+      "gps_coordinates": {
+        "latitude": 41.038512399999995,
+        "longitude": 28.9837977
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Novas Hagiasophia Restaurant",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSyUtTa4gZOfKLSeNmpfs5WbrtEahGMGPWooZ5xcAXP4aoYgvTbX4F1yyMGyHHXElTOG018issmeVfj1l4ETyIn2xOHjvedypb3XKalKxeoYbM40033ZIZHz2x--wRel2E8nVK01T5KYuCQ=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "6 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "7 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "8 dk."
+        }
+      ],
+      "rating": 4.8,
+      "reviews": 2747,
+      "gps_coordinates": {
+        "latitude": 41.0344248,
+        "longitude": 28.9839588
+      }
+    },
+    {
+      "category": "Barbek\u00fc restoran\u0131",
+      "name": "Hasan Ustam Ocakba\u015f\u0131 restaurant",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSzchm_l3EAX4z0cPTvX63MFGwcGmIPqEIDTuheZHF2XfCt_Op7w37vyGn6jVoCeSZ3RFFEZ_gbJNrETbpiRSTLRj-25g5SwSNE7zlQ-WceqrkOXNHVlSZ-F1qWyNbYoxrusm0Kx=k-no-",
+      "transportations": [
+        {
+          "type": "Public transport",
+          "duration": "6 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "8 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "13 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 1542,
+      "gps_coordinates": {
+        "latitude": 41.035836599999996,
+        "longitude": 28.981245899999998
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Kikirik Restaurant",
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipPiuRxZO5KYX3-ngR-WcPN50-RRXDh66DUmsD4Y=k-no-",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "10 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "16 dk."
+        },
+        {
+          "type": "Walking",
+          "duration": "22 dk."
+        }
+      ],
+      "rating": 4.8,
+      "reviews": 1035,
+      "gps_coordinates": {
+        "latitude": 41.0256402,
+        "longitude": 28.9811849
+      }
+    },
+    {
+      "category": "Restoran",
+      "name": "Natural F\u0131sh & Kebap",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSz5X1rD1iICugsobbwwvByh3efekDXDh7pOFyhoM_uzji8w4RDNZ_mWPaBmLjSamKSn9Q12_z9CppsVCyCkaGQusOjuI5CrPke4qtJxX8t0BC5PVSq83M1E_g2DP2y1owlvZLok=k-no-",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "6 dk."
+        },
+        {
+          "type": "Public transport",
+          "duration": "10 dk."
+        },
+        {
+          "type": "Taxi",
+          "duration": "12 dk."
+        }
+      ],
+      "rating": 4.7,
+      "reviews": 792,
+      "gps_coordinates": {
+        "latitude": 41.039632999999995,
+        "longitude": 28.9838933
+      }
+    }
+  ],
+  "hotel_class": "5 y\u0131ld\u0131zl\u0131 otel",
+  "extracted_hotel_class": 5,
+  "images": [
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipPzeKRnJboODPfxjGim5lI52VL58fATsFRyJCwo=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipPzeKRnJboODPfxjGim5lI52VL58fATsFRyJCwo=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAwepzLJHQnbeNsDz6sIkf_NRLM1QJwmgZV_Uus7RU8Rpy_MTqzeEFYdnBRW9TfkahtQXcYrBdLEP1oczxsOqtxeBZ2-PAwTDHNafoTWoY04PvttYDa7BZX3piN6hWvloGrEZ-D1Cs_g=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgICcypOiqgE=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAweqCJVqylR6Yv8Bujl_UifN1wVK8Fc_fcSwFoiqWjpDKf9s-Kr3wOAe2qtlk09z7JMR6Qok7y-sUqOchEq_ehJzKDBlnS_QejOV8HmWCnJfBO3xmZYFBKfoKrln3W8WZanoHr7QN=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgIC84PLELA=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAweqpwDjVkvStEBkGwisb4dss-BHSTARJM-lWTkYv7CfWvJQl4dg7Xq6LzqMdjlMJA4zLiWZsYB6K8IruC9Bd_Nq6-JWKAuCu6nTMkAEdwDDC4EpIcF4Ou0K_UerO4J4Vh0t5UAbGLw=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgICp0eX3jwE=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-proxy/ALd4DhH8N_0kwSleocSCi7crnFBjVXAqbk_GJZAwlXULsuvS2wkPk2GskslS97aGR5ijO2RqVDRz-gxc28uKDONdZid4A07XJRh3g5zwUT0QRk-wZ7v-I3OjSKba0Lm4tEIny0u_KUIvQ1Kftrz8exRIQm0CoVnozsJX5tx1lUbAcsRyZ_esXzKu6D9PIA=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://i.giatamedia.com/m.php?m=AQABAAAAla4KAGcZegQFAE2wiksofbTSkpQIVdrPiYs"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipMlG1rCGdcqkDsTg_Ns4IcX21dkBGoiYOpz3X60=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipMlG1rCGdcqkDsTg_Ns4IcX21dkBGoiYOpz3X60=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipMMHkGljyIkx-Lu1iL8cxHLG_JXt2xL3yp7T2Rd=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipMMHkGljyIkx-Lu1iL8cxHLG_JXt2xL3yp7T2Rd=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAwepILWTeG4pQ_izMowGcHBKaSKwrhtO_CfY3wvEtvzn3-7I8KNnvrME_L2lHhcFnQHrdi3MB3aNgVd86lFtI0mtoTfBHAlVNJCbNrfcl404T7x9ZArHePMmby_QeHGVEXSjb_5SV8Q=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgICBiuyltgE=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-proxy/ALd4DhH2yVUCkW_NNxs5f_XmOWaXLYKWcs0qxWhdbam0I120K-IL2eXLIO-BZPeiX7e2Ei-FMadamzo7M6zHrcsXyOCeYL48qCLrNHMqmE-nnGJNrZzY_t2cvmfPlk4T8j5Y9D0wdr4pwJCiAYPACcw4eBVSSoLtuNwjZDANIa4eSEp37uLvKUOC3VyaZg=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://photos.hotelbeds.com/giata/original/00/001571/001571a_hb_r_003.jpg"
+    }
+  ],
+  "overall_rating": 4.4,
+  "reviews": 5819,
+  "ratings": [
+    {
+      "stars": 5,
+      "count": 3873
+    },
+    {
+      "stars": 4,
+      "count": 1080
+    },
+    {
+      "stars": 3,
+      "count": 374
+    },
+    {
+      "stars": 2,
+      "count": 127
+    },
+    {
+      "stars": 1,
+      "count": 365
+    }
+  ],
+  "location_rating": 4.7,
+  "reviews_breakdown": [
+    {
+      "name": "Konum",
+      "description": "Location",
+      "total_mentioned": 648,
+      "positive": 531,
+      "negative": 50,
+      "neutral": 67,
+      "category_token": "j2obwnica1yRnFiSmp5fVDl5hU8-kJ2Zn8e41Ds_rzQXAKk8C6w",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=j2obwnica1yRnFiSmp5fVDl5hU8-kJ2Zn8e41Ds_rzQXAKk8C6w&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Hizmet",
+      "description": "Service",
+      "total_mentioned": 655,
+      "positive": 475,
+      "negative": 153,
+      "neutral": 27,
+      "category_token": "UPyn-Hica1yRnFiSmp5fVDl5eXBqUVlmcirjMo_MqtzUEgCpTAur",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=UPyn-Hica1yRnFiSmp5fVDl5eXBqUVlmcirjMo_MqtzUEgCpTAur&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Oda",
+      "description": "Room amenities",
+      "total_mentioned": 266,
+      "positive": 183,
+      "negative": 60,
+      "neutral": 23,
+      "category_token": "_b_nb3ica1yRnFiSmp5fVDl5XVB-fq5CYm5qXmZJZmox42L_lEQA2lMM_Q",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=_b_nb3ica1yRnFiSmp5fVDl5XVB-fq5CYm5qXmZJZmox42L_lEQA2lMM_Q&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Fitness",
+      "description": "Fitness",
+      "total_mentioned": 60,
+      "positive": 41,
+      "negative": 9,
+      "neutral": 10,
+      "category_token": "PXioD3ica1yRnFiSmp5fVDl5uVtmSV5qcTEjjAEAtXQMIg",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=PXioD3ica1yRnFiSmp5fVDl5uVtmSV5qcTEjjAEAtXQMIg&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Bar",
+      "description": "Bar or lounge",
+      "total_mentioned": 71,
+      "positive": 47,
+      "negative": 15,
+      "neutral": 9,
+      "category_token": "qI-Rpnica1yRnFiSmp5fVDl5rVNikUJ-kUJOfmleeirjYiAXAMhXDEE",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=qI-Rpnica1yRnFiSmp5fVDl5rVNikUJ-kUJOfmleeirjYiAXAMhXDEE&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "M\u00fclk",
+      "description": "Property",
+      "total_mentioned": 635,
+      "positive": 480,
+      "negative": 95,
+      "neutral": 60,
+      "category_token": "R36aS3ica1yRnFiSmp5fVDl5RUBRfkFqUUkl41Lfw3tysgGtXAxx",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=R36aS3ica1yRnFiSmp5fVDl5RUBRfkFqUUkl41Lfw3tysgGtXAxx&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Kahvalt\u0131",
+      "description": "Breakfast",
+      "total_mentioned": 154,
+      "positive": 121,
+      "negative": 21,
+      "neutral": 12,
+      "category_token": "g-VB8Xica1yRnFiSmp5fVDl5pVNRamJ2WmJxCeNK78SMssSckiMbAelfDkE",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=g-VB8Xica1yRnFiSmp5fVDl5pVNRamJ2WmJxCeNK78SMssSckiMbAelfDkE&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Dining",
+      "description": "Food and Beverage",
+      "total_mentioned": 119,
+      "positive": 97,
+      "negative": 14,
+      "neutral": 8,
+      "category_token": "2aMhPHica1yRnFiSmp5fVDl5o1t-fopCYl6KglNqWWpRYnoq4zKXzLzMvHQAKAwO6A",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=2aMhPHica1yRnFiSmp5fVDl5o1t-fopCYl6KglNqWWpRYnoq4zKXzLzMvHQAKAwO6A&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Sa\u011fl\u0131kl\u0131 Ya\u015fam",
+      "description": "Wellness",
+      "total_mentioned": 35,
+      "positive": 21,
+      "negative": 8,
+      "neutral": 6,
+      "category_token": "LufWknica1yRnFiSmp5fVDl5RXhqTk5eanExw6bgxCPzc45szAZihcjEo_MTcwF9xBMS",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=LufWknica1yRnFiSmp5fVDl5RXhqTk5eanExw6bgxCPzc45szAZihcjEo_MTcwF9xBMS&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Spor Salonu",
+      "description": "Gym",
+      "total_mentioned": 34,
+      "positive": 25,
+      "negative": 2,
+      "neutral": 7,
+      "category_token": "u8CPinica1yRnFiSmp5fVDl5sXtlLuPq4IL8IoXgxJz8vFIAsmYLzQ",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=u8CPinica1yRnFiSmp5fVDl5sXtlLuPq4IL8IoXgxJz8vFIAsmYLzQ&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "G\u00fcvenlik",
+      "description": "Safety",
+      "total_mentioned": 61,
+      "positive": 30,
+      "negative": 24,
+      "neutral": 7,
+      "category_token": "FG1KsXica1yRnFiSmp5fVDl5WXBiWmpJJcNK98N7ylLzcjKzAcZNDSU",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=FG1KsXica1yRnFiSmp5fVDl5WXBiWmpJJcNK98N7ylLzcjKzAcZNDSU&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "\u0130\u015f",
+      "description": "Business",
+      "total_mentioned": 38,
+      "positive": 28,
+      "negative": 5,
+      "neutral": 5,
+      "category_token": "shas8nica1yRnFiSmp5fVDl5hVNpcWZeanEx45IjG47OBwChxwyM",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=shas8nica1yRnFiSmp5fVDl5hVNpcWZeanEx45IjG47OBwChxwyM&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Do\u011fa",
+      "description": "Nature and outdoor activities",
+      "total_mentioned": 36,
+      "positive": 35,
+      "negative": 0,
+      "neutral": 1,
+      "category_token": "DATxqnica1yRnFiSmp5fVDl5r19iSWlRqkJiXopCfmlJSn5-kUJicklmWWZJZmox41KX_CPzEwH1WBQ4",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=DATxqnica1yRnFiSmp5fVDl5r19iSWlRqkJiXopCfmlJSn5-kUJicklmWWZJZmox41KX_CPzEwH1WBQ4&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Spa",
+      "description": "Spa",
+      "total_mentioned": 26,
+      "positive": 18,
+      "negative": 4,
+      "neutral": 4,
+      "category_token": "xb4k5nica1yRnFiSmp5fVDl5cXBBIiOIAABfNAiq",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=xb4k5nica1yRnFiSmp5fVDl5cXBBIiOIAABfNAiq&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Havuz",
+      "description": "Pool",
+      "total_mentioned": 28,
+      "positive": 23,
+      "negative": 5,
+      "neutral": 0,
+      "category_token": "jJfhbXica1yRnFiSmp5fVDl5SUB-fg7jUo_EstIqAHxlCg0",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=jJfhbXica1yRnFiSmp5fVDl5SUB-fg7jUo_EstIqAHxlCg0&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Atmosfer",
+      "description": "Atmosphere",
+      "total_mentioned": 144,
+      "positive": 128,
+      "negative": 6,
+      "neutral": 10,
+      "category_token": "86URH3ica1yRnFiSmp5fVDl5lWNJbn5xQUZqUSrjCjA7LbUIAOsIDcc",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=86URH3ica1yRnFiSmp5fVDl5lWNJbn5xQUZqUSrjCjA7LbUIAOsIDcc&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Temizlik",
+      "description": "Cleanliness",
+      "total_mentioned": 230,
+      "positive": 176,
+      "negative": 42,
+      "neutral": 12,
+      "category_token": "t2Wbg3ica1yRnFiSmp5fVDl5tXNOamJeTmZeanEx44qQ1NzMqpzMbAD4GQ4p",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=t2Wbg3ica1yRnFiSmp5fVDl5tXNOamJeTmZeanEx44qQ1NzMqpzMbAD4GQ4p&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Klima",
+      "description": "Air conditioning",
+      "total_mentioned": 22,
+      "positive": 4,
+      "negative": 16,
+      "neutral": 2,
+      "category_token": "5qOA1Hica1yRnFiSmp5fVDl5g2NmkUJyfl5KZklmfl5mXjrTUu-czNxEABHLDqE",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=5qOA1Hica1yRnFiSmp5fVDl5g2NmkUJyfl5KZklmfl5mXjrTUu-czNxEABHLDqE&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Gece Hayat\u0131",
+      "description": "Nightlife",
+      "total_mentioned": 21,
+      "positive": 9,
+      "negative": 10,
+      "neutral": 2,
+      "category_token": "GSwplXica1yRnFiSmp5fVDl5pV9mekZJTmZaKsMa99TkVAWPxMrEkiMbARHVDwo",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=GSwplXica1yRnFiSmp5fVDl5pV9mekZJTmZaKsMa99TkVAWPxMrEkiMbARHVDwo&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Otopark",
+      "description": "Parking",
+      "total_mentioned": 21,
+      "positive": 5,
+      "negative": 7,
+      "neutral": 9,
+      "category_token": "-57Qunica1yRnFiSmp5fVDl5eUBiUXZmXjrDcv-S_AIgGwC1KwwV",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=-57Qunica1yRnFiSmp5fVDl5eUBiUXZmXjrDcv-S_AIgGwC1KwwV&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Toplu Ta\u015f\u0131ma",
+      "description": "Public transit",
+      "total_mentioned": 48,
+      "positive": 39,
+      "negative": 5,
+      "neutral": 4,
+      "category_token": "GD-kZHica1yRnFiSmp5fVDl5XUBpUk5mskJJUWJecWYJ47qQ_IKcUoWQxKPzj2zMTQQAihoSjA",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=GD-kZHica1yRnFiSmp5fVDl5XUBpUk5mskJJUWJecWYJ47qQ_IKcUoWQxKPzj2zMTQQAihoSjA&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Restoran",
+      "description": "Restaurant",
+      "total_mentioned": 46,
+      "positive": 39,
+      "negative": 5,
+      "neutral": 2,
+      "category_token": "_a-owHica1yRnFiSmp5fVDl5VVBqcUliaVFiXgnjChA7H8gEAOxcDeU",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=_a-owHica1yRnFiSmp5fVDl5VVBqcUliaVFiXgnjChA7H8gEAOxcDeU&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Uyku",
+      "description": "Sleep",
+      "total_mentioned": 72,
+      "positive": 18,
+      "negative": 46,
+      "neutral": 8,
+      "category_token": "eFVwyHica1yRnFiSmp5fVDl5aXBOamoB05LQyuxSAHylCg0",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=eFVwyHica1yRnFiSmp5fVDl5aXBOamoB05LQyuxSAHylCg0&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Banyo",
+      "description": "Bathroom and toiletries",
+      "total_mentioned": 53,
+      "positive": 16,
+      "negative": 35,
+      "neutral": 2,
+      "category_token": "HWgeXXica1yRnFiSmp5fVDl5u1NiSUZRfn6uQmJeikJJfmZOaklRZmox01KnxLzKfACEEBFl",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=HWgeXXica1yRnFiSmp5fVDl5u1NiSUZRfn6uQmJeikJJfmZOaklRZmox01KnxLzKfACEEBFl&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Aile",
+      "description": "Family friendly",
+      "total_mentioned": 37,
+      "positive": 26,
+      "negative": 10,
+      "neutral": 1,
+      "category_token": "a9jTWXica1yRnFiSmp5fVDl5vVtibmZOpUJaUWZqXkpOJeMSx8ycVAD1Zg3J",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=a9jTWXica1yRnFiSmp5fVDl5vVtibmZOpUJaUWZqXkpOJeMSx8ycVAD1Zg3J&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "\u00c7iftler",
+      "description": "Couple friendly",
+      "total_mentioned": 11,
+      "positive": 7,
+      "negative": 2,
+      "neutral": 2,
+      "category_token": "Lc-d3Hica1yRnFiSmp5fVDl5vXN-aUFOqkJaUWZqXkpOJeOKw-2ZaSU5qUUANqkQKA",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=Lc-d3Hica1yRnFiSmp5fVDl5vXN-aUFOqkJaUWZqXkpOJeOKw-2ZaSU5qUUANqkQKA&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Eri\u015filebilirlik",
+      "description": "Accessibility",
+      "total_mentioned": 21,
+      "positive": 9,
+      "negative": 8,
+      "neutral": 4,
+      "category_token": "o1b-yHica1yRnFiSmp5fVDl5rWNycmpxcWZSZk5mSSXDBteizKPzM3NSQfyinMxsAKMtEtA",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=o1b-yHica1yRnFiSmp5fVDl5rWNycmpxcWZSZk5mSSXDBteizKPzM3NSQfyinMxsAKMtEtA&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Kablosuz",
+      "description": "Wi-Fi",
+      "total_mentioned": 15,
+      "positive": 8,
+      "negative": 7,
+      "neutral": 0,
+      "category_token": "Ba2dW3ica1yRnFiSmp5fVDl5aXimrlsmwwrvxKSc_OLSKgCjgAtP",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=Ba2dW3ica1yRnFiSmp5fVDl5aXimrlsmwwrvxKSc_OLSKgCjgAtP&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "TV",
+      "description": "Room entertainment",
+      "total_mentioned": 7,
+      "positive": 0,
+      "negative": 5,
+      "neutral": 2,
+      "category_token": "ujBrSXica1yRnFiSmp5fVDl5U1B-fq5Cal5JalFJYmZeLpDFsCgkDAAGnA5U",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=ujBrSXica1yRnFiSmp5fVDl5U1B-fq5Cal5JalFJYmZeLpDFsCgkDAAGnA5U&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    },
+    {
+      "name": "Mutfak",
+      "description": "Kitchen",
+      "total_mentioned": 8,
+      "positive": 3,
+      "negative": 5,
+      "neutral": 0,
+      "category_token": "BMiO2Hica1yRnFiSmp5fVDl5uXdmSXJGah7DMt_SkrTEbACosAuW",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=BMiO2Hica1yRnFiSmp5fVDl5uXdmSXJGah7DMt_SkrTEbACosAuW&engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+    }
+  ],
+  "amenities": [
+    "Wi-Fi",
+    "Wi-Fi in public areas",
+    "Restaurant",
+    "Bar",
+    "Room service",
+    "Breakfast",
+    "Breakfast buffet",
+    "Front desk",
+    "Baggage storage",
+    "Concierge",
+    "Currency exchange",
+    "Full-service laundry",
+    "Elevator",
+    "Wake up calls",
+    "Housekeeping",
+    "Turndown service",
+    "Kid-friendly",
+    "Fitness center",
+    "Treadmill",
+    "Weight machines",
+    "Free weights",
+    "Massage",
+    "Sauna",
+    "Spa",
+    "Hair salon",
+    "Outdoor pool",
+    "Hot tub",
+    "Pet-friendly",
+    "Dogs allowed",
+    "Cats allowed",
+    "Parking",
+    "Valet parking",
+    "EV charger",
+    "Airport shuttle",
+    "Car rental onsite",
+    "Air conditioning",
+    "Coffee maker in some rooms",
+    "Minibar",
+    "Accessible",
+    "Business center",
+    "Meeting rooms",
+    "English",
+    "Private bathroom",
+    "Bathtub in some rooms",
+    "Shower"
+  ],
+  "amenities_detailed": {
+    "groups": [
+      {
+        "title": "Internet",
+        "list": [
+          {
+            "title": "Wi-Fi",
+            "label": "free",
+            "available": true
+          },
+          {
+            "title": "Wi-Fi in public areas",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Food & drink",
+        "list": [
+          {
+            "title": "Restaurant",
+            "available": true
+          },
+          {
+            "title": "Bar",
+            "available": true
+          },
+          {
+            "title": "Room service",
+            "available": true
+          },
+          {
+            "title": "Breakfast",
+            "label": "free",
+            "available": true
+          },
+          {
+            "title": "Breakfast buffet",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Services",
+        "list": [
+          {
+            "title": "Front desk",
+            "label": "24 hour",
+            "available": true
+          },
+          {
+            "title": "Baggage storage",
+            "available": true
+          },
+          {
+            "title": "Concierge",
+            "available": true
+          },
+          {
+            "title": "Currency exchange",
+            "available": true
+          },
+          {
+            "title": "Full-service laundry",
+            "available": true
+          },
+          {
+            "title": "Elevator",
+            "available": true
+          },
+          {
+            "title": "Wake up calls",
+            "available": true
+          },
+          {
+            "title": "Housekeeping",
+            "label": "daily",
+            "available": true
+          },
+          {
+            "title": "Turndown service",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Children",
+        "list": [
+          {
+            "title": "Kid-friendly",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Wellness",
+        "list": [
+          {
+            "title": "Fitness center",
+            "label": "free",
+            "available": true
+          },
+          {
+            "title": "Treadmill",
+            "available": true
+          },
+          {
+            "title": "Weight machines",
+            "available": true
+          },
+          {
+            "title": "Free weights",
+            "available": true
+          },
+          {
+            "title": "Massage",
+            "available": true
+          },
+          {
+            "title": "Sauna",
+            "available": true
+          },
+          {
+            "title": "Spa",
+            "available": true
+          },
+          {
+            "title": "Hair salon",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Pools",
+        "list": [
+          {
+            "title": "Outdoor pool",
+            "available": true
+          },
+          {
+            "title": "Hot tub",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Pets",
+        "list": [
+          {
+            "title": "Pet-friendly",
+            "label": "extra charge",
+            "available": true
+          },
+          {
+            "title": "Dogs allowed",
+            "available": true
+          },
+          {
+            "title": "Cats allowed",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Parking & transportation",
+        "list": [
+          {
+            "title": "Parking",
+            "label": "extra charge",
+            "available": true
+          },
+          {
+            "title": "Valet parking",
+            "label": "extra charge",
+            "available": true
+          },
+          {
+            "title": "EV charger",
+            "available": true
+          },
+          {
+            "title": "Airport shuttle",
+            "label": "extra charge",
+            "available": true
+          },
+          {
+            "title": "Car rental onsite",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Rooms",
+        "list": [
+          {
+            "title": "Air conditioning",
+            "available": true
+          },
+          {
+            "title": "Coffee maker in some rooms",
+            "available": true
+          },
+          {
+            "title": "Minibar",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Accessibility",
+        "list": [
+          {
+            "title": "Accessible",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Business & events",
+        "list": [
+          {
+            "title": "Business center",
+            "available": true
+          },
+          {
+            "title": "Meeting rooms",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Languages spoken",
+        "list": [
+          {
+            "title": "English",
+            "available": true
+          }
+        ]
+      },
+      {
+        "title": "Bathrooms",
+        "list": [
+          {
+            "title": "Private bathroom",
+            "available": true
+          },
+          {
+            "title": "Bathtub in some rooms",
+            "available": true
+          },
+          {
+            "title": "Shower",
+            "available": true
+          }
+        ]
+      }
+    ],
+    "popular": [
+      {
+        "title": "Pool",
+        "available": true
+      },
+      {
+        "title": "Spa",
+        "available": true
+      },
+      {
+        "title": "Hot tub",
+        "available": true
+      },
+      {
+        "title": "Breakfast",
+        "label": "free",
+        "available": true
+      }
+    ]
+  },
+  "sustainability": {
+    "groups": [
+      {
+        "title": "Eco certifications",
+        "list": [
+          {
+            "title": "T\u00fcrkiye Sustainable Tourism Program",
+            "available": true
+          }
+        ]
+      }
+    ]
+  },
+  "eco_certified": true,
+  "other_reviews": [
+    {
+      "source": "Tripadvisor",
+      "source_icon": "https://www.gstatic.com/travel-hotels/branding/icon_100532569.png",
+      "source_rating": {
+        "score": 4.400000095367432,
+        "max_score": 5
+      },
+      "reviews": 2728,
+      "user_review": {
+        "username": "Roam67132059507",
+        "date": "bir ay \u00f6nce",
+        "rating": {
+          "score": 5,
+          "max_score": 5
+        },
+        "comment": "G\u00fczel bir ak\u015fam yeme\u011fi yedik. Yemekler harikayd\u0131. \u00d6zellikle Bar\u0131\u015f bey ve ekibi Aysun han\u0131m, Havva han\u0131m, Berkay beyler bizlere \u00e7ok ilgili ve \u00f6zenli davrand\u0131lar. Kibar ve d\u00fc\u015f\u00fcnceli bir ekip. Bizi rahat ve evimizde hissettirdiler. Kendilerine \u00e7ok te\u015fekk\u00fcr ederiz. Bir daha gelece\u011fiz",
+        "link": "https://www.tripadvisor.com.tr/Hotel_Review-g293974-d1924287-r1041951137?m=68573&staydates=2026_02_08_2026_02_09&uguests=1_2_0&supdv=desktop&supuc=US&supul=tr"
+      },
+      "source_number": 100532569,
+      "serpapi_link": "https://serpapi.com/search.json?engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ&source_number=100532569"
+    },
+    {
+      "source": "Tripadvisor",
+      "source_icon": "https://www.gstatic.com/travel-hotels/branding/icon_100532569.png",
+      "source_rating": {
+        "score": 4.300000190734863,
+        "max_score": 5
+      },
+      "reviews": 4,
+      "user_review": {
+        "username": "Dtyasin",
+        "date": "8 y\u0131l \u00f6nce",
+        "rating": {
+          "score": 4,
+          "max_score": 5
+        },
+        "comment": "Yer olarak Taksim Meydan\u0131'n\u0131n hemen kar\u015f\u0131s\u0131nda. Taksimde gece gezmesi i\u00e7in \u00e7ok avantajl\u0131 bir konumu var. Daimi m\u00fc\u015fterileri i\u00e7in fiyat avantaj\u0131 sa\u011flan\u0131yor. Oda k\u00fc\u00e7\u00fck ama yeterli. Kahvalt\u0131 da yine yeterli say\u0131l\u0131r. Konum/ fiyat a\u00e7\u0131s\u0131ndan 7/10",
+        "link": "https://www.tripadvisor.com.tr/Hotel_Review-g293974-d295045-r517062025?m=68573&staydates=2026_02_08_2026_02_09&uguests=1_2_0&supdv=desktop&supuc=US&supul=tr"
+      },
+      "source_number": 100532569,
+      "serpapi_link": "https://serpapi.com/search.json?engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ&source_number=100532569"
+    }
+  ],
+  "serpapi_google_hotels_reviews_link": "https://serpapi.com/search.json?engine=google_hotels_reviews&hl=en&property_token=ChgIvs7KtpDnnqVCGgwvZy8xMnFoa3YzMDUQAQ"
+}

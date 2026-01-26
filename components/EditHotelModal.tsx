@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Building2, MapPin, Loader2, Save, Trash2, Globe } from "lucide-react";
+import { X, Building2, MapPin, Loader2, Save, Globe } from "lucide-react";
 import { api } from "@/lib/api";
 import { Hotel } from "@/types";
+import { useI18n } from "@/lib/i18n";
 
 interface EditHotelModalProps {
   isOpen: boolean;
@@ -18,24 +19,27 @@ export default function EditHotelModal({
   hotel,
   onUpdate,
 }: EditHotelModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState(hotel.name);
   const [location, setLocation] = useState(hotel.location || "");
   const [currency, setCurrency] = useState(hotel.preferred_currency || "USD");
   const [isTarget, setIsTarget] = useState(hotel.is_target_hotel || false);
-  const [serpApiId, setSerpApiId] = useState<string | undefined>(hotel.serp_api_id || undefined);
+  const [serpApiId, setSerpApiId] = useState<string | undefined>(
+    hotel.serp_api_id || undefined,
+  );
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
-  // New Fields
+
   const [fixedCheckIn, setFixedCheckIn] = useState(hotel.fixed_check_in || "");
-  const [fixedCheckOut, setFixedCheckOut] = useState(hotel.fixed_check_out || "");
+  const [fixedCheckOut, setFixedCheckOut] = useState(
+    hotel.fixed_check_out || "",
+  );
   const [defaultAdults, setDefaultAdults] = useState(hotel.default_adults || 2);
 
   const suggestionRef = useRef<HTMLDivElement>(null);
 
-  // Sync state when hotel prop changes
   useEffect(() => {
     if (isOpen && hotel) {
       setName(hotel.name);
@@ -49,11 +53,8 @@ export default function EditHotelModal({
     }
   }, [isOpen, hotel]);
 
-  // Search logic (same as AddHotelModal)
   useEffect(() => {
     const searchHotels = async () => {
-      // Don't search if it matches initial hotel name exactly to avoid noise, 
-      // only if user is typing something new.
       if (name.length < 2 || name === hotel.name) {
         setSuggestions([]);
         return;
@@ -98,7 +99,6 @@ export default function EditHotelModal({
       onClose();
     } catch (error) {
       console.error("Error updating hotel:", error);
-      alert("Failed to update hotel.");
     } finally {
       setLoading(false);
     }
@@ -108,12 +108,11 @@ export default function EditHotelModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative">
-        
+      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
-            Edit Hotel
+            {t("editHotel.title")}
           </h2>
           <button
             onClick={onClose}
@@ -124,10 +123,9 @@ export default function EditHotelModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-            
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Hotel Name
+              {t("editHotel.nameLabel")}
             </label>
             <div className="relative z-50" ref={suggestionRef}>
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -137,36 +135,42 @@ export default function EditHotelModal({
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  // Only reset ID if they drastically change the name? 
-                  // Safer to reset if they type manually to avoid mismatch.
                   if (e.target.value !== hotel.name) setSerpApiId(undefined);
                   setShowSuggestions(true);
                 }}
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
               />
-               {/* Suggestions Dropdown logic similar to AddModal but simplified for brevity in this artifact */}
-               {showSuggestions && suggestions.length > 0 && (
-                   <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden">
-                       {suggestions.map((item, idx) => (
-                           <button key={idx} type="button" onClick={() => handleSelectSuggestion(item)} className="w-full px-3 py-2 text-left hover:bg-white/5 border-b border-white/5">
-                               <span className="text-white text-xs block">{item.name}</span>
-                               <span className="text-[var(--text-muted)] text-[10px] block">{item.location}</span>
-                           </button>
-                       ))}
-                   </div>
-               )}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+                  {suggestions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(item)}
+                      className="w-full px-3 py-2 text-left hover:bg-white/5 border-b border-white/5"
+                    >
+                      <span className="text-white text-xs block">
+                        {item.name}
+                      </span>
+                      <span className="text-[var(--text-muted)] text-[10px] block">
+                        {item.location}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {serpApiId && (
-                <p className="text-[10px] text-[var(--optimal-green)] mt-1 flex items-center gap-1">
-                    <Globe className="w-3 h-3"/> Linked to Google Graph ID
-                </p>
+              <p className="text-[10px] text-[var(--optimal-green)] mt-1 flex items-center gap-1">
+                <Globe className="w-3 h-3" /> {t("editHotel.linkedToGoogle")}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                Location
+                {t("editHotel.locationLabel")}
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -182,7 +186,7 @@ export default function EditHotelModal({
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                Currency
+                {t("editHotel.currencyLabel")}
               </label>
               <select
                 value={currency}
@@ -198,49 +202,54 @@ export default function EditHotelModal({
           </div>
 
           <div className="h-px bg-white/5 my-2" />
-          
-          <div className="space-y-3">
-              <p className="text-xs font-semibold text-[var(--soft-gold)] uppercase tracking-wider">Default Scan Settings (Optional)</p>
-              
-              <div className="grid grid-cols-3 gap-3">
-                 <div className="col-span-1">
-                    <label className="block text-xs text-[var(--text-secondary)] mb-1">Adults</label>
-                    <input 
-                        type="number" 
-                        min={1} 
-                        max={10}
-                        value={defaultAdults}
-                        onChange={(e) => setDefaultAdults(parseInt(e.target.value))}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
-                    />
-                 </div>
-                 <div className="col-span-2">
-                     {/* Spacer or CheckIn/Out split below */}
-                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Fixed Check-in</label>
-                        <input 
-                            type="date"
-                            value={fixedCheckIn}
-                            onChange={(e) => setFixedCheckIn(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs text-[var(--text-secondary)] mb-1">Fixed Check-out</label>
-                        <input 
-                            type="date"
-                            value={fixedCheckOut}
-                            onChange={(e) => setFixedCheckOut(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
-                        />
-                    </div>
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-[var(--soft-gold)] uppercase tracking-wider">
+              {t("editHotel.defaultScanSettings")}
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                  {t("editHotel.adults")}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={defaultAdults}
+                  onChange={(e) => setDefaultAdults(parseInt(e.target.value))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                  {t("editHotel.fixedCheckIn")}
+                </label>
+                <input
+                  type="date"
+                  value={fixedCheckIn}
+                  onChange={(e) => setFixedCheckIn(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                  {t("editHotel.fixedCheckOut")}
+                </label>
+                <input
+                  type="date"
+                  value={fixedCheckOut}
+                  onChange={(e) => setFixedCheckOut(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                />
+              </div>
+            </div>
           </div>
-          
+
           <div className="h-px bg-white/5 my-2" />
 
           <div className="flex items-center gap-2 py-2">
@@ -255,7 +264,7 @@ export default function EditHotelModal({
               htmlFor="isTargetEdit"
               className="text-sm text-[var(--text-secondary)] cursor-pointer select-none"
             >
-              This is my hotel (Target Hotel)
+              {t("editHotel.targetLabel")}
             </label>
           </div>
 
@@ -270,7 +279,7 @@ export default function EditHotelModal({
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Save Changes</span>
+                  <span>{t("editHotel.submitButton")}</span>
                 </>
               )}
             </button>

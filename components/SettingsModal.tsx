@@ -96,7 +96,7 @@ export default function SettingsModal({
       } as any);
 
       setPushEnabled(true);
-      alert(t("settings.pushEnabled") || "Push Notifications Enabled!");
+      alert(t("settings.pushEnabled"));
     } catch (error) {
       console.error("Error subscribing to push:", error);
       alert("Failed to enable push. " + error);
@@ -130,46 +130,79 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl">
-        {/* ... header ... */}
+      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+              <SettingsIcon className="w-5 h-5" />
+            </div>
+            <h2 className="text-xl font-bold text-white">
+              {t("settings.title")}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Threshold Section */}
-          {/* ... (omitted for brevity in prompt, effectively keeping same) ... */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[var(--soft-gold)]" />
+              {t("settings.triggerThreshold")}
+            </label>
+            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+              <input
+                type="range"
+                min="0.1"
+                max="10"
+                step="0.1"
+                value={threshold}
+                onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                className="flex-1 accent-[var(--soft-gold)]"
+              />
+              <span className="text-lg font-black text-white w-14 text-right">
+                {threshold}%
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
+              {t("settings.thresholdDesc").replace("{0}", threshold.toString())}
+            </p>
+          </div>
 
-          {/* Search Frequency */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-white flex items-center gap-2">
               <SettingsIcon className="w-4 h-4 text-[var(--soft-gold)]" />
-              Scan Frequency
+              {t("settings.scanFrequency")}
             </label>
             <select
               className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
               value={frequency}
               onChange={(e) => setFrequency(parseInt(e.target.value))}
             >
-              <option value="0">Real-time (Manual Only)</option>
-              <option value="60">Every hour</option>
-              <option value="240">Every 4 hours</option>
-              <option value="720">Every 12 hours</option>
-              <option value="1440">Daily (Recommended)</option>
+              <option value="0">{t("settings.realtime")}</option>
+              <option value="60">{t("settings.hourly")}</option>
+              <option value="240">{t("settings.every4h")}</option>
+              <option value="720">{t("settings.every12h")}</option>
+              <option value="1440">{t("settings.daily")}</option>
             </select>
           </div>
 
           <div className="h-px bg-white/10" />
 
-          {/* Notifications Section */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-white flex items-center gap-2">
               <Bell className="w-4 h-4 text-[var(--soft-gold)]" />
-              Notification Channels
+              {t("settings.notificationChannels")}
             </h3>
 
-            {/* Email Toggle */}
             <div className="space-y-2">
               <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
                 <span className="text-sm text-[var(--text-secondary)]">
-                  Email Alerts
+                  {t("settings.emailAlerts")}
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -187,29 +220,27 @@ export default function SettingsModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
-                  placeholder="tripzydevops@gmail.com"
+                  placeholder="name@company.com"
                 />
               )}
             </div>
 
-            {/* WhatsApp Toggle (Placeholder) */}
             <div
               className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed"
-              title="Coming Soon"
+              title={t("settings.comingSoon")}
             >
               <span className="text-sm text-[var(--text-secondary)] flex flex-col">
-                <span>WhatsApp Alerts</span>
+                <span>{t("settings.whatsappAlerts")}</span>
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Coming Soon
+                  {t("settings.comingSoon")}
                 </span>
               </span>
               <div className="w-11 h-6 bg-white/10 rounded-full"></div>
             </div>
 
-            {/* Push Toggle */}
             <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
               <span className="text-sm text-[var(--text-secondary)]">
-                {t("settings.push")}
+                {t("settings.pushAlerts")}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -234,7 +265,7 @@ export default function SettingsModal({
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Save Preferences</span>
+                  <span>{t("settings.savePreferences")}</span>
                 </>
               )}
             </button>

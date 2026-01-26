@@ -14,7 +14,7 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   onOpenAlerts?: () => void;
   onOpenSettings?: () => void;
-  onOpenBilling?: () => void; // Optional: Parent can still override if needed
+  onOpenBilling?: () => void;
 }
 
 export default function Header({
@@ -24,13 +24,12 @@ export default function Header({
   onOpenProfile = () => {},
   onOpenAlerts = () => {},
   onOpenSettings = () => {},
-  onOpenBilling, // Optional prop
+  onOpenBilling,
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
 
-  // Prefer internal handler if prop not provided
   const handleOpenBilling = onOpenBilling || (() => setIsBillingOpen(true));
 
   return (
@@ -91,7 +90,7 @@ export default function Header({
               {locale === "en" ? "TR" : "EN"}
             </button>
 
-            {/* Upgrade Button (Mobile hidden) */}
+            {/* Upgrade Button */}
             {(userProfile?.plan_type === "trial" ||
               !userProfile?.plan_type) && (
               <button
@@ -99,7 +98,7 @@ export default function Header({
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-lg text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all"
               >
                 <Crown className="w-3 h-3" />
-                Upgrade
+                {t("common.upgrade")}
               </button>
             )}
 
@@ -127,9 +126,9 @@ export default function Header({
                 onOpenBilling={handleOpenBilling}
               />
             )}
-            {userProfile ? null : (
+            {!userProfile && (
               <Link href="/login" className="btn-gold text-xs px-4 py-2">
-                Sign In
+                {t("common.signIn")}
               </Link>
             )}
           </div>
@@ -173,19 +172,19 @@ export default function Header({
                 href="/"
                 className="text-[var(--text-secondary)] hover:text-white"
               >
-                Dashboard
+                {t("common.dashboard")}
               </Link>
               <Link
                 href="/analysis"
                 className="text-[var(--text-secondary)] hover:text-white"
               >
-                Analysis
+                {t("common.analysis")}
               </Link>
               <Link
                 href="/reports"
                 className="text-[var(--text-secondary)] hover:text-white"
               >
-                Reports
+                {t("common.reports")}
               </Link>
               {userProfile && (
                 <div className="pt-4 border-t border-white/10">
@@ -205,7 +204,7 @@ export default function Header({
                   href="/login"
                   className="mt-4 w-full text-center py-3 rounded-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold mb-2"
                 >
-                  Sign In
+                  {t("common.signIn")}
                 </Link>
               )}
             </nav>
@@ -218,9 +217,8 @@ export default function Header({
         onClose={() => setIsBillingOpen(false)}
         currentPlan={userProfile?.plan_type || "trial"}
         onUpgrade={async () => {
-          // Mock upgrade in header context - usually would need refresh
           setIsBillingOpen(false);
-          window.location.reload(); // Simple way to refresh state for now
+          window.location.reload();
         }}
       />
     </header>

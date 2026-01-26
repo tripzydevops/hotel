@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 interface ScanSessionModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function ScanSessionModal({
   onClose,
   session,
 }: ScanSessionModalProps) {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<QueryLog[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +40,6 @@ export default function ScanSessionModal({
     if (!session) return;
     setLoading(true);
     try {
-      // We'll need to implement this endpoint or just fetch all logs for this session
       const result = await api.getSessionLogs(session.id);
       setLogs(result);
     } catch (error) {
@@ -96,21 +97,6 @@ export default function ScanSessionModal({
     document.body.removeChild(link);
   };
 
-  const exportToJSON = () => {
-    const dataStr =
-      "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(logs, null, 2));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute(
-      "download",
-      `scan_session_${session.id.slice(0, 8)}.json`,
-    );
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all">
       <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
@@ -123,7 +109,7 @@ export default function ScanSessionModal({
               </div>
               <div>
                 <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                  Pulse Intelligence
+                  {t("scanSession.title")}
                   <span
                     className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
                       session.status === "completed"
@@ -151,7 +137,7 @@ export default function ScanSessionModal({
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
                   <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                  CSV
+                  {t("scanSession.csvExport")}
                 </button>
               </div>
               <button
@@ -167,7 +153,7 @@ export default function ScanSessionModal({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                Average Rate
+                {t("scanSession.averageRate")}
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xl sm:text-2xl font-black text-white">
@@ -185,7 +171,7 @@ export default function ScanSessionModal({
             </div>
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                Success Rate
+                {t("scanSession.successRate")}
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xl sm:text-2xl font-black text-optimal-green">
@@ -202,7 +188,7 @@ export default function ScanSessionModal({
             </div>
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                Vendors
+                {t("scanSession.vendors")}
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xl sm:text-2xl font-black text-white">
@@ -212,7 +198,7 @@ export default function ScanSessionModal({
             </div>
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                Session ID
+                {t("scanSession.sessionId")}
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xs sm:text-sm font-mono text-[var(--text-muted)] mb-1">
@@ -229,7 +215,7 @@ export default function ScanSessionModal({
             <div className="h-40 flex flex-col items-center justify-center gap-4">
               <div className="w-10 h-10 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
               <p className="text-sm text-[var(--text-muted)] font-medium">
-                Extracting pulse data...
+                {t("scanSession.extractingData")}
               </p>
             </div>
           ) : (
@@ -238,7 +224,7 @@ export default function ScanSessionModal({
                 <div className="text-center py-20 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
                   <AlertCircle className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-20" />
                   <p className="text-[var(--text-muted)] font-medium italic">
-                    No detailed records found for this session
+                    {t("scanSession.noRecords")}
                   </p>
                 </div>
               ) : (
@@ -269,7 +255,7 @@ export default function ScanSessionModal({
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-wider">
                               <MapPin className="w-3 h-3" />
-                              <span>{log.location || "Unknown"}</span>
+                              <span>{log.location || t("common.pending")}</span>
                             </div>
                             {log.vendor && (
                               <>
@@ -294,7 +280,7 @@ export default function ScanSessionModal({
                               }).format(log.price)}
                             </p>
                             <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
-                              Live Rate
+                              {t("scanSession.liveRate")}
                             </p>
                           </div>
                         )}
@@ -321,13 +307,16 @@ export default function ScanSessionModal({
         {/* Footer */}
         <div className="p-6 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
           <p className="text-[10px] text-[var(--text-muted)] font-medium">
-            Intelligence data verified via SerpApi • All rates inclusive of
-            standard taxes
+            {t("scanSession.verifiedSerp")} • {t("hotelDetails.foundVia")}{" "}
+            SerpApi
           </p>
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <span className="text-[10px] text-white font-bold uppercase tracking-wider">
-              Generated {new Date().toLocaleTimeString()}
+              {t("scanSession.generatedAt").replace(
+                "{0}",
+                new Date().toLocaleTimeString(),
+              )}
             </span>
           </div>
         </div>

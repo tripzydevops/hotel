@@ -9,6 +9,7 @@ import {
   Lock,
   Check,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface HotelDetailsModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function HotelDetailsModal({
   isEnterprise,
   onUpgrade,
 }: HotelDetailsModalProps) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<
     "overview" | "amenities" | "offers" | "gallery" | "rooms"
   >("overview");
@@ -32,11 +34,11 @@ export default function HotelDetailsModal({
   if (!hotel) return null;
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: Building2 },
-    { id: "gallery", label: "Gallery", icon: ImageIcon },
-    { id: "amenities", label: "Amenities", icon: List },
-    { id: "offers", label: "Market Offers", icon: Tag },
-    { id: "rooms", label: "Room Types", icon: Building2 },
+    { id: "overview", label: t("hotelDetails.overview"), icon: Building2 },
+    { id: "gallery", label: t("hotelDetails.gallery"), icon: ImageIcon },
+    { id: "amenities", label: t("hotelDetails.amenities"), icon: List },
+    { id: "offers", label: t("hotelDetails.offers"), icon: Tag },
+    { id: "rooms", label: t("hotelDetails.rooms"), icon: Building2 },
   ];
 
   return (
@@ -69,7 +71,15 @@ export default function HotelDetailsModal({
               </h2>
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-[var(--text-muted)] mt-1">
                 <span>{hotel.location}</span>
-                {hotel.stars && <span>• {hotel.stars} Stars</span>}
+                {hotel.stars && (
+                  <span>
+                    •{" "}
+                    {t("hotelDetails.stars").replace(
+                      "{0}",
+                      hotel.stars.toString(),
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -110,7 +120,7 @@ export default function HotelDetailsModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-card p-6">
                   <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">
-                    Live Rates
+                    {t("hotelDetails.liveRates")}
                   </h3>
                   <div className="flex items-end gap-2 mb-2">
                     <span className="text-4xl font-black text-white">
@@ -120,22 +130,23 @@ export default function HotelDetailsModal({
                       }).format(hotel.price_info?.current_price || 0)}
                     </span>
                     <span className="text-[var(--text-muted)] mb-1">
-                      / night
+                      / {t("common.perNight")}
                     </span>
                   </div>
                   <div className="text-sm text-[var(--text-muted)]">
-                    Found via {hotel.price_info?.vendor || "SerpApi"}
+                    {t("hotelDetails.foundVia")}{" "}
+                    {hotel.price_info?.vendor || "SerpApi"}
                   </div>
                 </div>
 
                 <div className="glass-card p-6">
                   <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">
-                    Intelligence Summary
+                    {t("hotelDetails.intelSummary")}
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-[var(--text-secondary)]">
-                        Amenities Tracked
+                        {t("hotelDetails.amenitiesCount")}
                       </span>
                       <span className="text-white font-bold">
                         {hotel.amenities?.length || 0}
@@ -143,7 +154,7 @@ export default function HotelDetailsModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[var(--text-secondary)]">
-                        Market Offers
+                        {t("hotelDetails.offersCount")}
                       </span>
                       <span className="text-white font-bold">
                         {hotel.price_info?.offers?.length || 0}
@@ -151,7 +162,7 @@ export default function HotelDetailsModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[var(--text-secondary)]">
-                        Images Captured
+                        {t("hotelDetails.imagesCount")}
                       </span>
                       <span className="text-white font-bold">
                         {hotel.images?.length || 0}
@@ -168,8 +179,11 @@ export default function HotelDetailsModal({
             <LockedFeature
               isEnterprise={isEnterprise}
               onUpgrade={onUpgrade}
-              title="Visual Intelligence"
-              description="Access high-resolution image galleries to analyze competitor presentation."
+              title={t("hotelDetails.lockedTitle").replace(
+                "{0}",
+                t("hotelDetails.visualIntel"),
+              )}
+              description={t("hotelDetails.lockedDesc")}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {(hotel.images || []).map((img, idx) => (
@@ -184,14 +198,14 @@ export default function HotelDetailsModal({
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">
-                        View Full
+                        {t("common.view")}
                       </span>
                     </div>
                   </div>
                 ))}
                 {(!hotel.images || hotel.images.length === 0) && (
                   <div className="col-span-full py-12 text-center text-[var(--text-muted)]">
-                    No images captured for this hotel.
+                    {t("hotelDetails.noImages")}
                   </div>
                 )}
               </div>
@@ -203,8 +217,11 @@ export default function HotelDetailsModal({
             <LockedFeature
               isEnterprise={isEnterprise}
               onUpgrade={onUpgrade}
-              title="Feature Analysis"
-              description="Deep dive into competitor amenities and facilities."
+              title={t("hotelDetails.lockedTitle").replace(
+                "{0}",
+                t("hotelDetails.featureAnalysis"),
+              )}
+              description={t("hotelDetails.lockedDesc")}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {(hotel.amenities || []).map((amenity, idx) => (
@@ -220,7 +237,7 @@ export default function HotelDetailsModal({
                 ))}
                 {(!hotel.amenities || hotel.amenities.length === 0) && (
                   <div className="col-span-full py-12 text-center text-[var(--text-muted)]">
-                    No amenities captured for this hotel.
+                    {t("hotelDetails.noAmenities")}
                   </div>
                 )}
               </div>
@@ -232,16 +249,23 @@ export default function HotelDetailsModal({
             <LockedFeature
               isEnterprise={isEnterprise}
               onUpgrade={onUpgrade}
-              title="Market Depth"
-              description="See full competitor pricing across multiple vendors (Expedia, Booking, Agoda, etc.)."
+              title={t("hotelDetails.lockedTitle").replace(
+                "{0}",
+                t("hotelDetails.marketDepth"),
+              )}
+              description={t("hotelDetails.lockedDesc")}
             >
               <div className="overflow-hidden rounded-xl border border-white/10">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
                     <tr>
-                      <th className="p-4">Vendor</th>
-                      <th className="p-4 text-right">Price</th>
-                      <th className="p-4 text-right">Diff</th>
+                      <th className="p-4">{t("hotelDetails.vendor")}</th>
+                      <th className="p-4 text-right">
+                        {t("hotelDetails.price")}
+                      </th>
+                      <th className="p-4 text-right">
+                        {t("hotelDetails.diff")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -277,7 +301,7 @@ export default function HotelDetailsModal({
                 {(!hotel.price_info?.offers ||
                   hotel.price_info.offers.length === 0) && (
                   <div className="p-8 text-center text-[var(--text-muted)]">
-                    No additional offers found in this scan.
+                    {t("hotelDetails.noOffers")}
                   </div>
                 )}
               </div>
@@ -298,7 +322,7 @@ export default function HotelDetailsModal({
                         {room.name || "Standard Room"}
                       </h4>
                       <p className="text-xs text-[var(--text-muted)] mt-1">
-                        Direct from property
+                        {t("hotelDetails.foundVia")} property
                       </p>
                     </div>
                     <div className="text-right">
@@ -312,7 +336,7 @@ export default function HotelDetailsModal({
                         }).format(room.price || 0)}
                       </div>
                       <span className="text-[10px] text-[var(--soft-gold)] font-bold uppercase tracking-wider">
-                        Available Now
+                        {t("common.availableNow")}
                       </span>
                     </div>
                   </div>
@@ -321,7 +345,7 @@ export default function HotelDetailsModal({
                   hotel.price_info.room_types.length === 0) && (
                   <div className="py-12 text-center text-[var(--text-muted)] flex flex-col items-center gap-3">
                     <Building2 className="w-12 h-12 opacity-20" />
-                    <p>No specific room type data available for this date.</p>
+                    <p>{t("hotelDetails.noRooms")}</p>
                   </div>
                 )}
               </div>
@@ -346,6 +370,7 @@ function LockedFeature({
   title: string;
   description: string;
 }) {
+  const { t } = useI18n();
   if (isEnterprise) return <>{children}</>;
 
   return (
@@ -363,13 +388,12 @@ function LockedFeature({
         <div className="w-12 h-12 rounded-full bg-[var(--soft-gold)]/20 flex items-center justify-center mx-auto mb-4 text-[var(--soft-gold)]">
           <Lock className="w-6 h-6" />
         </div>
-        <h3 className="text-xl font-bold text-white mb-2">{title} is Locked</h3>
+        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
         <p className="text-[var(--text-secondary)] mb-6 text-sm">
-          {description} <br />
-          Upgrade to Enterprise to unlock full market intelligence.
+          {description}
         </p>
         <button onClick={onUpgrade} className="btn-gold px-8 py-3 w-full">
-          Unlock Enterprise Features
+          {t("hotelDetails.unlockButton")}
         </button>
       </div>
     </div>

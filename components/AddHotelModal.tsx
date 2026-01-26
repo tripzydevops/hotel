@@ -1,13 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Building2, MapPin, Search, Loader2 } from "lucide-react";
+import { X, Building2, MapPin, Loader2, Plus } from "lucide-react";
 import { api } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 interface AddHotelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, location: string, isTarget: boolean, currency: string, serpApiId?: string) => Promise<void>;
+  onAdd: (
+    name: string,
+    location: string,
+    isTarget: boolean,
+    currency: string,
+    serpApiId?: string,
+  ) => Promise<void>;
   initialName?: string;
   initialLocation?: string;
   currentHotelCount?: number;
@@ -21,6 +28,7 @@ export default function AddHotelModal({
   initialLocation = "",
   currentHotelCount = 0,
 }: AddHotelModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
   const [currency, setCurrency] = useState("USD");
@@ -93,7 +101,7 @@ export default function AddHotelModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLimitReached) return;
-    
+
     setLoading(true);
     try {
       await onAdd(name, location, isTarget, currency, serpApiId);
@@ -114,19 +122,19 @@ export default function AddHotelModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative overflow-hidden">
-        
         {/* Limit Warning Banner */}
         {isLimitReached && (
           <div className="absolute top-0 left-0 right-0 bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2 justify-center">
-            <Loader2 className="w-4 h-4 text-red-400 animate-pulse hidden" /> 
-            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Hotel Limit Reached (Max 5)</span>
+            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+              {t("addHotel.limitReached")}
+            </span>
           </div>
         )}
 
         <div className="flex items-center justify-between mb-6 mt-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
-            Add New Hotel
+            {t("addHotel.title")}
           </h2>
           <button
             onClick={onClose}
@@ -137,20 +145,23 @@ export default function AddHotelModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-            
           {/* Form Disabled Overlay if Limit Reached */}
           {isLimitReached && (
             <div className="absolute inset-0 z-10 bg-[var(--deep-ocean-card)]/50 backdrop-blur-[1px] flex items-center justify-center top-[80px]">
               <div className="bg-black/80 px-4 py-3 rounded-lg border border-white/10 text-center shadow-2xl">
-                <p className="text-white font-bold mb-1">Limit Reached</p>
-                <p className="text-xs text-[var(--text-muted)]">Upgrade to add more hotels.</p>
+                <p className="text-white font-bold mb-1">
+                  {t("addHotel.limitReached")}
+                </p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {t("addHotel.limitDesc")}
+                </p>
               </div>
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Hotel Name
+              {t("addHotel.nameLabel")}
             </label>
             <div className="relative z-50" ref={suggestionRef}>
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -165,7 +176,8 @@ export default function AddHotelModal({
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
-                  !isLimitReached && name.length >= 2 &&
+                  !isLimitReached &&
+                  name.length >= 2 &&
                   setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
                   setShowSuggestions(true)
                 }
@@ -173,7 +185,7 @@ export default function AddHotelModal({
                   if (e.key === "Escape") setShowSuggestions(false);
                 }}
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="e.g. Grand Plaza Hotel"
+                placeholder={t("addHotel.namePlaceholder")}
               />
               {name.length > 0 && !isSearching && !isLimitReached && (
                 <button
@@ -210,7 +222,9 @@ export default function AddHotelModal({
                               {item.name}
                             </span>
                             {item.source === "serpapi" && (
-                              <span className="text-[8px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1 rounded uppercase tracking-widest font-bold">Global</span>
+                              <span className="text-[8px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1 rounded uppercase tracking-widest font-bold">
+                                {t("addHotel.globalMatch")}
+                              </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
@@ -223,8 +237,12 @@ export default function AddHotelModal({
                       ))
                     ) : name.length >= 2 && !isSearching ? (
                       <div className="px-3 py-4 text-center bg-white/[0.02]">
-                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mb-1">No database matches</p>
-                        <p className="text-[9px] text-[var(--text-muted)]">Checking location below to set manually</p>
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mb-1">
+                          {t("addHotel.noMatch")}
+                        </p>
+                        <p className="text-[9px] text-[var(--text-muted)]">
+                          {t("addHotel.checkingLocation")}
+                        </p>
                       </div>
                     ) : null}
                   </div>
@@ -236,7 +254,7 @@ export default function AddHotelModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                Location
+                {t("addHotel.locationLabel")}
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -248,14 +266,14 @@ export default function AddHotelModal({
                   onChange={(e) => setLocation(e.target.value)}
                   onFocus={() => setShowSuggestions(false)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="e.g. Miami, FL"
+                  placeholder={t("addHotel.locationPlaceholder")}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                Currency
+                {t("addHotel.currencyLabel")}
               </label>
               <select
                 value={currency}
@@ -284,7 +302,7 @@ export default function AddHotelModal({
               htmlFor="isTarget"
               className="text-sm text-[var(--text-secondary)] cursor-pointer select-none disabled:opacity-50"
             >
-              This is my hotel (Target Hotel)
+              {t("addHotel.targetLabel")}
             </label>
           </div>
 
@@ -299,7 +317,11 @@ export default function AddHotelModal({
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>{isLimitReached ? "Limit Reached" : "Add Hotel Monitor"}</span>
+                  <span>
+                    {isLimitReached
+                      ? t("addHotel.limitReached")
+                      : t("addHotel.submitButton")}
+                  </span>
                 </>
               )}
             </button>
@@ -307,24 +329,5 @@ export default function AddHotelModal({
         </form>
       </div>
     </div>
-  );
-}
-
-// Helper icon
-function Plus({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
   );
 }

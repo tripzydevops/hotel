@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
+import { useI18n } from "@/lib/i18n";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -60,6 +61,7 @@ export default function TargetHotelTile({
   onEdit,
   onViewDetails,
 }: TargetHotelTileProps) {
+  const { t } = useI18n();
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -114,7 +116,7 @@ export default function TargetHotelTile({
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] uppercase tracking-widest text-[var(--soft-gold)] font-bold bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-full">
-                Property Owner
+                {t("common.myHotel")}
               </span>
               {rating && (
                 <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -140,7 +142,7 @@ export default function TargetHotelTile({
                 onEdit(id, { id, name, location, is_target_hotel: true });
               }}
               className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all border border-white/5"
-              title="Edit Hotel"
+              title={t("common.edit")}
             >
               <Edit2 className="w-4.5 h-4.5" />
             </button>
@@ -158,7 +160,7 @@ export default function TargetHotelTile({
                 });
               }}
               className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/20 transition-all border border-[var(--soft-gold)]/20"
-              title="View Hotel Intelligence"
+              title={t("common.view")}
             >
               <Building2 className="w-4.5 h-4.5" />
             </button>
@@ -170,7 +172,7 @@ export default function TargetHotelTile({
                 onDelete(id);
               }}
               className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-all border border-white/5"
-              title="Delete Monitor"
+              title={t("common.delete")}
             >
               <Trash2 className="w-4.5 h-4.5" />
             </button>
@@ -188,7 +190,7 @@ export default function TargetHotelTile({
         <div className="text-center group relative">
           <p className="text-[10px] font-bold tracking-widest text-[var(--soft-gold)] mb-2 uppercase flex items-center justify-center gap-2">
             <span className="w-1 h-1 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-            Live Market Rate
+            {t("dashboard.liveRate")}
           </p>
           <div className="relative inline-block mb-1">
             {currentPrice > 0 ? (
@@ -198,28 +200,28 @@ export default function TargetHotelTile({
                 </p>
                 {vendor && (
                   <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
-                    via {vendor}
+                    {t("hotelDetails.foundVia")} {vendor}
                   </span>
                 )}
                 {(checkIn || (adults && adults !== 2)) && (
                   <span className="mt-2 text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5">
                     {checkIn
-                      ? `Check-in ${new Date(checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                      : "Check-in Today"}
-                    {adults && adults !== 2 ? ` • ${adults} Guests` : ""}
+                      ? `${t("common.checkIn")} ${new Date(checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                      : t("common.today")}
+                    {adults && adults !== 2 ? ` • ${adults} G` : ""}
                   </span>
                 )}
               </div>
             ) : (
-              <p className="text-5xl font-bold text-[var(--text-muted)] animate-pulse">
-                SCAN REQUIRED
+              <p className="text-5xl font-bold text-[var(--text-muted)] animate-pulse uppercase">
+                {t("common.pending")}
               </p>
             )}
           </div>
 
           {/* Progressive Disclosure: Detail Tooltip on Hover */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-xl text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 pointer-events-none shadow-2xl backdrop-blur-md">
-            Verified via SerpApi Intelligence • {lastUpdated || "Just now"}
+            {t("dashboard.verified")} • {lastUpdated || t("common.pending")}
           </div>
         </div>
 
@@ -245,14 +247,18 @@ export default function TargetHotelTile({
       {/* Footer Stats */}
       <div className="flex items-center justify-between pt-6 border-t border-white/10">
         <div>
-          <p className="text-xs text-[var(--text-muted)]">Previous</p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {t("dashboard.previous")}
+          </p>
           <p className="text-lg text-[var(--text-secondary)]">
             {previousPrice ? formatPrice(previousPrice) : "—"}
           </p>
         </div>
 
         <div className="text-center">
-          <p className="text-xs text-[var(--text-muted)]">Change</p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {t("dashboard.change")}
+          </p>
           <p className={`text-lg font-semibold ${getTrendColor()}`}>
             {changePercent > 0 ? "+" : ""}
             {changePercent.toFixed(1)}%
@@ -260,9 +266,11 @@ export default function TargetHotelTile({
         </div>
 
         <div className="text-right">
-          <p className="text-xs text-[var(--text-muted)]">Updated</p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {t("dashboard.updated")}
+          </p>
           <p className="text-sm text-[var(--text-secondary)]">
-            {lastUpdated || "Pending"}
+            {lastUpdated || t("common.pending")}
           </p>
         </div>
       </div>

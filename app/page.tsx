@@ -8,7 +8,7 @@ import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileModal from "@/components/ProfileModal";
-import { Bell, RefreshCw, Plus, Settings, History, User } from "lucide-react";
+import { RefreshCw, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
@@ -20,15 +20,16 @@ import ScanSessionModal from "@/components/ScanSessionModal";
 import AlertsModal from "@/components/AlertsModal";
 import ScanSettingsModal from "@/components/ScanSettingsModal";
 import EditHotelModal from "@/components/EditHotelModal";
-import SubscriptionModal from "@/components/SubscriptionModal"; // New Import
+import SubscriptionModal from "@/components/SubscriptionModal";
 import { ScanSession, ScanOptions, Hotel } from "@/types";
-import Link from "next/link";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
 import HotelDetailsModal from "@/components/HotelDetailsModal";
 import { useToast } from "@/components/ui/ToastContext";
 import ZeroState from "@/components/ZeroState";
+import { useI18n } from "@/lib/i18n";
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const supabase = createClient();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
@@ -38,35 +39,30 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modals state
   const [isAddHotelOpen, setIsAddHotelOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isBillingOpen, setIsBillingOpen] = useState(false); // New State
+  const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
     undefined,
   );
-  const [profile, setProfile] = useState<any>(null); // Store full profile including subscription
+  const [profile, setProfile] = useState<any>(null);
 
-  // Edit State
   const [isEditHotelOpen, setIsEditHotelOpen] = useState(false);
   const [hotelToEdit, setHotelToEdit] = useState<Hotel | null>(null);
 
-  // Session Modal State
   const [selectedSession, setSelectedSession] = useState<ScanSession | null>(
     null,
   );
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isScanSettingsOpen, setIsScanSettingsOpen] = useState(false);
 
-  // Details Modal
   const [selectedHotelForDetails, setSelectedHotelForDetails] =
     useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const handleOpenDetails = (hotel: any) => {
-    // Try to find full hotel object in data
     const fullHotel =
       data?.competitors.find((h) => h.id === hotel.id) ||
       (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
@@ -84,16 +80,12 @@ export default function Dashboard() {
   };
 
   const handleEditHotel = (id: string, hotel: any) => {
-    // Ensure we have a valid hotel object. If passed from tile, it might be partial.
-    // Ideally we find it in our data.
     const fullHotel =
       data?.competitors.find((h) => h.id === id) ||
       (data?.target_hotel?.id === id ? data.target_hotel : null);
     if (fullHotel) {
       setHotelToEdit(fullHotel);
       setIsEditHotelOpen(true);
-    } else {
-      console.warn("Could not find full hotel data for edit", id);
     }
   };
 
@@ -105,7 +97,6 @@ export default function Dashboard() {
       if (session?.user?.id) {
         setUserId(session.user.id);
       } else {
-        // Redirect to login if not authenticated
         window.location.href = "/login";
       }
     };
@@ -130,24 +121,9 @@ export default function Dashboard() {
 
       const userProfile = await api.getProfile(userId);
       setProfile(userProfile);
-
-      /*
-      // Lazy cron: Check if scheduled scan is due (Vercel free tier workaround)
-      // DISABLED per user request (was causing spam due to useEffect loop)
-      /*
-      try {
-        const schedulerResult = await api.checkScheduledScan(userId);
-        if (schedulerResult.triggered) {
-          console.log("LazyScheduler: Triggered scan session", schedulerResult.session_id);
-        }
-      } catch (e) {
-        // Non-critical, don't block dashboard
-        console.warn("LazyScheduler check failed:", e);
-      }
-      */
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
-      setError("Failed to load dashboard data. Please check your connection.");
+      setError(t("common.loadingError") || "Failed to load dashboard data.");
     } finally {
       setLoading(false);
     }
@@ -166,14 +142,11 @@ export default function Dashboard() {
     }
   };
 
-  // Keep handleRefresh for backward compatibility or simple refresh if needed,
-  // but now we use handleScan mostly.
   const [scanDefaults, setScanDefaults] = useState<
     { checkIn?: string; checkOut?: string; adults?: number } | undefined
   >(undefined);
 
   const handleRefresh = () => {
-    // defaults from last scan if available
     if (data?.target_hotel?.price_info) {
       setScanDefaults({
         checkIn: data.target_hotel.price_info.check_in,
@@ -197,18 +170,14 @@ export default function Dashboard() {
   };
 
   const handleDeleteHotel = async (hotelId: string) => {
-    if (
-      !userId ||
-      !confirm("Are you sure you want to remove this hotel monitor?")
-    )
-      return;
+    if (!userId || !confirm(t("dashboard.removeConfirm"))) return;
     try {
       await api.deleteHotel(hotelId);
-      toast.success("Hotel removed from watch list");
+      toast.success(t("dashboard.removeSuccess"));
       await fetchData();
     } catch (error) {
       console.error("Failed to delete hotel:", error);
-      toast.error("Failed to delete hotel monitor");
+      toast.error(t("dashboard.removeError"));
     }
   };
 
@@ -226,7 +195,6 @@ export default function Dashboard() {
     if (!userId) return;
     await api.updateSettings(userId, settings);
     setUserSettings(settings);
-    // Refresh to check if any immediate alerts
     handleRefresh();
   };
 
@@ -234,22 +202,6 @@ export default function Dashboard() {
     setReSearchName(name);
     setReSearchLocation(location || "");
     setIsAddHotelOpen(true);
-  };
-
-  const handleDeleteLog = async (logId: string) => {
-    try {
-      await api.deleteLog(logId);
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          recent_searches: prev.recent_searches.filter((s) => s.id !== logId),
-          scan_history: prev.scan_history.filter((s) => s.id !== logId),
-        };
-      });
-    } catch (error) {
-      console.error("Failed to delete log:", error);
-    }
   };
 
   if (loading) {
@@ -268,7 +220,7 @@ export default function Dashboard() {
           onClick={fetchData}
           className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] rounded-lg font-bold hover:opacity-90 transition-opacity"
         >
-          Retry
+          {t("common.retry")}
         </button>
       </div>
     );
@@ -318,9 +270,7 @@ export default function Dashboard() {
         onAdd={handleAddHotel}
         initialName={reSearchName}
         initialLocation={reSearchLocation}
-        currentHotelCount={
-          (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)
-        }
+        currentHotelCount={currentHotelCount}
       />
 
       <SettingsModal
@@ -373,16 +323,12 @@ export default function Dashboard() {
         onClose={() => setIsBillingOpen(false)}
         currentPlan={profile?.plan_type || "trial"}
         onUpgrade={async (plan) => {
-          // Mock upgrade for now
           if (!userId) return;
-          // Update local state to reflect change immediately (optimistic UI)
           setProfile({
             ...profile,
             plan_type: plan,
             subscription_status: "active",
           });
-          // Call API eventually
-          // Call API eventually
           toast.success(`Upgraded to ${plan} plan successfully!`);
           setIsBillingOpen(false);
         }}
@@ -394,32 +340,29 @@ export default function Dashboard() {
         hotel={selectedHotelForDetails}
         isEnterprise={
           profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
-        } // Use both for now or just enterprise?
+        }
         onUpgrade={() => {
           setIsDetailsModalOpen(false);
           setIsBillingOpen(true);
         }}
       />
 
-      {/* Main Content */}
       <main className="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Dashboard Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
-              Rate Monitor
+              {t("dashboard.title")}
             </h1>
             <p className="text-[var(--text-secondary)] mt-1 text-xs">
-              Direct intelligence for revenue management
+              {t("dashboard.subtitle")}
             </p>
           </div>
 
-          {/* Market Pulse Summary */}
           {data?.competitors?.length && (
             <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
               <div className="text-right">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
-                  Market Pulse
+                  {t("dashboard.marketPulse")}
                 </p>
                 <div className="flex items-center gap-2 justify-end">
                   <span
@@ -459,9 +402,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
-            {/* Manual Search (Scan Now) */}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -474,22 +415,20 @@ export default function Dashboard() {
                 className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
               <span className="font-bold">
-                {isRefreshing ? "Scanning..." : "Scan Now"}
+                {isRefreshing ? t("common.scanning") : t("common.scanNow")}
               </span>
             </button>
 
-            {/* Add Competitor */}
             <button
               onClick={() => setIsAddHotelOpen(true)}
               className="btn-gold flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Hotel</span>
+              <span className="hidden sm:inline">{t("common.addHotel")}</span>
             </button>
           </div>
         </div>
 
-        {/* Bento Grid Dashboard */}
         <BentoGrid>
           {loading || isRefreshing ? (
             <>
@@ -505,7 +444,6 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {/* Target Hotel - Large Tile */}
               {data?.target_hotel && (
                 <TargetHotelTile
                   id={data.target_hotel.id}
@@ -524,8 +462,8 @@ export default function Dashboard() {
                   }
                   lastUpdated={
                     data.target_hotel.price_info
-                      ? "Updated just now"
-                      : "Pending initial scan"
+                      ? t("common.justNow")
+                      : t("dashboard.pendingInitial")
                   }
                   onDelete={handleDeleteHotel}
                   rating={data.target_hotel.rating}
@@ -540,7 +478,6 @@ export default function Dashboard() {
                 />
               )}
 
-              {/* Competitor Tiles */}
               {data?.competitors &&
                 [...data.competitors]
                   .sort(
@@ -585,7 +522,6 @@ export default function Dashboard() {
           )}
         </BentoGrid>
 
-        {/* Quick Stats */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-alert-red">
@@ -598,7 +534,7 @@ export default function Dashboard() {
               }
             </p>
             <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">
-              Yield Risk Area
+              {t("dashboard.yieldRisk")}
             </p>
           </div>
           <div className="glass-card p-4 text-center group">
@@ -610,7 +546,7 @@ export default function Dashboard() {
               }
             </p>
             <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">
-              Market Opportunity
+              {t("dashboard.marketOpportunity")}
             </p>
           </div>
           <div className="glass-card p-4 text-center">
@@ -631,35 +567,36 @@ export default function Dashboard() {
                 "—"
               )}
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Avg Competitor</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {t("dashboard.avgCompetitor")}
+            </p>
           </div>
           <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-white">
-              {(data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)}
+            <p className="text-2xl font-bold text-white">{currentHotelCount}</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {t("dashboard.hotelsTracked")}
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Hotels Tracked</p>
           </div>
         </div>
 
-        {/* Scan History Row */}
         <ScanHistory
           sessions={data?.recent_sessions || []}
           onOpenSession={handleOpenSession}
+          title={t("dashboard.scanHistoryTitle")}
         />
 
-        {/* Search History Row */}
         <SearchHistory
           searches={data?.recent_searches || []}
           onReSearch={handleReSearch}
+          title={t("dashboard.searchHistoryTitle")}
         />
 
-        {/* Rapid Pulse History Row */}
         <RapidPulseHistory
           sessions={data?.recent_sessions?.slice(0, 4) || []}
           onOpenSession={handleOpenSession}
+          title={t("dashboard.rapidPulseTitle")}
         />
 
-        {/* Footer */}
         <footer className="mt-20 py-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-[var(--text-muted)] text-sm">
             © 2026 Hotel Rate Monitor. All rates fetched via SerpApi.
@@ -669,13 +606,13 @@ export default function Dashboard() {
               href="#"
               className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
             >
-              Privacy
+              {t("common.privacy")}
             </a>
             <a
               href="#"
               className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
             >
-              Terms
+              {t("common.terms")}
             </a>
           </div>
         </footer>

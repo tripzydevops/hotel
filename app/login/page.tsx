@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { login, signup } from "./actions";
+import { useI18n } from "@/lib/i18n";
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +41,7 @@ export default function LoginPage() {
             <span className="text-[var(--soft-gold)]">Rate Sentinel</span>
           </h1>
           <p className="text-[var(--text-secondary)] mt-2 text-sm text-center">
-            {isLogin
-              ? "Access your enterprise competitor dashboard"
-              : "Register for your real-time monitoring account"}
+            {isLogin ? t("auth.loginSubtitle") : t("auth.signupSubtitle")}
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm animate-shake">
             <p className="font-bold mb-1 flex items-center gap-2">
-              ⚠️ Authentication Error
+              ⚠️ {t("auth.errorTitle")}
             </p>
             {error}
           </div>
@@ -62,7 +62,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest ml-1"
             >
-              Business Email
+              {t("auth.emailLabel")}
             </label>
             <input
               id="email"
@@ -70,7 +70,7 @@ export default function LoginPage() {
               type="email"
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
-              placeholder="name@company.com"
+              placeholder={t("auth.emailPlaceholder")}
             />
           </div>
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest ml-1"
             >
-              Secure Password
+              {t("auth.passwordLabel")}
             </label>
             <input
               id="password"
@@ -102,9 +102,9 @@ export default function LoginPage() {
             {isLoading ? (
               <div className="w-6 h-6 border-3 border-[var(--deep-ocean)]/30 border-t-[var(--deep-ocean)] rounded-full animate-spin" />
             ) : isLogin ? (
-              "Secure Log In"
+              t("auth.signInButton")
             ) : (
-              "Initialize Account"
+              t("auth.signUpButton")
             )}
           </button>
         </form>
@@ -112,7 +112,7 @@ export default function LoginPage() {
         {/* Toggle Section */}
         <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
           <p className="text-[var(--text-muted)] text-sm mb-4">
-            {isLogin ? "New to the platform?" : "Already have an account?"}
+            {isLogin ? t("auth.newToPlatform") : t("auth.alreadyHaveAccount")}
           </p>
           <button
             onClick={() => {
@@ -121,12 +121,12 @@ export default function LoginPage() {
             }}
             className="text-[var(--soft-gold)] font-bold hover:text-white transition-colors flex items-center gap-2 mx-auto decoration-2 underline-offset-4 hover:underline"
           >
-            {isLogin ? "Request Access / Sign Up" : "Back to Secure Login"}
+            {isLogin ? t("auth.requestAccess") : t("auth.backToLogin")}
           </button>
         </div>
 
         <div className="mt-8 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-bold opacity-50">
-          Automated Market Intel • Enterprise Security Layer
+          {t("auth.protectedText")}
         </div>
       </div>
     </div>

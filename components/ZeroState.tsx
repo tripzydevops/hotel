@@ -1,12 +1,14 @@
 "use client";
 
 import { Building2, Plus } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface ZeroStateProps {
   onAddHotel: () => void;
 }
 
 export default function ZeroState({ onAddHotel }: ZeroStateProps) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 animate-in fade-in zoom-in duration-500">
       <div className="relative mb-8 group cursor-pointer" onClick={onAddHotel}>
@@ -20,41 +22,37 @@ export default function ZeroState({ onAddHotel }: ZeroStateProps) {
       </div>
 
       <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
-        Welcome to Rate Sentinel
+        {t("dashboard.title")}
       </h2>
 
       <p className="text-[var(--text-secondary)] max-w-md text-lg mb-8 leading-relaxed">
-        Your dashboard is empty. Start by adding a
-        <span className="text-[var(--soft-gold)] font-bold mx-1">
-          Target Hotel
-        </span>
-        to monitor its rates against competitors automatically.
+        {t("dashboard.subtitle")}
       </p>
 
       <button
         onClick={onAddHotel}
         className="btn-gold text-lg px-8 py-4 shadow-[0_0_20px_rgba(255,215,0,0.15)] hover:shadow-[0_0_30px_rgba(255,215,0,0.3)] transform hover:-translate-y-1 transition-all"
       >
-        Add Your First Hotel
+        {t("common.addHotel")}
       </button>
 
       <div className="mt-12 grid grid-cols-3 gap-8 text-center opacity-50">
         <div className="flex flex-col items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)]" />
           <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">
-            Track Prices
+            {t("alerts.undercut")}
           </span>
         </div>
         <div className="flex flex-col items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)]" />
           <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">
-            Spy Competitors
+            {t("hotelDetails.featureAnalysis")}
           </span>
         </div>
         <div className="flex flex-col items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)]" />
           <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">
-            Get Alerts
+            {t("alerts.title")}
           </span>
         </div>
       </div>

@@ -7,16 +7,12 @@ import {
   TrendingUp,
   BarChart,
   Target,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
   Info,
   Zap,
   LayoutGrid,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Link from "next/link";
-
 import { createClient } from "@/utils/supabase/client";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
@@ -28,17 +24,15 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 
 export default function AnalysisPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const supabase = createClient();
-  /* New: Profile State for Header */
+  /* Profile State for Header */
   const [profile, setProfile] = useState<any>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
-  // Replicate hotel count logic roughly or use 0
   const hotelCount = 0;
-  /* End New State */
 
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
@@ -52,7 +46,6 @@ export default function AnalysisPage() {
       } = await supabase.auth.getSession();
       if (session?.user?.id) {
         setUserId(session.user.id);
-        // Fetch Profile for Header
         try {
           const userProfile = await api.getProfile(session.user.id);
           setProfile(userProfile);
@@ -60,7 +53,6 @@ export default function AnalysisPage() {
           console.error("Failed to fetch profile", e);
         }
       } else {
-        // Redirect to login if not authenticated
         window.location.href = "/login";
       }
     };
@@ -74,7 +66,6 @@ export default function AnalysisPage() {
       try {
         const result = await api.getAnalysis(userId, currency);
         setData(result);
-        // Update currency from response (may differ from request if using user settings)
         if (result.display_currency) {
           setCurrency(result.display_currency);
         }
@@ -93,7 +84,7 @@ export default function AnalysisPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
           <p className="text-[var(--soft-gold)] font-black uppercase tracking-widest text-[10px]">
-            Processing Intelligence...
+            {t("analysis.processing")}
           </p>
         </div>
       </div>
@@ -128,7 +119,7 @@ export default function AnalysisPage() {
                 <Zap className="w-5 h-5" />
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">
-                Market Intelligence
+                {t("analysis.title")}
               </h1>
             </div>
 
@@ -150,47 +141,47 @@ export default function AnalysisPage() {
             </select>
           </div>
           <p className="text-[var(--text-secondary)] font-medium">
-            Real-time competitor spread and predictive price analysis.
+            {t("analysis.subtitle")}
           </p>
         </div>
 
         {/* Global KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <KPICard
-            title="Market Average"
+            title={t("analysis.marketAverage")}
             value={
               data?.market_average
                 ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.market_average}`
                 : "N/A"
             }
-            subtitle="Current active inventory"
+            subtitle={t("common.availableNow")}
             icon={<BarChart className="w-5 h-5" />}
           />
           <KPICard
-            title="Target Price"
+            title={t("analysis.targetPrice")}
             value={
               data?.target_price
                 ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.target_price}`
                 : "N/A"
             }
-            subtitle="Your current rate"
+            subtitle={t("hotelDetails.liveRates")}
             icon={<Target className="w-5 h-5" />}
             highlight
           />
           <KPICard
-            title="Market Spread"
+            title={t("analysis.marketSpread")}
             value={
               data?.market_min && data?.market_max
                 ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.market_min} - ${CURRENCY_SYMBOLS[currency] || "$"}${data.market_max}`
                 : "N/A"
             }
-            subtitle="Inventory range"
+            subtitle={t("analysis.inventoryRange")}
             icon={<LayoutGrid className="w-5 h-5" />}
           />
           <KPICard
-            title="Market Position"
+            title={t("analysis.marketPosition")}
             value={data?.competitive_rank ? `#${data.competitive_rank}` : "N/A"}
-            subtitle="Price rank (Low to High)"
+            subtitle={t("analysis.competitiveRank")}
             icon={<TrendingUp className="w-5 h-5" />}
           />
         </div>
@@ -200,11 +191,11 @@ export default function AnalysisPage() {
           <div className="lg:col-span-2 glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-white">
-                Competitor Price Spread
+                {t("analysis.marketSpread")}
               </h2>
               <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-bold uppercase">
                 <Info className="w-3.5 h-3.5" />
-                Where you sit in the market
+                {t("analysis.marketSitInfo")}
               </div>
             </div>
 
@@ -214,11 +205,11 @@ export default function AnalysisPage() {
                 {/* Visual Indicators */}
                 <div className="absolute left-0 -top-6 text-[10px] font-black text-[var(--optimal-green)]">
                   {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_min} (Min)
+                  {data?.market_min} ({t("analysis.minLabel")})
                 </div>
                 <div className="absolute right-0 -top-6 text-[10px] font-black text-[var(--alert-red)]">
                   {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_max} (Max)
+                  {data?.market_max} ({t("analysis.maxLabel")})
                 </div>
 
                 {/* Target Marker */}
@@ -227,7 +218,8 @@ export default function AnalysisPage() {
                   style={{ left: `${spreadPercentage}%` }}
                 >
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black shadow-lg">
-                    YOU: {CURRENCY_SYMBOLS[currency] || "$"}
+                    {t("analysis.youLabel")}:{" "}
+                    {CURRENCY_SYMBOLS[currency] || "$"}
                     {data?.target_price}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--soft-gold)] rotate-45" />
                   </div>
@@ -238,7 +230,7 @@ export default function AnalysisPage() {
             <div className="mt-12 flex items-center gap-12 border-t border-white/5 pt-8">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
-                  Price Gap (To Min)
+                  {t("analysis.priceGapToMin")}
                 </span>
                 <span className="text-xl font-black text-white">
                   {data?.target_price && data?.market_min
@@ -248,7 +240,7 @@ export default function AnalysisPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
-                  Inventory Spread
+                  {t("analysis.inventorySpread")}
                 </span>
                 <span className="text-xl font-black text-white">
                   {data?.market_max && data?.market_min
@@ -259,14 +251,13 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          {/* Historical Trend Preview */}
           <div className="glass-card p-8 flex flex-col justify-between">
             <div>
               <h2 className="text-lg font-black text-white mb-2">
-                Target Price Trend
+                {t("analysis.targetPriceTrend")}
               </h2>
               <p className="text-xs text-[var(--text-muted)] font-medium mb-8">
-                30-day historical movements
+                {t("analysis.targetPriceTrendDesc")}
               </p>
 
               <div className="space-y-4">
@@ -280,7 +271,7 @@ export default function AnalysisPage() {
                       <div className="flex items-center gap-3">
                         <div className="text-[10px] font-black text-[var(--text-muted)]">
                           {new Date(point.recorded_at).toLocaleDateString(
-                            undefined,
+                            locale === "en" ? "en-US" : "tr-TR",
                             { month: "short", day: "numeric" },
                           )}
                         </div>
@@ -298,7 +289,7 @@ export default function AnalysisPage() {
               href="/reports"
               className="btn-gold w-full mt-8 font-black text-xs uppercase tracking-widest py-4 text-center block"
             >
-              Detailed History Repo
+              {t("analysis.historyRepo")}
             </Link>
           </div>
         </div>

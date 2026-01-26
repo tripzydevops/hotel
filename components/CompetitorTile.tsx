@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
+import { useI18n } from "@/lib/i18n";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -36,6 +37,7 @@ interface CompetitorTileProps {
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {
+  const { t } = useI18n();
   const {
     id,
     name,
@@ -148,7 +150,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
               {isUndercut && (
                 <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
-                  Undercut
+                  {t("dashboard.undercut")}
                 </span>
               )}
               {onViewDetails && (
@@ -163,7 +165,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                     });
                   }}
                   className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--text-muted)] hover:text-white transition-colors"
-                  title="View Intelligence"
+                  title={t("common.view")}
                 >
                   <Hotel className="w-3.5 h-3.5" />
                 </button>
@@ -175,7 +177,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                     onEdit(id, { id, name });
                   }}
                   className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--soft-gold)] hover:text-white transition-colors"
-                  title="Edit Hotel"
+                  title={t("common.edit")}
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
@@ -187,7 +189,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                     onDelete(id);
                   }}
                   className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-500/50 hover:text-red-400 transition-colors"
-                  title="Remove Monitor"
+                  title={t("common.delete")}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -219,11 +221,11 @@ export default function CompetitorTile(props: CompetitorTileProps) {
           </p>
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">
-              {currentPrice > 0 ? "per night" : "Pending Scan"}
+              {currentPrice > 0 ? t("common.perNight") : t("common.pending")}
             </p>
             {vendor && currentPrice > 0 && (
               <span className="text-[9px] text-[var(--text-muted)] italic">
-                via {vendor}
+                {t("hotelDetails.foundVia")} {vendor}
               </span>
             )}
             {(checkIn || (adults && adults !== 2)) && (
@@ -234,7 +236,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                       month: "short",
                       day: "numeric",
                     })
-                  : "Today"}
+                  : t("common.today")}
                 {adults && adults !== 2 ? ` • ${adults} G` : ""}
               </span>
             )}
@@ -261,7 +263,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
 
         {/* Progressive Disclosure: Hover Tooltip */}
         <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-          Live Market Rate • Verified
+          {t("dashboard.liveRate")} • {t("dashboard.verified")}
         </div>
       </div>
 
@@ -269,7 +271,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
       {previousPrice && (
         <div className="pt-3 border-t border-white/5">
           <p className="text-xs text-[var(--text-muted)]">
-            Was:{" "}
+            {t("dashboard.previous")}:{" "}
             <span className="text-[var(--text-secondary)]">
               {formatPrice(previousPrice)}
             </span>
