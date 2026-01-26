@@ -117,6 +117,110 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
             raise e
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
+async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
+    """
+    Verify that the user is logged in AND has an active approval status.
+    Block access if subscription_status is 'pending_approval' or 'rejected'.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+         raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    
+    try:
+        token = auth_header.split(" ")[1]
+        user = db.auth.get_user(token)
+        
+        if not user or not user.user:
+            raise HTTPException(status_code=401, detail="Invalid Token")
+            
+        user_id = user.user.id
+        
+        # Check Approval Status in user_profiles
+        # We fetch plan_type and subscription_status
+        # If no profile exists, create one with 'pending_approval'
+        
+        res = db.table("user_profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
+        
+        status = "pending_approval" # Default
+        if res.data:
+            status = res.data.get("subscription_status") or "pending_approval"
+        else:
+            # Auto-create profile as pending if missing
+            try:
+                email = user.user.email
+                db.table("user_profiles").insert({
+                    "user_id": user_id, 
+                    "email": email,
+                    "subscription_status": "pending_approval",
+                    "plan_type": "trial"
+                }).execute()
+            except Exception:
+                pass 
+                
+        # BLOCKING LOGIC
+        if status in ["pending_approval", "suspended", "rejected"]:
+            raise HTTPException(status_code=403, detail="Account Pending Approval")
+
+        return user.user
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Auth Check Error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication Verification Failed")
+
+async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
+    """
+    Verify that the user is logged in AND has an active approval status.
+    Block access if subscription_status is 'pending_approval' or 'rejected'.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+         raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    
+    try:
+        token = auth_header.split(" ")[1]
+        user = db.auth.get_user(token)
+        
+        if not user or not user.user:
+            raise HTTPException(status_code=401, detail="Invalid Token")
+            
+        user_id = user.user.id
+        
+        # Check Approval Status in user_profiles
+        # We fetch plan_type and subscription_status
+        # If no profile exists, create one with 'pending_approval'
+        
+        res = db.table("user_profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
+        
+        status = "pending_approval" # Default
+        if res.data:
+            status = res.data.get("subscription_status") or "pending_approval"
+        else:
+            # Auto-create profile as pending if missing
+            try:
+                email = user.user.email
+                db.table("user_profiles").insert({
+                    "user_id": user_id, 
+                    "email": email,
+                    "subscription_status": "pending_approval",
+                    "plan_type": "trial"
+                }).execute()
+            except Exception:
+                pass 
+                
+        # BLOCKING LOGIC
+        if status in ["pending_approval", "suspended", "rejected"]:
+            raise HTTPException(status_code=403, detail="Account Pending Approval")
+
+        return user.user
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Auth Check Error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication Verification Failed")
+
 # ===== Helpers =====
 
 # Exchange rates to USD (approximate, update periodically or use API)
@@ -187,7 +291,7 @@ async def health_check():
 # ===== Dashboard Endpoint =====
 
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
-async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
     # Default empty response
     fallback_resp = DashboardResponse(
@@ -774,7 +878,7 @@ async def search_hotel_directory(
 
 
 @app.get("/api/hotels/{user_id}", response_model=List[Hotel])
-async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     if not db:
         return []
         
@@ -783,7 +887,7 @@ async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase
 
 
 @app.post("/api/hotels/{user_id}", response_model=Hotel)
-async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] = Depends(get_supabase)):
+async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
         
@@ -1505,7 +1609,7 @@ async def get_analysis(
         return MarketAnalysis(market_average=0, market_min=0, market_max=0, display_currency="USD")
 
 @app.get("/api/reports/{user_id}", response_model=ReportsResponse)
-async def get_reports(user_id: UUID, db: Client = Depends(get_supabase)):
+async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Fetch data for reporting and historical audit, including legacy scans."""
     try:
         # 1. Fetch real sessions
@@ -2116,35 +2220,41 @@ async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase),
         
         results = []
         for h in hotels:
-            user = user_map.get(h["user_id"], {})
-            
-            # Fetch last price
-            last_price = None
-            last_currency = "USD"
-            last_scanned = None
-            
-            # Optimization: This N+1 query is bad but valid for MVP with low data
-            # Real fix: Fetch latest prices in bulk or use a view
-            prices = db.table("price_logs").select("price, currency, recorded_at").eq("hotel_id", h["id"]).order("recorded_at", desc=True).limit(1).execute().data
-            if prices:
-                last_price = prices[0]["price"]
-                last_currency = prices[0]["currency"]
-                last_scanned = prices[0]["recorded_at"]
+            try:
+                user = user_map.get(h["user_id"], {})
                 
-            results.append({
-                "id": h["id"],
-                "name": h["name"],
-                "location": h["location"],
-                "user_id": h["user_id"],
-                "user_display": user.get("display_name") or user.get("email"),
-                "serp_api_id": h.get("serp_api_id"),
-                "is_target_hotel": h["is_target_hotel"],
-                "preferred_currency": h.get("preferred_currency"),
-                "last_price": last_price,
-                "last_currency": last_currency,
-                "last_scanned": last_scanned,
-                "created_at": h["created_at"]
-            })
+                # Fetch last price
+                last_price = None
+                last_currency = "USD"
+                last_scanned = None
+                
+                # Optimization: This N+1 query is bad but valid for MVP with low data
+                try:
+                    prices = db.table("price_logs").select("price, currency, recorded_at").eq("hotel_id", h["id"]).order("recorded_at", desc=True).limit(1).execute().data
+                    if prices:
+                        last_price = prices[0]["price"]
+                        last_currency = prices[0]["currency"]
+                        last_scanned = prices[0]["recorded_at"]
+                except Exception:
+                    pass # limit fetch errors
+
+                results.append({
+                    "id": h["id"],
+                    "name": h["name"],
+                    "location": h["location"],
+                    "user_id": h["user_id"],
+                    "user_display": user.get("display_name") or user.get("email"),
+                    "serp_api_id": h.get("serp_api_id"),
+                    "is_target_hotel": h["is_target_hotel"],
+                    "preferred_currency": h.get("preferred_currency"),
+                    "last_price": last_price,
+                    "last_currency": last_currency,
+                    "last_scanned": last_scanned,
+                    "created_at": h["created_at"]
+                })
+            except Exception as e:
+                print(f"Skipping invalid admin hotel row: {e}")
+                continue
             
         return results
     except Exception as e:
