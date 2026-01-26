@@ -28,8 +28,8 @@ def load_api_keys() -> List[str]:
     """Load all available SerpApi keys from environment."""
     keys = []
     
-    # Primary key
-    primary = os.getenv("SERPAPI_API_KEY")
+    # Primary key (Try both naming conventions)
+    primary = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
     if primary:
         keys.append(primary)
     

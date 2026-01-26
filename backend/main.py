@@ -1868,8 +1868,9 @@ async def reload_api_keys(user: Any = Depends(get_current_admin_user), db: Clien
             "total_keys": reload_result.get('total_keys', 0),
             "keys_found": [f"Key #{i+1}" for i in range(reload_result.get('total_keys', 0))],
             "env_debug": {
-                "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing",
-                "NEXT_PUBLIC_SERPAPI_KEY": "Set" if os.getenv("NEXT_PUBLIC_SERPAPI_KEY") else "Missing"
+                "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
+                "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
+                "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing"
             },
             "current_status": full_status
         }
