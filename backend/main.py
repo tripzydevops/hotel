@@ -225,52 +225,67 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             
             # Build price info with trend
             price_info = None
-            if current_price and current_price.get("price") is not None:
-                current = float(current_price["price"])
-                curr_currency = current_price.get("currency") or "USD"
-                
-                previous = None
-                if previous_price and previous_price.get("price") is not None:
-                     raw_prev = float(previous_price["price"])
-                     prev_currency = previous_price.get("currency") or "USD"
-                     
-                     if curr_currency != prev_currency:
+            try:
+                if current_price and current_price.get("price") is not None:
+                    current = float(current_price["price"])
+                    curr_currency = current_price.get("currency") or "USD"
+                    
+                    previous = None
+                    if previous_price and previous_price.get("price") is not None:
                          try:
-                            previous = convert_currency(raw_prev, prev_currency, curr_currency)
-                         except Exception:
-                            # Fallback if conversion fails (e.g. key missing)
-                            previous = raw_prev
-                     else:
-                         previous = raw_prev
-                
-                # Dynamic check for price_comparator (module vs instance)
-                trend, change = None, 0.0
-                try:
-                    if hasattr(price_comparator, "price_comparator"):
-                        # If module, access instance inside
-                        trend, change = price_comparator.price_comparator.calculate_trend(current, previous)
-                    else:
-                        # Direct instance (or if we fixed import)
-                        trend, change = price_comparator.calculate_trend(current, previous)
-                except Exception as e:
-                    print(f"Trend Calc Error: {e}")
-                    # Ultimate fallback
-                    from backend.models.schemas import TrendDirection
-                    trend, change = TrendDirection.STABLE, 0.0
+                            raw_prev = float(previous_price["price"])
+                            prev_currency = previous_price.get("currency") or "USD"
+                            
+                            if curr_currency != prev_currency:
+                                try:
+                                   previous = convert_currency(raw_prev, prev_currency, curr_currency)
+                                except Exception:
+                                   previous = raw_prev
+                            else:
+                                previous = raw_prev
+                         except (ValueError, TypeError):
+                            previous = None
+                    
+                    # Dynamic check for price_comparator (module vs instance)
+                    trend, change = None, 0.0
+                    try:
+                        if hasattr(price_comparator, "price_comparator"):
+                            trend, change = price_comparator.price_comparator.calculate_trend(current, previous)
+                        else:
+                            trend, change = price_comparator.calculate_trend(current, previous)
+                    except Exception as e:
+                        print(f"Trend Calc Error: {e}")
+                        from backend.models.schemas import TrendDirection
+                        trend, change = TrendDirection.STABLE, 0.0
 
-                price_info = {
-                    "current_price": current,
-                    "previous_price": previous,
-                    "currency": curr_currency,
-                    "trend": trend.value if hasattr(trend, "value") else "stable",
-                    "change_percent": change,
-                    "recorded_at": current_price["recorded_at"],
-                    "vendor": current_price.get("vendor"),
-                    "check_in": current_price.get("check_in_date"),
-                    "check_out": current_price.get("check_out_date"),
-                    "adults": current_price.get("adults"),
-                }
+                    price_info = {
+                        "current_price": current,
+                        "previous_price": previous,
+                        "currency": curr_currency,
+                        "trend": trend.value if hasattr(trend, "value") else "stable",
+                        "change_percent": change,
+                        "recorded_at": current_price["recorded_at"],
+                        "vendor": current_price.get("vendor"),
+                        "check_in": current_price.get("check_in_date"),
+                        "check_out": current_price.get("check_out_date"),
+                        "adults": current_price.get("adults"),
+                    }
+            except (ValueError, TypeError) as e:
+                print(f"Skipping invalid price for hotel {hotel['name']}: {e}")
+                price_info = None
             
+            # Safe Price History
+            valid_history = []
+            for p in prices:
+                try:
+                    if p.get("price") is not None:
+                        valid_history.append(PricePoint(
+                            price=float(p["price"]), 
+                            recorded_at=p["recorded_at"]
+                        ))
+                except (ValueError, TypeError):
+                    continue
+
             hotel_with_price = HotelWithPrice(
                 id=hotel["id"],
                 name=hotel["name"],
@@ -280,10 +295,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 stars=hotel.get("stars"),
                 image_url=hotel.get("image_url"),
                 price_info=price_info,
-                price_history=[
-                    PricePoint(price=float(p["price"]), recorded_at=p["recorded_at"]) 
-                    for p in prices if p.get("price") is not None
-                ]
+                price_history=valid_history
             )
             
             if hotel["is_target_hotel"]:
