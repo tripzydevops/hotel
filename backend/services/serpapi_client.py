@@ -420,15 +420,44 @@ class SerpApiClient:
         properties = data.get("properties", [])
         
         if not properties:
-            # Try alternative response structure
-            properties = data.get("organic_results", [])
-        
-        if not properties:
+            # Check for Direct "Knowledge Graph" Result (Root level fields)
+            # This happens for specific queries like "Willmont Hotel Balikesir"
+            if data.get("search_parameters", {}).get("q") and (data.get("rate_per_night") or data.get("prices") or data.get("menu")):
+                 print(f"[SerpApi] Detected Knowledge Graph Result for {target_hotel}")
+                 # Construct a 'best_match' object from root fields
+                 best_match = {
+                     "name": data.get("name") or data.get("search_parameters", {}).get("q"),
+                     "deal_description": "Direct",
+                     "overall_rating": data.get("overall_rating"),
+                     "extracted_hotel_class": data.get("extracted_hotel_class"),
+                     "property_token": data.get("property_token"),
+                     "images": data.get("images", []),
+                     "amenities": data.get("amenities", []),
+                     "prices": data.get("prices", []),
+                     "description": data.get("description"),
+                     "rate_per_night": data.get("rate_per_night")
+                 }
+                 
+                 # If rate_per_night is at root but not in prices list
+                 if not best_match["prices"] and data.get("rate_per_night"):
+                      best_match["prices"] = [{"rate_per_night": data.get("rate_per_night"), "source": "Official"}]
+
+            else:
+                # Try alternative response structure (older format)
+                properties = data.get("organic_results", [])
+                
+        if not properties and not best_match:
             print(f"[SerpApi] No properties found for {target_hotel}")
-            return None
+            # Try to return partial ANYWAY from root if name matches loosely
+            if data.get("name") and target_hotel.lower() in data.get("name", "").lower():
+                 print(f"[SerpApi] Using root data as fallback for {target_hotel}")
+                 best_match = data
+            else:
+                 return None
         
-        # Find the best matching hotel
-        # Find the best matching hotel
+        # Find the best matching hotel (if not already found via knowledge graph)
+        if not best_match:
+            # Find the best matching hotel
         target_lower = target_hotel.lower()
         best_match = None
         
@@ -555,12 +584,12 @@ class SerpApiClient:
                 price = None
         
         if price is None:
-            print(f"[SerpApi] Could not extract price for {target_hotel}")
-            return None
+            print(f"[SerpApi] Could not extract price for {target_hotel}, returning partial data.")
+            # return None -> Don't return None! Return partial data.
         
         return {
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
-            "price": float(price),
+            "price": float(price) if price is not None else None,
             "currency": currency,
             "source": "serpapi",
             "vendor": best_match.get("deal_description", "Unknown Vendor"), # e.g. "Booking.com"

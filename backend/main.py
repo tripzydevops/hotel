@@ -559,44 +559,49 @@ async def run_monitor_background(
                     )
                     return
 
-                current_price = price_data["price"]
-                prices_updated += 1
-                
-                if hotel["is_target_hotel"]:
-                    target_price_ref["value"] = current_price
-                
-                # Get previous price
-                prev_result = db.table("price_logs") \
-                    .select("price, currency") \
-                    .eq("hotel_id", hotel_id) \
-                    .order("recorded_at", desc=True) \
-                    .limit(1) \
-                    .execute()
-                
-                previous_price = None
-                previous_currency = "USD"
-                
-                if prev_result.data:
-                    previous_price = prev_result.data[0]["price"]
-                    previous_currency = prev_result.data[0].get("currency", "USD")
-                    
-                    # Normalize if currencies differ
-                    if hotel_currency != previous_currency:
-                        previous_price = convert_currency(previous_price, previous_currency, hotel_currency)
-                
-                # Log price
-                db.table("price_logs").insert({
-                    "hotel_id": hotel_id,
-                    "price": current_price,
-                    "currency": hotel_currency,
-                    "check_in_date": (options.check_in if options and options.check_in else date.today()).isoformat(),
-                    "source": "serpapi",
-                    "vendor": price_data.get("vendor"),
-                    "offers": price_data.get("offers", []),
-                    "room_types": price_data.get("room_types", [])
-                }).execute()
+                current_price = price_data.get("price")
+                is_partial = current_price is None
 
-                # Update metadata
+                if not is_partial:
+                    prices_updated += 1
+                    
+                    if hotel["is_target_hotel"]:
+                        target_price_ref["value"] = current_price
+                    
+                    # Get previous price
+                    prev_result = db.table("price_logs") \
+                        .select("price, currency") \
+                        .eq("hotel_id", hotel_id) \
+                        .order("recorded_at", desc=True) \
+                        .limit(1) \
+                        .execute()
+                    
+                    previous_price = None
+                    previous_currency = "USD"
+                    
+                    if prev_result.data:
+                        previous_price = prev_result.data[0]["price"]
+                        previous_currency = prev_result.data[0].get("currency", "USD")
+                        
+                        # Normalize if currencies differ
+                        if hotel_currency != previous_currency:
+                            previous_price = convert_currency(previous_price, previous_currency, hotel_currency)
+                    
+                    # Log price
+                    db.table("price_logs").insert({
+                        "hotel_id": hotel_id,
+                        "price": current_price,
+                        "currency": hotel_currency,
+                        "check_in_date": (options.check_in if options and options.check_in else date.today()).isoformat(),
+                        "source": "serpapi",
+                        "vendor": price_data.get("vendor"),
+                        "offers": price_data.get("offers", []),
+                        "room_types": price_data.get("room_types", [])
+                    }).execute()
+                else:
+                    print(f"[Monitor] Partial data for {hotel_name} (No Price)")
+
+                # Update metadata (ALWAYS run this if price_data exists)
                 meta_update = {}
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
@@ -612,8 +617,8 @@ async def run_monitor_background(
                 if meta_update:
                     db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
                 
-                # Alerts
-                if previous_price:
+                # Alerts (Only if price exists)
+                if not is_partial and previous_price:
                     threshold_alert = price_comparator.price_comparator.check_threshold_breach(
                         current_price, previous_price, threshold
                     )
@@ -640,7 +645,8 @@ async def run_monitor_background(
                 await log_query(
                     db=db, user_id=user_id,
                     hotel_name=price_data.get("hotel_name", hotel_name),
-                    location=location, action_type="monitor", status="success",
+                    location=location, action_type="monitor", 
+                    status="success" if not is_partial else "partial_data",
                     price=current_price, currency=hotel_currency,
                     vendor=price_data.get("vendor"), session_id=session_id
                 )
