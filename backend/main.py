@@ -390,6 +390,8 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                         "check_in": current_price.get("check_in_date"),
                         "check_out": current_price.get("check_out_date"),
                         "adults": current_price.get("adults"),
+                        "offers": current_price.get("offers") or [],
+                        "room_types": current_price.get("room_types") or []
                     }
             except (ValueError, TypeError) as e:
                 print(f"Skipping invalid price for hotel {hotel['name']}: {e}")
@@ -416,6 +418,8 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                     rating=hotel.get("rating"),
                     stars=hotel.get("stars"),
                     image_url=hotel.get("image_url"),
+                    amenities=hotel.get("amenities") or [],
+                    images=hotel.get("images") or [],
                     price_info=price_info,
                     price_history=valid_history
                 )

@@ -188,6 +188,8 @@ class PriceWithTrend(BaseModel):
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     adults: Optional[int] = None
+    offers: List[Dict[str, Any]] = []
+    room_types: List[Dict[str, Any]] = []
 
 
 
@@ -205,6 +207,8 @@ class HotelWithPrice(BaseModel):
     rating: Optional[float] = None
     stars: Optional[int] = None
     image_url: Optional[str] = None
+    amenities: List[str] = []
+    images: List[Dict[str, Any]] = []
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
 
