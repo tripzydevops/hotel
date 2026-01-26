@@ -2170,7 +2170,13 @@ async def get_admin_settings(db: Client = Depends(get_supabase)):
 @app.put("/api/admin/settings")
 async def update_admin_settings(updates: AdminSettingsUpdate, db: Client = Depends(get_supabase)):
     """Update global system settings."""
-    if not db:
+    # Force Service Role for Admin Actions (Bypass RLS)
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
         
     try:
