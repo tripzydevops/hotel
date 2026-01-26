@@ -2027,7 +2027,7 @@ async def update_admin_user(user_id: UUID, updates: dict, db: Client = Depends(g
         raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:
         # Update user_profiles table
-        profile_fields = ["display_name", "company_name", "job_title", "phone", "timezone"]
+        profile_fields = ["display_name", "company_name", "job_title", "phone", "timezone", "plan_type", "subscription_status", "trial_ends_at", "subscription_end_date"]
         profile_update = {k: v for k, v in updates.items() if k in profile_fields and v is not None}
         
         if profile_update:
