@@ -92,35 +92,49 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
              raise HTTPException(status_code=401, detail="Invalid Token Format")
              
         token = token_parts[1]
-        user = db.auth.get_user(token)
         
-        if not user or not user.user:
-            print("Admin Auth: User invalid in Supabase")
-            raise HTTPException(status_code=401, detail="Invalid Token")
+        # Call Supabase to verify token
+        try:
+            user_resp = db.auth.get_user(token)
+            if not user_resp or not user_resp.user:
+                print(f"Admin Auth: Supabase rejected token. Response: {user_resp}")
+                raise HTTPException(status_code=401, detail="Supabase: Invalid Token")
+            user_obj = user_resp.user
+        except Exception as auth_e:
+            print(f"Admin Auth: Supabase get_user exception: {auth_e}")
+            raise HTTPException(status_code=401, detail=f"Supabase Auth Error: {str(auth_e)}")
             
-        user_id = user.user.id
-        email = user.user.email
+        user_id = user_obj.id
+        email = user_obj.email
         
+        print(f"Admin Auth: Verified {email} ({user_id})")
+
         # 1. Check strict whitelist (Hardcoded for MVP safety)
         if email and (email in ["admin@hotel.plus", "elif@tripzy.travel"] or email.endswith("@tripzy.travel")):
-            return user.user
+            print(f"Admin Auth: {email} allowed via Whitelist")
+            return user_obj
             
         # 2. Check Database Role
         # Use limit(1) instead of single() to avoid crash if no profile
-        profile = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
-        
-        if profile.data and profile.data[0].get("role") == "admin":
-            return user.user
+        try:
+            profile = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
             
-        print(f"Admin Auth: User {email} is not admin")
+            if profile.data and profile.data[0].get("role") == "admin":
+                print(f"Admin Auth: {email} allowed via DB Role")
+                return user_obj
+        except Exception as db_e:
+            print(f"Admin Auth: DB Profile lookup failed: {db_e}")
+            # Fallthrough to block
+            
+        print(f"Admin Auth: DENIED - User {email} has no admin role")
         raise HTTPException(status_code=403, detail="Admin Access Required")
         
     except HTTPException as he:
         raise he
     except Exception as e:
-        print(f"Admin Auth Error: {e}")
+        print(f"Admin Auth CRITICAL: {e}")
         # DEBUG: Return actual error to client to debug 401
-        raise HTTPException(status_code=401, detail=f"Auth Failed: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"Auth Critical Failure: {str(e)}")
 
 async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
     """
