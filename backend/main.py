@@ -2015,7 +2015,13 @@ async def update_admin_directory(entry_id: str, updates: dict, db: Client = Depe
 @app.get("/api/admin/hotels")
 async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase)):
     """List all hotels across all users with user info."""
-    if not db:
+    # Force Service Role for Admin Actions (Bypass RLS)
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
         
     try:
@@ -2072,7 +2078,13 @@ async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase))
 @app.get("/api/admin/scans")
 async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase)):
     """List recent scan sessions with user info."""
-    if not db:
+    # Force Service Role for Admin Actions (Bypass RLS)
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
         
     try:
