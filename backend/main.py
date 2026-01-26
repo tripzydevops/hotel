@@ -409,6 +409,8 @@ async def trigger_monitor(
             if plan_res.data:
                 limit = plan_res.data[0].get("monthly_scan_limit", 100)
         
+        print(f"[Monitor] User {user_id} | Plan: {plan_type} | Hotels Found: {len(hotels)}")
+        
         # 2. Count Monthly Usage
         now = datetime.now()
         first_day = datetime(now.year, now.month, 1).isoformat()
