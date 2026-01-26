@@ -26,7 +26,7 @@ export default function HotelDetailsModal({
   onUpgrade,
 }: HotelDetailsModalProps) {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "amenities" | "offers" | "gallery"
+    "overview" | "amenities" | "offers" | "gallery" | "rooms"
   >("overview");
 
   if (!hotel) return null;
@@ -35,6 +35,7 @@ export default function HotelDetailsModal({
     { id: "overview", label: "Overview", icon: Building2 },
     { id: "gallery", label: "Gallery", icon: ImageIcon },
     { id: "amenities", label: "Amenities", icon: List },
+    { id: "rooms", label: "Room Types", icon: Building2 },
     { id: "offers", label: "Market Offers", icon: Tag },
   ];
 
@@ -281,6 +282,50 @@ export default function HotelDetailsModal({
                 )}
               </div>
             </LockedFeature>
+          )}
+
+          {/* ROOM TYPES TAB */}
+          {activeTab === "rooms" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                {(hotel.price_info?.room_types || []).map((room, idx) => (
+                  <div
+                    key={idx}
+                    className="glass-card p-4 flex justify-between items-center group hover:bg-white/5 transition-all border border-white/5 hover:border-[var(--soft-gold)]/30"
+                  >
+                    <div>
+                      <h4 className="font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
+                        {room.name || "Standard Room"}
+                      </h4>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Direct from property
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black text-white">
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency:
+                            room.currency ||
+                            hotel.price_info?.currency ||
+                            "USD",
+                        }).format(room.price || 0)}
+                      </div>
+                      <span className="text-[10px] text-[var(--soft-gold)] font-bold uppercase tracking-wider">
+                        Available Now
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!hotel.price_info?.room_types ||
+                  hotel.price_info.room_types.length === 0) && (
+                  <div className="py-12 text-center text-[var(--text-muted)] flex flex-col items-center gap-3">
+                    <Building2 className="w-12 h-12 opacity-20" />
+                    <p>No specific room type data available for this date.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

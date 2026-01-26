@@ -609,19 +609,60 @@ class SerpApiClient:
                 {"thumbnail": img.get("thumbnail"), "original": img.get("original")} 
                 for img in best_match.get("images", [])[:10]
             ],
-            "offers": [
-                {
-                    "vendor": p.get("source"),
-                    "price": p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
-                }
-                for p in best_match.get("prices", [])
-            ],
-            # Room types are tricky in basic hotel search, usually requires deep search.
-            # We capture what we can from 'options' if available in this endpoint (rare) or raw data.
-            "room_types": [], 
+            "offers": self._parse_market_offers(best_match.get("prices", []), currency),
+            "room_types": self._parse_room_types(best_match.get("room_types", []), currency), 
             
             "raw_data": best_match,
         }
+
+    def _parse_market_offers(self, prices_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
+        """Parse raw price sources into numeric offers."""
+        offers = []
+        for p in prices_data:
+            try:
+                raw_price = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+                if not raw_price:
+                    continue
+                
+                # Use a simpler version of the float parser for these
+                import re
+                clean_str = re.sub(r'[^\d.,]', '', str(raw_price))
+                # Handle comma/dot same as main parser
+                if "," in clean_str and "." in clean_str:
+                    if clean_str.rfind(",") > clean_str.rfind("."):
+                        clean_str = clean_str.replace(".", "").replace(",", ".")
+                    else:
+                        clean_str = clean_str.replace(",", "")
+                elif "," in clean_str and len(clean_str.split(",")[-1]) != 3:
+                    clean_str = clean_str.replace(",", ".")
+                
+                # Fallback for simple thousands
+                clean_str = clean_str.replace(",", "") if len(clean_str.split(",")[-1]) == 3 else clean_str
+                
+                offers.append({
+                    "vendor": p.get("source") or "Unknown",
+                    "price": float(clean_str) if clean_str else None,
+                    "currency": currency
+                })
+            except:
+                continue
+        return offers
+
+    def _parse_room_types(self, room_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
+        """Parse room type results if present in the data."""
+        rooms = []
+        # SerpApi sometimes provides these in property_details or specific engines
+        # But we capture what we can from the current response
+        for r in room_data:
+            try:
+                rooms.append({
+                    "name": r.get("title") or r.get("name") or "Standard Room",
+                    "price": float(re.sub(r'[^\d.]', '', str(r.get("price")))) if r.get("price") else None,
+                    "currency": currency
+                })
+            except:
+                continue
+        return rooms
     
     async def fetch_multiple_hotels(
         self,
