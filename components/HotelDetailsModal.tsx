@@ -261,15 +261,7 @@ export default function HotelDetailsModal({
                             {new Intl.NumberFormat("en-US", {
                               style: "currency",
                               currency: hotel.price_info?.currency || "USD",
-                            }).format(
-                              typeof offer.price === "string"
-                                ? parseFloat(
-                                    (offer.price as string)
-                                      .replace(/[^\d.,]/g, "")
-                                      .replace(",", "."),
-                                  ) || 0
-                                : offer.price || 0,
-                            )}
+                            }).format(offer.price || 0)}
                           </td>
                           <td
                             className={`p-4 text-right font-bold ${diff > 0 ? "text-[var(--danger)]" : diff < 0 ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}

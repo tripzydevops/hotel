@@ -202,7 +202,8 @@ class SerpApiClient:
         if price is None: return None
         if isinstance(price, (int, float)): return float(price)
             
-        clean_str = re.sub(r'[^\d.,]', '', str(price))
+        s_price = str(price).strip().replace('\xa0', ' ')
+        clean_str = re.sub(r'[^\d.,]', '', s_price)
         if not clean_str: return None
         
         if "," in clean_str and "." in clean_str:
@@ -220,7 +221,7 @@ class SerpApiClient:
             parts = clean_str.split(".")
             if len(parts[-1]) == 3 and len(parts) > 1:
                  if currency in ["TRY", "EUR", "IDR", "VND"]:
-                     clean_str = clean_str.replace(".", "")
+                      clean_str = clean_str.replace(".", "")
         
         try:
             return float(clean_str)
@@ -240,15 +241,27 @@ class SerpApiClient:
                 })
         return offers
 
-    def _parse_room_types(self, room_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
+    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
+        """Extract room types from featured_prices or rooms array."""
         rooms = []
-        for r in room_data:
-            price = self._clean_price_string(r.get("price"), currency)
-            rooms.append({
-                "name": r.get("title") or r.get("name") or "Standard Room",
-                "price": price,
-                "currency": currency
-            })
+        room_names = set()
+        raw_rooms = []
+        if best_match.get("rooms"): raw_rooms.extend(best_match["rooms"])
+        if best_match.get("room_types"): raw_rooms.extend(best_match["room_types"])
+        featured = best_match.get("featured_prices", []) or []
+        for p in featured:
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+        prices = best_match.get("prices", []) or []
+        for p in prices:
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+
+        for r in raw_rooms:
+            name = r.get("name") or r.get("title")
+            if not name or name in room_names: continue
+            raw_p = r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night") or r.get("price")
+            price = self._clean_price_string(raw_p, currency)
+            rooms.append({"name": name, "price": price, "currency": currency})
+            room_names.add(name)
         return rooms
 
     async def search_hotels(self, query: str) -> List[Dict[str, Any]]:
@@ -298,13 +311,10 @@ class SerpApiClient:
                            target_serp_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         properties = data.get("properties", [])
         best_match = None
-        
-        # Knowledge Graph fallback
         if not properties and data.get("rate_per_night"):
              best_match = {"name": data.get("name"), "prices": data.get("prices", []), "rate_per_night": data.get("rate_per_night"),
                            "amenities": data.get("amenities", []), "images": data.get("images", []), "overall_rating": data.get("overall_rating"),
                            "property_token": data.get("property_token")}
-        
         if not best_match:
             for prop in properties:
                 if str(prop.get("hotel_id")) == str(target_serp_id) or prop.get("property_token") == target_serp_id:
@@ -314,10 +324,8 @@ class SerpApiClient:
                     if target_hotel.lower() in prop.get("name", "").lower():
                         best_match = prop; break
             if not best_match and properties: best_match = properties[0]
-
         if not best_match: return None
 
-        # Price extraction
         raw_price = None
         if "rate_per_night" in best_match:
             r = best_match["rate_per_night"]
@@ -342,42 +350,6 @@ class SerpApiClient:
             "room_types": self._extract_all_room_types(best_match, default_currency),
             "raw_data": best_match
         }
-
-    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
-        """Extract room types from featured_prices or rooms array."""
-        rooms = []
-        room_names = set()
-        
-        # 1. Check direct 'rooms' array if it exists (some engines)
-        raw_rooms = best_match.get("rooms", []) or best_match.get("room_types", [])
-        
-        # 2. Check room selections in featured_prices
-        featured = best_match.get("featured_prices", []) or []
-        for provider in featured:
-            if "rooms" in provider:
-                 raw_rooms.extend(provider["rooms"])
-        
-        # 3. Check regular prices
-        prices = best_match.get("prices", []) or []
-        for provider in prices:
-            if "rooms" in provider:
-                 raw_rooms.extend(provider["rooms"])
-
-        for r in raw_rooms:
-            name = r.get("name") or r.get("title")
-            if not name or name in room_names:
-                continue
-            
-            price = self._clean_price_string(r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night") or r.get("price"), currency)
-            
-            rooms.append({
-                "name": name,
-                "price": price,
-                "currency": currency
-            })
-            room_names.add(name)
-            
-        return rooms
 
     async def fetch_multiple_hotels(self, hotels: List[Dict[str, str]], check_in: Optional[date] = None, 
                                    check_out: Optional[date] = None, currency: str = "USD") -> Dict[str, Any]:
