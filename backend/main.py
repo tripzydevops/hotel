@@ -1257,7 +1257,7 @@ async def check_scheduled_scan(
 
 
 @app.post("/api/admin/directory")
-async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supabase)):
+async def add_to_directory(hotel: Dict[str, str], user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
     """Admin tool to manually add a hotel to the shared directory."""
     name = hotel.get("name", "").title().strip()
     location = hotel.get("location", "").title().strip()
@@ -1278,7 +1278,7 @@ async def add_to_directory(hotel: Dict[str, str], db: Client = Depends(get_supab
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/users")
-async def admin_list_users(db: Client = Depends(get_supabase)):
+async def admin_list_users(user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
     """Admin: List all users and their subscription status."""
     # Start with a secure check (TODO: Add 'is_admin' check to get_current_user or similar)
     try:
@@ -1291,7 +1291,7 @@ async def admin_list_users(db: Client = Depends(get_supabase)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/admin/users/{user_id}/subscription")
-async def admin_update_subscription(user_id: str, payload: Dict[str, Any], db: Client = Depends(get_supabase)):
+async def admin_update_subscription(user_id: str, payload: Dict[str, Any], user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
     """Admin: Manually update user subscription."""
     valid_plans = ["trial", "starter", "pro", "enterprise"]
     valid_statuses = ["active", "trial", "past_due", "canceled"]
@@ -1319,7 +1319,7 @@ async def admin_update_subscription(user_id: str, payload: Dict[str, Any], db: C
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/sync")
-async def sync_directory_manual(db: Optional[Client] = Depends(get_supabase)):
+async def sync_directory_manual(user: Any = Depends(get_current_admin_user), db: Optional[Client] = Depends(get_supabase)):
     """Backfill hotel_directory from existing hotels table."""
     # Seed list for "Cold Start" (Dev Mode / Empty DB)
     SEED_HOTELS = [
@@ -1649,7 +1649,7 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
 
 
 @app.get("/api/admin/api-keys/status")
-async def get_api_key_status():
+async def get_api_key_status(user: Any = Depends(get_current_admin_user)):
     """Get status of SerpApi keys for monitoring quota usage."""
     try:
         status = serpapi_client.get_key_status()
@@ -1667,7 +1667,7 @@ async def get_api_key_status():
 
 
 @app.post("/api/admin/api-keys/rotate")
-async def force_rotate_api_key():
+async def force_rotate_api_key(user: Any = Depends(get_current_admin_user)):
     """Force rotate to next API key (for testing or manual intervention)."""
     try:
         success = serpapi_client._key_manager.rotate_key("manual_rotation")
@@ -1682,7 +1682,7 @@ async def force_rotate_api_key():
 
 
 @app.post("/api/admin/api-keys/reset")
-async def reset_api_keys():
+async def reset_api_keys(user: Any = Depends(get_current_admin_user)):
     """Reset all API keys to active status (e.g., at new billing period)."""
     try:
         serpapi_client._key_manager.reset_all()
@@ -1697,7 +1697,7 @@ async def reset_api_keys():
 
 
 @app.post("/api/admin/api-keys/reload")
-async def reload_api_keys(db: Client = Depends(get_supabase)):
+async def reload_api_keys(user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
     """Force reload API keys from env."""
     try:
         # Check auth/admin permissions here if strict
@@ -1710,8 +1710,13 @@ async def reload_api_keys(db: Client = Depends(get_supabase)):
         
         return {
             "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
-            "reload_details": reload_result,
-            "current_status": full_status  # Pass this to frontend
+            "total_keys": reload_result.get('total_keys', 0),
+            "keys_found": [f"Key #{i+1}" for i in range(reload_result.get('total_keys', 0))],
+            "env_debug": {
+                "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing",
+                "NEXT_PUBLIC_SERPAPI_KEY": "Set" if os.getenv("NEXT_PUBLIC_SERPAPI_KEY") else "Missing"
+            },
+            "current_status": full_status
         }
     except Exception as e:
         print(f"API Key Reload Error: {e}")

@@ -368,8 +368,13 @@ class SerpApiClient:
         
         # Optimization: Use direct ID if available
         if serp_api_id:
-            print(f"[SerpApi] Optimizing search with ID: {serp_api_id}")
-            params["ht_id"] = serp_api_id
+            print(f"[SerpApi] Optimizing search with Property Token: {serp_api_id}")
+            params["property_token"] = serp_api_id
+            # Ensure we don't conflict with q if utilizing token directly
+            # params["q"] = hotel_name # Keep q just in case, or maybe remove it? 
+            # Usually property_token takes precedence or filters q.
+            # Based on user URL: &property_token=...&q=Willmont...
+            # So we keep q.
         
         # Localization: Match country to currency for better results
         if currency == "TRY":
