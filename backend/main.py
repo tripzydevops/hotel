@@ -1590,7 +1590,7 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
 async def get_api_key_status():
     """Get status of SerpApi keys for monitoring quota usage."""
     try:
-        status = serpapi_client.serpapi_client.get_key_status()
+        status = serpapi_client.get_key_status()
         # Add quota info
         status["quota_per_key"] = 250  # Monthly limit
         status["quota_period"] = "monthly"
@@ -1608,11 +1608,11 @@ async def get_api_key_status():
 async def force_rotate_api_key():
     """Force rotate to next API key (for testing or manual intervention)."""
     try:
-        success = serpapi_client.serpapi_client._key_manager.rotate_key("manual_rotation")
+        success = serpapi_client._key_manager.rotate_key("manual_rotation")
         return {
             "status": "success" if success else "failed",
             "message": "Rotated to next key" if success else "No available keys to rotate to",
-            "current_status": serpapi_client.serpapi_client.get_key_status()
+            "current_status": serpapi_client.get_key_status()
         }
     except Exception as e:
         print(f"API Key Rotate Error: {e}")
@@ -1623,11 +1623,11 @@ async def force_rotate_api_key():
 async def reset_api_keys():
     """Reset all API keys to active status (e.g., at new billing period)."""
     try:
-        serpapi_client.serpapi_client._key_manager.reset_all()
+        serpapi_client._key_manager.reset_all()
         return {
             "status": "success",
             "message": "All keys reset to active",
-            "current_status": serpapi_client.serpapi_client.get_key_status()
+            "current_status": serpapi_client.get_key_status()
         }
     except Exception as e:
         print(f"API Key Reset Error: {e}")
@@ -1641,10 +1641,10 @@ async def reload_api_keys(db: Client = Depends(get_supabase)):
         # Check auth/admin permissions here if strict
         
         # Reload logic
-        reload_result = serpapi_client.serpapi_client.reload()
+        reload_result = serpapi_client.reload()
         
         # Fetch full status for UI
-        full_status = serpapi_client.serpapi_client.get_key_status()
+        full_status = serpapi_client.get_key_status()
         
         return {
             "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
