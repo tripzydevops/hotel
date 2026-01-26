@@ -24,6 +24,7 @@ import SubscriptionModal from "@/components/SubscriptionModal"; // New Import
 import { ScanSession, ScanOptions, Hotel } from "@/types";
 import Link from "next/link";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
+import HotelDetailsModal from "@/components/HotelDetailsModal";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -44,17 +45,33 @@ export default function Dashboard() {
     undefined,
   );
   const [profile, setProfile] = useState<any>(null); // Store full profile including subscription
-  
+
   // Edit State
   const [isEditHotelOpen, setIsEditHotelOpen] = useState(false);
   const [hotelToEdit, setHotelToEdit] = useState<Hotel | null>(null);
 
   // Session Modal State
-  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(
+    null,
+  );
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isScanSettingsOpen, setIsScanSettingsOpen] = useState(false);
 
-  // Re-search state
+  // Details Modal
+  const [selectedHotelForDetails, setSelectedHotelForDetails] =
+    useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const handleOpenDetails = (hotel: any) => {
+    // Try to find full hotel object in data
+    const fullHotel =
+      data?.competitors.find((h) => h.id === hotel.id) ||
+      (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
+    if (fullHotel) {
+      setSelectedHotelForDetails(fullHotel);
+      setIsDetailsModalOpen(true);
+    }
+  };
   const [reSearchName, setReSearchName] = useState("");
   const [reSearchLocation, setReSearchLocation] = useState("");
 
@@ -62,26 +79,27 @@ export default function Dashboard() {
     setSelectedSession(session);
     setIsSessionModalOpen(true);
   };
-  
+
   const handleEditHotel = (id: string, hotel: any) => {
     // Ensure we have a valid hotel object. If passed from tile, it might be partial.
     // Ideally we find it in our data.
-    const fullHotel = data?.competitors.find(h => h.id === id) || (data?.target_hotel?.id === id ? data.target_hotel : null);
+    const fullHotel =
+      data?.competitors.find((h) => h.id === id) ||
+      (data?.target_hotel?.id === id ? data.target_hotel : null);
     if (fullHotel) {
-        setHotelToEdit(fullHotel);
-        setIsEditHotelOpen(true);
+      setHotelToEdit(fullHotel);
+      setIsEditHotelOpen(true);
     } else {
-        // Fallback if we can't find it (rare)
-        console.warn("Could not find full hotel data for edit", id);
-        // We could just set what we have? 
-        // Typescript needs full Hotel. Let's cast or fetch? 
-        // Tiles pass what they have. CompetitorTile actually constructs a partial obj in onEdit? 
-        // No, in my previous edit I tried to pass object but commented it out. 
-        // The tile only receives flat props. 
-        // So finding it in `data` is the best way.
+      // Fallback if we can't find it (rare)
+      console.warn("Could not find full hotel data for edit", id);
+      // We could just set what we have?
+      // Typescript needs full Hotel. Let's cast or fetch?
+      // Tiles pass what they have. CompetitorTile actually constructs a partial obj in onEdit?
+      // No, in my previous edit I tried to pass object but commented it out.
+      // The tile only receives flat props.
+      // So finding it in `data` is the best way.
     }
   };
-
 
   useEffect(() => {
     const getSession = async () => {
@@ -94,7 +112,7 @@ export default function Dashboard() {
         // DEV MODE: Bypass login as requested by user ("deactivate log in")
         // We use a fixed UUID so data persists for this "Guest/Dev" user
         console.warn("DEV MODE: Bypassing Login. Using Dev User ID.");
-        setUserId("123e4567-e89b-12d3-a456-426614174000"); 
+        setUserId("123e4567-e89b-12d3-a456-426614174000");
       }
     };
     getSession();
@@ -153,18 +171,20 @@ export default function Dashboard() {
     }
   };
 
-  // Keep handleRefresh for backward compatibility or simple refresh if needed, 
+  // Keep handleRefresh for backward compatibility or simple refresh if needed,
   // but now we use handleScan mostly.
-  const [scanDefaults, setScanDefaults] = useState<{checkIn?: string; checkOut?: string; adults?: number} | undefined>(undefined);
+  const [scanDefaults, setScanDefaults] = useState<
+    { checkIn?: string; checkOut?: string; adults?: number } | undefined
+  >(undefined);
 
   const handleRefresh = () => {
     // defaults from last scan if available
     if (data?.target_hotel?.price_info) {
-        setScanDefaults({
-            checkIn: data.target_hotel.price_info.check_in,
-            checkOut: data.target_hotel.price_info.check_out,
-            adults: data.target_hotel.price_info.adults
-        });
+      setScanDefaults({
+        checkIn: data.target_hotel.price_info.check_in,
+        checkOut: data.target_hotel.price_info.check_out,
+        adults: data.target_hotel.price_info.adults,
+      });
     }
     setIsScanSettingsOpen(true);
   };
@@ -182,7 +202,11 @@ export default function Dashboard() {
   };
 
   const handleDeleteHotel = async (hotelId: string) => {
-    if (!userId || !confirm("Are you sure you want to remove this hotel monitor?")) return;
+    if (
+      !userId ||
+      !confirm("Are you sure you want to remove this hotel monitor?")
+    )
+      return;
     try {
       await api.deleteHotel(hotelId);
       await fetchData();
@@ -194,7 +218,12 @@ export default function Dashboard() {
 
   const handleQuickAdd = async (name: string, location: string) => {
     if (!userId) return;
-    await handleAddHotel(name, location, false, userSettings?.currency || "USD");
+    await handleAddHotel(
+      name,
+      location,
+      false,
+      userSettings?.currency || "USD",
+    );
   };
 
   const handleSaveSettings = async (settings: UserSettings) => {
@@ -214,12 +243,12 @@ export default function Dashboard() {
   const handleDeleteLog = async (logId: string) => {
     try {
       await api.deleteLog(logId);
-      setData(prev => {
+      setData((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          recent_searches: prev.recent_searches.filter(s => s.id !== logId),
-          scan_history: prev.scan_history.filter(s => s.id !== logId),
+          recent_searches: prev.recent_searches.filter((s) => s.id !== logId),
+          scan_history: prev.scan_history.filter((s) => s.id !== logId),
         };
       });
     } catch (error) {
@@ -251,18 +280,31 @@ export default function Dashboard() {
 
   if (!data && loading) return null;
 
-  const effectiveTargetPrice = data?.target_hotel?.price_info?.current_price || 0;
+  const effectiveTargetPrice =
+    data?.target_hotel?.price_info?.current_price || 0;
 
-  const isLocked = profile?.subscription_status === 'past_due' || profile?.subscription_status === 'canceled' || profile?.subscription_status === 'unpaid';
+  const isLocked =
+    profile?.subscription_status === "past_due" ||
+    profile?.subscription_status === "canceled" ||
+    profile?.subscription_status === "unpaid";
 
-  const currentHotelCount = (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
+  const currentHotelCount =
+    (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
   return (
     <div className="min-h-screen pb-12 relative">
-      {isLocked && <PaywallOverlay reason={profile?.subscription_status === 'canceled' ? "Subscription Canceled" : "Trial Expired"} />}
-      <Header 
-        userProfile={profile} 
-        hotelCount={currentHotelCount} 
+      {isLocked && (
+        <PaywallOverlay
+          reason={
+            profile?.subscription_status === "canceled"
+              ? "Subscription Canceled"
+              : "Trial Expired"
+          }
+        />
+      )}
+      <Header
+        userProfile={profile}
+        hotelCount={currentHotelCount}
         unreadCount={data?.unread_alerts_count}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenAlerts={() => setIsAlertsOpen(true)}
@@ -280,7 +322,9 @@ export default function Dashboard() {
         onAdd={handleAddHotel}
         initialName={reSearchName}
         initialLocation={reSearchLocation}
-        currentHotelCount={(data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)}
+        currentHotelCount={
+          (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0)
+        }
       />
 
       <SettingsModal
@@ -290,7 +334,7 @@ export default function Dashboard() {
         onSave={handleSaveSettings}
       />
 
-      <ScanSessionModal 
+      <ScanSessionModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
         session={selectedSession}
@@ -302,13 +346,16 @@ export default function Dashboard() {
         onScan={handleScan}
         initialValues={scanDefaults}
       />
-      
+
       {hotelToEdit && (
-        <EditHotelModal 
-            isOpen={isEditHotelOpen}
-            onClose={() => { setIsEditHotelOpen(false); setHotelToEdit(null); }}
-            hotel={hotelToEdit}
-            onUpdate={fetchData}
+        <EditHotelModal
+          isOpen={isEditHotelOpen}
+          onClose={() => {
+            setIsEditHotelOpen(false);
+            setHotelToEdit(null);
+          }}
+          hotel={hotelToEdit}
+          onUpdate={fetchData}
         />
       )}
 
@@ -330,13 +377,30 @@ export default function Dashboard() {
         onClose={() => setIsBillingOpen(false)}
         currentPlan={profile?.plan_type || "trial"}
         onUpgrade={async (plan) => {
-             // Mock upgrade for now
-             if (!userId) return;
-             // Update local state to reflect change immediately (optimistic UI)
-             setProfile({...profile, plan_type: plan, subscription_status: 'active'});
-             // Call API eventually
-             alert(`Upgraded to ${plan} plan successfully!`);
-             setIsBillingOpen(false);
+          // Mock upgrade for now
+          if (!userId) return;
+          // Update local state to reflect change immediately (optimistic UI)
+          setProfile({
+            ...profile,
+            plan_type: plan,
+            subscription_status: "active",
+          });
+          // Call API eventually
+          alert(`Upgraded to ${plan} plan successfully!`);
+          setIsBillingOpen(false);
+        }}
+      />
+
+      <HotelDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        hotel={selectedHotelForDetails}
+        isEnterprise={
+          profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
+        } // Use both for now or just enterprise?
+        onUpgrade={() => {
+          setIsDetailsModalOpen(false);
+          setIsBillingOpen(true);
         }}
       />
 
@@ -357,23 +421,46 @@ export default function Dashboard() {
           {data?.competitors?.length && (
             <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
               <div className="text-right">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Market Pulse</p>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
+                  Market Pulse
+                </p>
                 <div className="flex items-center gap-2 justify-end">
-                  <span className={`text-sm font-black ${
-                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)) > 0 
-                    ? 'text-alert-red' : 'text-optimal-green'
-                  }`}>
-                    {(data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)).toFixed(1)}%
+                  <span
+                    className={`text-sm font-black ${
+                      data.competitors.reduce(
+                        (acc, c) => acc + (c.price_info?.change_percent || 0),
+                        0,
+                      ) /
+                        (data.competitors.length || 1) >
+                      0
+                        ? "text-alert-red"
+                        : "text-optimal-green"
+                    }`}
+                  >
+                    {(
+                      data.competitors.reduce(
+                        (acc, c) => acc + (c.price_info?.change_percent || 0),
+                        0,
+                      ) / (data.competitors.length || 1)
+                    ).toFixed(1)}
+                    %
                   </span>
-                  <div className={`w-1.5 h-1.5 rounded-full ${
-                    (data.competitors.reduce((acc, c) => acc + (c.price_info?.change_percent || 0), 0) / (data.competitors.length || 1)) > 0 
-                    ? 'bg-alert-red' : 'bg-optimal-green'
-                  }`} />
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      data.competitors.reduce(
+                        (acc, c) => acc + (c.price_info?.change_percent || 0),
+                        0,
+                      ) /
+                        (data.competitors.length || 1) >
+                      0
+                        ? "bg-alert-red"
+                        : "bg-optimal-green"
+                    }`}
+                  />
                 </div>
               </div>
             </div>
           )}
-
 
           {/* Actions */}
           <div className="flex items-center gap-3">
@@ -424,10 +511,20 @@ export default function Dashboard() {
                   location={data.target_hotel.location}
                   currentPrice={effectiveTargetPrice}
                   previousPrice={data.target_hotel.price_info?.previous_price}
-                  currency={data.target_hotel.price_info?.currency || userSettings?.currency || "USD"}
+                  currency={
+                    data.target_hotel.price_info?.currency ||
+                    userSettings?.currency ||
+                    "USD"
+                  }
                   trend={data.target_hotel.price_info?.trend || "stable"}
-                  changePercent={data.target_hotel.price_info?.change_percent || 0}
-                  lastUpdated={data.target_hotel.price_info ? "Updated just now" : "Pending initial scan"}
+                  changePercent={
+                    data.target_hotel.price_info?.change_percent || 0
+                  }
+                  lastUpdated={
+                    data.target_hotel.price_info
+                      ? "Updated just now"
+                      : "Pending initial scan"
+                  }
                   onDelete={handleDeleteHotel}
                   rating={data.target_hotel.rating}
                   stars={data.target_hotel.stars}
@@ -437,41 +534,51 @@ export default function Dashboard() {
                   checkIn={data.target_hotel.price_info?.check_in}
                   adults={data.target_hotel.price_info?.adults}
                   onEdit={handleEditHotel}
+                  onViewDetails={handleOpenDetails}
                 />
               )}
 
               {/* Competitor Tiles */}
-              {data?.competitors && [...data.competitors]
-                .sort((a, b) => (a.price_info?.current_price || 0) - (b.price_info?.current_price || 0))
-                .map((competitor, index) => {
-                  const isUndercut =
-                    competitor.price_info &&
-                    competitor.price_info.current_price < effectiveTargetPrice;
+              {data?.competitors &&
+                [...data.competitors]
+                  .sort(
+                    (a, b) =>
+                      (a.price_info?.current_price || 0) -
+                      (b.price_info?.current_price || 0),
+                  )
+                  .map((competitor, index) => {
+                    const isUndercut =
+                      competitor.price_info &&
+                      competitor.price_info.current_price <
+                        effectiveTargetPrice;
 
-                  return (
-                    <CompetitorTile
-                      key={competitor.id}
-                      id={competitor.id}
-                      name={competitor.name}
-                      currentPrice={competitor.price_info?.current_price || 0}
-                      previousPrice={competitor.price_info?.previous_price}
-                      currency={competitor.price_info?.currency || "USD"}
-                      trend={competitor.price_info?.trend || "stable"}
-                      changePercent={competitor.price_info?.change_percent || 0}
-                      isUndercut={isUndercut}
-                      rank={index + 1}
-                      onDelete={handleDeleteHotel}
-                      rating={competitor.rating}
-                      stars={competitor.stars}
-                      imageUrl={competitor.image_url}
-                      vendor={competitor.price_info?.vendor}
-                      priceHistory={competitor.price_history}
-                      checkIn={competitor.price_info?.check_in}
-                      adults={competitor.price_info?.adults}
-                      onEdit={handleEditHotel}
-                    />
-                  );
-                })}
+                    return (
+                      <CompetitorTile
+                        key={competitor.id}
+                        id={competitor.id}
+                        name={competitor.name}
+                        currentPrice={competitor.price_info?.current_price || 0}
+                        previousPrice={competitor.price_info?.previous_price}
+                        currency={competitor.price_info?.currency || "USD"}
+                        trend={competitor.price_info?.trend || "stable"}
+                        changePercent={
+                          competitor.price_info?.change_percent || 0
+                        }
+                        isUndercut={isUndercut}
+                        rank={index + 1}
+                        onDelete={handleDeleteHotel}
+                        rating={competitor.rating}
+                        stars={competitor.stars}
+                        imageUrl={competitor.image_url}
+                        vendor={competitor.price_info?.vendor}
+                        priceHistory={competitor.price_history}
+                        checkIn={competitor.price_info?.check_in}
+                        adults={competitor.price_info?.adults}
+                        onEdit={handleEditHotel}
+                        onViewDetails={handleOpenDetails}
+                      />
+                    );
+                  })}
             </>
           )}
         </BentoGrid>
@@ -483,26 +590,34 @@ export default function Dashboard() {
               {
                 (data?.competitors || []).filter(
                   (c) =>
-                    c.price_info && c.price_info.current_price < effectiveTargetPrice,
+                    c.price_info &&
+                    c.price_info.current_price < effectiveTargetPrice,
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">Yield Risk Area</p>
+            <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">
+              Yield Risk Area
+            </p>
           </div>
           <div className="glass-card p-4 text-center group">
             <p className="text-2xl font-bold text-optimal-green">
               {
-                (data?.competitors || []).filter((c) => c.price_info?.trend === "down")
-                  .length
+                (data?.competitors || []).filter(
+                  (c) => c.price_info?.trend === "down",
+                ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">Market Opportunity</p>
+            <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">
+              Market Opportunity
+            </p>
           </div>
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-white">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
-                  {data.target_hotel?.price_info?.currency === "TRY" ? "₺" : "$"}
+                  {data.target_hotel?.price_info?.currency === "TRY"
+                    ? "₺"
+                    : "$"}
                   {Math.round(
                     (data?.competitors || []).reduce(
                       (sum, c) => sum + (c.price_info?.current_price || 0),
@@ -510,7 +625,9 @@ export default function Dashboard() {
                     ) / (data?.competitors?.length || 1),
                   )}
                 </>
-              ) : "—"}
+              ) : (
+                "—"
+              )}
             </p>
             <p className="text-xs text-[var(--text-muted)]">Avg Competitor</p>
           </div>
@@ -523,20 +640,20 @@ export default function Dashboard() {
         </div>
 
         {/* Scan History Row */}
-        <ScanHistory 
-          sessions={data?.recent_sessions || []} 
+        <ScanHistory
+          sessions={data?.recent_sessions || []}
           onOpenSession={handleOpenSession}
         />
 
         {/* Search History Row */}
-        <SearchHistory 
-          searches={data?.recent_searches || []} 
+        <SearchHistory
+          searches={data?.recent_searches || []}
           onReSearch={handleReSearch}
         />
 
         {/* Rapid Pulse History Row */}
-        <RapidPulseHistory 
-          sessions={data?.recent_sessions?.slice(0, 4) || []} 
+        <RapidPulseHistory
+          sessions={data?.recent_sessions?.slice(0, 4) || []}
           onOpenSession={handleOpenSession}
         />
 
@@ -546,8 +663,18 @@ export default function Dashboard() {
             © 2026 Hotel Rate Monitor. All rates fetched via SerpApi.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider">Privacy</a>
-            <a href="#" className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider">Terms</a>
+            <a
+              href="#"
+              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+            >
+              Privacy
+            </a>
+            <a
+              href="#"
+              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+            >
+              Terms
+            </a>
           </div>
         </footer>
       </main>

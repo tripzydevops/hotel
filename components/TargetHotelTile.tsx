@@ -1,6 +1,13 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Building2, Trash2, Edit2 } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Building2,
+  Trash2,
+  Edit2,
+} from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
 
@@ -25,6 +32,7 @@ interface TargetHotelTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
+  onViewDetails?: (hotel: any) => void;
 }
 
 /**
@@ -50,6 +58,7 @@ export default function TargetHotelTile({
   checkIn,
   adults,
   onEdit,
+  onViewDetails,
 }: TargetHotelTileProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -88,48 +97,74 @@ export default function TargetHotelTile({
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5">
             {imageUrl ? (
-                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+              <img
+                src={imageUrl}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-                <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
+              <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
             )}
             {stars && (
-                <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
-                    {stars}★
-                </div>
+              <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
+                {stars}★
+              </div>
             )}
           </div>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] uppercase tracking-widest text-[var(--soft-gold)] font-bold bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-full">
-                    Property Owner
+              <span className="text-[10px] uppercase tracking-widest text-[var(--soft-gold)] font-bold bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-full">
+                Property Owner
+              </span>
+              {rating && (
+                <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  ★ {rating.toFixed(1)}
                 </span>
-                {rating && (
-                    <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        ★ {rating.toFixed(1)}
-                    </span>
-                )}
+              )}
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">{name}</h2>
+            <h2 className="text-2xl font-bold text-white leading-tight">
+              {name}
+            </h2>
             {location && (
-              <p className="text-sm text-[var(--text-muted)] mt-0.5">{location}</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">
+                {location}
+              </p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-3">
           {onEdit && (
             <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(id, { id, name, location, is_target_hotel: true });
-                }}
-                className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all border border-white/5"
-                title="Edit Hotel"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(id, { id, name, location, is_target_hotel: true });
+              }}
+              className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all border border-white/5"
+              title="Edit Hotel"
             >
-                <Edit2 className="w-4.5 h-4.5" />
+              <Edit2 className="w-4.5 h-4.5" />
+            </button>
+          )}
+          {onViewDetails && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails({
+                  id,
+                  name,
+                  location,
+                  imageUrl,
+                  price_info: { currency, current_price: currentPrice },
+                });
+              }}
+              className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/20 transition-all border border-[var(--soft-gold)]/20"
+              title="View Hotel Intelligence"
+            >
+              <Building2 className="w-4.5 h-4.5" />
             </button>
           )}
           {onDelete && (
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(id);
@@ -140,7 +175,9 @@ export default function TargetHotelTile({
               <Trash2 className="w-4.5 h-4.5" />
             </button>
           )}
-          <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}>
+          <div
+            className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}
+          >
             {getTrendIcon()}
           </div>
         </div>
@@ -160,14 +197,17 @@ export default function TargetHotelTile({
                   {formatPrice(currentPrice)}
                 </p>
                 {vendor && (
-                    <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
-                        via {vendor}
-                    </span>
+                  <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
+                    via {vendor}
+                  </span>
                 )}
                 {(checkIn || (adults && adults !== 2)) && (
-                     <span className="mt-2 text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5">
-                        {checkIn ? `Check-in ${new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Check-in Today'}{adults && adults !== 2 ? ` • ${adults} Guests` : ''}
-                     </span>
+                  <span className="mt-2 text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5">
+                    {checkIn
+                      ? `Check-in ${new Date(checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                      : "Check-in Today"}
+                    {adults && adults !== 2 ? ` • ${adults} Guests` : ""}
+                  </span>
                 )}
               </div>
             ) : (
@@ -176,23 +216,29 @@ export default function TargetHotelTile({
               </p>
             )}
           </div>
-          
+
           {/* Progressive Disclosure: Detail Tooltip on Hover */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-xl text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 pointer-events-none shadow-2xl backdrop-blur-md">
             Verified via SerpApi Intelligence • {lastUpdated || "Just now"}
           </div>
         </div>
-        
+
         {/* Trend Chart Background */}
         {priceHistory && priceHistory.length > 1 && (
-            <div className="absolute inset-x-8 bottom-0 h-24 opacity-30 pointer-events-none mask-linear-fade">
-                <TrendChart 
-                    data={priceHistory} 
-                    color={trend === "up" ? "#EF4444" : trend === "down" ? "#10B981" : "#94A3B8"} 
-                    width={400} 
-                    height={96} 
-                />
-            </div>
+          <div className="absolute inset-x-8 bottom-0 h-24 opacity-30 pointer-events-none mask-linear-fade">
+            <TrendChart
+              data={priceHistory}
+              color={
+                trend === "up"
+                  ? "#EF4444"
+                  : trend === "down"
+                    ? "#10B981"
+                    : "#94A3B8"
+              }
+              width={400}
+              height={96}
+            />
+          </div>
         )}
       </div>
 

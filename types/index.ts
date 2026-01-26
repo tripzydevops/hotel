@@ -24,6 +24,8 @@ export interface Hotel {
   fixed_check_out?: string; // "YYYY-MM-DD"
   default_adults?: number;
   created_at: string;
+  amenities?: string[];
+  images?: { thumbnail?: string; original?: string }[];
 }
 
 export interface PriceInfo {
@@ -37,6 +39,8 @@ export interface PriceInfo {
   check_in?: string; // ISO Date "YYYY-MM-DD"
   check_out?: string; // ISO Date "YYYY-MM-DD"
   adults?: number;
+  offers?: { vendor?: string; price?: number }[];
+  room_types?: { name?: string; price?: number; currency?: string }[];
 }
 
 export interface PricePoint {

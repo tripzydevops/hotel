@@ -1,6 +1,13 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus, Hotel, Trash2, Edit2 } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Hotel,
+  Trash2,
+  Edit2,
+} from "lucide-react";
 import TrendChart from "./TrendChart";
 import { PricePoint } from "@/types";
 
@@ -25,6 +32,7 @@ interface CompetitorTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
+  onViewDetails?: (hotel: any) => void;
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {
@@ -47,6 +55,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     checkIn,
     adults,
     onEdit,
+    onViewDetails,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -102,14 +111,18 @@ export default function CompetitorTile(props: CompetitorTileProps) {
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5">
             {image_src ? (
-                <img src={image_src} alt={name} className="w-full h-full object-cover" />
+              <img
+                src={image_src}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-                <Hotel className="w-5 h-5 text-[var(--text-secondary)]" />
+              <Hotel className="w-5 h-5 text-[var(--text-secondary)]" />
             )}
             {stars && (
-                <div className="absolute bottom-0.5 right-0.5 bg-black/60 backdrop-blur-md px-1 rounded text-[7px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
-                    {stars}★
-                </div>
+              <div className="absolute bottom-0.5 right-0.5 bg-black/60 backdrop-blur-md px-1 rounded text-[7px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
+                {stars}★
+              </div>
             )}
           </div>
           <div>
@@ -127,30 +140,47 @@ export default function CompetitorTile(props: CompetitorTileProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
-                {rating && (
-                    <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        ★ {rating.toFixed(1)}
-                    </span>
-                )}
-                {isUndercut && (
-                    <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
-                        <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
-                        Undercut
-                    </span>
-                )}
-            {onEdit && (
+              {rating && (
+                <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                  ★ {rating.toFixed(1)}
+                </span>
+              )}
+              {isUndercut && (
+                <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
+                  Undercut
+                </span>
+              )}
+              {onViewDetails && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEdit(id, { id, name }); 
+                    onViewDetails({
+                      id,
+                      name,
+                      imageUrl: image_src,
+                      price_info: { currency, current_price: currentPrice },
+                    });
+                  }}
+                  className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--text-muted)] hover:text-white transition-colors"
+                  title="View Intelligence"
+                >
+                  <Hotel className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(id, { id, name });
                   }}
                   className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--soft-gold)] hover:text-white transition-colors"
                   title="Edit Hotel"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
-            )}
-            {onDelete && (
+              )}
+              {onDelete && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -161,14 +191,13 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
-            )}
+              )}
             </div>
           </div>
         </div>
 
         {/* Trend Badge & Actions */}
         <div className="flex items-center gap-2">
-
           <div
             className={`px-2 py-1 rounded-md ${getTrendBgColor()} flex items-center gap-1`}
           >
@@ -183,38 +212,53 @@ export default function CompetitorTile(props: CompetitorTileProps) {
 
       <div className="flex-1 flex items-center justify-between group relative cursor-default">
         <div>
-          <p className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}>
+          <p
+            className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}
+          >
             {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
           </p>
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">
-                {currentPrice > 0 ? "per night" : "Pending Scan"}
+              {currentPrice > 0 ? "per night" : "Pending Scan"}
             </p>
             {vendor && currentPrice > 0 && (
-                <span className="text-[9px] text-[var(--text-muted)] italic">
-                    via {vendor}
-                </span>
+              <span className="text-[9px] text-[var(--text-muted)] italic">
+                via {vendor}
+              </span>
             )}
             {(checkIn || (adults && adults !== 2)) && (
-                <span className="text-[9px] text-[var(--soft-gold)] font-bold ml-1 border border-[var(--soft-gold)]/20 px-1.5 py-0.5 rounded-full bg-[var(--soft-gold)]/5">
-                • {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today'}{adults && adults !== 2 ? ` • ${adults} G` : ''}
-                </span>
+              <span className="text-[9px] text-[var(--soft-gold)] font-bold ml-1 border border-[var(--soft-gold)]/20 px-1.5 py-0.5 rounded-full bg-[var(--soft-gold)]/5">
+                •{" "}
+                {checkIn
+                  ? new Date(checkIn).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Today"}
+                {adults && adults !== 2 ? ` • ${adults} G` : ""}
+              </span>
             )}
           </div>
         </div>
 
         {/* Trend Chart */}
         {priceHistory && priceHistory.length > 1 && (
-            <div className="w-20 h-10 opacity-60 group-hover:opacity-100 transition-opacity">
-                <TrendChart 
-                    data={priceHistory} 
-                    color={trend === "up" ? "#EF4444" : trend === "down" ? "#10B981" : "#94A3B8"} 
-                    width={80} 
-                    height={40} 
-                />
-            </div>
+          <div className="w-20 h-10 opacity-60 group-hover:opacity-100 transition-opacity">
+            <TrendChart
+              data={priceHistory}
+              color={
+                trend === "up"
+                  ? "#EF4444"
+                  : trend === "down"
+                    ? "#10B981"
+                    : "#94A3B8"
+              }
+              width={80}
+              height={40}
+            />
+          </div>
         )}
-        
+
         {/* Progressive Disclosure: Hover Tooltip */}
         <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
           Live Market Rate • Verified

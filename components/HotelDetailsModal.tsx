@@ -1,0 +1,333 @@
+import { HotelWithPrice } from "@/types";
+import { useState } from "react";
+import {
+  Building2,
+  X,
+  Image as ImageIcon,
+  List,
+  Tag,
+  Lock,
+  Check,
+} from "lucide-react";
+
+interface HotelDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  hotel: HotelWithPrice | null;
+  isEnterprise: boolean;
+  onUpgrade?: () => void;
+}
+
+export default function HotelDetailsModal({
+  isOpen,
+  onClose,
+  hotel,
+  isEnterprise,
+  onUpgrade,
+}: HotelDetailsModalProps) {
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "amenities" | "offers" | "gallery"
+  >("overview");
+
+  if (!hotel) return null;
+
+  const tabs = [
+    { id: "overview", label: "Overview", icon: Building2 },
+    { id: "gallery", label: "Gallery", icon: ImageIcon },
+    { id: "amenities", label: "Amenities", icon: List },
+    { id: "offers", label: "Market Offers", icon: Tag },
+  ];
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? "" : "hidden"}`}
+    >
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative w-full max-w-4xl bg-[var(--deep-ocean)] border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        {/* Header */}
+        <div className="p-6 border-b border-white/10 flex items-start justify-between bg-white/5">
+          <div className="flex items-center gap-4">
+            {hotel.image_url ? (
+              <img
+                src={hotel.image_url}
+                alt={hotel.name}
+                className="w-16 h-16 rounded-lg object-cover border border-white/10"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-white/5 flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-white/20" />
+              </div>
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-white max-w-lg truncate">
+                {hotel.name}
+              </h2>
+              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+                <span>{hotel.location}</span>
+                {hotel.stars && <span>• {hotel.stars} Stars</span>}
+                {hotel.rating && <span>• {hotel.rating} Rating</span>}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-white/10 overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`
+                        flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap
+                        ${
+                          activeTab === tab.id
+                            ? "border-[var(--soft-gold)] text-[var(--soft-gold)] bg-[var(--soft-gold)]/5"
+                            : "border-transparent text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+                        }
+                    `}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 bg-[var(--deep-ocean)]">
+          {/* OVERVIEW TAB */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">
+                    Live Rates
+                  </h3>
+                  <div className="flex items-end gap-2 mb-2">
+                    <span className="text-4xl font-black text-white">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: hotel.price_info?.currency || "USD",
+                      }).format(hotel.price_info?.current_price || 0)}
+                    </span>
+                    <span className="text-[var(--text-muted)] mb-1">
+                      / night
+                    </span>
+                  </div>
+                  <div className="text-sm text-[var(--text-muted)]">
+                    Found via {hotel.price_info?.vendor || "SerpApi"}
+                  </div>
+                </div>
+
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">
+                    Intelligence Summary
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">
+                        Amenities Tracked
+                      </span>
+                      <span className="text-white font-bold">
+                        {hotel.amenities?.length || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">
+                        Market Offers
+                      </span>
+                      <span className="text-white font-bold">
+                        {hotel.price_info?.offers?.length || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)]">
+                        Images Captured
+                      </span>
+                      <span className="text-white font-bold">
+                        {hotel.images?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* GALLERIES TAB (Locked) */}
+          {activeTab === "gallery" && (
+            <LockedFeature
+              isEnterprise={isEnterprise}
+              onUpgrade={onUpgrade}
+              title="Visual Intelligence"
+              description="Access high-resolution image galleries to analyze competitor presentation."
+            >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {(hotel.images || []).map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-video rounded-lg overflow-hidden bg-white/5 relative group cursor-pointer"
+                  >
+                    <img
+                      src={img.original || img.thumbnail}
+                      alt={`Gallery ${idx}`}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">
+                        View Full
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!hotel.images || hotel.images.length === 0) && (
+                  <div className="col-span-full py-12 text-center text-[var(--text-muted)]">
+                    No images captured for this hotel.
+                  </div>
+                )}
+              </div>
+            </LockedFeature>
+          )}
+
+          {/* AMENITIES TAB (Locked) */}
+          {activeTab === "amenities" && (
+            <LockedFeature
+              isEnterprise={isEnterprise}
+              onUpgrade={onUpgrade}
+              title="Feature Analysis"
+              description="Deep dive into competitor amenities and facilities."
+            >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {(hotel.amenities || []).map((amenity, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5"
+                  >
+                    <Check className="w-4 h-4 text-[var(--soft-gold)]" />
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      {amenity}
+                    </span>
+                  </div>
+                ))}
+                {(!hotel.amenities || hotel.amenities.length === 0) && (
+                  <div className="col-span-full py-12 text-center text-[var(--text-muted)]">
+                    No amenities captured for this hotel.
+                  </div>
+                )}
+              </div>
+            </LockedFeature>
+          )}
+
+          {/* OFFERS TAB (Locked) */}
+          {activeTab === "offers" && (
+            <LockedFeature
+              isEnterprise={isEnterprise}
+              onUpgrade={onUpgrade}
+              title="Market Depth"
+              description="See full competitor pricing across multiple vendors (Expedia, Booking, Agoda, etc.)."
+            >
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
+                    <tr>
+                      <th className="p-4">Vendor</th>
+                      <th className="p-4 text-right">Price</th>
+                      <th className="p-4 text-right">Diff</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {(hotel.price_info?.offers || []).map((offer, idx) => {
+                      const diff =
+                        (offer.price || 0) -
+                        (hotel.price_info?.current_price || 0);
+                      return (
+                        <tr
+                          key={idx}
+                          className="group hover:bg-white/5 transition-colors"
+                        >
+                          <td className="p-4 font-medium text-white">
+                            {offer.vendor || "Unknown"}
+                          </td>
+                          <td className="p-4 text-right text-[var(--text-secondary)]">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: hotel.price_info?.currency || "USD",
+                            }).format(offer.price || 0)}
+                          </td>
+                          <td
+                            className={`p-4 text-right font-bold ${diff > 0 ? "text-[var(--danger)]" : diff < 0 ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}
+                          >
+                            {diff > 0 ? "+" : ""}
+                            {diff.toFixed(0)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {(!hotel.price_info?.offers ||
+                  hotel.price_info.offers.length === 0) && (
+                  <div className="p-8 text-center text-[var(--text-muted)]">
+                    No additional offers found in this scan.
+                  </div>
+                )}
+              </div>
+            </LockedFeature>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LockedFeature({
+  children,
+  isEnterprise,
+  onUpgrade,
+  title,
+  description,
+}: {
+  children: React.ReactNode;
+  isEnterprise: boolean;
+  onUpgrade?: () => void;
+  title: string;
+  description: string;
+}) {
+  if (isEnterprise) return <>{children}</>;
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
+      {/* Blurry Background Mockup */}
+      <div className="absolute inset-0 opacity-10 blur-sm pointer-events-none select-none overflow-hidden">
+        <div className="grid grid-cols-3 gap-4 p-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+            <div key={i} className="h-24 bg-white/20 rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-sm mx-auto">
+        <div className="w-12 h-12 rounded-full bg-[var(--soft-gold)]/20 flex items-center justify-center mx-auto mb-4 text-[var(--soft-gold)]">
+          <Lock className="w-6 h-6" />
+        </div>
+        <h3 className="text-xl font-bold text-white mb-2">{title} is Locked</h3>
+        <p className="text-[var(--text-secondary)] mb-6 text-sm">
+          {description} <br />
+          Upgrade to Enterprise to unlock full market intelligence.
+        </p>
+        <button onClick={onUpgrade} className="btn-gold px-8 py-3 w-full">
+          Unlock Enterprise Features
+        </button>
+      </div>
+    </div>
+  );
+}
