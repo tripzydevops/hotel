@@ -33,6 +33,16 @@ export default function ReportsPage() {
   );
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
+  /* New: Profile State for Header */
+  const [profile, setProfile] = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBillingOpen, setIsBillingOpen] = useState(false);
+  // Replicate hotel count logic or use 0
+  const hotelCount = 0;
+  /* End New State */
+
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -40,6 +50,13 @@ export default function ReportsPage() {
       } = await supabase.auth.getSession();
       if (session?.user?.id) {
         setUserId(session.user.id);
+        // Fetch Profile for Header
+        try {
+          const userProfile = await api.getProfile(session.user.id);
+          setProfile(userProfile);
+        } catch (e) {
+          console.error("Failed to fetch profile", e);
+        }
       } else {
         // Redirect to login if not authenticated, do NOT fallback to dev user
         window.location.href = "/login";
@@ -160,7 +177,15 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen pb-12 bg-[var(--deep-ocean)]">
-      <Header />
+      <Header
+        userProfile={profile}
+        hotelCount={hotelCount}
+        unreadCount={0}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenBilling={() => setIsBillingOpen(true)}
+      />
 
       <ScanSessionModal
         isOpen={isSessionModalOpen}
