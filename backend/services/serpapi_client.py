@@ -339,9 +339,45 @@ class SerpApiClient:
             "amenities": best_match.get("amenities", []),
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
             "offers": self._parse_market_offers(best_match.get("prices", []), default_currency),
-            "room_types": self._parse_room_types(best_match.get("room_types", []), default_currency),
+            "room_types": self._extract_all_room_types(best_match, default_currency),
             "raw_data": best_match
         }
+
+    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
+        """Extract room types from featured_prices or rooms array."""
+        rooms = []
+        room_names = set()
+        
+        # 1. Check direct 'rooms' array if it exists (some engines)
+        raw_rooms = best_match.get("rooms", []) or best_match.get("room_types", [])
+        
+        # 2. Check room selections in featured_prices
+        featured = best_match.get("featured_prices", []) or []
+        for provider in featured:
+            if "rooms" in provider:
+                 raw_rooms.extend(provider["rooms"])
+        
+        # 3. Check regular prices
+        prices = best_match.get("prices", []) or []
+        for provider in prices:
+            if "rooms" in provider:
+                 raw_rooms.extend(provider["rooms"])
+
+        for r in raw_rooms:
+            name = r.get("name") or r.get("title")
+            if not name or name in room_names:
+                continue
+            
+            price = self._clean_price_string(r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night") or r.get("price"), currency)
+            
+            rooms.append({
+                "name": name,
+                "price": price,
+                "currency": currency
+            })
+            room_names.add(name)
+            
+        return rooms
 
     async def fetch_multiple_hotels(self, hotels: List[Dict[str, str]], check_in: Optional[date] = None, 
                                    check_out: Optional[date] = None, currency: str = "USD") -> Dict[str, Any]:

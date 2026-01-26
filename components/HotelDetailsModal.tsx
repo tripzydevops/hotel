@@ -35,8 +35,8 @@ export default function HotelDetailsModal({
     { id: "overview", label: "Overview", icon: Building2 },
     { id: "gallery", label: "Gallery", icon: ImageIcon },
     { id: "amenities", label: "Amenities", icon: List },
-    { id: "rooms", label: "Room Types", icon: Building2 },
     { id: "offers", label: "Market Offers", icon: Tag },
+    { id: "rooms", label: "Room Types", icon: Building2 },
   ];
 
   return (
@@ -261,7 +261,15 @@ export default function HotelDetailsModal({
                             {new Intl.NumberFormat("en-US", {
                               style: "currency",
                               currency: hotel.price_info?.currency || "USD",
-                            }).format(offer.price || 0)}
+                            }).format(
+                              typeof offer.price === "string"
+                                ? parseFloat(
+                                    (offer.price as string)
+                                      .replace(/[^\d.,]/g, "")
+                                      .replace(",", "."),
+                                  ) || 0
+                                : offer.price || 0,
+                            )}
                           </td>
                           <td
                             className={`p-4 text-right font-bold ${diff > 0 ? "text-[var(--danger)]" : diff < 0 ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}
