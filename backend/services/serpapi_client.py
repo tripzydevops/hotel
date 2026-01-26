@@ -463,8 +463,8 @@ class SerpApiClient:
         # Find the best matching hotel (if not already found via knowledge graph)
         if not best_match:
             # Find the best matching hotel
-        target_lower = target_hotel.lower()
-        best_match = None
+            target_lower = target_hotel.lower()
+            best_match = None
         
         # Prio 0: Look for exact ID match first
         if target_serp_id:
