@@ -6,20 +6,24 @@ const API_BASE_URL =
   (isProduction ? "" : "http://localhost:8000");
 
 class ApiClient {
-  private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    
-    // Get session token safely
-    let token = null;
+  private async getToken(): Promise<string | null> {
     try {
         const { createClient } = await import("@/utils/supabase/client");
         const supabase = createClient();
         const { data } = await supabase.auth.getSession();
-        token = data.session?.access_token;
-        if (!token) {
-            console.log("[ApiClient] No token found in session");
-        }
+        return data.session?.access_token || null;
     } catch (e) {
-        console.error("[ApiClient] Error getting session:", e);
+        console.error("[ApiClient] Error getting token:", e);
+        return null;
+    }
+  }
+
+  private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    
+    // Get session token safely
+    const token = await this.getToken();
+    if (!token) {
+        console.log("[ApiClient] No token found in session");
     }
 
     const headers: HeadersInit = {
@@ -158,10 +162,14 @@ class ApiClient {
   }
 
   async exportReport(userId: string, format: string = "csv"): Promise<void> {
+    const token = await this.getToken();
+    const headers: any = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const url = `${API_BASE_URL}/api/reports/${userId}/export?format=${format}`;
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers
     });
 
     if (!response.ok) throw new Error("Export failed");
@@ -314,6 +322,34 @@ class ApiClient {
     return this.fetch<void>(`/api/admin/plans/${id}`, {
       method: "DELETE",
     });
+  }
+
+  // ===== Admin API Keys =====
+
+  async getAdminKeyStatus() {
+    return this.fetch<any>("/api/admin/api-keys/status");
+  }
+
+  async rotateAdminKey() {
+    return this.fetch<any>("/api/admin/api-keys/rotate", {
+      method: "POST",
+    });
+  }
+
+  async reloadAdminKeys() {
+    return this.fetch<any>("/api/admin/api-keys/reload", {
+      method: "POST",
+    });
+  }
+
+  async resetAdminKeys() {
+    return this.fetch<any>("/api/admin/api-keys/reset", {
+      method: "POST",
+    });
+  }
+
+  async getAdminScanDetails(id: string) {
+    return this.fetch<any>(`/api/admin/scans/${id}`);
   }
 }
 

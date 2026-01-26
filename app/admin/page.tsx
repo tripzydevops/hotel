@@ -96,9 +96,7 @@ export default function AdminPage() {
   const fetchScanDetails = async (id: string) => {
     setScanDetailsLoading(true);
     try {
-      const res = await fetch(`/api/admin/scans/${id}`);
-      if (!res.ok) throw new Error("Failed to load details");
-      const data = await res.json();
+      const data = await api.getAdminScanDetails(id);
       setScanDetails(data);
     } catch (err: any) {
       toast.error("Error: " + err.message);
@@ -1113,10 +1111,9 @@ const ApiKeysPanel = () => {
   const loadKeyStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/api-keys/status");
-      const data = await res.json();
+      const data = await api.getAdminKeyStatus();
       setKeyStatus(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load key status:", err);
     } finally {
       setLoading(false);
@@ -1127,8 +1124,7 @@ const ApiKeysPanel = () => {
     if (!confirm("Force rotate to next API key?")) return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/api-keys/rotate", { method: "POST" });
-      const data = await res.json();
+      const data = await api.rotateAdminKey();
       setKeyStatus(data.current_status);
       alert(data.message);
     } catch (err: any) {
@@ -1141,12 +1137,7 @@ const ApiKeysPanel = () => {
   const handleReload = async () => {
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/api-keys/reload", { method: "POST" });
-      const data = await res.json();
-
-      if (data.status === "error" || !res.ok) {
-        throw new Error(data.error || data.detail || "Unknown error");
-      }
+      const data = await api.reloadAdminKeys();
 
       setKeyStatus((curr) =>
         curr ? { ...curr, total_keys: data.total_keys } : null,
@@ -1172,8 +1163,7 @@ const ApiKeysPanel = () => {
       return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/api-keys/reset", { method: "POST" });
-      const data = await res.json();
+      const data = await api.resetAdminKeys();
       setKeyStatus(data.current_status);
       alert(data.message);
     } catch (err: any) {
