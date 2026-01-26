@@ -82,6 +82,7 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
     """
     auth_header = request.headers.get("Authorization")
     if not auth_header:
+         print("Admin Auth: Missing Header")
          raise HTTPException(status_code=401, detail="Missing Authorization Header")
     
     try:
@@ -94,27 +95,31 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         user = db.auth.get_user(token)
         
         if not user or not user.user:
+            print("Admin Auth: User invalid in Supabase")
             raise HTTPException(status_code=401, detail="Invalid Token")
             
         user_id = user.user.id
         email = user.user.email
         
         # 1. Check strict whitelist (Hardcoded for MVP safety)
-        if email in ["admin@hotel.plus", "elif@tripzy.travel"] or (email and email.endswith("@tripzy.travel")):
+        if email and (email in ["admin@hotel.plus", "elif@tripzy.travel"] or email.endswith("@tripzy.travel")):
             return user.user
             
         # 2. Check Database Role
-        profile = db.table("user_profiles").select("role").eq("user_id", user_id).single().execute()
-        if profile.data and profile.data.get("role") == "admin":
+        # Use limit(1) instead of single() to avoid crash if no profile
+        profile = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
+        
+        if profile.data and profile.data[0].get("role") == "admin":
             return user.user
             
+        print(f"Admin Auth: User {email} is not admin")
         raise HTTPException(status_code=403, detail="Admin Access Required")
         
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        print(f"Auth Error: {e}")
+        print(f"Admin Auth Error: {e}")
         # Only raise 403/401, careful not to leak internal errors
-        if isinstance(e, HTTPException):
-            raise e
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
 async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
