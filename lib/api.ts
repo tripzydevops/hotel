@@ -15,9 +15,11 @@ class ApiClient {
         const supabase = createClient();
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token;
+        if (!token) {
+            console.log("[ApiClient] No token found in session");
+        }
     } catch (e) {
-        // Warning: This might run on server side where createClient behaves differently
-        // but this ApiClient is mostly used on client side.
+        console.error("[ApiClient] Error getting session:", e);
     }
 
     const headers: HeadersInit = {
@@ -27,9 +29,14 @@ class ApiClient {
 
     if (token) {
         (headers as any)["Authorization"] = `Bearer ${token}`;
+    } else {
+        console.warn(`[ApiClient] Sending request to ${endpoint} WITHOUT token`);
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log(`[ApiClient] Fetching from ${API_BASE_URL}: ${fullUrl}`);
+    
+    const response = await fetch(fullUrl, {
       ...options,
       cache: "no-store",
       headers,
