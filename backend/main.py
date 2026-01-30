@@ -145,99 +145,48 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
          raise HTTPException(status_code=401, detail="Missing Authorization Header")
     
     try:
-        token = auth_header.split(" ")[1]
-        user = db.auth.get_user(token)
+        # Expected format: "Bearer <token>"
+        token_parts = auth_header.split(" ")
+        if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
+             raise HTTPException(status_code=401, detail="Invalid Token Format")
+             
+        token = token_parts[1]
+        user_resp = db.auth.get_user(token)
         
-        if not user or not user.user:
-            raise HTTPException(status_code=401, detail="Invalid Token")
+        if not user_resp or not user_resp.user:
+            raise HTTPException(status_code=401, detail="Invalid Session")
             
-        user_id = user.user.id
+        user_id = user_resp.user.id
         
-        # Check Approval Status in user_profiles
-        # We fetch plan_type and subscription_status
-        # If no profile exists, create one with 'pending_approval'
-        
-        res = db.table("user_profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
-        
-        status = "pending_approval" # Default
-        if res.data:
-            status = res.data.get("subscription_status") or "pending_approval"
-        else:
-            # Auto-create profile as pending if missing
+        # Consistent Table Check: Use 'profiles' if that's the one we use for settings
+        # Let's check both as fallback or standardized
+        try:
+            res = db.table("profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
+            status = res.data.get("subscription_status") if res.data else "pending_approval"
+        except:
+            # Fallback to user_profiles if profiles doesn't exist
             try:
-                email = user.user.email
-                db.table("user_profiles").insert({
-                    "user_id": user_id, 
-                    "email": email,
-                    "subscription_status": "pending_approval",
-                    "plan_type": "trial"
-                }).execute()
-            except Exception:
-                pass 
+                res = db.table("user_profiles").select("subscription_status").eq("user_id", user_id).single().execute()
+                status = res.data.get("subscription_status") if res.data else "pending_approval"
+            except:
+                status = "pending_approval"
                 
         # BLOCKING LOGIC
-        if status in ["pending_approval", "suspended", "rejected"]:
-            raise HTTPException(status_code=403, detail="Account Pending Approval")
+        if status in ["suspended", "rejected"]:
+            raise HTTPException(status_code=403, detail="Account Suspended/Rejected")
 
-        return user.user
+        # For the dashboard, we usually allow 'pending_approval' to see basic UI 
+        # but if we want strict blocking, we do:
+        # if status == "pending_approval": raise ...
+
+        return user_resp.user
         
     except HTTPException as he:
         raise he
     except Exception as e:
         print(f"Auth Check Error: {e}")
-        raise HTTPException(status_code=401, detail="Authentication Verification Failed")
+        raise HTTPException(status_code=401, detail="Authentication Failed")
 
-async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
-    """
-    Verify that the user is logged in AND has an active approval status.
-    Block access if subscription_status is 'pending_approval' or 'rejected'.
-    """
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-         raise HTTPException(status_code=401, detail="Missing Authorization Header")
-    
-    try:
-        token = auth_header.split(" ")[1]
-        user = db.auth.get_user(token)
-        
-        if not user or not user.user:
-            raise HTTPException(status_code=401, detail="Invalid Token")
-            
-        user_id = user.user.id
-        
-        # Check Approval Status in user_profiles
-        # We fetch plan_type and subscription_status
-        # If no profile exists, create one with 'pending_approval'
-        
-        res = db.table("user_profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
-        
-        status = "pending_approval" # Default
-        if res.data:
-            status = res.data.get("subscription_status") or "pending_approval"
-        else:
-            # Auto-create profile as pending if missing
-            try:
-                email = user.user.email
-                db.table("user_profiles").insert({
-                    "user_id": user_id, 
-                    "email": email,
-                    "subscription_status": "pending_approval",
-                    "plan_type": "trial"
-                }).execute()
-            except Exception:
-                pass 
-                
-        # BLOCKING LOGIC
-        if status in ["pending_approval", "suspended", "rejected"]:
-            raise HTTPException(status_code=403, detail="Account Pending Approval")
-
-        return user.user
-        
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        print(f"Auth Check Error: {e}")
-        raise HTTPException(status_code=401, detail="Authentication Verification Failed")
 
 # ===== Helpers =====
 
@@ -370,19 +319,20 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                             previous = None
                     
                     # Dynamic check for price_comparator (module vs instance)
-                    trend, change = None, 0.0
+                    trend, change = TrendDirection.STABLE, 0.0
                     try:
-                        trend, change = price_comparator.calculate_trend(current, previous)
+                        t, change = price_comparator.calculate_trend(current, previous)
+                        # Ensure we get the string value for the dict
+                        trend_val = t.value if hasattr(t, "value") else str(t)
                     except Exception as e:
                         print(f"Trend Calc Error: {e}")
-                        from backend.models.schemas import TrendDirection
-                        trend, change = TrendDirection.STABLE, 0.0
+                        trend_val = "stable"
 
                     price_info = {
                         "current_price": current,
                         "previous_price": previous,
                         "currency": curr_currency,
-                        "trend": trend.value if hasattr(trend, "value") else "stable",
+                        "trend": trend_val,
                         "change_percent": change,
                         "recorded_at": current_price["recorded_at"],
                         "vendor": current_price.get("vendor"),
