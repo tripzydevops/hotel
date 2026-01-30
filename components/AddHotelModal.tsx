@@ -57,9 +57,19 @@ export default function AddHotelModal({
         .getLocations()
         .then((data) => {
           setLocationsRegistry(data);
+          const INVALID_COUNTRIES = [
+            "USD",
+            "EUR",
+            "GBP",
+            "TRY",
+            "AUD",
+            "CAD",
+            "JPY",
+          ];
           const uniqueCountries = Array.from(
             new Set(data.map((l: any) => l.country)),
-          );
+          ).filter((c) => !INVALID_COUNTRIES.includes(c as string));
+
           if (!uniqueCountries.includes("Turkey"))
             uniqueCountries.push("Turkey");
           setCountries(uniqueCountries.sort());
