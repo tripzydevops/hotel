@@ -13,12 +13,14 @@ This project follows a strict 3-Layer Architecture to solve the "Cold Start" pro
 ### LAYER 2: Autonomous Reasoning Engine (The "Brain")
 
 - **Backend:** Python (FastAPI)
-- **Logic:** Autonomous Agents manage data and reasoning.
-- **Reasoning:** Gemini-compatible reasoning engine explains recommendation logic.
+- **Strategic Benchmarking:** Implemented **ARI (Average Rate Index)** and **GRI (Sentiment Index)** to normalize market positioning.
+- **Logic:** Autonomous Quadrant Advisor analyzes Price vs. Value to provide revenue management "So What?" reasoning.
+- **Reasoning:** Gemini-compatible reasoning engine explains recommendation logic based on market spread.
 
 ### LAYER 3: Data & Algorithms (The Infrastructure)
 
 - **Database:** Supabase (PostgreSQL)
+- **Extended Schema:** Added `review_count` to track social proof volume for GRI calculations.
 - **Vector Search:** `pgvector` for semantic hotel search.
 - **Recommendation:** Hybrid approach (Collaborative Filtering + Vector-Based).
 

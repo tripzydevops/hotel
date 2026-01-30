@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tripzy.travel 🚀
 
-## Getting Started
+### Autonomous Agent-Based Recommendation Engine
 
-First, run the development server:
+**Tripzy.travel** is a next-generation travel intelligence platform designed to solve the "Cold Start" problem using Autonomous Agents and LLM-based reasoning.
+
+## 🏗️ Technical Architecture
+
+We adhere to a strict **3-Layer Architecture**:
+
+1. **LAYER 1: User Interface & Signal Collection**
+   - Next.js Web Dashboard & React Native Mobile App.
+   - Real-time user signal collection module.
+   - Dynamic i18n support (EN/TR) and Currency Normalization.
+
+2. **LAYER 2: Autonomous Reasoning Engine (The "Brain")**
+   - FastAPI-powered backend with Autonomous Agent orchestration.
+   - **Strategic Intelligence Layer**: Calculates **ARI (Average Rate Index)** and **GRI (Global Review Index)** to perform market benchmarking.
+   - **Autonomous Quadrant Advisor**: Real-time analysis of Price vs. Value to provide actionable revenue management insights.
+
+3. **LAYER 3: Data & Algorithms (The Infrastructure)**
+   - **Supabase** for relational and vector storage.
+   - `pgvector` for semantic hotel search and hybrid recommendations.
+   - Real-time market data extraction via **SerpApi**.
+
+## 📊 Core Features
+
+- **ARI (Price Index)**: Real-time price benchmarking against market averages.
+- **GRI (Sentiment Index)**: Scientific sentiment analysis based on rating and social proof volume.
+- **Quadrant Visualization**: Dynamic 2x2 grid for strategic positioning.
+- **Enterprise Reports**: Professional PDF/CSV exports with multi-currency support.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.11+
+- Supabase Account
+- SerpApi Key
+
+### Installation
+
+1. Clone the repository
+2. Install frontend dependencies: `npm install`
+3. Install backend dependencies: `pip install -r requirements.txt`
+4. Set up `.env` from `.env.example`
+
+### Running Locally
 
 ```bash
+# Frontend
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Backend
+cd backend
+uvicorn main:app --reload
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+_Built with ❤️ for the future of Autonomous Travel Intelligence._
