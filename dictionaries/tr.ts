@@ -115,6 +115,12 @@ export const tr = {
     globalMatch: "Küresel",
     noMatch: "Veritabanı eşleşmesi yok",
     checkingLocation: "Manuel ayarlamak için konum kontrol ediliyor",
+    countryLabel: "Ülke",
+    cityLabel: "Şehir",
+    addNewLocation: "Yeni Konum Ekle",
+    selectCountry: "Ülke Seçin",
+    selectCity: "Şehir Seçin",
+    manualEntry: "Manuel Giriş",
   },
   editHotel: {
     title: "Oteli Düzenle",

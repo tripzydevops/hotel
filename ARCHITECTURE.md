@@ -23,6 +23,7 @@ This project follows a strict 3-Layer Architecture to solve the "Cold Start" pro
 - **Extended Schema:** Added `review_count` to track social proof volume for GRI calculations.
 - **Vector Search:** `pgvector` for semantic hotel search.
 - **Recommendation:** Hybrid approach (Collaborative Filtering + Vector-Based).
+- **Location Discovery:** Self-learning `location_registry` that standardizes market data through hierarchical selection and autonomous ingestion during hotel creation.
 
 ## 📊 Core Features
 

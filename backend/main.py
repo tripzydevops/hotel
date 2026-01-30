@@ -27,12 +27,11 @@ from backend.models.schemas import (
     TrendDirection, QueryLog, PricePoint,
     MarketAnalysis, ReportsResponse, ScanSession,
     UserProfile, UserProfileUpdate,
-    AdminStats, AdminUser, AdminDirectoryEntry, AdminLog, AdminDataResponse, AdminUserCreate,
-    ScanOptions,
-    AdminSettings, AdminSettingsUpdate,
-    PlanCreate, PlanUpdate, MembershipPlan
+    PlanCreate, PlanUpdate, MembershipPlan,
+    LocationRegistry
 )
 from backend.services import serpapi_client, price_comparator, notification_service
+from backend.services.location_service import LocationService
 
 # Initialize FastAPI
 app = FastAPI(
@@ -937,6 +936,17 @@ async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     return result.data or []
 
 
+# ===== Location Discovery =====
+
+@app.get("/api/locations", response_model=List[LocationRegistry])
+async def list_locations(db: Client = Depends(get_supabase)):
+    """Fetch all discovered locations for the dropdowns."""
+    if not db:
+        return []
+    service = LocationService(db)
+    return await service.get_locations()
+
+
 @app.post("/api/hotels/{user_id}", response_model=Hotel)
 async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     if not db:
@@ -989,6 +999,19 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
             location=hotel_data.get("location"),
             action_type="create"
         )
+        
+        # Autonomous Location Discovery
+        try:
+            loc_service = LocationService(db)
+            raw_location = hotel_data.get("location", "")
+            if raw_location:
+                # Basic parsing: "City, Country" or "City"
+                parts = [p.strip() for p in raw_location.split(",")]
+                city = parts[0]
+                country = parts[1] if len(parts) > 1 else (hotel_data.get("preferred_currency", "TRY") == "TRY" and "Turkey" or "Unknown")
+                await loc_service.upsert_location(country, city)
+        except Exception as loc_e:
+            print(f"Location discovery ignored: {loc_e}")
         
         # Mirror to shared directory so it appears in autocomplete for everyone
         try:

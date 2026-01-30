@@ -115,6 +115,12 @@ export const en = {
     globalMatch: "Global",
     noMatch: "No database matches",
     checkingLocation: "Checking location below to set manually",
+    countryLabel: "Country",
+    cityLabel: "City",
+    addNewLocation: "Add New Location",
+    selectCountry: "Select Country",
+    selectCity: "Select City",
+    manualEntry: "Manual Entry",
   },
   editHotel: {
     title: "Edit Hotel",

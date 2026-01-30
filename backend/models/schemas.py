@@ -151,6 +151,18 @@ class UserProfile(UserProfileBase):
         from_attributes = True
 
 
+# ===== Location Models =====
+
+class LocationRegistry(BaseModel):
+    country: str
+    city: str
+    district: Optional[str] = ""
+    occurrence_count: int = 1
+
+    class Config:
+        from_attributes = True
+
+
 # ===== Alert Models =====
 
 class AlertBase(BaseModel):

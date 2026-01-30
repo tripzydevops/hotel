@@ -161,6 +161,10 @@ class ApiClient {
     return this.fetch<any>(`/api/reports/${userId}`);
   }
 
+  async getLocations(): Promise<any[]> {
+    return this.fetch<any[]>("/api/locations");
+  }
+
   async exportReport(userId: string, format: string = "csv"): Promise<void> {
     const token = await this.getToken();
     const headers: any = { "Content-Type": "application/json" };

@@ -29,8 +29,12 @@ export default function AddHotelModal({
   currentHotelCount = 0,
 }: AddHotelModalProps) {
   const { t } = useI18n();
+  const [locationsRegistry, setLocationsRegistry] = useState<any[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [country, setCountry] = useState("Turkey");
+  const [city, setCity] = useState("");
+  const [isManualEntry, setIsManualEntry] = useState(false);
   const [name, setName] = useState(initialName);
-  const [location, setLocation] = useState(initialLocation);
   const [currency, setCurrency] = useState("TRY");
   const [isTarget, setIsTarget] = useState(false);
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
@@ -42,7 +46,25 @@ export default function AddHotelModal({
   useEffect(() => {
     if (isOpen) {
       setName(initialName);
-      setLocation(initialLocation);
+      if (initialLocation) {
+        const parts = initialLocation.split(",").map((p) => p.trim());
+        setCity(parts[0]);
+        if (parts[1]) setCountry(parts[1]);
+      }
+
+      // Load locations
+      api
+        .getLocations()
+        .then((data) => {
+          setLocationsRegistry(data);
+          const uniqueCountries = Array.from(
+            new Set(data.map((l: any) => l.country)),
+          );
+          if (!uniqueCountries.includes("Turkey"))
+            uniqueCountries.push("Turkey");
+          setCountries(uniqueCountries.sort());
+        })
+        .catch((err) => console.error("Failed to load locations:", err));
     }
   }, [isOpen, initialName, initialLocation]);
 
@@ -50,6 +72,13 @@ export default function AddHotelModal({
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
+
+  // Filter cities based on selected country
+  const filteredCities = Array.from(
+    new Set(
+      locationsRegistry.filter((l) => l.country === country).map((l) => l.city),
+    ),
+  ).sort();
 
   // Search logic
   useEffect(() => {
@@ -91,7 +120,16 @@ export default function AddHotelModal({
 
   const handleSelectSuggestion = (suggestion: any) => {
     setName(suggestion.name);
-    setLocation(suggestion.location);
+    if (suggestion.location) {
+      const parts = suggestion.location.split(",").map((p: string) => p.trim());
+      setCity(parts[0]);
+      if (parts[1]) {
+        setCountry(parts[1]);
+        if (!countries.includes(parts[1])) {
+          setCountries((prev) => [...prev, parts[1]].sort());
+        }
+      }
+    }
     setSerpApiId(suggestion.serp_api_id);
     setShowSuggestions(false);
   };
@@ -104,13 +142,18 @@ export default function AddHotelModal({
 
     setLoading(true);
     try {
-      await onAdd(name, location, isTarget, currency, serpApiId);
+      // Standardize location: City, Country
+      const formattedLocation = city ? `${city}, ${country}` : country;
+
+      await onAdd(name, formattedLocation, isTarget, currency, serpApiId);
       onClose();
       // Reset form
       setName("");
-      setLocation("");
+      setCity("");
+      setCountry("Turkey");
       setCurrency("TRY");
       setIsTarget(false);
+      setIsManualEntry(false);
       setSerpApiId(undefined);
     } catch (error) {
       console.error("Error adding hotel:", error);
@@ -251,41 +294,106 @@ export default function AddHotelModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                {t("addHotel.locationLabel")}
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  required
-                  value={location}
-                  disabled={isLimitReached}
-                  onChange={(e) => setLocation(e.target.value)}
-                  onFocus={() => setShowSuggestions(false)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder={t("addHotel.locationPlaceholder")}
-                />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                  {t("addHotel.countryLabel")}
+                </label>
+                <div className="relative">
+                  <select
+                    value={country}
+                    disabled={isLimitReached || isManualEntry}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50 transition-all"
+                  >
+                    {countries.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                  {isManualEntry
+                    ? t("addHotel.cityLabel")
+                    : t("addHotel.cityLabel")}
+                </label>
+                <div className="relative">
+                  {isManualEntry ? (
+                    <input
+                      type="text"
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder={t("addHotel.locationPlaceholder")}
+                      className="w-full bg-white/5 border border-[var(--soft-gold)]/50 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                    />
+                  ) : (
+                    <select
+                      value={city}
+                      required
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW__") {
+                          setIsManualEntry(true);
+                          setCity("");
+                        } else {
+                          setCity(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] transition-all"
+                    >
+                      <option value="">{t("addHotel.selectCity")}</option>
+                      {filteredCities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                      <option
+                        value="__NEW__"
+                        className="text-[var(--soft-gold)] font-bold"
+                      >
+                        + {t("addHotel.addNewLocation")}
+                      </option>
+                    </select>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                {t("addHotel.currencyLabel")}
-              </label>
-              <select
-                value={currency}
-                disabled={isLimitReached}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="TRY">TRY (₺)</option>
-                <option value="GBP">GBP (£)</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsManualEntry(!isManualEntry)}
+                  className="text-[10px] text-[var(--soft-gold)] hover:underline flex items-center gap-1"
+                >
+                  <MapPin className="w-3 h-3" />
+                  {isManualEntry
+                    ? t("addHotel.selectCity")
+                    : t("addHotel.manualEntry")}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                  {t("addHotel.currencyLabel")}
+                </label>
+                <select
+                  value={currency}
+                  disabled={isLimitReached}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="TRY">TRY (₺)</option>
+                  <option value="GBP">GBP (£)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -309,7 +417,7 @@ export default function AddHotelModal({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading || isLimitReached}
+              disabled={loading || isLimitReached || (!city && !isManualEntry)}
               className="w-full btn-gold py-3 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
