@@ -25,12 +25,18 @@ from backend.models.schemas import (
     Alert, AlertCreate,
     DashboardResponse, HotelWithPrice, MonitorResult,
     TrendDirection, QueryLog, PricePoint,
-    MarketAnalysis, ReportsResponse, ScanSession,
+    MarketAnalysis, ReportsResponse, ScanSession, ScanOptions,
     UserProfile, UserProfileUpdate,
     PlanCreate, PlanUpdate, MembershipPlan,
-    LocationRegistry
+    LocationRegistry,
+    # Admin Models
+    AdminStats, AdminUserCreate, AdminUser, AdminDirectoryEntry, 
+    AdminLog, AdminDataResponse, AdminSettings, AdminSettingsUpdate
 )
-from backend.services import serpapi_client, price_comparator, notification_service
+# Fix: explicit imports to avoid module/instance shadowing
+from backend.services.serpapi_client import serpapi_client
+from backend.services.price_comparator import price_comparator
+from backend.services.notification_service import notification_service
 from backend.services.location_service import LocationService
 
 # Initialize FastAPI

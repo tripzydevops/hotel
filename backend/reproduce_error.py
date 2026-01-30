@@ -18,11 +18,13 @@ def test_model_instantiation():
     
     try:
         # 1. Test PriceWithTrend with rich data
+        trend_str = "up" # Simulator what backend passes
+        
         price_info = {
             "current_price": 150.0,
             "previous_price": 140.0,
             "currency": "TRY",
-            "trend": "up",
+            "trend": trend_str, # Passing string "up" to Enum field
             "change_percent": 7.14,
             "recorded_at": datetime.now(),
             "vendor": "Booking.com",
@@ -33,16 +35,19 @@ def test_model_instantiation():
             "room_types": []
         }
         pt = PriceWithTrend(**price_info)
-        print("✅ PriceWithTrend instantiated successfully")
+        print(f"✅ PriceWithTrend instantiated successfully (Trend: {pt.trend})")
 
-        # 2. Test HotelWithPrice with fractional stars
+        # 2. Test HotelWithPrice with fractional stars and MISSING FIELDS supplied
         hotel_data = {
             "id": uuid.uuid4(),
+            "user_id": uuid.uuid4(),
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
             "name": "Test Hotel",
             "is_target_hotel": True,
             "location": "Istanbul",
             "rating": 4.8,
-            "stars": 4.5, # FIXED: was crashing if int
+            "stars": 4.5, 
             "image_url": "http://image.com",
             "amenities": ["Wifi", "Pool"],
             "images": [{"url": "http://img1.png"}],
