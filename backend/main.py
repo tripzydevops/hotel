@@ -469,10 +469,13 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 
     except Exception as e:
         import traceback
-        traceback.print_exc()
-        print(f"DASHBOARD ERROR: {e}")
-        # Raising 500 with details for the user to see
-        raise HTTPException(status_code=500, detail=f"Dashboard Crash Details: {str(e)}")
+        tb_str = traceback.format_exc()
+        print(f"DASHBOARD ERROR: {e}\n{tb_str}")
+        # Raising 500 with detailed traceback so we can identify the exact line of failure
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Crash: {str(e)} | Trace: {tb_str[:1000]}"
+        )
 
 
 
