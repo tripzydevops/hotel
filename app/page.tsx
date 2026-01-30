@@ -553,22 +553,27 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-white">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
-                  {(data.target_hotel?.price_info?.currency ||
-                    userSettings?.currency ||
-                    "TRY") === "TRY"
-                    ? "₺"
-                    : "$"}
-                  {new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(
-                    Math.round(
+                  {(() => {
+                    const activeCurrency =
+                      data.target_hotel?.price_info?.currency ||
+                      data.competitors[0]?.price_info?.currency ||
+                      userSettings?.currency ||
+                      "TRY";
+                    const avgPrice = Math.round(
                       (data?.competitors || []).reduce(
                         (sum, c) => sum + (c.price_info?.current_price || 0),
                         0,
                       ) / (data?.competitors?.length || 1),
-                    ),
-                  )}
+                    );
+                    return new Intl.NumberFormat(
+                      activeCurrency === "TRY" ? "tr-TR" : "en-US",
+                      {
+                        style: "currency",
+                        currency: activeCurrency,
+                        minimumFractionDigits: 0,
+                      },
+                    ).format(avgPrice);
+                  })()}
                 </>
               ) : (
                 "—"
