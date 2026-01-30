@@ -211,19 +211,14 @@ class PricePoint(BaseModel):
     recorded_at: datetime
 
 
-class HotelWithPrice(BaseModel):
+class HotelWithPrice(Hotel):
     """Hotel data enriched with latest price info."""
-    id: UUID
-    name: str
-    is_target_hotel: bool
-    location: Optional[str] = None
-    rating: Optional[float] = None
-    stars: Optional[float] = None
-    image_url: Optional[str] = None
-    amenities: List[Any] = []
-    images: List[Any] = []
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
+    
+    class Config:
+        from_attributes = True
+        extra = "allow"
 
 
 
@@ -237,6 +232,10 @@ class QueryLog(BaseModel):
     price: Optional[float] = None
     currency: Optional[str] = None
     vendor: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+        extra = "allow"
 
 
 class ScanSession(BaseModel):

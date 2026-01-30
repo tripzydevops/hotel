@@ -252,7 +252,7 @@ async def health_check():
         "status": "healthy", 
         "supabase_configured": bool(url and has_key),
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.4-hotfix"
+        "version": "1.0.6-hotfix"
     }
 
 
@@ -360,16 +360,9 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                     continue
 
             try:
+                # Build the hotel with enrichment (id, name etc are in the 'hotel' dict)
                 hotel_with_price = HotelWithPrice(
-                    id=hotel["id"],
-                    name=hotel["name"],
-                    is_target_hotel=hotel["is_target_hotel"],
-                    location=hotel.get("location"),
-                    rating=hotel.get("rating"),
-                    stars=hotel.get("stars"),
-                    image_url=hotel.get("image_url"),
-                    amenities=hotel.get("amenities") or [],
-                    images=hotel.get("images") or [],
+                    **hotel, # Unpack all fields from 'hotels' table (id, user_id, created_at, updated_at etc)
                     price_info=price_info,
                     price_history=valid_history
                 )
@@ -447,13 +440,16 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             valid_items = []
             for item in data_list:
                 try:
-                    # Handle specific field conversions if needed
-                    if "price" in item and item["price"] is None:
-                        item["price"] = 0.0 # Default fallback
-                    valid_items.append(model_class(**item))
+                    if isinstance(item, dict):
+                        if "price" in item and item["price"] is None:
+                            item["price"] = 0.0 # Default fallback
+                        valid_items.append(model_class(**item))
+                    else:
+                        valid_items.append(item) # Already a model?
                 except Exception as e:
                     # converting UUIDs or Dates might fail
-                    print(f"Skipping invalid {model_class.__name__}: {e} | Data: {item.get('id', 'unknown')}")
+                    ident = getattr(item, "id", "unknown") if not isinstance(item, dict) else item.get("id", "unknown")
+                    print(f"Skipping invalid {model_class.__name__}: {e} | Data ID: {ident}")
                     continue
             return valid_items
 
