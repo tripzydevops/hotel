@@ -453,6 +453,7 @@ export default function Dashboard() {
                   previousPrice={data.target_hotel.price_info?.previous_price}
                   currency={
                     data.target_hotel.price_info?.currency ||
+                    data.competitors?.[0]?.price_info?.currency ||
                     userSettings?.currency ||
                     "TRY"
                   }
@@ -554,17 +555,21 @@ export default function Dashboard() {
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
+                    // Robust currency detection: Prioritize hotel data, then competitor data, then settings
                     const activeCurrency =
                       data.target_hotel?.price_info?.currency ||
-                      data.competitors[0]?.price_info?.currency ||
+                      data.competitors.find((c) => c.price_info?.currency)
+                        ?.price_info?.currency ||
                       userSettings?.currency ||
                       "TRY";
+
                     const avgPrice = Math.round(
                       (data?.competitors || []).reduce(
                         (sum, c) => sum + (c.price_info?.current_price || 0),
                         0,
                       ) / (data?.competitors?.length || 1),
                     );
+
                     return new Intl.NumberFormat(
                       activeCurrency === "TRY" ? "tr-TR" : "en-US",
                       {
