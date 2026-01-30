@@ -31,7 +31,7 @@ export default function AddHotelModal({
   const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const [location, setLocation] = useState(initialLocation);
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("TRY");
   const [isTarget, setIsTarget] = useState(false);
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
@@ -109,7 +109,7 @@ export default function AddHotelModal({
       // Reset form
       setName("");
       setLocation("");
-      setCurrency("USD");
+      setCurrency("TRY");
       setIsTarget(false);
       setSerpApiId(undefined);
     } catch (error) {

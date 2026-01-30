@@ -43,7 +43,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     name,
     currentPrice,
     previousPrice,
-    currency = "USD",
+    currency = "TRY",
     trend,
     changePercent,
     isUndercut = false,
@@ -60,7 +60,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     onViewDetails,
   } = props;
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: 0,

@@ -39,9 +39,8 @@ export default function ReportsPage() {
   );
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
 
-  /* Profile State for Header */
   const [profile, setProfile] = useState<any>(null);
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("TRY");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -301,6 +300,171 @@ export default function ReportsPage() {
             </button>
           </div>
         </div>
+
+        {/* --- STRATEGIC INTELLIGENCE LAYER --- */}
+        {analysis && (
+          <div className="mb-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <div className="mb-6">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <div className="w-2 h-6 bg-[var(--soft-gold)] rounded-full mr-1" />
+                {t("reports.strategicIntelligence")}
+              </h2>
+              <p className="text-sm text-[var(--text-muted)] font-medium mt-1">
+                {t("reports.quadrantDesc")}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Quadrant Visual Placeholder or Mini Map */}
+              <div className="lg:col-span-2 glass-card p-6 flex flex-col items-center justify-center min-h-[300px] border border-[var(--soft-gold)]/20 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                <div className="relative z-10 w-full h-full flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--soft-gold)]">
+                      {t("reports.quadrantTitle")}
+                    </h4>
+                    <div className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter bg-[var(--soft-gold)] text-[var(--deep-ocean)]">
+                      Autonomous
+                    </div>
+                  </div>
+
+                  <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 border-2 border-dashed border-white/10 rounded-xl p-4 relative">
+                    {/* Quadrant Labels */}
+                    <div className="border border-white/5 flex flex-col items-center justify-center rounded-lg bg-white/5 hover:bg-[var(--optimal-green)]/10 transition-colors group/q">
+                      <span className="text-[10px] font-black uppercase tracking-tighter text-[var(--text-muted)] group-hover/q:text-[var(--optimal-green)]">
+                        {t("reports.underpriced")}
+                      </span>
+                    </div>
+                    <div className="border border-white/5 flex flex-col items-center justify-center rounded-lg bg-white/5 hover:bg-blue-500/10 transition-colors group/q">
+                      <span className="text-[10px] font-black uppercase tracking-tighter text-[var(--text-muted)] group-hover/q:text-blue-400">
+                        {t("reports.valuePremium")}
+                      </span>
+                    </div>
+                    <div className="border border-white/5 flex flex-col items-center justify-center rounded-lg bg-white/5 hover:bg-alert-red/10 transition-colors group/q">
+                      <span className="text-[10px] font-black uppercase tracking-tighter text-[var(--text-muted)] group-hover/q:text-alert-red">
+                        {t("reports.lostValue")}
+                      </span>
+                    </div>
+                    <div className="border border-white/5 flex flex-col items-center justify-center rounded-lg bg-white/5 hover:bg-amber-500/10 transition-colors group/q">
+                      <span className="text-[10px] font-black uppercase tracking-tighter text-[var(--text-muted)] group-hover/q:text-amber-400">
+                        {t("reports.overpriced")}
+                      </span>
+                    </div>
+
+                    {/* Actual Pointer */}
+                    <div
+                      className="absolute w-4 h-4 bg-[var(--soft-gold)] rounded-full border-2 border-white shadow-[0_0_15px_rgba(255,215,0,0.5)] animate-pulse"
+                      style={{
+                        left: `${Math.min(90, Math.max(10, (analysis.sentiment_index || 100) / 2))}%`,
+                        top: `${Math.min(90, Math.max(10, 100 - (analysis.ari || 100) / 2))}%`,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-medium italic">
+                    <Lightbulb className="w-3 h-3 text-[var(--soft-gold)]" />
+                    {analysis.ari && analysis.ari > 105
+                      ? t("reports.highPosition")
+                      : t("reports.lowPosition")}
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ARI Card */}
+                <div className="glass-card p-6 flex flex-col justify-between border-t-2 border-t-[var(--soft-gold)]">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                      {t("reports.ariLabel")}
+                    </h4>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mb-4">
+                      {t("reports.ariDesc")}
+                    </p>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-4xl font-black text-white italic">
+                      {analysis.ari || "100.0"}
+                    </span>
+                    <div
+                      className={`px-2 py-1 rounded text-[10px] font-black ${(analysis.ari || 100) > 100 ? "bg-alert-red/10 text-alert-red" : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)]"}`}
+                    >
+                      {(analysis.ari || 100) > 100
+                        ? t("reports.overpriced")
+                        : t("reports.underpriced")}
+                    </div>
+                  </div>
+                  <div className="w-full bg-white/5 h-1.5 rounded-full mt-4 overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--soft-gold)] rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${Math.min(100, analysis.ari || 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Sentiment Card */}
+                <div className="glass-card p-6 flex flex-col justify-between border-t-2 border-t-blue-500">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                      {t("reports.sentimentLabel")}
+                    </h4>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mb-4">
+                      {t("reports.sentimentDesc")}
+                    </p>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-4xl font-black text-white italic">
+                      {analysis.sentiment_index || "100.0"}
+                    </span>
+                    <div
+                      className={`px-2 py-1 rounded text-[10px] font-black ${(analysis.sentiment_index || 100) > 100 ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)]" : "bg-alert-red/10 text-alert-red"}`}
+                    >
+                      {(analysis.sentiment_index || 100) > 100
+                        ? t("reports.valuePremium")
+                        : t("reports.lostValue")}
+                    </div>
+                  </div>
+                  <div className="w-full bg-white/5 h-1.5 rounded-full mt-4 overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${Math.min(100, analysis.sentiment_index || 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* So What? Card */}
+                <div className="md:col-span-2 glass-card p-4 bg-[var(--soft-gold)]/5 border border-dashed border-[var(--soft-gold)]/20 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[var(--soft-gold)]/10 flex items-center justify-center flex-shrink-0 animate-pulse">
+                    <Lightbulb className="w-6 h-6 text-[var(--soft-gold)]" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">
+                      {t("reports.soWhat")}
+                    </h5>
+                    <p className="text-xs text-[var(--text-secondary)] font-medium">
+                      {analysis.ari &&
+                      analysis.ari < 95 &&
+                      analysis.sentiment_index &&
+                      analysis.sentiment_index > 105
+                        ? "Your 'Underpriced' status combined with 'Value Premium' sentiment suggests an immediate 5-10% rate increase opportunity without losing occupancy."
+                        : analysis.ari &&
+                            analysis.ari > 105 &&
+                            analysis.sentiment_index &&
+                            analysis.sentiment_index < 95
+                          ? "Warning: High Pricing with low sentiment indicates a 'Value Gap'. You are at risk of major ADR loss if competitors lower rates."
+                          : "Market data suggests a balanced pricing position. Monitor Stealth Patterns for unexpected competitor shifts."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* --- ANALYTICS DASHBOARD --- */}
         {analysis && (

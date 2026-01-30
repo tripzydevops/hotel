@@ -37,7 +37,7 @@ export default function AnalysisPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [currency, setCurrency] = useState<string>("USD");
+  const [currency, setCurrency] = useState<string>("TRY");
 
   useEffect(() => {
     const getSession = async () => {

@@ -187,7 +187,7 @@ export default function Dashboard() {
       name,
       location,
       false,
-      userSettings?.currency || "USD",
+      userSettings?.currency || "TRY",
     );
   };
 
@@ -454,7 +454,7 @@ export default function Dashboard() {
                   currency={
                     data.target_hotel.price_info?.currency ||
                     userSettings?.currency ||
-                    "USD"
+                    "TRY"
                   }
                   trend={data.target_hotel.price_info?.trend || "stable"}
                   changePercent={
@@ -498,7 +498,7 @@ export default function Dashboard() {
                         name={competitor.name}
                         currentPrice={competitor.price_info?.current_price || 0}
                         previousPrice={competitor.price_info?.previous_price}
-                        currency={competitor.price_info?.currency || "USD"}
+                        currency={competitor.price_info?.currency || "TRY"}
                         trend={competitor.price_info?.trend || "stable"}
                         changePercent={
                           competitor.price_info?.change_percent || 0

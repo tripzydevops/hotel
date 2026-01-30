@@ -22,7 +22,7 @@ export default function EditHotelModal({
   const { t } = useI18n();
   const [name, setName] = useState(hotel.name);
   const [location, setLocation] = useState(hotel.location || "");
-  const [currency, setCurrency] = useState(hotel.preferred_currency || "USD");
+  const [currency, setCurrency] = useState(hotel.preferred_currency || "TRY");
   const [isTarget, setIsTarget] = useState(hotel.is_target_hotel || false);
   const [serpApiId, setSerpApiId] = useState<string | undefined>(
     hotel.serp_api_id || undefined,
@@ -44,7 +44,7 @@ export default function EditHotelModal({
     if (isOpen && hotel) {
       setName(hotel.name);
       setLocation(hotel.location || "");
-      setCurrency(hotel.preferred_currency || "USD");
+      setCurrency(hotel.preferred_currency || "TRY");
       setIsTarget(hotel.is_target_hotel || false);
       setSerpApiId(hotel.serp_api_id);
       setFixedCheckIn(hotel.fixed_check_in || "");

@@ -88,7 +88,7 @@ class ApiClient {
     name: string,
     location: string,
     isTarget: boolean,
-    currency: string = "USD",
+    currency: string = "TRY",
     serpApiId?: string,
   ): Promise<void> {
     return this.fetch<void>(`/api/hotels/${userId}`, {

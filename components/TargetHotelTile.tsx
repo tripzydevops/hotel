@@ -46,7 +46,7 @@ export default function TargetHotelTile({
   location,
   currentPrice,
   previousPrice,
-  currency = "USD",
+  currency = "TRY",
   trend,
   changePercent,
   lastUpdated,
@@ -63,7 +63,7 @@ export default function TargetHotelTile({
 }: TargetHotelTileProps) {
   const { t } = useI18n();
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: 0,

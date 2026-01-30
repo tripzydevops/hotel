@@ -13,11 +13,13 @@ import { useI18n } from "@/lib/i18n";
 interface ScanHistoryProps {
   sessions: ScanSession[];
   onOpenSession: (session: ScanSession) => void;
+  title?: string;
 }
 
 export default function ScanHistory({
   sessions,
   onOpenSession,
+  title,
 }: ScanHistoryProps) {
   const { t, locale } = useI18n();
   if (sessions.length === 0) return null;
@@ -42,7 +44,7 @@ export default function ScanHistory({
             <Database className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            {t("history.intelLogs")}
+            {title || t("history.intelLogs")}
           </h2>
         </div>
         <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">

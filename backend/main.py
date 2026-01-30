@@ -1591,18 +1591,26 @@ async def get_analysis(
             if settings_result.data and settings_result.data[0].get("currency"):
                 display_currency = settings_result.data[0]["currency"]
             else:
-                display_currency = "USD"
+                display_currency = "TRY"
         
         # Fetch all hotels
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         hotels = hotels_result.data or []
         
-        current_prices = []  # Tuple of (converted_price, original_price, currency, hotel)
+        current_prices = []  # List of converted_prices
         target_price = None
+        target_sentiment = None
+        market_sentiments = []
         target_currency = None
         target_history = []
         
         for hotel in hotels:
+            # Collect sentiment data (using rating as base)
+            hotel_rating = hotel.get("rating") or 0.0
+            market_sentiments.append(hotel_rating)
+            if hotel["is_target_hotel"]:
+                target_sentiment = hotel_rating
+
             price_result = db.table("price_logs") \
                 .select("*") \
                 .eq("hotel_id", hotel["id"]) \
@@ -1638,10 +1646,16 @@ async def get_analysis(
             )
 
         # Basic Stats (all in display currency now)
-        market_avg = sum(current_prices) / len(current_prices)
-        market_min = min(current_prices)
-        market_max = max(current_prices)
+        market_avg = sum(current_prices) / len(current_prices) if current_prices else 1.0
+        market_min = min(current_prices) if current_prices else 0
+        market_max = max(current_prices) if current_prices else 0
         
+        # Strategic Indices (100 = Market Average)
+        ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else 100.0
+        
+        avg_sentiment = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 1.0
+        sentiment_index = (target_sentiment / avg_sentiment) * 100 if target_sentiment and avg_sentiment > 0 else 100.0
+
         # Rank (1 = cheapest)
         sorted_prices = sorted(current_prices)
         rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
@@ -1653,7 +1667,9 @@ async def get_analysis(
             target_price=round(target_price, 2) if target_price else None,
             competitive_rank=rank,
             price_history=target_history,
-            display_currency=display_currency
+            display_currency=display_currency,
+            ari=round(ari, 1),
+            sentiment_index=round(sentiment_index, 1)
         )
     except Exception as e:
         print(f"Analysis error: {e}")

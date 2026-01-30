@@ -7,11 +7,13 @@ import { useI18n } from "@/lib/i18n";
 interface RapidPulseHistoryProps {
   sessions: ScanSession[];
   onOpenSession: (session: ScanSession) => void;
+  title?: string;
 }
 
 export default function RapidPulseHistory({
   sessions,
   onOpenSession,
+  title,
 }: RapidPulseHistoryProps) {
   const { t, locale } = useI18n();
   if (sessions.length === 0) return null;
@@ -34,7 +36,7 @@ export default function RapidPulseHistory({
             <Zap className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            {t("history.rapidPulseHistory")}
+            {title || t("history.rapidPulseHistory")}
           </h2>
         </div>
       </div>

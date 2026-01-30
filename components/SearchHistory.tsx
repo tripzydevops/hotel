@@ -7,11 +7,13 @@ import { useI18n } from "@/lib/i18n";
 interface SearchHistoryProps {
   searches: QueryLog[];
   onReSearch: (hotelName: string, location?: string) => void;
+  title?: string;
 }
 
 export default function SearchHistory({
   searches,
   onReSearch,
+  title,
 }: SearchHistoryProps) {
   const { t, locale } = useI18n();
   if (searches.length === 0) return null;
@@ -32,7 +34,7 @@ export default function SearchHistory({
             <History className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            {t("history.searchHistory")}
+            {title || t("history.searchHistory")}
           </h2>
         </div>
         <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest italic">

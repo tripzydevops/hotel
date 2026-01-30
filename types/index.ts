@@ -200,4 +200,6 @@ export interface MarketAnalysis {
   price_history: PricePoint[];
   competitors: HotelWithPrice[];
   display_currency: string;
+  ari?: number;
+  sentiment_index?: number;
 }

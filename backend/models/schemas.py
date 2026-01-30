@@ -29,6 +29,7 @@ class HotelBase(BaseModel):
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
     rating: Optional[float] = None
+    review_count: Optional[int] = None
     stars: Optional[int] = None
     image_url: Optional[str] = None
     property_token: Optional[str] = None
@@ -328,7 +329,12 @@ class MarketAnalysis(BaseModel):
     competitive_rank: int = 0
     price_history: List[PricePoint] = []
     competitors: List[HotelWithPrice] = []
-    display_currency: str = "USD"  # The currency all values are displayed in
+    display_currency: str = "USD"
+    # Strategic Indices (100 = Market Average)
+    ari: float = 100.0  # Average Rate Index
+    mpi: float = 100.0  # Market Penetration Index (Requires Occ)
+    rgi: float = 100.0  # Revenue Generation Index (Requires RevPAR)
+    sentiment_index: float = 100.0  # Sentiment vs Market Avg
 
 
 class ReportsResponse(BaseModel):
