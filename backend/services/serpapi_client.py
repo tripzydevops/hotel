@@ -264,23 +264,69 @@ class SerpApiClient:
             room_names.add(name)
         return rooms
 
-    async def search_hotels(self, query: str) -> List[Dict[str, Any]]:
-        params = {"engine": "google_hotels", "q": query, "gl": "us", "hl": "en", "api_key": self.api_key}
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(SERPAPI_BASE_URL, params=params)
-                if self._is_quota_error(response):
-                    if self._key_manager.rotate_key():
-                        params["api_key"] = self.api_key
-                        response = await client.get(SERPAPI_BASE_URL, params=params)
-                    else: return []
-                response.raise_for_status()
-                properties = response.json().get("properties", [])
-                return [{"name": self._clean_hotel_name(p.get("name", "")), "location": p.get("description", "Unknown"), 
-                         "serp_api_id": p.get("hotel_id") or p.get("property_token"), "source": "serpapi"} for p in properties[:5]]
-        except Exception as e:
-            print(f"[SerpApi] Search Error: {e}")
-            return []
+    async def search_hotels(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        # Default to checking in tomorrow
+        check_in = date.today() + timedelta(days=1)
+        check_out = check_in + timedelta(days=1)
+        
+        all_results = []
+        offset = 0
+        max_pages = (limit // 20) + 2  # Safety cap
+        page_count = 0
+        
+        while len(all_results) < limit and page_count < max_pages:
+            params = {
+                "engine": "google_hotels", 
+                "q": query, 
+                "gl": "us", 
+                "hl": "en", 
+                "check_in_date": check_in.isoformat(),
+                "check_out_date": check_out.isoformat(),
+                "api_key": self.api_key,
+                "start": offset
+            }
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.get(SERPAPI_BASE_URL, params=params)
+                    if self._is_quota_error(response):
+                        if self._key_manager.rotate_key():
+                            params["api_key"] = self.api_key
+                            response = await client.get(SERPAPI_BASE_URL, params=params)
+                        else: break
+                    
+                    response.raise_for_status()
+                    data = response.json()
+                    properties = data.get("properties", [])
+                    
+                    if not properties:
+                        break
+                        
+                    for p in properties:
+                        all_results.append({
+                            "name": self._clean_hotel_name(p.get("name", "")), 
+                            "location": p.get("description", "Unknown"), 
+                            "serp_api_id": p.get("hotel_id") or p.get("property_token"), 
+                            "source": "serpapi",
+                            "stars": p.get("extracted_hotel_class"),
+                            "rating": p.get("overall_rating"),
+                            "amenities": p.get("amenities", []),
+                            "image_url": p.get("images", [{}])[0].get("thumbnail") if p.get("images") else None,
+                            "images": p.get("images", [])
+                        })
+                    
+                    # Pagination Check
+                    pagination = data.get("serpapi_pagination", {})
+                    if not pagination.get("next"):
+                        break
+                        
+                    offset += 20
+                    page_count += 1
+                    
+            except Exception as e:
+                print(f"[SerpApi] Search Error: {e}")
+                break
+                
+        return all_results[:limit]
 
     async def fetch_hotel_price(self, hotel_name: str, location: str, check_in: Optional[date] = None, 
                                check_out: Optional[date] = None, adults: int = 2, currency: str = "USD", 
