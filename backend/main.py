@@ -159,16 +159,17 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
         user_id = user_resp.user.id
         
         # Consistent Table Check: Use 'profiles' if that's the one we use for settings
-        # Let's check both as fallback or standardized
         try:
-            res = db.table("profiles").select("subscription_status, plan_type").eq("user_id", user_id).single().execute()
+            # Table 'profiles' uses 'id' as the primary key/link to auth.users in some schemas, 
+            # while 'user_profiles' uses 'user_id'.
+            res = db.table("profiles").select("subscription_status, plan_type").eq("id", str(user_id)).single().execute()
             status = res.data.get("subscription_status") if res.data else "pending_approval"
-        except:
-            # Fallback to user_profiles if profiles doesn't exist
+        except Exception:
+            # Fallback to user_profiles
             try:
-                res = db.table("user_profiles").select("subscription_status").eq("user_id", user_id).single().execute()
+                res = db.table("user_profiles").select("subscription_status").eq("user_id", str(user_id)).single().execute()
                 status = res.data.get("subscription_status") if res.data else "pending_approval"
-            except:
+            except Exception:
                 status = "pending_approval"
                 
         # BLOCKING LOGIC
@@ -251,7 +252,7 @@ async def health_check():
         "status": "healthy", 
         "supabase_configured": bool(url and has_key),
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.3-hotfix"
+        "version": "1.0.4-hotfix"
     }
 
 
@@ -286,7 +287,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             # Get latest 2 prices for trend calculation
             prices_result = db.table("price_logs") \
                 .select("*") \
-                .eq("hotel_id", hotel["id"]) \
+                .eq("hotel_id", str(hotel["id"])) \
                 .order("recorded_at", desc=True) \
                 .limit(10) \
                 .execute()

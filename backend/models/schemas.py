@@ -30,15 +30,15 @@ class HotelBase(BaseModel):
     location: Optional[str] = None
     rating: Optional[float] = None
     review_count: Optional[int] = None
-    stars: Optional[int] = None
+    stars: Optional[float] = None
     image_url: Optional[str] = None
     property_token: Optional[str] = None
     preferred_currency: Optional[str] = Field(default="USD", max_length=3)
     fixed_check_in: Optional[date] = None
     fixed_check_out: Optional[date] = None
     default_adults: Optional[int] = 2
-    amenities: Optional[List[str]] = Field(default_factory=list)
-    images: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    amenities: Optional[List[Any]] = Field(default_factory=list)
+    images: Optional[List[Any]] = Field(default_factory=list)
 
 
 class HotelCreate(HotelBase):
@@ -218,10 +218,10 @@ class HotelWithPrice(BaseModel):
     is_target_hotel: bool
     location: Optional[str] = None
     rating: Optional[float] = None
-    stars: Optional[int] = None
+    stars: Optional[float] = None
     image_url: Optional[str] = None
-    amenities: List[str] = []
-    images: List[Dict[str, Any]] = []
+    amenities: List[Any] = []
+    images: List[Any] = []
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
 
