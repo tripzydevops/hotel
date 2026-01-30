@@ -29,7 +29,7 @@ import ZeroState from "@/components/ZeroState";
 import { useI18n } from "@/lib/i18n";
 
 export default function Dashboard() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const supabase = createClient();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
@@ -553,14 +553,21 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-white">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
-                  {data.target_hotel?.price_info?.currency === "TRY"
+                  {(data.target_hotel?.price_info?.currency ||
+                    userSettings?.currency ||
+                    "TRY") === "TRY"
                     ? "₺"
                     : "$"}
-                  {Math.round(
-                    (data?.competitors || []).reduce(
-                      (sum, c) => sum + (c.price_info?.current_price || 0),
-                      0,
-                    ) / (data?.competitors?.length || 1),
+                  {new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }).format(
+                    Math.round(
+                      (data?.competitors || []).reduce(
+                        (sum, c) => sum + (c.price_info?.current_price || 0),
+                        0,
+                      ) / (data?.competitors?.length || 1),
+                    ),
                   )}
                 </>
               ) : (
