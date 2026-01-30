@@ -311,44 +311,54 @@ export default function HotelDetailsModal({
           {/* ROOM TYPES TAB */}
           {activeTab === "rooms" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                {(hotel.price_info?.room_types || []).map((room, idx) => (
-                  <div
-                    key={idx}
-                    className="glass-card p-4 flex justify-between items-center group hover:bg-white/5 transition-all border border-white/5 hover:border-[var(--soft-gold)]/30"
-                  >
-                    <div>
-                      <h4 className="font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
-                        {room.name || "Standard Room"}
-                      </h4>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        {t("hotelDetails.foundVia")} property
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-black text-white">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency:
-                            room.currency ||
-                            hotel.price_info?.currency ||
-                            "USD",
-                        }).format(room.price || 0)}
-                      </div>
-                      <span className="text-[10px] text-[var(--soft-gold)] font-bold uppercase tracking-wider">
-                        {t("common.availableNow")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {(!hotel.price_info?.room_types ||
-                  hotel.price_info.room_types.length === 0) && (
-                  <div className="py-12 text-center text-[var(--text-muted)] flex flex-col items-center gap-3">
-                    <Building2 className="w-12 h-12 opacity-20" />
-                    <p>{t("hotelDetails.noRooms")}</p>
-                  </div>
+              <LockedFeature
+                isEnterprise={isEnterprise}
+                onUpgrade={onUpgrade}
+                title={t("hotelDetails.lockedTitle").replace(
+                  "{0}",
+                  t("hotelDetails.rooms"),
                 )}
-              </div>
+                description={t("hotelDetails.lockedDesc")}
+              >
+                <div className="grid grid-cols-1 gap-4">
+                  {(hotel.price_info?.room_types || []).map((room, idx) => (
+                    <div
+                      key={idx}
+                      className="glass-card p-4 flex justify-between items-center group hover:bg-white/5 transition-all border border-white/5 hover:border-[var(--soft-gold)]/30"
+                    >
+                      <div>
+                        <h4 className="font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
+                          {room.name || "Standard Room"}
+                        </h4>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">
+                          {t("hotelDetails.foundVia")} property
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-black text-white">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency:
+                              room.currency ||
+                              hotel.price_info?.currency ||
+                              "USD",
+                          }).format(room.price || 0)}
+                        </div>
+                        <span className="text-[10px] text-[var(--soft-gold)] font-bold uppercase tracking-wider">
+                          {t("common.availableNow")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {(!hotel.price_info?.room_types ||
+                    hotel.price_info.room_types.length === 0) && (
+                    <div className="py-12 text-center text-[var(--text-muted)] flex flex-col items-center gap-3">
+                      <Building2 className="w-12 h-12 opacity-20" />
+                      <p>{t("hotelDetails.noRooms")}</p>
+                    </div>
+                  )}
+                </div>
+              </LockedFeature>
             </div>
           )}
         </div>
