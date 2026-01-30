@@ -41,6 +41,7 @@ export default function ReportsPage() {
 
   /* Profile State for Header */
   const [profile, setProfile] = useState<any>(null);
+  const [currency, setCurrency] = useState("USD");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -57,6 +58,9 @@ export default function ReportsPage() {
         try {
           const userProfile = await api.getProfile(session.user.id);
           setProfile(userProfile);
+          if (userProfile?.preferred_currency) {
+            setCurrency(userProfile.preferred_currency);
+          }
         } catch (e) {
           console.error("Failed to fetch profile", e);
         }
@@ -70,10 +74,11 @@ export default function ReportsPage() {
   useEffect(() => {
     async function loadData() {
       if (!userId) return;
+      setLoading(true);
       try {
         const [reportsResult, analysisResult] = await Promise.all([
           api.getReports(userId),
-          api.getAnalysis(userId),
+          api.getAnalysis(userId, currency),
         ]);
         setData(reportsResult);
         setAnalysis(analysisResult);
@@ -84,7 +89,7 @@ export default function ReportsPage() {
       }
     }
     loadData();
-  }, [userId]);
+  }, [userId, currency]);
 
   const handleExport = async (format: string) => {
     if (!userId) return;
@@ -105,11 +110,12 @@ export default function ReportsPage() {
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+        doc.text(`Currency: ${currency}`, 14, 32);
 
         // Weekly Summary
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
-        doc.text(t("reports.weeklySummary"), 14, 40);
+        doc.text(t("reports.weeklySummary"), 14, 45);
 
         const summaryData = [
           [t("reports.totalPulses"), data?.weekly_summary?.total_scans || 0],
@@ -128,7 +134,7 @@ export default function ReportsPage() {
         ];
 
         autoTable(doc, {
-          startY: 45,
+          startY: 50,
           head: [[t("reports.timestamp"), "Value"]],
           body: summaryData,
           theme: "grid",
@@ -137,7 +143,7 @@ export default function ReportsPage() {
         });
 
         // Sessions Table
-        const lastY = (doc as any).lastAutoTable.finalY || 60;
+        const lastY = (doc as any).lastAutoTable.finalY || 65;
         doc.setFontSize(14);
         doc.text(t("reports.fullHistoryLog"), 14, lastY + 15);
 
@@ -164,7 +170,9 @@ export default function ReportsPage() {
           headStyles: { fillColor: [40, 40, 40] },
         });
 
-        doc.save(`hotel-reports-${new Date().toISOString().split("T")[0]}.pdf`);
+        doc.save(
+          `hotel-reports-${currency}-${new Date().toISOString().split("T")[0]}.pdf`,
+        );
       } else {
         await api.exportReport(userId, format);
       }
@@ -185,7 +193,7 @@ export default function ReportsPage() {
     profile?.subscription_status === "canceled" ||
     profile?.subscription_status === "unpaid";
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -243,6 +251,30 @@ export default function ReportsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+              <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">
+                {t("reports.currencyLabel")}
+              </span>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="bg-transparent text-xs font-bold text-white border-none focus:ring-0 cursor-pointer"
+              >
+                <option value="USD" className="bg-[var(--deep-ocean)]">
+                  USD ($)
+                </option>
+                <option value="EUR" className="bg-[var(--deep-ocean)]">
+                  EUR (€)
+                </option>
+                <option value="TRY" className="bg-[var(--deep-ocean)]">
+                  TRY (₺)
+                </option>
+                <option value="GBP" className="bg-[var(--deep-ocean)]">
+                  GBP (£)
+                </option>
+              </select>
+            </div>
+
             <button
               onClick={() => handleExport("csv")}
               disabled={!!exporting}
@@ -382,8 +414,8 @@ export default function ReportsPage() {
                 </div>
                 <p className="text-sm text-[var(--text-secondary)]">
                   {(analysis.target_price || 0) < analysis.market_average
-                    ? "You are positioned below the market average. Consider raising rates to capture more yield."
-                    : "You are positioned above the market average. Monitor occupancy levels closely."}
+                    ? t("reports.lowPosition")
+                    : t("reports.highPosition")}
                 </p>
               </div>
 
@@ -400,8 +432,8 @@ export default function ReportsPage() {
                 <p className="text-sm text-[var(--text-secondary)]">
                   {analysis.market_max - analysis.market_min >
                   analysis.market_average * 0.5
-                    ? "High market volatility detected. Review rates daily."
-                    : "Market variances are low. Stable pricing strategy recommended."}
+                    ? t("reports.highVolatility")
+                    : t("reports.lowVolatility")}
                 </p>
               </div>
             </div>

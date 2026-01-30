@@ -216,6 +216,12 @@ export const en = {
     noData: "Not enough data",
     marketComparison: "Market Comparison",
     proTip: "Pro Insight",
+    noHistoryData: "No historical data available for this period",
+    lowPosition: "You are positioned below the market average. Consider raising rates to capture more yield.",
+    highPosition: "You are positioned above the market average. Monitor occupancy levels closely.",
+    highVolatility: "High market volatility detected. Review rates daily.",
+    lowVolatility: "Market variances are low. Stable pricing strategy recommended.",
+    currencyLabel: "Currency",
   },
   subscription: {
     title: "Subscription Plans",
