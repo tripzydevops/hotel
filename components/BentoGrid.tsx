@@ -58,7 +58,7 @@ export function BentoTile({
     <div
       onClick={onClick}
       className={`
-        glass-card p-6
+        glass-card p-4 sm:p-6
         flex flex-col
         transition-all duration-300
         hover:scale-[1.02]

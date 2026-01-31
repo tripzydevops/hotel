@@ -27,6 +27,7 @@ import HotelDetailsModal from "@/components/HotelDetailsModal";
 import { useToast } from "@/components/ui/ToastContext";
 import ZeroState from "@/components/ZeroState";
 import { useI18n } from "@/lib/i18n";
+import BottomNav from "@/components/BottomNav";
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -347,7 +348,15 @@ export default function Dashboard() {
         }}
       />
 
-      <main className="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <BottomNav
+        onOpenAddHotel={() => setIsAddHotelOpen(true)}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        unreadCount={data?.unread_alerts_count}
+      />
+
+      <main className="pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">

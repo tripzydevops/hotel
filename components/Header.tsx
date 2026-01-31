@@ -133,35 +133,45 @@ export default function Header({
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-white"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Mobile Actions */}
+          <div className="flex md:hidden items-center gap-2">
+            {/* Language Switcher Mobile */}
+            <button
+              onClick={() => setLocale(locale === "en" ? "tr" : "en")}
+              className="text-[10px] font-bold text-[var(--soft-gold)] border border-[var(--soft-gold)]/30 rounded px-1.5 py-1 bg-[var(--soft-gold)]/5"
             >
-              {isMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
+              {locale === "en" ? "TR" : "EN"}
+            </button>
+
+            <button
+              className="p-2 text-white"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {isMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
