@@ -304,7 +304,7 @@ class SerpApiClient:
                     for p in properties:
                         all_results.append({
                             "name": self._clean_hotel_name(p.get("name", "")), 
-                            "location": p.get("description", "Unknown"), 
+                            "location": p.get("location", "Unknown"), 
                             "serp_api_id": p.get("hotel_id") or p.get("property_token"), 
                             "source": "serpapi",
                             "stars": p.get("extracted_hotel_class"),
