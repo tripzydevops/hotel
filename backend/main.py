@@ -268,13 +268,14 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         hotel_ids = [str(h["id"]) for h in hotels]
         hotel_prices_map = {}
         try:
-            # Fetch latest 100 price logs for these hotels
-            # Note: 100 is a safe limit for a dashboard to avoid memory issues
+            # OPTIMIZATION: Fetch exactly 2 logs per hotel (current & previous)
+            # This ensures we fetch only what we need for the dashboard.
+            price_limit = len(hotel_ids) * 2
             all_prices_res = db.table("price_logs") \
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
                 .order("recorded_at", desc=True) \
-                .limit(200) \
+                .limit(price_limit) \
                 .execute()
             
             for p in (all_prices_res.data or []):
@@ -1355,13 +1356,13 @@ async def get_analysis(
         hotel_ids = [str(h["id"]) for h in hotels]
         hotel_prices_map = {}
         try:
-            # Fetch latest 30 price logs for each hotel in one go
-            # We fetch more to ensure we get enough history for the target hotel
+            # OPTIMIZATION: Fetch enough to cover 30 days for target + 1 for rivals.
+            # 50 is a safe, tight limit for a small tracking list.
             all_prices_res = db.table("price_logs") \
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
                 .order("recorded_at", desc=True) \
-                .limit(200) \
+                .limit(50) \
                 .execute()
             
             for p in (all_prices_res.data or []):
@@ -1380,15 +1381,26 @@ async def get_analysis(
         market_sentiments = []
         target_history = []
         
+        # 4. Map Prices and Find Target
         for hotel in hotels:
             hid = str(hotel["id"])
             hotel_rating = hotel.get("rating") or 0.0
             market_sentiments.append(hotel_rating)
             
+            # Explicit target check
             if hotel.get("is_target_hotel"):
                 target_hotel_id = hid
                 target_sentiment = hotel_rating
 
+        # FALLBACK: If no explicit target, pick the first one
+        if not target_hotel_id and hotels:
+            target_hotel_id = str(hotels[0]["id"])
+            target_sentiment = hotels[0].get("rating") or 0.0
+            
+        for hotel in hotels:
+            hid = str(hotel["id"])
+            is_target = (hid == target_hotel_id)
+            
             prices = hotel_prices_map.get(hid, [])
             if prices:
                 try:
@@ -1398,7 +1410,7 @@ async def get_analysis(
                         converted = convert_currency(orig_price, orig_currency, display_currency)
                         current_prices.append(converted)
                         
-                        if hotel.get("is_target_hotel"):
+                        if is_target:
                             target_price = converted
                             target_history = []
                             for p in prices:

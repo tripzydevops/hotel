@@ -36,7 +36,11 @@ export default function DiscoveryShard({ hotelId }: DiscoveryShardProps) {
       }
     };
 
-    if (hotelId) fetchRivals();
+    if (hotelId) {
+      fetchRivals();
+    } else {
+      setLoading(false);
+    }
   }, [hotelId]);
 
   const handleAddRival = async (rival: DiscoveryRival) => {
