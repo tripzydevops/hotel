@@ -88,6 +88,8 @@ export interface QueryLog {
   currency?: string;
   vendor?: string;
   session_id?: string;
+  check_in_date?: string;
+  adults?: number;
 }
 
 export interface ScanSession {
@@ -98,6 +100,10 @@ export interface ScanSession {
   hotels_count: number;
   created_at: string;
   completed_at?: string;
+  check_in_date?: string;
+  check_out_date?: string;
+  adults?: number;
+  currency?: string;
   // Enriched with logs
   logs?: QueryLog[];
 }

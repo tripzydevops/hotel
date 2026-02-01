@@ -123,8 +123,22 @@ export default function ScanSessionModal({
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-muted)] font-medium">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>{formatDate(session.created_at)}</span>
+                    <span>Scan: {formatDate(session.created_at)}</span>
                   </div>
+                  {session.check_in_date && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-white/10" />
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
+                        <span>Booked: {session.check_in_date}</span>
+                      </div>
+                      <span className="w-1 h-1 rounded-full bg-white/10" />
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
+                        <span>{session.adults || 2} People</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

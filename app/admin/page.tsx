@@ -826,6 +826,38 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                <div className="bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 p-4 rounded-xl mb-6">
+                  <div className="text-[10px] text-[var(--soft-gold)] uppercase font-black tracking-widest mb-2">
+                    Search Configuration
+                  </div>
+                  <div className="flex gap-6">
+                    <div>
+                      <div className="text-[10px] text-[var(--text-muted)] uppercase">
+                        Check-in
+                      </div>
+                      <div className="text-white font-bold">
+                        {scanDetails.session.check_in_date || "Today"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-[var(--text-muted)] uppercase">
+                        Occupancy
+                      </div>
+                      <div className="text-white font-bold">
+                        {scanDetails.session.adults || 2} People
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-[var(--text-muted)] uppercase">
+                        Currency
+                      </div>
+                      <div className="text-white font-bold">
+                        {scanDetails.session.currency || "USD"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <h4 className="text-white font-bold mb-2">Result Logs</h4>
                 {scanDetails.logs.length === 0 ? (
                   <div className="text-[var(--text-muted)] italic">
