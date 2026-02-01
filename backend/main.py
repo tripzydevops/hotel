@@ -261,20 +261,39 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             print(f"Hotels fetch failed: {e}")
             return JSONResponse(content=fallback_data)
         
+        if not hotels:
+            return JSONResponse(content=fallback_data)
+
+        # 1.1 BATCH FETCH Price Logs for all hotels
+        hotel_ids = [str(h["id"]) for h in hotels]
+        hotel_prices_map = {}
+        try:
+            # Fetch latest 100 price logs for these hotels
+            # Note: 100 is a safe limit for a dashboard to avoid memory issues
+            all_prices_res = db.table("price_logs") \
+                .select("*") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(200) \
+                .execute()
+            
+            for p in (all_prices_res.data or []):
+                hid = str(p["hotel_id"])
+                if hid not in hotel_prices_map:
+                    hotel_prices_map[hid] = []
+                # Limit to 10 per hotel in memory
+                if len(hotel_prices_map[hid]) < 10:
+                    hotel_prices_map[hid].append(p)
+        except Exception as e:
+            print(f"Batch price fetch failed: {e}. Falling back to empty history.")
+
         target_hotel = None
         competitors = []
         
         for hotel in hotels:
             try:
-                # Get latest prices
-                prices_result = db.table("price_logs") \
-                    .select("*") \
-                    .eq("hotel_id", str(hotel["id"])) \
-                    .order("recorded_at", desc=True) \
-                    .limit(10) \
-                    .execute()
-                
-                prices = prices_result.data or []
+                hid = str(hotel["id"])
+                prices = hotel_prices_map.get(hid, [])
                 current_price = prices[0] if prices else None
                 previous_price = prices[1] if len(prices) > 1 else None
                 

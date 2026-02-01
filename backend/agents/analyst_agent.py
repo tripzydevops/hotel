@@ -1,9 +1,6 @@
-
 from datetime import datetime, date
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from supabase import Client
-from backend.models.schemas import MarketAnalysis, PricePoint
 from supabase import Client
 from backend.models.schemas import MarketAnalysis, PricePoint
 from backend.services.price_comparator import price_comparator
