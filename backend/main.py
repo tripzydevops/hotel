@@ -8,7 +8,7 @@ import asyncio
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
-from datetime import date, datetime, timezone
+from datetime import datetime, date, timezone
 from uuid import UUID
 from dotenv import load_dotenv
 # Load environment variables from .env and .env.local (Vercel style)
@@ -236,19 +236,20 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
-    fallback_resp = DashboardResponse(
-        target_hotel=None,
-        competitors=[],
-        recent_searches=[],
-        scan_history=[],
-        recent_sessions=[],
-        unread_alerts_count=0,
-    )
-
-    if not db:
-        return fallback_resp
-
     try:
+        # 0. Safe Initialization (inside try block)
+        fallback_resp = DashboardResponse(
+            target_hotel=None,
+            competitors=[],
+            recent_searches=[],
+            scan_history=[],
+            recent_sessions=[],
+            unread_alerts_count=0,
+        )
+
+        if not db:
+            return fallback_resp
+
         # 1. Fetch hotels with full coverage
         try:
             hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()

@@ -5,7 +5,7 @@ Provides structured data validation for all API operations.
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from uuid import UUID
 from enum import Enum
 
