@@ -314,7 +314,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                                 price=float(p["price"]), 
                                 recorded_at=p.get("recorded_at")
                             ))
-                     except Exception:
+                    except Exception:
                         continue
 
                 # Build the hotel (HotelWithPrice)
