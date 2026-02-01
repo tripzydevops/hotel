@@ -8,6 +8,7 @@ from supabase import Client
 from backend.models.schemas import MarketAnalysis, PricePoint
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
+from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 
 class AnalystAgent:
     """
@@ -107,3 +108,37 @@ class AnalystAgent:
     def _get_hotels(self, user_id: UUID):
         res = self.db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         return res.data or []
+
+    async def discover_rivals(self, target_hotel_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Pillar 3: Autonomous Discovery.
+        Uses vector search to find 'Ghost Competitors' in the directory.
+        """
+        try:
+            # 1. Get Target Hotel Info from the master Directory
+            target = self.db.table("hotel_directory").select("*").eq("id", target_hotel_id).single().execute()
+            if not target.data:
+                # If not in directory, try the user's hotels list
+                target = self.db.table("hotels").select("*").eq("id", target_hotel_id).single().execute()
+                
+            if not target.data:
+                return []
+            
+            # 2. Generate Embedding for Target (if not exists in directory yet)
+            target_embedding = target.data.get("embedding")
+            if not target_embedding:
+                text = format_hotel_for_embedding(target.data)
+                target_embedding = await get_embedding(text)
+                
+            # 3. Perform Vector Search (RPC)
+            res = self.db.rpc("match_hotels", {
+                "query_embedding": target_embedding,
+                "match_threshold": 0.5,
+                "match_count": limit,
+                "target_hotel_id": target_hotel_id
+            }).execute()
+            
+            return res.data or []
+        except Exception as e:
+            print(f"[AnalystAgent] Discovery error: {e}")
+            return []

@@ -1354,6 +1354,7 @@ async def get_analysis(
         
         current_prices = []  # List of converted_prices
         target_price = None
+        target_hotel_id = None
         target_sentiment = None
         market_sentiments = []
         target_currency = None
@@ -1364,6 +1365,7 @@ async def get_analysis(
             hotel_rating = hotel.get("rating") or 0.0
             market_sentiments.append(hotel_rating)
             if hotel["is_target_hotel"]:
+                target_hotel_id = hotel["id"]
                 target_sentiment = hotel_rating
 
             price_result = db.table("price_logs") \
@@ -1415,7 +1417,33 @@ async def get_analysis(
         sorted_prices = sorted(current_prices)
         rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
         
+        # Generate Advisory Message
+        advisory = "Overall market position is stable."
+        if ari > 105:
+            advisory = "Your rates are above market average. Ensure your high sentiment justifications are clear to maintain occupancy."
+            if sentiment_index > 105:
+                advisory = "Your premium pricing is well-supported by superior guest sentiment compared to competitors."
+        elif ari < 95:
+            advisory = "Your aggressive pricing is attracting volume. Monitor if sentiment index remains high to ensure quality isn't compromised."
+        elif sentiment_index < 90:
+            advisory = "Urgent: Guest sentiment is lagging behind market average. Price adjustments may be needed to compensate for reputation risk."
+
+        # Assign Quadrant
+        quadrant_x = max(-50, min(50, ari - 100))
+        quadrant_y = max(-50, min(50, sentiment_index - 100))
+        
+        q_label = "Neutral"
+        if ari >= 100 and sentiment_index >= 100:
+            q_label = "Premium King"
+        elif ari < 100 and sentiment_index >= 100:
+            q_label = "Value Leader"
+        elif ari >= 100 and sentiment_index < 100:
+            q_label = "Danger Zone"
+        elif ari < 100 and sentiment_index < 100:
+            q_label = "Budget/Economy"
+
         return MarketAnalysis(
+            hotel_id=target_hotel_id,
             market_average=round(market_avg, 2),
             market_min=round(market_min, 2),
             market_max=round(market_max, 2),
@@ -1424,11 +1452,30 @@ async def get_analysis(
             price_history=target_history,
             display_currency=display_currency,
             ari=round(ari, 1),
-            sentiment_index=round(sentiment_index, 1)
+            sentiment_index=round(sentiment_index, 1),
+            advisory_msg=advisory,
+            quadrant_x=round(quadrant_x, 1),
+            quadrant_y=round(quadrant_y, 1),
+            quadrant_label=q_label
         )
     except Exception as e:
         print(f"Analysis error: {e}")
         return MarketAnalysis(market_average=0, market_min=0, market_max=0, display_currency="USD")
+
+@app.get("/api/discovery/{hotel_id}")
+async def get_discovery_rivals(hotel_id: str):
+    """
+    Pillar 3: Autonomous Discovery.
+    Fetches semantically similar rivals that are NOT yet tracked.
+    """
+    try:
+        # Use service role client if needed, or normal client
+        analyst = AnalystAgent(supabase)
+        rivals = await analyst.discover_rivals(hotel_id, limit=5)
+        return {"rivals": rivals}
+    except Exception as e:
+        print(f"Discovery error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/reports/{user_id}", response_model=ReportsResponse)
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):

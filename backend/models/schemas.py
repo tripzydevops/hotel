@@ -340,6 +340,7 @@ class AdminDataResponse(BaseModel):
 
 
 class MarketAnalysis(BaseModel):
+    hotel_id: Optional[str] = None
     market_average: float
     market_min: float
     market_max: float
@@ -353,6 +354,10 @@ class MarketAnalysis(BaseModel):
     mpi: float = 100.0  # Market Penetration Index (Requires Occ)
     rgi: float = 100.0  # Revenue Generation Index (Requires RevPAR)
     sentiment_index: float = 100.0  # Sentiment vs Market Avg
+    advisory_msg: Optional[str] = None # Natural language reasoning from Agent
+    quadrant_x: float = 0.0 # Normalized ARI offset (-50 to +50)
+    quadrant_y: float = 0.0 # Normalized Sentiment offset (-50 to +50)
+    quadrant_label: str = "Standard"
 
 
 class ReportsResponse(BaseModel):
