@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Clock,
   MapPin,
+  Users,
 } from "lucide-react";
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
