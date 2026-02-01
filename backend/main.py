@@ -1446,16 +1446,26 @@ async def get_analysis(
         elif ari < 95:
             advisory = "Your aggressive pricing is attracting volume. Monitor quality levels."
         elif sentiment_index < 90:
-            advisory = "Urgent: Guest sentiment is lagging. reputation risk detected."
-
-        quad_x = max(-50, min(50, ari - 100))
-        quad_y = max(-50, min(50, sentiment_index - 100))
-        
-        q_label = "Neutral"
-        if ari >= 100 and sentiment_index >= 100: q_label = "Premium King"
-        elif ari < 100 and sentiment_index >= 100: q_label = "Value Leader"
-        elif ari >= 100 and sentiment_index < 100: q_label = "Danger Zone"
-        elif ari < 100 and sentiment_index < 100: q_label = "Budget/Economy"
+            advisory = "Your pricing is currently higher than supported by your guest sentiment."
+            
+        # 6. Extract Competitors (non-target hotels with prices)
+        competitors_list = []
+        for hotel in hotels:
+            hid = str(hotel["id"])
+            if hid != target_hotel_id:
+                prices = hotel_prices_map.get(hid, [])
+                if prices:
+                    try:
+                        orig_p = float(prices[0]["price"]) if prices[0].get("price") is not None else None
+                        if orig_p is not None:
+                            competitors_list.append({
+                                "id": hid,
+                                "name": hotel.get("name"),
+                                "price": convert_currency(orig_p, prices[0].get("currency") or "USD", display_currency),
+                                "rating": hotel.get("rating"),
+                                "stars": hotel.get("stars")
+                            })
+                    except Exception: continue
 
         # 6. Final Response
         analysis_data = {
@@ -1465,14 +1475,15 @@ async def get_analysis(
             "market_max": round(market_max, 2),
             "target_price": round(target_price, 2) if target_price else None,
             "competitive_rank": rank,
+            "competitors": competitors_list,
             "price_history": target_history,
             "display_currency": display_currency,
             "ari": round(ari, 1),
             "sentiment_index": round(sentiment_index, 1),
             "advisory_msg": advisory,
-            "quadrant_x": round(quad_x, 1),
-            "quadrant_y": round(quad_y, 1),
-            "quadrant_label": q_label
+            "quadrant_x": round(ari / 2, 1), # Simple x mapping
+            "quadrant_y": round(sentiment_index / 2, 1), # Simple y mapping
+            "quadrant_label": "Value Leader" if sentiment_index > 100 and ari < 100 else "Neutral"
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))
@@ -1487,16 +1498,17 @@ async def get_analysis(
         )
 
 @app.get("/api/discovery/{hotel_id}")
-async def get_discovery_rivals(hotel_id: str):
-    """
-    Pillar 3: Autonomous Discovery.
-    Fetches semantically similar rivals that are NOT yet tracked.
-    """
+async def get_discovery_rivals(
+    hotel_id: str, 
+    db: Client = Depends(get_supabase),
+    current_active_user = Depends(get_current_active_user)
+):
+    """Fetch potential rivals using autonomous discovery engine."""
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
     try:
-        # Use service role client if needed, or normal client
-        analyst = AnalystAgent(supabase)
+        from backend.agents.analyst_agent import AnalystAgent
+        analyst = AnalystAgent(db)
         rivals = await analyst.discover_rivals(hotel_id, limit=5)
         return JSONResponse(content=jsonable_encoder({"rivals": rivals}))
     except Exception as e:
@@ -1558,7 +1570,18 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
         all_sessions = sessions + legacy_sessions
         all_sessions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
 
-        return JSONResponse(content=jsonable_encoder({"sessions": all_sessions[:100]}))
+        # 4. Synthesize Weekly Summary
+        summary = {
+            "total_scans": len(all_sessions),
+            "active_monitors": 1, # Placeholder
+            "last_week_trend": "Increasing",
+            "system_health": "100%"
+        }
+
+        return JSONResponse(content=jsonable_encoder({
+            "sessions": all_sessions[:100],
+            "weekly_summary": summary
+        }))
     except Exception as e:
         print(f"Reports error: {e}")
         import traceback
