@@ -123,7 +123,7 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         print(f"Admin Auth: Verified {email} ({user_id})")
 
         # 1. Check strict whitelist (Hardcoded for MVP safety)
-        if email and (email in ["admin@hotel.plus", "elif@tripzy.travel"] or email.endswith("@tripzy.travel")):
+        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
             print(f"Admin Auth: {email} allowed via Whitelist")
             return user_obj
             
@@ -1316,15 +1316,19 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
         print(f"Error fetching session logs: {e}")
         return []
 
-@app.get("/api/analysis/{user_id}", response_model=MarketAnalysis)
+@app.get("/api/analysis/{user_id}")
 async def get_analysis(
     user_id: UUID, 
     currency: Optional[str] = Query(None, description="Display currency (USD, EUR, GBP, TRY). Defaults to user settings."),
-    db: Client = Depends(get_supabase)
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
 ):
-    """Predictive market analysis with currency normalization."""
+    """Predictive market analysis with currency normalization (Optimized)."""
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import JSONResponse
+    
     try:
-        # Get user's preferred currency from settings if not specified
+        # 1. Fetch Currency Settings
         display_currency = currency
         if not display_currency:
             settings_result = db.table("settings").select("currency").eq("user_id", str(user_id)).execute()
@@ -1333,119 +1337,142 @@ async def get_analysis(
             else:
                 display_currency = "TRY"
         
-        # Fetch all hotels
+        # 2. Fetch all hotels
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         hotels = hotels_result.data or []
         
-        current_prices = []  # List of converted_prices
+        if not hotels:
+            return JSONResponse(content={
+                "market_average": 0, "market_min": 0, "market_max": 0,
+                "target_price": None, "competitive_rank": 0,
+                "display_currency": display_currency,
+                "ari": 100.0, "sentiment_index": 100.0,
+                "advisory_msg": "No hotel data available.",
+                "quadrant_x": 0, "quadrant_y": 0, "quadrant_label": "Neutral"
+            })
+
+        # 3. BATCH FETCH Price Logs for all hotels
+        hotel_ids = [str(h["id"]) for h in hotels]
+        hotel_prices_map = {}
+        try:
+            # Fetch latest 30 price logs for each hotel in one go
+            # We fetch more to ensure we get enough history for the target hotel
+            all_prices_res = db.table("price_logs") \
+                .select("*") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(200) \
+                .execute()
+            
+            for p in (all_prices_res.data or []):
+                hid = str(p["hotel_id"])
+                if hid not in hotel_prices_map:
+                    hotel_prices_map[hid] = []
+                if len(hotel_prices_map[hid]) < 30:
+                    hotel_prices_map[hid].append(p)
+        except Exception as e:
+            print(f"Batch analysis price fetch failed: {e}")
+
+        current_prices = []
         target_price = None
         target_hotel_id = None
-        target_sentiment = None
+        target_sentiment = 0.0
         market_sentiments = []
-        target_currency = None
         target_history = []
         
         for hotel in hotels:
-            # Collect sentiment data (using rating as base)
+            hid = str(hotel["id"])
             hotel_rating = hotel.get("rating") or 0.0
             market_sentiments.append(hotel_rating)
-            if hotel["is_target_hotel"]:
-                target_hotel_id = hotel["id"]
+            
+            if hotel.get("is_target_hotel"):
+                target_hotel_id = hid
                 target_sentiment = hotel_rating
 
-            price_result = db.table("price_logs") \
-                .select("*") \
-                .eq("hotel_id", hotel["id"]) \
-                .order("recorded_at", desc=True) \
-                .limit(30) \
-                .execute()
-            
-            prices = price_result.data or []
+            prices = hotel_prices_map.get(hid, [])
             if prices:
-                orig_price = float(prices[0]["price"])
-                orig_currency = prices[0].get("currency", "USD")
-                
-                # Convert to display currency
-                converted_price = convert_currency(orig_price, orig_currency, display_currency)
-                current_prices.append(converted_price)
-                
-                if hotel["is_target_hotel"]:
-                    target_price = converted_price
-                    target_currency = orig_currency
-                    # Convert history too
-                    target_history = [
-                        PricePoint(
-                            price=convert_currency(float(p["price"]), p.get("currency", "USD"), display_currency), 
-                            recorded_at=p["recorded_at"]
-                        ) for p in prices
-                    ]
+                try:
+                    orig_price = float(prices[0]["price"]) if prices[0].get("price") is not None else None
+                    if orig_price is not None:
+                        orig_currency = prices[0].get("currency") or "USD"
+                        converted = convert_currency(orig_price, orig_currency, display_currency)
+                        current_prices.append(converted)
+                        
+                        if hotel.get("is_target_hotel"):
+                            target_price = converted
+                            target_history = []
+                            for p in prices:
+                                try:
+                                    if p.get("price") is not None:
+                                        target_history.append({
+                                            "price": convert_currency(float(p["price"]), p.get("currency") or "USD", display_currency),
+                                            "recorded_at": p.get("recorded_at")
+                                        })
+                                except Exception: continue
+                except Exception as e:
+                    print(f"Error processing price for hotel {hid}: {e}")
 
-        if not current_prices:
-            return MarketAnalysis(
-                market_average=0, market_min=0, market_max=0,
-                target_price=target_price, competitive_rank=0,
-                display_currency=display_currency
-            )
-
-        # Basic Stats (all in display currency now)
-        market_avg = sum(current_prices) / len(current_prices) if current_prices else 1.0
-        market_min = min(current_prices) if current_prices else 0
-        market_max = max(current_prices) if current_prices else 0
+        # 4. Calculate Stats
+        market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
+        market_min = min(current_prices) if current_prices else 0.0
+        market_max = max(current_prices) if current_prices else 0.0
         
-        # Strategic Indices (100 = Market Average)
         ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else 100.0
         
         avg_sentiment = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 1.0
         sentiment_index = (target_sentiment / avg_sentiment) * 100 if target_sentiment and avg_sentiment > 0 else 100.0
 
-        # Rank (1 = cheapest)
         sorted_prices = sorted(current_prices)
         rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
         
-        # Generate Advisory Message
+        # 5. Advisory & Quadrant
         advisory = "Overall market position is stable."
         if ari > 105:
-            advisory = "Your rates are above market average. Ensure your high sentiment justifications are clear to maintain occupancy."
+            advisory = "Your rates are above market average. Ensure your high sentiment justifications are clear."
             if sentiment_index > 105:
-                advisory = "Your premium pricing is well-supported by superior guest sentiment compared to competitors."
+                advisory = "Your premium pricing is well-supported by superior guest sentiment."
         elif ari < 95:
-            advisory = "Your aggressive pricing is attracting volume. Monitor if sentiment index remains high to ensure quality isn't compromised."
+            advisory = "Your aggressive pricing is attracting volume. Monitor quality levels."
         elif sentiment_index < 90:
-            advisory = "Urgent: Guest sentiment is lagging behind market average. Price adjustments may be needed to compensate for reputation risk."
+            advisory = "Urgent: Guest sentiment is lagging. reputation risk detected."
 
-        # Assign Quadrant
-        quadrant_x = max(-50, min(50, ari - 100))
-        quadrant_y = max(-50, min(50, sentiment_index - 100))
+        quad_x = max(-50, min(50, ari - 100))
+        quad_y = max(-50, min(50, sentiment_index - 100))
         
         q_label = "Neutral"
-        if ari >= 100 and sentiment_index >= 100:
-            q_label = "Premium King"
-        elif ari < 100 and sentiment_index >= 100:
-            q_label = "Value Leader"
-        elif ari >= 100 and sentiment_index < 100:
-            q_label = "Danger Zone"
-        elif ari < 100 and sentiment_index < 100:
-            q_label = "Budget/Economy"
+        if ari >= 100 and sentiment_index >= 100: q_label = "Premium King"
+        elif ari < 100 and sentiment_index >= 100: q_label = "Value Leader"
+        elif ari >= 100 and sentiment_index < 100: q_label = "Danger Zone"
+        elif ari < 100 and sentiment_index < 100: q_label = "Budget/Economy"
 
-        return MarketAnalysis(
-            hotel_id=target_hotel_id,
-            market_average=round(market_avg, 2),
-            market_min=round(market_min, 2),
-            market_max=round(market_max, 2),
-            target_price=round(target_price, 2) if target_price else None,
-            competitive_rank=rank,
-            price_history=target_history,
-            display_currency=display_currency,
-            ari=round(ari, 1),
-            sentiment_index=round(sentiment_index, 1),
-            advisory_msg=advisory,
-            quadrant_x=round(quadrant_x, 1),
-            quadrant_y=round(quadrant_y, 1),
-            quadrant_label=q_label
-        )
+        # 6. Final Response
+        analysis_data = {
+            "hotel_id": target_hotel_id,
+            "market_average": round(market_avg, 2),
+            "market_min": round(market_min, 2),
+            "market_max": round(market_max, 2),
+            "target_price": round(target_price, 2) if target_price else None,
+            "competitive_rank": rank,
+            "price_history": target_history,
+            "display_currency": display_currency,
+            "ari": round(ari, 1),
+            "sentiment_index": round(sentiment_index, 1),
+            "advisory_msg": advisory,
+            "quadrant_x": round(quad_x, 1),
+            "quadrant_y": round(quad_y, 1),
+            "quadrant_label": q_label
+        }
+        
+        return JSONResponse(content=jsonable_encoder(analysis_data))
+
     except Exception as e:
-        print(f"Analysis error: {e}")
-        return MarketAnalysis(market_average=0, market_min=0, market_max=0, display_currency="USD")
+        import traceback
+        tb = traceback.format_exc()
+        print(f"CRITICAL ANALYSIS ERROR: {e}\n{tb}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Analysis Fail", "detail": str(e), "trace": tb[:500]}
+        )
 
 @app.get("/api/discovery/{hotel_id}")
 async def get_discovery_rivals(hotel_id: str):
@@ -1453,18 +1480,22 @@ async def get_discovery_rivals(hotel_id: str):
     Pillar 3: Autonomous Discovery.
     Fetches semantically similar rivals that are NOT yet tracked.
     """
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import JSONResponse
     try:
         # Use service role client if needed, or normal client
         analyst = AnalystAgent(supabase)
         rivals = await analyst.discover_rivals(hotel_id, limit=5)
-        return {"rivals": rivals}
+        return JSONResponse(content=jsonable_encoder({"rivals": rivals}))
     except Exception as e:
         print(f"Discovery error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=500, content={"error": "Discovery Fail", "detail": str(e)})
 
-@app.get("/api/reports/{user_id}", response_model=ReportsResponse)
+@app.get("/api/reports/{user_id}")
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
-    """Fetch data for reporting and historical audit, including legacy scans."""
+    """Fetch data for reporting and historical audit (Optimized)."""
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import JSONResponse
     try:
         # 1. Fetch real sessions
         sessions_result = db.table("scan_sessions") \
@@ -1493,44 +1524,34 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
         if orphaned_logs:
             current_group = []
             for log in orphaned_logs:
-                log_time = datetime.fromisoformat(log["created_at"].replace("Z", "+00:00"))
-                
-                if not current_group:
-                    current_group.append(log)
-                else:
-                    last_log = current_group[-1]
-                    last_time = datetime.fromisoformat(last_log["created_at"].replace("Z", "+00:00"))
+                try:
+                    log_time = datetime.fromisoformat(log["created_at"].replace("Z", "+00:00"))
                     
-                    if (last_time - log_time).total_seconds() < 300: # 5 min window
+                    if not current_group:
                         current_group.append(log)
                     else:
-                        # Close group
-                        legacy_sessions.append(synthesize_session(current_group))
-                        current_group = [log]
-            
-            if current_group:
+                        last_log = current_group[-1]
+                        last_time = datetime.fromisoformat(last_log["created_at"].replace("Z", "+00:00"))
+                        
+                        if (last_time - log_time).total_seconds() < 300: # 5 min window
+                            current_group.append(log)
+                        else:
+                            # synthesize session from group
+                            legacy_sessions.append(synthesize_session(current_group))
+                            current_group = [log]
+                except Exception: continue
                 legacy_sessions.append(synthesize_session(current_group))
 
-        # Combine and re-sort
+        # Merge and sort
         all_sessions = sessions + legacy_sessions
-        all_sessions.sort(key=lambda x: x["created_at"], reverse=True)
-        
-        summary = {
-            "total_scans": len(all_sessions),
-            "last_week_trend": "stable",
-            "active_monitors": 5,
-            "system_health": "100%"
-        }
-        
-        return ReportsResponse(
-            sessions=all_sessions[:50],
-            weekly_summary=summary
-        )
+        all_sessions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+        return JSONResponse(content=jsonable_encoder({"sessions": all_sessions[:100]}))
     except Exception as e:
         print(f"Reports error: {e}")
         import traceback
         traceback.print_exc()
-        return ReportsResponse()
+        return JSONResponse(status_code=500, content={"error": "Reports Fail", "detail": str(e)})
 
 def synthesize_session(logs: List[Dict]) -> Dict:
     """Creates a mock session object from a group of logs."""
