@@ -35,7 +35,7 @@ The current Tripzy.travel platform is a state-of-the-art **Automated Monitoring 
 
 ### 2026 Optimization:
 
-- **Reasoning Middleware**: Integration of LLM-based reasoning (Gemini 1.5 Pro) to provide context-aware insights (e.g., "Competitor dropped prices due to local event occupancy").
+- **Reasoning Middleware**: Integration of advanced LLM reasoning (**Gemini 3.0 Pro / Deep Think**) to provide context-aware insights (e.g., "Competitor dropped prices due to local event occupancy").
 - **Yield Forecasting**: Shift from historical monitoring to predictive revenue management.
 
 ---

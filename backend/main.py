@@ -39,6 +39,14 @@ from backend.services.price_comparator import price_comparator
 from backend.services.notification_service import notification_service
 from backend.services.location_service import LocationService
 
+# Import New Agents
+from backend.agents.scraper_agent import ScraperAgent
+from backend.agents.analyst_agent import AnalystAgent
+from backend.agents.notifier_agent import NotifierAgent
+
+# Import Helpers
+from backend.utils.helpers import convert_currency, log_query
+
 # Initialize FastAPI
 app = FastAPI(
     title="Hotel Rate Monitor API",
@@ -197,59 +205,7 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
 
 # ===== Helpers =====
 
-# Exchange rates to USD (approximate, update periodically or use API)
-EXCHANGE_RATES_TO_USD = {
-    "USD": 1.0,
-    "EUR": 1.08,      # 1 EUR = 1.08 USD
-    "GBP": 1.26,      # 1 GBP = 1.26 USD
-    "TRY": 0.029,     # 1 TRY = 0.029 USD
-}
-
-def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
-    """Convert amount from one currency to another via USD."""
-    if from_currency == to_currency:
-        return amount
-    # Convert to USD first
-    usd_rate = EXCHANGE_RATES_TO_USD.get(from_currency, 1.0)
-    usd_amount = amount * usd_rate
-    # Convert from USD to target
-    target_rate = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
-    return round(usd_amount / target_rate, 2)
-
-async def log_query(
-    db: Client,
-    user_id: Optional[UUID],
-    hotel_name: str,
-    location: Optional[str],
-    action_type: str,
-    status: str = "success",
-    price: Optional[float] = None,
-    currency: Optional[str] = None,
-    vendor: Optional[str] = None,
-    session_id: Optional[UUID] = None,
-    check_in: Optional[date] = None,
-    adults: Optional[int] = 2
-):
-    """Log a search or monitor query for future reporting/analysis."""
-    try:
-        log_data = {
-            "user_id": str(user_id) if user_id else None,
-            "hotel_name": hotel_name.title().strip(),
-            "location": location.title().strip() if location else None,
-            "action_type": action_type,
-            "status": status,
-            "price": price,
-            "currency": currency,
-            "vendor": vendor,
-            "session_id": str(session_id) if session_id else None,
-            "check_in_date": check_in.isoformat() if check_in else None,
-            "adults": adults
-        }
-        
-        db.table("query_logs").insert(log_data).execute()
-                
-    except Exception as e:
-        print(f"[QueryLogs] Failed to log {action_type}: {e}")
+# helpers are now in backend.utils.helpers
 
 
 # ===== Health Check =====
@@ -596,255 +552,66 @@ async def run_monitor_background(
     db: Client,
     session_id: Optional[UUID]
 ):
-    """Background task to perform the actual scan."""
+    """
+    Background orchestrator for Agent-Mesh monitoring.
+    2026 Strategy: main.py acts as the 'Mission Control' for specialized agents.
+    """
+    errors = []
     try:
-        errors = []
-        prices_updated = 0
-        alerts_generated = 0
-    
-        # Get user settings
+        # 1. Initialize Agents
+        scraper = ScraperAgent(db)
+        analyst = AnalystAgent(db)
+        notifier = NotifierAgent()
+
+        # 2. Get User Settings (Threshold for Analyst)
         settings = None
         try:
-            settings_result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-            if settings_result.data:
-                settings = settings_result.data[0]
-        except Exception as e:
-            print(f"Error fetching settings: {e}")
+            settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
+            if settings_res.data:
+                settings = settings_res.data[0]
+        except Exception: pass
         
         threshold = settings["threshold_percent"] if settings else 2.0
-        user_default_currency = settings.get("currency", "USD") if settings else "USD"
-    
-        # Update session to 'running'
+
+        # 3. Phase 1: Scraper Agent (Data Gathering)
+        print(f"[Orchestrator] Triggering ScraperAgent for {len(hotels)} hotels...")
+        scraper_results = await scraper.run_scan(user_id, hotels, options, session_id)
+
+        # 4. Phase 2: Analyst Agent (Intelligence & Persistence)
+        print(f"[Orchestrator] Triggering AnalystAgent for analysis...")
+        analysis = await analyst.analyze_results(user_id, scraper_results, threshold)
+
+        # 5. Phase 3: Notifier Agent (Communication)
+        if analysis["alerts"] and settings:
+            print(f"[Orchestrator] Triggering NotifierAgent for {len(analysis['alerts'])} alerts...")
+            hotel_name_map = {h["id"]: h["name"] for h in hotels}
+            await notifier.dispatch_alerts(analysis["alerts"], settings, hotel_name_map)
+
+        # 6. Finalize Session (Status mapping)
+        final_status = "completed"
+        # If any hotel failed to return a price, mark as partial
+        if any(res["status"] != "success" for res in scraper_results):
+            final_status = "partial"
+        
         if session_id:
-            try:
-                db.table("scan_sessions").update({"status": "running"}).eq("id", session_id).execute()
-            except: pass
+            db.table("scan_sessions").update({
+                "status": final_status,
+                "completed_at": datetime.now().isoformat()
+            }).eq("id", str(session_id)).execute()
+            print(f"[Orchestrator] Session {session_id} finalized as {final_status}")
 
-        # Max concurrency: 3 (reduced to avoid rate limits/timeouts in background)
-        semaphore = asyncio.Semaphore(3)
-        target_price_ref = {"value": None}
-
-        async def process_hotel(hotel):
-            nonlocal prices_updated, alerts_generated
-            async with semaphore:
-                hotel_id = hotel["id"]
-                hotel_name = hotel["name"].title().strip()
-                location = (hotel.get("location") or "").title().strip()
-                serp_api_id = hotel.get("serp_api_id")
-                # Explicitly clear falsy values to None to trigger acquisition logic in client
-                if not serp_api_id:
-                    serp_api_id = None
-                    print(f"[Monitor] No token for {hotel_name}. Running acquisition search...")
-
-                hotel_currency = hotel.get("preferred_currency") or user_default_currency
-            
-                try:
-                    # Determine Check-in/out and Adults
-                    # Priority: Manual Options > Hotel Fixed > Default (None/2)
-                    check_in_date = None
-                    if options and options.check_in:
-                        check_in_date = options.check_in
-                    elif hotel.get("fixed_check_in"):
-                        check_in_date = date.fromisoformat(hotel["fixed_check_in"]) if isinstance(hotel["fixed_check_in"], str) else hotel["fixed_check_in"]
-
-                    check_out_date = None
-                    if options and options.check_out:
-                        check_out_date = options.check_out
-                    elif hotel.get("fixed_check_out"):
-                        check_out_date = date.fromisoformat(hotel["fixed_check_out"]) if isinstance(hotel["fixed_check_out"], str) else hotel["fixed_check_out"]
-
-                    adults_count = 2
-                    if options and options.adults:
-                        adults_count = options.adults
-                    elif hotel.get("default_adults"):
-                        adults_count = hotel["default_adults"]
-
-                    # Fetch Real Price
-                    price_data = await serpapi_client.fetch_hotel_price(
-                        hotel_name=hotel_name,
-                        location=location,
-                        currency=hotel_currency,
-                        serp_api_id=serp_api_id,
-                        check_in=check_in_date,
-                        check_out=check_out_date,
-                        adults=adults_count
-                    )
-
-                
-                    if not price_data or (isinstance(price_data, dict) and price_data.get("error") == "quota_exhausted"):
-                        status = "quota_exhausted" if price_data and price_data.get("error") == "quota_exhausted" else "not_found"
-                        await log_query(
-                            db=db, user_id=user_id, hotel_name=hotel_name,
-                            location=location, action_type="monitor", status=status,
-                            session_id=session_id, check_in=check_in_date, adults=adults_count
-                        )
-                        return
-
-                    current_price = price_data.get("price")
-                    is_partial = current_price is None
-
-                    if not is_partial:
-                        prices_updated += 1
-                    
-                        if hotel["is_target_hotel"]:
-                            target_price_ref["value"] = current_price
-                    
-                        # Get previous price
-                        prev_result = db.table("price_logs") \
-                            .select("price, currency") \
-                            .eq("hotel_id", hotel_id) \
-                            .order("recorded_at", desc=True) \
-                            .limit(1) \
-                            .execute()
-                    
-                        previous_price = None
-                        previous_currency = "USD"
-                    
-                        if prev_result.data:
-                            previous_price = prev_result.data[0]["price"]
-                            previous_currency = prev_result.data[0].get("currency", "USD")
-                        
-                            # Normalize if currencies differ
-                            if hotel_currency != previous_currency:
-                                previous_price = convert_currency(previous_price, previous_currency, hotel_currency)
-                    
-                        # Log price
-                        db.table("price_logs").insert({
-                            "hotel_id": hotel_id,
-                            "price": current_price,
-                            "currency": hotel_currency,
-                            "check_in_date": (options.check_in if options and options.check_in else date.today()).isoformat(),
-                            "source": "serpapi",
-                            "vendor": price_data.get("vendor"),
-                            "offers": price_data.get("offers", []),
-                            "room_types": price_data.get("room_types", [])
-                        }).execute()
-
-                        # Log successful query for Dashboard Scan History
-                        await log_query(
-                            db=db, user_id=user_id, hotel_name=hotel_name,
-                            location=location, action_type="monitor", status="success",
-                            price=current_price, currency=hotel_currency,
-                            vendor=price_data.get("vendor"),
-                            session_id=session_id, check_in=check_in_date, adults=adults_count
-                        )
-
-                    else:
-                        print(f"[Monitor] Partial data for {hotel_name} (No Price)")
-                        await log_query(
-                            db=db, user_id=user_id, hotel_name=hotel_name,
-                            location=location, action_type="monitor", status="partial",
-                            session_id=session_id, check_in=check_in_date, adults=adults_count
-                        )
-
-                    # Update metadata (ALWAYS run this if price_data exists)
-                    meta_update = {}
-                    if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
-                    if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
-                    if price_data.get("property_token"): 
-                        meta_update["serp_api_id"] = price_data["property_token"]
-                        meta_update["property_token"] = price_data["property_token"]
-                    if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
-
-                    # Save Rich Data
-                    if price_data.get("amenities"): meta_update["amenities"] = price_data["amenities"]
-                    if price_data.get("images"): meta_update["images"] = price_data["images"]
-                
-                    if meta_update:
-                        db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
-                
-                    # Alerts (Only if price exists)
-                    if not is_partial and previous_price:
-                        threshold_alert = price_comparator.check_threshold_breach(
-                            current_price, previous_price, threshold
-                        )
-                        if threshold_alert:
-                            db.table("alerts").insert({
-                                "user_id": str(user_id),
-                                "hotel_id": hotel_id,
-                                "currency": hotel_currency,  # Store currency with alert
-                                **threshold_alert,
-                            }).execute()
-                            alerts_generated += 1
-                        
-                            if settings:
-                                await notification_service.send_notifications(
-                                    settings=settings,
-                                    hotel_name=hotel_name,
-                                    alert_message=threshold_alert["message"],
-                                    current_price=threshold_alert["new_price"],
-                                    previous_price=threshold_alert["old_price"],
-                                    currency=hotel_currency
-                                )
-            
-                    # Log monitor log
-
-                
-                except Exception as e:
-                    print(f"Error in background task for {hotel_name}: {e}")
-                    errors.append(str(e))
-
-        # Wait for all to finish
-        await asyncio.gather(*[process_hotel(hotel) for hotel in hotels])
-    
-        # Second pass for competitor undercuts
-        target_price = target_price_ref["value"]
-        if target_price:
-            for hotel in hotels:
-                if hotel["is_target_hotel"]: continue
-            
-                latest = db.table("price_logs") \
-                    .select("price") \
-                    .eq("hotel_id", hotel["id"]) \
-                    .order("recorded_at", desc=True) \
-                    .limit(2).execute()
-            
-                if len(latest.data) >= 1:
-                    current = latest.data[0]["price"]
-                    previous = latest.data[1]["price"] if len(latest.data) > 1 else None
-                    undercut = price_comparator.check_competitor_undercut(target_price, hotel["name"], current, previous)
-                    if undercut:
-                        # Get hotel currency for alert
-                        comp_currency = hotel.get("preferred_currency") or "USD"
-                        db.table("alerts").insert({
-                            "user_id": str(user_id), 
-                            "hotel_id": hotel["id"], 
-                            "currency": comp_currency,
-                            **undercut
-                        }).execute()
-                        alerts_generated += 1
-
-        # Finalize session
-        if session_id:
-            try:
-                db.table("scan_sessions").update({
-                    "status": "completed" if not errors else "partial",
-                    "completed_at": datetime.now().isoformat()
-                }).eq("id", session_id).execute()
-            except: pass
-
-
-    except Exception as top_e:
-        print(f"CRITICAL MONITOR ERROR: {top_e}")
+    except Exception as e:
+        print(f"[Orchestrator] CRITICAL ERROR: {e}")
         import traceback
         traceback.print_exc()
-        errors.append(f"System Crash: {str(top_e)}")
-
-    finally:
-        # Finalize session (Always runs)
+        errors.append(str(e))
         if session_id:
             try:
-                status = "completed"
-                if errors:
-                    status = "partial"
-                
                 db.table("scan_sessions").update({
-                    "status": status,
+                    "status": "failed",
                     "completed_at": datetime.now().isoformat()
-                }).eq("id", session_id).execute()
-                print(f"[Monitor] Session {session_id} finalized as {status}")
-            except Exception as final_e:
-                print(f"Failed to finalize session {session_id}: {final_e}")
+                }).eq("id", str(session_id)).execute()
+            except: pass
 # ===== Hotels CRUD =====
 
 @app.get("/api/v1/directory/search")
