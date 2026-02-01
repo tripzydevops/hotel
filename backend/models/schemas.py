@@ -205,8 +205,11 @@ class PriceWithTrend(BaseModel):
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     adults: Optional[int] = None
-    offers: List[Dict[str, Any]] = []
     room_types: List[Dict[str, Any]] = []
+
+    class Config:
+        extra = "allow"
+        from_attributes = True
 
 
 
@@ -261,6 +264,7 @@ class ScanSession(BaseModel):
 
     class Config:
         from_attributes = True
+        extra = "allow"
 
 
 class DashboardResponse(BaseModel):

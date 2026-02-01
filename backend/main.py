@@ -233,30 +233,33 @@ async def health_check():
 
 # ===== Dashboard Endpoint =====
 
-@app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
+@app.get("/api/dashboard/{user_id}")
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
+    from fastapi.encoders import jsonable_encoder
+    
+    # 0. Core Fallback
+    fallback_data = {
+        "target_hotel": None,
+        "competitors": [],
+        "recent_searches": [],
+        "scan_history": [],
+        "recent_sessions": [],
+        "unread_alerts_count": 0,
+        "last_updated": datetime.now(timezone.utc).isoformat()
+    }
+
     try:
-        # 0. Safe Initialization (inside try block)
-        fallback_resp = DashboardResponse(
-            target_hotel=None,
-            competitors=[],
-            recent_searches=[],
-            scan_history=[],
-            recent_sessions=[],
-            unread_alerts_count=0,
-        )
-
         if not db:
-            return fallback_resp
+            return JSONResponse(content=fallback_data)
 
-        # 1. Fetch hotels with full coverage
+        # 1. Fetch hotels
         try:
             hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
             hotels = hotels_result.data or []
         except Exception as e:
             print(f"Hotels fetch failed: {e}")
-            return fallback_resp
+            return JSONResponse(content=fallback_data)
         
         target_hotel = None
         competitors = []
@@ -320,49 +323,46 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 for p in prices:
                     try:
                         if p.get("price") is not None:
-                            valid_history.append(PricePoint(
-                                price=float(p["price"]), 
-                                recorded_at=p.get("recorded_at")
-                            ))
+                            valid_history.append({
+                                "price": float(p["price"]), 
+                                "recorded_at": p.get("recorded_at")
+                            })
                     except Exception:
                         continue
 
-                # Build the hotel (HotelWithPrice)
-                try:
-                    hotel_with_price = HotelWithPrice(
-                        **hotel, 
-                        price_info=price_info,
-                        price_history=valid_history
-                    )
-                    
-                    if hotel.get("is_target_hotel"):
-                        target_hotel = hotel_with_price
-                    else:
-                        competitors.append(hotel_with_price)
-                except Exception as e:
-                    print(f"Pydantic mapping failed for hotel {hotel.get('id')}: {e}")
+                # Build the hotel dict
+                hotel_data = {
+                    **hotel,
+                    "price_info": price_info,
+                    "price_history": valid_history
+                }
+                
+                if hotel.get("is_target_hotel"):
+                    target_hotel = hotel_data
+                else:
+                    competitors.append(hotel_data)
             except Exception as e:
                 print(f"Crash in hotel loop for {hotel.get('id')}: {e}")
                 continue
         
-        # 2. Count unread alerts (Safe)
+        # 2. Alerts (Safe)
         unread_count = 0
         try:
             alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
             unread_count = alerts_res.count or 0
         except Exception: pass 
         
-        # 3. Activity/Scan Fetch (Safe)
-        unique_recent = []
+        # 3. Activity (Safe)
+        recent_searches = []
         try:
             recent_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).in_("action_type", ["search", "create"]).order("created_at", desc=True).limit(20).execute()
             seen = set()
             for log in (recent_res.data or []):
                 name = log.get("hotel_name")
                 if name and name not in seen:
-                    unique_recent.append(log)
+                    recent_searches.append(log)
                     seen.add(name)
-                if len(unique_recent) >= 10: break
+                if len(recent_searches) >= 10: break
         except Exception: pass
 
         scan_history = []
@@ -377,51 +377,33 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             recent_sessions = sess_res.data or []
         except Exception: pass
 
-        # 4. Final Safe Response
-        def safe_map(model, data):
-            out = []
-            for d in data:
-                try: out.append(model(**d) if isinstance(d, dict) else d)
-                except Exception as e: print(f"Skip {model.__name__}: {e}")
-            return out
-
-        return DashboardResponse(
-            target_hotel=target_hotel,
-            competitors=competitors,
-            recent_searches=safe_map(QueryLog, unique_recent),
-            scan_history=safe_map(QueryLog, scan_history),
-            recent_sessions=safe_map(ScanSession, recent_sessions),
-            unread_alerts_count=unread_count,
-            last_updated=datetime.now(timezone.utc),
-        )
+        # 4. Final Serialized Response
+        final_response = {
+            "target_hotel": target_hotel,
+            "competitors": competitors,
+            "recent_searches": recent_searches,
+            "scan_history": scan_history,
+            "recent_sessions": recent_sessions,
+            "unread_alerts_count": unread_count,
+            "last_updated": datetime.now(timezone.utc).isoformat()
+        }
+        
+        return JSONResponse(content=jsonable_encoder(final_response))
 
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        # Log to stdout for Vercel logs
         print(f"CRITICAL DASHBOARD ERROR: {e}\n{tb}")
         
-        # If it's a validation error, we want to see the details
-        error_msg = str(e)
-        if "validation" in error_msg.lower():
-            # Extract more detail if possible
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "error": "Pydantic Validation Error",
-                    "detail": error_msg[:500],
-                    "trace": tb[:500]
-                }
-            )
-
-        # Final fallback - NEVER return 500 if possible
-        try:
-            return fallback_resp
-        except Exception:
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Total Crash", "detail": error_msg}
-            )
+        # Diagnostics
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Dashboard Crash",
+                "detail": str(e),
+                "trace": tb[:1000]
+            }
+        )
 
 
 
