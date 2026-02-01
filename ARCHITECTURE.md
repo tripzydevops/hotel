@@ -1,4 +1,4 @@
-# Tripzy.travel Technical Documentation
+# Hotel Rate Monitor Technical Documentation
 
 ## 🏗️ 3-Layer Architecture
 
@@ -12,7 +12,9 @@ This project follows a strict 3-Layer Architecture to solve the "Cold Start" pro
 
 ### LAYER 2: Autonomous Reasoning Engine (The "Brain")
 
-- **Backend:** Python (FastAPI)
+- **Architecture:** Transitioned to an **Agent-Mesh** structure (Orchestrator, Scraper, Analyst, Notifier).
+- **Backend:** Python (FastAPI).
+- **Discovery Engine:** Autonomous "Ghost Competitor" discovery using Gemini embeddings and `pgvector`.
 - **Strategic Benchmarking:** Implemented **ARI (Average Rate Index)** and **GRI (Sentiment Index)** to normalize market positioning.
 - **Logic:** Autonomous Quadrant Advisor analyzes Price vs. Value to provide revenue management "So What?" reasoning.
 - **Reasoning:** Gemini-compatible reasoning engine explains recommendation logic based on market spread.
@@ -20,9 +22,9 @@ This project follows a strict 3-Layer Architecture to solve the "Cold Start" pro
 ### LAYER 3: Data & Algorithms (The Infrastructure)
 
 - **Database:** Supabase (PostgreSQL)
-- **Extended Schema:** Added `review_count` to track social proof volume for GRI calculations.
-- **Vector Search:** `pgvector` for semantic hotel search.
-- **Recommendation:** Hybrid approach (Collaborative Filtering + Vector-Based).
+- **Vector Search:** `pgvector` enabled with HNSW indexing for high-speed semantic matchmaking.
+- **Embeddings:** 768-dimensional vectors generated via Gemini (`embedding-001`) for hotel metadata.
+- **Recommendation:** Hybrid approach (Collaborative Filtering + Vector-Based Semantic Search).
 - **Location Discovery:** Self-learning `location_registry` that standardizes market data through hierarchical selection and autonomous ingestion during hotel creation.
 
 ## 📊 Core Features

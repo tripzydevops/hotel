@@ -27,6 +27,7 @@ We adhere to a strict **3-Layer Architecture**:
 
 - **ARI (Price Index)**: Real-time price benchmarking against market averages.
 - **GRI (Sentiment Index)**: Scientific sentiment analysis based on rating and social proof volume.
+- **Discovery Engine 👻**: Autonomous "Ghost Competitor" identification using semantic vector search.
 - **Quadrant Visualization**: Dynamic 2x2 grid for strategic positioning.
 - **Enterprise Reports**: Professional PDF/CSV exports with multi-currency support.
 
