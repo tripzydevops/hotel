@@ -348,7 +348,9 @@ class SerpApiClient:
                     if self._key_manager.rotate_key():
                         params["api_key"] = self.api_key
                         response = await client.get(SERPAPI_BASE_URL, params=params)
-                    else: return None
+                    else: 
+                        print("[SerpApi] CRITICAL: All API keys exhausted (429)")
+                        return {"error": "quota_exhausted", "status": "error"}
                 response.raise_for_status()
                 return self._parse_hotel_result(response.json(), hotel_name, currency, serp_api_id)
         except Exception as e:

@@ -36,7 +36,7 @@ EXPECTED_SCHEMA = {
     "scan_sessions": {
         "required": [
             "id", "user_id", "status", "hotels_count", "session_type",
-            "created_at", "completed_at"
+            "created_at", "completed_at", "check_in_date", "check_out_date", "adults", "currency"
         ]
     },
     "admin_settings": {
@@ -51,7 +51,8 @@ EXPECTED_SCHEMA = {
     "query_logs": {
         "required": [
             "user_id", "hotel_name", "location", "action_type", 
-            "status", "created_at", "session_id", "vendor", "price"
+            "status", "created_at", "session_id", "vendor", "price",
+            "check_in_date", "adults"
         ]
     }
 }

@@ -226,7 +226,9 @@ async def log_query(
     price: Optional[float] = None,
     currency: Optional[str] = None,
     vendor: Optional[str] = None,
-    session_id: Optional[UUID] = None
+    session_id: Optional[UUID] = None,
+    check_in: Optional[date] = None,
+    adults: Optional[int] = 2
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
@@ -239,7 +241,9 @@ async def log_query(
             "price": price,
             "currency": currency,
             "vendor": vendor,
-            "session_id": str(session_id) if session_id else None
+            "session_id": str(session_id) if session_id else None,
+            "check_in_date": check_in.isoformat() if check_in else None,
+            "adults": adults
         }
         
         db.table("query_logs").insert(log_data).execute()
@@ -555,7 +559,11 @@ async def trigger_monitor(
             "user_id": str(user_id),
             "session_type": "manual",
             "hotels_count": len(hotels),
-            "status": "pending"
+            "status": "pending",
+            "check_in_date": options.check_in.isoformat() if options and options.check_in else None,
+            "check_out_date": options.check_out.isoformat() if options and options.check_out else None,
+            "adults": options.adults if options else 2,
+            "currency": options.currency if options else "TRY"
         }).execute()
         if session_result.data:
             session_id = session_result.data[0]["id"]
@@ -663,11 +671,12 @@ async def run_monitor_background(
                     )
 
                 
-                    if not price_data:
+                    if not price_data or (isinstance(price_data, dict) and price_data.get("error") == "quota_exhausted"):
+                        status = "quota_exhausted" if price_data and price_data.get("error") == "quota_exhausted" else "not_found"
                         await log_query(
                             db=db, user_id=user_id, hotel_name=hotel_name,
-                            location=location, action_type="monitor", status="not_found",
-                            session_id=session_id
+                            location=location, action_type="monitor", status=status,
+                            session_id=session_id, check_in=check_in_date, adults=adults_count
                         )
                         return
 
@@ -717,7 +726,7 @@ async def run_monitor_background(
                             location=location, action_type="monitor", status="success",
                             price=current_price, currency=hotel_currency,
                             vendor=price_data.get("vendor"),
-                            session_id=session_id
+                            session_id=session_id, check_in=check_in_date, adults=adults_count
                         )
 
                     else:
@@ -725,7 +734,7 @@ async def run_monitor_background(
                         await log_query(
                             db=db, user_id=user_id, hotel_name=hotel_name,
                             location=location, action_type="monitor", status="partial",
-                            session_id=session_id
+                            session_id=session_id, check_in=check_in_date, adults=adults_count
                         )
 
                     # Update metadata (ALWAYS run this if price_data exists)

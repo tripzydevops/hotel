@@ -232,6 +232,9 @@ class QueryLog(BaseModel):
     price: Optional[float] = None
     currency: Optional[str] = None
     vendor: Optional[str] = None
+    session_id: Optional[UUID] = None
+    check_in_date: Optional[date] = None
+    adults: Optional[int] = 2
     
     class Config:
         from_attributes = True
@@ -247,6 +250,10 @@ class ScanSession(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
     logs: Optional[List[QueryLog]] = None
+    check_in_date: Optional[date] = None
+    check_out_date: Optional[date] = None
+    adults: Optional[int] = 2
+    currency: Optional[str] = "TRY"
 
     class Config:
         from_attributes = True
