@@ -1,4 +1,4 @@
-# Hotel Rate Monitor Technical Documentation
+# Hotel Rate Sentinel Technical Architecture
 
 ## 🏗️ 3-Layer Architecture
 

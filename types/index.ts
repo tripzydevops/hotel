@@ -96,7 +96,7 @@ export interface ScanSession {
   id: string;
   user_id: string;
   session_type: "manual" | "scheduled";
-  status: "pending" | "completed" | "failed";
+  status: "pending" | "completed" | "failed" | "partial";
   hotels_count: number;
   created_at: string;
   completed_at?: string;
@@ -206,6 +206,10 @@ export interface MarketAnalysis {
   price_history: PricePoint[];
   competitors: HotelWithPrice[];
   display_currency: string;
-  ari?: number;
-  sentiment_index?: number;
+  ari: number;
+  sentiment_index: number;
+  advisory_msg?: string;
+  quadrant_x: number;
+  quadrant_y: number;
+  quadrant_label: string;
 }

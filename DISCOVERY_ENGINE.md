@@ -1,6 +1,6 @@
 # 👻 Autonomous Discovery Engine (Technical Deep-Dive)
 
-The **Autonomous Discovery Engine** is a Pillar 3 capability of Tripzy.travel that solves the "Cold Start" problem by proactively identifying strategic rivals using AI-powered semantic matchmaking.
+The **Autonomous Discovery Engine** is a core capability of **Hotel Rate Sentinel** that solves the "Cold Start" problem by proactively identifying strategic rivals using AI-powered semantic matchmaking.
 
 ## 🏗️ Architecture
 
@@ -47,4 +47,4 @@ To refine match accuracy, modify the `format_hotel_for_embedding` function in `b
 
 ---
 
-_Tripzy.travel R&D - Phase 5 Documentation_
+_Hotel Rate Sentinel R&D - Phase 5 Documentation_

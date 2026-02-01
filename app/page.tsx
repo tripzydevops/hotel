@@ -8,7 +8,7 @@ import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileModal from "@/components/ProfileModal";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, Zap, Cpu } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { DashboardData, UserSettings } from "@/types";
@@ -359,8 +359,12 @@ export default function Dashboard() {
       <main className="pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
               {t("dashboard.title")}
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(255,215,0,0.1)]">
+                <Cpu className="w-2.5 h-2.5" />
+                Agent-Mesh Active
+              </span>
             </h1>
             <p className="text-[var(--text-secondary)] mt-1 text-xs">
               {t("dashboard.subtitle")}

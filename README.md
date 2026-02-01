@@ -1,8 +1,8 @@
-# Tripzy.travel 🚀
+# Hotel Rate Sentinel 🚀
 
 ### Autonomous Agent-Based Recommendation Engine
 
-**Tripzy.travel** is a next-generation travel intelligence platform designed to solve the "Cold Start" problem using Autonomous Agents and LLM-based reasoning.
+**Hotel Rate Sentinel** is a next-generation travel intelligence platform designed to solve the "Cold Start" problem using Autonomous Agents and LLM-based reasoning.
 
 ## 🏗️ Technical Architecture
 
@@ -60,4 +60,5 @@ uvicorn main:app --reload
 
 ---
 
-_Built with ❤️ for the future of Autonomous Travel Intelligence._
+_Hotel Rate Sentinel R&D - 2026_
+❤️ for the future of Autonomous Travel Intelligence.\_

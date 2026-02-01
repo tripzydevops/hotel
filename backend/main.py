@@ -227,7 +227,6 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
-    # Default empty response
     fallback_resp = DashboardResponse(
         target_hotel=None,
         competitors=[],
@@ -235,209 +234,164 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         scan_history=[],
         recent_sessions=[],
         unread_alerts_count=0,
-        last_updated=datetime.now(timezone.utc),
     )
 
     if not db:
         return fallback_resp
 
     try:
-        # Fetch all hotels for user
-        hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-        hotels = hotels_result.data or []
+        # 1. Fetch hotels with full coverage
+        try:
+            hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+            hotels = hotels_result.data or []
+        except Exception as e:
+            print(f"Hotels fetch failed: {e}")
+            return fallback_resp
         
         target_hotel = None
         competitors = []
         
         for hotel in hotels:
-            # Get latest 2 prices for trend calculation
-            prices_result = db.table("price_logs") \
-                .select("*") \
-                .eq("hotel_id", str(hotel["id"])) \
-                .order("recorded_at", desc=True) \
-                .limit(10) \
-                .execute()
-            
-            prices = prices_result.data or []
-            current_price = prices[0] if prices else None
-            previous_price = prices[1] if len(prices) > 1 else None
-            
-            # Build price info with trend
-            price_info = None
             try:
-                if current_price and current_price.get("price") is not None:
-                    current = float(current_price["price"])
-                    curr_currency = current_price.get("currency") or "USD"
-                    
-                    previous = None
-                    if previous_price and previous_price.get("price") is not None:
-                         try:
-                            raw_prev = float(previous_price["price"])
-                            prev_currency = previous_price.get("currency") or "USD"
-                            
-                            if curr_currency != prev_currency:
-                                try:
-                                   previous = convert_currency(raw_prev, prev_currency, curr_currency)
-                                except Exception:
-                                   previous = raw_prev
-                            else:
-                                previous = raw_prev
-                         except (ValueError, TypeError):
-                            previous = None
-                    
-                    # Dynamic check for price_comparator (module vs instance)
-                    trend, change = TrendDirection.STABLE, 0.0
-                    try:
-                        t, change = price_comparator.calculate_trend(current, previous)
-                        # Ensure we get the string value for the dict
-                        trend_val = t.value if hasattr(t, "value") else str(t)
-                    except Exception as e:
-                        print(f"Trend Calc Error: {e}")
-                        trend_val = "stable"
-
-                    price_info = {
-                        "current_price": current,
-                        "previous_price": previous,
-                        "currency": curr_currency,
-                        "trend": trend_val,
-                        "change_percent": change,
-                        "recorded_at": current_price["recorded_at"],
-                        "vendor": current_price.get("vendor"),
-                        "check_in": current_price.get("check_in_date"),
-                        "check_out": current_price.get("check_out_date"),
-                        "adults": current_price.get("adults"),
-                        "offers": current_price.get("offers") or [],
-                        "room_types": current_price.get("room_types") or []
-                    }
-            except (ValueError, TypeError) as e:
-                print(f"Skipping invalid price for hotel {hotel['name']}: {e}")
-                price_info = None
-            
-            # Safe Price History
-            valid_history = []
-            for p in prices:
-                try:
-                    if p.get("price") is not None:
-                        valid_history.append(PricePoint(
-                            price=float(p["price"]), 
-                            recorded_at=p["recorded_at"]
-                        ))
-                except (ValueError, TypeError):
-                    continue
-
-            try:
-                # Build the hotel with enrichment (id, name etc are in the 'hotel' dict)
-                hotel_with_price = HotelWithPrice(
-                    **hotel, # Unpack all fields from 'hotels' table (id, user_id, created_at, updated_at etc)
-                    price_info=price_info,
-                    price_history=valid_history
-                )
+                # Get latest prices
+                prices_result = db.table("price_logs") \
+                    .select("*") \
+                    .eq("hotel_id", str(hotel["id"])) \
+                    .order("recorded_at", desc=True) \
+                    .limit(10) \
+                    .execute()
                 
-                if hotel["is_target_hotel"]:
-                    target_hotel = hotel_with_price
-                else:
-                    competitors.append(hotel_with_price)
+                prices = prices_result.data or []
+                current_price = prices[0] if prices else None
+                previous_price = prices[1] if len(prices) > 1 else None
+                
+                price_info = None
+                if current_price and current_price.get("price") is not None:
+                    try:
+                        current = float(current_price["price"])
+                        curr_currency = current_price.get("currency") or "USD"
+                        
+                        previous = None
+                        if previous_price and previous_price.get("price") is not None:
+                             try:
+                                raw_prev = float(previous_price["price"])
+                                prev_currency = previous_price.get("currency") or "USD"
+                                previous = convert_currency(raw_prev, prev_currency, curr_currency)
+                             except Exception:
+                                previous = None
+                        
+                        trend_val = "stable"
+                        change = 0.0
+                        try:
+                            t, change = price_comparator.calculate_trend(current, previous)
+                            trend_val = t.value if hasattr(t, "value") else str(t)
+                        except Exception:
+                            pass
+
+                        price_info = {
+                            "current_price": current,
+                            "previous_price": previous,
+                            "currency": curr_currency,
+                            "trend": trend_val,
+                            "change_percent": change,
+                            "recorded_at": current_price.get("recorded_at"),
+                            "vendor": current_price.get("vendor"),
+                            "check_in": current_price.get("check_in_date"),
+                            "check_out": current_price.get("check_out_date"),
+                            "adults": current_price.get("adults"),
+                            "offers": current_price.get("offers") or [],
+                            "room_types": current_price.get("room_types") or []
+                        }
+                    except Exception as e:
+                        print(f"Error building price_info for {hotel.get('name')}: {e}")
+
+                # Safe Price History
+                valid_history = []
+                for p in prices:
+                    try:
+                        if p.get("price") is not None:
+                            valid_history.append(PricePoint(
+                                price=float(p["price"]), 
+                                recorded_at=p.get("recorded_at")
+                            ))
+                     except Exception:
+                        continue
+
+                # Build the hotel (HotelWithPrice)
+                try:
+                    hotel_with_price = HotelWithPrice(
+                        **hotel, 
+                        price_info=price_info,
+                        price_history=valid_history
+                    )
+                    
+                    if hotel.get("is_target_hotel"):
+                        target_hotel = hotel_with_price
+                    else:
+                        competitors.append(hotel_with_price)
+                except Exception as e:
+                    print(f"Pydantic mapping failed for hotel {hotel.get('id')}: {e}")
             except Exception as e:
-                print(f"Skipping invalid hotel record {hotel.get('id')}: {e}")
+                print(f"Crash in hotel loop for {hotel.get('id')}: {e}")
                 continue
         
-        # Count unread alerts
+        # 2. Count unread alerts (Safe)
         unread_count = 0
         try:
-            alerts_result = db.table("alerts") \
-                .select("id", count="exact") \
-                .eq("user_id", str(user_id)) \
-                .eq("is_read", False) \
-                .execute()
-            unread_count = alerts_result.count if alerts_result.count is not None else 0
-        except Exception:
-            pass 
+            alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
+            unread_count = alerts_res.count or 0
+        except Exception: pass 
         
-        # Fetch activity
+        # 3. Activity/Scan Fetch (Safe)
         unique_recent = []
         try:
-            recent_result = db.table("query_logs") \
-                .select("*") \
-                .eq("user_id", str(user_id)) \
-                .in_("action_type", ["search", "create"]) \
-                .order("created_at", desc=True) \
-                .limit(20) \
-                .execute()
-            
-            seen_names = set()
-            for log in (recent_result.data or []):
+            recent_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).in_("action_type", ["search", "create"]).order("created_at", desc=True).limit(20).execute()
+            seen = set()
+            for log in (recent_res.data or []):
                 name = log.get("hotel_name")
-                if name and name not in seen_names:
+                if name and name not in seen:
                     unique_recent.append(log)
-                    seen_names.add(name)
+                    seen.add(name)
                 if len(unique_recent) >= 10: break
-        except Exception:
-            pass
+        except Exception: pass
 
-        # Fetch scan history (safe)
         scan_history = []
         try:
-            scan_result = db.table("query_logs") \
-                .select("*") \
-                .eq("user_id", str(user_id)) \
-                .eq("action_type", "monitor") \
-                .order("created_at", desc=True) \
-                .limit(10) \
-                .execute()
-            scan_history = scan_result.data or []
-        except Exception:
-            pass
+            scan_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).eq("action_type", "monitor").order("created_at", desc=True).limit(10).execute()
+            scan_history = scan_res.data or []
+        except Exception: pass
 
-        # Fetch sessions (safe)
         recent_sessions = []
         try:
-            sessions_result = db.table("scan_sessions") \
-                .select("*") \
-                .eq("user_id", str(user_id)) \
-                .order("created_at", desc=True) \
-                .limit(5) \
-                .execute()
-            recent_sessions = sessions_result.data or []
-        except Exception:
-            pass
+            sess_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
+            recent_sessions = sess_res.data or []
+        except Exception: pass
 
-        # Helper for safe parsing
-        def safe_parse_models(model_class, data_list):
-            valid_items = []
-            for item in data_list:
-                try:
-                    if isinstance(item, dict):
-                        if "price" in item and item["price"] is None:
-                            item["price"] = 0.0 # Default fallback
-                        valid_items.append(model_class(**item))
-                    else:
-                        valid_items.append(item) # Already a model?
-                except Exception as e:
-                    # converting UUIDs or Dates might fail
-                    ident = getattr(item, "id", "unknown") if not isinstance(item, dict) else item.get("id", "unknown")
-                    print(f"Skipping invalid {model_class.__name__}: {e} | Data ID: {ident}")
-                    continue
-            return valid_items
+        # 4. Final Safe Response
+        def safe_map(model, data):
+            out = []
+            for d in data:
+                try: out.append(model(**d) if isinstance(d, dict) else d)
+                except Exception as e: print(f"Skip {model.__name__}: {e}")
+            return out
 
         return DashboardResponse(
             target_hotel=target_hotel,
             competitors=competitors,
-            recent_searches=safe_parse_models(QueryLog, unique_recent),
-            scan_history=safe_parse_models(QueryLog, scan_history),
-            recent_sessions=safe_parse_models(ScanSession, recent_sessions),
+            recent_searches=safe_map(QueryLog, unique_recent),
+            scan_history=safe_map(QueryLog, scan_history),
+            recent_sessions=safe_map(ScanSession, recent_sessions),
             unread_alerts_count=unread_count,
             last_updated=datetime.now(timezone.utc),
         )
 
     except Exception as e:
         import traceback
-        tb_str = traceback.format_exc()
-        print(f"DASHBOARD ERROR: {e}\n{tb_str}")
-        # Raising 500 with detailed traceback so we can identify the exact line of failure
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Crash: {str(e)} | Trace: {tb_str[:1000]}"
-        )
+        tb = traceback.format_exc()
+        print(f"CRITICAL DASHBOARD ERROR: {e}\n{tb}")
+        # Final fallback - NEVER return 500 if possible
+        fallback_resp.unread_alerts_count = 0 
+        return fallback_resp
 
 
 

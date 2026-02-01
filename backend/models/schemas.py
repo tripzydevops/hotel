@@ -40,6 +40,10 @@ class HotelBase(BaseModel):
     amenities: Optional[List[Any]] = Field(default_factory=list)
     images: Optional[List[Any]] = Field(default_factory=list)
 
+    class Config:
+        extra = "allow"
+        from_attributes = True
+
 
 class HotelCreate(HotelBase):
     pass
@@ -59,8 +63,8 @@ class HotelUpdate(BaseModel):
 class Hotel(HotelBase):
     id: UUID
     user_id: UUID
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -208,7 +212,7 @@ class PriceWithTrend(BaseModel):
 
 class PricePoint(BaseModel):
     price: float
-    recorded_at: datetime
+    recorded_at: Optional[datetime] = None
 
 
 class HotelWithPrice(Hotel):
@@ -228,7 +232,7 @@ class QueryLog(BaseModel):
     location: Optional[str] = None
     action_type: str
     status: Optional[str] = "success"
-    created_at: datetime
+    created_at: Optional[datetime] = None
     price: Optional[float] = None
     currency: Optional[str] = None
     vendor: Optional[str] = None
@@ -247,7 +251,7 @@ class ScanSession(BaseModel):
     session_type: str = "manual"
     status: str = "pending"
     hotels_count: int = 0
-    created_at: datetime
+    created_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     logs: Optional[List[QueryLog]] = None
     check_in_date: Optional[date] = None
@@ -267,7 +271,11 @@ class DashboardResponse(BaseModel):
     scan_history: List[QueryLog] = []
     recent_sessions: List[ScanSession] = []
     unread_alerts_count: int = 0
-    last_updated: Optional[datetime] = None
+    last_updated: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Config:
+        extra = "allow"
+        from_attributes = True
 
 
 class ScanOptions(BaseModel):
