@@ -127,6 +127,10 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
             print(f"Admin Auth: {email} allowed via Whitelist")
             return user_obj
             
+        if not db:
+             print("Admin Auth: DB Client is None")
+             return None # Fallback for safety
+
         # 2. Check Database Role
         # Use limit(1) instead of single() to avoid crash if no profile
         try:
@@ -165,6 +169,11 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
              raise HTTPException(status_code=401, detail="Invalid Token Format")
              
         token = token_parts[1]
+        
+        if not db:
+            print("Auth Check: DB Client is None (Vercel Env issue?)")
+            raise HTTPException(status_code=503, detail="Database Unavailable")
+
         user_resp = db.auth.get_user(token)
         
         if not user_resp or not user_resp.user:
@@ -388,10 +397,30 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
+        # Log to stdout for Vercel logs
         print(f"CRITICAL DASHBOARD ERROR: {e}\n{tb}")
+        
+        # If it's a validation error, we want to see the details
+        error_msg = str(e)
+        if "validation" in error_msg.lower():
+            # Extract more detail if possible
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "Pydantic Validation Error",
+                    "detail": error_msg[:500],
+                    "trace": tb[:500]
+                }
+            )
+
         # Final fallback - NEVER return 500 if possible
-        fallback_resp.unread_alerts_count = 0 
-        return fallback_resp
+        try:
+            return fallback_resp
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Total Crash", "detail": error_msg}
+            )
 
 
 
