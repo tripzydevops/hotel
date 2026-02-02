@@ -18,6 +18,7 @@ import AdvisorQuadrant from "@/components/AdvisorQuadrant";
 import DiscoveryShard from "@/components/DiscoveryShard";
 import AnalysisFilters from "@/components/AnalysisFilters";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
+import RateSpreadChart from "@/components/RateSpreadChart";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -276,6 +277,17 @@ export default function AnalysisPage() {
         {data?.daily_prices && data.daily_prices.length > 0 && (
           <div className="mb-12">
             <CalendarHeatmap
+              dailyPrices={data.daily_prices}
+              targetHotelName={data?.hotel_name || "Your Hotel"}
+              currency={currency}
+            />
+          </div>
+        )}
+
+        {/* Rate Spread Chart */}
+        {data?.daily_prices && data.daily_prices.length > 0 && (
+          <div className="mb-12">
+            <RateSpreadChart
               dailyPrices={data.daily_prices}
               targetHotelName={data?.hotel_name || "Your Hotel"}
               currency={currency}
