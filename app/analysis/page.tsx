@@ -519,18 +519,18 @@ export default function AnalysisPage() {
                     <div className="absolute inset-0 bg-[var(--soft-gold)] rotate-45 animate-ping opacity-60 -z-10 rounded-sm" />
                   </div>
 
-                  {/* Always Visible Label */}
-                  <div className="absolute -top-[90px] whitespace-nowrap pointer-events-auto z-40">
-                    <div className="relative px-4 py-2.5 bg-gradient-to-b from-[var(--soft-gold)] to-[var(--soft-gold)]/90 text-[var(--deep-ocean)] rounded-xl shadow-[0_10px_30px_-10px_rgba(255,215,0,0.5)] border-2 border-white/20 flex flex-col items-center gap-0.5">
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-80">
+                  {/* Always Visible Label - Micro Size */}
+                  <div className="absolute -top-[50px] whitespace-nowrap pointer-events-auto z-40">
+                    <div className="relative px-2 py-1 bg-gradient-to-b from-[var(--soft-gold)] to-[var(--soft-gold)]/90 text-[var(--deep-ocean)] rounded-md shadow-xl border border-white/20 flex flex-col items-center gap-0.5">
+                      <span className="text-[7px] font-black uppercase tracking-widest opacity-80 leading-none">
                         You
                       </span>
-                      <span className="text-base font-black leading-none tracking-tight">
+                      <span className="text-xs font-black leading-none tracking-tight">
                         {CURRENCY_SYMBOLS[currency]}
                         {data?.target_price?.toFixed(0)}
                       </span>
                       {/* Arrow */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[var(--soft-gold)] rotate-45 border-r border-b border-black/5" />
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--soft-gold)]/90 rotate-45 border-r border-b border-black/5" />
                     </div>
                   </div>
                 </div>
