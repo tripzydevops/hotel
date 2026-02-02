@@ -468,7 +468,7 @@ function KPICard({
 
   return (
     <div
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative`}
+      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative hover:z-30`}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
