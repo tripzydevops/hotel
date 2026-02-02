@@ -1321,10 +1321,13 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
 async def get_analysis(
     user_id: UUID, 
     currency: Optional[str] = Query(None, description="Display currency (USD, EUR, GBP, TRY). Defaults to user settings."),
+    start_date: Optional[str] = Query(None, description="Start date for analysis (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date for analysis (ISO format)"),
+    exclude_hotel_ids: Optional[str] = Query(None, description="Comma-separated hotel IDs to exclude"),
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
-    """Predictive market analysis with currency normalization (Optimized)."""
+    """Predictive market analysis with currency normalization, date filtering, and hotel exclusion."""
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
     
@@ -1342,6 +1345,12 @@ async def get_analysis(
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         hotels = hotels_result.data or []
         
+        # 2b. Filter out excluded hotels
+        excluded_ids = set()
+        if exclude_hotel_ids:
+            excluded_ids = set(exclude_hotel_ids.split(","))
+        hotels = [h for h in hotels if str(h["id"]) not in excluded_ids]
+        
         if not hotels:
             return JSONResponse(content={
                 "market_average": 0, "market_min": 0, "market_max": 0,
@@ -1349,34 +1358,44 @@ async def get_analysis(
                 "display_currency": display_currency,
                 "ari": 100.0, "sentiment_index": 100.0,
                 "advisory_msg": "No hotel data available.",
-                "quadrant_x": 0, "quadrant_y": 0, "quadrant_label": "Neutral"
+                "quadrant_x": 0, "quadrant_y": 0, "quadrant_label": "Neutral",
+                "price_rank_list": [], "daily_prices": [], "all_hotels": []
             })
 
-        # 3. BATCH FETCH Price Logs for all hotels
+        # 3. BATCH FETCH Price Logs for all hotels (with date filtering)
         hotel_ids = [str(h["id"]) for h in hotels]
         hotel_prices_map = {}
+        all_daily_prices = []  # For calendar heatmap
+        
         try:
-            # OPTIMIZATION: Fetch enough to cover 30 days for target + 1 for rivals.
-            # 50 is a safe, tight limit for a small tracking list.
-            all_prices_res = db.table("price_logs") \
+            # Build query with date filters
+            price_query = db.table("price_logs") \
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
-                .order("recorded_at", desc=True) \
-                .limit(50) \
-                .execute()
+                .order("recorded_at", desc=True)
+            
+            # Apply date filters if provided
+            if start_date:
+                price_query = price_query.gte("recorded_at", start_date)
+            if end_date:
+                price_query = price_query.lte("recorded_at", end_date + "T23:59:59")
+            
+            # Increase limit for calendar data
+            all_prices_res = price_query.limit(500).execute()
             
             for p in (all_prices_res.data or []):
                 hid = str(p["hotel_id"])
                 if hid not in hotel_prices_map:
                     hotel_prices_map[hid] = []
-                if len(hotel_prices_map[hid]) < 30:
-                    hotel_prices_map[hid].append(p)
+                hotel_prices_map[hid].append(p)
+                
         except Exception as e:
             print(f"Batch analysis price fetch failed: {e}")
 
         current_prices = []
         target_price = None
         target_hotel_id = None
+        target_hotel_name = None
         target_sentiment = 0.0
         market_sentiments = []
         target_history = []
@@ -1390,13 +1409,18 @@ async def get_analysis(
             # Explicit target check
             if hotel.get("is_target_hotel"):
                 target_hotel_id = hid
+                target_hotel_name = hotel.get("name")
                 target_sentiment = hotel_rating
 
         # FALLBACK: If no explicit target, pick the first one
         if not target_hotel_id and hotels:
             target_hotel_id = str(hotels[0]["id"])
+            target_hotel_name = hotels[0].get("name")
             target_sentiment = hotels[0].get("rating") or 0.0
             
+        # Build price rank list for KPI hover (all hotels with prices)
+        price_rank_list = []
+        
         for hotel in hotels:
             hid = str(hotel["id"])
             is_target = (hid == target_hotel_id)
@@ -1410,10 +1434,19 @@ async def get_analysis(
                         converted = convert_currency(orig_price, orig_currency, display_currency)
                         current_prices.append(converted)
                         
+                        # Add to price rank list
+                        price_rank_list.append({
+                            "id": hid,
+                            "name": hotel.get("name"),
+                            "price": converted,
+                            "rating": hotel.get("rating"),
+                            "is_target": is_target
+                        })
+                        
                         if is_target:
                             target_price = converted
                             target_history = []
-                            for p in prices:
+                            for p in prices[:30]:  # Last 30 entries for history
                                 try:
                                     if p.get("price") is not None:
                                         target_history.append({
@@ -1424,7 +1457,52 @@ async def get_analysis(
                 except Exception as e:
                     print(f"Error processing price for hotel {hid}: {e}")
 
-        # 4. Calculate Stats
+        # Sort price rank list by price (ascending = cheapest first)
+        price_rank_list.sort(key=lambda x: x["price"])
+        for i, item in enumerate(price_rank_list):
+            item["rank"] = i + 1
+
+        # 5. Build daily prices for calendar heatmap
+        daily_prices = []
+        if target_hotel_id:
+            # Group all prices by date
+            date_price_map = {}
+            for hid, prices in hotel_prices_map.items():
+                for p in prices:
+                    try:
+                        date_str = p.get("recorded_at", "")[:10]  # Extract YYYY-MM-DD
+                        if date_str not in date_price_map:
+                            date_price_map[date_str] = {"target": None, "competitors": []}
+                        
+                        price_val = float(p["price"]) if p.get("price") is not None else None
+                        if price_val is not None:
+                            converted_price = convert_currency(price_val, p.get("currency") or "USD", display_currency)
+                            hotel_name = next((h["name"] for h in hotels if str(h["id"]) == hid), "Unknown")
+                            
+                            if hid == target_hotel_id:
+                                date_price_map[date_str]["target"] = converted_price
+                            else:
+                                date_price_map[date_str]["competitors"].append({
+                                    "name": hotel_name,
+                                    "price": converted_price
+                                })
+                    except Exception:
+                        continue
+            
+            # Calculate vs_comp for each date
+            for date_str, data in sorted(date_price_map.items()):
+                if data["target"] is not None and data["competitors"]:
+                    comp_avg = sum(c["price"] for c in data["competitors"]) / len(data["competitors"])
+                    vs_comp = ((data["target"] - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0
+                    daily_prices.append({
+                        "date": date_str,
+                        "price": round(data["target"], 2),
+                        "comp_avg": round(comp_avg, 2),
+                        "vs_comp": round(vs_comp, 1),
+                        "competitors": data["competitors"]
+                    })
+
+        # 6. Calculate Stats
         market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
         market_min = min(current_prices) if current_prices else 0.0
         market_max = max(current_prices) if current_prices else 0.0
@@ -1437,7 +1515,7 @@ async def get_analysis(
         sorted_prices = sorted(current_prices)
         rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
         
-        # 5. Advisory & Quadrant
+        # 7. Advisory & Quadrant
         advisory = "Overall market position is stable."
         if ari > 105:
             advisory = "Your rates are above market average. Ensure your high sentiment justifications are clear."
@@ -1448,7 +1526,7 @@ async def get_analysis(
         elif sentiment_index < 90:
             advisory = "Your pricing is currently higher than supported by your guest sentiment."
             
-        # 6. Extract Competitors (non-target hotels with prices)
+        # 8. Extract Competitors (non-target hotels with prices)
         competitors_list = []
         for hotel in hotels:
             hid = str(hotel["id"])
@@ -1467,23 +1545,32 @@ async def get_analysis(
                             })
                     except Exception: continue
 
-        # 6. Final Response
+        # 9. All hotels list (for filter UI)
+        all_hotels_list = [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels]
+
+        # 10. Final Response
         analysis_data = {
             "hotel_id": target_hotel_id,
+            "hotel_name": target_hotel_name,
             "market_average": round(market_avg, 2),
             "market_min": round(market_min, 2),
             "market_max": round(market_max, 2),
             "target_price": round(target_price, 2) if target_price else None,
             "competitive_rank": rank,
+            "total_hotels": len(hotels),
             "competitors": competitors_list,
             "price_history": target_history,
             "display_currency": display_currency,
             "ari": round(ari, 1),
             "sentiment_index": round(sentiment_index, 1),
             "advisory_msg": advisory,
-            "quadrant_x": round(ari / 2, 1), # Simple x mapping
-            "quadrant_y": round(sentiment_index / 2, 1), # Simple y mapping
-            "quadrant_label": "Value Leader" if sentiment_index > 100 and ari < 100 else "Neutral"
+            "quadrant_x": round(ari / 2, 1),
+            "quadrant_y": round(sentiment_index / 2, 1),
+            "quadrant_label": "Value Leader" if sentiment_index > 100 and ari < 100 else "Neutral",
+            # NEW fields for enhanced UI
+            "price_rank_list": price_rank_list,
+            "daily_prices": daily_prices,
+            "all_hotels": all_hotels_list
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))

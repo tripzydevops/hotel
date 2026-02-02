@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -16,6 +16,8 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import AdvisorQuadrant from "@/components/AdvisorQuadrant";
 import DiscoveryShard from "@/components/DiscoveryShard";
+import AnalysisFilters from "@/components/AnalysisFilters";
+import CalendarHeatmap from "@/components/CalendarHeatmap";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -41,6 +43,14 @@ export default function AnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<string>("TRY");
 
+  // Filter state
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [excludedHotelIds, setExcludedHotelIds] = useState<string[]>([]);
+  const [allHotels, setAllHotels] = useState<
+    { id: string; name: string; is_target: boolean }[]
+  >([]);
+
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -61,26 +71,50 @@ export default function AnalysisPage() {
     getSession();
   }, []);
 
-  useEffect(() => {
-    async function loadData() {
-      if (!userId) return;
-      setLoading(true);
-      try {
-        const result = await api.getAnalysis(userId, currency);
-        setData(result);
-        if (result.display_currency) {
-          setCurrency(result.display_currency);
-        }
-      } catch (err) {
-        console.error("Failed to load analysis:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [currency, userId]);
+  const loadData = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      // Build query params
+      const params = new URLSearchParams();
+      if (currency) params.set("currency", currency);
+      if (startDate) params.set("start_date", startDate);
+      if (endDate) params.set("end_date", endDate);
+      if (excludedHotelIds.length > 0)
+        params.set("exclude_hotel_ids", excludedHotelIds.join(","));
 
-  if (loading) {
+      const result = await api.getAnalysisWithFilters(
+        userId,
+        params.toString(),
+      );
+      setData(result);
+      if (result.display_currency) {
+        setCurrency(result.display_currency);
+      }
+      if (result.all_hotels && allHotels.length === 0) {
+        setAllHotels(result.all_hotels);
+      }
+    } catch (err) {
+      console.error("Failed to load analysis:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, currency, startDate, endDate, excludedHotelIds]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleDateChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  const handleExcludedChange = (ids: string[]) => {
+    setExcludedHotelIds(ids);
+  };
+
+  if (loading && !data) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -114,7 +148,7 @@ export default function AnalysisPage() {
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-12">
+        <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
@@ -147,6 +181,16 @@ export default function AnalysisPage() {
           </p>
         </div>
 
+        {/* Analysis Filters */}
+        <AnalysisFilters
+          allHotels={data?.all_hotels || allHotels}
+          excludedHotelIds={excludedHotelIds}
+          onExcludedChange={handleExcludedChange}
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
+        />
+
         {/* Global KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <KPICard
@@ -158,6 +202,12 @@ export default function AnalysisPage() {
             }
             subtitle={t("common.availableNow")}
             icon={<BarChart className="w-5 h-5" />}
+            hoverData={{
+              type: "average",
+              targetPrice: data?.target_price,
+              marketAvg: data?.market_average,
+              currency,
+            }}
           />
           <KPICard
             title={t("analysis.targetPrice")}
@@ -183,8 +233,13 @@ export default function AnalysisPage() {
           <KPICard
             title={t("analysis.marketPosition")}
             value={data?.competitive_rank ? `#${data.competitive_rank}` : "N/A"}
-            subtitle={t("analysis.competitiveRank")}
+            subtitle={`of ${data?.total_hotels || 0} hotels`}
             icon={<TrendingUp className="w-5 h-5" />}
+            hoverData={{
+              type: "ranking",
+              priceRankList: data?.price_rank_list || [],
+              currency,
+            }}
           />
           <KPICard
             title="Avg Rate Index (ARI)"
@@ -210,6 +265,17 @@ export default function AnalysisPage() {
             label={data?.quadrant_label || "Standard"}
           />
         </div>
+
+        {/* Calendar Heatmap */}
+        {data?.daily_prices && data.daily_prices.length > 0 && (
+          <div className="mb-12">
+            <CalendarHeatmap
+              dailyPrices={data.daily_prices}
+              targetHotelName={data?.hotel_name || "Your Hotel"}
+              currency={currency}
+            />
+          </div>
+        )}
 
         {/* Rival Discovery Engine */}
         <div className="mb-12">
@@ -357,6 +423,20 @@ export default function AnalysisPage() {
   );
 }
 
+interface HoverData {
+  type: "ranking" | "average";
+  priceRankList?: {
+    id: string;
+    name: string;
+    price: number;
+    rank: number;
+    is_target: boolean;
+  }[];
+  targetPrice?: number;
+  marketAvg?: number;
+  currency?: string;
+}
+
 function KPICard({
   title,
   value,
@@ -364,6 +444,7 @@ function KPICard({
   icon,
   highlight = false,
   trend,
+  hoverData,
 }: {
   title: string;
   value: string;
@@ -371,10 +452,15 @@ function KPICard({
   icon: React.ReactNode;
   highlight?: boolean;
   trend?: "up" | "down";
+  hoverData?: HoverData;
 }) {
+  const symbol = hoverData?.currency
+    ? CURRENCY_SYMBOLS[hoverData.currency] || "$"
+    : "$";
+
   return (
     <div
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"}`}
+      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative`}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
@@ -401,6 +487,91 @@ function KPICard({
       <div className="text-[10px] font-medium text-[var(--text-muted)]">
         {subtitle}
       </div>
+
+      {/* Hover Tooltip */}
+      {hoverData && (
+        <div className="absolute left-0 right-0 top-full mt-2 z-50 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200">
+          <div className="mx-4 p-4 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl">
+            {hoverData.type === "ranking" && hoverData.priceRankList && (
+              <>
+                <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
+                  Price Leaderboard
+                </div>
+                <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                  {hoverData.priceRankList.slice(0, 6).map((item) => (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between py-1.5 px-2 rounded ${
+                        item.is_target
+                          ? "bg-[var(--soft-gold)]/10 border-l-2 border-[var(--soft-gold)]"
+                          : "bg-white/[0.02]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-white/50"}`}
+                        >
+                          #{item.rank}
+                        </span>
+                        <span
+                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold" : "text-white/70"} truncate max-w-[120px]`}
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-white/70"}`}
+                      >
+                        {symbol}
+                        {item.price.toFixed(0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {hoverData.type === "average" && (
+              <>
+                <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
+                  Market Comparison
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/70">Your Price</span>
+                    <span className="text-sm font-black text-[var(--soft-gold)]">
+                      {symbol}
+                      {hoverData.targetPrice?.toFixed(0) || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/70">Market Avg</span>
+                    <span className="text-sm font-black text-white">
+                      {symbol}
+                      {hoverData.marketAvg?.toFixed(0) || "N/A"}
+                    </span>
+                  </div>
+                  {hoverData.targetPrice && hoverData.marketAvg && (
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                      <span className="text-xs text-white/70">Difference</span>
+                      <span
+                        className={`text-sm font-black ${hoverData.targetPrice > hoverData.marketAvg ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
+                      >
+                        {hoverData.targetPrice > hoverData.marketAvg ? "+" : ""}
+                        {(
+                          ((hoverData.targetPrice - hoverData.marketAvg) /
+                            hoverData.marketAvg) *
+                          100
+                        ).toFixed(1)}
+                        %
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

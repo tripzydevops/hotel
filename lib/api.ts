@@ -157,6 +157,11 @@ class ApiClient {
     return this.fetch<any>(`/api/analysis/${userId}${params}`);
   }
 
+  async getAnalysisWithFilters(userId: string, queryParams: string): Promise<any> {
+    const params = queryParams ? `?${queryParams}` : "";
+    return this.fetch<any>(`/api/analysis/${userId}${params}`);
+  }
+
   async getReports(userId: string): Promise<any> {
     return this.fetch<any>(`/api/reports/${userId}`);
   }
