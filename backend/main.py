@@ -1569,10 +1569,12 @@ async def get_analysis(
             "hotel_id": target_hotel_id,
             "hotel_name": target_hotel_name,
             "market_average": round(market_avg, 2),
+            "market_avg": round(market_avg, 2),  # alias for frontend
             "market_min": round(market_min, 2),
             "market_max": round(market_max, 2),
             "target_price": round(target_price, 2) if target_price else None,
             "competitive_rank": rank,
+            "market_rank": rank,  # NEW: for Market Spread UI
             "total_hotels": len(hotels),
             "competitors": competitors_list,
             "price_history": target_history,
