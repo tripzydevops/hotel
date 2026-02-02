@@ -17,7 +17,14 @@ interface SentimentBreakdownProps {
 }
 
 export default function SentimentBreakdown({ data }: SentimentBreakdownProps) {
-  if (!data || data.length === 0) return null;
+  console.log("SentimentBreakdown Data:", data);
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-4 bg-red-500/10 text-red-500 border border-red-500 rounded">
+        DEBUG: No Sentiment Data Received
+      </div>
+    );
+  }
 
   // Sort by total mentions to show most relevant first
   const sortedData = [...data].sort(

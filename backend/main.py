@@ -1565,6 +1565,7 @@ async def get_analysis(
         all_hotels_list = [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels]
 
         # 10. Final Response
+        target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
         analysis_data = {
             "hotel_id": target_hotel_id,
             "hotel_name": target_hotel_name,

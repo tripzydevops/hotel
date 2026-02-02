@@ -22,15 +22,13 @@ supabase = create_client(url, key)
 async def inject_dummy_sentiment():
     print("Injecting dummy sentiment data...")
     
-    # 1. Get first hotel (User's target)
-    # We assume the user has at least one hotel.
-    hotels = supabase.table("hotels").select("*").limit(1).execute()
+    # 1. Get ALL hotels
+    hotels = supabase.table("hotels").select("*").execute()
     if not hotels.data:
         print("No hotels found!")
         return
 
-    target_id = hotels.data[0]["id"]
-    print(f"Target Hotel ID: {target_id}")
+    print(f"Found {len(hotels.data)} hotels. Updating all...")
 
     # 2. Dummy Data
     dummy_data = [
@@ -40,9 +38,11 @@ async def inject_dummy_sentiment():
         {"name": "Amenities", "total_mentioned": 45, "positive": 20, "negative": 20, "neutral": 5, "description": "Pool & Facilities"}
     ]
 
-    # 3. Update
-    res = supabase.table("hotels").update({"sentiment_breakdown": dummy_data}).eq("id", target_id).execute()
-    print("Update successful:", res.data)
+    # 3. Update Loop
+    for hotel in hotels.data:
+        res = supabase.table("hotels").update({"sentiment_breakdown": dummy_data}).eq("id", hotel["id"]).execute()
+        print(f"Updated hotel: {hotel.get('name')} ({hotel['id']})")
+
     print("\nDONE! Please refresh your Analysis page.")
 
 if __name__ == "__main__":
