@@ -41,6 +41,7 @@ export default function AnalysisPage() {
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
+  const [userSettings, setUserSettings] = useState<any>(undefined);
   const hotelCount = 0;
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -66,8 +67,11 @@ export default function AnalysisPage() {
         try {
           const userProfile = await api.getProfile(session.user.id);
           setProfile(userProfile);
+          // Fetch settings for the modal
+          const settings = await api.getSettings(session.user.id);
+          setUserSettings(settings);
         } catch (e) {
-          console.error("Failed to fetch profile", e);
+          console.error("Failed to fetch profile/settings", e);
         }
       } else {
         window.location.href = "/login";
@@ -160,8 +164,14 @@ export default function AnalysisPage() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        settings={undefined}
-        onSave={async () => {}}
+        settings={userSettings}
+        onSave={async (settings) => {
+          if (userId) {
+            await api.updateSettings(userId, settings);
+            setUserSettings(settings);
+            setIsSettingsOpen(false);
+          }
+        }}
       />
       <AlertsModal
         isOpen={isAlertsOpen}
