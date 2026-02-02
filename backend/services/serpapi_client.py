@@ -364,7 +364,7 @@ class SerpApiClient:
         if not properties and data.get("rate_per_night"):
              best_match = {"name": data.get("name"), "prices": data.get("prices", []), "rate_per_night": data.get("rate_per_night"),
                            "amenities": data.get("amenities", []), "images": data.get("images", []), "overall_rating": data.get("overall_rating"),
-                           "property_token": data.get("property_token")}
+                           "property_token": data.get("property_token"), "reviews_breakdown": data.get("reviews_breakdown", [])}
         if not best_match:
             for prop in properties:
                 if str(prop.get("hotel_id")) == str(target_serp_id) or prop.get("property_token") == target_serp_id:
@@ -400,6 +400,7 @@ class SerpApiClient:
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
             "offers": self._parse_market_offers(best_match.get("prices", []), default_currency),
             "room_types": self._extract_all_room_types(best_match, default_currency),
+            "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "raw_data": best_match
         }
 

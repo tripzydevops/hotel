@@ -23,6 +23,7 @@ import ProfileModal from "@/components/ProfileModal";
 import SettingsModal from "@/components/SettingsModal";
 import AlertsModal from "@/components/AlertsModal";
 import SubscriptionModal from "@/components/SubscriptionModal";
+import SentimentBreakdown from "@/components/SentimentBreakdown";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -242,6 +243,11 @@ export default function AnalysisPage() {
           endDate={endDate}
           onDateChange={handleDateChange}
         />
+
+        {/* 2. Sentiment Analysis Breakdown */}
+        <div className="mb-8">
+          <SentimentBreakdown data={data?.sentiment_breakdown} />
+        </div>
 
         {/* Global KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">

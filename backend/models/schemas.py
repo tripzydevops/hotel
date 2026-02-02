@@ -39,6 +39,7 @@ class HotelBase(BaseModel):
     default_adults: Optional[int] = 2
     amenities: Optional[List[Any]] = Field(default_factory=list)
     images: Optional[List[Any]] = Field(default_factory=list)
+    sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
 
     class Config:
         extra = "allow"
@@ -382,6 +383,7 @@ class MarketAnalysis(BaseModel):
     quadrant_label: str = "Standard"
     target_rating: float = 0.0
     market_rating: float = 0.0
+    sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
 
 
 class ReportsResponse(BaseModel):

@@ -60,6 +60,7 @@ class AnalystAgent:
                 if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
                 if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+                if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
                 if meta_update:
                     self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
 

@@ -1592,7 +1592,8 @@ async def get_analysis(
             "daily_prices": daily_prices,
             "all_hotels": all_hotels_list,
             "min_hotel": min_hotel,
-            "max_hotel": max_hotel
+            "max_hotel": max_hotel,
+            "sentiment_breakdown": target_h.get("sentiment_breakdown") if target_h else None
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))
