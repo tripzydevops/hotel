@@ -19,6 +19,10 @@ import DiscoveryShard from "@/components/DiscoveryShard";
 import AnalysisFilters from "@/components/AnalysisFilters";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
 import RateSpreadChart from "@/components/RateSpreadChart";
+import ProfileModal from "@/components/ProfileModal";
+import SettingsModal from "@/components/SettingsModal";
+import AlertsModal from "@/components/AlertsModal";
+import SubscriptionModal from "@/components/SubscriptionModal";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -145,6 +149,31 @@ export default function AnalysisPage() {
         onOpenAlerts={() => setIsAlertsOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenBilling={() => setIsBillingOpen(true)}
+      />
+
+      {/* Modals */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userId={userId || ""}
+      />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={undefined}
+        onSave={async () => {}}
+      />
+      <AlertsModal
+        isOpen={isAlertsOpen}
+        onClose={() => setIsAlertsOpen(false)}
+        userId={userId || ""}
+        onUpdate={() => {}}
+      />
+      <SubscriptionModal
+        isOpen={isBillingOpen}
+        onClose={() => setIsBillingOpen(false)}
+        currentPlan={profile?.plan_type || "trial"}
+        onUpgrade={async () => setIsBillingOpen(false)}
       />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
