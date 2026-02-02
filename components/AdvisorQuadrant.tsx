@@ -15,6 +15,8 @@ interface AdvisorQuadrantProps {
   x: number; // -50 to 50
   y: number; // -50 to 50
   label: string;
+  ari?: number;
+  sentiment?: number;
 }
 
 const QUADRANT_INFO: Record<
@@ -53,7 +55,13 @@ const QUADRANT_INFO: Record<
   },
 };
 
-export default function AdvisorQuadrant({ x, y, label }: AdvisorQuadrantProps) {
+export default function AdvisorQuadrant({
+  x,
+  y,
+  label,
+  ari,
+  sentiment,
+}: AdvisorQuadrantProps) {
   // Convert -50/50 range to percentage, clamped to stay within bounds
   // Add padding (15% on each side) so indicator stays fully visible
   const clamp = (val: number, min: number, max: number) =>
@@ -156,74 +164,75 @@ export default function AdvisorQuadrant({ x, y, label }: AdvisorQuadrantProps) {
         </div>
 
         {/* Insights Panel - Right Side */}
-        <div className="lg:w-[280px] p-5 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-white/5">
-          {/* Current Position */}
-          <div className="mb-5">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
-              Current Position
-            </div>
-            <div
-              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 ${quadrantData.color}`}
-            >
-              {quadrantData.icon}
-              <span className="text-sm font-black uppercase tracking-wide">
-                {label}
-              </span>
-            </div>
-          </div>
-
-          {/* Insight */}
-          <div className="mb-5">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
-              Market Insight
-            </div>
-            <p className="text-xs font-medium text-white/80 leading-relaxed">
-              {quadrantData.insight}
-            </p>
-          </div>
-
-          {/* Recommended Action */}
-          <div className="mb-5">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
-              Recommended Action
-            </div>
-            <p className="text-xs font-medium text-[var(--soft-gold)] leading-relaxed">
-              {quadrantData.action}
-            </p>
-          </div>
-
-          {/* Position Metrics */}
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
-            <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-              <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">
-                Price
+        <div className="lg:w-[320px] p-5 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col justify-between">
+          <div>
+            {/* Current Position */}
+            <div className="mb-6">
+              <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
+                Current Position
               </div>
-              <div className="flex items-center justify-center gap-1">
-                <span className="text-sm font-black text-white">
-                  {x > 0 ? "+" : ""}
-                  {x}
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 ${quadrantData.color}`}
+              >
+                {quadrantData.icon}
+                <span className="text-sm font-black uppercase tracking-wide">
+                  {label}
                 </span>
-                {x > 0 ? (
-                  <ArrowUpRight className="w-3 h-3 text-[var(--alert-red)]" />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3 text-[var(--optimal-green)]" />
-                )}
               </div>
             </div>
-            <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-              <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">
-                Value
+
+            {/* Insight */}
+            <div className="mb-6">
+              <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
+                Market Insight
               </div>
-              <div className="flex items-center justify-center gap-1">
-                <span className="text-sm font-black text-white">
-                  {y > 0 ? "+" : ""}
-                  {y}
+              <p className="text-xs font-medium text-white/80 leading-relaxed">
+                {quadrantData.insight}
+              </p>
+            </div>
+          </div>
+
+          {/* Key Indices */}
+          <div className="space-y-4 pt-4 border-t border-white/5">
+            {/* Sentiment Index */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                  Sentiment Index
                 </span>
-                {y > 0 ? (
-                  <ArrowUpRight className="w-3 h-3 text-[var(--optimal-green)]" />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3 text-[var(--alert-red)]" />
-                )}
+                <span
+                  className={`text-xs font-black ${(sentiment || 100) >= 100 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
+                >
+                  {sentiment?.toFixed(1) || "100.0"}
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ${(sentiment || 100) >= 100 ? "bg-[var(--optimal-green)]" : "bg-[var(--alert-red)]"}`}
+                  style={{
+                    width: `${Math.min(Math.max((sentiment || 100) / 2, 0), 100)}%`,
+                  }} // Normalized loosely
+                />
+              </div>
+            </div>
+
+            {/* ARI */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                  ARI
+                </span>
+                <span className="text-xs font-black text-white">
+                  {ari?.toFixed(1) || "100.0"}
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[var(--soft-gold)] rounded-full transition-all duration-1000"
+                  style={{
+                    width: `${Math.min(Math.max((ari || 100) / 2, 0), 100)}%`,
+                  }}
+                />
               </div>
             </div>
           </div>

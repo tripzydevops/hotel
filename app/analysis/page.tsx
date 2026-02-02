@@ -309,6 +309,8 @@ export default function AnalysisPage() {
             x={data?.quadrant_x || 0}
             y={data?.quadrant_y || 0}
             label={data?.quadrant_label || "Standard"}
+            ari={data?.ari}
+            sentiment={data?.sentiment_index}
           />
         </div>
 
