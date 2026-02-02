@@ -203,11 +203,33 @@ export default function RateSpreadChart({
   if (chartData.length === 0) {
     return (
       <div className="glass-card p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="w-4 h-4 text-[var(--soft-gold)]" />
-          <span className="text-sm font-black text-white uppercase tracking-wider">
-            Rate Spread
-          </span>
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[var(--soft-gold)]" />
+            <span className="text-sm font-black text-white uppercase tracking-wider">
+              Rate Spread
+            </span>
+          </div>
+
+          {/* Month Navigation - always shown */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigateMonth(-1)}
+              className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-bold text-white min-w-[120px] text-center">
+              {monthLabel}
+            </span>
+            <button
+              onClick={() => navigateMonth(1)}
+              className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="text-center py-12 text-white/40">
           No price data available for this period
