@@ -112,8 +112,18 @@ class SettingsCreate(SettingsBase):
     pass
 
 
-class SettingsUpdate(SettingsBase):
-    pass
+class SettingsUpdate(BaseModel):
+    threshold_percent: Optional[float] = None
+    check_frequency_minutes: Optional[int] = None
+    notification_email: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    push_enabled: Optional[bool] = None
+    push_subscription: Optional[Dict[str, Any]] = None
+    notifications_enabled: Optional[bool] = None
+    currency: Optional[str] = None
+
+    class Config:
+        extra = "ignore"
 
 
 class Settings(SettingsBase):
