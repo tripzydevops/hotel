@@ -62,7 +62,7 @@ export default function AnalysisFilters({
   const includedCount = allHotels.length - excludedHotelIds.length;
 
   return (
-    <div className="glass-card p-4 mb-6">
+    <div className="glass-card p-4 mb-6 relative z-20">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         {/* Date Range */}
         <div className="flex items-center gap-3 flex-1">
