@@ -229,6 +229,12 @@ export default function AnalysisPage() {
             }
             subtitle={t("analysis.inventoryRange")}
             icon={<LayoutGrid className="w-5 h-5" />}
+            hoverData={{
+              type: "spread",
+              currency,
+              minHotel: data?.min_hotel,
+              maxHotel: data?.max_hotel,
+            }}
           />
           <KPICard
             title={t("analysis.marketPosition")}
@@ -424,7 +430,7 @@ export default function AnalysisPage() {
 }
 
 interface HoverData {
-  type: "ranking" | "average";
+  type: "ranking" | "average" | "spread";
   priceRankList?: {
     id: string;
     name: string;
@@ -435,6 +441,8 @@ interface HoverData {
   targetPrice?: number;
   marketAvg?: number;
   currency?: string;
+  minHotel?: { name: string; price: number };
+  maxHotel?: { name: string; price: number };
 }
 
 function KPICard({
@@ -490,7 +498,7 @@ function KPICard({
 
       {/* Hover Tooltip */}
       {hoverData && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200">
+        <div className="absolute left-0 right-0 top-full mt-2 z-[100] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200">
           <div className="mx-4 p-4 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl">
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
@@ -563,6 +571,47 @@ function KPICard({
                           100
                         ).toFixed(1)}
                         %
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            {hoverData.type === "spread" && (
+              <>
+                <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
+                  Price Range Details
+                </div>
+                <div className="space-y-2">
+                  {hoverData.minHotel && (
+                    <div className="flex items-center justify-between py-1.5 px-2 rounded bg-[var(--optimal-green)]/10 border-l-2 border-[var(--optimal-green)]">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-[var(--optimal-green)] uppercase font-bold">
+                          Lowest
+                        </span>
+                        <span className="text-xs text-white truncate max-w-[140px]">
+                          {hoverData.minHotel.name}
+                        </span>
+                      </div>
+                      <span className="text-sm font-black text-[var(--optimal-green)]">
+                        {symbol}
+                        {hoverData.minHotel.price?.toFixed(0)}
+                      </span>
+                    </div>
+                  )}
+                  {hoverData.maxHotel && (
+                    <div className="flex items-center justify-between py-1.5 px-2 rounded bg-[var(--alert-red)]/10 border-l-2 border-[var(--alert-red)]">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-[var(--alert-red)] uppercase font-bold">
+                          Highest
+                        </span>
+                        <span className="text-xs text-white truncate max-w-[140px]">
+                          {hoverData.maxHotel.name}
+                        </span>
+                      </div>
+                      <span className="text-sm font-black text-[var(--alert-red)]">
+                        {symbol}
+                        {hoverData.maxHotel.price?.toFixed(0)}
                       </span>
                     </div>
                   )}
