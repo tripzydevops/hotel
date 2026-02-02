@@ -371,42 +371,126 @@ export default function AnalysisPage() {
               </div>
             </div>
 
+            {/* Percentile Badge */}
+            {data?.market_rank && data?.price_rank_list && (
+              <div className="mb-6 flex items-center gap-3">
+                <div
+                  className={`px-3 py-1.5 rounded-full text-xs font-black ${
+                    data.market_rank <= 2
+                      ? "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
+                      : data.market_rank <=
+                          Math.ceil(data.price_rank_list.length / 2)
+                        ? "bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]"
+                        : "bg-[var(--alert-red)]/20 text-[var(--alert-red)]"
+                  }`}
+                >
+                  #{data.market_rank} of {data.price_rank_list.length}
+                </div>
+                <span className="text-xs text-white/60">
+                  {data.market_rank === 1
+                    ? "You're the cheapest in the market!"
+                    : data.market_rank <= 2
+                      ? "Excellent competitive position"
+                      : data.market_rank <=
+                          Math.ceil(data.price_rank_list.length / 2)
+                        ? "Mid-range pricing"
+                        : "Premium pricing tier"}
+                </span>
+              </div>
+            )}
+
             <div className="relative pt-12 pb-8">
               {/* Range Bar */}
-              <div className="h-3 w-full bg-white/5 rounded-full relative">
+              <div className="h-3 w-full bg-gradient-to-r from-[var(--optimal-green)]/20 via-[var(--soft-gold)]/20 to-[var(--alert-red)]/20 rounded-full relative">
                 {/* Visual Indicators */}
                 <div className="absolute left-0 -top-6 text-[10px] font-black text-[var(--optimal-green)]">
                   {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_min} ({t("analysis.minLabel")})
+                  {data?.market_min?.toFixed(0)} ({t("analysis.minLabel")})
                 </div>
                 <div className="absolute right-0 -top-6 text-[10px] font-black text-[var(--alert-red)]">
                   {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_max} ({t("analysis.maxLabel")})
+                  {data?.market_max?.toFixed(0)} ({t("analysis.maxLabel")})
                 </div>
+
+                {/* Competitor Dots */}
+                {data?.price_rank_list
+                  ?.slice(0, 10)
+                  .map((comp: any, idx: number) => {
+                    if (comp.is_target) return null;
+                    const compSpread =
+                      data.market_max > data.market_min
+                        ? ((comp.price - data.market_min) /
+                            (data.market_max - data.market_min)) *
+                          100
+                        : 0;
+                    return (
+                      <div
+                        key={comp.id || idx}
+                        className="absolute w-2 h-2 rounded-full bg-white/40 top-1/2 -translate-y-1/2 hover:scale-150 transition-transform cursor-pointer group"
+                        style={{
+                          left: `${Math.min(Math.max(compSpread, 2), 98)}%`,
+                        }}
+                        title={`${comp.name}: ${CURRENCY_SYMBOLS[currency]}${comp.price?.toFixed(0)}`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap px-2 py-1 rounded bg-black/90 text-[9px] text-white font-bold z-10">
+                          {comp.name?.substring(0, 15)}...{" "}
+                          {CURRENCY_SYMBOLS[currency]}
+                          {comp.price?.toFixed(0)}
+                        </div>
+                      </div>
+                    );
+                  })}
 
                 {/* Target Marker */}
                 <div
-                  className="absolute h-10 w-1 bg-[var(--soft-gold)] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out"
-                  style={{ left: `${spreadPercentage}%` }}
+                  className="absolute h-10 w-1 bg-[var(--soft-gold)] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out shadow-lg shadow-[var(--soft-gold)]/50"
+                  style={{
+                    left: `${Math.min(Math.max(spreadPercentage, 1), 99)}%`,
+                  }}
                 >
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black shadow-lg">
                     {t("analysis.youLabel")}:{" "}
                     {CURRENCY_SYMBOLS[currency] || "$"}
-                    {data?.target_price}
+                    {data?.target_price?.toFixed(0)}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--soft-gold)] rotate-45" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 flex items-center gap-12 border-t border-white/5 pt-8">
+            {/* Stats Row - Enhanced */}
+            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-white/5 pt-8">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   {t("analysis.priceGapToMin")}
                 </span>
-                <span className="text-xl font-black text-white">
+                <span
+                  className={`text-xl font-black ${
+                    data?.target_price === data?.market_min
+                      ? "text-[var(--optimal-green)]"
+                      : "text-white"
+                  }`}
+                >
                   {data?.target_price && data?.market_min
-                    ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min).toFixed(2)}`
+                    ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min).toFixed(0)}`
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
+                  Gap to Median
+                </span>
+                <span
+                  className={`text-xl font-black ${
+                    data?.target_price < data?.market_avg
+                      ? "text-[var(--optimal-green)]"
+                      : data?.target_price > data?.market_avg
+                        ? "text-[var(--alert-red)]"
+                        : "text-white"
+                  }`}
+                >
+                  {data?.target_price && data?.market_avg
+                    ? `${data.target_price < data.market_avg ? "-" : "+"}${CURRENCY_SYMBOLS[currency] || "$"}${Math.abs(data.target_price - data.market_avg).toFixed(0)}`
                     : "N/A"}
                 </span>
               </div>
@@ -416,7 +500,7 @@ export default function AnalysisPage() {
                 </span>
                 <span className="text-xl font-black text-white">
                   {data?.market_max && data?.market_min
-                    ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min).toFixed(2)}`
+                    ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min).toFixed(0)}`
                     : "N/A"}
                 </span>
               </div>
