@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Bell, Crown } from "lucide-react";
@@ -29,8 +30,19 @@ export default function Header({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
+  const pathname = usePathname();
 
   const handleOpenBilling = onOpenBilling || (() => setIsBillingOpen(true));
+
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === "/" || pathname === "";
+    return pathname.startsWith(path);
+  };
+
+  const navLinkClass = (path: string) =>
+    isActive(path)
+      ? "text-white text-sm font-medium border-b-2 border-[var(--soft-gold)] pb-1"
+      : "text-[var(--text-secondary)] text-sm hover:text-white transition-colors";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5">
@@ -60,22 +72,13 @@ export default function Header({
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-white text-sm font-medium border-b-2 border-[var(--soft-gold)] pb-1"
-            >
+            <Link href="/" className={navLinkClass("/")}>
               {t("common.dashboard")}
             </Link>
-            <Link
-              href="/analysis"
-              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
-            >
+            <Link href="/analysis" className={navLinkClass("/analysis")}>
               {t("common.analysis")}
             </Link>
-            <Link
-              href="/reports"
-              className="text-[var(--text-secondary)] text-sm hover:text-white transition-colors"
-            >
+            <Link href="/reports" className={navLinkClass("/reports")}>
               {t("common.reports")}
             </Link>
           </nav>
