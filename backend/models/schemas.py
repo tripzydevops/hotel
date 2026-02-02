@@ -380,6 +380,8 @@ class MarketAnalysis(BaseModel):
     quadrant_x: float = 0.0 # Normalized ARI offset (-50 to +50)
     quadrant_y: float = 0.0 # Normalized Sentiment offset (-50 to +50)
     quadrant_label: str = "Standard"
+    target_rating: float = 0.0
+    market_rating: float = 0.0
 
 
 class ReportsResponse(BaseModel):

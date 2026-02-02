@@ -323,6 +323,8 @@ export default function AnalysisPage() {
             label={data?.quadrant_label || "Standard"}
             ari={data?.ari}
             sentiment={data?.sentiment_index}
+            targetRating={data?.target_rating}
+            marketRating={data?.market_rating}
           />
         </div>
 
@@ -478,22 +480,22 @@ export default function AnalysisPage() {
                         <div className="w-1.5 h-1.5 rounded-full bg-[var(--deep-ocean)] opacity-20" />
 
                         {/* Hover Tooltip */}
-                        <div className="absolute -top-14 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap min-w-[120px]">
-                          <div className="relative px-3 py-2 rounded-lg bg-[var(--deep-ocean)] border border-white/20 text-white shadow-2xl z-[60]">
-                            <div className="text-[9px] font-bold text-white/50 uppercase tracking-wider mb-0.5">
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap min-w-[100px]">
+                          <div className="relative px-2.5 py-1.5 rounded-lg bg-[var(--deep-ocean)] border border-white/20 text-white shadow-xl z-[60]">
+                            <div className="text-[8px] font-bold text-white/50 uppercase tracking-wider mb-0.5">
                               Competitor
                             </div>
-                            <div className="font-bold text-sm mb-0.5">
-                              {comp.name?.substring(0, 20)}
+                            <div className="font-bold text-xs mb-0.5">
+                              {comp.name?.substring(0, 18)}
                             </div>
                             <div
-                              className={`text-lg font-black ${compSpread < 33 ? "text-[var(--optimal-green)]" : compSpread > 66 ? "text-[var(--alert-red)]" : "text-white"}`}
+                              className={`text-base font-black ${compSpread < 33 ? "text-[var(--optimal-green)]" : compSpread > 66 ? "text-[var(--alert-red)]" : "text-white"}`}
                             >
                               {CURRENCY_SYMBOLS[currency]}
                               {comp.price?.toFixed(0)}
                             </div>
                             {/* Tooltip Arrow */}
-                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[var(--deep-ocean)] border-r border-b border-white/20 rotate-45" />
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[var(--deep-ocean)] border-r border-b border-white/20 rotate-45" />
                           </div>
                         </div>
                       </div>

@@ -1585,6 +1585,8 @@ async def get_analysis(
             "quadrant_x": round(ari / 2, 1),
             "quadrant_y": round(sentiment_index / 2, 1),
             "quadrant_label": "Value Leader" if sentiment_index > 100 and ari < 100 else "Neutral",
+            "target_rating": round(target_sentiment, 1),
+            "market_rating": round(avg_sentiment, 1),
             # NEW fields for enhanced UI
             "price_rank_list": price_rank_list,
             "daily_prices": daily_prices,

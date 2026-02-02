@@ -17,6 +17,8 @@ interface AdvisorQuadrantProps {
   label: string;
   ari?: number;
   sentiment?: number;
+  targetRating?: number;
+  marketRating?: number;
 }
 
 const QUADRANT_INFO: Record<
@@ -61,6 +63,8 @@ export default function AdvisorQuadrant({
   label,
   ari,
   sentiment,
+  targetRating,
+  marketRating,
 }: AdvisorQuadrantProps) {
   // Convert -50/50 range to percentage, clamped to stay within bounds
   // Add padding (15% on each side) so indicator stays fully visible
@@ -206,13 +210,18 @@ export default function AdvisorQuadrant({
                   {sentiment?.toFixed(1) || "100.0"}
                 </span>
               </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-1">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ${(sentiment || 100) >= 100 ? "bg-[var(--optimal-green)]" : "bg-[var(--alert-red)]"}`}
                   style={{
                     width: `${Math.min(Math.max((sentiment || 100) / 2, 0), 100)}%`,
                   }} // Normalized loosely
                 />
+              </div>
+              {/* Actual Ratings Display */}
+              <div className="flex justify-between text-[8px] font-bold text-white/40 uppercase tracking-widest ">
+                <span>You: {targetRating?.toFixed(1) || "N/A"}</span>
+                <span>Mkt: {marketRating?.toFixed(1) || "N/A"}</span>
               </div>
             </div>
 
