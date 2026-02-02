@@ -399,20 +399,29 @@ export default function AnalysisPage() {
               </div>
             )}
 
-            <div className="relative pt-12 pb-8">
-              {/* Range Bar */}
-              <div className="h-3 w-full bg-gradient-to-r from-[var(--optimal-green)]/20 via-[var(--soft-gold)]/20 to-[var(--alert-red)]/20 rounded-full relative">
-                {/* Visual Indicators */}
-                <div className="absolute left-0 -top-6 text-[10px] font-black text-[var(--optimal-green)]">
-                  {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_min?.toFixed(0)} ({t("analysis.minLabel")})
-                </div>
-                <div className="absolute right-0 -top-6 text-[10px] font-black text-[var(--alert-red)]">
-                  {CURRENCY_SYMBOLS[currency] || "$"}
-                  {data?.market_max?.toFixed(0)} ({t("analysis.maxLabel")})
-                </div>
+            <div className="relative pt-16 pb-8">
+              {/* Price Scale Labels */}
+              <div className="absolute top-2 left-0 right-0 flex justify-between text-[10px] font-black">
+                <span className="text-[var(--optimal-green)]">
+                  {CURRENCY_SYMBOLS[currency]}
+                  {data?.market_min?.toFixed(0)}
+                </span>
+                <span className="text-white/40">
+                  {CURRENCY_SYMBOLS[currency]}
+                  {((data?.market_min + data?.market_max) / 2)?.toFixed(0)}
+                </span>
+                <span className="text-[var(--alert-red)]">
+                  {CURRENCY_SYMBOLS[currency]}
+                  {data?.market_max?.toFixed(0)}
+                </span>
+              </div>
 
-                {/* Competitor Dots */}
+              {/* Range Bar - Thicker with better gradient */}
+              <div className="h-6 w-full bg-gradient-to-r from-[var(--optimal-green)]/30 via-[var(--soft-gold)]/30 to-[var(--alert-red)]/30 rounded-full relative border border-white/10">
+                {/* Inner gradient fill */}
+                <div className="absolute inset-1 bg-gradient-to-r from-[var(--optimal-green)]/40 via-[var(--soft-gold)]/20 to-[var(--alert-red)]/40 rounded-full" />
+
+                {/* Competitor Dots - Larger with colors */}
                 {data?.price_rank_list
                   ?.slice(0, 10)
                   .map((comp: any, idx: number) => {
@@ -423,38 +432,64 @@ export default function AnalysisPage() {
                             (data.market_max - data.market_min)) *
                           100
                         : 0;
+                    // Color based on position: green if cheap, red if expensive
+                    const dotColor =
+                      compSpread < 33
+                        ? "bg-[var(--optimal-green)]"
+                        : compSpread > 66
+                          ? "bg-[var(--alert-red)]"
+                          : "bg-white";
                     return (
                       <div
                         key={comp.id || idx}
-                        className="absolute w-2 h-2 rounded-full bg-white/40 top-1/2 -translate-y-1/2 hover:scale-150 transition-transform cursor-pointer group"
+                        className={`absolute w-4 h-4 rounded-full ${dotColor} top-1/2 -translate-y-1/2 hover:scale-125 transition-all cursor-pointer group border-2 border-[var(--deep-ocean)] shadow-lg z-10`}
                         style={{
-                          left: `${Math.min(Math.max(compSpread, 2), 98)}%`,
+                          left: `calc(${Math.min(Math.max(compSpread, 3), 97)}% - 8px)`,
                         }}
-                        title={`${comp.name}: ${CURRENCY_SYMBOLS[currency]}${comp.price?.toFixed(0)}`}
                       >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap px-2 py-1 rounded bg-black/90 text-[9px] text-white font-bold z-10">
-                          {comp.name?.substring(0, 15)}...{" "}
-                          {CURRENCY_SYMBOLS[currency]}
-                          {comp.price?.toFixed(0)}
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap px-3 py-2 rounded-lg bg-[var(--deep-ocean)] border border-white/20 text-xs text-white font-bold z-50 shadow-xl">
+                          <div className="text-[10px] text-white/60 mb-0.5">
+                            Competitor
+                          </div>
+                          <div className="font-black">
+                            {comp.name?.substring(0, 20)}
+                          </div>
+                          <div
+                            className={`text-lg ${compSpread < 33 ? "text-[var(--optimal-green)]" : compSpread > 66 ? "text-[var(--alert-red)]" : "text-white"}`}
+                          >
+                            {CURRENCY_SYMBOLS[currency]}
+                            {comp.price?.toFixed(0)}
+                          </div>
+                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[var(--deep-ocean)] border-r border-b border-white/20 rotate-45" />
                         </div>
                       </div>
                     );
                   })}
 
-                {/* Target Marker */}
+                {/* Your Hotel Marker - Prominent */}
                 <div
-                  className="absolute h-10 w-1 bg-[var(--soft-gold)] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out shadow-lg shadow-[var(--soft-gold)]/50"
+                  className="absolute h-12 w-1.5 bg-[var(--soft-gold)] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out rounded-full shadow-lg shadow-[var(--soft-gold)]/50 z-20"
                   style={{
-                    left: `${Math.min(Math.max(spreadPercentage, 1), 99)}%`,
+                    left: `calc(${Math.min(Math.max(spreadPercentage, 1), 99)}% - 3px)`,
                   }}
                 >
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black shadow-lg">
-                    {t("analysis.youLabel")}:{" "}
-                    {CURRENCY_SYMBOLS[currency] || "$"}
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-[var(--soft-gold)] rounded-full blur-sm" />
+
+                  {/* Label */}
+                  <div className="absolute -top-14 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-2 rounded-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-sm font-black shadow-xl">
+                    {t("analysis.youLabel")}: {CURRENCY_SYMBOLS[currency]}
                     {data?.target_price?.toFixed(0)}
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--soft-gold)] rotate-45" />
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[var(--soft-gold)] rotate-45" />
                   </div>
                 </div>
+              </div>
+
+              {/* Position Labels */}
+              <div className="flex justify-between mt-2 text-[9px] font-bold text-white/40 uppercase tracking-wider">
+                <span>Cheapest</span>
+                <span>Mid-Range</span>
+                <span>Premium</span>
               </div>
             </div>
 
