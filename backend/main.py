@@ -1492,20 +1492,36 @@ async def get_analysis(
             # Calculate vs_comp for each date
             for date_str, data in sorted(date_price_map.items()):
                 if data["target"] is not None and data["competitors"]:
-                    comp_avg = sum(c["price"] for c in data["competitors"]) / len(data["competitors"])
-                    vs_comp = ((data["target"] - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0
-                    daily_prices.append({
-                        "date": date_str,
-                        "price": round(data["target"], 2),
-                        "comp_avg": round(comp_avg, 2),
-                        "vs_comp": round(vs_comp, 1),
-                        "competitors": data["competitors"]
-                    })
+                    # Deduplicate competitors by hotel name (keep first/latest price)
+                    seen_hotels = set()
+                    unique_competitors = []
+                    for c in data["competitors"]:
+                        if c["name"] not in seen_hotels:
+                            seen_hotels.add(c["name"])
+                            unique_competitors.append(c)
+                    
+                    if unique_competitors:
+                        comp_avg = sum(c["price"] for c in unique_competitors) / len(unique_competitors)
+                        vs_comp = ((data["target"] - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0
+                        daily_prices.append({
+                            "date": date_str,
+                            "price": round(data["target"], 2),
+                            "comp_avg": round(comp_avg, 2),
+                            "vs_comp": round(vs_comp, 1),
+                            "competitors": unique_competitors
+                        })
 
         # 6. Calculate Stats
         market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
         market_min = min(current_prices) if current_prices else 0.0
         market_max = max(current_prices) if current_prices else 0.0
+        
+        # Find min/max hotels for spread tooltip
+        min_hotel = None
+        max_hotel = None
+        if price_rank_list:
+            min_hotel = {"name": price_rank_list[0]["name"], "price": price_rank_list[0]["price"]}
+            max_hotel = {"name": price_rank_list[-1]["name"], "price": price_rank_list[-1]["price"]}
         
         ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else 100.0
         
@@ -1570,7 +1586,9 @@ async def get_analysis(
             # NEW fields for enhanced UI
             "price_rank_list": price_rank_list,
             "daily_prices": daily_prices,
-            "all_hotels": all_hotels_list
+            "all_hotels": all_hotels_list,
+            "min_hotel": min_hotel,
+            "max_hotel": max_hotel
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))
