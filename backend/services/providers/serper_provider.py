@@ -32,6 +32,9 @@ class SerperProvider(HotelDataProvider):
             return None
 
         # Use Google Places via Serper (Shopping returns irrelevant products like Toner)
+        # NOTE: 'places' and 'reviews' endpoints do NOT return booking prices.
+        # They are only useful for Metadata (Address, Website) and Sentiment Analysis.
+        # This is a fallback to prevent "Not Found" errors, returning price 0.0.
         query = f"{hotel_name} {location}"
         
         payload = {
