@@ -40,19 +40,18 @@ class ProviderFactory:
         
     @classmethod
     def _register_providers(cls):
-        # 1. Decodo (First Priority)
-        if os.getenv("DECODO_API_KEY"):
-            cls._providers.append(DecodoProvider())
-
-        # 2. Serper.dev (Secondary)
+        # 1. Serper.dev (Primary - Stable)
         if os.getenv("SERPER_API_KEY"):
             cls._providers.append(SerperProvider())
-            
-        # 3. SerpApi (Backup)
+
+        # 2. SerpApi (Secondary - Reliable)
         if os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY"):
             cls._providers.append(SerpApiProvider())
+
+        # 3. Decodo (Backup - High Quota but Unstable)
+        if os.getenv("DECODO_API_KEY"):
+            cls._providers.append(DecodoProvider())
             
-        # 4. RapidApi (Supplementary)
         # 4. RapidApi (Supplementary)
         if os.getenv("RAPIDAPI_KEY"):
             cls._providers.append(RapidApiProvider())
@@ -69,34 +68,34 @@ class ProviderFactory:
             
         report = []
         
-        # 1. Decodo
-        report.append({
-            "name": "Decodo",
-            "type": "Primary (Google Hotels)",
-            "enabled": bool(os.getenv("DECODO_API_KEY")),
-            "priority": 1,
-            "limit": "2,500 / mo",
-            "refresh": "Monthly (1st)"
-        })
-        
-        # 2. Serper
+        # 1. Serper
         report.append({
             "name": "Serper.dev",
-            "type": "Secondary (JSON Search)",
+            "type": "Primary (JSON Search)",
             "enabled": bool(os.getenv("SERPER_API_KEY")),
-            "priority": 2,
+            "priority": 1,
             "limit": "2,500 / mo",
             "refresh": "Monthly"
         })
-        
-        # 3. SerpApi
+
+        # 2. SerpApi
         report.append({
             "name": "SerpApi",
-            "type": "Backup (Legacy)",
+            "type": "Secondary (Legacy)",
             "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
-            "priority": 3,
+            "priority": 2,
             "limit": "100 / mo (Free)",
             "refresh": "Monthly"
+        })
+
+        # 3. Decodo
+        report.append({
+            "name": "Decodo",
+            "type": "Backup (Google Hotels)",
+            "enabled": bool(os.getenv("DECODO_API_KEY")),
+            "priority": 3,
+            "limit": "2,500 / mo (Unstable)",
+            "refresh": "Monthly (1st)"
         })
         
         # 4. RapidAPI

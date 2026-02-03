@@ -22,10 +22,10 @@ async def test_providers():
         provider = ProviderFactory.get_provider(prefer="auto")
         print(f"Auto-Selected Provider: {provider.get_provider_name()}")
         
-        if provider.get_provider_name() == "Decodo":
-            print("SUCCESS: Factory correctly prioritized Decodo.")
+        if provider.get_provider_name() == "Serper.dev":
+            print("SUCCESS: Factory correctly prioritized Serper.dev.")
         else:
-            print("FAILURE: Factory did not prioritize Decodo.")
+            print(f"FAILURE: Factory prioritized {provider.get_provider_name()}.")
             
     # 3. Test Secondary Selection
     try:
