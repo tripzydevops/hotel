@@ -40,28 +40,18 @@ class ProviderFactory:
         
     @classmethod
     def _register_providers(cls):
-        # 1. RapidApi (Primary for Prices)
-        rapid_key = os.getenv("RAPIDAPI_KEY")
-        if rapid_key:
-            cls._providers.append(RapidApiProvider(rapid_key))
-            
-        # 2. SerpApi (Secondary - Reliable)
+        # 1. SerpApi (Primary - High Fidelity)
         serp_keys = []
         if os.getenv("SERPAPI_API_KEY"): serp_keys.append(os.getenv("SERPAPI_API_KEY"))
         if os.getenv("SERPAPI_KEY"): serp_keys.append(os.getenv("SERPAPI_KEY"))
-        # Support user's custom key name from screenshot
         if os.getenv("SERPAPI_API_KEY_2"): serp_keys.append(os.getenv("SERPAPI_API_KEY_2"))
         
         if serp_keys:
             cls._providers.append(SerpApiProvider())
 
-        # 3. Serper.dev (Supplementary - Metadata Only)
-        if os.getenv("SERPER_API_KEY"):
-            cls._providers.append(SerperProvider())
-
-        # 4. Decodo (Backup - Unstable)
-        if os.getenv("DECODO_API_KEY"):
-            cls._providers.append(DecodoProvider())
+        # Alternative providers (RapidAPI, Serper, Decodo) are decommissioned 
+        # as per user request to restore original SerpApi fidelity.
+        pass
             
     @classmethod
     def get_status_report(cls) -> List[dict]:
@@ -75,44 +65,25 @@ class ProviderFactory:
             
         report = []
         
-        # 1. RapidAPI (Booking.com) - Primary for Prices
-        report.append({
-            "name": "RapidAPI",
-            "type": "Price Source (Booking.com)",
-            "enabled": bool(os.getenv("RAPIDAPI_KEY")),
-            "priority": 1,
-            "limit": "500 / mo",
-            "refresh": "Monthly"
-        })
-
-        # 2. Serper.dev - Primary for Metadata
-        report.append({
-            "name": "Serper.dev",
-            "type": "Metadata Source (Google)",
-            "enabled": bool(os.getenv("SERPER_API_KEY")),
-            "priority": 1,
-            "limit": "2,500 / mo",
-            "refresh": "Monthly"
-        })
-
-        # 3. SerpApi - Secondary/Legacy
+        # 1. SerpApi - Primary
         report.append({
             "name": "SerpApi",
-            "type": "Legacy / Backup",
+            "type": "Primary (Google Hotels)",
             "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY") or os.getenv("SERPAPI_API_KEY_2")),
-            "priority": 2,
+            "priority": 1,
             "limit": "100 / mo (Free)",
             "refresh": "Monthly"
         })
 
-        # 4. Decodo - Backup
-        report.append({
-            "name": "Decodo",
-            "type": "Backup (Unstable)",
-            "enabled": bool(os.getenv("DECODO_API_KEY")),
-            "priority": 3,
-            "limit": "2,500 / mo",
-            "refresh": "Monthly"
-        })
+        # Alternative providers shown as decommissioned
+        for p_name in ["RapidAPI", "Serper.dev", "Decodo"]:
+            report.append({
+                "name": p_name,
+                "type": "Decommissioned",
+                "enabled": False,
+                "priority": 99,
+                "limit": "N/A",
+                "refresh": "N/A"
+            })
         
         return report

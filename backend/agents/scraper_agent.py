@@ -62,37 +62,23 @@ class ScraperAgent:
 
                 adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
                 
-                # Fetch price with FAILOVER
+                # Fetch price with SerpApi (Original High-Fidelity Source)
                 price_data = None
                 if check_in and check_out:
-                    providers = ProviderFactory.get_active_providers()
-                    
-                    for provider in providers:
-                        try:
-                            # print(f"[Scraper] Trying Provider: {provider.get_provider_name()}")
-                            candidate_data = await provider.fetch_price(
-                                hotel_name=hotel_name,
-                                location=location,
-                                check_in=check_in,
-                                check_out=check_out,
-                                adults=adults,
-                                currency=options.currency if options and options.currency else "TRY"
-                            )
-                            
-                            if candidate_data:
-                                # Prioritize metadata from any successful provider
-                                if not price_data:
-                                    price_data = candidate_data
-                                elif candidate_data.get("price", 0) > 0:
-                                    # If we found a real price, prefer this data
-                                    price_data = candidate_data
-                                    
-                                # If we have a real price, we can stop searching
-                                if candidate_data.get("price", 0) > 0:
-                                    break
-                        except Exception as e:
-                            print(f"[Scraper] Provider {provider.get_provider_name()} Error: {e}")
-                            continue
+                    try:
+                        primary_provider = ProviderFactory.get_provider()
+                        print(f"[Scraper] Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...")
+                        
+                        price_data = await primary_provider.fetch_price(
+                            hotel_name=hotel_name,
+                            location=location,
+                            check_in=check_in,
+                            check_out=check_out,
+                            adults=adults,
+                            currency=options.currency if options and options.currency else "TRY"
+                        )
+                    except Exception as e:
+                        print(f"[Scraper] Primary Provider Error for {hotel_name}: {e}")
                 else:
                     print(f"[Scraper] Validation Failed for {hotel_name}: check_in={check_in} check_out={check_out}. Both are required.")
                 
