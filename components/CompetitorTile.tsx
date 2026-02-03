@@ -33,7 +33,7 @@ interface CompetitorTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
-  onEdit?: (id: string, hotel: any) => void;
+
   onViewDetails?: (hotel: any) => void;
   isEnterprise?: boolean;
   amenities?: string[];

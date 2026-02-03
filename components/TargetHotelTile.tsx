@@ -33,7 +33,7 @@ interface TargetHotelTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
-  onEdit?: (id: string, hotel: any) => void;
+
   onViewDetails?: (hotel: any) => void;
   isEnterprise?: boolean;
   amenities?: string[];
@@ -63,7 +63,7 @@ export default function TargetHotelTile({
   checkIn,
   adults,
   onEdit,
-  onEdit,
+
   onViewDetails,
   isEnterprise = false,
   amenities,

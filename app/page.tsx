@@ -491,7 +491,6 @@ export default function Dashboard() {
                   checkIn={data.target_hotel.price_info?.check_in}
                   adults={data.target_hotel.price_info?.adults}
                   onEdit={handleEditHotel}
-                  onEdit={handleEditHotel}
                   onViewDetails={handleOpenDetails}
                   isEnterprise={isEnterprise}
                   amenities={data.target_hotel.amenities}
@@ -534,7 +533,6 @@ export default function Dashboard() {
                         priceHistory={competitor.price_history}
                         checkIn={competitor.price_info?.check_in}
                         adults={competitor.price_info?.adults}
-                        onEdit={handleEditHotel}
                         onEdit={handleEditHotel}
                         onViewDetails={handleOpenDetails}
                         isEnterprise={isEnterprise}
