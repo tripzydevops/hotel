@@ -3,10 +3,12 @@
 import { useI18n } from "@/lib/i18n";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import YieldForecastChart from "./YieldForecastChart";
 import ExecutiveSummary from "./ExecutiveSummary";
-import { Cpu, FileText, TrendingUp } from "lucide-react";
+import { Cpu, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { api } from "@/lib/api";
+import { ReportsResponse } from "@/types";
 
 interface ReportsClientProps {
   userId: string;
@@ -18,10 +20,27 @@ export default function ReportsClient({
   initialProfile,
 }: ReportsClientProps) {
   const { t } = useI18n();
+  const [data, setData] = useState<ReportsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await api.getReports(userId);
+        setData(response);
+      } catch (e) {
+        console.error("Failed to fetch reports:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [userId]);
 
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] pb-24 relative animate-fade-in">
@@ -63,36 +82,77 @@ export default function ReportsClient({
             <YieldForecastChart />
           </div>
 
-          {/* Right Column: Key Metrics Grid (Placeholder for advanced metrics) */}
+          {/* Right Column: Key Metrics Grid */}
           <div className="grid grid-cols-2 gap-4 h-full">
             <div className="glass-panel-premium p-6 rounded-2xl flex flex-col justify-center items-center">
               <span className="text-[var(--text-muted)] text-xs uppercase tracking-widest font-bold mb-2">
-                Projected RevPAR
+                Price Index (ARI)
               </span>
-              <span className="text-4xl font-bold text-white">$142</span>
-              <span className="text-xs text-optimal-green mt-2 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" /> +12% vs LY
+              <span className="text-4xl font-bold text-white">
+                {data?.metrics?.price_index
+                  ? data.metrics.price_index.toFixed(0)
+                  : "..."}
+              </span>
+              <span className="text-xs text-white/60 mt-2 flex items-center gap-1">
+                {data?.metrics?.price_index && (
+                  <>
+                    {data.metrics.price_index > 100 ? (
+                      <>
+                        <TrendingUp className="w-3 h-3 text-optimal-green" />{" "}
+                        Premium
+                      </>
+                    ) : data.metrics.price_index < 100 ? (
+                      <>
+                        <TrendingDown className="w-3 h-3 text-alert-red" />{" "}
+                        Competitive
+                      </>
+                    ) : (
+                      <>
+                        <Minus className="w-3 h-3 text-white" /> Market Avg
+                      </>
+                    )}
+                  </>
+                )}
               </span>
             </div>
+
             <div className="glass-panel-premium p-6 rounded-2xl flex flex-col justify-center items-center">
               <span className="text-[var(--text-muted)] text-xs uppercase tracking-widest font-bold mb-2">
-                Occupancy Pace
+                Sentiment Score
               </span>
-              <span className="text-4xl font-bold text-white">78%</span>
+              <span className="text-4xl font-bold text-white">
+                {data?.metrics?.sentiment_score
+                  ? data.metrics.sentiment_score.toFixed(0)
+                  : "..."}
+              </span>
               <span className="text-xs text-optimal-green mt-2 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" /> +5% vs Comp
+                {data?.metrics?.sentiment_score && (
+                  <>
+                    {data.metrics.sentiment_score > 80
+                      ? "Excellent"
+                      : "Needs Attention"}
+                  </>
+                )}
               </span>
             </div>
+
             <div className="glass-panel-premium p-6 rounded-2xl flex flex-col justify-center items-center col-span-2">
               <span className="text-[var(--text-muted)] text-xs uppercase tracking-widest font-bold mb-2">
-                Market Demand Index
+                Broadcast Heat
               </span>
               <div className="w-full h-4 bg-white/5 rounded-full overflow-hidden mt-2 relative">
-                <div className="absolute left-0 top-0 h-full w-[85%] bg-gradient-to-r from-optimal-green to-blue-500"></div>
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-optimal-green to-blue-500 transition-all duration-1000"
+                  style={{ width: `${data?.metrics?.market_heat || 50}%` }}
+                ></div>
               </div>
               <div className="flex justify-between w-full mt-2 text-xs text-[var(--text-secondary)]">
                 <span>Low</span>
-                <span className="font-bold text-white">High (85/100)</span>
+                <span className="font-bold text-white">
+                  {data?.metrics?.market_heat
+                    ? `${data.metrics.market_heat}/100`
+                    : "..."}
+                </span>
                 <span>Peak</span>
               </div>
             </div>
@@ -101,7 +161,7 @@ export default function ReportsClient({
 
         {/* Bottom Section: Executive Summary */}
         <div className="h-[400px]">
-          <ExecutiveSummary />
+          <ExecutiveSummary briefing={data?.briefing || null} />
         </div>
       </main>
     </div>

@@ -37,17 +37,22 @@ export default async function Dashboard() {
         initialProfile={profile}
       />
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Server-side fetch error:", error);
-    // In case of critical failure, we can still load the client shell
-    // The client will attempt to re-fetch or show error
-    // But ideally we redirect to an error page or show a fallback
+    // Return a minimal profile so the user still looks logged in
+    const minimalProfile = {
+      id: userId,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || "User",
+      plan_type: "free", // Default fallback
+    };
+
     return (
       <DashboardClient
         userId={userId}
         initialData={null}
         initialSettings={undefined}
-        initialProfile={null}
+        initialProfile={minimalProfile}
       />
     );
   }

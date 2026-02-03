@@ -213,3 +213,27 @@ export interface MarketAnalysis {
   quadrant_y: number;
   quadrant_label: string;
 }
+
+export interface ReportMetrics {
+  price_index: number;
+  sentiment_score: number;
+  market_heat: number;
+}
+
+export interface ReportInsight {
+  title: string;
+  insight: string;
+  type: "positive" | "negative" | "warning" | "neutral";
+}
+
+export interface ReportBriefing {
+  insights: ReportInsight[];
+  action: string;
+}
+
+export interface ReportsResponse {
+  sessions: ScanSession[];
+  weekly_summary: any;
+  metrics: ReportMetrics | null;
+  briefing: ReportBriefing | null;
+}

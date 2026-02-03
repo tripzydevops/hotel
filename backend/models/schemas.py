@@ -386,9 +386,26 @@ class MarketAnalysis(BaseModel):
     sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
 
 
+
+class ReportMetrics(BaseModel):
+    price_index: float
+    sentiment_score: float
+    market_heat: float
+
+class ReportInsight(BaseModel):
+    title: str
+    insight: str
+    type: str  # positive, negative, warning, neutral
+
+class ReportBriefing(BaseModel):
+    insights: List[ReportInsight]
+    action: str
+
 class ReportsResponse(BaseModel):
     sessions: List[ScanSession] = []
     weekly_summary: Dict[str, Any] = {}
+    metrics: Optional[ReportMetrics] = None
+    briefing: Optional[ReportBriefing] = None
 
 
 # ===== SerpApi Response Models =====

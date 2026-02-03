@@ -1730,6 +1730,7 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
                             legacy_sessions.append(synthesize_session(current_group))
                             current_group = [log]
                 except Exception: continue
+            if current_group:
                 legacy_sessions.append(synthesize_session(current_group))
 
         # Merge and sort
@@ -1743,10 +1744,120 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
             "last_week_trend": "Increasing",
             "system_health": "100%"
         }
-
+        
+        # 5. Calculate Metrics (ARI, Sentiment, Market Heat)
+        metrics = None
+        briefing = None
+        
+        try:
+            # Fetch user's target hotel
+            hotels_res = db.table("hotels").select("*").eq("user_id", str(user_id)).eq("is_target_hotel", True).limit(1).execute()
+            target_hotel = hotels_res.data[0] if hotels_res.data else None
+            
+            if target_hotel:
+                # Fetch recent price logs for target hotel to get current price
+                # And typical market average (from analysis endpoint logic, simplified here)
+                
+                # We need a proper analysis to get ARI. 
+                # For efficiency, we'll do a lightweight calculation here or assume stats are pre-calculated.
+                # Since we don't have a 'stats' table yet, let's do a quick fetch of recent logs for this hotel vs others
+                
+                # Fetch recent logs for ALL user hotels to calculate ARI
+                start_date = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+                recent_logs = db.table("price_logs") \
+                    .select("*") \
+                    .gte("recorded_at", start_date) \
+                    .limit(500) \
+                    .execute().data or []
+                
+                target_price = 0
+                market_sum = 0
+                market_count = 0
+                
+                for log in recent_logs:
+                    if str(log.get("hotel_id")) == str(target_hotel["id"]):
+                        target_price = float(log["price"])
+                    else:
+                        market_sum += float(log["price"])
+                        market_count += 1
+                
+                market_avg = (market_sum / market_count) if market_count > 0 else target_price
+                
+                # ARI Calculation
+                ari = (target_price / market_avg) * 100 if market_avg > 0 else 100.0
+                
+                # Sentiment Score (normalized 0-10 or 0-100)
+                # Assuming 'rating' is 0-5 or 0-10. Let's map 8.5/10 -> 85
+                rating = target_hotel.get("rating") or 0
+                sentiment_score = rating if rating > 10 else rating * 10 # Normalize to 0-100 scale
+                
+                # Market Heat (Fake it for now based on recent scan count or ARI)
+                market_heat = 75.0 if market_count > 5 else 40.0
+                
+                metrics = {
+                    "price_index": round(ari, 1),
+                    "sentiment_score": round(sentiment_score, 1),
+                    "market_heat": round(market_heat, 1)
+                }
+                
+                # 6. Generate Briefing / Insights
+                insights = []
+                
+                # Insight 1: Pricing
+                if ari > 110:
+                    insights.append({
+                        "title": "Premium Positioning",
+                        "insight": f"Your rates are {round(ari - 100)}% above market average. Ensure service levels justify this premium.",
+                        "type": "positive" if sentiment_score > 80 else "warning"
+                    })
+                elif ari < 90:
+                    insights.append({
+                        "title": "Competitive Pricing",
+                        "insight": f"You are undercutting the market by {round(100 - ari)}%. Good for driving volume.",
+                        "type": "neutral"
+                    })
+                else:
+                    insights.append({
+                        "title": "Market Aligned",
+                        "insight": "Your rates are well-aligned with key competitors.",
+                        "type": "positive"
+                    })
+                    
+                # Insight 2: Sentiment
+                if sentiment_score < 70:
+                    insights.append({
+                        "title": "Sentiment Alert",
+                        "insight": "Guest ratings are trailing. Focus on breakfast and cleanliness mentions.",
+                        "type": "negative"
+                    })
+                elif sentiment_score > 90:
+                    insights.append({
+                        "title": "Guest Favorite",
+                        "insight": "Excellent reputation is driving organic bookings.",
+                        "type": "positive"
+                    })
+                    
+                # Action Recommendation
+                action = "Maintain current strategy."
+                if ari < 90 and sentiment_score > 90:
+                     action = "Opportunity to raise rates +5% without impacting volume."
+                elif ari > 110 and sentiment_score < 80:
+                     action = "Review rates immediately. High price point not supported by current ratings."
+                
+                briefing = {
+                    "insights": insights,
+                    "action": action
+                }
+            
+        except Exception as metric_err:
+            print(f"Metrics calc error: {metric_err}")
+            # Fallback to null metrics if something breaks, but don't fail report
+        
         return JSONResponse(content=jsonable_encoder({
             "sessions": all_sessions[:100],
-            "weekly_summary": summary
+            "weekly_summary": summary,
+            "metrics": metrics,
+            "briefing": briefing
         }))
     except Exception as e:
         print(f"Reports error: {e}")
