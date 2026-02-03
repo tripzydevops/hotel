@@ -29,32 +29,36 @@ class AnalystAgent:
             "target_price": None
         }
 
-        # 1. Persistence & Basic Check
+        # 1. Persistence & Analysis Loop
         for res in scraper_results:
-            hotel_id = res["hotel_id"]
-            price_data = res["price_data"]
-            status = res["status"]
-            
-            if status != "success" or not price_data:
-                continue
-
-            current_price = price_data.get("price", 0.0)
-            currency = price_data.get("currency", "TRY")
-            
-            # 2. Currency Normalization (if RapidAPI returns USD but TRY was expected)
-            target_currency = options.currency if options and options.currency else "TRY"
-            if currency == "USD" and target_currency == "TRY" and current_price > 0:
-                print(f"[AnalystAgent] Converting {current_price} USD to TRY for {hotel_id}")
-                current_price = convert_currency(current_price, "USD", "TRY")
-                currency = "TRY"
-
-            # 3. Log to price_logs (This updates the dashboard)
             try:
+                hotel_id = res["hotel_id"]
+                price_data = res["price_data"]
+                status = res["status"]
+                
+                if status != "success" or not price_data:
+                    print(f"[AnalystAgent] Skipping {hotel_id} - status: {status}")
+                    continue
+
+                current_price = price_data.get("price", 0.0)
+                currency = price_data.get("currency", "TRY")
+                
+                # 2. Currency Normalization (if RapidAPI returns USD but TRY was expected)
+                target_currency = options.currency if options and options.currency else "TRY"
+                if currency == "USD" and target_currency == "TRY" and current_price > 0:
+                    print(f"[AnalystAgent] Converting {current_price} USD to TRY for {hotel_id}")
+                    current_price = convert_currency(current_price, "USD", "TRY")
+                    currency = "TRY"
+
+                # 3. Log to price_logs (This updates the dashboard)
+                check_in = res.get("check_in")
+                check_in_str = check_in.isoformat() if hasattr(check_in, "isoformat") else str(check_in)
+                
                 self.db.table("price_logs").insert({
                     "hotel_id": hotel_id,
                     "price": current_price,
                     "currency": currency,
-                    "check_in_date": res.get("check_in").isoformat() if hasattr(res.get("check_in"), "isoformat") else res.get("check_in"),
+                    "check_in_date": check_in_str,
                     "source": price_data.get("source", "serpapi"),
                     "vendor": price_data.get("vendor", "Unknown"),
                     "offers": price_data.get("offers", []),
@@ -63,45 +67,53 @@ class AnalystAgent:
                 analysis_summary["prices_updated"] += 1
                 
                 # 4. Update hotel meta (Dashboard card metadata)
-                # Only update columns that exist
-                meta_update = {}
+                meta_update = {
+                    "current_price": current_price,
+                    "currency": currency,
+                    "last_scan": datetime.now().isoformat(),
+                    "vendor_source": price_data.get("vendor", "Unknown")
+                }
+                
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
-                if meta_update:
-                    self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+                
+                self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+
+                # 5. Check for Threshold Breaches (Comparison with Previous)
+                prev_res = self.db.table("price_logs") \
+                    .select("price, currency") \
+                    .eq("hotel_id", hotel_id) \
+                    .order("recorded_at", desc=True) \
+                    .limit(2) \
+                    .execute()
+                
+                if len(prev_res.data) > 1:
+                    previous_price = prev_res.data[1]["price"]
+                    previous_currency = prev_res.data[1].get("currency", "USD")
+                    
+                    # Normalize if currencies differ
+                    if currency != previous_currency:
+                        previous_price = convert_currency(previous_price, previous_currency, currency)
+
+                    alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
+                    if alert:
+                        alert_data = {
+                            "user_id": str(user_id),
+                            "hotel_id": hotel_id,
+                            "currency": currency,
+                            **alert
+                        }
+                        analysis_summary["alerts"].append(alert_data)
+                        # Persist Alert
+                        self.db.table("alerts").insert(alert_data).execute()
 
             except Exception as e:
-                print(f"[AnalystAgent] Database error logging for {hotel_id}: {e}")
-
-            # 3. Check for Threshold Breaches (Comparison with Previous)
-            prev_res = self.db.table("price_logs") \
-                .select("price") \
-                .eq("hotel_id", hotel_id) \
-                .order("recorded_at", desc=True) \
-                .limit(2) \
-                .execute()
-            
-            if len(prev_res.data) > 1:
-                previous_price = prev_res.data[1]["price"]
-                previous_currency = prev_res.data[1].get("currency", "USD")
-                
-                # Normalize if currencies differ
-                if currency != previous_currency:
-                    previous_price = convert_currency(previous_price, previous_currency, currency)
-
-                alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
-                if alert:
-                    alert_data = {
-                        "user_id": str(user_id),
-                        "hotel_id": hotel_id,
-                        "currency": currency,
-                        **alert
-                    }
-                    analysis_summary["alerts"].append(alert_data)
-                    # Persist Alert
-                    self.db.table("alerts").insert(alert_data).execute()
+                print(f"[AnalystAgent] CRITICAL error processing hotel {res.get('hotel_id')}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
 
         # 4. Competitor Undercut Detection (Multi-hotel reasoning)
         target_res = [r for r in scraper_results if r.get("price_data") and r["price_data"].get("price") and any(h['id'] == r['hotel_id'] and h.get('is_target_hotel') for h in self._get_hotels(user_id))]

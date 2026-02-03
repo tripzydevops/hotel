@@ -164,6 +164,7 @@ class RapidApiProvider(HotelDataProvider):
                 "currency": currency,
                 "vendor": "Booking.com",
                 "source": "RapidAPI",
+                "resolved_name": prop.get("name", target_name),
                 "url": "", 
                 "rating": prop.get("reviewScore", 0.0),
                 "reviews": prop.get("reviewCount", 0),
