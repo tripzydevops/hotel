@@ -110,12 +110,19 @@ export default async function Dashboard() {
     };
 
     return (
-      <DashboardClient
-        userId={userId}
-        initialData={null}
-        initialSettings={undefined}
-        initialProfile={minimalProfile}
-      />
+      <div className="relative">
+        <div className="bg-red-900/50 text-red-200 p-2 text-xs border-b border-red-700 font-mono">
+          [DEBUG - ERROR CATCH] Error: {String(error?.message || error)} |
+          ServiceKey:{" "}
+          {!!process.env.SUPABASE_SERVICE_ROLE_KEY ? "PRESENT" : "MISSING"}
+        </div>
+        <DashboardClient
+          userId={userId}
+          initialData={null}
+          initialSettings={undefined}
+          initialProfile={minimalProfile}
+        />
+      </div>
     );
   }
 }
