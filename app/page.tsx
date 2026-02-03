@@ -29,19 +29,38 @@ export default async function Dashboard() {
     ]);
 
     // DIRECT DB ACCESS: optimization for Vercel loading
+    // Strategy: Try 'profiles' (newer schema) -> Fallback to 'user_profiles' (legacy schema)
+    let finalProfile = null;
+
+    // 1. Try profiles
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
-    // If direct fetch fails (or table is user_profiles), fallback or just use what we have
-    const finalProfile = profileData || {
-      id: userId,
-      email: session.user.email,
-      full_name: session.user.user_metadata?.full_name || "User",
-      plan_type: "free",
-    };
+    if (profileData) {
+      finalProfile = profileData;
+    } else {
+      // 2. Fallback to user_profiles
+      console.log("Dashboard: Fallback to user_profiles");
+      const { data: userProfileData } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      finalProfile = userProfileData;
+    }
+
+    // 3. Last Resort Fallback
+    if (!finalProfile) {
+      finalProfile = {
+        id: userId,
+        email: session.user.email,
+        full_name: session.user.user_metadata?.full_name || "User",
+        plan_type: "free",
+      };
+    }
 
     return (
       <DashboardClient

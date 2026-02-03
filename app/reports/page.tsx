@@ -19,19 +19,36 @@ export default async function ReportsPage() {
 
   try {
     // DIRECT DB ACCESS: optimization for Vercel loading
+    let profile = null;
+
+    // 1. Try profiles
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
-    // If direct fetch fails, fallback
-    const profile = profileData || {
-      id: userId,
-      email: session.user.email,
-      full_name: session.user.user_metadata?.full_name || "User",
-      plan_type: "free",
-    };
+    if (profileData) {
+      profile = profileData;
+    } else {
+      // 2. Fallback to user_profiles
+      const { data: userProfileData } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      profile = userProfileData;
+    }
+
+    // 3. Critical Fallback
+    if (!profile) {
+      profile = {
+        id: userId,
+        email: session.user.email,
+        full_name: session.user.user_metadata?.full_name || "User",
+        plan_type: "free",
+      };
+    }
 
     return <ReportsClient userId={userId} initialProfile={profile} />;
   } catch (error) {

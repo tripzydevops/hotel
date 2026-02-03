@@ -21,13 +21,24 @@ export default async function AnalysisPage() {
   let profile = null;
   try {
     // DIRECT DB ACCESS: optimization for Vercel loading
+    // 1. Try profiles
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
-    profile = profileData;
+    if (profileData) {
+      profile = profileData;
+    } else {
+      // 2. Fallback
+      const { data: userProfileData } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      profile = userProfileData;
+    }
   } catch (error) {
     console.error("Failed to fetch profile for analysis page:", error);
     // Fallback minimal profile to ensure header stays logged in
