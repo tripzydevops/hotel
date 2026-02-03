@@ -360,6 +360,10 @@ class ApiClient {
   async getAdminScanDetails(id: string) {
     return this.fetch<any>(`/api/admin/scans/${id}`);
   }
+
+  async getAdminProviders() {
+    return this.fetch<any[]>("/api/admin/providers");
+  }
 }
 
 export const api = new ApiClient();

@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
-from backend.services.serpapi_client import serpapi_client
+from backend.services.provider_factory import ProviderFactory
 from backend.utils.helpers import log_query
 
 class ScraperAgent:
@@ -47,14 +47,22 @@ class ScraperAgent:
                 adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
                 
                 # Fetch price
-                price_data = await serpapi_client.fetch_hotel_price(
-                    hotel_name=hotel_name,
-                    location=location,
-                    serp_api_id=serp_api_id,
-                    check_in=check_in,
-                    check_out=check_out,
-                    adults=adults
-                )
+                # Use Provider Factory to get the best available provider
+                try:
+                    provider = ProviderFactory.get_provider(prefer="auto")
+                    # print(f"[Scraper] Using Provider: {provider.get_provider_name()}")
+                    
+                    price_data = await provider.fetch_price(
+                        hotel_name=hotel_name,
+                        location=location,
+                        check_in=check_in,
+                        check_out=check_out,
+                        adults=adults,
+                        currency=options.currency if options and options.currency else "USD"
+                    )
+                except Exception as e:
+                    print(f"[Scraper] Provider Error: {e}")
+                    price_data = None
                 
                 status = "success" if price_data else "not_found"
                 if price_data and price_data.get("status") == "error":

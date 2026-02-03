@@ -46,6 +46,7 @@ export default function AdminPage() {
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [scans, setScans] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
 
   // Directory Form State
   const [dirName, setDirName] = useState("");
@@ -138,7 +139,15 @@ export default function AdminPage() {
         setLogs(data);
       } else if (activeTab === "scans") {
         const data = await api.getAdminScans();
+      } else if (activeTab === "scans") {
+        const data = await api.getAdminScans();
         setScans(data);
+      }
+
+      // Always fetch providers for overview
+      if (activeTab === "overview") {
+        const pData = await api.getAdminProviders();
+        setProviders(pData);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load data");
@@ -354,6 +363,48 @@ export default function AdminPage() {
               icon={Database}
             />
             <div className="col-span-full mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Providers Card */}
+              <div className="p-6 glass-card border border-white/10 md:col-span-2">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-white">
+                    Data Providers
+                  </h3>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    Priority Order
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {providers.map((p) => (
+                    <div
+                      key={p.name}
+                      className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-2 h-2 rounded-full ${p.enabled ? "bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" : "bg-red-500/50"}`}
+                        />
+                        <div>
+                          <div className="text-sm font-bold text-white">
+                            {p.name}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                            {p.type}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">
+                        P{p.priority}
+                      </div>
+                    </div>
+                  ))}
+                  {providers.length === 0 && (
+                    <div className="col-span-full text-xs text-center text-[var(--text-muted)] py-2">
+                      Loading provider status...
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="p-6 glass-card border border-white/10">
                 <h3 className="text-lg font-bold text-white mb-2">
                   System Health
