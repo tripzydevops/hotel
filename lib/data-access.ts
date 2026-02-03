@@ -1,11 +1,17 @@
 import { DashboardData, UserSettings } from "@/types";
 
 const isProduction = process.env.NODE_ENV === "production";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:8000";
+};
+
+const API_BASE_URL = getBaseUrl();
 
 async function fetchWithToken<T>(endpoint: string, token: string): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  console.log(`[DataAccess] Fetching: ${url}`);
+  console.log(`[DataAccess] Fetching: ${url} (Env: ${process.env.NODE_ENV})`);
   
   const res = await fetch(url, {
     headers: {
