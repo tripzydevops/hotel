@@ -10,6 +10,13 @@ class ProviderFactory:
     _providers: List[HotelDataProvider] = []
     
     @classmethod
+    def get_active_providers(cls) -> List[HotelDataProvider]:
+        """Returns list of all active providers sorted by priority."""
+        if not cls._providers:
+            cls._register_providers()
+        return cls._providers
+
+    @classmethod
     def get_provider(cls, prefer: str = "primary") -> HotelDataProvider:
         """
         Get the most appropriate provider.

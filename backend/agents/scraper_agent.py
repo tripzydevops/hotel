@@ -42,27 +42,49 @@ class ScraperAgent:
                 serp_api_id = hotel.get("serp_api_id")
                 
                 # Determine search parameters
-                check_in = options.check_in if options and options.check_in else hotel.get("fixed_check_in")
-                check_out = options.check_out if options and options.check_out else hotel.get("fixed_check_out")
+                check_in_raw = options.check_in if options and options.check_in else hotel.get("fixed_check_in")
+                check_out_raw = options.check_out if options and options.check_out else hotel.get("fixed_check_out")
+                
+                # Normalize Dates (Prevent 'str' object has no attribute 'strftime' error)
+                check_in = check_in_raw
+                if isinstance(check_in_raw, str):
+                    try:
+                        check_in = datetime.strptime(check_in_raw, "%Y-%m-%d").date()
+                    except ValueError:
+                        check_in = None # Handle invalid format
+
+                check_out = check_out_raw
+                if isinstance(check_out_raw, str):
+                    try:
+                        check_out = datetime.strptime(check_out_raw, "%Y-%m-%d").date()
+                    except ValueError:
+                        check_out = None
+
                 adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
                 
-                # Fetch price
-                # Use Provider Factory to get the best available provider
-                try:
-                    provider = ProviderFactory.get_provider(prefer="auto")
-                    # print(f"[Scraper] Using Provider: {provider.get_provider_name()}")
+                # Fetch price with FAILOVER
+                price_data = None
+                if check_in and check_out:
+                    providers = ProviderFactory.get_active_providers()
                     
-                    price_data = await provider.fetch_price(
-                        hotel_name=hotel_name,
-                        location=location,
-                        check_in=check_in,
-                        check_out=check_out,
-                        adults=adults,
-                        currency=options.currency if options and options.currency else "USD"
-                    )
-                except Exception as e:
-                    print(f"[Scraper] Provider Error: {e}")
-                    price_data = None
+                    for provider in providers:
+                        try:
+                            # print(f"[Scraper] Trying Provider: {provider.get_provider_name()}")
+                            price_data = await provider.fetch_price(
+                                hotel_name=hotel_name,
+                                location=location,
+                                check_in=check_in,
+                                check_out=check_out,
+                                adults=adults,
+                                currency=options.currency if options and options.currency else "USD"
+                            )
+                            if price_data:
+                                break # Success
+                        except Exception as e:
+                            print(f"[Scraper] Provider {provider.get_provider_name()} Error: {e}")
+                            continue
+                else:
+                    print(f"[Scraper] Invalid Dates for {hotel_name}: {check_in_raw} - {check_out_raw}")
                 
                 status = "success" if price_data else "not_found"
                 if price_data and price_data.get("status") == "error":
