@@ -1184,6 +1184,7 @@ const StatCard = ({
 
 const ApiKeysPanel = () => {
   const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null);
+  const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -1194,8 +1195,12 @@ const ApiKeysPanel = () => {
   const loadKeyStatus = async () => {
     setLoading(true);
     try {
-      const data = await api.getAdminKeyStatus();
-      setKeyStatus(data);
+      const [kData, pData] = await Promise.all([
+        api.getAdminKeyStatus(),
+        api.getAdminProviders(),
+      ]);
+      setKeyStatus(kData);
+      setProviders(pData);
     } catch (err: any) {
       console.error("Failed to load key status:", err);
     } finally {
@@ -1282,6 +1287,31 @@ const ApiKeysPanel = () => {
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
+        </div>
+
+        </div>
+
+        {/* Providers Status */}
+        <div className="mb-8">
+            <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider text-[var(--text-muted)]">
+                Active Data Providers
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {providers.map((p) => (
+                    <div key={p.name} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${p.enabled ? "bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" : "bg-red-500/50"}`} />
+                            <div>
+                                <div className="text-sm font-bold text-white">{p.name}</div>
+                                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{p.type}</div>
+                            </div>
+                        </div>
+                        <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">
+                            P{p.priority}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
 
         {/* Stats */}
