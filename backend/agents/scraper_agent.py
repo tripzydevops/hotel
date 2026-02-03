@@ -84,7 +84,7 @@ class ScraperAgent:
                             print(f"[Scraper] Provider {provider.get_provider_name()} Error: {e}")
                             continue
                 else:
-                    print(f"[Scraper] Invalid Dates for {hotel_name}: {check_in_raw} - {check_out_raw}")
+                    print(f"[Scraper] Validation Failed for {hotel_name}: check_in={check_in} check_out={check_out}. Both are required.")
                 
                 status = "success" if price_data else "not_found"
                 if price_data and price_data.get("status") == "error":

@@ -8,7 +8,7 @@ import asyncio
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from uuid import UUID
 from dotenv import load_dotenv
 # Load environment variables from .env and .env.local (Vercel style)
@@ -496,6 +496,19 @@ async def trigger_monitor(
         # Fail open to avoid blocking legitimate users on DB error, but log it
     # ==========================
         
+    # ===== DEFAULT DATES (RELIABILITY FIX) =====
+    check_in = options.check_in if options and options.check_in else None
+    check_out = options.check_out if options and options.check_out else None
+    
+    if not check_in:
+        check_in = date.today()
+    if not check_out:
+        check_out = check_in + timedelta(days=1)
+        
+    adults = options.adults if options and options.adults else 2
+    currency = options.currency if options and options.currency else "USD"
+    # ==========================================
+
     # Create session immediately
     session_id = None
     try:
@@ -504,29 +517,38 @@ async def trigger_monitor(
             "session_type": "manual",
             "hotels_count": len(hotels),
             "status": "pending",
-            "check_in_date": options.check_in.isoformat() if options and options.check_in else None,
-            "check_out_date": options.check_out.isoformat() if options and options.check_out else None,
-            "adults": options.adults if options else 2,
-            "currency": options.currency if options else "TRY"
+            "check_in_date": check_in.isoformat(),
+            "check_out_date": check_out.isoformat(),
+            "adults": adults,
+            "currency": currency
         }).execute()
         if session_result.data:
             session_id = session_result.data[0]["id"]
     except Exception as e:
         print(f"Failed to create session: {e}")
 
+    # Inject normalized options back for the background task
+    from backend.models.schemas import ScanOptions
+    normalized_options = ScanOptions(
+        check_in=check_in,
+        check_out=check_out,
+        adults=adults,
+        currency=currency
+    )
+
     # Launch background task
     background_tasks.add_task(
         run_monitor_background,
         user_id=user_id,
         hotels=hotels,
-        options=options,
+        options=normalized_options,
         db=db,
         session_id=session_id
     )
 
     return MonitorResult(
         hotels_checked=len(hotels),
-        prices_updated=0, # Will be updated in background
+        prices_updated=0,
         alerts_generated=0,
         session_id=session_id,
         errors=[]

@@ -24,8 +24,15 @@ export default function ScanSettingsModal({
 }: ScanSettingsModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
-  const [checkIn, setCheckIn] = useState(initialValues?.checkIn || "");
-  const [checkOut, setCheckOut] = useState(initialValues?.checkOut || "");
+  const todayStr = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+  const [checkIn, setCheckIn] = useState(initialValues?.checkIn || todayStr);
+  const [checkOut, setCheckOut] = useState(
+    initialValues?.checkOut || tomorrowStr,
+  );
   const [adults, setAdults] = useState(initialValues?.adults || 2);
 
   useEffect(() => {
