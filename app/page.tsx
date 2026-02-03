@@ -6,6 +6,7 @@ import {
   getSettingsServer,
   getProfileServer,
 } from "@/lib/data-access";
+import { createAdminClient } from "@/utils/supabase/server";
 
 export default async function Dashboard() {
   const supabase = await createClient();
@@ -30,10 +31,12 @@ export default async function Dashboard() {
 
     // DIRECT DB ACCESS: optimization for Vercel loading
     // Strategy: Try 'profiles' (newer schema) -> Fallback to 'user_profiles' (legacy schema)
+    // CRITICAL: Use Admin Client to bypass potential RLS issues on legacy tables
+    const adminSupabase = createAdminClient();
     let finalProfile = null;
 
     // 1. Try profiles
-    const { data: profileData } = await supabase
+    const { data: profileData } = await adminSupabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
@@ -43,8 +46,8 @@ export default async function Dashboard() {
       finalProfile = profileData;
     } else {
       // 2. Fallback to user_profiles
-      console.log("Dashboard: Fallback to user_profiles");
-      const { data: userProfileData } = await supabase
+      console.log("Dashboard: Fallback to user_profiles (Admin Fetch)");
+      const { data: userProfileData } = await adminSupabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)

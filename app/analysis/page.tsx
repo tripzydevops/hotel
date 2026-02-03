@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { getProfileServer } from "@/lib/data-access";
 import AnalysisClient from "@/components/analysis/AnalysisClient";
 
 export default async function AnalysisPage() {
   const supabase = await createClient();
 
+  // Validate session
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -15,14 +16,16 @@ export default async function AnalysisPage() {
   }
 
   const userId = session.user.id;
-  const token = session.access_token;
 
   // We only need profile for the header for now
   let profile = null;
   try {
     // DIRECT DB ACCESS: optimization for Vercel loading
+    // CRITICAL: Use Admin Client to bypass RLS on user_profiles
+    const adminSupabase = createAdminClient();
+
     // 1. Try profiles
-    const { data: profileData } = await supabase
+    const { data: profileData } = await adminSupabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
@@ -32,7 +35,7 @@ export default async function AnalysisPage() {
       profile = profileData;
     } else {
       // 2. Fallback
-      const { data: userProfileData } = await supabase
+      const { data: userProfileData } = await adminSupabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)

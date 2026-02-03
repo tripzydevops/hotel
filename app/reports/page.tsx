@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { getProfileServer } from "@/lib/data-access";
 import ReportsClient from "@/components/reports/ReportsClient";
 
@@ -15,14 +15,16 @@ export default async function ReportsPage() {
   }
 
   const userId = session.user.id;
-  const token = session.access_token;
 
   try {
     // DIRECT DB ACCESS: optimization for Vercel loading
+    // Strategy: Try 'profiles' -> Fallback to 'user_profiles' (legacy)
+    // CRITICAL: Use Admin Client to bypass RLS
+    const adminSupabase = createAdminClient();
     let profile = null;
 
     // 1. Try profiles
-    const { data: profileData } = await supabase
+    const { data: profileData } = await adminSupabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
@@ -32,7 +34,7 @@ export default async function ReportsPage() {
       profile = profileData;
     } else {
       // 2. Fallback to user_profiles
-      const { data: userProfileData } = await supabase
+      const { data: userProfileData } = await adminSupabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)
