@@ -33,7 +33,11 @@ interface TargetHotelTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
+  onEdit?: (id: string, hotel: any) => void;
   onViewDetails?: (hotel: any) => void;
+  isEnterprise?: boolean;
+  amenities?: string[];
+  images?: { thumbnail?: string; original?: string }[];
 }
 
 /**
@@ -59,7 +63,11 @@ export default function TargetHotelTile({
   checkIn,
   adults,
   onEdit,
+  onEdit,
   onViewDetails,
+  isEnterprise = false,
+  amenities,
+  images,
 }: TargetHotelTileProps) {
   const { t } = useI18n();
   const formatPrice = (price: number) => {
@@ -131,6 +139,20 @@ export default function TargetHotelTile({
               <p className="text-sm text-[var(--text-muted)] mt-0.5">
                 {location}
               </p>
+            )}
+
+            {/* Rich Data: Amenities */}
+            {isEnterprise && amenities && amenities.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {amenities.slice(0, 3).map((am, i) => (
+                  <span
+                    key={i}
+                    className="px-1.5 py-0.5 rounded-md bg-white/5 text-[9px] text-[var(--text-muted)] border border-white/5"
+                  >
+                    {am}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>

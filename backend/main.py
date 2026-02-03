@@ -37,7 +37,9 @@ from backend.models.schemas import (
 from backend.services.serpapi_client import serpapi_client
 from backend.services.price_comparator import price_comparator
 from backend.services.notification_service import notification_service
+from backend.services.notification_service import notification_service
 from backend.services.location_service import LocationService
+from backend.services.provider_factory import ProviderFactory
 
 # Import New Agents
 from backend.agents.scraper_agent import ScraperAgent
@@ -2482,6 +2484,12 @@ async def delete_admin_hotel(hotel_id: UUID, db: Client = Depends(get_supabase))
     except Exception as e:
         print(f"Admin Delete Hotel Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/providers")
+async def get_admin_providers(admin=Depends(get_current_admin_user)):
+    """Return status of all configured data providers."""
+    return ProviderFactory.get_status_report()
 
 
 

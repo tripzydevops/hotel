@@ -69,43 +69,43 @@ class ProviderFactory:
             
         report = []
         
-        # 1. Serper
+        # 1. RapidAPI (Booking.com) - Primary for Prices
+        report.append({
+            "name": "RapidAPI",
+            "type": "Price Source (Booking.com)",
+            "enabled": bool(os.getenv("RAPIDAPI_KEY")),
+            "priority": 1,
+            "limit": "500 / mo",
+            "refresh": "Monthly"
+        })
+
+        # 2. Serper.dev - Primary for Metadata
         report.append({
             "name": "Serper.dev",
-            "type": "Primary (JSON Search)",
+            "type": "Metadata Source (Google)",
             "enabled": bool(os.getenv("SERPER_API_KEY")),
             "priority": 1,
             "limit": "2,500 / mo",
             "refresh": "Monthly"
         })
 
-        # 2. SerpApi
+        # 3. SerpApi - Secondary/Legacy
         report.append({
             "name": "SerpApi",
-            "type": "Secondary (Legacy)",
+            "type": "Legacy / Backup",
             "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
             "priority": 2,
             "limit": "100 / mo (Free)",
             "refresh": "Monthly"
         })
 
-        # 3. Decodo
+        # 4. Decodo - Backup
         report.append({
             "name": "Decodo",
-            "type": "Backup (Google Hotels)",
+            "type": "Backup (Unstable)",
             "enabled": bool(os.getenv("DECODO_API_KEY")),
             "priority": 3,
-            "limit": "2,500 / mo (Unstable)",
-            "refresh": "Monthly (1st)"
-        })
-        
-        # 4. RapidAPI
-        report.append({
-            "name": "RapidAPI",
-            "type": "Supplementary (Booking.com)",
-            "enabled": bool(os.getenv("RAPIDAPI_KEY")),
-            "priority": 4,
-            "limit": "500 / mo",
+            "limit": "2,500 / mo",
             "refresh": "Monthly"
         })
         

@@ -240,6 +240,9 @@ export default function Dashboard() {
   const currentHotelCount =
     (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
+  const isEnterprise =
+    profile?.plan_type === "enterprise" || profile?.plan_type === "pro";
+
   return (
     <div className="min-h-screen pb-12 relative">
       {isLocked && (
@@ -488,7 +491,11 @@ export default function Dashboard() {
                   checkIn={data.target_hotel.price_info?.check_in}
                   adults={data.target_hotel.price_info?.adults}
                   onEdit={handleEditHotel}
+                  onEdit={handleEditHotel}
                   onViewDetails={handleOpenDetails}
+                  isEnterprise={isEnterprise}
+                  amenities={data.target_hotel.amenities}
+                  images={data.target_hotel.images}
                 />
               )}
 
@@ -528,7 +535,11 @@ export default function Dashboard() {
                         checkIn={competitor.price_info?.check_in}
                         adults={competitor.price_info?.adults}
                         onEdit={handleEditHotel}
+                        onEdit={handleEditHotel}
                         onViewDetails={handleOpenDetails}
+                        isEnterprise={isEnterprise}
+                        amenities={competitor.amenities}
+                        images={competitor.images}
                       />
                     );
                   })}

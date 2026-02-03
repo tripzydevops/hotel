@@ -115,6 +115,32 @@ class ScraperAgent:
                     "check_in": check_in,
                     "adults": adults
                 }
+
+                # [NEW] Persist Rich Data to Hotel Record
+                if price_data:
+                    try:
+                        update_payload = {}
+                        if price_data.get("photos"):
+                            # Normalize string URLs to object format expected by DB/Frontend
+                            # DB likely stores JSONB. Frontend type expects {thumbnail, original}
+                            # RapidAPI returns list of strings.
+                            # Let's simple-store as array of objects
+                            imgs = [{"original": url, "thumbnail": url} for url in price_data["photos"][:5]]
+                            update_payload["images"] = imgs
+                        
+                        if price_data.get("amenities"):
+                            update_payload["amenities"] = price_data["amenities"]
+                            
+                        if price_data.get("rating"):
+                            update_payload["rating"] = price_data["rating"]
+
+                        if update_payload:
+                            self.db.table("hotels").update(update_payload).eq("id", str(hotel_id)).execute()
+                            # print(f"[Scraper] Updated metadata for {hotel_name}")
+
+                    except Exception as e:
+                        print(f"[Scraper] Metadata Update Error: {e}")
+
                 results.append(result)
                 return result
 

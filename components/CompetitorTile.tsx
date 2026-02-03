@@ -33,7 +33,11 @@ interface CompetitorTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
+  onEdit?: (id: string, hotel: any) => void;
   onViewDetails?: (hotel: any) => void;
+  isEnterprise?: boolean;
+  amenities?: string[];
+  images?: { thumbnail?: string; original?: string }[];
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {
@@ -58,6 +62,9 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     adults,
     onEdit,
     onViewDetails,
+    isEnterprise = false,
+    amenities,
+    images,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
@@ -129,6 +136,19 @@ export default function CompetitorTile(props: CompetitorTileProps) {
           </div>
           <div>
             <div className="flex items-center gap-1.5 mb-0.5">
+              {/* Rich Data: Amenities (Mini) */}
+              {isEnterprise && amenities && amenities.length > 0 && (
+                <div className="absolute -bottom-2 left-0 flex gap-0.5 translate-y-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  {amenities.slice(0, 2).map((am, i) => (
+                    <span
+                      key={i}
+                      className="px-1 py-0.5 rounded-[2px] bg-black/80 text-[7px] text-[var(--soft-gold)] whitespace-nowrap"
+                    >
+                      {am}
+                    </span>
+                  ))}
+                </div>
+              )}
               <h3
                 className="text-sm font-bold text-white line-clamp-1"
                 title={name}
