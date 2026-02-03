@@ -518,15 +518,22 @@ async def trigger_monitor(
     check_in = options.check_in if options and options.check_in else None
     check_out = options.check_out if options and options.check_out else None
     
-    if not check_in:
-        # If it's late (after 6 PM local-ish), default to tomorrow
+    # Aggressive adjustment: If check_in is 'today' and it's late (after 6 PM UTC), 
+    # force it to tomorrow because Google Hotels often lacks same-day results late at night.
+    today = date.today()
+    is_today = (not check_in) or (check_in == today)
+    
+    if is_today:
         current_hour = datetime.now().hour
         if current_hour >= 18:
-            check_in = date.today() + timedelta(days=1)
-        else:
-            check_in = date.today()
+            check_in = today + timedelta(days=1)
+            print(f"[Monitor] Late night detected ({current_hour}:00 UTC). Advancing check-in to {check_in}")
+        elif not check_in:
+            check_in = today
             
     if not check_out:
+        check_out = check_in + timedelta(days=1)
+    elif check_out <= check_in:
         check_out = check_in + timedelta(days=1)
         
     adults = options.adults if options and options.adults else 2
