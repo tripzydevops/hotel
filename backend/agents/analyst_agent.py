@@ -19,7 +19,8 @@ class AnalystAgent:
         self,
         user_id: UUID,
         scraper_results: List[Dict[str, Any]],
-        threshold: float = 2.0
+        threshold: float = 2.0,
+        options: Optional[ScanOptions] = None
     ) -> Dict[str, Any]:
         """Analyzes scraped data, logs prices, and detects alerts."""
         analysis_summary = {
@@ -37,27 +38,34 @@ class AnalystAgent:
             if status != "success" or not price_data:
                 continue
 
-            current_price = price_data.get("price")
-            currency = price_data.get("currency", "USD")
+            current_price = price_data.get("price", 0.0)
+            currency = price_data.get("currency", "TRY")
             
-            # Log price
+            # 2. Currency Normalization (if RapidAPI returns USD but TRY was expected)
+            target_currency = options.currency if options and options.currency else "TRY"
+            if currency == "USD" and target_currency == "TRY" and current_price > 0:
+                print(f"[AnalystAgent] Converting {current_price} USD to TRY for {hotel_id}")
+                current_price = convert_currency(current_price, "USD", "TRY")
+                currency = "TRY"
+
+            # 3. Log to price_logs (This updates the dashboard)
             try:
                 self.db.table("price_logs").insert({
                     "hotel_id": hotel_id,
                     "price": current_price,
                     "currency": currency,
-                    "check_in_date": res.get("check_in") or date.today().isoformat(),
-                    "source": "serpapi",
-                    "vendor": price_data.get("vendor"),
+                    "check_in_date": res.get("check_in").isoformat() if hasattr(res.get("check_in"), "isoformat") else res.get("check_in"),
+                    "source": price_data.get("source", "serpapi"),
+                    "vendor": price_data.get("vendor", "Unknown"),
                     "offers": price_data.get("offers", []),
                     "room_types": price_data.get("room_types", [])
                 }).execute()
                 analysis_summary["prices_updated"] += 1
                 
-                # Update hotel metadata if available
+                # 4. Update hotel meta (Dashboard card metadata)
+                # Only update columns that exist
                 meta_update = {}
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
-                if price_data.get("stars"): meta_update["stars"] = price_data["stars"]
                 if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
@@ -65,7 +73,7 @@ class AnalystAgent:
                     self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
 
             except Exception as e:
-                print(f"[AnalystAgent] Database error logging price/meta for {hotel_id}: {e}")
+                print(f"[AnalystAgent] Database error logging for {hotel_id}: {e}")
 
             # 3. Check for Threshold Breaches (Comparison with Previous)
             prev_res = self.db.table("price_logs") \

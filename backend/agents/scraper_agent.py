@@ -76,7 +76,7 @@ class ScraperAgent:
                                 check_in=check_in,
                                 check_out=check_out,
                                 adults=adults,
-                                currency=options.currency if options and options.currency else "USD"
+                                currency=options.currency if options and options.currency else "TRY"
                             )
                             
                             if candidate_data:

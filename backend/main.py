@@ -501,12 +501,12 @@ async def trigger_monitor(
     check_out = options.check_out if options and options.check_out else None
     
     if not check_in:
-        check_in = date.today() + timedelta(days=1)
+        check_in = date.today()
     if not check_out:
         check_out = check_in + timedelta(days=1)
         
     adults = options.adults if options and options.adults else 2
-    currency = options.currency if options and options.currency else "USD"
+    currency = options.currency if options and options.currency else "TRY"
     # ==========================================
 
     # Create session immediately
@@ -589,7 +589,7 @@ async def run_monitor_background(
 
         # 4. Phase 2: Analyst Agent (Intelligence & Persistence)
         print(f"[Orchestrator] Triggering AnalystAgent for analysis...")
-        analysis = await analyst.analyze_results(user_id, scraper_results, threshold)
+        analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options)
 
         # 5. Phase 3: Notifier Agent (Communication)
         if analysis["alerts"] and settings:

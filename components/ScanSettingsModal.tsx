@@ -24,17 +24,14 @@ export default function ScanSettingsModal({
 }: ScanSettingsModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
+  const todayStr = new Date().toISOString().split("T")[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  const dayAfter = new Date();
-  dayAfter.setDate(dayAfter.getDate() + 2);
-  const dayAfterStr = dayAfter.toISOString().split("T")[0];
-
-  const [checkIn, setCheckIn] = useState(initialValues?.checkIn || tomorrowStr);
+  const [checkIn, setCheckIn] = useState(initialValues?.checkIn || todayStr);
   const [checkOut, setCheckOut] = useState(
-    initialValues?.checkOut || dayAfterStr,
+    initialValues?.checkOut || tomorrowStr,
   );
   const [adults, setAdults] = useState(initialValues?.adults || 2);
 
