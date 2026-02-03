@@ -72,6 +72,10 @@ async def validation_exception_handler(request, exc):
         content={"detail": exc.errors(), "body": exc.body},
     )
 
+@app.get("/api/ping")
+async def ping():
+    return {"status": "pong"}
+
 # Supabase client
 def get_supabase() -> Client:
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
