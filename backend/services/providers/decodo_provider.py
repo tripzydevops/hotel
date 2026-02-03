@@ -94,8 +94,8 @@ class DecodoProvider(HotelDataProvider):
                         # If we get a results array, it's done.
                         if "results" in poll_data:
                             return self._parse_response(poll_data)
-                    elif poll_resp.status_code == 404:
-                        # Job might not be ready/created in results DB yet
+                    elif poll_resp.status_code == 404 or poll_resp.status_code == 204:
+                        # Job might not be ready/created in results DB yet (404) or processing (204)
                         continue
                     else:
                         print(f"Decodo Poll Error: {poll_resp.status_code}")
