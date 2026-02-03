@@ -37,7 +37,6 @@ from backend.models.schemas import (
 from backend.services.serpapi_client import serpapi_client
 from backend.services.price_comparator import price_comparator
 from backend.services.notification_service import notification_service
-from backend.services.notification_service import notification_service
 from backend.services.location_service import LocationService
 from backend.services.provider_factory import ProviderFactory
 

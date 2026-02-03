@@ -2,7 +2,7 @@ from datetime import datetime, date
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
-from backend.models.schemas import MarketAnalysis, PricePoint
+from backend.models.schemas import MarketAnalysis, PricePoint, ScanOptions
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
