@@ -34,24 +34,29 @@ export default async function Dashboard() {
     // CRITICAL: Use Admin Client to bypass potential RLS issues on legacy tables
     const adminSupabase = createAdminClient();
     let finalProfile = null;
+    let userProfileData = null; // Defined here for debug scope
+    let profileData = null;
 
     // 1. Try profiles
-    const { data: profileData } = await adminSupabase
+    const profileRes = await adminSupabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+    profileData = profileRes.data;
 
     if (profileData) {
       finalProfile = profileData;
     } else {
       // 2. Fallback to user_profiles
       console.log("Dashboard: Fallback to user_profiles (Admin Fetch)");
-      const { data: userProfileData } = await adminSupabase
+      const userProfileRes = await adminSupabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
+      userProfileData = userProfileRes.data;
+
       finalProfile = userProfileData;
     }
 
@@ -65,13 +70,34 @@ export default async function Dashboard() {
       };
     }
 
+    // DEBUG: Inject debug info into the response to visualize in frontend
+    // We'll wrap the DashboardClient in a div showing the debug info if we are in this degraded state (Free plan but shouldn't be?)
+    // Or just pass it as a prop? DashboardClient doesn't support it.
+    // Let's modify the return to include a debug banner.
+    const isServiceKeySet = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const isFree = finalProfile?.plan_type === "free";
+
     return (
-      <DashboardClient
-        userId={userId}
-        initialData={dashboardData}
-        initialSettings={settings}
-        initialProfile={finalProfile}
-      />
+      <div className="relative">
+        {isFree && (
+          <div className="bg-red-900/50 text-red-200 p-2 text-xs border-b border-red-700 font-mono">
+            [DEBUG MODE] Plan: {finalProfile.plan_type} | ServiceKey:{" "}
+            {isServiceKeySet ? "PRESENT" : "MISSING"} | UserID: {userId} |
+            Table:{" "}
+            {finalProfile === profileData
+              ? "profiles"
+              : finalProfile === userProfileData
+                ? "user_profiles"
+                : "FALLBACK"}
+          </div>
+        )}
+        <DashboardClient
+          userId={userId}
+          initialData={dashboardData}
+          initialSettings={settings}
+          initialProfile={finalProfile}
+        />
+      </div>
     );
   } catch (error: any) {
     console.error("Server-side fetch error:", error);
