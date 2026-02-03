@@ -17,6 +17,7 @@ load_dotenv(".env.local", override=True)
 from supabase import create_client, Client
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from backend.models.schemas import (
     Hotel, HotelCreate, HotelUpdate,
@@ -241,7 +242,6 @@ async def health_check():
 @app.get("/api/dashboard/{user_id}")
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
-    from fastapi.encoders import jsonable_encoder
     
     # 0. Core Fallback
     fallback_data = {
@@ -532,7 +532,6 @@ async def trigger_monitor(
         print(f"Failed to create session: {e}")
 
     # Inject normalized options back for the background task
-    from backend.models.schemas import ScanOptions
     normalized_options = ScanOptions(
         check_in=check_in,
         check_out=check_out,
