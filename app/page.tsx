@@ -79,7 +79,7 @@ export default async function Dashboard() {
 
     return (
       <div className="relative">
-        {isFree && (
+        {true && (
           <div className="bg-red-900/50 text-red-200 p-2 text-xs border-b border-red-700 font-mono">
             [DEBUG MODE] Plan: {finalProfile.plan_type} | ServiceKey:{" "}
             {isServiceKeySet ? "PRESENT" : "MISSING"} | UserID: {userId} |
