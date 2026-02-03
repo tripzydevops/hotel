@@ -217,7 +217,7 @@ export default function TargetHotelTile({
           <div className="relative inline-block mb-1">
             {currentPrice > 0 ? (
               <div className="flex flex-col items-center">
-                <p className="text-4xl sm:text-6xl font-black text-white tracking-tighter transition-all">
+                <p className="text-price-lg text-white tracking-tighter transition-all text-glow">
                   {formatPrice(currentPrice)}
                 </p>
                 {vendor && (

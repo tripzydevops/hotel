@@ -235,7 +235,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
       <div className="flex-1 flex items-center justify-between group relative cursor-default">
         <div>
           <p
-            className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}
+            className={`text-3xl font-bold tracking-tight ${currentPrice > 0 ? "text-white text-glow-sm" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}
           >
             {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
           </p>

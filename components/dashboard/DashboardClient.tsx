@@ -233,7 +233,10 @@ export default function DashboardClient({
     );
 
   return (
-    <div className="min-h-screen pb-12 relative animate-fade-in">
+    <div className="min-h-screen pb-12 relative animate-fade-in overflow-hidden">
+      {/* Premium Atmospheric Background */}
+      <div className="bg-mesh" />
+
       {isLocked && (
         <PaywallOverlay
           reason={
