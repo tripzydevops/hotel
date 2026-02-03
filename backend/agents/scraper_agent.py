@@ -70,7 +70,7 @@ class ScraperAgent:
                     for provider in providers:
                         try:
                             # print(f"[Scraper] Trying Provider: {provider.get_provider_name()}")
-                            price_data = await provider.fetch_price(
+                            candidate_data = await provider.fetch_price(
                                 hotel_name=hotel_name,
                                 location=location,
                                 check_in=check_in,
@@ -78,8 +78,18 @@ class ScraperAgent:
                                 adults=adults,
                                 currency=options.currency if options and options.currency else "USD"
                             )
-                            if price_data:
-                                break # Success
+                            
+                            if candidate_data:
+                                # Prioritize metadata from any successful provider
+                                if not price_data:
+                                    price_data = candidate_data
+                                elif candidate_data.get("price", 0) > 0:
+                                    # If we found a real price, prefer this data
+                                    price_data = candidate_data
+                                    
+                                # If we have a real price, we can stop searching
+                                if candidate_data.get("price", 0) > 0:
+                                    break
                         except Exception as e:
                             print(f"[Scraper] Provider {provider.get_provider_name()} Error: {e}")
                             continue

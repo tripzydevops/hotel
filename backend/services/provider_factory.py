@@ -40,22 +40,28 @@ class ProviderFactory:
         
     @classmethod
     def _register_providers(cls):
-        # 1. Serper.dev (Primary - Stable)
-        if os.getenv("SERPER_API_KEY"):
-            cls._providers.append(SerperProvider())
-
-        # 2. SerpApi (Secondary - Reliable)
-        if os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY"):
-            cls._providers.append(SerpApiProvider())
-
-        # 3. Decodo (Backup - High Quota but Unstable)
-        if os.getenv("DECODO_API_KEY"):
-            cls._providers.append(DecodoProvider())
-            
-        # 4. RapidApi (Supplementary -> Primary for Prices)
+        # 1. RapidApi (Primary for Prices)
         rapid_key = os.getenv("RAPIDAPI_KEY")
         if rapid_key:
             cls._providers.append(RapidApiProvider(rapid_key))
+            
+        # 2. SerpApi (Secondary - Reliable)
+        serp_keys = []
+        if os.getenv("SERPAPI_API_KEY"): serp_keys.append(os.getenv("SERPAPI_API_KEY"))
+        if os.getenv("SERPAPI_KEY"): serp_keys.append(os.getenv("SERPAPI_KEY"))
+        # Support user's custom key name from screenshot
+        if os.getenv("SERPAPI_API_KEY_2"): serp_keys.append(os.getenv("SERPAPI_API_KEY_2"))
+        
+        if serp_keys:
+            cls._providers.append(SerpApiProvider())
+
+        # 3. Serper.dev (Supplementary - Metadata Only)
+        if os.getenv("SERPER_API_KEY"):
+            cls._providers.append(SerperProvider())
+
+        # 4. Decodo (Backup - Unstable)
+        if os.getenv("DECODO_API_KEY"):
+            cls._providers.append(DecodoProvider())
             
     @classmethod
     def get_status_report(cls) -> List[dict]:
@@ -93,7 +99,7 @@ class ProviderFactory:
         report.append({
             "name": "SerpApi",
             "type": "Legacy / Backup",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
+            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY") or os.getenv("SERPAPI_API_KEY_2")),
             "priority": 2,
             "limit": "100 / mo (Free)",
             "refresh": "Monthly"
