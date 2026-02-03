@@ -16,7 +16,8 @@ class HotelDataProvider(ABC):
         check_in: date, 
         check_out: date, 
         adults: int = 2, 
-        currency: str = "USD"
+        currency: str = "USD",
+        serp_api_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch price and metadata for a specific hotel.

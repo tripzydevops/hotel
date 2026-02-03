@@ -72,47 +72,58 @@ class SerpApiProvider(HotelDataProvider):
         check_in: date, 
         check_out: date, 
         adults: int = 2, 
-        currency: str = "USD"
+        currency: str = "USD",
+        serp_api_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         
-        params = {
-            "engine": "google_hotels",
-            "q": f"{hotel_name} {location}",
-            "check_in_date": check_in.isoformat(),
-            "check_out_date": check_out.isoformat(),
-            "adults": adults,
-            "currency": currency,
-            "gl": "us",
-            "hl": "en",
-            "api_key": self._key_manager.current_key
-        }
-        
-        # Currency Localization logic
-        if currency == "TRY": params["gl"], params["hl"] = "tr", "tr"
-        elif currency == "GBP": params["gl"] = "uk"
-        elif currency == "EUR": params["gl"] = "fr"
+        async def do_fetch(q_str: str, token: Optional[str] = None) -> Optional[Dict[str, Any]]:
+            params = {
+                "engine": "google_hotels",
+                "q": q_str,
+                "check_in_date": check_in.isoformat(),
+                "check_out_date": check_out.isoformat(),
+                "adults": adults,
+                "currency": currency,
+                "gl": "tr" if currency == "TRY" else "us",
+                "hl": "tr" if currency == "TRY" else "en",
+                "api_key": self._key_manager.current_key
+            }
+            
+            if token:
+                if len(token) > 20: params["property_token"] = token
+                else: params["hotel_class_id"] = token
 
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(self.BASE_URL, params=params)
-                
-                # Quota Handling
-                if self._is_quota_error(response):
-                    if self._key_manager.rotate_key():
-                        params["api_key"] = self._key_manager.current_key
-                        response = await client.get(self.BASE_URL, params=params)
-                    else:
-                        print("[SerpApi] All keys exhausted.")
-                        return None
-                
-                if response.status_code != 200:
-                    return None
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.get(self.BASE_URL, params=params)
+                    if self._is_quota_error(response):
+                        if self._key_manager.rotate_key():
+                            params["api_key"] = self._key_manager.current_key
+                            response = await client.get(self.BASE_URL, params=params)
+                        else: return None
                     
-                return self._parse_hotel_result(response.json(), hotel_name, currency)
-                
-        except Exception as e:
-            print(f"[SerpApi] Error: {e}")
+                    if response.status_code == 200:
+                        data = response.json()
+                        return self._parse_hotel_result(data, hotel_name, currency)
+            except Exception as e:
+                print(f"[SerpApi] Fetch Error: {e}")
             return None
+
+        # 1. Primary Attempt (with ID if available)
+        search_query = f"{hotel_name} {location}" if location else hotel_name
+        result = await do_fetch(search_query, serp_api_id)
+        
+        # 2. Fallback Attempt (without ID if ID failed or returned NOT_FOUND)
+        if not result and serp_api_id:
+            print(f"[SerpApi] NOT_FOUND with token. Retrying with fuzzy search: {search_query}")
+            result = await do_fetch(search_query, None)
+
+        # 3. Last Resort: Broader search (just name)
+        if not result and location:
+            print(f"[SerpApi] NOT_FOUND with location. Retrying with name only: {hotel_name}")
+            result = await do_fetch(hotel_name, None)
+
+        return result
 
     def _is_quota_error(self, response: httpx.Response) -> bool:
         if response.status_code == 429: return True
@@ -121,17 +132,33 @@ class SerpApiProvider(HotelDataProvider):
         except: return False
 
     def _parse_hotel_result(self, data: Dict[str, Any], target_hotel: str, currency: str) -> Optional[Dict[str, Any]]:
-        # This parsing logic matches the original client's heuristic
         properties = data.get("properties", [])
         best_match = None
         
-        # ... (simplified standard match logic)
-        if not properties and data.get("rate_per_night"):
-             # Direct Single Result
-             best_match = data
+        # Remove common stop words for fuzzy matching
+        ignore = ["hotel", "resort", "spa", "residences", "by", "wyndham", "hilton", "garden", "inn", "&"]
+        target_norm = target_hotel.lower()
+        for word in ignore:
+            target_norm = target_norm.replace(word, "")
+        target_norm = target_norm.strip()
         
+        # 1. Try to find by name match
+        for prop in properties:
+            name = prop.get("name", "").lower()
+            if target_norm in name or (len(target_norm) > 3 and target_norm[:5] in name):
+                best_match = prop
+                print(f"[SerpApi] Match found: {prop.get('name')}")
+                break
+        
+        # 2. Heuristic: Primary Result
+        if not best_match and data.get("rate_per_night"):
+             best_match = data
+             print(f"[SerpApi] Using knowledge graph result")
+        
+        # 3. Fallback to first property if results exist
         if not best_match and properties:
-             best_match = properties[0] # Default to first for now
+             best_match = properties[0]
+             print(f"[SerpApi] Falling back to first property: {best_match.get('name')}")
              
         if not best_match: return None
 
@@ -141,10 +168,11 @@ class SerpApiProvider(HotelDataProvider):
             "vendor": "SerpApi",
             "source": "SerpApi",
             "url": best_match.get("link", ""),
-            "rating": best_match.get("overall_rating", 0.0),
+            "rating": best_match.get("overall_rating", best_match.get("rating", 0.0)),
             "reviews": best_match.get("reviews", 0),
             "amenities": best_match.get("amenities", []),
-            "sentiment_breakdown": best_match.get("reviews_breakdown", [])
+            "sentiment_breakdown": best_match.get("reviews_breakdown", []),
+            "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")]
         }
 
     def _extract_price(self, match: Dict[str, Any]) -> float:

@@ -519,7 +519,13 @@ async def trigger_monitor(
     check_out = options.check_out if options and options.check_out else None
     
     if not check_in:
-        check_in = date.today()
+        # If it's late (after 6 PM local-ish), default to tomorrow
+        current_hour = datetime.now().hour
+        if current_hour >= 18:
+            check_in = date.today() + timedelta(days=1)
+        else:
+            check_in = date.today()
+            
     if not check_out:
         check_out = check_in + timedelta(days=1)
         

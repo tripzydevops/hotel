@@ -75,7 +75,8 @@ class ScraperAgent:
                             check_in=check_in,
                             check_out=check_out,
                             adults=adults,
-                            currency=options.currency if options and options.currency else "TRY"
+                            currency=options.currency if options and options.currency else "TRY",
+                            serp_api_id=serp_api_id
                         )
                     except Exception as e:
                         print(f"[Scraper] Primary Provider Error for {hotel_name}: {e}")
