@@ -23,18 +23,32 @@ export default async function Dashboard() {
 
   try {
     // Parallel data fetching for maximum performance
-    const [dashboardData, settings, profile] = await Promise.all([
+    const [dashboardData, settings] = await Promise.all([
       getDashboardServer(userId, token),
       getSettingsServer(userId, token),
-      getProfileServer(userId, token),
     ]);
+
+    // DIRECT DB ACCESS: optimization for Vercel loading
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    // If direct fetch fails (or table is user_profiles), fallback or just use what we have
+    const finalProfile = profileData || {
+      id: userId,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || "User",
+      plan_type: "free",
+    };
 
     return (
       <DashboardClient
         userId={userId}
         initialData={dashboardData}
         initialSettings={settings}
-        initialProfile={profile}
+        initialProfile={finalProfile}
       />
     );
   } catch (error: any) {

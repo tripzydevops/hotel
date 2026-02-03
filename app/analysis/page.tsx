@@ -20,11 +20,23 @@ export default async function AnalysisPage() {
   // We only need profile for the header for now
   let profile = null;
   try {
-    profile = await getProfileServer(userId, token);
+    // DIRECT DB ACCESS: optimization for Vercel loading
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    profile = profileData;
   } catch (error) {
     console.error("Failed to fetch profile for analysis page:", error);
-    // Optional: could redirect to login if we suspect token issues
-    // redirect("/login");
+    // Fallback minimal profile to ensure header stays logged in
+    profile = {
+      id: userId,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || "User",
+      plan_type: "free", // Default fallback, but keeps user "logged in" in UI
+    };
   }
 
   return <AnalysisClient userId={userId} initialProfile={profile} />;

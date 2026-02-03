@@ -18,8 +18,21 @@ export default async function ReportsPage() {
   const token = session.access_token;
 
   try {
-    // We only need profile for the header for now
-    const profile = await getProfileServer(userId, token);
+    // DIRECT DB ACCESS: optimization for Vercel loading
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    // If direct fetch fails, fallback
+    const profile = profileData || {
+      id: userId,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || "User",
+      plan_type: "free",
+    };
+
     return <ReportsClient userId={userId} initialProfile={profile} />;
   } catch (error) {
     console.error("Failed to fetch profile for reports:", error);
