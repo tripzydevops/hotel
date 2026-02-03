@@ -23,6 +23,7 @@ export default function BentoGrid({
         sm:grid-cols-2
         lg:grid-cols-3
         auto-rows-[minmax(180px,auto)]
+        grid-flow-dense
         ${className}
       `}
     >
@@ -49,9 +50,10 @@ export function BentoTile({
   onClick,
 }: BentoTileProps) {
   const sizeClasses = {
-    small: "",
-    medium: "sm:col-span-1 lg:col-span-1 lg:row-span-1",
-    large: "sm:col-span-2 lg:col-span-2 lg:row-span-2",
+    small: "col-span-1 row-span-1",
+    medium: "col-span-1 sm:col-span-2 lg:col-span-2 row-span-1", // Wide
+    large: "col-span-1 sm:col-span-2 lg:col-span-2 row-span-2", // Big square
+    tall: "col-span-1 row-span-2", // Tall vertical
   };
 
   return (
