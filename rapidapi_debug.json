@@ -1,0 +1,870 @@
+{
+  "status": true,
+  "message": "Success",
+  "timestamp": 1770134076564,
+  "data": {
+    "hotels": [
+      {
+        "hotel_id": 8387803,
+        "accessibilityLabel": "Hilton Garden Inn Balikesir.\n4 out of 5 stars.\nThis is a Preferred property.\n9.2 Wonderful 228 reviews.\n\u200e0.6 km from downtown\u202c.\n2\u00a0beds.\n84 USD.\n+10 USD taxes and charges.",
+        "property": {
+          "accuratePropertyClass": 4,
+          "isHighlightedHotel": true,
+          "priceBreakdown": {
+            "excludedPrice": {
+              "value": 10.0881522733043,
+              "currency": "USD"
+            },
+            "taxExceptions": [],
+            "grossPrice": {
+              "currency": "USD",
+              "value": 84.0679356108686
+            },
+            "benefitBadges": []
+          },
+          "reviewScore": 9.2,
+          "ufi": -737812,
+          "longitude": 27.87892,
+          "latitude": 39.644813,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "00:00"
+          },
+          "qualityClass": 0,
+          "rankingPosition": 0,
+          "reviewCount": 228,
+          "isPreferred": true,
+          "isFirstPage": true,
+          "checkoutDate": "2026-03-06",
+          "reviewScoreWord": "Wonderful",
+          "mainPhotoId": 506250591,
+          "name": "Hilton Garden Inn Balikesir",
+          "id": 8387803,
+          "checkinDate": "2026-03-05",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/506250591.jpg?k=302cf2fa8f6d1cc66e7f54013ee67f5550d3e276531b276f0f4344626bbd0375&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/506250591.jpg?k=302cf2fa8f6d1cc66e7f54013ee67f5550d3e276531b276f0f4344626bbd0375&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/506250591.jpg?k=302cf2fa8f6d1cc66e7f54013ee67f5550d3e276531b276f0f4344626bbd0375&o="
+          ],
+          "blockIds": [
+            "838780307_350331553_2_0_0_954959"
+          ],
+          "currency": "TRY",
+          "countryCode": "tr",
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "00:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 4,
+          "wishlistName": "Bal\u0131kesir",
+          "position": 0
+        }
+      },
+      {
+        "hotel_id": 15619275,
+        "accessibilityLabel": "Masal pansiyon.\n\u200e200 m from downtown\u202c.\nMobile-only price\nNew to Booking.com.\n Hotel room : 2\u00a0beds.\nOriginal price 43 USD. Current price 39 USD..\n+4 USD taxes and charges.",
+        "property": {
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/806613776.jpg?k=19f71ea4a5ae6d5067297542d4200f6f98c059fd079e3c350c9d4254d61a1d29&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/806613776.jpg?k=19f71ea4a5ae6d5067297542d4200f6f98c059fd079e3c350c9d4254d61a1d29&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/806613776.jpg?k=19f71ea4a5ae6d5067297542d4200f6f98c059fd079e3c350c9d4254d61a1d29&o="
+          ],
+          "currency": "EUR",
+          "blockIds": [
+            "1561927501_427265931_3_0_0"
+          ],
+          "checkin": {
+            "untilTime": "23:00",
+            "fromTime": "11:30"
+          },
+          "propertyClass": 0,
+          "optOutFromGalleryChanges": 0,
+          "countryCode": "tr",
+          "position": 1,
+          "wishlistName": "Bal\u0131kesir",
+          "isFirstPage": true,
+          "reviewScoreWord": "",
+          "checkoutDate": "2026-03-06",
+          "id": 15619275,
+          "checkinDate": "2026-03-05",
+          "name": "Masal pansiyon",
+          "mainPhotoId": 806613776,
+          "latitude": 39.6482074910384,
+          "checkout": {
+            "fromTime": "00:00",
+            "untilTime": "11:00"
+          },
+          "ufi": -737812,
+          "longitude": 27.8840926694481,
+          "qualityClass": 0,
+          "rankingPosition": 1,
+          "reviewCount": 0,
+          "priceBreakdown": {
+            "benefitBadges": [
+              {
+                "text": "Mobile-only price",
+                "variant": "constructive",
+                "identifier": "Mobile Rate",
+                "explanation": "Mobile-only price"
+              }
+            ],
+            "strikethroughPrice": {
+              "value": 43.4160002278473,
+              "currency": "USD"
+            },
+            "grossPrice": {
+              "value": 39.0744430850628,
+              "currency": "USD"
+            },
+            "taxExceptions": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 3.90739714050611
+            }
+          },
+          "accuratePropertyClass": 0,
+          "reviewScore": 0
+        }
+      },
+      {
+        "hotel_id": 7581469,
+        "accessibilityLabel": "\u00d6zdemir Otel.\n7.5 Good 155 reviews.\n\u200e200 m from downtown\u202c.\n43 USD.\n+5 USD taxes and charges.\nFree cancellation.",
+        "property": {
+          "id": 7581469,
+          "checkinDate": "2026-03-05",
+          "name": "\u00d6zdemir Otel",
+          "mainPhotoId": 310978607,
+          "reviewScoreWord": "Good",
+          "checkoutDate": "2026-03-06",
+          "isFirstPage": true,
+          "position": 2,
+          "wishlistName": "Bal\u0131kesir",
+          "checkin": {
+            "fromTime": "12:00",
+            "untilTime": "12:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 0,
+          "countryCode": "tr",
+          "currency": "EUR",
+          "blockIds": [
+            "0_0_2_0_0"
+          ],
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/310978607.jpg?k=5ff4e7982a1ff3f4944299b2e51b61e3fb03ea7c3093b39737b40148eec5ede3&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/310978607.jpg?k=5ff4e7982a1ff3f4944299b2e51b61e3fb03ea7c3093b39737b40148eec5ede3&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/310978607.jpg?k=5ff4e7982a1ff3f4944299b2e51b61e3fb03ea7c3093b39737b40148eec5ede3&o="
+          ],
+          "reviewScore": 7.5,
+          "priceBreakdown": {
+            "grossPrice": {
+              "currency": "USD",
+              "value": 43.1000000000001
+            },
+            "taxExceptions": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 5.17000000000009
+            },
+            "benefitBadges": []
+          },
+          "accuratePropertyClass": 0,
+          "reviewCount": 155,
+          "rankingPosition": 2,
+          "qualityClass": 0,
+          "latitude": 39.648143,
+          "checkout": {
+            "fromTime": "00:00",
+            "untilTime": "10:00"
+          },
+          "ufi": -737812,
+          "longitude": 27.883945
+        }
+      },
+      {
+        "hotel_id": 447707,
+        "accessibilityLabel": "Elit Asya Hotel.\n3 out of 5 stars.\nThis is a Preferred property.\n8.4 Very Good 120 reviews.\n\u200e350 m from downtown\u202c.\nBreakfast included.\n Hotel room : 1\u00a0bed.\n89 USD.\n+11 USD taxes and charges.\nFree cancellation.",
+        "property": {
+          "reviewScore": 8.4,
+          "priceBreakdown": {
+            "benefitBadges": [],
+            "taxExceptions": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 10.7392102963595
+            },
+            "grossPrice": {
+              "value": 89.4929081496589,
+              "currency": "USD"
+            }
+          },
+          "accuratePropertyClass": 3,
+          "rankingPosition": 3,
+          "qualityClass": 0,
+          "reviewCount": 120,
+          "latitude": 39.650229838817,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "00:00"
+          },
+          "longitude": 27.8856789124984,
+          "ufi": -737812,
+          "reviewScoreWord": "Very Good",
+          "checkoutDate": "2026-03-06",
+          "checkinDate": "2026-03-05",
+          "id": 447707,
+          "name": "Elit Asya Hotel",
+          "mainPhotoId": 351210901,
+          "isPreferred": true,
+          "isFirstPage": true,
+          "checkin": {
+            "untilTime": "00:00",
+            "fromTime": "13:00"
+          },
+          "propertyClass": 3,
+          "optOutFromGalleryChanges": 0,
+          "countryCode": "tr",
+          "position": 3,
+          "wishlistName": "Bal\u0131kesir",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/351210901.jpg?k=2a0b014642a7f6fbeb8e3f706fbbc4a404b0057661a356961a0eff7cc6fc28da&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/351210901.jpg?k=2a0b014642a7f6fbeb8e3f706fbbc4a404b0057661a356961a0eff7cc6fc28da&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/351210901.jpg?k=2a0b014642a7f6fbeb8e3f706fbbc4a404b0057661a356961a0eff7cc6fc28da&o="
+          ],
+          "currency": "EUR",
+          "blockIds": [
+            "44770702_378897437_0_1_0"
+          ]
+        }
+      },
+      {
+        "hotel_id": 1994260,
+        "accessibilityLabel": "Alt\u0131n Otel & Spa Bal\u0131kesir.\n7.9 Good 76 reviews.\n\u200e3 km from downtown\u202c.\nBreakfast included.\n2\u00a0beds.\n136 USD.\n+16 USD taxes and charges.\nFree cancellation.",
+        "property": {
+          "currency": "EUR",
+          "blockIds": [
+            "199426001_243604196_2_1_0"
+          ],
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/81855215.jpg?k=75d01320c06fdd2c41791a47eb03ceb13a439d537d8476b5bcb2dc01e4bcb081&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/81855215.jpg?k=75d01320c06fdd2c41791a47eb03ceb13a439d537d8476b5bcb2dc01e4bcb081&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/81855215.jpg?k=75d01320c06fdd2c41791a47eb03ceb13a439d537d8476b5bcb2dc01e4bcb081&o="
+          ],
+          "position": 4,
+          "wishlistName": "Bal\u0131kesir",
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "00:00"
+          },
+          "propertyClass": 0,
+          "optOutFromGalleryChanges": 0,
+          "countryCode": "tr",
+          "isFirstPage": true,
+          "id": 1994260,
+          "checkinDate": "2026-03-05",
+          "mainPhotoId": 81855215,
+          "name": "Alt\u0131n Otel & Spa Bal\u0131kesir",
+          "reviewScoreWord": "Good",
+          "checkoutDate": "2026-03-06",
+          "latitude": 39.641075166835,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "00:00"
+          },
+          "longitude": 27.9200090417252,
+          "ufi": -737812,
+          "reviewCount": 76,
+          "rankingPosition": 4,
+          "qualityClass": 0,
+          "priceBreakdown": {
+            "benefitBadges": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 16.3286183256927
+            },
+            "taxExceptions": [],
+            "grossPrice": {
+              "currency": "USD",
+              "value": 136.071308394102
+            }
+          },
+          "accuratePropertyClass": 0,
+          "reviewScore": 7.9
+        }
+      },
+      {
+        "hotel_id": 1576197,
+        "accessibilityLabel": "Willmont Hotel.\n4 out of 5 stars.\nThis is a Preferred property.\n8.9 Excellent 35 reviews.\n\u200e3.7 km from downtown\u202c.\nBeds: 1 double or 2 twins.\n138 USD.\n+17 USD taxes and charges.\nFree cancellation.\nNo prepayment needed.",
+        "property": {
+          "reviewScore": 8.9,
+          "accuratePropertyClass": 4,
+          "priceBreakdown": {
+            "benefitBadges": [],
+            "taxExceptions": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 16.5774295269984
+            },
+            "grossPrice": {
+              "currency": "USD",
+              "value": 138.145403284987
+            }
+          },
+          "qualityClass": 0,
+          "rankingPosition": 5,
+          "reviewCount": 35,
+          "longitude": 27.8457619319496,
+          "ufi": -737812,
+          "latitude": 39.6591005945963,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "00:00"
+          },
+          "checkoutDate": "2026-03-06",
+          "reviewScoreWord": "Excellent",
+          "name": "Willmont Hotel",
+          "mainPhotoId": 186416145,
+          "id": 1576197,
+          "checkinDate": "2026-03-05",
+          "isPreferred": true,
+          "isFirstPage": true,
+          "countryCode": "tr",
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "00:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 4,
+          "wishlistName": "Bal\u0131kesir",
+          "position": 5,
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/186416145.jpg?k=69dbe0a143daf50f016d5ff508f591272481936caf10c1550e61731d4beb7a16&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/186416145.jpg?k=69dbe0a143daf50f016d5ff508f591272481936caf10c1550e61731d4beb7a16&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/186416145.jpg?k=69dbe0a143daf50f016d5ff508f591272481936caf10c1550e61731d4beb7a16&o="
+          ],
+          "blockIds": [
+            "157619706_285067429_0_0_0"
+          ],
+          "currency": "EUR"
+        }
+      },
+      {
+        "hotel_id": 3422340,
+        "accessibilityLabel": "Erpey Ferah Apart Otel.\n4 out of 5 for property rating.\nThis is a Preferred property.\n7.7 Good 122 reviews.\n\u200e86.4 km from downtown\u202c.\nMobile-only price.\nBreakfast included.\n Entire apartment \u2013 35\u00a0m\u00b2 : 2\u00a0beds \u2022 1\u00a0bedroom \u2022 1\u00a0bathroom.\nOriginal price 168 USD. Current price 151 USD..\n+18 USD taxes and charges.\nOnly 4 left at this price on Booking.com.",
+        "property": {
+          "position": 6,
+          "wishlistName": "Bal\u0131kesir",
+          "checkin": {
+            "fromTime": "12:00",
+            "untilTime": "12:00"
+          },
+          "propertyClass": 0,
+          "optOutFromGalleryChanges": 0,
+          "countryCode": "tr",
+          "currency": "EUR",
+          "blockIds": [
+            "342234002_116909530_2_41_0"
+          ],
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/207433185.jpg?k=4ae01d6585254835e62109f00c07d7d0dcb50e4cd8479e08d0f2da50fe8cca6d&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/207433185.jpg?k=4ae01d6585254835e62109f00c07d7d0dcb50e4cd8479e08d0f2da50fe8cca6d&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/207433185.jpg?k=4ae01d6585254835e62109f00c07d7d0dcb50e4cd8479e08d0f2da50fe8cca6d&o="
+          ],
+          "id": 3422340,
+          "checkinDate": "2026-03-05",
+          "name": "Erpey Ferah Apart Otel",
+          "mainPhotoId": 207433185,
+          "reviewScoreWord": "Good",
+          "checkoutDate": "2026-03-06",
+          "isFirstPage": true,
+          "isPreferred": true,
+          "reviewCount": 122,
+          "qualityClass": 4,
+          "rankingPosition": 6,
+          "latitude": 39.4742994542984,
+          "checkout": {
+            "untilTime": "10:00",
+            "fromTime": "00:00"
+          },
+          "ufi": -737812,
+          "longitude": 26.9032891906128,
+          "reviewScore": 7.7,
+          "priceBreakdown": {
+            "taxExceptions": [],
+            "excludedPrice": {
+              "value": 18.1706466553596,
+              "currency": "USD"
+            },
+            "grossPrice": {
+              "currency": "USD",
+              "value": 151.421898234662
+            },
+            "strikethroughPrice": {
+              "currency": "USD",
+              "value": 168.246572311529
+            },
+            "benefitBadges": [
+              {
+                "variant": "constructive",
+                "explanation": "Mobile-only price",
+                "identifier": "Mobile Rate",
+                "text": "Mobile-only price"
+              }
+            ]
+          },
+          "accuratePropertyClass": 0
+        }
+      },
+      {
+        "hotel_id": 11089265,
+        "accessibilityLabel": "\u00d6zdemir Inn Otel.\n7.1 Good 26 reviews.\n\u200e1.7 km from downtown\u202c.\n2\u00a0beds.\n57 USD.\n+1 USD taxes and charges.",
+        "property": {
+          "isFirstPage": true,
+          "checkoutDate": "2026-03-06",
+          "reviewScoreWord": "Good",
+          "name": "\u00d6zdemir Inn Otel",
+          "mainPhotoId": 802686698,
+          "id": 11089265,
+          "checkinDate": "2026-03-05",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/802686698.jpg?k=db7b76bf8318824faaa3aafcfc1ba2b7214c544b076a33be8d67d3975324dc2e&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/802686698.jpg?k=db7b76bf8318824faaa3aafcfc1ba2b7214c544b076a33be8d67d3975324dc2e&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/802686698.jpg?k=db7b76bf8318824faaa3aafcfc1ba2b7214c544b076a33be8d67d3975324dc2e&o="
+          ],
+          "blockIds": [
+            "0_0_2_1_0"
+          ],
+          "currency": "EUR",
+          "countryCode": "tr",
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "23:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 0,
+          "wishlistName": "Bal\u0131kesir",
+          "position": 7,
+          "accuratePropertyClass": 0,
+          "priceBreakdown": {
+            "benefitBadges": [],
+            "grossPrice": {
+              "currency": "USD",
+              "value": 56.6700000000001
+            },
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 1.13000000000009
+            },
+            "taxExceptions": []
+          },
+          "reviewScore": 7.1,
+          "ufi": -737812,
+          "longitude": 27.9025487,
+          "latitude": 39.6557707,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "08:00"
+          },
+          "rankingPosition": 7,
+          "qualityClass": 0,
+          "reviewCount": 26
+        }
+      },
+      {
+        "hotel_id": 7490702,
+        "accessibilityLabel": "Manast\u0131rhan Otel Kazda\u011flar\u0131.\n9.4 Wonderful 20 reviews.\n\u200e90.3 km from downtown\u202c.\nMobile-only price.\nBreakfast included.\n Hotel room : Beds: 1 double or 2 twins.\nOriginal price 152 USD. Current price 136 USD..\n+16 USD taxes and charges.\nFree cancellation.",
+        "property": {
+          "id": 7490702,
+          "checkinDate": "2026-03-05",
+          "mainPhotoId": 523356546,
+          "name": "Manast\u0131rhan Otel Kazda\u011flar\u0131",
+          "reviewScoreWord": "Wonderful",
+          "checkoutDate": "2026-03-06",
+          "isFirstPage": true,
+          "position": 8,
+          "wishlistName": "Bal\u0131kesir",
+          "checkin": {
+            "untilTime": "00:00",
+            "fromTime": "14:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 0,
+          "countryCode": "tr",
+          "currency": "EUR",
+          "blockIds": [
+            "749070203_391712078_0_1_0"
+          ],
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/523356546.jpg?k=64444eaa0c53601e29cca22d23ea3aee3976be8172cbe31eec74573331887170&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/523356546.jpg?k=64444eaa0c53601e29cca22d23ea3aee3976be8172cbe31eec74573331887170&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/523356546.jpg?k=64444eaa0c53601e29cca22d23ea3aee3976be8172cbe31eec74573331887170&o="
+          ],
+          "reviewScore": 9.4,
+          "priceBreakdown": {
+            "grossPrice": {
+              "value": 136.450303276091,
+              "currency": "USD"
+            },
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 16.3740175259309
+            },
+            "taxExceptions": [],
+            "benefitBadges": [
+              {
+                "identifier": "Mobile Rate",
+                "variant": "constructive",
+                "explanation": "Mobile-only price",
+                "text": "Mobile-only price"
+              }
+            ],
+            "strikethroughPrice": {
+              "currency": "USD",
+              "value": 151.611429367085
+            }
+          },
+          "accuratePropertyClass": 0,
+          "reviewCount": 20,
+          "rankingPosition": 8,
+          "qualityClass": 0,
+          "latitude": 39.5745982545458,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "08:00"
+          },
+          "longitude": 26.8358261613769,
+          "ufi": -737812
+        }
+      },
+      {
+        "hotel_id": 6546839,
+        "accessibilityLabel": "VALENT OTEL BUSINESS.\n9.4 Wonderful 12 reviews.\n\u200e79.5 km from downtown\u202c.\nBreakfast included.\n1\u00a0bed.\n116 USD.\n+14 USD taxes and charges.\nFree cancellation.\nOnly 3 left at this price on Booking.com.",
+        "property": {
+          "reviewScoreWord": "Wonderful",
+          "checkoutDate": "2026-03-06",
+          "id": 6546839,
+          "checkinDate": "2026-03-05",
+          "mainPhotoId": 612475881,
+          "name": "VALENT OTEL BUSINESS",
+          "isFirstPage": true,
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "00:00"
+          },
+          "propertyClass": 0,
+          "optOutFromGalleryChanges": 0,
+          "countryCode": "tr",
+          "position": 9,
+          "wishlistName": "Bal\u0131kesir",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/612475881.jpg?k=8ff9f201cddf8783eda913dbf9a28445e3b2454808759d25460ea2234fb6e92a&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/612475881.jpg?k=8ff9f201cddf8783eda913dbf9a28445e3b2454808759d25460ea2234fb6e92a&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/612475881.jpg?k=8ff9f201cddf8783eda913dbf9a28445e3b2454808759d25460ea2234fb6e92a&o="
+          ],
+          "currency": "EUR",
+          "blockIds": [
+            "654683902_369548795_2_1_0"
+          ],
+          "reviewScore": 9.4,
+          "priceBreakdown": {
+            "excludedPrice": {
+              "value": 13.8976975129352,
+              "currency": "USD"
+            },
+            "taxExceptions": [],
+            "grossPrice": {
+              "currency": "USD",
+              "value": 115.814303167794
+            },
+            "benefitBadges": []
+          },
+          "accuratePropertyClass": 0,
+          "qualityClass": 0,
+          "rankingPosition": 9,
+          "reviewCount": 12,
+          "latitude": 39.5960907103233,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "12:00"
+          },
+          "longitude": 26.9598999865913,
+          "ufi": -737812
+        }
+      },
+      {
+        "hotel_id": 15187476,
+        "accessibilityLabel": "Balikesir karesi grup hotel pansiyon.\n\u200e1 km from downtown\u202c.\nEarly 2026 Deal.\n Hotel room : 25\u00a0beds.\nOriginal price 63 USD. Current price 50 USD..\n+5 USD taxes and charges.",
+        "property": {
+          "checkinDate": "2026-03-05",
+          "id": 15187476,
+          "name": "Balikesir karesi grup hotel pansiyon",
+          "mainPhotoId": 770084098,
+          "reviewScoreWord": "",
+          "checkoutDate": "2026-03-06",
+          "isFirstPage": true,
+          "position": 10,
+          "wishlistName": "Bal\u0131kesir",
+          "checkin": {
+            "untilTime": "11:00",
+            "fromTime": "11:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 0,
+          "countryCode": "tr",
+          "currency": "EUR",
+          "blockIds": [
+            "1518747601_423564861_38_0_0"
+          ],
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/770084098.jpg?k=dbea3e5ba03c88c63afb79a08561a9035c3fe03d5824c4240ad2c9794ebb5d84&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/770084098.jpg?k=dbea3e5ba03c88c63afb79a08561a9035c3fe03d5824c4240ad2c9794ebb5d84&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/770084098.jpg?k=dbea3e5ba03c88c63afb79a08561a9035c3fe03d5824c4240ad2c9794ebb5d84&o="
+          ],
+          "reviewScore": 0,
+          "priceBreakdown": {
+            "strikethroughPrice": {
+              "value": 62.7120003291127,
+              "currency": "USD"
+            },
+            "benefitBadges": [
+              {
+                "text": "Early 2026 Deal",
+                "variant": "constructive",
+                "explanation": "Early 2026 Deal",
+                "identifier": "Early Year Deals"
+              }
+            ],
+            "excludedPrice": {
+              "value": 5.01702434632943,
+              "currency": "USD"
+            },
+            "taxExceptions": [],
+            "grossPrice": {
+              "currency": "USD",
+              "value": 50.1696538632904
+            }
+          },
+          "accuratePropertyClass": 0,
+          "reviewCount": 0,
+          "rankingPosition": 10,
+          "qualityClass": 0,
+          "latitude": 39.6393090540504,
+          "checkout": {
+            "fromTime": "00:00",
+            "untilTime": "10:00"
+          },
+          "ufi": -737812,
+          "longitude": 27.8806949999537
+        }
+      },
+      {
+        "hotel_id": 6652477,
+        "accessibilityLabel": "1774 Kazda\u011f\u0131 Termal Otel.\n8.2 Very Good 4 reviews.\n\u200e85.9 km from downtown\u202c.\nBreakfast included.\n3\u00a0beds.\n149 USD.\n+18 USD taxes and charges.\nFree cancellation.\nNo prepayment needed.\nOnly 2 left at this price on Booking.com.",
+        "property": {
+          "rankingPosition": 11,
+          "qualityClass": 0,
+          "reviewCount": 4,
+          "latitude": 39.5928560231453,
+          "checkout": {
+            "untilTime": "12:00",
+            "fromTime": "11:00"
+          },
+          "longitude": 26.885468116333,
+          "ufi": -737812,
+          "reviewScore": 8.2,
+          "priceBreakdown": {
+            "taxExceptions": [],
+            "excludedPrice": {
+              "currency": "USD",
+              "value": 17.8295040935693
+            },
+            "grossPrice": {
+              "currency": "USD",
+              "value": 148.579200779744
+            },
+            "benefitBadges": []
+          },
+          "accuratePropertyClass": 0,
+          "checkin": {
+            "untilTime": "00:00",
+            "fromTime": "14:00"
+          },
+          "optOutFromGalleryChanges": 0,
+          "propertyClass": 0,
+          "countryCode": "tr",
+          "position": 11,
+          "wishlistName": "Bal\u0131kesir",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/565620407.jpg?k=84c4c76ef436a38ab3cee1aedc31145c05c7c4ce5dc0c51b417a81de2748e482&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/565620407.jpg?k=84c4c76ef436a38ab3cee1aedc31145c05c7c4ce5dc0c51b417a81de2748e482&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/565620407.jpg?k=84c4c76ef436a38ab3cee1aedc31145c05c7c4ce5dc0c51b417a81de2748e482&o="
+          ],
+          "currency": "EUR",
+          "blockIds": [
+            "665247701_272723206_2_9_0"
+          ],
+          "reviewScoreWord": "Very Good",
+          "checkoutDate": "2026-03-06",
+          "id": 6652477,
+          "checkinDate": "2026-03-05",
+          "mainPhotoId": 565620407,
+          "name": "1774 Kazda\u011f\u0131 Termal Otel",
+          "isFirstPage": true
+        }
+      },
+      {
+        "hotel_id": 13916572,
+        "accessibilityLabel": "K\u0131l\u0131\u00e7aslan Suite Hotel.\n5.0 Fair 1 review.\n\u200e\u00c7ayirhisar\u202c \u2022 \u200e2.4 km from Bal\u0131kesir\u202c.\nBreakfast included.\n Hotel room : 3\u00a0beds.\n133 USD.\n+27 USD taxes and charges.\nFree cancellation.\nNo prepayment needed.\nOnly 1 left at this price on Booking.com.",
+        "property": {
+          "reviewScore": 5,
+          "isExtended": true,
+          "priceBreakdown": {
+            "benefitBadges": [],
+            "grossPrice": {
+              "value": 132.627808536031,
+              "currency": "USD"
+            },
+            "taxExceptions": [],
+            "excludedPrice": {
+              "value": 26.5256324592066,
+              "currency": "USD"
+            }
+          },
+          "accuratePropertyClass": 0,
+          "rankingPosition": 12,
+          "qualityClass": 0,
+          "reviewCount": 1,
+          "checkout": {
+            "fromTime": "11:00",
+            "untilTime": "12:00"
+          },
+          "latitude": 39.6257385,
+          "longitude": 27.8832919,
+          "ufi": -742590,
+          "reviewScoreWord": "Fair",
+          "checkoutDate": "2026-03-06",
+          "checkinDate": "2026-03-05",
+          "id": 13916572,
+          "mainPhotoId": 669314676,
+          "name": "K\u0131l\u0131\u00e7aslan Suite Hotel",
+          "isFirstPage": true,
+          "propertyClass": 0,
+          "optOutFromGalleryChanges": 0,
+          "checkin": {
+            "fromTime": "14:00",
+            "untilTime": "00:00"
+          },
+          "countryCode": "tr",
+          "position": 12,
+          "wishlistName": "\u00c7ayirhisar",
+          "photoUrls": [
+            "https://cf.bstatic.com/xdata/images/hotel/square500/669314676.jpg?k=8d606da9c8c2e7af8f2d6cb22c68305c5fe178b8d75a1fe97dfb511441e44fd0&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square1024/669314676.jpg?k=8d606da9c8c2e7af8f2d6cb22c68305c5fe178b8d75a1fe97dfb511441e44fd0&o=",
+            "https://cf.bstatic.com/xdata/images/hotel/square2000/669314676.jpg?k=8d606da9c8c2e7af8f2d6cb22c68305c5fe178b8d75a1fe97dfb511441e44fd0&o="
+          ],
+          "currency": "EUR",
+          "blockIds": [
+            "1391657212_411133656_2_1_0"
+          ]
+        }
+      }
+    ],
+    "meta": [
+      {
+        "title": "12 properties+ 1 property around Bal\u0131kesir"
+      }
+    ],
+    "appear": [
+      {
+        "component": {
+          "props": {
+            "content": {
+              "props": {
+                "fitContentWidth": true,
+                "items": [
+                  {
+                    "props": {
+                      "component": {
+                        "props": {
+                          "items": [
+                            {
+                              "props": {
+                                "text": [
+                                  {
+                                    "text": "Read more on how payments affect the order of listed properties",
+                                    "font": "body_2"
+                                  },
+                                  {
+                                    "font": "strong_2",
+                                    "text": "  ",
+                                    "color": "foreground"
+                                  },
+                                  {
+                                    "color": "action_foreground",
+                                    "linkActions": [
+                                      {
+                                        "props": {
+                                          "url": "booking://webview?url=https%3A%2F%2Fm.booking.com%2Fgeneral.en-us.html%3Faid%3D332731%3Btmpl%3Ddocs%2Fterms-and-conditions"
+                                        }
+                                      }
+                                    ],
+                                    "text": "Learn more",
+                                    "font": "body_2"
+                                  }
+                                ]
+                              }
+                            }
+                          ],
+                          "spacing": "spacing_half"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "props": {}
+                  },
+                  {
+                    "props": {
+                      "component": {
+                        "props": {
+                          "accessibilityLabel": "Close",
+                          "tertiaryTintedColor": "foreground",
+                          "icon": "close",
+                          "variant": "tertiary_tinted"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "fill": true
+          }
+        },
+        "id": "cma"
+      },
+      {
+        "contentUrl": "https://mobile-apps.booking.com/json/mobile.saba?route_path=saba-chat-entrypoint&add_bh_info=1&add_genius_percentage_value=1&add_ribbon_text=1&affiliate_id=332731&arrival_date=2026-03-05&autoextend=1&booked_x_times_for_dates=1&booked_x_times_threshold=1&categories_filter_additional_data=&change_popularity_sort_option_copy_tag=1&change_sort_options_copy_tags=1&check_excluded_charge_or_tax=1&check_flexible_dates=1&check_is_candidate_wholesaler=1&currency_code=USD&dark_mode=1&deeplink_sec_since_click=168567.9046729803&departure_date=2026-03-06&dest_ids=8387803&device_id=57d11ec8bad14e119e4c15a86202c23f&distance_unit=metric&dl_sr_adoption=1&dotd=2&exposure_api_version=2.17&fix_dotd=1&flex_window=0&generate_map_bounding_box=1&get_cny_campaign_banner=1&get_skiing_info=1&guest_qty=2&include_amazon_banner=1&include_apartment_config=1&include_badges_in_price_breakdown=1&include_beach_information=1&include_bh_quality_classification=1&include_block_ids=1&include_bsb_info=1&include_bwallet_hotel_eligibility=1&include_composite_breakdown=1&include_cpc_non_trader_copy=1&include_excluded_charges_detail=1&include_free_cancellation=1&include_genius_badge=1&include_last_reservation=1&include_nr_bookings_best_range_message=1&include_nr_bookings_today=1&include_offered_bed_types=1&include_preview_cards=1&include_rack_rate_savings=1&include_rtb=1&include_ski_information=1&languagecode=en-us&location_source=recents&mark_first_highlighted_hotel=1&min_saba_version=31&network_type=wifi&new_segments_carousel=1&offset=0&optimized_call=1&outcome=search_results&page_define_enabled=1&pref_match=0&reason=change_sort_options&remove_wishlist_padding=1&room_qty=1&rows=auto&saba=1&saba_payload_root=1&saba_version=50&sb_calendar_open=1&search_type=hotel&send_ranking_version=1&send_search_id=1&show_beach_filter_badge=1&show_city_distance=1&show_distance_to_beach=1&show_distance_to_nearest_public_transport=1&show_genius_free_breakfast=0&show_if_mobile_deal=1&show_negotiated_rates=1&show_no_prepayment=1&show_policy=1&show_review_score_breakdowns=1&show_selected_filter_values=1&show_soldout=1&sort_by=auto&sort_by_source=sort_options&sort_genius_new_copy=1&source=search_results&temperature_unit=c&travel_purpose=&unfiltered_count_enabled=1&units=metric&use_dest_based_list_creation=1&use_direct_payment=1&user_os=15.5&user_version=36.8-iphone&categories_filter=price%3A%3AUSD-min-max&page=search-results"
+      },
+      {
+        "component": {
+          "props": {
+            "text": "Get instant access to our Genius loyalty program and enjoy discounts at properties worldwide.",
+            "title": "Sign in and save money"
+          }
+        },
+        "id": "signin_now"
+      },
+      {
+        "component": {
+          "props": {
+            "title": "",
+            "text": "Properties with these icons have been awarded Booking.com's quality rating for homes"
+          }
+        },
+        "id": "banner_qualityrating"
+      }
+    ]
+  }
+}

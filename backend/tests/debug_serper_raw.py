@@ -31,37 +31,32 @@ async def debug_serper():
         "Content-Type": "application/json"
     }
 
-    # Try Places
-    variations = [
-        "Hilton Garden Inn Balikesir",
-    ]
+    # Try Reviews with CID (from previous Places result)
+    # CID for Hilton Garden Inn Balikesir: "3233374916735990197"
     
-    headers = {
-        "X-API-KEY": api_key,
-        "Content-Type": "application/json"
+    print("\n--- Testing Query (Reviews with CID) ---")
+    payload = {
+        "cid": "3233374916735990197",
+        "gl": "tr", 
+        "hl": "en"
     }
-
+    
     async with httpx.AsyncClient() as client:
-        for q in variations:
-            print(f"\n--- Testing Query (Places): {q} ---")
-            payload = {
-                "q": q,
-                "gl": "tr", 
-                "hl": "en",
-                "type": "places"
-            }
-            resp = await client.post("https://google.serper.dev/places", headers=headers, json=payload)
-            print(f"Status: {resp.status_code}")
+        resp = await client.post("https://google.serper.dev/reviews", headers=headers, json=payload)
+        print(f"Status: {resp.status_code}")
+        
+        if resp.status_code == 200:
             data = resp.json()
-            
-            with open("serper_places_debug.json", "w", encoding="utf-8") as f:
+            with open("serper_reviews_debug.json", "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
                 
-            places = data.get("places", [])
-            print(f"Results found: {len(places)}")
-            if places:
-                print(f"Top Result: {places[0].get('title')} - {places[0].get('rating')}")
-                print(f"Details: {json.dumps(places[0], indent=2)}")
+            print(f"Keys available: {list(data.keys())}")
+            reviews = data.get("reviews", [])
+            print(f"Reviews found: {len(reviews)}")
+            if reviews:
+                 print(f"First Review Snippet: {json.dumps(reviews[0], indent=2)}")
+        else:
+            print(f"Error: {resp.text}")
 
 if __name__ == "__main__":
     asyncio.run(debug_serper())

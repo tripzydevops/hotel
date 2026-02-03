@@ -1,24 +1,26 @@
-import os
 import httpx
-from typing import Dict, Any, Optional
-from datetime import date
-from ..data_provider_interface import HotelDataProvider
+import json
+from typing import Optional, Dict, Any, Tuple
+from datetime import date, timedelta
+from backend.services.data_provider_interface import HotelDataProvider
 
 class RapidApiProvider(HotelDataProvider):
     """
-    RapidAPI Provider for Booking.com (via Betify/Tipsters).
-    Limit: 500 requests/month (Free Tier).
+    Provider for fetching hotel data via RapidAPI (Booking.com).
     """
     
-    # Base URL for the "Booking.com" API by Betify on RapidAPI
-    BASE_URL = "https://booking-com.p.rapidapi.com/v1/hotels/search"
-    
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("RAPIDAPI_KEY")
-        self.host = "booking-com.p.rapidapi.com"
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.host = "booking-com15.p.rapidapi.com"
+        self.headers = {
+            "x-rapidapi-key": self.api_key,
+            "x-rapidapi-host": self.host,
+            "Content-Type": "application/json"
+        }
+        self.base_url = f"https://{self.host}/api/v1/hotels"
 
     def get_provider_name(self) -> str:
-        return "RapidApi"
+        return "RapidAPI"
 
     async def fetch_price(
         self, 
@@ -33,105 +35,142 @@ class RapidApiProvider(HotelDataProvider):
         if not self.api_key:
             return None
 
-        # 1. We typically need a "dest_id" (Destination ID) for Booking.com APIs.
-        # This provider usually has a "locations/auto-complete" endpoint.
-        # For MVP, we might skip if we can't find dest_id easily, OR we try to implement the 2-step flow.
-        # Let's try the 2-step flow: Location Search -> Hotel Search.
+        try:
+            async with httpx.AsyncClient() as client:
+                # 1. Resolve Hotel ID
+                dest_id, search_type = await self._resolve_destination(client, hotel_name, location)
+                
+                if not dest_id:
+                    print(f"[RapidAPI] Could not resolve destination for: {hotel_name}")
+                    return None
+
+                # 2. Fetch Prices
+                return await self._get_hotel_details(
+                    client, 
+                    dest_id, 
+                    search_type, 
+                    hotel_name, 
+                    check_in, 
+                    check_out, 
+                    adults, 
+                    currency
+                )
+
+        except Exception as e:
+            print(f"[RapidAPI] Exception: {e}")
+            return None
+
+    async def _resolve_destination(self, client: httpx.AsyncClient, hotel_name: str, location: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Search for the hotel to get its proprietary Booking.com 'dest_id'.
+        """
+        url = f"{self.base_url}/searchDestination"
+        query = f"{hotel_name} {location}"
         
-        async with httpx.AsyncClient() as client:
-            headers = {
-                "X-RapidAPI-Key": self.api_key,
-                "X-RapidAPI-Host": self.host
+        try:
+            resp = await client.get(url, headers=self.headers, params={"query": query})
+            if resp.status_code != 200:
+                print(f"[RapidAPI] Resolve Error {resp.status_code}: {resp.text}")
+                return None, None
+            
+            data = resp.json()
+            
+            # Normalize response
+            locations = []
+            if isinstance(data, list):
+                locations = data
+            elif isinstance(data, dict):
+                 if "data" in data: locations = data["data"]
+                 elif "result" in data: locations = data["result"]
+            
+            # Iterate to find best match
+            # Priority: dest_type="hotel"
+            for item in locations:
+                if item.get("dest_type") == "hotel":
+                    return item.get("dest_id"), "hotel"
+            
+            # Fallback (optional) - if no hotel specific ID found, do we return None?
+            # Or try searching by city? Searching by city returns ALL hotels, not useful for specific pricing.
+            return None, None
+
+        except Exception as e:
+            print(f"[RapidAPI] Resolve Exception: {e}")
+            return None, None
+
+    async def _get_hotel_details(
+        self, 
+        client: httpx.AsyncClient, 
+        dest_id: str, 
+        search_type: str, 
+        target_name: str,
+        check_in: date, 
+        check_out: date, 
+        adults: int, 
+        currency: str
+    ) -> Optional[Dict[str, Any]]:
+        
+        url = f"{self.base_url}/searchHotels"
+        params = {
+            "dest_id": dest_id,
+            "search_type": search_type,
+            "arrival_date": check_in.strftime("%Y-%m-%d"),
+            "departure_date": check_out.strftime("%Y-%m-%d"),
+            "adults": str(adults),
+            "units": "metric",
+            "temperature_unit": "c",
+            "languagecode": "en-us",
+            "currency_code": currency
+        }
+        
+        try:
+            resp = await client.get(url, headers=self.headers, params=params)
+            if resp.status_code != 200:
+                print(f"[RapidAPI] Search Error {resp.status_code}: {resp.text}")
+                return None
+            
+            data = resp.json()
+            
+            # Extract hotels list
+            hotels = []
+            if "data" in data and "hotels" in data["data"]:
+                hotels = data["data"]["hotels"]
+            elif "result" in data:
+                hotels = data["result"]
+            
+            if not hotels:
+                return None
+                
+            best_match = hotels[0]
+            prop = best_match.get("property", best_match)
+            
+            price_val = 0.0
+            if "priceBreakdown" in prop:
+                 price_val = prop["priceBreakdown"].get("grossPrice", {}).get("value", 0.0)
+            
+            # Extra Fields (Photos, Checkin, etc)
+            photos = prop.get("photoUrls", [])
+            checkin = prop.get("checkin", {})
+            checkout = prop.get("checkout", {})
+            review_word = prop.get("reviewScoreWord", "")
+            
+            return {
+                "price": float(price_val),
+                "currency": currency,
+                "vendor": "Booking.com",
+                "source": "RapidAPI",
+                "url": "", 
+                "rating": prop.get("reviewScore", 0.0),
+                "reviews": prop.get("reviewCount", 0),
+                "amenities": [], 
+                "sentiment_breakdown": [], 
+                # Extended Metadata
+                "photos": photos[:5] if photos else [],
+                "checkin_time": checkin.get("fromTime"),
+                "checkout_time": checkout.get("untilTime"),
+                "review_word": review_word,
+                "is_preferred": prop.get("isPreferred", False)
             }
 
-            try:
-                # Step A: Get Destination ID
-                # Endpoint varies, usually /v1/hotels/locations
-                dest_id = await self._get_destination_id(client, location, headers)
-                if not dest_id:
-                    print(f"[RapidApi] Could not find destination: {location}")
-                    return None
-
-                # Step B: Search Hotels
-                params = {
-                    "checkin_date": check_in.isoformat(),
-                    "checkout_date": check_out.isoformat(),
-                    "dest_id": dest_id,
-                    "dest_type": "city", # Assuming city for now
-                    "adults_number": adults,
-                    "order_by": "popularity",
-                    "filter_by_currency": currency,
-                    "locale": "en-gb",
-                    "units": "metric"
-                }
-                
-                response = await client.get(self.BASE_URL, headers=headers, params=params, timeout=30.0)
-                
-                if response.status_code != 200:
-                    print(f"[RapidApi] Error {response.status_code}: {response.text}")
-                    return None
-                    
-                data = response.json()
-                return self._parse_response(data, hotel_name, currency)
-
-            except Exception as e:
-                print(f"[RapidApi] Exception: {e}")
-                return None
-
-    async def _get_destination_id(self, client, location: str, headers: Dict) -> Optional[str]:
-        """Helper to get Booking.com Destination ID."""
-        try:
-            url = "https://booking-com.p.rapidapi.com/v1/hotels/locations"
-            params = {"name": location, "locale": "en-gb"}
-            res = await client.get(url, headers=headers, params=params)
-            if res.status_code == 200:
-                data = res.json()
-                # Iterate to find a 'city' type
-                for item in data:
-                    if item.get("dest_type") == "city":
-                        return item.get("dest_id")
-                # Fallback to first item
-                if data: return data[0].get("dest_id")
-        except:
-            pass
-        return None
-
-    def _parse_response(self, data: Dict[str, Any], target_name: str, currency: str) -> Optional[Dict[str, Any]]:
-        # This API usually returns a 'result' list
-        results = data.get("result", [])
-        if not results: return None
-        
-        # Simple fuzzy match for hotel name
-        best_match = None
-        target_clean = target_name.lower()
-        
-        for hotel in results:
-            name = hotel.get("hotel_name", "").lower()
-            if target_clean in name or name in target_clean:
-                best_match = hotel
-                break
-        
-        if not best_match and results:
-            best_match = results[0] # Fallback
-            
-        if not best_match: return None
-
-        # Extract Price (Booking.com extraction can be tricky, check 'composite_price_breakdown')
-        price_val = 0.0
-        try:
-            # Look for gross_amount
-            gross = best_match.get("composite_price_breakdown", {}).get("gross_amount", {})
-            price_val = float(gross.get("value", 0))
-        except:
-            pass
-
-        return {
-            "price": price_val,
-            "currency": currency,
-            "source": "RapidApi (Booking)",
-            "url": best_match.get("url", ""),
-            "rating": best_match.get("review_score", 0.0),
-            "reviews": best_match.get("review_nr", 0),
-            "amenities": [], # Requires extra call usually
-            "sentiment_breakdown": []
-        }
+        except Exception as e:
+            print(f"[RapidAPI] Details Exception: {e}")
+            return None

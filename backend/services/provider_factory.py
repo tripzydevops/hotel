@@ -52,9 +52,10 @@ class ProviderFactory:
         if os.getenv("DECODO_API_KEY"):
             cls._providers.append(DecodoProvider())
             
-        # 4. RapidApi (Supplementary)
-        if os.getenv("RAPIDAPI_KEY"):
-            cls._providers.append(RapidApiProvider())
+        # 4. RapidApi (Supplementary -> Primary for Prices)
+        rapid_key = os.getenv("RAPIDAPI_KEY")
+        if rapid_key:
+            cls._providers.append(RapidApiProvider(rapid_key))
             
     @classmethod
     def get_status_report(cls) -> List[dict]:
