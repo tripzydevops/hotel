@@ -1413,6 +1413,7 @@ async def get_analysis(
                 target_sentiment = hotel_rating
 
         # FALLBACK: If no explicit target, pick the first one
+        # FALLBACK: If no explicit target, pick the first one
         if not target_hotel_id and hotels:
             target_hotel_id = str(hotels[0]["id"])
             target_hotel_name = hotels[0].get("name")
@@ -2535,6 +2536,18 @@ async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_su
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(400, f"Failed to delete plan: {str(e)}")
+@app.get("/api/admin/providers")
+async def get_admin_providers(
+    current_admin = Depends(get_current_admin_user)
+):
+    """Fetch status of all data providers."""
+    from backend.services.provider_factory import ProviderFactory
+    try:
+        return ProviderFactory.get_status_report()
+    except Exception as e:
+        print(f"Provider Report Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/admin/scans/{session_id}")
 async def get_admin_scan_details(session_id: UUID, db: Client = Depends(get_supabase)):
     """Get full details for a specific scan session including logs."""
