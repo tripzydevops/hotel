@@ -65,37 +65,43 @@ class RapidApiProvider(HotelDataProvider):
         Search for the hotel to get its proprietary Booking.com 'dest_id'.
         """
         url = f"{self.base_url}/searchDestination"
-        query = f"{hotel_name} {location}"
         
-        try:
-            resp = await client.get(url, headers=self.headers, params={"query": query})
-            if resp.status_code != 200:
-                print(f"[RapidAPI] Resolve Error {resp.status_code}: {resp.text}")
+        # Clean query: Avoid "Hotel City City"
+        clean_name = hotel_name
+        if location.lower() in hotel_name.lower():
+            query = hotel_name
+        else:
+            query = f"{hotel_name} {location}"
+            
+        async def perform_search(search_query: str):
+            try:
+                resp = await client.get(url, headers=self.headers, params={"query": search_query})
+                if resp.status_code != 200:
+                    return None, None
+                
+                data = resp.json()
+                locations = []
+                if isinstance(data, list): locations = data
+                elif isinstance(data, dict):
+                     if "data" in data: locations = data["data"]
+                     elif "result" in data: locations = data["result"]
+                
+                for item in locations:
+                    if item.get("dest_type") == "hotel":
+                        return item.get("dest_id"), "hotel"
                 return None, None
-            
-            data = resp.json()
-            
-            # Normalize response
-            locations = []
-            if isinstance(data, list):
-                locations = data
-            elif isinstance(data, dict):
-                 if "data" in data: locations = data["data"]
-                 elif "result" in data: locations = data["result"]
-            
-            # Iterate to find best match
-            # Priority: dest_type="hotel"
-            for item in locations:
-                if item.get("dest_type") == "hotel":
-                    return item.get("dest_id"), "hotel"
-            
-            # Fallback (optional) - if no hotel specific ID found, do we return None?
-            # Or try searching by city? Searching by city returns ALL hotels, not useful for specific pricing.
-            return None, None
+            except:
+                return None, None
 
-        except Exception as e:
-            print(f"[RapidAPI] Resolve Exception: {e}")
-            return None, None
+        # Try Primary Search
+        dest_id, search_type = await perform_search(query)
+        
+        # Try Fallback: Just Hotel Name (Booking.com usually knows where it is)
+        if not dest_id and query != hotel_name:
+            print(f"[RapidAPI] Fallback searching for just hotel name: {hotel_name}")
+            dest_id, search_type = await perform_search(hotel_name)
+            
+        return dest_id, search_type
 
     async def _get_hotel_details(
         self, 

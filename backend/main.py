@@ -501,7 +501,7 @@ async def trigger_monitor(
     check_out = options.check_out if options and options.check_out else None
     
     if not check_in:
-        check_in = date.today()
+        check_in = date.today() + timedelta(days=1)
     if not check_out:
         check_out = check_in + timedelta(days=1)
         
