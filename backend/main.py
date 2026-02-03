@@ -308,11 +308,11 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                         
                         previous = None
                         if previous_price and previous_price.get("price") is not None:
-                             try:
+                            try:
                                 raw_prev = float(previous_price["price"])
                                 prev_currency = previous_price.get("currency") or "USD"
                                 previous = convert_currency(raw_prev, prev_currency, curr_currency)
-                             except Exception:
+                            except Exception:
                                 previous = None
                         
                         trend_val = "stable"
@@ -417,13 +417,14 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         tb = traceback.format_exc()
         print(f"CRITICAL DASHBOARD ERROR: {e}\n{tb}")
         
-        # Diagnostics
+        # Diagnostics - return full error for debugging (User can check Network tab)
         return JSONResponse(
             status_code=500,
             content={
                 "error": "Dashboard Crash",
                 "detail": str(e),
-                "trace": tb[:1000]
+                "trace": tb,
+                "msg": "Please check backend logs or Network tab in devtools"
             }
         )
 

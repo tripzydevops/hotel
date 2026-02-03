@@ -297,7 +297,7 @@ class ScanOptions(BaseModel):
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     adults: int = Field(default=2, ge=1, le=10)
-    currency: Optional[str] = "USD"
+    currency: Optional[str] = "TRY"
 
 
 class MonitorResult(BaseModel):
