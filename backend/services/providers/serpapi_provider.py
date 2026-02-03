@@ -96,14 +96,30 @@ class SerpApiProvider(HotelDataProvider):
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(self.BASE_URL, params=params)
-                    if self._is_quota_error(response):
-                        if self._key_manager.rotate_key():
-                            params["api_key"] = self._key_manager.current_key
-                            response = await client.get(self.BASE_URL, params=params)
-                        else: return None
+                    current_key_suffix = self._key_manager.current_key[-5:]
+                    print(f"[SerpApi Diag] HTTP Status: {response.status_code} (Key: ...{current_key_suffix})")
                     
-                    if response.status_code == 200:
+                    if self._is_quota_error(response):
+                        print(f"[SerpApi Diag] 429/Quota error on Key ...{current_key_suffix}")
+                        if self._key_manager.rotate_key():
+                            new_key = self._key_manager.current_key
+                            print(f"[SerpApi Diag] Retrying with Key ...{new_key[-5:]}")
+                            params["api_key"] = new_key
+                            response = await client.get(self.BASE_URL, params=params)
+                            print(f"[SerpApi Diag] Retry Status: {response.status_code}")
+                        else:
+                            print("[SerpApi Diag] FAILED: All configured keys are exhausted.")
+                            return None
+                    
+                if response.status_code == 200:
                         data = response.json()
+                        print(f"[SerpApi Diag] Keys in response: {list(data.keys())}")
+                        if "properties" in data:
+                            print(f"[SerpApi Diag] Found {len(data['properties'])} properties")
+                            for p in data["properties"][:3]:
+                                print(f"  - {p.get('name')}")
+                        elif "error" in data:
+                            print(f"[SerpApi Diag] API Error: {data['error']}")
                         return self._parse_hotel_result(data, hotel_name, currency)
             except Exception as e:
                 print(f"[SerpApi] Fetch Error: {e}")
