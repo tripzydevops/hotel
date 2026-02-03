@@ -19,41 +19,49 @@ async def debug_serper():
     # More specific query with dates
     check_in = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d")
     check_out = (date.today() + timedelta(days=31)).strftime("%Y-%m-%d")
-    query = f"Willmont Hotel Balikesir price {check_in} to {check_out}"
-    
-    payload = {
-        "q": query,
-        "gl": "tr", 
-        "hl": "en",
-    }
+    # Variations to test
+    variations = [
+        f"Hilton Garden Inn Balikesir booking {check_in} {check_out}",
+        f"hotel Hilton Garden Inn Balikesir",
+        f"Hilton Garden Inn Balikesir gecelik fiyat", # Turkish intent
+    ]
     
     headers = {
         "X-API-KEY": api_key,
         "Content-Type": "application/json"
     }
 
-    # Try Shopping
-    print("Trying https://google.serper.dev/shopping ...")
+    # Try Places
+    variations = [
+        "Hilton Garden Inn Balikesir",
+    ]
+    
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+
     async with httpx.AsyncClient() as client:
-        resp = await client.post("https://google.serper.dev/shopping", headers=headers, json=payload)
-        
-        print(f"Status: {resp.status_code}")
-        data = resp.json()
-        
-        # Dump to file for easier reading
-        with open("serper_debug.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        for q in variations:
+            print(f"\n--- Testing Query (Places): {q} ---")
+            payload = {
+                "q": q,
+                "gl": "tr", 
+                "hl": "en",
+                "type": "places"
+            }
+            resp = await client.post("https://google.serper.dev/places", headers=headers, json=payload)
+            print(f"Status: {resp.status_code}")
+            data = resp.json()
             
-        print("Saved raw response to serper_debug.json")
-        
-        # Print key sections
-        if "knowledgeGraph" in data:
-            print("Knowledge Graph found!")
-            print(json.dumps(data["knowledgeGraph"], indent=2))
-            
-        if "organic" in data:
-            print(f"Organic Results: {len(data['organic'])}")
-            print(data['organic'][0].get("snippet"))
+            with open("serper_places_debug.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+                
+            places = data.get("places", [])
+            print(f"Results found: {len(places)}")
+            if places:
+                print(f"Top Result: {places[0].get('title')} - {places[0].get('rating')}")
+                print(f"Details: {json.dumps(places[0], indent=2)}")
 
 if __name__ == "__main__":
     asyncio.run(debug_serper())
