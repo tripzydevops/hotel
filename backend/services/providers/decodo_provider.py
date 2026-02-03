@@ -45,8 +45,8 @@ class DecodoProvider(HotelDataProvider):
             "check_out": check_out.strftime("%Y-%m-%d"),
             "adults": adults,
             "currency": currency,
-            "gl": "us",
-            "hl": "en"
+            "geo": "United States", # Decodo uses 'geo', not 'gl'
+            "locale": "en-US"       # Decodo uses 'locale', not 'hl'
         }
 
         headers = {
