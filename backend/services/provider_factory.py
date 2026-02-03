@@ -1,10 +1,7 @@
 import os
 from typing import List
 from .data_provider_interface import HotelDataProvider
-from .providers.decodo_provider import DecodoProvider
 from .providers.serpapi_provider import SerpApiProvider 
-from .providers.serper_provider import SerperProvider
-from .providers.rapidapi_provider import RapidApiProvider
 
 class ProviderFactory:
     _providers: List[HotelDataProvider] = []
