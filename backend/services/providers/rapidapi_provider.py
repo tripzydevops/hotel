@@ -90,7 +90,8 @@ class RapidApiProvider(HotelDataProvider):
                     if item.get("dest_type") == "hotel":
                         return item.get("dest_id"), "hotel"
                 return None, None
-            except:
+            except Exception as e:
+                print(f"[RapidAPI] Destination search exception for '{search_query}': {e}")
                 return None, None
 
         # Try Primary Search
@@ -152,6 +153,16 @@ class RapidApiProvider(HotelDataProvider):
             price_val = 0.0
             if "priceBreakdown" in prop:
                  price_val = prop["priceBreakdown"].get("grossPrice", {}).get("value", 0.0)
+            
+            # 2026 Resilience: If price is too low, check if it's per person 
+            # (Hilton Garden Inn for ₺1800 usually means per person when it should be ₺3600)
+            if price_val > 0 and price_val < 3000 and adults > 1 and currency == "TRY":
+                 print(f"[RapidAPI] Price {price_val} looks like per-person. Scaling by {adults} adults.")
+                 price_val = price_val * adults
+            
+            if price_val == 0:
+                 print(f"[RapidAPI] Found hotel {target_name} but price is 0. Skipping.")
+                 return None
             
             # Extra Fields (Photos, Checkin, etc)
             photos = prop.get("photoUrls", [])

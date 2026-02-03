@@ -280,7 +280,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
                 .order("recorded_at", desc=True) \
-                .limit(price_limit) \
+                .limit(200) \
                 .execute()
             
             for p in (all_prices_res.data or []):

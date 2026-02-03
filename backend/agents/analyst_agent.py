@@ -79,7 +79,9 @@ class AnalystAgent:
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
                 
-                self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+                print(f"[AnalystAgent] Updating hotel {hotel_id} metadata: {meta_update}")
+                update_res = self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+                print(f"[AnalystAgent] Update result for {hotel_id}: {update_res.data}")
 
                 # 5. Check for Threshold Breaches (Comparison with Previous)
                 prev_res = self.db.table("price_logs") \
