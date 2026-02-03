@@ -1,9 +1,7 @@
 import { DashboardData, MonitorResult, Alert, QueryLog } from "@/types";
 
 const isProduction = process.env.NODE_ENV === "production";
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (isProduction ? "" : "http://localhost:8000");
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 class ApiClient {
   private async getToken(): Promise<string | null> {

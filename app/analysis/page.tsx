@@ -18,7 +18,14 @@ export default async function AnalysisPage() {
   const token = session.access_token;
 
   // We only need profile for the header for now
-  const profile = await getProfileServer(userId, token);
+  let profile = null;
+  try {
+    profile = await getProfileServer(userId, token);
+  } catch (error) {
+    console.error("Failed to fetch profile for analysis page:", error);
+    // Optional: could redirect to login if we suspect token issues
+    // redirect("/login");
+  }
 
   return <AnalysisClient userId={userId} initialProfile={profile} />;
 }
