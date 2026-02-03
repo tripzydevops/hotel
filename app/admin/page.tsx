@@ -390,6 +390,11 @@ export default function AdminPage() {
                           <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
                             {p.type}
                           </div>
+                          {p.limit && (
+                            <div className="text-[10px] text-[var(--soft-gold)] mt-0.5 opacity-80">
+                              Limit: {p.limit} • Reset: {p.refresh}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">
@@ -1309,6 +1314,11 @@ const ApiKeysPanel = () => {
                     <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
                       {p.type}
                     </div>
+                    {p.limit && (
+                      <div className="text-[10px] text-[var(--soft-gold)] mt-0.5 opacity-80">
+                        Limit: {p.limit} • Reset: {p.refresh}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">

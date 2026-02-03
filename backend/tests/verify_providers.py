@@ -57,5 +57,11 @@ async def test_providers():
     except Exception as e:
         print(f"RapidAPI Error: {e}")
 
+    # 6. Test Metadata (Status Report)
+    print("\n--- Metadata Check ---")
+    report = ProviderFactory.get_status_report()
+    for p in report:
+        print(f"Provider: {p['name']} | Limit: {p.get('limit', 'N/A')} | Refresh: {p.get('refresh', 'N/A')}")
+
 if __name__ == "__main__":
     asyncio.run(test_providers())

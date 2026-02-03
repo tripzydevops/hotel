@@ -67,7 +67,9 @@ class ProviderFactory:
             "name": "Decodo",
             "type": "Primary (Google Hotels)",
             "enabled": bool(os.getenv("DECODO_API_KEY")),
-            "priority": 1
+            "priority": 1,
+            "limit": "2,500 / mo",
+            "refresh": "Monthly (1st)"
         })
         
         # 2. Serper
@@ -75,7 +77,9 @@ class ProviderFactory:
             "name": "Serper.dev",
             "type": "Secondary (JSON Search)",
             "enabled": bool(os.getenv("SERPER_API_KEY")),
-            "priority": 2
+            "priority": 2,
+            "limit": "2,500 / mo",
+            "refresh": "Monthly"
         })
         
         # 3. SerpApi
@@ -83,7 +87,9 @@ class ProviderFactory:
             "name": "SerpApi",
             "type": "Backup (Legacy)",
             "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
-            "priority": 3
+            "priority": 3,
+            "limit": "100 / mo (Free)",
+            "refresh": "Monthly"
         })
         
         # 4. RapidAPI
@@ -91,53 +97,9 @@ class ProviderFactory:
             "name": "RapidAPI",
             "type": "Supplementary (Booking.com)",
             "enabled": bool(os.getenv("RAPIDAPI_KEY")),
-            "priority": 4
-        })
-        
-        return report
-            
-    @classmethod
-    def get_status_report(cls) -> List[dict]:
-        """
-        Returns a list of all configured providers and their status.
-        Used for Admin Panel.
-        """
-        # Ensure configured
-        if not cls._providers:
-            cls._register_providers()
-            
-        report = []
-        
-        # 1. Decodo
-        report.append({
-            "name": "Decodo",
-            "type": "Primary (Google Hotels)",
-            "enabled": bool(os.getenv("DECODO_API_KEY")),
-            "priority": 1
-        })
-        
-        # 2. Serper
-        report.append({
-            "name": "Serper.dev",
-            "type": "Secondary (JSON Search)",
-            "enabled": bool(os.getenv("SERPER_API_KEY")),
-            "priority": 2
-        })
-        
-        # 3. SerpApi
-        report.append({
-            "name": "SerpApi",
-            "type": "Backup (Legacy)",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
-            "priority": 3
-        })
-        
-        # 4. RapidAPI
-        report.append({
-            "name": "RapidAPI",
-            "type": "Supplementary (Booking.com)",
-            "enabled": bool(os.getenv("RAPIDAPI_KEY")),
-            "priority": 4
+            "priority": 4,
+            "limit": "500 / mo",
+            "refresh": "Monthly"
         })
         
         return report
