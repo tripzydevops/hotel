@@ -68,6 +68,10 @@ class DecodoProvider(HotelDataProvider):
                     return None
                 
                 data = response.json()
+                if data.get("status") == "failed":
+                    print(f"Decodo Scraping Failed: {data.get('message')}")
+                    return None
+                    
                 return self._parse_response(data)
 
         except Exception as e:
