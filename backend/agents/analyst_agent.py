@@ -67,11 +67,12 @@ class AnalystAgent:
                 analysis_summary["prices_updated"] += 1
                 
                 # 4. Update hotel meta (Dashboard card metadata)
+                vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
                 meta_update = {
                     "current_price": current_price,
                     "currency": currency,
                     "last_scan": datetime.now().isoformat(),
-                    "vendor_source": price_data.get("vendor", "Unknown")
+                    "vendor_source": vendor
                 }
                 
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]

@@ -138,6 +138,7 @@ class SerpApiProvider(HotelDataProvider):
         return {
             "price": self._extract_price(best_match),
             "currency": currency,
+            "vendor": "SerpApi",
             "source": "SerpApi",
             "url": best_match.get("link", ""),
             "rating": best_match.get("overall_rating", 0.0),

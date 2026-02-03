@@ -21,15 +21,7 @@ class ProviderFactory:
         if not cls._providers:
             cls._register_providers()
             
-        if prefer == "secondary":
-             for p in cls._providers:
-                 if isinstance(p, SerperProvider): return p
-
-        if prefer == "tertiary":
-             for p in cls._providers:
-                 if isinstance(p, SerpApiProvider): return p
-        
-        # Default to First Available
+        # Default to First Available (SerpApi)
         if cls._providers:
             return cls._providers[0]
             
@@ -37,6 +29,9 @@ class ProviderFactory:
         
     @classmethod
     def _register_providers(cls):
+        # Force clear to prevent zombie instances in persistent processes
+        cls._providers = []
+        
         # 1. SerpApi (Primary - High Fidelity)
         serp_keys = []
         if os.getenv("SERPAPI_API_KEY"): serp_keys.append(os.getenv("SERPAPI_API_KEY"))
@@ -71,16 +66,5 @@ class ProviderFactory:
             "limit": "100 / mo (Free)",
             "refresh": "Monthly"
         })
-
-        # Alternative providers shown as decommissioned
-        for p_name in ["RapidAPI", "Serper.dev", "Decodo"]:
-            report.append({
-                "name": p_name,
-                "type": "Decommissioned",
-                "enabled": False,
-                "priority": 99,
-                "limit": "N/A",
-                "refresh": "N/A"
-            })
         
         return report

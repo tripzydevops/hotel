@@ -77,6 +77,20 @@ async def validation_exception_handler(request, exc):
 async def ping():
     return {"status": "pong"}
 
+@app.get("/api/admin/debug-providers")
+async def debug_providers():
+    """Diagnostic endpoint to see what the live process is actually using."""
+    providers = ProviderFactory.get_active_providers()
+    return {
+        "active_providers": [p.get_provider_name() for p in providers],
+        "registered_count": len(providers),
+        "primary_provider": providers[0].get_provider_name() if providers else "None",
+        "env_check": {
+            "SERPAPI": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
+            "RAPIDAPI": bool(os.getenv("RAPIDAPI_KEY")),
+        }
+    }
+
 # Supabase client
 def get_supabase() -> Client:
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -2511,24 +2525,43 @@ async def delete_admin_hotel(hotel_id: UUID, db: Client = Depends(get_supabase))
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Admin Providers Endpoint
 @app.get("/api/admin/providers")
-async def get_admin_providers(admin=Depends(get_current_admin_user)):
-    """Return status of all configured data providers."""
-    return ProviderFactory.get_status_report()
+async def get_admin_providers(current_admin = Depends(get_current_admin_user)):
+    """Fetch status of all data providers."""
+    try:
+        return ProviderFactory.get_status_report()
+    except Exception as e:
+        print(f"Provider Report Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+# Admin Scan Details
+@app.get("/api/admin/scans/{session_id}")
+async def get_admin_scan_details(session_id: UUID, db: Client = Depends(get_supabase)):
+    """Get full details for a specific scan session including logs."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+        
+    try:
+        # Fetch session
+        session_res = db.table("scan_sessions").select("*").eq("id", str(session_id)).single().execute()
+        if not session_res.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+            
+        session = session_res.data
+        
+        # Fetch logs
+        logs_res = db.table("query_logs").select("*").eq("session_id", str(session_id)).order("created_at", desc=True).execute()
+        
+        return {
+            "session": session,
+            "logs": logs_res.data or []
+        }
+    except Exception as e:
+        print(f"Admin Scan Details Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-# ===== Admin Plans CRUD =====
-
-# ===== Admin Plans CRUD =====
-
+# Admin Plans CRUD
 @app.get("/api/admin/plans")
 async def get_admin_plans(db: Optional[Client] = Depends(get_supabase)):
     if not db: return []
@@ -2564,54 +2597,7 @@ async def update_admin_plan(plan_id: UUID, plan: PlanUpdate, db: Optional[Client
 async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_supabase)):
     if not db: raise HTTPException(503, "DB unavailable")
     try:
-        # Check usage before delete? For now, just delete.
         db.table("membership_plans").delete().eq("id", str(plan_id)).execute()
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(400, f"Failed to delete plan: {str(e)}")
-@app.get("/api/admin/providers")
-async def get_admin_providers(
-    current_admin = Depends(get_current_admin_user)
-):
-    """Fetch status of all data providers."""
-    from backend.services.provider_factory import ProviderFactory
-    try:
-        return ProviderFactory.get_status_report()
-    except Exception as e:
-        print(f"Provider Report Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/admin/scans/{session_id}")
-async def get_admin_scan_details(session_id: UUID, db: Client = Depends(get_supabase)):
-    """Get full details for a specific scan session including logs."""
-    if not db:
-        raise HTTPException(status_code=503, detail="Database credentials missing.")
-        
-    try:
-        # Fetch session
-        session_res = db.table("scan_sessions").select("*").eq("id", str(session_id)).single().execute()
-        if not session_res.data:
-            raise HTTPException(status_code=404, detail="Session not found")
-            
-        session = session_res.data
-        
-        # Fetch logs
-        logs_res = db.table("query_logs").select("*").eq("session_id", str(session_id)).order("created_at", desc=True).execute()
-        
-        return {
-            "session": session,
-            "logs": logs_res.data or []
-        }
-    except Exception as e:
-        print(f"Admin Scan Details Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ===== Admin Plans CRUD =====
-# (Consolidated - removed duplicates)
-
-@app.delete("/api/admin/plans/{plan_id}")
-async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_supabase)):
-    if not db: raise HTTPException(500, "DB Error")
-    db.table("membership_plans").delete().eq("id", str(plan_id)).execute()
-    return {"message": "Plan deleted"}
