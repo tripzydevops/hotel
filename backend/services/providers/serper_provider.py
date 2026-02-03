@@ -31,14 +31,14 @@ class SerperProvider(HotelDataProvider):
         if not self.api_key:
             return None
 
-        # Serper.dev accepts JSON payload
-        query = f"hotels in {location} {hotel_name}"
+        # Use Google Shopping Engine via Serper for Price Data
+        query = f"{hotel_name} {location} price {check_in.strftime('%Y-%m-%d')} to {check_out.strftime('%Y-%m-%d')}"
         
         payload = {
             "q": query,
-            "gl": "us",
+            "gl": "tr", # Optimize for local inventory if mostly Turkish hotels? Or make configurable? Default 'us' often hides local OTA prices.
             "hl": "en",
-            "type": "places" # Optimize for places/hotels
+            # "location": location # Optional: "Balikesir, Turkey"
         }
         
         headers = {
@@ -49,7 +49,7 @@ class SerperProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    self.BASE_URL,
+                    "https://google.serper.dev/shopping", # SWITCH TO SHOPPING ENDPOINT
                     headers=headers,
                     json=payload,
                     timeout=15.0
@@ -66,32 +66,52 @@ class SerperProvider(HotelDataProvider):
             return None
 
     def _parse_response(self, data: Dict[str, Any], target_name: str, currency: str) -> Optional[Dict[str, Any]]:
-        # Serper returns "places" or "organic"
-        places = data.get("places", [])
-        organic = data.get("organic", [])
+        # Check 'shopping' list
+        shopping = data.get("shopping", [])
         
-        # Try to find best match in places first (richer data)
-        best_match = None
-        if places:
-            best_match = places[0]
-        elif organic:
-            best_match = organic[0]
-            
-        if not best_match:
+        if not shopping:
             return None
-
-        # Price extraction (often in snippets or specialized fields)
-        price_val = 0.0
-        # Serper isn't specialized for Hotel JSON, so we might need to regex the "snippet" or "price" field if available
-        # This is a basic implementation
+            
+        # Simplistic: Take first result. 
+        # Better: Fuzzy match title?
+        best_match = shopping[0]
         
+        # Extract Price (e.g. "TRY 5,295.00", "$120")
+        raw_price = best_match.get("price", "0")
+        price_val = 0.0
+        
+        try:
+            # Remove non-numeric chars except dot and comma
+            # Handle "5,295.00" -> 5295.00
+            clean_str = ''.join(filter(lambda x: x.isdigit() or x in ['.', ','], raw_price))
+            # If comma is decimal separator vs thousand separator?
+            # Start simple: remove commas, assuming dot is decimal (US/Standard)
+            # If "5.295,00" (EU), logic differs. 
+            # Serper 'hl=en' usually returns standard format "TRY 5,295.00" -> 5295.00
+            
+            if ',' in clean_str and '.' in clean_str:
+                if clean_str.find(',') < clean_str.find('.'):
+                    # 5,295.00 -> Remove comma
+                    clean_str = clean_str.replace(',', '')
+                else:
+                    # 5.295,00 -> Remove dot, swap comma to dot
+                    clean_str = clean_str.replace('.', '').replace(',', '.')
+            elif ',' in clean_str:
+                # 5295,00 -> 5295.00
+                clean_str = clean_str.replace(',', '.')
+                
+            price_val = float(clean_str)
+        except:
+            price_val = 0.0
+
         return {
-            "price": price_val, # Placeholder - Serper often needs raw HTML parsing for exact dates/prices
-            "currency": currency,
+            "price": price_val,
+            "currency": currency, # Ideally extract from "TRY" prefix, but we return requested for now
+            "vendor": best_match.get("source", "Google Shopping"), # e.g. "Firsat Bu Firsat"
             "source": "Serper.dev",
             "url": best_match.get("link", ""),
-            "rating": best_match.get("rating", 0.0),
+            "rating": best_match.get("rating", 0.0), # Shopping usually has rating
             "reviews": best_match.get("reviews", 0),
-            "amenities": [], # Serper basic usually doesn't have this
+            "amenities": [],
             "sentiment_breakdown": []
         }
