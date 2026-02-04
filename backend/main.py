@@ -454,7 +454,8 @@ async def trigger_monitor(
     user_id: UUID,
     background_tasks: BackgroundTasks,
     options: ScanOptions = None,
-    db: Optional[Client] = Depends(get_supabase)
+    db: Optional[Client] = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
 ):
     """
     Trigger price monitoring for all hotels of a user (Asynchronous).
@@ -469,81 +470,70 @@ async def trigger_monitor(
     if not hotels:
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
         
-    # ===== ENFORCE LIMITS (Enterprise Only + Once Daily) =====
+    # ===== ADMIN BYPASS / LIMIT ENFORCEMENT =====
     try:
-        # 1. Get User Plan Limits from tier_configs
-        daily_manual_limit = 0
-        monthly_total_limit = 500 # Default
-        plan_type = "starter"
+        # Check Admin Status
+        is_admin = False
+        email = getattr(current_user, 'email', None)
         
-        profile_res = db.table("profiles").select("plan_type").eq("user_id", str(user_id)).execute()
-        if profile_res.data:
-            plan_type = profile_res.data[0].get("plan_type", "starter")
-            
-            # Fetch tier config
-            tier_res = db.table("tier_configs").select("manual_scans_per_day").eq("plan_type", plan_type).execute()
-            if tier_res.data:
-                daily_manual_limit = tier_res.data[0].get("manual_scans_per_day", 0)
-            
-            # Legacy plans table check for monthly total
-            plan_res = db.table("plans").select("monthly_scan_limit").eq("name", plan_type).execute()
-            if plan_res.data:
-                monthly_total_limit = plan_res.data[0].get("monthly_scan_limit", 500)
+        # 1. Whitelist Check
+        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
+            is_admin = True
         
-        print(f"[Monitor] User {user_id} | Plan: {plan_type} | Hotels Found: {len(hotels)}")
-        
-        # 2. Daily Manual Scan Check
-        today_start = datetime.combine(date.today(), datetime.min.time()).isoformat()
-        
-        daily_manual_res = db.table("scan_sessions") \
-            .select("id", count="exact") \
-            .eq("user_id", str(user_id)) \
-            .eq("session_type", "manual") \
-            .gte("created_at", today_start) \
-            .execute()
-            
-        current_daily_manual = daily_manual_res.count if daily_manual_res.count is not None else 0
-        
-        # 3. Monthly Total Scan Check
-        now = datetime.now()
-        first_day = datetime(now.year, now.month, 1).isoformat()
-        
-        monthly_total_res = db.table("scan_sessions") \
-            .select("id", count="exact") \
-            .eq("user_id", str(user_id)) \
-            .gte("created_at", first_day) \
-            .execute()
-            
-        current_monthly_total = monthly_total_res.count if monthly_total_res.count is not None else 0
-        
-        # ACCESS CONTROL: Manual scans restricted to plans with manual_scans_per_day > 0 (Enterprise)
-        if daily_manual_limit <= 0:
-            print(f"Manual scan blocked for {plan_type} user {user_id}")
-            return MonitorResult(
-                hotels_checked=0, 
-                prices_updated=0, 
-                alerts_generated=0, 
-                errors=["MANUAL_SCAN_RESTRICTED: Manual scans are only available to Enterprise users. Please upgrade your plan."]
-            )
+        # 2. DB Role Check (if not already whitelisted)
+        if not is_admin:
+            try:
+                profile_res = db.table("user_profiles").select("role").eq("user_id", str(current_user.id)).execute()
+                if profile_res.data and profile_res.data[0].get("role") == "admin":
+                    is_admin = True
+            except Exception:
+                pass
 
-        # RATE LIMIT: Daily manual scan limit
-        if current_daily_manual >= daily_manual_limit:
-            print(f"Daily manual limit reached for {user_id}: {current_daily_manual}/{daily_manual_limit}")
-            return MonitorResult(
-                hotels_checked=0, 
-                prices_updated=0, 
-                alerts_generated=0, 
-                errors=[f"DAILY_LIMIT_REACHED: You have reached your daily limit of {daily_manual_limit} manual scan(s)."]
-            )
+        if is_admin:
+            print(f"[Monitor] Admin Bypass for {email} (User: {user_id})")
+        else:
+            # ENFORCE LIMITS (Standard/Enterprise Users)
+            # 1. Get User Plan Limits from tier_configs
+            daily_manual_limit = 0
+            monthly_total_limit = 500  # Default
+            plan_type = "starter"
             
-        # SAFETEY: Monthly total limit (covers both manual and scheduled)
-        if current_monthly_total >= monthly_total_limit:
-             return MonitorResult(
-                hotels_checked=0, 
-                prices_updated=0, 
-                alerts_generated=0, 
-                errors=[f"MONTHLY_LIMIT_REACHED: System-wide limit reached ({current_monthly_total}/{monthly_total_limit})."]
-            )
+            profile_res = db.table("profiles").select("plan_type").eq("user_id", str(user_id)).execute()
+            if profile_res.data:
+                plan_type = profile_res.data[0].get("plan_type", "starter")
+                
+                # Fetch tier config
+                tier_res = db.table("tier_configs").select("manual_scans_per_day").eq("plan_type", plan_type).execute()
+                if tier_res.data:
+                    daily_manual_limit = tier_res.data[0].get("manual_scans_per_day", 0)
+                
+                # Legacy plans table check for monthly total
+                plan_res = db.table("plans").select("monthly_scan_limit").eq("name", plan_type).execute()
+                if plan_res.data:
+                    monthly_total_limit = plan_res.data[0].get("monthly_scan_limit", 500)
+            
+            # 2. Daily Manual Scan Check
+            today_start = datetime.combine(date.today(), datetime.min.time()).isoformat()
+            daily_manual_res = db.table("scan_sessions").select("id", count="exact").eq("user_id", str(user_id)).eq("session_type", "manual").gte("created_at", today_start).execute()
+            current_daily_manual = daily_manual_res.count if daily_manual_res.count is not None else 0
+            
+            # 3. Monthly Total Scan Check
+            now = datetime.now()
+            first_day = datetime(now.year, now.month, 1).isoformat()
+            monthly_total_res = db.table("scan_sessions").select("id", count="exact").eq("user_id", str(user_id)).gte("created_at", first_day).execute()
+            current_monthly_total = monthly_total_res.count if monthly_total_res.count is not None else 0
+            
+            # ACCESS CONTROL: Manual scans restricted to plans with manual_scans_per_day > 0 (Enterprise)
+            if daily_manual_limit <= 0:
+                return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=["MANUAL_SCAN_RESTRICTED: Manual scans are only available to Enterprise users."])
+
+            # RATE LIMIT: Daily manual scan limit
+            if current_daily_manual >= daily_manual_limit:
+                return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=[f"DAILY_LIMIT_REACHED: Limit {daily_manual_limit} reached."])
+                
+            # SAFETY: Monthly total limit
+            if current_monthly_total >= monthly_total_limit:
+                 return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=[f"MONTHLY_LIMIT_REACHED: Limit {monthly_total_limit} reached."])
             
     except Exception as e:
         print(f"Limit check failed (allowing pass): {e}")

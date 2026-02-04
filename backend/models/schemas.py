@@ -162,6 +162,7 @@ class UserProfile(UserProfileBase):
     updated_at: datetime
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
+    role: Optional[str] = "user"
     
     class Config:
         from_attributes = True

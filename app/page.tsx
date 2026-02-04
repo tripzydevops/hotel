@@ -302,13 +302,17 @@ export default function Dashboard() {
           setIsBillingOpen(true);
         }}
         initialValues={scanDefaults}
-        userPlan={profile?.plan_type}
+        userPlan={profile?.role === "admin" ? "enterprise" : profile?.plan_type}
         dailyLimitReached={
-          data?.recent_sessions?.some(
-            (s) =>
-              s.session_type === "manual" &&
-              s.created_at.startsWith(new Date().toISOString().split("T")[0]),
-          ) || false
+          profile?.role === "admin"
+            ? false
+            : data?.recent_sessions?.some(
+                (s) =>
+                  s.session_type === "manual" &&
+                  s.created_at.startsWith(
+                    new Date().toISOString().split("T")[0],
+                  ),
+              ) || false
         }
       />
 
