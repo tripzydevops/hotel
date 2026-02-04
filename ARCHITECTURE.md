@@ -40,6 +40,25 @@ This project follows a strict 3-Layer Architecture to solve the "Cold Start" pro
 - **SerpApi Integration:** Automated extraction of market hotel rates.
 - **Enterprise Gating:** Room-level intelligence gated for Enterprise tier users.
 
+## 🛰️ UI/UX Design Standard (2026 Refit)
+
+The user has explicitly approved and locked in the **Agentic Command Center** aesthetic as the only valid UI direction for the 2026 overhaul.
+
+### Design Principles
+
+- **Aesthetic**: Modern-Premium (Linear.app / Vercel style).
+- **Theme**: Deep Ocean (#0B1F3B) with Soft Gold (#D4AF37) accents.
+- **Layout**: 3-Pane Modular Grid (Navigation | Market Analysis | Agent AI).
+- **Data Density**: High-density information presentation.
+- **Typography**: Inter (UI) and **Fira Code** (Numerical/Technical Data).
+- **Restrictions**:
+  - **NO** Glows, pulses, or radial gradients.
+  - **NO** Mesh backgrounds or blurs.
+  - **NO** Retro terminal effects.
+  - **YES** Shadowless 1px borders (#ffffff10) and sharp, technical layouts.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Frontend:** Next.js 14, Tailwind CSS, Lucide Icons, Recharts.

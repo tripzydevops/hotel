@@ -33,6 +33,7 @@ import ZeroState from "@/components/ZeroState";
 import { useI18n } from "@/lib/i18n";
 import BottomNav from "@/components/BottomNav";
 import ReasoningShard from "@/components/ReasoningShard";
+import CommandLayout from "@/components/layout/CommandLayout";
 
 interface DashboardClientProps {
   userId: string;
@@ -233,10 +234,7 @@ export default function DashboardClient({
     );
 
   return (
-    <div className="min-h-screen pb-12 relative animate-fade-in overflow-hidden">
-      {/* Premium Atmospheric Background */}
-      <div className="bg-mesh" />
-
+    <CommandLayout userProfile={profile} activeRoute="dashboard">
       {isLocked && (
         <PaywallOverlay
           reason={
@@ -246,15 +244,6 @@ export default function DashboardClient({
           }
         />
       )}
-      <Header
-        userProfile={profile}
-        hotelCount={currentHotelCount}
-        unreadCount={data?.unread_alerts_count}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenBilling={() => setIsBillingOpen(true)}
-      />
 
       <AddHotelModal
         isOpen={isAddHotelOpen}
@@ -343,15 +332,7 @@ export default function DashboardClient({
         }}
       />
 
-      <BottomNav
-        onOpenAddHotel={() => setIsAddHotelOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        unreadCount={data?.unread_alerts_count}
-      />
-
-      <main className="pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="pb-12">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
@@ -442,22 +423,22 @@ export default function DashboardClient({
           <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
             <ReasoningShard
               title={t("dashboard.marketPulse") || "Market Pulse"}
-              insight="Competitor 'Grand Marina' dropped rates by 12% for next weekend. This correlates with a local festival cancellation."
+              insight="Neural signal detection suggests aggressive pricing decay in secondary competitor nodes. Dynamic yield protection initiated."
               type="warning"
               className="md:col-span-2"
             />
-            <div className="glass-panel-premium p-5 rounded-2xl flex flex-col justify-center items-center text-center">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
-                System Status
+            <div className="panel p-5 rounded-sm flex flex-col justify-center items-center text-center bg-[#0d2547]">
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-2">
+                Core Engine Status
               </span>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-optimal-green animate-pulse" />
-                <span className="text-lg font-bold text-white">
-                  All Agents Active
+                <div className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_8px_var(--success)] animate-pulse" />
+                <span className="text-base font-bold text-white tracking-tighter uppercase">
+                  SYNAPSE_LINK_LIVE
                 </span>
               </div>
-              <span className="text-xs text-[var(--soft-gold)]">
-                Next Scan: 14 mins
+              <span className="text-[10px] font-mono text-[var(--soft-gold)]">
+                T_SCRAPE_SCAN: 14m 22s
               </span>
             </div>
           </div>
@@ -564,8 +545,8 @@ export default function DashboardClient({
         </BentoGrid>
 
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-alert-red">
+          <div className="panel p-4 text-center bg-[#0d2547]">
+            <p className="text-2xl font-bold text-alert-red data-value">
               {
                 (data?.competitors || []).filter(
                   (c) =>
@@ -574,24 +555,24 @@ export default function DashboardClient({
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">
+            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
               {t("dashboard.yieldRisk")}
             </p>
           </div>
-          <div className="glass-card p-4 text-center group">
-            <p className="text-2xl font-bold text-optimal-green">
+          <div className="panel p-4 text-center bg-[#0d2547]">
+            <p className="text-2xl font-bold text-[var(--success)] data-value">
               {
                 (data?.competitors || []).filter(
                   (c) => c.price_info?.trend === "down",
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">
+            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
               {t("dashboard.marketOpportunity")}
             </p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-white">
+          <div className="panel p-4 text-center bg-[#0d2547]">
+            <p className="text-2xl font-bold text-white data-value">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
@@ -623,13 +604,15 @@ export default function DashboardClient({
                 "—"
               )}
             </p>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
               {t("dashboard.avgCompetitor")}
             </p>
           </div>
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-white">{currentHotelCount}</p>
-            <p className="text-xs text-[var(--text-muted)]">
+          <div className="panel p-4 text-center bg-[#0d2547]">
+            <p className="text-2xl font-bold text-white data-value">
+              {currentHotelCount}
+            </p>
+            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
               {t("dashboard.hotelsTracked")}
             </p>
           </div>
@@ -672,7 +655,7 @@ export default function DashboardClient({
             </a>
           </div>
         </footer>
-      </main>
-    </div>
+      </div>
+    </CommandLayout>
   );
 }

@@ -33,6 +33,7 @@ import {
   KeyStatus,
 } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
+import CommandLayout from "@/components/layout/CommandLayout";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -265,43 +266,52 @@ export default function AdminPage() {
   }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all ${
         activeTab === id
-          ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]"
+          ? "bg-[var(--soft-gold)] text-black shadow-[0_0_15px_rgba(212,175,55,0.2)]"
           : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
       }`}
     >
-      <Icon className="w-4 h-4" />
+      <Icon className="w-3.5 h-3.5" />
       {label}
     </button>
   );
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4">
+    <CommandLayout userProfile={{}} activeRoute="admin">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/20 flex items-center justify-center">
-          <Database className="w-6 h-6 text-[var(--soft-gold)]" />
+      <div className="flex flex-col mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <Activity className="w-4 h-4 text-[var(--soft-gold)]" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--soft-gold)]">
+            Core Administrative Layer
+          </span>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            System Administration
-          </h1>
-          <p className="text-[var(--text-muted)] mt-1">
-            Manage users, directory, and monitor system health
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+              System Administration
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-white/5 border border-white/10 text-[8px] font-mono text-[var(--text-muted)] uppercase">
+                Auth_Level: ROOT
+              </span>
+            </h1>
+            <p className="text-[var(--text-secondary)] mt-1 text-sm font-medium">
+              Overseeing platform architecture, user nodes, and neural
+              infrastructure status.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
-        <TabButton id="overview" label="Overview" icon={LayoutDashboard} />
-        <TabButton id="users" label="Users" icon={Users} />
-        <TabButton id="directory" label="Directory" icon={Building2} />
-        <TabButton id="logs" label="System Logs" icon={Activity} />
-        <TabButton id="keys" label="API Keys" icon={Key} />
-        <TabButton id="plans" label="Memberships" icon={Crown} />
-        <TabButton id="scans" label="User Scans" icon={ScanLine} />
+      <div className="flex flex-wrap gap-2 mb-8 border-b border-white/5 pb-4">
+        <TabButton id="overview" label="SYS_OVERVIEW" icon={LayoutDashboard} />
+        <TabButton id="users" label="USER_NODES" icon={Users} />
+        <TabButton id="directory" label="MASTER_DIR" icon={Building2} />
+        <TabButton id="logs" label="KERNEL_LOGS" icon={Activity} />
+        <TabButton id="keys" label="API_QUOTA" icon={Key} />
+        <TabButton id="plans" label="LICENSE_MODS" icon={Crown} />
+        <TabButton id="scans" label="SIGNAL_CAPTURE" icon={ScanLine} />
       </div>
 
       {/* Content */}
@@ -1159,7 +1169,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-    </div>
+    </CommandLayout>
   );
 }
 
@@ -1172,15 +1182,15 @@ const StatCard = ({
   value: number;
   icon: React.ElementType;
 }) => (
-  <div className="glass-card p-6 border border-white/10 flex items-center gap-4">
-    <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center shrink-0">
+  <div className="panel p-6 border-[var(--panel-border)] bg-[#0d2547] flex items-center gap-4">
+    <div className="w-12 h-12 rounded-sm bg-black/20 flex items-center justify-center shrink-0 border border-white/5">
       <Icon className="w-6 h-6 text-[var(--soft-gold)]" />
     </div>
     <div>
-      <p className="text-[var(--text-muted)] text-xs uppercase font-bold tracking-wider">
+      <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mb-1">
         {label}
       </p>
-      <p className="text-2xl font-bold text-white">
+      <p className="text-2xl font-bold text-white data-value">
         {value?.toLocaleString() || 0}
       </p>
     </div>
