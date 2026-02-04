@@ -1258,7 +1258,7 @@ async def check_scheduled_scan(
                 run_monitor_background,
                 user_id=user_id,
                 hotels=hotels,
-                check_in=None,
+                options=None,
                 db=db,
                 session_id=session_id
             )

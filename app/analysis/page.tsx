@@ -124,6 +124,19 @@ export default function AnalysisPage() {
     setExcludedHotelIds(ids);
   };
 
+  const handleSetTarget = async (hotelId: string) => {
+    if (!userId) return;
+    try {
+      await api.updateHotel(hotelId, { is_target_hotel: true });
+      // Refresh data to reflect new target
+      loadData();
+      // Optional: Clear allHotels to force re-fetch from result
+      setAllHotels([]);
+    } catch (err) {
+      console.error("Failed to set target hotel:", err);
+    }
+  };
+
   if (loading && !data) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
@@ -239,6 +252,7 @@ export default function AnalysisPage() {
           allHotels={data?.all_hotels || allHotels}
           excludedHotelIds={excludedHotelIds}
           onExcludedChange={handleExcludedChange}
+          onSetTarget={handleSetTarget}
           startDate={startDate}
           endDate={endDate}
           onDateChange={handleDateChange}

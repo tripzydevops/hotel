@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, ChevronDown, X, Filter } from "lucide-react";
+import { Calendar, ChevronDown, X, Filter, Star } from "lucide-react";
 
 interface Hotel {
   id: string;
@@ -13,6 +13,7 @@ interface AnalysisFiltersProps {
   allHotels: Hotel[];
   excludedHotelIds: string[];
   onExcludedChange: (ids: string[]) => void;
+  onSetTarget: (id: string) => void;
   startDate: string;
   endDate: string;
   onDateChange: (start: string, end: string) => void;
@@ -29,6 +30,7 @@ export default function AnalysisFilters({
   allHotels,
   excludedHotelIds,
   onExcludedChange,
+  onSetTarget,
   startDate,
   endDate,
   onDateChange,
@@ -136,27 +138,39 @@ export default function AnalysisFilters({
               </div>
               <div className="max-h-[200px] overflow-y-auto">
                 {allHotels.map((hotel) => (
-                  <label
+                  <div
                     key={hotel.id}
-                    className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 cursor-pointer transition-colors"
+                    className="flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors group"
                   >
-                    <input
-                      type="checkbox"
-                      checked={excludedHotelIds.includes(hotel.id)}
-                      onChange={() => toggleHotelExclusion(hotel.id)}
-                      className="w-4 h-4 rounded border-white/20 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]"
-                    />
-                    <span
-                      className={`text-sm ${excludedHotelIds.includes(hotel.id) ? "text-white/40 line-through" : "text-white"}`}
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input
+                        type="checkbox"
+                        checked={excludedHotelIds.includes(hotel.id)}
+                        onChange={() => toggleHotelExclusion(hotel.id)}
+                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]"
+                      />
+                      <span
+                        className={`text-sm ${excludedHotelIds.includes(hotel.id) ? "text-white/40 line-through" : "text-white"}`}
+                      >
+                        {hotel.name}
+                      </span>
+                    </label>
+                    <button
+                      onClick={() => !hotel.is_target && onSetTarget(hotel.id)}
+                      className={`p-1.5 rounded-lg transition-all ${
+                        hotel.is_target
+                          ? "text-[var(--soft-gold)]"
+                          : "text-white/20 hover:text-[var(--soft-gold)] hover:bg-white/5 opacity-0 group-hover:opacity-100"
+                      }`}
+                      title={
+                        hotel.is_target ? "Current Target" : "Set as Target"
+                      }
                     >
-                      {hotel.name}
-                      {hotel.is_target && (
-                        <span className="ml-2 text-[8px] font-bold text-[var(--soft-gold)] uppercase">
-                          Target
-                        </span>
-                      )}
-                    </span>
-                  </label>
+                      <Star
+                        className={`w-3.5 h-3.5 ${hotel.is_target ? "fill-current" : ""}`}
+                      />
+                    </button>
+                  </div>
                 ))}
               </div>
               {excludedHotelIds.length > 0 && (
