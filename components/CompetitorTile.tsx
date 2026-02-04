@@ -45,8 +45,6 @@ interface CompetitorTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: { thumbnail?: string; original?: string }[];
-  targetPrice?: number;
-  targetRating?: number;
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {
@@ -172,60 +170,6 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                 </span>
               )}
             </div>
-            {/* Market Information Section */}
-            {(targetPrice || isEnterprise) && (
-              <div className="mt-3 p-2.5 rounded-lg bg-white/5 border border-white/5 space-y-1.5 backdrop-blur-sm group-hover:bg-white/10 transition-colors">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-[var(--soft-gold)]">
-                    Market Information
-                  </span>
-                  <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]/50" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {targetPrice && (
-                    <div className="flex flex-col">
-                      <span className="text-[8px] text-[var(--text-muted)] uppercase">
-                        Price Position
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold ${currentPrice < targetPrice ? "text-optimal-green" : "text-white"}`}
-                      >
-                        {currentPrice < targetPrice
-                          ? "Undercutting"
-                          : currentPrice === targetPrice
-                            ? "Parity"
-                            : "Premium"}
-                      </span>
-                    </div>
-                  )}
-
-                  {targetPrice && (
-                    <div className="flex flex-col">
-                      <span className="text-[8px] text-[var(--text-muted)] uppercase">
-                        Price Gap
-                      </span>
-                      <span className="text-[10px] font-bold text-white">
-                        {currentPrice < targetPrice ? "-" : "+"}
-                        {formatPrice(Math.abs(currentPrice - targetPrice))}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Sentiment Summary if Enterprise */}
-                {isEnterprise && (rating || stars) && (
-                  <div className="pt-1.5 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-[8px] text-[var(--text-muted)] uppercase">
-                      Yield Opportunity
-                    </span>
-                    <span className="text-[9px] font-bold text-white">
-                      {isUndercut ? "Capture Volume" : "Optimize Margin"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
             <div className="flex items-center gap-2">
               {rating && (
                 <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">

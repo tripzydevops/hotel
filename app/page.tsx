@@ -568,8 +568,6 @@ export default function Dashboard() {
                           onEdit={handleEditHotel}
                           onViewDetails={handleOpenDetails}
                           isEnterprise={isEnterprise}
-                          targetPrice={effectiveTargetPrice}
-                          targetRating={data.target_hotel?.rating}
                           amenities={competitor.amenities}
                           images={competitor.images}
                         />

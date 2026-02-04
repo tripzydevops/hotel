@@ -33,7 +33,6 @@ interface TargetHotelTileProps {
   checkIn?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
-
   onViewDetails?: (hotel: any) => void;
   isEnterprise?: boolean;
   amenities?: string[];
@@ -63,7 +62,6 @@ export default function TargetHotelTile({
   checkIn,
   adults,
   onEdit,
-
   onViewDetails,
   isEnterprise = false,
   amenities,
@@ -101,7 +99,7 @@ export default function TargetHotelTile({
   };
 
   return (
-    <div className="glass-card p-4 sm:p-8 sm:col-span-2 lg:col-span-1 lg:row-span-2 flex flex-col group/card relative overflow-hidden">
+    <div className="glass-card p-4 sm:p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2 flex flex-col group/card relative overflow-hidden">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -239,23 +237,6 @@ export default function TargetHotelTile({
                 {t("common.pending")}
               </p>
             )}
-          </div>
-
-          {/* Market Information Section for Target */}
-          <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--soft-gold)]">
-                Market Information
-              </span>
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-            </div>
-            <p className="text-xs text-[var(--text-muted)] italic leading-relaxed">
-              {changePercent < 0
-                ? "Your rates are trending downward, maintaining competitive capture."
-                : changePercent > 0
-                  ? "Rates are increasing. Monitor competitor undercut alerts."
-                  : "Stable market position maintained."}
-            </p>
           </div>
 
           {/* Progressive Disclosure: Detail Tooltip on Hover */}

@@ -174,15 +174,20 @@ class SerpApiProvider(HotelDataProvider):
 
     def _parse_market_offers(self, prices_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
         offers = []
+        seen_vendors = set()
         for p in prices_data:
-            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+            vendor = p.get("source") or p.get("name") or "Unknown"
+            if vendor in seen_vendors: continue
+            
+            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night") or p.get("price")
             price = self._clean_price_string(raw, currency)
             if price is not None:
                 offers.append({
-                    "vendor": p.get("source") or p.get("name") or "Unknown",
+                    "vendor": vendor,
                     "price": price,
                     "currency": currency
                 })
+                seen_vendors.add(vendor)
         return offers
 
     def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
@@ -255,11 +260,18 @@ class SerpApiProvider(HotelDataProvider):
             raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
         elif "price" in best_match: raw_price = best_match["price"]
         elif best_match.get("prices"):
+            # Try to find a featured price or the first one
             r = best_match["prices"][0].get("rate_per_night", {})
             raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
 
         price = self._clean_price_string(raw_price, currency)
 
+        # Build Offers List (Market intelligence)
+        # SerpApi provides other vendors in 'prices' or 'featured_prices'
+        offers_data = best_match.get("prices", []) or []
+        if best_match.get("featured_prices"):
+            offers_data.extend(best_match["featured_prices"])
+            
         return {
             "price": price or 0.0,
             "currency": currency,
@@ -273,7 +285,7 @@ class SerpApiProvider(HotelDataProvider):
             "image_url": best_match.get("images", [{}])[0].get("thumbnail") if best_match.get("images") else None,
             "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")],
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
-            "offers": self._parse_market_offers(best_match.get("prices", []), currency),
+            "offers": self._parse_market_offers(offers_data, currency),
             "room_types": self._extract_all_room_types(best_match, currency),
             "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "reviews_list": best_match.get("actual_reviews", []) if isinstance(best_match.get("actual_reviews"), list) else [],
@@ -281,7 +293,5 @@ class SerpApiProvider(HotelDataProvider):
         }
 
     def _extract_price(self, match: Dict[str, Any]) -> float:
-        # This is now handled inside _parse_hotel_result for consistency
-        # but kept for interface compatibility if needed.
         val = match.get("rate_per_night", {}).get("extracted_lowest") if isinstance(match.get("rate_per_night"), dict) else match.get("rate_per_night")
         return self._clean_price_string(val, "USD") or 0.0
