@@ -54,3 +54,5 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
     </div>
   );
 };
+
+export default SentimentBreakdown;
