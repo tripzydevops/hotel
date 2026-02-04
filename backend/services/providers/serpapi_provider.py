@@ -137,32 +137,109 @@ class SerpApiProvider(HotelDataProvider):
     def _is_quota_error(self, response: httpx.Response) -> bool:
         if response.status_code == 429: return True
         try:
-            return "quota" in response.json().get("error", "").lower()
+            error = response.json().get("error", "").lower()
+            return any(x in error for x in ["quota", "limit", "exceeded"])
         except: return False
 
-    def _parse_hotel_result(self, data: Dict[str, Any], target_hotel: str, currency: str) -> Optional[Dict[str, Any]]:
+    def _clean_price_string(self, price: Any, currency: str) -> Optional[float]:
+        """Robusly clean price string into a float."""
+        if price is None: return None
+        if isinstance(price, (int, float)): return float(price)
+            
+        s_price = str(price).strip().replace('\xa0', ' ')
+        clean_str = re.sub(r'[^\d.,]', '', s_price)
+        if not clean_str: return None
+        
+        if "," in clean_str and "." in clean_str:
+            if clean_str.rfind(",") > clean_str.rfind("."):
+                clean_str = clean_str.replace(".", "").replace(",", ".")
+            else:
+                clean_str = clean_str.replace(",", "")
+        elif "," in clean_str:
+            parts = clean_str.split(",")
+            if len(parts[-1]) == 3 and len(parts) > 1:
+                 clean_str = clean_str.replace(",", "")
+            else:
+                 clean_str = clean_str.replace(",", ".")
+        elif "." in clean_str:
+            parts = clean_str.split(".")
+            if len(parts[-1]) == 3 and len(parts) > 1:
+                 if currency in ["TRY", "EUR", "IDR", "VND"]:
+                      clean_str = clean_str.replace(".", "")
+        
+        try:
+            return float(clean_str)
+        except ValueError:
+            return None
+
+    def _parse_market_offers(self, prices_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
+        offers = []
+        for p in prices_data:
+            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+            price = self._clean_price_string(raw, currency)
+            if price is not None:
+                offers.append({
+                    "vendor": p.get("source") or p.get("name") or "Unknown",
+                    "price": price,
+                    "currency": currency
+                })
+        return offers
+
+    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
+        """Extract room types from featured_prices or rooms array."""
+        rooms = []
+        room_names = set()
+        raw_rooms = []
+        if best_match.get("rooms"): raw_rooms.extend(best_match["rooms"])
+        if best_match.get("room_types"): raw_rooms.extend(best_match["room_types"])
+        featured = best_match.get("featured_prices", []) or []
+        for p in featured:
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+        prices = best_match.get("prices", []) or []
+        for p in prices:
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+
+        for r in raw_rooms:
+            name = r.get("name") or r.get("title")
+            if not name or name in room_names: continue
+            raw_p = r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night") or r.get("price")
+            price = self._clean_price_string(raw_p, currency)
+            rooms.append({"name": name, "price": price, "currency": currency})
+            room_names.add(name)
+        return rooms
+
+    def _parse_hotel_result(self, data: Dict[str, Any], target_hotel: str, currency: str, target_serp_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         properties = data.get("properties", [])
         best_match = None
         
-        # Remove common stop words for fuzzy matching
-        ignore = ["hotel", "resort", "spa", "residences", "by", "wyndham", "hilton", "garden", "inn", "&"]
-        target_norm = target_hotel.lower()
-        for word in ignore:
-            target_norm = target_norm.replace(word, "")
-        target_norm = target_norm.strip()
-        
-        # 1. Try to find by name match
-        for prop in properties:
-            name = prop.get("name", "").lower()
-            if target_norm in name or (len(target_norm) > 3 and target_norm[:5] in name):
-                best_match = prop
-                print(f"[SerpApi] Match found: {prop.get('name')}")
-                break
-        
-        # 2. Heuristic: Primary Result
+        # 0. Primary ID Match (Highest fidelity)
+        if target_serp_id:
+            for prop in properties:
+                if str(prop.get("hotel_id")) == str(target_serp_id) or prop.get("property_token") == target_serp_id:
+                    best_match = prop
+                    print(f"[SerpApi] Exact ID match found: {prop.get('name')}")
+                    break
+
+        # 1. Knowledge Graph Result (if ID match failed)
         if not best_match and data.get("rate_per_night"):
              best_match = data
              print(f"[SerpApi] Using knowledge graph result")
+
+        # 2. Fuzzy Name Match
+        if not best_match:
+            # Remove common stop words for fuzzy matching
+            ignore = ["hotel", "resort", "spa", "residences", "by", "wyndham", "hilton", "garden", "inn", "&"]
+            target_norm = target_hotel.lower()
+            for word in ignore:
+                target_norm = target_norm.replace(word, "")
+            target_norm = target_norm.strip()
+            
+            for prop in properties:
+                name = prop.get("name", "").lower()
+                if target_norm in name or (len(target_norm) > 3 and target_norm[:5] in name):
+                    best_match = prop
+                    print(f"[SerpApi] Name match found: {prop.get('name')}")
+                    break
         
         # 3. Fallback to first property if results exist
         if not best_match and properties:
@@ -171,22 +248,40 @@ class SerpApiProvider(HotelDataProvider):
              
         if not best_match: return None
 
+        # Extract Raw Price safely using the robust cleaner
+        raw_price = None
+        if "rate_per_night" in best_match:
+            r = best_match["rate_per_night"]
+            raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
+        elif "price" in best_match: raw_price = best_match["price"]
+        elif best_match.get("prices"):
+            r = best_match["prices"][0].get("rate_per_night", {})
+            raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
+
+        price = self._clean_price_string(raw_price, currency)
+
         return {
-            "price": self._extract_price(best_match),
+            "price": price or 0.0,
             "currency": currency,
-            "vendor": "SerpApi",
+            "vendor": best_match.get("deal_description") or best_match.get("source") or "SerpApi",
             "source": "SerpApi",
             "url": best_match.get("link", ""),
             "rating": best_match.get("overall_rating", best_match.get("rating", 0.0)),
-            "reviews": best_match.get("reviews", 0),
+            "reviews": int(best_match.get("reviews") or 0) if isinstance(best_match.get("reviews"), (int, float, str)) and str(best_match.get("reviews")).isdigit() else 0,
             "amenities": best_match.get("amenities", []),
-            "sentiment_breakdown": best_match.get("reviews_breakdown", []),
-            "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")]
+            "property_token": best_match.get("property_token") or best_match.get("hotel_id"),
+            "image_url": best_match.get("images", [{}])[0].get("thumbnail") if best_match.get("images") else None,
+            "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")],
+            "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
+            "offers": self._parse_market_offers(best_match.get("prices", []), currency),
+            "room_types": self._extract_all_room_types(best_match, currency),
+            "reviews_breakdown": best_match.get("reviews_breakdown", []),
+            "reviews_list": best_match.get("actual_reviews", []) if isinstance(best_match.get("actual_reviews"), list) else [],
+            "raw_data": best_match
         }
 
     def _extract_price(self, match: Dict[str, Any]) -> float:
-        # Simplistic extraction for brevity; creates a clean float
-        try:
-            val = match.get("rate_per_night", {}).get("extracted_lowest")
-            return float(val) if val else 0.0
-        except: return 0.0
+        # This is now handled inside _parse_hotel_result for consistency
+        # but kept for interface compatibility if needed.
+        val = match.get("rate_per_night", {}).get("extracted_lowest") if isinstance(match.get("rate_per_night"), dict) else match.get("rate_per_night")
+        return self._clean_price_string(val, "USD") or 0.0

@@ -117,11 +117,9 @@ class ScraperAgent:
                 if price_data:
                     try:
                         update_payload = {}
-                        if price_data.get("photos"):
-                            # Normalize string URLs to object format expected by DB/Frontend
-                            # DB likely stores JSONB. Frontend type expects {thumbnail, original}
-                            # RapidAPI returns list of strings.
-                            # Let's simple-store as array of objects
+                        if price_data.get("images"):
+                            update_payload["images"] = price_data["images"]
+                        elif price_data.get("photos"):
                             imgs = [{"original": url, "thumbnail": url} for url in price_data["photos"][:5]]
                             update_payload["images"] = imgs
                         
@@ -131,12 +129,14 @@ class ScraperAgent:
                         if price_data.get("rating"):
                             update_payload["rating"] = price_data["rating"]
 
-                        # [NEW] Sentiment Persistence
+                        # [NEW] Sentiment & Reviews Persistence
                         if "reviews_breakdown" in price_data:
                             update_payload["sentiment_breakdown"] = price_data["reviews_breakdown"]
                             
-                        if "reviews" in price_data and price_data["reviews"]:
-                            # Store top 5 relevant reviews snippet
+                        # Handle review snippets (reviews_list from provider)
+                        if "reviews_list" in price_data and price_data["reviews_list"]:
+                            update_payload["reviews"] = price_data["reviews_list"][:5]
+                        elif "reviews" in price_data and isinstance(price_data["reviews"], list):
                             update_payload["reviews"] = price_data["reviews"][:5]
 
                         if update_payload:
