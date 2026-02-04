@@ -95,15 +95,13 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                 : "bg-white/10 border-white/5 text-white/50"
             }`}
           >
-            {isUndercut
-              ? "Pricing_Threat_Detected"
-              : `Competitor_Node_#${rank || "00"}`}
+            {isUndercut ? "Rate Alert" : `CompSet Position #${rank || "00"}`}
           </div>
           {isUndercut && (
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
               <ShieldAlert size={12} className="text-red-500" />
               <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">
-                AGGRESSIVE_UNDERCUT
+                UNDER-CUTTING RATE
               </span>
             </div>
           )}
@@ -135,14 +133,14 @@ export default function CompetitorTile(props: CompetitorTileProps) {
           </h3>
           <div className="flex items-center gap-2 mt-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">
             <Target size={12} className="text-[var(--gold-primary)]" />
-            <span>Counter_Monitor_Node</span>
+            <span>Market Competitor</span>
           </div>
         </div>
 
         <div className="flex items-baseline justify-between mb-8 group/price">
           <div className="flex flex-col">
             <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-60">
-              CURRENT_VALUE
+              ROOM RATE
             </span>
             <div
               className={`text-3xl font-black data-value tracking-tighter transition-all duration-500 group-hover/price:scale-105 origin-left ${isUndercut ? "text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]" : "text-white"}`}
@@ -152,7 +150,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-60 text-right">
-              MARKET_DELTA
+              PRICE VARIANCE
             </span>
             <div
               className={`flex items-center gap-1.5 text-xs font-black transition-all ${getTrendColor()}`}
@@ -178,7 +176,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
               className="text-[var(--gold-primary)] opacity-60"
             />
             <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-              Neural_Data_Stream
+              Market Performance Pace
             </span>
           </div>
           {priceHistory && priceHistory.length > 0 ? (
@@ -194,7 +192,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
             <div className="flex flex-col items-center justify-center h-full gap-2 border border-dashed border-white/10 rounded-xl">
               <div className="w-1 h-1 rounded-full bg-[var(--gold-primary)] animate-ping" />
               <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] opacity-40">
-                AWAITING_SIGNAL
+                AWAITING DATA
               </span>
             </div>
           )}
@@ -204,7 +202,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
       <div className="mt-8 pt-5 border-t border-white/5 flex items-center justify-between relative z-10">
         <div className="flex flex-col">
           <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">
-            STRATEGIC_POSTURE
+            COMPETITIVE STANDING
           </span>
           <div className="flex items-center gap-2">
             <div
@@ -213,7 +211,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
             <span
               className={`text-[10px] font-black tracking-[0.2em] uppercase ${isUndercut ? "text-red-500" : "text-white/60"}`}
             >
-              {isUndercut ? "CRITICAL_RESPONSE" : "PASSIVE_MONITOR"}
+              {isUndercut ? "ACTION REQUIRED" : "TRACKING"}
             </span>
           </div>
         </div>

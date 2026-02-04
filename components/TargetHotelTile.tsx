@@ -96,7 +96,7 @@ export default function TargetHotelTile({
             <div className="relative w-2 h-2 rounded-full bg-[var(--gold-primary)] shadow-[0_0_12px_var(--gold-primary)]" />
           </div>
           <span className="text-[9px] font-black uppercase tracking-[0.5em] text-[var(--gold-primary)] opacity-80">
-            Primary_Node_Active
+            Performance Core
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export default function TargetHotelTile({
           </div>
           <div className="text-right flex flex-col items-end">
             <span className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mb-2 opacity-60">
-              OPTIMIZED ADR
+              Current Market Rate
             </span>
             <div className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent">
               {currentPrice > 0
@@ -168,7 +168,7 @@ export default function TargetHotelTile({
               />
             </div>
             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] block mb-3 opacity-60">
-              VARIANCE_SIGNAL
+              PRICE VARIATION
             </span>
             <div className="flex items-center gap-4">
               <span
@@ -195,7 +195,7 @@ export default function TargetHotelTile({
 
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-3xl transition-all hover:bg-white/[0.06] shadow-2xl">
             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] block mb-3 opacity-60">
-              LAST_NEURAL_SYNC
+              LAST LIVE UPDATE
             </span>
             <div className="flex items-center gap-4">
               <div className="text-2xl font-black text-white tracking-tighter flex items-center gap-3">
@@ -217,14 +217,14 @@ export default function TargetHotelTile({
               className="text-[var(--gold-primary)] animate-pulse"
             />
             <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.5em]">
-              Predictive_Pricing_Velocity
+              Price Movement Trends
             </span>
           </div>
           <div className="absolute top-8 right-8 z-20">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[var(--gold-primary)]" />
               <span className="text-[8px] font-black text-[var(--gold-primary)] uppercase tracking-widest opacity-60">
-                LIVE_FEED
+                LIVE DATA
               </span>
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function TargetHotelTile({
         <div className="flex items-center gap-8">
           <div className="flex flex-col">
             <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1.5 opacity-60">
-              Data_Source
+              Pricing Channel
             </span>
             <span className="text-[10px] font-black text-white/80 tracking-[0.2em] uppercase">
               {vendor || "Global_API"}
@@ -286,7 +286,7 @@ export default function TargetHotelTile({
             className="relative z-10 text-black group-hover:scale-125 transition-transform"
           />
           <span className="relative z-10 font-black uppercase tracking-[0.2em] text-xs leading-none">
-            DEEP_ANALYSIS
+            ANALYZE
           </span>
         </button>
       </div>
