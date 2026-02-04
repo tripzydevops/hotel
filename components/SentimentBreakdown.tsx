@@ -21,22 +21,22 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="glass-card p-8 border-white/5 bg-black/20">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-          <MessageSquare className="w-5 h-5" />
+    <div className="glass-card p-10 border-white/5 bg-black/20">
+      <div className="flex items-start gap-4 mb-10">
+        <div className="p-3 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-[0_0_15px_rgba(255,215,0,0.1)]">
+          <ThumbsUp className="w-6 h-6" />
         </div>
         <div>
-          <h3 className="text-lg font-black text-white tracking-tight">
+          <h3 className="text-xl font-black text-white tracking-tight leading-none mb-1">
             Sentiment Deep Dive
           </h3>
-          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+          <p className="text-[11px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] opacity-60">
             Granular analysis of review text & themes
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12">
         {items.map((item, idx) => {
           const posPercent = Math.round(
             (item.positive / item.total_mentioned) * 100,
