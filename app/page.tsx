@@ -484,6 +484,7 @@ export default function Dashboard() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
+                  className="sm:col-span-2 lg:col-span-2 lg:row-span-2"
                 >
                   <TargetHotelTile
                     id={data.target_hotel.id}
@@ -542,6 +543,7 @@ export default function Dashboard() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
+                        className="col-span-1"
                       >
                         <CompetitorTile
                           id={competitor.id}

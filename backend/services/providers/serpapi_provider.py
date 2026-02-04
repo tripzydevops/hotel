@@ -22,24 +22,42 @@ class ApiKeyManager:
             if not self._keys: raise ValueError("No API keys configured")
             return self._keys[self._current_index]
 
-    def rotate_key(self) -> bool:
+    def rotate_key(self, mark_exhausted: bool = True) -> bool:
         with self._lock:
             if not self._keys: return False
-            current_key = self._keys[self._current_index]
-            self._exhausted_keys[current_key] = datetime.now()
             
+            if mark_exhausted:
+                current_key = self._keys[self._current_index]
+                self._exhausted_keys[current_key] = datetime.now()
+            
+            # Simple rotation to next available (or least recently exhausted if all exhausted)
             attempts = 0
+            original_index = self._current_index
             while attempts < len(self._keys):
                 self._current_index = (self._current_index + 1) % len(self._keys)
                 next_key = self._keys[self._current_index]
+                
                 if next_key not in self._exhausted_keys:
                     return True
+                
                 # Check cooldown
                 if datetime.now() - self._exhausted_keys[next_key] > self._exhaustion_cooldown:
                     del self._exhausted_keys[next_key]
                     return True
                 attempts += 1
+            
+            # If we reached here, all keys are technically exhausted. 
+            # If we were told NOT to mark exhaustion, we just wrap around anyway (hope for transient fix)
+            if not mark_exhausted:
+                self._current_index = (original_index + 1) % len(self._keys)
+                return True
+                
             return False
+
+    @property
+    def current_key_index(self) -> int:
+        with self._lock:
+            return self._current_index
 
 def load_api_keys() -> List[str]:
     keys = []
@@ -64,6 +82,9 @@ class SerpApiProvider(HotelDataProvider):
 
     def get_provider_name(self) -> str:
         return "SerpApi"
+
+    def get_active_key_index(self) -> int:
+        return self._key_manager.current_key_index
 
     async def fetch_price(
         self, 
@@ -99,8 +120,11 @@ class SerpApiProvider(HotelDataProvider):
                     current_key_suffix = self._key_manager.current_key[-5:]
                     
                     if self._is_quota_error(response):
-                        print(f"[SerpApi] 429 Error on Key ...{current_key_suffix}")
-                        if self._key_manager.rotate_key():
+                        is_rate_limit = response.status_code == 429
+                        print(f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_key_suffix}")
+                        
+                        # Only mark as 'permanently' exhausted if it's a quota error (not 429)
+                        if self._key_manager.rotate_key(mark_exhausted=not is_rate_limit):
                             new_key = self._key_manager.current_key
                             print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
                             params["api_key"] = new_key
@@ -113,7 +137,7 @@ class SerpApiProvider(HotelDataProvider):
                         data = response.json()
                         if "error" in data:
                             print(f"[SerpApi] API Error: {data['error']} (Key: ...{current_key_suffix})")
-                        return self._parse_hotel_result(data, hotel_name, currency)
+                        return self._parse_hotel_result(data, hotel_name, currency, target_serp_id=token)
             except Exception as e:
                 print(f"[SerpApi] Fetch Error: {e}")
             return None
@@ -175,19 +199,28 @@ class SerpApiProvider(HotelDataProvider):
     def _parse_market_offers(self, prices_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
         offers = []
         seen_vendors = set()
+        
+        # Determine current target price to identify competitors correctly
         for p in prices_data:
-            vendor = p.get("source") or p.get("name") or "Unknown"
+            # Normalize vendor name
+            vendor = p.get("source") or p.get("name") or p.get("deal_description") or "Unknown"
             if vendor in seen_vendors: continue
             
-            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night") or p.get("price")
+            # Extract price from various possible fields
+            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+            if not raw:
+                 raw = p.get("price") or p.get("extracted_lowest")
+            
             price = self._clean_price_string(raw, currency)
-            if price is not None:
+            if price and price > 0:
                 offers.append({
                     "vendor": vendor,
                     "price": price,
                     "currency": currency
                 })
                 seen_vendors.add(vendor)
+        
+        # print(f"[SerpApi] Extracted {len(offers)} market offers")
         return offers
 
     def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
@@ -271,6 +304,10 @@ class SerpApiProvider(HotelDataProvider):
         offers_data = best_match.get("prices", []) or []
         if best_match.get("featured_prices"):
             offers_data.extend(best_match["featured_prices"])
+        
+        offers = self._parse_market_offers(offers_data, currency)
+        if not offers:
+            print(f"[SerpApi] WARNING: No offers found for {best_match.get('name')}. Prices key exists: {'prices' in best_match}, Featured key exists: {'featured_prices' in best_match}")
             
         return {
             "price": price or 0.0,
@@ -285,7 +322,7 @@ class SerpApiProvider(HotelDataProvider):
             "image_url": best_match.get("images", [{}])[0].get("thumbnail") if best_match.get("images") else None,
             "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")],
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
-            "offers": self._parse_market_offers(offers_data, currency),
+            "offers": offers,
             "room_types": self._extract_all_room_types(best_match, currency),
             "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "reviews_list": best_match.get("actual_reviews", []) if isinstance(best_match.get("actual_reviews"), list) else [],

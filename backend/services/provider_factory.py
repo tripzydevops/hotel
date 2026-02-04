@@ -57,6 +57,12 @@ class ProviderFactory:
             
         report = []
         
+        # Determine which key is actually active from the SerpApiProvider instance
+        active_key_index = 0
+        serp_provider = next((p for p in cls._providers if isinstance(p, SerpApiProvider)), None)
+        if serp_provider:
+            active_key_index = serp_provider.get_active_key_index()
+
         # Mock Usage Data (In a real app, this would come from a DB)
         from datetime import date, timedelta
         today = date.today()
@@ -70,7 +76,7 @@ class ProviderFactory:
             "limit": "5000/mo",
             "refresh": (today + timedelta(days=15)).strftime("%b %d"), 
             "latency": "1.2s",
-            "health": "Healthy"
+            "health": "Active" if active_key_index == 0 else "Ready"
         })
 
         # 2. SerpApi Key 2 (Backup)
@@ -82,7 +88,7 @@ class ProviderFactory:
             "limit": "5000/mo",
             "refresh": (today + timedelta(days=5)).strftime("%b %d"),
             "latency": "0.8s",
-            "health": "Standby"
+            "health": "Active" if active_key_index == 1 else "Ready"
         })
 
         # 3. SerpApi Key 3 (Free Tier)
@@ -95,7 +101,7 @@ class ProviderFactory:
              # USER REQUEST: Mark creation date and refresh in a month
             "refresh": (today + timedelta(days=30)).strftime("%b %d"),
             "latency": "Pending",
-            "health": "Active",
+            "health": "Active" if active_key_index == 2 else "Ready",
             "created_at": today.strftime("%b %d, %Y")
         })
         

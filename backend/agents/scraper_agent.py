@@ -119,9 +119,13 @@ class ScraperAgent:
                         update_payload = {}
                         if price_data.get("images"):
                             update_payload["images"] = price_data["images"]
+                            if not hotel.get("image_url") and price_data["images"]:
+                                update_payload["image_url"] = price_data["images"][0].get("thumbnail") or price_data["images"][0].get("original")
                         elif price_data.get("photos"):
                             imgs = [{"original": url, "thumbnail": url} for url in price_data["photos"][:5]]
                             update_payload["images"] = imgs
+                            if not hotel.get("image_url") and imgs:
+                                update_payload["image_url"] = imgs[0]["thumbnail"]
                         
                         if price_data.get("amenities"):
                             update_payload["amenities"] = price_data["amenities"]

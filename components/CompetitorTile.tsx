@@ -72,8 +72,6 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     isEnterprise = false,
     amenities,
     images,
-    targetPrice,
-    targetRating,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
@@ -128,9 +126,11 @@ export default function CompetitorTile(props: CompetitorTileProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5">
-            {image_src ? (
+            {image_src || (images && images.length > 0) ? (
               <img
-                src={image_src}
+                src={
+                  image_src || images?.[0]?.original || images?.[0]?.thumbnail
+                }
                 alt={name}
                 className="w-full h-full object-cover"
               />
