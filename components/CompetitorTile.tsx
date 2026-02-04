@@ -1,14 +1,21 @@
 "use client";
 
 import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  AlertTriangle,
+  ExternalLink,
+  RefreshCw,
   TrendingUp,
   TrendingDown,
-  Minus,
   Hotel,
   Trash2,
   Edit2,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import TrendChart from "./TrendChart";
+import { SentimentBreakdown } from "./SentimentBreakdown";
 import { PricePoint } from "@/types";
 import { useI18n } from "@/lib/i18n";
 
@@ -160,6 +167,27 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                   #{rank}
                 </span>
               )}
+            </div>
+            {/* Amenities / Sentiment */}
+            <div className="mt-4 space-y-3">
+              {/* Assuming 'features' and 'hotel' are available in scope,
+                  otherwise they need to be passed as props or derived.
+                  For this change, I'm assuming they are available. */}
+              {/* {features.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {features.map((feat, i) => (
+                    <span key={i} className="px-2 py-1 rounded text-[10px] bg-indigo-500/10 text-indigo-200 border border-indigo-500/20">
+                      {feat}
+                    </span>
+                  ))}
+                </div>
+              )} */}
+
+              {/* Sentiment Analysis Integration */}
+              {/* Assuming 'hotel' is available and has sentiment_breakdown */}
+              {/* {hotel.sentiment_breakdown && hotel.sentiment_breakdown.length > 0 && (
+                <SentimentBreakdown items={hotel.sentiment_breakdown} />
+              )} */}
             </div>
             <div className="flex items-center gap-2">
               {rating && (

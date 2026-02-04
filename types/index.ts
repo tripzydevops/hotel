@@ -25,7 +25,9 @@ export interface Hotel {
   default_adults?: number;
   created_at: string;
   amenities?: string[];
-  images?: { thumbnail?: string; original?: string }[];
+  images?: Array<{ thumbnail?: string; original?: string }>;
+  sentiment_breakdown?: Array<{ name: string; rating: number; total?: number }>;
+  reviews?: Array<{ text: string; sentiment?: string; date?: string }>;
 }
 
 export interface PriceInfo {

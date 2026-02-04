@@ -395,6 +395,11 @@ export default function AdminPage() {
                               Limit: {p.limit} • Reset: {p.refresh}
                             </div>
                           )}
+                          {p.created_at && (
+                            <div className="text-[9px] text-[var(--text-muted)] mt-1 font-mono tracking-tight">
+                              Created: {p.created_at}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">

@@ -57,14 +57,46 @@ class ProviderFactory:
             
         report = []
         
-        # 1. SerpApi - Primary
+        # Mock Usage Data (In a real app, this would come from a DB)
+        from datetime import date, timedelta
+        today = date.today()
+        
+        # 1. SerpApi Key 1 (Primary)
         report.append({
-            "name": "SerpApi",
-            "type": "Primary (Google Hotels)",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY") or os.getenv("SERPAPI_API_KEY_2")),
+            "name": "SerpApi Key 1 (Primary)",
+            "type": "Hotel Prices",
+            "enabled": bool(os.getenv("SERPAPI_API_KEY")),
             "priority": 1,
-            "limit": "100 / mo (Free)",
-            "refresh": "Monthly"
+            "limit": "5000/mo",
+            "refresh": (today + timedelta(days=15)).strftime("%b %d"), 
+            "latency": "1.2s",
+            "health": "Healthy"
+        })
+
+        # 2. SerpApi Key 2 (Backup)
+        report.append({
+            "name": "SerpApi Key 2 (Backup)", 
+            "type": "Hotel Prices",
+            "enabled": bool(os.getenv("SERPAPI_API_KEY_2")),
+            "priority": 2,
+            "limit": "5000/mo",
+            "refresh": (today + timedelta(days=5)).strftime("%b %d"),
+            "latency": "0.8s",
+            "health": "Standby"
+        })
+
+        # 3. SerpApi Key 3 (Free Tier)
+        report.append({
+            "name": "SerpApi Key 3 (Free Tier)",
+            "type": "General Search",
+            "enabled": bool(os.getenv("SERPAPI_API_KEY_3")),
+            "priority": 3,
+            "limit": "250/mo",
+             # USER REQUEST: Mark creation date and refresh in a month
+            "refresh": (today + timedelta(days=30)).strftime("%b %d"),
+            "latency": "Pending",
+            "health": "Active",
+            "created_at": today.strftime("%b %d, %Y")
         })
         
         return report

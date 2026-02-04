@@ -131,6 +131,14 @@ class ScraperAgent:
                         if price_data.get("rating"):
                             update_payload["rating"] = price_data["rating"]
 
+                        # [NEW] Sentiment Persistence
+                        if "reviews_breakdown" in price_data:
+                            update_payload["sentiment_breakdown"] = price_data["reviews_breakdown"]
+                            
+                        if "reviews" in price_data and price_data["reviews"]:
+                            # Store top 5 relevant reviews snippet
+                            update_payload["reviews"] = price_data["reviews"][:5]
+
                         if update_payload:
                             self.db.table("hotels").update(update_payload).eq("id", str(hotel_id)).execute()
                             # print(f"[Scraper] Updated metadata for {hotel_name}")

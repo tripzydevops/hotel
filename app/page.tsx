@@ -295,6 +295,14 @@ export default function Dashboard() {
         onClose={() => setIsScanSettingsOpen(false)}
         onScan={handleScan}
         initialValues={scanDefaults}
+        userPlan={profile?.plan_type}
+        dailyLimitReached={
+          data?.recent_sessions?.some(
+            (s) =>
+              s.session_type === "manual" &&
+              s.created_at.startsWith(new Date().toISOString().split("T")[0]),
+          ) || false
+        }
       />
 
       {hotelToEdit && (

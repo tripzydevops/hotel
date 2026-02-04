@@ -8,7 +8,7 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_KEY")
 
 if not url or not key:
-    print("❌ Error: Missing Supabase credentials")
+    print("X Error: Missing Supabase credentials")
     sys.exit(1)
 
 supabase: Client = create_client(url, key)

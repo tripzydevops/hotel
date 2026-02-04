@@ -40,6 +40,7 @@ class HotelBase(BaseModel):
     amenities: Optional[List[Any]] = Field(default_factory=list)
     images: Optional[List[Any]] = Field(default_factory=list)
     sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
+    reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
     class Config:
         extra = "allow"
