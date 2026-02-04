@@ -45,6 +45,8 @@ interface CompetitorTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: { thumbnail?: string; original?: string }[];
+  targetPrice?: number;
+  targetRating?: number;
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {
@@ -72,6 +74,8 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     isEnterprise = false,
     amenities,
     images,
+    targetPrice,
+    targetRating,
   } = props;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
@@ -168,27 +172,60 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                 </span>
               )}
             </div>
-            {/* Amenities / Sentiment */}
-            <div className="mt-4 space-y-3">
-              {/* Assuming 'features' and 'hotel' are available in scope,
-                  otherwise they need to be passed as props or derived.
-                  For this change, I'm assuming they are available. */}
-              {/* {features.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {features.map((feat, i) => (
-                    <span key={i} className="px-2 py-1 rounded text-[10px] bg-indigo-500/10 text-indigo-200 border border-indigo-500/20">
-                      {feat}
-                    </span>
-                  ))}
+            {/* Market Information Section */}
+            {(targetPrice || isEnterprise) && (
+              <div className="mt-3 p-2.5 rounded-lg bg-white/5 border border-white/5 space-y-1.5 backdrop-blur-sm group-hover:bg-white/10 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-[var(--soft-gold)]">
+                    Market Information
+                  </span>
+                  <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]/50" />
                 </div>
-              )} */}
 
-              {/* Sentiment Analysis Integration */}
-              {/* Assuming 'hotel' is available and has sentiment_breakdown */}
-              {/* {hotel.sentiment_breakdown && hotel.sentiment_breakdown.length > 0 && (
-                <SentimentBreakdown items={hotel.sentiment_breakdown} />
-              )} */}
-            </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {targetPrice && (
+                    <div className="flex flex-col">
+                      <span className="text-[8px] text-[var(--text-muted)] uppercase">
+                        Price Position
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold ${currentPrice < targetPrice ? "text-optimal-green" : "text-white"}`}
+                      >
+                        {currentPrice < targetPrice
+                          ? "Undercutting"
+                          : currentPrice === targetPrice
+                            ? "Parity"
+                            : "Premium"}
+                      </span>
+                    </div>
+                  )}
+
+                  {targetPrice && (
+                    <div className="flex flex-col">
+                      <span className="text-[8px] text-[var(--text-muted)] uppercase">
+                        Price Gap
+                      </span>
+                      <span className="text-[10px] font-bold text-white">
+                        {currentPrice < targetPrice ? "-" : "+"}
+                        {formatPrice(Math.abs(currentPrice - targetPrice))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sentiment Summary if Enterprise */}
+                {isEnterprise && (rating || stars) && (
+                  <div className="pt-1.5 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[8px] text-[var(--text-muted)] uppercase">
+                      Yield Opportunity
+                    </span>
+                    <span className="text-[9px] font-bold text-white">
+                      {isUndercut ? "Capture Volume" : "Optimize Margin"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2">
               {rating && (
                 <span className="text-[10px] font-bold text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
