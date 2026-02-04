@@ -297,6 +297,10 @@ export default function Dashboard() {
         isOpen={isScanSettingsOpen}
         onClose={() => setIsScanSettingsOpen(false)}
         onScan={handleScan}
+        onUpgrade={() => {
+          setIsScanSettingsOpen(false);
+          setIsBillingOpen(true);
+        }}
         initialValues={scanDefaults}
         userPlan={profile?.plan_type}
         dailyLimitReached={

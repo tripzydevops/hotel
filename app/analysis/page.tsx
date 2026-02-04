@@ -246,7 +246,7 @@ export default function AnalysisPage() {
 
         {/* 2. Sentiment Analysis Breakdown */}
         <div className="mb-8">
-          <SentimentBreakdown data={data?.sentiment_breakdown} />
+          <SentimentBreakdown items={data?.sentiment_breakdown} />
         </div>
 
         {/* Global KPI Cards */}
