@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 
 interface SentimentItem {
   name: string;
@@ -20,70 +21,71 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="glass-card p-6 border-l-4 border-l-[var(--soft-gold)]">
-      <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-        Guest Sentiment Deep Dive
-      </h3>
+    <div className="glass-card p-8 border-white/5 bg-black/20">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+          <MessageSquare className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="text-lg font-black text-white tracking-tight">
+            Sentiment Deep Dive
+          </h3>
+          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+            Granular analysis of review text & themes
+          </p>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
         {items.map((item, idx) => {
-          const posPercent = (item.positive / item.total_mentioned) * 100;
-          const negPercent = (item.negative / item.total_mentioned) * 100;
-          const neuPercent = (item.neutral / item.total_mentioned) * 100;
+          const posPercent = Math.round(
+            (item.positive / item.total_mentioned) * 100,
+          );
+          const negPercent = Math.round(
+            (item.negative / item.total_mentioned) * 100,
+          );
 
           return (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="space-y-3"
+              className="relative group lg:px-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h4 className="text-xs font-bold text-white">{item.name}</h4>
-                  <p className="text-[10px] text-[var(--text-muted)]">
-                    {item.description}
+                  <h4 className="text-sm font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
+                    {item.name}
+                  </h4>
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter mt-0.5">
+                    {item.total_mentioned} MENTIONS
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-black text-white px-2 py-0.5 rounded bg-white/5 uppercase">
-                    {item.total_mentioned} Mentions
-                  </span>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                    <ThumbsUp className="w-3.5 h-3.5 text-[var(--optimal-green)]" />
+                    <span className="text-xs font-black text-white">
+                      {posPercent}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                    <ThumbsDown className="w-3.5 h-3.5 text-[var(--alert-red)]" />
+                    <span className="text-xs font-black text-white">
+                      {negPercent}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Multi-segment Bar */}
-              <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden flex">
+              {/* Minimalist Progress Bar */}
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${posPercent}%` }}
-                  className="h-full bg-[var(--optimal-green)]/80"
-                  title={`Positive: ${item.positive}`}
+                  className="h-full bg-white/20 group-hover:bg-[var(--soft-gold)]/30 transition-colors"
                 />
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${neuPercent}%` }}
-                  className="h-full bg-white/20"
-                  title={`Neutral: ${item.neutral}`}
-                />
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${negPercent}%` }}
-                  className="h-full bg-[var(--alert-red)]/80"
-                  title={`Negative: ${item.negative}`}
-                />
-              </div>
-
-              <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tighter">
-                <span className="text-[var(--optimal-green)]">
-                  {item.positive} Pos
-                </span>
-                <span className="text-white/40">{item.neutral} Neu</span>
-                <span className="text-[var(--alert-red)]">
-                  {item.negative} Neg
-                </span>
               </div>
             </motion.div>
           );
