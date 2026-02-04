@@ -95,7 +95,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
                 : "bg-white/10 border-white/5 text-white/50"
             }`}
           >
-            {isUndercut ? "Rate Alert" : `CompSet Position #${rank || "00"}`}
+            {isUndercut ? "RATE ALERT" : `COMPETITOR #${rank || "00"}`}
           </div>
           {isUndercut && (
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">

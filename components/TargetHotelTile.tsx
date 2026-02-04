@@ -88,15 +88,14 @@ export default function TargetHotelTile({
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold-glow)] via-transparent to-transparent opacity-20 pointer-events-none group-hover/card:opacity-30 transition-opacity duration-1000" />
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[var(--gold-glow)] opacity-10 blur-[100px] pointer-events-none group-hover/card:opacity-20 transition-all duration-1000 group-hover/card:scale-125" />
 
-      {/* Header Status Bar */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-black/40 backdrop-blur-2xl relative z-10">
+      <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.02] backdrop-blur-2xl relative z-10 transition-colors duration-500 group-hover/card:border-[var(--gold-dim)]/30">
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="absolute inset-0 bg-[var(--gold-primary)]/20 blur-md rounded-full animate-pulse" />
             <div className="relative w-2 h-2 rounded-full bg-[var(--gold-primary)] shadow-[0_0_12px_var(--gold-primary)]" />
           </div>
-          <span className="text-[9px] font-black uppercase tracking-[0.5em] text-[var(--gold-primary)] opacity-80">
-            Performance Core
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-primary)] opacity-90 font-mono">
+            TRACKING ACTIVE
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -147,10 +146,10 @@ export default function TargetHotelTile({
             </div>
           </div>
           <div className="text-right flex flex-col items-end">
-            <span className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mb-2 opacity-60">
-              Current Market Rate
+            <span className="text-[10px] font-bold text-[var(--gold-primary)] uppercase tracking-[0.2em] mb-2 opacity-80 font-mono">
+              Current Rate
             </span>
-            <div className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent">
+            <div className="text-5xl font-bold text-white tracking-tight drop-shadow-xl font-mono">
               {currentPrice > 0
                 ? api.formatCurrency(currentPrice, currency)
                 : t("common.pending")}
