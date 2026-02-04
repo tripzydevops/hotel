@@ -98,7 +98,7 @@ export interface ScanSession {
   id: string;
   user_id: string;
   session_type: "manual" | "scheduled";
-  status: "pending" | "completed" | "failed" | "partial";
+  status: "pending" | "running" | "completed" | "failed" | "partial";
   hotels_count: number;
   created_at: string;
   completed_at?: string;
@@ -138,7 +138,7 @@ export interface AdminStats {
   total_users: number;
   total_hotels: number;
   total_scans: number;
-  directory_size: number;
+  directory_count: number;
   api_calls_today: number;
   service_role_active: boolean;
 }

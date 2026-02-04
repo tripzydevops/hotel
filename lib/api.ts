@@ -215,8 +215,8 @@ class ApiClient {
       body: JSON.stringify(profile),
     });
   }
-  async getAdminStats(): Promise<any> {
-    return this.fetch<any>("/api/admin/stats");
+  async getAdminStats(): Promise<AdminStats> {
+    return this.fetch<AdminStats>("/api/admin/stats");
   }
 
   async getAdminUsers(): Promise<any[]> {

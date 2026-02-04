@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import BentoGrid from "@/components/BentoGrid";
 import TargetHotelTile from "@/components/TargetHotelTile";
@@ -114,13 +115,15 @@ export default function Dashboard() {
     if (!userId) return;
     try {
       setError(null);
-      const dashboardData = await api.getDashboard(userId);
+
+      const [dashboardData, settings, userProfile] = await Promise.all([
+        api.getDashboard(userId),
+        api.getSettings(userId),
+        api.getProfile(userId),
+      ]);
+
       setData(dashboardData);
-
-      const settings = await api.getSettings(userId);
       setUserSettings(settings);
-
-      const userProfile = await api.getProfile(userId);
       setProfile(userProfile);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
@@ -369,7 +372,11 @@ export default function Dashboard() {
 
       <main className="pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
               {t("dashboard.title")}
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(255,215,0,0.1)]">
@@ -380,7 +387,7 @@ export default function Dashboard() {
             <p className="text-[var(--text-secondary)] mt-1 text-xs">
               {t("dashboard.subtitle")}
             </p>
-          </div>
+          </motion.div>
 
           {data?.competitors?.length && (
             <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
@@ -469,41 +476,47 @@ export default function Dashboard() {
           ) : (
             <>
               {data?.target_hotel && (
-                <TargetHotelTile
-                  id={data.target_hotel.id}
-                  name={data.target_hotel.name}
-                  location={data.target_hotel.location}
-                  currentPrice={effectiveTargetPrice}
-                  previousPrice={data.target_hotel.price_info?.previous_price}
-                  currency={
-                    data.target_hotel.price_info?.currency ||
-                    data.competitors?.[0]?.price_info?.currency ||
-                    userSettings?.currency ||
-                    "TRY"
-                  }
-                  trend={data.target_hotel.price_info?.trend || "stable"}
-                  changePercent={
-                    data.target_hotel.price_info?.change_percent || 0
-                  }
-                  lastUpdated={
-                    data.target_hotel.price_info
-                      ? t("common.justNow")
-                      : t("dashboard.pendingInitial")
-                  }
-                  onDelete={handleDeleteHotel}
-                  rating={data.target_hotel.rating}
-                  stars={data.target_hotel.stars}
-                  imageUrl={data.target_hotel.image_url}
-                  vendor={data.target_hotel.price_info?.vendor}
-                  priceHistory={data.target_hotel.price_history}
-                  checkIn={data.target_hotel.price_info?.check_in}
-                  adults={data.target_hotel.price_info?.adults}
-                  onEdit={handleEditHotel}
-                  onViewDetails={handleOpenDetails}
-                  isEnterprise={isEnterprise}
-                  amenities={data.target_hotel.amenities}
-                  images={data.target_hotel.images}
-                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <TargetHotelTile
+                    id={data.target_hotel.id}
+                    name={data.target_hotel.name}
+                    location={data.target_hotel.location}
+                    currentPrice={effectiveTargetPrice}
+                    previousPrice={data.target_hotel.price_info?.previous_price}
+                    currency={
+                      data.target_hotel.price_info?.currency ||
+                      data.competitors?.[0]?.price_info?.currency ||
+                      userSettings?.currency ||
+                      "TRY"
+                    }
+                    trend={data.target_hotel.price_info?.trend || "stable"}
+                    changePercent={
+                      data.target_hotel.price_info?.change_percent || 0
+                    }
+                    lastUpdated={
+                      data.target_hotel.price_info
+                        ? t("common.justNow")
+                        : t("dashboard.pendingInitial")
+                    }
+                    onDelete={handleDeleteHotel}
+                    rating={data.target_hotel.rating}
+                    stars={data.target_hotel.stars}
+                    imageUrl={data.target_hotel.image_url}
+                    vendor={data.target_hotel.price_info?.vendor}
+                    priceHistory={data.target_hotel.price_history}
+                    checkIn={data.target_hotel.price_info?.check_in}
+                    adults={data.target_hotel.price_info?.adults}
+                    onEdit={handleEditHotel}
+                    onViewDetails={handleOpenDetails}
+                    isEnterprise={isEnterprise}
+                    amenities={data.target_hotel.amenities}
+                    images={data.target_hotel.images}
+                  />
+                </motion.div>
               )}
 
               {data?.competitors &&
@@ -520,41 +533,57 @@ export default function Dashboard() {
                         effectiveTargetPrice;
 
                     return (
-                      <CompetitorTile
+                      <motion.div
                         key={competitor.id}
-                        id={competitor.id}
-                        name={competitor.name}
-                        currentPrice={competitor.price_info?.current_price || 0}
-                        previousPrice={competitor.price_info?.previous_price}
-                        currency={competitor.price_info?.currency || "TRY"}
-                        trend={competitor.price_info?.trend || "stable"}
-                        changePercent={
-                          competitor.price_info?.change_percent || 0
-                        }
-                        isUndercut={isUndercut}
-                        rank={index + 1}
-                        onDelete={handleDeleteHotel}
-                        rating={competitor.rating}
-                        stars={competitor.stars}
-                        imageUrl={competitor.image_url}
-                        vendor={competitor.price_info?.vendor}
-                        priceHistory={competitor.price_history}
-                        checkIn={competitor.price_info?.check_in}
-                        adults={competitor.price_info?.adults}
-                        onEdit={handleEditHotel}
-                        onViewDetails={handleOpenDetails}
-                        isEnterprise={isEnterprise}
-                        amenities={competitor.amenities}
-                        images={competitor.images}
-                      />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
+                      >
+                        <CompetitorTile
+                          id={competitor.id}
+                          name={competitor.name}
+                          currentPrice={
+                            competitor.price_info?.current_price || 0
+                          }
+                          previousPrice={competitor.price_info?.previous_price}
+                          currency={competitor.price_info?.currency || "TRY"}
+                          trend={competitor.price_info?.trend || "stable"}
+                          changePercent={
+                            competitor.price_info?.change_percent || 0
+                          }
+                          isUndercut={isUndercut}
+                          rank={index + 1}
+                          onDelete={handleDeleteHotel}
+                          rating={competitor.rating}
+                          stars={competitor.stars}
+                          imageUrl={competitor.image_url}
+                          vendor={competitor.price_info?.vendor}
+                          priceHistory={competitor.price_history}
+                          checkIn={competitor.price_info?.check_in}
+                          adults={competitor.price_info?.adults}
+                          onEdit={handleEditHotel}
+                          onViewDetails={handleOpenDetails}
+                          isEnterprise={isEnterprise}
+                          amenities={competitor.amenities}
+                          images={competitor.images}
+                        />
+                      </motion.div>
                     );
                   })}
             </>
           )}
         </BentoGrid>
 
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="glass-card p-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4"
+        >
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-[var(--soft-gold)]/30 shadow-lg hover:shadow-[var(--soft-gold)]/5"
+          >
             <p className="text-2xl font-bold text-alert-red">
               {
                 (data?.competitors || []).filter(
@@ -567,8 +596,11 @@ export default function Dashboard() {
             <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">
               {t("dashboard.yieldRisk")}
             </p>
-          </div>
-          <div className="glass-card p-4 text-center group">
+          </motion.div>
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-optimal-green/30 shadow-lg hover:shadow-optimal-green/5"
+          >
             <p className="text-2xl font-bold text-optimal-green">
               {
                 (data?.competitors || []).filter(
@@ -579,13 +611,15 @@ export default function Dashboard() {
             <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">
               {t("dashboard.marketOpportunity")}
             </p>
-          </div>
-          <div className="glass-card p-4 text-center">
+          </motion.div>
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-white/20 shadow-lg hover:shadow-white/5"
+          >
             <p className="text-2xl font-bold text-white">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
-                    // Robust currency detection: Prioritize hotel data, then competitor data, then settings
                     const activeCurrency =
                       data.target_hotel?.price_info?.currency ||
                       data.competitors.find((c) => c.price_info?.currency)
@@ -617,14 +651,17 @@ export default function Dashboard() {
             <p className="text-xs text-[var(--text-muted)]">
               {t("dashboard.avgCompetitor")}
             </p>
-          </div>
-          <div className="glass-card p-4 text-center">
+          </motion.div>
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-white/20 shadow-lg hover:shadow-white/5"
+          >
             <p className="text-2xl font-bold text-white">{currentHotelCount}</p>
             <p className="text-xs text-[var(--text-muted)]">
               {t("dashboard.hotelsTracked")}
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <ScanHistory
           sessions={data?.recent_sessions || []}

@@ -33,21 +33,29 @@ export default function ScanSessionModal({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+
     if (isOpen && session) {
       fetchSessionLogs();
+
+      // Poll for updates if scan is not finished
+      if (session.status === "running" || session.status === "pending") {
+        interval = setInterval(fetchSessionLogs, 3000);
+      }
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isOpen, session]);
 
   const fetchSessionLogs = async () => {
     if (!session) return;
-    setLoading(true);
     try {
       const result = await api.getSessionLogs(session.id);
       setLogs(result);
     } catch (error) {
       console.error("Failed to fetch session logs:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -149,7 +157,7 @@ export default function ScanSessionModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={exportToCSV}
-                  disabled={loading || logs.length === 0}
+                  disabled={logs.length === 0}
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
                   <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -227,177 +235,198 @@ export default function ScanSessionModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-8 bg-[var(--deep-ocean)]/30 backdrop-blur-sm">
-          {loading ? (
-            <div className="h-40 flex flex-col items-center justify-center gap-4">
-              <div className="w-10 h-10 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-[var(--text-muted)] font-medium">
-                {t("scanSession.extractingData")}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {/* Agent Mesh Processing Map */}
-              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5">
-                  <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
+          <div className="space-y-8">
+            {/* Live Progress Bar */}
+            {(session.status === "running" || session.status === "pending") && (
+              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+                <div className="flex justify-between items-end mb-3">
+                  <div>
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider mb-1">
+                      Scan in Progress...
+                    </h4>
+                    <p className="text-[10px] text-[var(--text-muted)] font-medium">
+                      Processing {logs.length} of {session.hotels_count} hotels
+                    </p>
+                  </div>
+                  <span className="text-sm font-black text-[var(--soft-gold)]">
+                    {Math.round(
+                      (logs.length / (session.hotels_count || 1)) * 100,
+                    )}
+                    %
+                  </span>
                 </div>
-                <h3 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-                  Agent-Mesh Processing Status
-                </h3>
-                <div className="flex items-center justify-between max-w-2xl mx-auto relative px-4">
-                  {/* Connection Lines */}
-                  <div className="absolute top-5 left-0 right-0 h-[2px] bg-white/5 -z-0" />
+                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-[var(--soft-gold)] to-amber-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_var(--soft-gold)]/30"
+                    style={{
+                      width: `${(logs.length / (session.hotels_count || 1)) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
-                  {/* Step 1: Scraper */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status !== "pending"
-                          ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
-                    >
-                      <Database className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Scraper Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Data Harvested
-                      </p>
-                    </div>
+            {/* Agent Mesh Processing Map */}
+            <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
+              </div>
+              <h3 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                Agent-Mesh Processing Status
+              </h3>
+              <div className="flex items-center justify-between max-w-2xl mx-auto relative px-4">
+                {/* Connection Lines */}
+                <div className="absolute top-5 left-0 right-0 h-[2px] bg-white/5 -z-0" />
+
+                {/* Step 1: Scraper */}
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+                      session.status !== "pending"
+                        ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green"
+                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                    }`}
+                  >
+                    <Database className="w-5 h-5" />
                   </div>
-
-                  {/* Step 2: Analyst */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status === "completed" ||
-                        session.status === "partial" ||
-                        session.status === "failed"
-                          ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)]"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
-                    >
-                      <Zap className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Analyst Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Insights Generated
-                      </p>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                      Scraper Agent
+                    </p>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)]">
+                      Data Harvested
+                    </p>
                   </div>
+                </div>
 
-                  {/* Step 3: Notifier */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status === "completed"
-                          ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
-                    >
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Notifier Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Alerts Dispatched
-                      </p>
-                    </div>
+                {/* Step 2: Analyst */}
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+                      session.status === "completed" ||
+                      session.status === "partial" ||
+                      session.status === "failed"
+                        ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)]"
+                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                      Analyst Agent
+                    </p>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)]">
+                      Insights Generated
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 3: Notifier */}
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+                      session.status === "completed"
+                        ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
+                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                    }`}
+                  >
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                      Notifier Agent
+                    </p>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)]">
+                      Alerts Dispatched
+                    </p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {logs.length === 0 ? (
-                <div className="text-center py-20 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
-                  <AlertCircle className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-20" />
-                  <p className="text-[var(--text-muted)] font-medium italic">
-                    {t("scanSession.noRecords")}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-5">
-                        <div
-                          className={`p-3 rounded-xl ${
-                            log.status === "success"
-                              ? "bg-optimal-green/10 text-optimal-green border border-optimal-green/20"
-                              : "bg-alert-red/10 text-alert-red border border-alert-red/20"
-                          }`}
-                        >
-                          {log.status === "success" ? (
-                            <CheckCircle2 className="w-5 h-5" />
-                          ) : (
-                            <AlertCircle className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-base font-black text-white leading-none mb-1.5">
-                            {log.hotel_name}
-                          </p>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-wider">
-                              <MapPin className="w-3 h-3" />
-                              <span>{log.location || t("common.pending")}</span>
-                            </div>
-                            {log.vendor && (
-                              <>
-                                <span className="w-1 h-1 rounded-full bg-white/10" />
-                                <span className="text-[10px] font-bold text-[var(--soft-gold)]/80 italic">
-                                  via {log.vendor}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-8">
-                        {log.price && (
-                          <div className="text-right">
-                            <p className="text-xl font-black text-white tracking-tight">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: log.currency || "USD",
-                                minimumFractionDigits: 0,
-                              }).format(log.price)}
-                            </p>
-                            <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
-                              {t("scanSession.liveRate")}
-                            </p>
-                          </div>
+            {logs.length === 0 ? (
+              <div className="text-center py-20 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
+                <AlertCircle className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-20" />
+                <p className="text-[var(--text-muted)] font-medium italic">
+                  {t("scanSession.noRecords")}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-5">
+                      <div
+                        className={`p-3 rounded-xl ${
+                          log.status === "success"
+                            ? "bg-optimal-green/10 text-optimal-green border border-optimal-green/20"
+                            : "bg-alert-red/10 text-alert-red border border-alert-red/20"
+                        }`}
+                      >
+                        {log.status === "success" ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5" />
                         )}
-                        <div className="hidden sm:block">
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-lg ${
-                              log.status === "success"
-                                ? "text-optimal-green bg-optimal-green/5 border border-optimal-green/10"
-                                : "text-alert-red bg-alert-red/5 border border-alert-red/10"
-                            }`}
-                          >
-                            {log.status}
-                          </span>
+                      </div>
+                      <div>
+                        <p className="text-base font-black text-white leading-none mb-1.5">
+                          {log.hotel_name}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-wider">
+                            <MapPin className="w-3 h-3" />
+                            <span>{log.location || t("common.pending")}</span>
+                          </div>
+                          {log.vendor && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-white/10" />
+                              <span className="text-[10px] font-bold text-[var(--soft-gold)]/80 italic">
+                                via {log.vendor}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+
+                    <div className="flex items-center gap-8">
+                      {log.price && (
+                        <div className="text-right">
+                          <p className="text-xl font-black text-white tracking-tight">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: log.currency || "USD",
+                              minimumFractionDigits: 0,
+                            }).format(log.price)}
+                          </p>
+                          <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
+                            {t("scanSession.liveRate")}
+                          </p>
+                        </div>
+                      )}
+                      <div className="hidden sm:block">
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-lg ${
+                            log.status === "success"
+                              ? "text-optimal-green bg-optimal-green/5 border border-optimal-green/10"
+                              : "text-alert-red bg-alert-red/5 border border-alert-red/10"
+                          }`}
+                        >
+                          {log.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

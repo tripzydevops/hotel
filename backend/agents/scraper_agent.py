@@ -25,7 +25,7 @@ class ScraperAgent:
     ) -> List[Dict[str, Any]]:
         """Performs the actual scraping for a list of hotels."""
         results = []
-        semaphore = asyncio.Semaphore(3) # Max 3 concurrent requests to SerpApi
+        semaphore = asyncio.Semaphore(10) # Max 10 concurrent requests to SerpApi for enterprise speed
         
         # Update session status
         if session_id:
