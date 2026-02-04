@@ -18,11 +18,11 @@ export default function BentoGrid({
   return (
     <div
       className={`
-        grid gap-4
+        grid gap-6
         grid-cols-1
         sm:grid-cols-2
         lg:grid-cols-3
-        auto-rows-[minmax(180px,auto)]
+        auto-rows-[minmax(200px,auto)]
         grid-flow-dense
         ${className}
       `}
@@ -35,7 +35,7 @@ export default function BentoGrid({
 interface BentoTileProps {
   children: ReactNode;
   className?: string;
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium" | "large" | "tall";
   onClick?: () => void;
 }
 
@@ -60,12 +60,11 @@ export function BentoTile({
     <div
       onClick={onClick}
       className={`
-        glass-card p-4 sm:p-6
+        premium-card p-6
         flex flex-col
-        transition-all duration-300
-        hover:scale-[1.02]
+        transition-all duration-500
         ${onClick ? "cursor-pointer" : ""}
-        ${sizeClasses[size]}
+        ${sizeClasses[size as keyof typeof sizeClasses]}
         ${className}
       `}
     >

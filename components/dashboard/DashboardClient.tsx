@@ -8,7 +8,7 @@ import CompetitorTile from "@/components/CompetitorTile";
 import AddHotelModal from "@/components/AddHotelModal";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileModal from "@/components/ProfileModal";
-import { RefreshCw, Plus, Cpu } from "lucide-react";
+import { RefreshCw, Plus, Cpu, BrainCircuit, Activity } from "lucide-react";
 import { api } from "@/lib/api";
 import {
   DashboardData,
@@ -333,18 +333,19 @@ export default function DashboardClient({
       />
 
       <div className="pb-12">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-              {t("dashboard.title")}
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(255,215,0,0.1)]">
-                <Cpu className="w-2.5 h-2.5" />
-                Agent-Mesh Active
-              </span>
-            </h1>
-            <p className="text-[var(--text-secondary)] mt-1 text-xs">
-              {t("dashboard.subtitle")}
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 mb-16 relative z-10">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-1.5 h-12 bg-[var(--gold-gradient)] rounded-full hidden sm:block shadow-[0_0_20px_rgba(212,175,55,0.3)]" />
+              <div className="flex flex-col">
+                <h1 className="text-5xl font-black text-white tracking-tighter flex items-center gap-6 italic leading-none">
+                  EXECUTIVE_HUB
+                </h1>
+                <p className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.6em] mt-3 opacity-80 pl-1">
+                  Quantum_Yield_Control_Center
+                </p>
+              </div>
+            </div>
           </div>
 
           {data?.competitors?.length && (
@@ -391,55 +392,63 @@ export default function DashboardClient({
             </div>
           )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className={`
-                btn-gold flex items-center gap-2 px-6 shadow-lg shadow-[var(--soft-gold)]/20
-                ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
+                btn-premium flex items-center gap-4 px-10 py-5 shadow-[0_20px_40px_rgba(212,175,55,0.15)] relative overflow-hidden group/btn
+                ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105 active:scale-95 transition-all duration-300"}
               `}
             >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
               <RefreshCw
-                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                className={`w-5 h-5 text-black relative z-10 ${isRefreshing ? "animate-spin" : ""}`}
               />
-              <span className="font-bold">
-                {isRefreshing ? t("common.scanning") : t("common.scanNow")}
+              <span className="font-black tracking-[0.4em] uppercase text-sm text-black relative z-10">
+                {isRefreshing ? "CAPTURING_LIVE_DATA" : "INITIATE_SIGNAL_GRAB"}
               </span>
             </button>
 
             <button
               onClick={() => setIsAddHotelOpen(true)}
-              className="btn-gold flex items-center gap-2"
+              className="p-5 rounded-2xl bg-black border border-white/5 hover:bg-white/5 hover:border-[var(--gold-primary)]/40 text-white transition-all transform hover:rotate-90 shadow-2xl group/add"
+              title="Add Node"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("common.addHotel")}</span>
+              <Plus className="w-6 h-6 text-[var(--gold-primary)] group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
 
         {/* 2026 Agentic Insight Panel */}
         {data?.competitors?.length && (
-          <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-6">
             <ReasoningShard
-              title={t("dashboard.marketPulse") || "Market Pulse"}
-              insight="Neural signal detection suggests aggressive pricing decay in secondary competitor nodes. Dynamic yield protection initiated."
+              title="Autonomous Signal Advisory"
+              insight="Neural signal detection suggests aggressive pricing decay in secondary competitor nodes. Dynamic yield protection initiated via rapid ADR shift."
               type="warning"
-              className="md:col-span-2"
+              className="md:col-span-2 shadow-2xl"
             />
-            <div className="panel p-5 rounded-sm flex flex-col justify-center items-center text-center bg-[#0d2547]">
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-2">
-                Core Engine Status
+            <div className="premium-card p-8 flex flex-col justify-center items-center text-center bg-black/60 border-[var(--gold-glow)]/20 shadow-[0_30px_60px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-b from-[var(--gold-primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mb-4 relative z-10">
+                Core_Logic_Status
               </span>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-[var(--success)] shadow-[0_0_8px_var(--success)] animate-pulse" />
-                <span className="text-base font-bold text-white tracking-tighter uppercase">
-                  SYNAPSE_LINK_LIVE
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className="w-3 h-3 rounded-full bg-[var(--gold-primary)] shadow-[0_0_20px_var(--gold-primary)] animate-pulse" />
+                <span className="text-2xl font-black text-white tracking-tighter uppercase italic">
+                  SYNAPSE_LINKED
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-[var(--soft-gold)]">
-                T_SCRAPE_SCAN: 14m 22s
-              </span>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/10 mt-2 relative z-10">
+                <Activity
+                  size={14}
+                  className="text-[var(--gold-primary)] animate-bounce"
+                />
+                <span className="text-[10px] font-black text-[var(--gold-primary)] tracking-[0.3em] leading-none uppercase">
+                  Uptime: 99.9%
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -544,9 +553,10 @@ export default function DashboardClient({
           )}
         </BentoGrid>
 
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="panel p-4 text-center bg-[#0d2547]">
-            <p className="text-2xl font-bold text-alert-red data-value">
+        <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="premium-card p-8 text-center bg-black/40 border-red-500/10 hover:border-red-500/40 shadow-2xl transition-all group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-red-500/10" />
+            <p className="text-5xl font-black text-red-500 data-value drop-shadow-[0_0_15px_rgba(239,68,68,0.4)] group-hover:scale-110 transition-transform">
               {
                 (data?.competitors || []).filter(
                   (c) =>
@@ -555,24 +565,26 @@ export default function DashboardClient({
                 ).length
               }
             </p>
-            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
-              {t("dashboard.yieldRisk")}
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
+              Yield_Breach
             </p>
           </div>
-          <div className="panel p-4 text-center bg-[#0d2547]">
-            <p className="text-2xl font-bold text-[var(--success)] data-value">
+          <div className="premium-card p-8 text-center bg-black/40 border-emerald-500/10 hover:border-emerald-500/40 shadow-2xl transition-all group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-emerald-500/10" />
+            <p className="text-5xl font-black text-emerald-400 data-value drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform">
               {
                 (data?.competitors || []).filter(
                   (c) => c.price_info?.trend === "down",
                 ).length
               }
             </p>
-            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
-              {t("dashboard.marketOpportunity")}
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
+              Market_Signals
             </p>
           </div>
-          <div className="panel p-4 text-center bg-[#0d2547]">
-            <p className="text-2xl font-bold text-white data-value">
+          <div className="premium-card p-8 text-center bg-black/40 border-[var(--gold-glow)]/20 hover:border-[var(--gold-primary)]/40 shadow-2xl transition-all group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-[var(--gold-primary)]/10" />
+            <p className="text-4xl font-black text-white group-hover:text-[var(--gold-primary)] transition-all">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
@@ -604,16 +616,17 @@ export default function DashboardClient({
                 "—"
               )}
             </p>
-            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
-              {t("dashboard.avgCompetitor")}
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
+              Mean_Market_ADR
             </p>
           </div>
-          <div className="panel p-4 text-center bg-[#0d2547]">
-            <p className="text-2xl font-bold text-white data-value">
+          <div className="premium-card p-8 text-center bg-black/40 border-blue-500/10 hover:border-blue-500/40 shadow-2xl transition-all group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-blue-500/10" />
+            <p className="text-5xl font-black text-white group-hover:text-blue-400 transition-all">
               {currentHotelCount}
             </p>
-            <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--text-muted)] mt-1">
-              {t("dashboard.hotelsTracked")}
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
+              Active_Nodes
             </p>
           </div>
         </div>
@@ -636,22 +649,28 @@ export default function DashboardClient({
           title={t("dashboard.rapidPulseTitle")}
         />
 
-        <footer className="mt-20 py-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-[var(--text-muted)] text-sm">
-            © 2026 Hotel Plus Rate Sentinel. All rates fetched via SerpApi.
-          </p>
-          <div className="flex gap-4">
+        <footer className="mt-32 py-12 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center sm:items-start gap-2">
+            <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.3em]">
+              © 2026 TRIPZY.AI // QUANTUM_RATE_SENTINEL
+            </p>
+            <p className="text-[var(--text-muted)] text-[8px] font-mono tracking-widest opacity-40 uppercase">
+              Engineered for absolute property yield dominance. Powered by
+              Neural Scrape v5.
+            </p>
+          </div>
+          <div className="flex gap-8">
             <a
               href="#"
-              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+              className="text-[var(--text-muted)] hover:text-[var(--gold-primary)] transition-all text-[10px] font-black uppercase tracking-[0.3em]"
             >
-              {t("common.privacy")}
+              Intelligence_Policy
             </a>
             <a
               href="#"
-              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+              className="text-[var(--text-muted)] hover:text-[var(--gold-primary)] transition-all text-[10px] font-black uppercase tracking-[0.3em]"
             >
-              {t("common.terms")}
+              Nodes_Terms
             </a>
           </div>
         </footer>

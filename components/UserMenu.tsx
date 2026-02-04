@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Sparkles,
   Settings,
+  Zap,
+  Globe,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
@@ -79,143 +81,187 @@ export default function UserMenu({
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group"
+        className="flex items-center gap-3 p-1.5 pr-4 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group relative overflow-hidden"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] p-[1px]">
-          <div className="w-full h-full rounded-full bg-[var(--deep-ocean)] flex items-center justify-center">
-            <span className="text-xs font-bold text-[var(--soft-gold)]">
-              {profile?.display_name?.substring(0, 2).toUpperCase() || "ME"}
-            </span>
+        <div className="relative w-9 h-9">
+          <div className="absolute inset-0 bg-[var(--gold-primary)]/20 blur-md rounded-full group-hover:blur-lg transition-all" />
+          <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[var(--gold-primary)] to-[#8c6d00] p-[2px] shadow-lg">
+            <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+              <span className="text-xs font-black text-[var(--gold-primary)] uppercase tracking-tighter">
+                {profile?.display_name?.substring(0, 2).toUpperCase() || "ID"}
+              </span>
+            </div>
           </div>
         </div>
         <div className="text-left hidden md:block">
-          <p className="text-xs text-white font-medium leading-none mb-0.5">
-            {profile?.display_name || "User"}
+          <p className="text-xs text-white font-black uppercase tracking-tight leading-none mb-1">
+            {profile?.display_name || "Nexus_User"}
           </p>
-          <p className="text-[10px] text-[var(--text-muted)] leading-none uppercase tracking-wider">
-            {plan}
-          </p>
+          <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+            <div
+              className={`w-1 h-1 rounded-full ${isPro ? "bg-[var(--gold-primary)] animate-pulse" : "bg-white"}`}
+            />
+            <p
+              className={`text-[9px] font-black leading-none uppercase tracking-[0.2em] ${isPro ? "text-[var(--gold-primary)]" : "text-[var(--text-muted)]"}`}
+            >
+              {plan}
+            </p>
+          </div>
         </div>
         <ChevronDown
-          className={`w-3 h-3 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-white transition-all duration-300 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-[var(--deep-ocean-card)] border border-white/10 rounded-xl shadow-2xl py-2 animate-in fade-in zoom-in-95 origin-top-right z-50">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-white/5">
-            <p className="text-sm font-bold text-white flex items-center gap-2">
-              {profile?.display_name || "Guest User"}
-              {profile?.plan_type === "enterprise" &&
-                profile?.display_name === "Demo User" && (
-                  <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded uppercase">
-                    Dev
-                  </span>
-                )}
-            </p>
-            <p className="text-xs text-[var(--text-muted)] truncate">
-              {profile?.email || "No email"}
-            </p>
+        <div className="absolute right-0 top-full mt-3 w-80 bg-[var(--bg-deep)]/95 backdrop-blur-3xl border border-[var(--card-border)] rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] py-3 animate-in fade-in slide-in-from-top-4 origin-top-right z-50">
+          {/* Internal Glow */}
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-[var(--gold-glow)] opacity-10 blur-3xl pointer-events-none" />
+
+          {/* User Profile Header */}
+          <div className="px-6 py-4 border-b border-white/5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5">
+                <User className="w-6 h-6 text-[var(--gold-primary)]" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm font-black text-white truncate uppercase tracking-tight">
+                  {profile?.display_name || "Guest_Protocol"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Globe className="w-3 h-3 text-[var(--text-muted)]" />
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest truncate">
+                    {profile?.email || "awaiting@sync.net"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Membership Card */}
-          <div className="p-3">
+          {/* Membership Status Visualization */}
+          <div className="p-4">
             <div
-              className={`rounded-lg p-3 border ${isPro ? "bg-gradient-to-br from-[var(--soft-gold)]/10 to-transparent border-[var(--soft-gold)]/20" : "bg-white/5 border-white/5"}`}
+              className={`rounded-2xl p-5 border transition-all duration-500 relative overflow-hidden ${
+                isPro
+                  ? "bg-black/60 border-[var(--gold-primary)]/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]"
+                  : "bg-white/[0.03] border-white/5"
+              }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {isPro ? (
-                    <Sparkles className="w-3 h-3 text-[var(--soft-gold)]" />
-                  ) : (
-                    <User className="w-3 h-3 text-[var(--text-muted)]" />
-                  )}
-                  <span
-                    className={`text-xs font-bold uppercase tracking-wider ${isPro ? "text-[var(--soft-gold)]" : "text-white"}`}
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`p-1.5 rounded-lg ${isPro ? "bg-[var(--gold-primary)]/20 text-[var(--gold-primary)]" : "bg-white/10 text-white/40"}`}
                   >
-                    {plan.toUpperCase()} {t("userMenu.planSuffix")}
+                    {isPro ? (
+                      <Sparkles className="w-4 h-4" />
+                    ) : (
+                      <Shield className="w-4 h-4" />
+                    )}
+                  </div>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-[0.2em] ${isPro ? "text-[var(--gold-primary)]" : "text-white/60"}`}
+                  >
+                    {plan}_Identity
                   </span>
                 </div>
-                <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-[var(--optimal-green)]">
-                  {t("userMenu.planActive")}
-                </span>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">
+                    Status_Active
+                  </span>
+                </div>
               </div>
 
-              {/* Usage Bar */}
-              <div className="mb-1 flex justify-between text-[10px] text-[var(--text-muted)]">
-                <span>{t("userMenu.hotelsTracked")}</span>
-                <span>
-                  {hotelCount} / {limit}
-                </span>
+              {/* Progress Indicator */}
+              <div className="space-y-3 relative z-10">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                  <span className="text-[var(--text-muted)]">Node_Load</span>
+                  <span className="text-white">
+                    {hotelCount} <span className="opacity-40">/</span> {limit}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-black/60 rounded-full border border-white/5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${isPro ? "bg-[var(--gold-gradient)]" : "bg-white/20"}`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${isPro ? "bg-[var(--soft-gold)]" : "bg-white/40"}`}
-                  style={{ width: `${usagePercent}%` }}
-                />
-              </div>
+
               {!isPro && (
                 <button
                   onClick={() => {
                     setIsOpen(false);
                     onOpenUpgrade?.();
                   }}
-                  className="w-full mt-3 py-1.5 text-xs bg-[var(--soft-gold)] text-black font-bold rounded hover:opacity-90 transition-opacity"
+                  className="w-full mt-5 py-3 group/btn relative overflow-hidden bg-[var(--gold-gradient)] rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                 >
-                  {t("userMenu.upgradeToPro")}
+                  <div className="absolute inset-0 bg-white/20 translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
+                  <div className="flex items-center justify-center gap-2 relative z-10">
+                    <Zap className="w-3.5 h-3.5 text-black" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black">
+                      {t("userMenu.upgradeToPro")}
+                    </span>
+                  </div>
                 </button>
               )}
             </div>
           </div>
 
-          <div className="h-px bg-white/5 my-1" />
+          <div className="h-px bg-white/5 my-2" />
 
-          {/* Actions */}
-          <div className="px-2">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                onOpenProfile?.();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
-            >
-              <User className="w-4 h-4" />
-              {t("userMenu.myProfile")}
-            </button>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                onOpenSettings?.();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
-            >
-              <Settings className="w-4 h-4" />
-              {t("userMenu.alertSettings")}
-            </button>
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              <Shield className="w-4 h-4" />
-              {t("userMenu.adminPanel")}
-            </Link>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                onOpenBilling?.();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-lg transition-colors text-left"
-            >
-              <CreditCard className="w-4 h-4" />
-              {t("userMenu.billing")}
-            </button>
+          {/* Menu Actions */}
+          <div className="px-3 py-2 space-y-1">
+            {[
+              {
+                icon: User,
+                label: t("userMenu.myProfile"),
+                onClick: onOpenProfile,
+              },
+              {
+                icon: Settings,
+                label: t("userMenu.alertSettings"),
+                onClick: onOpenSettings,
+              },
+              { icon: Shield, label: t("userMenu.adminPanel"), link: "/admin" },
+              {
+                icon: CreditCard,
+                label: t("userMenu.billing"),
+                onClick: onOpenBilling,
+              },
+            ].map((item, idx) =>
+              item.link ? (
+                <Link
+                  key={idx}
+                  href={item.link}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all group/item"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <item.icon className="w-4 h-4 group-hover/item:text-[var(--gold-primary)] transition-colors" />
+                  {item.label}
+                </Link>
+              ) : (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setIsOpen(false);
+                    item.onClick?.();
+                  }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all text-left group/item"
+                >
+                  <item.icon className="w-4 h-4 group-hover/item:text-[var(--gold-primary)] transition-colors" />
+                  {item.label}
+                </button>
+              ),
+            )}
+
+            <div className="h-px bg-white/5 my-2" />
+
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-left"
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-all text-left group/out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 group-hover/out:translate-x-1 transition-transform" />
               {t("userMenu.signOut")}
             </button>
           </div>

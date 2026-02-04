@@ -362,6 +362,17 @@ class ApiClient {
   async getAdminProviders() {
     return this.fetch<any[]>("/api/admin/providers");
   }
+
+  // ===== Utilities =====
+
+  formatCurrency(amount: number, currency: string = "TRY"): string {
+    return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
 }
 
 export const api = new ApiClient();

@@ -13,8 +13,8 @@ import {
   ToggleRight,
   DollarSign,
   Activity,
+  Terminal,
 } from "lucide-react";
-import CommandLayout from "@/components/layout/CommandLayout";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -68,20 +68,22 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <CommandLayout userProfile={{}} activeRoute="admin">
+    <div className="max-w-4xl mx-auto py-4">
       {/* Header */}
-      <div className="flex flex-col mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Activity className="w-4 h-4 text-[var(--soft-gold)]" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--soft-gold)]">
-            Neural Infrastructure Config
+      <div className="flex flex-col mb-10 border-b border-red-500/10 pb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <Terminal className="w-4 h-4 text-red-500" />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-[0.4em] text-red-500/60">
+            System_Parameters :: Root_Override
           </span>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Global Settings</h1>
-            <p className="text-[var(--text-secondary)] mt-1 text-sm font-medium">
-              Configure system-wide parameters and operational behavior.
+            <h1 className="text-3xl font-black text-white tracking-tighter uppercase">
+              Kernel Config
+            </h1>
+            <p className="text-slate-500 mt-2 text-sm font-medium">
+              Global environment variables and system-wide operation flags.
             </p>
           </div>
         </div>
@@ -117,9 +119,9 @@ export default function AdminSettingsPage() {
                 className={`transition-colors ${settings.maintenance_mode ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"}`}
               >
                 {settings.maintenance_mode ? (
-                  <ToggleRight className="w-8 h-8" />
+                  <ToggleRight className="w-8 h-8 text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]" />
                 ) : (
-                  <ToggleLeft className="w-8 h-8" />
+                  <ToggleLeft className="w-8 h-8 text-slate-700" />
                 )}
               </button>
             </div>
@@ -238,6 +240,6 @@ export default function AdminSettingsPage() {
           COMMIT_CHANGES
         </button>
       </div>
-    </CommandLayout>
+    </div>
   );
 }

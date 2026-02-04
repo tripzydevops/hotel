@@ -22,6 +22,7 @@ import {
   Save,
   Crown,
   ScanLine,
+  Terminal,
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -33,7 +34,6 @@ import {
   KeyStatus,
 } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
-import CommandLayout from "@/components/layout/CommandLayout";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -278,26 +278,25 @@ export default function AdminPage() {
   );
 
   return (
-    <CommandLayout userProfile={{}} activeRoute="admin">
+    <div className="max-w-7xl mx-auto py-4">
       {/* Header */}
-      <div className="flex flex-col mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Activity className="w-4 h-4 text-[var(--soft-gold)]" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--soft-gold)]">
-            Core Administrative Layer
+      <div className="flex flex-col mb-10 border-b border-red-500/10 pb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <Terminal className="w-4 h-4 text-red-500" />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-[0.4em] text-red-500/60">
+            System_Kernel_Dashboard :: Access_Level_Root
           </span>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              System Administration
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-white/5 border border-white/10 text-[8px] font-mono text-[var(--text-muted)] uppercase">
-                Auth_Level: ROOT
+            <h1 className="text-3xl font-black text-white flex items-center gap-4 tracking-tighter">
+              COORDINATION CENTER
+              <span className="flex items-center gap-2 px-2 py-1 rounded bg-red-500/5 border border-red-500/20 text-[10px] font-mono text-red-400">
+                AUTH_STATUS: VERIFIED
               </span>
             </h1>
-            <p className="text-[var(--text-secondary)] mt-1 text-sm font-medium">
-              Overseeing platform architecture, user nodes, and neural
-              infrastructure status.
+            <p className="text-slate-500 mt-2 text-sm font-medium">
+              Platform-wide resource management and network health monitoring.
             </p>
           </div>
         </div>
@@ -1169,7 +1168,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-    </CommandLayout>
+    </div>
   );
 }
 

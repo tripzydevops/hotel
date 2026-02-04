@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  X,
+  Zap,
+  ShieldAlert,
+} from "lucide-react";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -17,19 +24,17 @@ export default function Toast({
   id,
   type,
   message,
-  duration = 3000,
+  duration = 4000,
   onClose,
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Entrance animation
     requestAnimationFrame(() => setIsVisible(true));
 
-    // Auto-dismiss
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(() => onClose(id), 300); // Wait for exit animation
+      setTimeout(() => onClose(id), 500);
     }, duration);
 
     return () => clearTimeout(timer);
@@ -37,36 +42,55 @@ export default function Toast({
 
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(() => onClose(id), 300);
+    setTimeout(() => onClose(id), 500);
   };
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-green-400" />,
-    error: <AlertCircle className="w-5 h-5 text-red-400" />,
-    info: <Info className="w-5 h-5 text-blue-400" />,
+    success: <Zap className="w-5 h-5 text-[var(--gold-primary)]" />,
+    error: <ShieldAlert className="w-5 h-5 text-red-500" />,
+    info: <Info className="w-5 h-5 text-[var(--gold-primary)]" />,
   };
 
-  const bgColors = {
-    success: "bg-green-500/10 border-green-500/20",
-    error: "bg-red-500/10 border-red-500/20",
-    info: "bg-blue-500/10 border-blue-500/20",
+  const bgStyles = {
+    success:
+      "bg-black/80 border-[var(--gold-primary)]/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]",
+    error:
+      "bg-red-500/10 border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]",
+    info: "bg-black/80 border-[var(--gold-primary)]/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]",
   };
 
   return (
     <div
       className={`
-        flex items-center gap-3 p-4 rounded-xl border backdrop-blur-md shadow-lg 
-        transition-all duration-300 transform translate-x-0
-        ${bgColors[type]}
-        ${isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"}
+        flex items-center gap-4 p-5 rounded-2xl border backdrop-blur-2xl
+        transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform
+        ${bgStyles[type]}
+        ${isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-90"}
       `}
+      style={{ fontFamily: "var(--font-main)" }}
       role="alert"
     >
-      <div className="flex-shrink-0">{icons[type]}</div>
-      <p className="text-sm font-medium text-white">{message}</p>
+      <div className="flex-shrink-0 relative">
+        <div
+          className={`absolute inset-0 blur-lg opacity-40 ${type === "error" ? "bg-red-500" : "bg-[var(--gold-primary)]"}`}
+        />
+        <div className="relative">{icons[type]}</div>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span
+          className={`text-[10px] font-black uppercase tracking-[0.3em] ${type === "error" ? "text-red-400" : "text-[var(--gold-primary)]"}`}
+        >
+          {type === "success"
+            ? "Neural_Confirmed"
+            : type === "error"
+              ? "Kernel_Fault"
+              : "System_Signal"}
+        </span>
+        <p className="text-sm font-bold text-white leading-snug">{message}</p>
+      </div>
       <button
         onClick={handleClose}
-        className="ml-auto flex-shrink-0 p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+        className="ml-6 flex-shrink-0 p-2 rounded-xl hover:bg-white/5 text-[var(--text-muted)] hover:text-white transition-all transform hover:rotate-90"
       >
         <X className="w-4 h-4" />
       </button>

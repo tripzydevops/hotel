@@ -12,6 +12,12 @@ import {
   MapPin,
   Users,
   Zap,
+  Target,
+  Sparkles,
+  Search,
+  Cpu,
+  ShieldCheck,
+  Activity,
 } from "lucide-react";
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
@@ -100,315 +106,320 @@ export default function ScanSessionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
-        {/* Header */}
-        <div className="p-4 sm:p-8 border-b border-white/5 bg-white/[0.02]">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-4 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner">
-                <Database className="w-6 h-6 sm:w-8 sm:h-8" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl transition-all duration-500">
+      <div className="premium-card w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-500 bg-black/40 border-[var(--gold-primary)]/10">
+        {/* Silk Glow Effect */}
+        <div className="absolute -top-32 -left-32 w-64 h-64 bg-[var(--gold-glow)] opacity-10 blur-[100px] pointer-events-none" />
+
+        {/* Header Protocol */}
+        <div className="p-8 border-b border-white/5 bg-black/40 backdrop-blur-3xl relative z-10">
+          <div className="flex flex-col xl:flex-row xl:items-start justify-between mb-8 gap-8">
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-[var(--gold-primary)]/20 blur-xl rounded-2xl group-hover:blur-2xl transition-all" />
+                <div className="relative p-5 rounded-2xl bg-black border border-[var(--gold-primary)]/40 text-[var(--gold-primary)] shadow-2xl">
+                  <Database className="w-8 h-8" />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-emerald-500 p-1 rounded-full shadow-lg z-20">
+                  <ShieldCheck className="w-4 h-4 text-black" />
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                  {t("scanSession.title")}
-                  <span
-                    className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                    {t("scanSession.title")}
+                  </h2>
+                  <div
+                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border ${
                       session.status === "completed"
-                        ? "bg-optimal-green/20 text-optimal-green"
-                        : "bg-amber-500/20 text-amber-500"
+                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                     }`}
                   >
-                    {session.status}
-                  </span>
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-muted)] font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>Scan: {formatDate(session.created_at)}</span>
+                    {session.status}_Identity
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-[var(--gold-primary)] opacity-40" />
+                    <span>Epoch: {formatDate(session.created_at)}</span>
                   </div>
                   {session.check_in_date && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-white/10" />
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
-                        <span>Booked: {session.check_in_date}</span>
-                      </div>
-                      <span className="w-1 h-1 rounded-full bg-white/10" />
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
-                        <span>{session.adults || 2} People</span>
-                      </div>
-                    </>
+                    <div className="flex items-center gap-2">
+                      <Target className="w-3.5 h-3.5 text-[var(--gold-primary)] opacity-40" />
+                      <span>Reference: {session.check_in_date}</span>
+                    </div>
                   )}
+                  <div className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-[var(--gold-primary)] opacity-40" />
+                    <span>Nodes: {session.adults || 2} Units</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={exportToCSV}
-                  disabled={loading || logs.length === 0}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
-                >
-                  <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                  {t("scanSession.csvExport")}
-                </button>
-              </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={exportToCSV}
+                disabled={loading || logs.length === 0}
+                className="btn-premium px-6 py-3 text-[10px] font-black flex items-center gap-3 group disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <Download className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
+                {t("scanSession.csvExport")}
+              </button>
               <button
                 onClick={onClose}
-                className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-[var(--text-muted)] hover:text-white"
+                className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-[var(--text-muted)] hover:text-white group"
               >
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                <X className="w-6 h-6 group-hover:rotate-90 transition-transform" />
               </button>
             </div>
           </div>
 
-          {/* Summary Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
-              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                {t("scanSession.averageRate")}
-              </p>
-              <div className="flex items-end gap-1">
-                <span className="text-xl sm:text-2xl font-black text-white">
-                  {logs.length > 0
-                    ? (
+          {/* Neural Summary Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                label: t("scanSession.averageRate"),
+                value:
+                  logs.length > 0
+                    ? api.formatCurrency(
                         logs.reduce((acc, l) => acc + (l.price || 0), 0) /
-                        logs.length
-                      ).toFixed(0)
-                    : "—"}
-                </span>
-                <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)] mb-1 sm:mb-1.5">
-                  {logs[0]?.currency || "USD"}
-                </span>
+                          logs.length,
+                        logs[0]?.currency || "TRY",
+                      )
+                    : "—",
+                color: "text-white",
+              },
+              {
+                label: t("scanSession.successRate"),
+                value: `${session.hotels_count > 0 ? ((logs.filter((l) => l.status === "success").length / session.hotels_count) * 100).toFixed(0) : "0"}%`,
+                color: "text-emerald-500",
+              },
+              {
+                label: t("scanSession.vendors"),
+                value: new Set(logs.map((l) => l.vendor).filter(Boolean)).size,
+                color: "text-[var(--gold-primary)]",
+              },
+              {
+                label: t("scanSession.sessionId"),
+                value: session.id.slice(0, 8).toUpperCase(),
+                color: "text-white/40",
+                font: "font-mono",
+              },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 hover:bg-white/[0.05] transition-all group/stat"
+              >
+                <p className="text-[9px] text-[var(--text-muted)] uppercase font-black tracking-[0.3em] mb-3 opacity-60 group-hover/stat:text-[var(--gold-primary)] transition-colors">
+                  {stat.label}
+                </p>
+                <div
+                  className={`text-2xl font-black tracking-tighter ${stat.color} ${stat.font || ""}`}
+                >
+                  {stat.value}
+                </div>
               </div>
-            </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
-              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                {t("scanSession.successRate")}
-              </p>
-              <div className="flex items-end gap-1">
-                <span className="text-xl sm:text-2xl font-black text-optimal-green">
-                  {session.hotels_count > 0
-                    ? (
-                        (logs.filter((l) => l.status === "success").length /
-                          session.hotels_count) *
-                        100
-                      ).toFixed(0)
-                    : "0"}
-                  %
-                </span>
-              </div>
-            </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
-              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                {t("scanSession.vendors")}
-              </p>
-              <div className="flex items-end gap-1">
-                <span className="text-xl sm:text-2xl font-black text-white">
-                  {new Set(logs.map((l) => l.vendor).filter(Boolean)).size}
-                </span>
-              </div>
-            </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
-              <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
-                {t("scanSession.sessionId")}
-              </p>
-              <div className="flex items-end gap-1">
-                <span className="text-xs sm:text-sm font-mono text-[var(--text-muted)] mb-1">
-                  {session.id.slice(0, 8)}...
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 bg-[var(--deep-ocean)]/30 backdrop-blur-sm">
+        {/* Intelligence Stream */}
+        <div className="flex-1 overflow-y-auto p-10 bg-[var(--bg-deep)] custom-scrollbar relative">
           {loading ? (
-            <div className="h-40 flex flex-col items-center justify-center gap-4">
-              <div className="w-10 h-10 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-[var(--text-muted)] font-medium">
-                {t("scanSession.extractingData")}
+            <div className="h-64 flex flex-col items-center justify-center gap-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[var(--gold-primary)]/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                <Cpu className="w-12 h-12 text-[var(--gold-primary)] animate-spin-slow" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--gold-primary)] animate-pulse">
+                Synchronizing_Neural_Feed...
               </p>
             </div>
           ) : (
-            <div className="space-y-8">
-              {/* Agent Mesh Processing Map */}
-              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5">
-                  <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
+            <div className="space-y-12">
+              {/* Agent Mesh Visualization */}
+              <div className="premium-card p-10 bg-black/40 border-[var(--gold-primary)]/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                  <Zap className="w-32 h-32 text-[var(--gold-primary)]" />
                 </div>
-                <h3 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-                  Agent-Mesh Processing Status
+                <h3 className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[var(--gold-primary)] animate-ping" />
+                  Agent-Mesh_Orchestration_Protocol
                 </h3>
-                <div className="flex items-center justify-between max-w-2xl mx-auto relative px-4">
-                  {/* Connection Lines */}
-                  <div className="absolute top-5 left-0 right-0 h-[2px] bg-white/5 -z-0" />
 
-                  {/* Step 1: Scraper */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
+                <div className="grid grid-cols-3 gap-8 relative">
+                  {/* Continuous Connection Line */}
+                  <div className="absolute top-8 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[var(--gold-primary)] to-transparent opacity-20" />
+
+                  {[
+                    {
+                      icon: Search,
+                      label: "Extraction Agent",
+                      status: session.status !== "pending",
+                      desc: "Surface Data Harvested",
+                      color: "text-emerald-500",
+                    },
+                    {
+                      icon: Cpu,
+                      label: "Synthesis Agent",
+                      status: ["completed", "partial", "failed"].includes(
+                        session.status,
+                      ),
+                      desc: "Neural Insights Generated",
+                      color: "text-[var(--gold-primary)]",
+                    },
+                    {
+                      icon: Activity,
+                      label: "Dispatch Agent",
+                      status: session.status === "completed",
+                      desc: "Strategic Alerts Issued",
+                      color: "text-blue-500",
+                    },
+                  ].map((agent, i) => (
                     <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status !== "pending"
-                          ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
+                      key={i}
+                      className="flex flex-col items-center gap-4 group/node"
                     >
-                      <Database className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Scraper Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Data Harvested
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Step 2: Analyst */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status === "completed" ||
-                        session.status === "partial" ||
-                        session.status === "failed"
-                          ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)]"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
-                    >
-                      <Zap className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Analyst Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Insights Generated
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Step 3: Notifier */}
-                  <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        session.status === "completed"
-                          ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
-                          : "bg-white/5 border-white/10 text-[var(--text-muted)]"
-                      }`}
-                    >
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] font-black uppercase text-white tracking-widest">
-                        Notifier Agent
-                      </p>
-                      <p className="text-[8px] font-bold text-[var(--text-muted)]">
-                        Alerts Dispatched
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {logs.length === 0 ? (
-                <div className="text-center py-20 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
-                  <AlertCircle className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-20" />
-                  <p className="text-[var(--text-muted)] font-medium italic">
-                    {t("scanSession.noRecords")}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-5">
-                        <div
-                          className={`p-3 rounded-xl ${
-                            log.status === "success"
-                              ? "bg-optimal-green/10 text-optimal-green border border-optimal-green/20"
-                              : "bg-alert-red/10 text-alert-red border border-alert-red/20"
-                          }`}
-                        >
-                          {log.status === "success" ? (
-                            <CheckCircle2 className="w-5 h-5" />
-                          ) : (
-                            <AlertCircle className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-base font-black text-white leading-none mb-1.5">
-                            {log.hotel_name}
-                          </p>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-wider">
-                              <MapPin className="w-3 h-3" />
-                              <span>{log.location || t("common.pending")}</span>
-                            </div>
-                            {log.vendor && (
-                              <>
-                                <span className="w-1 h-1 rounded-full bg-white/10" />
-                                <span className="text-[10px] font-bold text-[var(--soft-gold)]/80 italic">
-                                  via {log.vendor}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-8">
-                        {log.price && (
-                          <div className="text-right">
-                            <p className="text-xl font-black text-white tracking-tight">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: log.currency || "USD",
-                                minimumFractionDigits: 0,
-                              }).format(log.price)}
-                            </p>
-                            <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
-                              {t("scanSession.liveRate")}
-                            </p>
-                          </div>
+                      <div
+                        className={`w-16 h-16 rounded-3xl flex items-center justify-center border-2 transition-all duration-700 relative ${
+                          agent.status
+                            ? `bg-black border-${agent.color.split("-")[1]}-500/40 shadow-[0_0_30px_rgba(0,0,0,0.5)]`
+                            : "bg-white/5 border-white/10 text-white/10"
+                        }`}
+                      >
+                        {agent.status && (
+                          <div
+                            className={`absolute inset-0 bg-${agent.color.split("-")[1]}-500/10 blur-xl rounded-full animate-pulse`}
+                          />
                         )}
-                        <div className="hidden sm:block">
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-lg ${
-                              log.status === "success"
-                                ? "text-optimal-green bg-optimal-green/5 border border-optimal-green/10"
-                                : "text-alert-red bg-alert-red/5 border border-alert-red/10"
-                            }`}
-                          >
-                            {log.status}
-                          </span>
-                        </div>
+                        <agent.icon
+                          className={`w-7 h-7 relative z-10 ${agent.status ? agent.color : "text-white/20"}`}
+                        />
+                      </div>
+                      <div className="text-center">
+                        <p
+                          className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${agent.status ? "text-white" : "text-white/20"}`}
+                        >
+                          {agent.label}
+                        </p>
+                        <p
+                          className={`text-[8px] font-bold uppercase tracking-widest ${agent.status ? "text-[var(--text-muted)]" : "text-white/10"}`}
+                        >
+                          {agent.desc}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+
+              {/* Individual Node Updates */}
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] px-2 mb-6">
+                  Raw_Data_Stream_Nodes
+                </h3>
+                {logs.length === 0 ? (
+                  <div className="text-center py-20 bg-black/20 rounded-3xl border border-dashed border-white/10">
+                    <AlertCircle className="w-16 h-16 text-white/5 mx-auto mb-6" />
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.5em] italic">
+                      {t("scanSession.noRecords")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {logs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="group flex items-center justify-between p-6 bg-black/40 hover:bg-black/60 border border-white/5 hover:border-[var(--gold-primary)]/20 rounded-2xl transition-all duration-500"
+                      >
+                        <div className="flex items-center gap-6">
+                          <div
+                            className={`p-4 rounded-xl relative overflow-hidden ${
+                              log.status === "success"
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                                : "bg-red-500/10 text-red-500 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                            }`}
+                          >
+                            {log.status === "success" ? (
+                              <Sparkles className="w-5 h-5" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-lg font-black text-white tracking-tight uppercase group-hover:text-[var(--gold-primary)] transition-colors">
+                              {log.hotel_name}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <div className="flex items-center gap-2 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                                <MapPin className="w-3 h-3 text-[var(--gold-primary)]" />
+                                <span>
+                                  {log.location || "Awaiting_Node_Sync"}
+                                </span>
+                              </div>
+                              {log.vendor && (
+                                <div className="flex items-center gap-2 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
+                                  <span className="text-[8px] font-black text-[var(--gold-primary)] uppercase tracking-tighter italic">
+                                    VIA_{log.vendor}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-10">
+                          {log.price && (
+                            <div className="text-right">
+                              <span className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-widest mb-1 block opacity-60">
+                                Valuation
+                              </span>
+                              <p className="text-3xl font-black text-white tracking-tighter font-mono italic">
+                                {api.formatCurrency(
+                                  log.price,
+                                  log.currency || "USD",
+                                )}
+                              </p>
+                            </div>
+                          )}
+                          <div className="hidden lg:block min-w-[120px] text-right">
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl border ${
+                                log.status === "success"
+                                  ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                                  : "text-red-500 border-red-500/20 bg-red-500/5 shadow-[0_0_10px_rgba(239,68,68,0.1)]"
+                              }`}
+                            >
+                              {log.status === "success"
+                                ? "Verfied"
+                                : "Interrupted"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
-          <p className="text-[10px] text-[var(--text-muted)] font-medium">
-            {t("scanSession.verifiedSerp")} • {t("hotelDetails.foundVia")}{" "}
-            SerpApi
-          </p>
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-            <span className="text-[10px] text-white font-bold uppercase tracking-wider">
+        {/* Protocol Footer */}
+        <div className="px-10 py-6 border-t border-white/5 bg-black/40 backdrop-blur-3xl flex items-center justify-between relative z-10 transition-all">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-lg bg-[var(--gold-primary)]/10">
+              <ShieldCheck className="w-4 h-4 text-[var(--gold-primary)]" />
+            </div>
+            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">
+              Verified_Neural_Integrity • Deep_Extraction Protocol
+            </p>
+          </div>
+          <div className="flex items-center gap-3 px-5 py-2 rounded-2xl bg-white/5 border border-white/5">
+            <Clock className="w-4 h-4 text-[var(--gold-primary)] opacity-60" />
+            <span className="text-[10px] text-white font-black uppercase tracking-[0.2em] group-hover:text-[var(--gold-primary)] transition-colors">
               {t("scanSession.generatedAt").replace(
                 "{0}",
                 new Date().toLocaleTimeString(),

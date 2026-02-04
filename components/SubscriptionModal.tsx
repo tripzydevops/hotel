@@ -1,6 +1,15 @@
 "use client";
 
-import { X, Check, Shield, Zap, Building2, Crown, Loader2 } from "lucide-react";
+import {
+  X,
+  Check,
+  Shield,
+  Zap,
+  Building2,
+  Crown,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 
@@ -85,16 +94,20 @@ export default function SubscriptionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="glass-card w-full max-w-4xl p-6 animate-in fade-in zoom-in-95 duration-200 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl transition-all duration-500 overflow-y-auto">
+      <div className="premium-card w-full max-w-4xl p-10 shadow-2xl relative overflow-hidden bg-black/40 border-[var(--gold-primary)]/10 my-8">
+        {/* Silk Glow Aura */}
+        <div className="absolute -top-48 -right-48 w-96 h-96 bg-[var(--gold-glow)] opacity-20 blur-[150px] pointer-events-none" />
+        <div className="absolute -bottom-48 -left-48 w-96 h-96 bg-[var(--gold-glow)] opacity-10 blur-[150px] pointer-events-none" />
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-12">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
+            <h2 className="text-3xl font-black text-white flex items-center gap-3 tracking-tighter uppercase">
+              <Shield className="w-8 h-8 text-[var(--gold-primary)]" />
               {t("subscription.title")}
             </h2>
-            <p className="text-[var(--text-muted)] text-sm mt-1">
+            <p className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mt-2 opacity-80">
               {t("subscription.subtitle").replace(
                 "{0}",
                 currentPlan.toUpperCase(),
@@ -103,14 +116,14 @@ export default function SubscriptionModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
+            className="p-3 hover:bg-white/5 rounded-2xl transition-all group"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6 text-[var(--text-muted)] group-hover:text-white transition-colors" />
           </button>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {PLANS.map((plan) => {
             const isCurrent = currentPlan === plan.id;
             const isPopular = plan.popular;
@@ -119,49 +132,55 @@ export default function SubscriptionModal({
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl p-6 border transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl md:hover:shadow-[var(--soft-gold)]/10 flex flex-col ${
+                className={`relative rounded-3xl p-8 border transition-all duration-500 flex flex-col group/plan ${
                   isPopular
-                    ? "bg-gradient-to-b from-white/10 to-transparent border-[var(--soft-gold)]"
-                    : "bg-white/5 border-white/10"
+                    ? "bg-black/60 border-[var(--gold-primary)]/40 shadow-[0_0_50px_rgba(212,175,55,0.1)] scale-105 z-10"
+                    : "bg-white/5 border-white/5 hover:border-white/10"
                 }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--soft-gold)] text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--gold-gradient)] text-black text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-xl">
+                    <Sparkles className="w-3 h-3 inline mr-1 mb-0.5" />
                     {t("subscription.mostPopular")}
                   </div>
                 )}
 
-                <div className="p-3 bg-white/5 rounded-xl w-fit mb-4">
+                <div
+                  className={`p-4 rounded-2xl w-fit mb-6 transition-transform duration-500 group-hover/plan:scale-110 ${isPopular ? "bg-[var(--gold-primary)]/10" : "bg-white/5"}`}
+                >
                   <Icon
-                    className={`w-6 h-6 ${isPopular ? "text-[var(--soft-gold)]" : "text-white"}`}
+                    className={`w-8 h-8 ${isPopular ? "text-[var(--gold-primary)]" : "text-[var(--text-muted)]"}`}
                   />
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">
                   {plan.name}
                 </h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-black text-white">
+                  <span className="text-4xl font-black text-white tracking-tighter">
                     {plan.price}
                   </span>
-                  <span className="text-sm text-[var(--text-muted)]">
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">
                     {plan.period}
                   </span>
                 </div>
-                <p className="text-sm text-[var(--text-muted)] mb-6 h-10">
+                <p className="text-[10px] font-bold text-[var(--text-muted)] mb-8 h-10 leading-relaxed uppercase tracking-wider">
                   {plan.description}
                 </p>
 
-                <div className="space-y-3 mb-8 flex-1">
+                <div className="space-y-4 mb-10 flex-1">
                   {plan.features.map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 text-sm text-[var(--text-secondary)]"
-                    >
-                      <Check
-                        className={`w-4 h-4 shrink-0 mt-0.5 ${isPopular ? "text-[var(--soft-gold)]" : "text-white/50"}`}
-                      />
-                      <span>{feature}</span>
+                    <div key={i} className="flex items-start gap-3">
+                      <div
+                        className={`mt-1 p-0.5 rounded-full ${isPopular ? "bg-[var(--gold-primary)]/20" : "bg-white/10"}`}
+                      >
+                        <Check
+                          className={`w-3 h-3 shrink-0 ${isPopular ? "text-[var(--gold-primary)]" : "text-[var(--text-muted)]"}`}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-white/80 tracking-tight leading-snug">
+                        {feature}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -169,12 +188,12 @@ export default function SubscriptionModal({
                 <button
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={isCurrent || loading !== null}
-                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-2 ${
                     isCurrent
-                      ? "bg-white/10 text-white cursor-default"
+                      ? "bg-white/5 text-[var(--text-muted)] cursor-default border border-white/5"
                       : isPopular
-                        ? "btn-gold shadow-lg shadow-[var(--soft-gold)]/20 hover:scale-[1.02]"
-                        : "bg-white text-black hover:bg-gray-100"
+                        ? "btn-premium shadow-xl shadow-[var(--gold-glow)]"
+                        : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
                   }`}
                 >
                   {loading === plan.id ? (
@@ -182,7 +201,12 @@ export default function SubscriptionModal({
                   ) : isCurrent ? (
                     t("subscription.currentPlan")
                   ) : (
-                    t("subscription.upgrade")
+                    <>
+                      <Zap
+                        className={`w-4 h-4 ${isPopular ? "text-black" : "text-[var(--gold-primary)]"}`}
+                      />
+                      {t("subscription.upgrade")}
+                    </>
                   )}
                 </button>
               </div>
@@ -190,7 +214,7 @@ export default function SubscriptionModal({
           })}
         </div>
 
-        <div className="mt-8 text-center text-xs text-[var(--text-muted)]">
+        <div className="mt-12 text-center text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
           {t("subscription.contactSales")}
         </div>
       </div>

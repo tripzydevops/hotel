@@ -1,6 +1,13 @@
 "use client";
 
-import { MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Activity,
+  Sparkles,
+  BrainCircuit,
+} from "lucide-react";
 
 interface SentimentTopic {
   keyword: string;
@@ -21,48 +28,80 @@ const mockTopics: SentimentTopic[] = [
 
 export default function SentimentClusters() {
   return (
-    <div className="glass-panel-premium p-6 rounded-2xl relative overflow-hidden group">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-[var(--soft-gold)]" />
-          Sentiment Clusters
-        </h3>
-        <span className="text-xs font-mono text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 rounded px-2 py-1">
-          Last 30 Days
-        </span>
-      </div>
+    <div className="p-8 relative overflow-hidden group">
+      {/* Background Ambience */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-[var(--gold-primary)]/5 via-transparent to-transparent pointer-events-none opacity-40" />
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4 relative z-10">
         {mockTopics.map((topic, i) => (
           <div
             key={i}
             className={`
-              px-4 py-2 rounded-xl border backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95
+              px-6 py-4 rounded-3xl border backdrop-blur-3xl transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-2xl relative group/node
               ${
                 topic.sentiment === "positive"
-                  ? "bg-optimal-green/10 border-optimal-green/20 text-optimal-green hover:bg-optimal-green/20"
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/20"
                   : topic.sentiment === "negative"
-                    ? "bg-alert-red/10 border-alert-red/20 text-alert-red hover:bg-alert-red/20"
-                    : "bg-white/5 border-white/10 text-[var(--text-secondary)] hover:bg-white/10"
+                    ? "bg-red-500/10 border-red-500/20 text-red-500 hover:border-red-500/40 hover:bg-red-500/20"
+                    : "bg-white/5 border-white/10 text-[var(--text-muted)] hover:border-[var(--gold-primary)]/20 hover:bg-white/10"
               }
             `}
           >
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm">{topic.keyword}</span>
-              <span className="text-xs opacity-60">({topic.count})</span>
-              {topic.sentiment === "positive" && (
-                <ThumbsUp className="w-3 h-3" />
-              )}
-              {topic.sentiment === "negative" && (
-                <ThumbsDown className="w-3 h-3" />
-              )}
+            {/* Active Node Glow */}
+            <div
+              className={`absolute inset-0 blur-xl opacity-0 group-hover/node:opacity-40 transition-opacity rounded-full -z-10 ${
+                topic.sentiment === "positive"
+                  ? "bg-emerald-500/20"
+                  : topic.sentiment === "negative"
+                    ? "bg-red-500/20"
+                    : "bg-white/10"
+              }`}
+            />
+
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="font-black text-sm uppercase tracking-tight italic group-hover/node:text-white transition-colors">
+                  {topic.keyword}
+                </span>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest opacity-40 leading-none">
+                    Capture_Density:
+                  </span>
+                  <span className="text-[9px] font-black tracking-widest leading-none">
+                    {topic.count}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1 ml-2">
+                {topic.sentiment === "positive" && (
+                  <ThumbsUp className="w-4 h-4 text-emerald-500 group-hover/node:scale-125 transition-transform" />
+                )}
+                {topic.sentiment === "negative" && (
+                  <ThumbsDown className="w-4 h-4 text-red-500 group-hover/node:scale-125 transition-transform" />
+                )}
+                {topic.sentiment === "neutral" && (
+                  <Activity className="w-4 h-4 text-white/20 group-hover/node:scale-125 transition-transform" />
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Decorative background blur */}
-      <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-[var(--soft-gold)]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="mt-12 flex items-center justify-between opacity-10 relative z-10 pointer-events-none">
+        <div className="flex items-center gap-2">
+          <BrainCircuit size={14} className="text-[var(--gold-primary)]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">
+            Semantic_Graph_Nodes
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="text-[var(--gold-primary)]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">
+            Clusters_Identified
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

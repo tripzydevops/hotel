@@ -19,7 +19,7 @@ export default function CommandLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="command-center-layout min-h-screen bg-[var(--deep-ocean)]">
+    <div className="flex h-screen bg-[var(--bg-base)] overflow-hidden">
       {/* 1. PRIMARY NAVIGATION (Left) */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}
@@ -27,12 +27,12 @@ export default function CommandLayout({
         activeRoute={activeRoute}
       />
 
-      {/* 2. TACTICAL VIEWPORT (Center) */}
-      <div className="flex flex-col h-screen overflow-hidden border-x border-[var(--panel-border)]">
+      {/* 2. TACTICAL VIEWPORT (Center/Main) */}
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 overflow-hidden">
         <CommandHeader userProfile={userProfile} />
 
-        <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
-          <div className="max-w-[1400px] mx-auto animate-fade-in">
+        <main className="flex-1 overflow-y-auto p-8 scroll-smooth custom-scrollbar">
+          <div className="max-w-[1600px] mx-auto animate-fade-in">
             {children}
           </div>
         </main>
@@ -40,6 +40,22 @@ export default function CommandLayout({
 
       {/* 3. AGENT INTELLIGENCE (Right) */}
       <AgentPulseSidebar />
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      `}</style>
     </div>
   );
 }
