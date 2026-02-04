@@ -339,10 +339,10 @@ export default function DashboardClient({
               <div className="w-1.5 h-12 bg-[var(--gold-gradient)] rounded-full hidden sm:block shadow-[0_0_20px_rgba(212,175,55,0.3)]" />
               <div className="flex flex-col">
                 <h1 className="text-5xl font-black text-white tracking-tighter flex items-center gap-6 italic leading-none">
-                  EXECUTIVE_HUB
+                  DASHBOARD
                 </h1>
                 <p className="text-[10px] font-black text-[var(--gold-primary)] uppercase tracking-[0.6em] mt-3 opacity-80 pl-1">
-                  Quantum_Yield_Control_Center
+                  Competitor Rate Overview
                 </p>
               </div>
             </div>
@@ -406,7 +406,7 @@ export default function DashboardClient({
                 className={`w-5 h-5 text-black relative z-10 ${isRefreshing ? "animate-spin" : ""}`}
               />
               <span className="font-black tracking-[0.4em] uppercase text-sm text-black relative z-10">
-                {isRefreshing ? "CAPTURING_LIVE_DATA" : "INITIATE_SIGNAL_GRAB"}
+                {isRefreshing ? "UPDATING PRICES" : "REFRESH LIVE RATES"}
               </span>
             </button>
 
@@ -424,20 +424,20 @@ export default function DashboardClient({
         {data?.competitors?.length && (
           <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-6">
             <ReasoningShard
-              title="Autonomous Signal Advisory"
-              insight="Neural signal detection suggests aggressive pricing decay in secondary competitor nodes. Dynamic yield protection initiated via rapid ADR shift."
+              title="Market Update Advisory"
+              insight="Competitor rates are showing downward movement in your area. Consider adjusting your ADR for upcoming weekend slots."
               type="warning"
               className="md:col-span-2 shadow-2xl"
             />
             <div className="premium-card p-8 flex flex-col justify-center items-center text-center bg-black/60 border-[var(--gold-glow)]/20 shadow-[0_30px_60px_rgba(0,0,0,0.5)] relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-b from-[var(--gold-primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mb-4 relative z-10">
-                Core_Logic_Status
+                Monitoring Status
               </span>
               <div className="flex items-center gap-4 mb-4 relative z-10">
                 <div className="w-3 h-3 rounded-full bg-[var(--gold-primary)] shadow-[0_0_20px_var(--gold-primary)] animate-pulse" />
                 <span className="text-2xl font-black text-white tracking-tighter uppercase italic">
-                  SYNAPSE_LINKED
+                  ADVISOR_READY
                 </span>
               </div>
               <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/10 mt-2 relative z-10">
@@ -446,7 +446,7 @@ export default function DashboardClient({
                   className="text-[var(--gold-primary)] animate-bounce"
                 />
                 <span className="text-[10px] font-black text-[var(--gold-primary)] tracking-[0.3em] leading-none uppercase">
-                  Uptime: 99.9%
+                  Connected
                 </span>
               </div>
             </div>
@@ -566,7 +566,7 @@ export default function DashboardClient({
               }
             </p>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
-              Yield_Breach
+              Price Under-cuts
             </p>
           </div>
           <div className="premium-card p-8 text-center bg-black/40 border-emerald-500/10 hover:border-emerald-500/40 shadow-2xl transition-all group">
@@ -579,7 +579,7 @@ export default function DashboardClient({
               }
             </p>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
-              Market_Signals
+              Market Declines
             </p>
           </div>
           <div className="premium-card p-8 text-center bg-black/40 border-[var(--gold-glow)]/20 hover:border-[var(--gold-primary)]/40 shadow-2xl transition-all group">
@@ -617,7 +617,7 @@ export default function DashboardClient({
               )}
             </p>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
-              Mean_Market_ADR
+              Avg Market Rate
             </p>
           </div>
           <div className="premium-card p-8 text-center bg-black/40 border-blue-500/10 hover:border-blue-500/40 shadow-2xl transition-all group">
@@ -626,7 +626,7 @@ export default function DashboardClient({
               {currentHotelCount}
             </p>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] mt-4">
-              Active_Nodes
+              Tracked Hotels
             </p>
           </div>
         </div>
@@ -652,11 +652,10 @@ export default function DashboardClient({
         <footer className="mt-32 py-12 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center sm:items-start gap-2">
             <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.3em]">
-              © 2026 TRIPZY.AI // QUANTUM_RATE_SENTINEL
+              © 2026 HOTEL RATE SENTINEL
             </p>
             <p className="text-[var(--text-muted)] text-[8px] font-mono tracking-widest opacity-40 uppercase">
-              Engineered for absolute property yield dominance. Powered by
-              Neural Scrape v5.
+              Professional Competitor Intelligence for Revenue Management.
             </p>
           </div>
           <div className="flex gap-8">
@@ -664,13 +663,13 @@ export default function DashboardClient({
               href="#"
               className="text-[var(--text-muted)] hover:text-[var(--gold-primary)] transition-all text-[10px] font-black uppercase tracking-[0.3em]"
             >
-              Intelligence_Policy
+              Privacy_Policy
             </a>
             <a
               href="#"
               className="text-[var(--text-muted)] hover:text-[var(--gold-primary)] transition-all text-[10px] font-black uppercase tracking-[0.3em]"
             >
-              Nodes_Terms
+              Terms_of_Service
             </a>
           </div>
         </footer>

@@ -52,14 +52,14 @@ export default function ScanHistory({
               {title || t("history.intelLogs")}
             </h2>
             <p className="text-[9px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mt-1 opacity-60">
-              Protocol_Pulse_Feed
+              Activity History Log
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/5">
           <Cpu size={12} className="text-[var(--gold-primary)] opacity-40" />
           <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em]">
-            {t("history.lastPulseCount").replace("{0}", "10")}_Nodes
+            {t("history.lastPulseCount").replace("{0}", "10")} Tracked
           </span>
         </div>
       </div>
@@ -130,7 +130,8 @@ export default function ScanHistory({
                       : "text-amber-500 bg-amber-500/5 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
                   }`}
                 >
-                  {session.status}_Identity
+                  Status:{" "}
+                  {session.status === "completed" ? "Success" : "Partial"}
                 </span>
               </div>
               <div className="p-3 bg-white/5 rounded-xl group-hover:bg-[var(--gold-primary)] transition-all">

@@ -25,20 +25,25 @@ export default function AdminSidebar({ activeRoute }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
-    { name: "Global Intel", href: "/admin", icon: Database, id: "overview" },
-    { name: "User Nodes", href: "/admin/users", icon: Users, id: "users" },
+    { name: "System Overview", href: "/admin", icon: Database, id: "overview" },
+    { name: "User Accounts", href: "/admin/users", icon: Users, id: "users" },
     {
-      name: "Master Directory",
+      name: "Property Directory",
       href: "/admin/list",
       icon: Building2,
       id: "list",
     },
-    { name: "API Quotas", href: "/admin/keys", icon: Key, id: "keys" },
-    { name: "License Mods", href: "/admin/plans", icon: Crown, id: "plans" },
-    { name: "Signal Capture", href: "/admin/scans", icon: Search, id: "scans" },
-    { name: "Kernel Logs", href: "/admin/logs", icon: Terminal, id: "logs" },
+    { name: "License Keys", href: "/admin/keys", icon: Key, id: "keys" },
+    { name: "Service Plans", href: "/admin/plans", icon: Crown, id: "plans" },
     {
-      name: "System Config",
+      name: "Live Monitoring",
+      href: "/admin/scans",
+      icon: Search,
+      id: "scans",
+    },
+    { name: "System Logs", href: "/admin/logs", icon: Terminal, id: "logs" },
+    {
+      name: "Admin Settings",
       href: "/admin/settings",
       icon: Activity,
       id: "settings",
@@ -58,10 +63,10 @@ export default function AdminSidebar({ activeRoute }: AdminSidebarProps) {
         {!isCollapsed && (
           <div className="ml-4 flex flex-col">
             <span className="font-black text-sm tracking-widest text-white uppercase">
-              System<span className="text-red-500">_Root</span>
+              SENTINEL<span className="text-red-500">.ADMIN</span>
             </span>
             <span className="text-[8px] text-red-500/60 font-mono tracking-[0.2em] font-bold">
-              Level 5 Access Only
+              Root Authority Level
             </span>
           </div>
         )}

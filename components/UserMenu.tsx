@@ -95,7 +95,7 @@ export default function UserMenu({
         </div>
         <div className="text-left hidden md:block">
           <p className="text-xs text-white font-black uppercase tracking-tight leading-none mb-1">
-            {profile?.display_name || "Nexus_User"}
+            {profile?.display_name || "User Profile"}
           </p>
           <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
             <div
@@ -126,7 +126,7 @@ export default function UserMenu({
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-black text-white truncate uppercase tracking-tight">
-                  {profile?.display_name || "Guest_Protocol"}
+                  {profile?.display_name || "Account Profile"}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Globe className="w-3 h-3 text-[var(--text-muted)]" />
@@ -161,13 +161,13 @@ export default function UserMenu({
                   <span
                     className={`text-[10px] font-black uppercase tracking-[0.2em] ${isPro ? "text-[var(--gold-primary)]" : "text-white/60"}`}
                   >
-                    {plan}_Identity
+                    {plan} Account
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">
-                    Status_Active
+                    Active
                   </span>
                 </div>
               </div>
@@ -175,7 +175,7 @@ export default function UserMenu({
               {/* Progress Indicator */}
               <div className="space-y-3 relative z-10">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-[var(--text-muted)]">Node_Load</span>
+                  <span className="text-[var(--text-muted)]">Hotel Limit</span>
                   <span className="text-white">
                     {hotelCount} <span className="opacity-40">/</span> {limit}
                   </span>

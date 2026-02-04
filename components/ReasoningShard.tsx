@@ -89,12 +89,12 @@ export default function ReasoningShard({
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--text-muted)] group-hover:text-white transition-colors">
-                Autonomous_Reasoning
+                Market Analysis
               </span>
               <span
                 className={`text-[8px] font-black uppercase tracking-[0.3em] mt-1 opacity-60 ${getAccentColor()}`}
               >
-                Neural_Signal_Detection
+                Market Change Detected
               </span>
             </div>
           </div>

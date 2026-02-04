@@ -47,7 +47,7 @@ export default function RapidPulseHistory({
               {title || t("history.rapidPulseHistory")}
             </h2>
             <p className="text-[9px] font-black text-[var(--gold-primary)] uppercase tracking-[0.4em] mt-1 opacity-60">
-              Neural_Signal_Stream
+              Live Activity Stream
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function RapidPulseHistory({
                     {formatDate(session.created_at)} UTC
                   </span>
                   <span className="text-[7px] font-bold text-[var(--gold-primary)] uppercase tracking-[0.3em] opacity-40">
-                    Live_Pulse
+                    Live_Status
                   </span>
                 </div>
               </div>
@@ -94,7 +94,8 @@ export default function RapidPulseHistory({
                     }`}
                   />
                   <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest leading-none">
-                    {session.status}_Identity
+                    Status:{" "}
+                    {session.status === "completed" ? "Success" : "Partial"}
                   </p>
                 </div>
               </div>

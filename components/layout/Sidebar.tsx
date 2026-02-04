@@ -26,25 +26,25 @@ export default function Sidebar({
 }: SidebarProps) {
   const navItems = [
     {
-      name: "Executive Hub",
+      name: "Dashboard",
       href: "/",
       icon: LayoutDashboard,
       id: "dashboard",
     },
     {
-      name: "Intelligence",
+      name: "Market Insights",
       href: "/analysis",
       icon: BrainCircuit,
       id: "analysis",
     },
     {
-      name: "Yield Strategy",
+      name: "Reports",
       href: "/reports",
       icon: FilePieChart,
       id: "reports",
     },
     {
-      name: "Preferences",
+      name: "Settings",
       href: "/settings",
       icon: Settings,
       id: "settings",
@@ -66,10 +66,10 @@ export default function Sidebar({
         {!isCollapsed && (
           <div className="ml-4 flex flex-col">
             <span className="font-extrabold text-base tracking-tight text-white leading-none">
-              TRIPZY<span className="text-[var(--gold-primary)]">.AI</span>
+              SENTINEL<span className="text-[var(--gold-primary)]">.ADMIN</span>
             </span>
             <span className="text-[9px] text-[var(--text-muted)] font-black tracking-[0.3em] uppercase mt-1">
-              Sentinel v2
+              Rate Intelligence
             </span>
           </div>
         )}
@@ -109,17 +109,17 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* Pulse / System Info */}
+      {/* System Info */}
       {!isCollapsed && (
         <div className="px-6 py-4">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse shadow-[0_0_8px_var(--success)]" />
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                Neural Link
+                System Active
               </span>
               <span className="text-[8px] text-[var(--text-muted)] font-mono uppercase">
-                Status: Nominal
+                Data Stream: Live
               </span>
             </div>
           </div>
