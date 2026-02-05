@@ -73,6 +73,15 @@ export default function Dashboard() {
     setProfile,
   } = useDashboard(userId, t);
 
+  // Trigger lazy scan check on dashboard load
+  useEffect(() => {
+    if (userId) {
+      api.checkScheduledScan(userId).catch((err) => {
+        console.error("[LazyCron] Failed to check scheduled scan:", err);
+      });
+    }
+  }, [userId]);
+
   const {
     isAddHotelOpen,
     setIsAddHotelOpen,

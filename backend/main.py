@@ -1136,11 +1136,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
             else:
                 last_run_iso = last_log.data[0]["recorded_at"]
                 last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
-                # Make naive for comparison if needed, or aware
-                if last_run.tzinfo is None:
-                    last_run = last_run.replace(tzinfo=None)
-                
-                minutes_since = (datetime.now() - last_run).total_seconds() / 60
+                minutes_since = (datetime.now(timezone.utc) - last_run).total_seconds() / 60
                 
                 if minutes_since >= freq_minutes:
                     should_run = True

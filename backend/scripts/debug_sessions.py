@@ -1,6 +1,10 @@
 import os
 import asyncio
 from supabase import create_client
+from dotenv import load_dotenv
+
+# Load env from root directory
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env.local"))
 
 async def check_db():
     url = "https://ocjpxvjyxmzmxyxvjxzp.supabase.co"
