@@ -9,10 +9,6 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Req
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timezone, timedelta
-try:
-    from backend.debug_routes import *
-except: pass
-
 from uuid import UUID
 from dotenv import load_dotenv
 # Load environment variables from .env and .env.local (Vercel style)
@@ -91,6 +87,16 @@ async def validation_exception_handler(request, exc):
 @app.get("/api/ping")
 async def ping():
     return {"status": "pong"}
+
+@app.get("/api/debug-status")
+async def debug_status():
+    return {
+        "status": "ok", 
+        "env": {
+            "SUPABASE_URL": bool(os.getenv("NEXT_PUBLIC_SUPABASE_URL")),
+            "SUPABASE_KEY": bool(os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+        }
+    }
 
 @app.get("/api/admin/debug-providers")
 async def debug_providers():
