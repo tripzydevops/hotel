@@ -73,8 +73,8 @@ class ProviderFactory:
             "type": "Hotel Prices",
             "enabled": bool(os.getenv("SERPAPI_API_KEY")),
             "priority": 1,
-            "limit": "5000/mo",
-            "refresh": (today + timedelta(days=15)).strftime("%b %d"), 
+            "limit": "250/mo",
+            "refresh": "Refreshed Today (Feb 05)", 
             "latency": "1.2s",
             "health": "Active" if active_key_index == 0 else "Ready"
         })
@@ -85,7 +85,7 @@ class ProviderFactory:
             "type": "Hotel Prices",
             "enabled": bool(os.getenv("SERPAPI_API_KEY_2")),
             "priority": 2,
-            "limit": "5000/mo",
+            "limit": "250/mo",
             "refresh": (today + timedelta(days=5)).strftime("%b %d"),
             "latency": "0.8s",
             "health": "Active" if active_key_index == 1 else "Ready"

@@ -184,11 +184,7 @@ export default function HotelTile(props: HotelTileProps) {
             ) : (
               <HotelIcon className="w-5 h-5 text-[var(--text-secondary)]" />
             )}
-            {stars && (
-              <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5 z-10">
-                {stars}★
-              </div>
-            )}
+            {/* Star rating removed from image as it was deemed "cheap" looking */}
           </div>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
@@ -206,46 +202,30 @@ export default function HotelTile(props: HotelTileProps) {
               )}
             </div>
             <h2
-              className={`${titleSize} font-bold text-white leading-tight line-clamp-1`}
+              className={`${titleSize} font-bold text-white leading-tight mb-1`}
               title={name}
             >
               {name}
             </h2>
+            {stars && (
+              <div className="flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 w-fit">
+                {[...Array(Math.min(5, stars))].map((_, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] text-[var(--soft-gold)] font-bold"
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            )}
             {location && (
               <p className="text-sm text-[var(--text-muted)] mt-0.5">
                 {location}
               </p>
             )}
 
-            {/* Rich Data: Amenities & Offers */}
-            {(isEnterprise && amenities && amenities.length > 0) ||
-            (offers && offers.length > 0) ? (
-              <div
-                className={`flex flex-wrap gap-1 mt-2 ${!isTarget ? "absolute -bottom-2 left-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none translate-y-full" : ""}`}
-              >
-                {/* Offers Badge */}
-                {offers && offers.length > 0 && (
-                  <span
-                    className={`px-1.5 py-0.5 rounded-md ${isTarget ? "bg-white/5 border border-white/5" : "bg-black/80"} text-[9px] ${isTarget ? "text-[var(--text-muted)]" : "text-[var(--soft-gold)]"} flex items-center gap-1`}
-                  >
-                    <Tag className="w-2.5 h-2.5" />
-                    {offers.length} offers
-                  </span>
-                )}
-
-                {/* Amenities Badges */}
-                {isEnterprise &&
-                  amenities &&
-                  amenities.slice(0, isTarget ? 3 : 2).map((am, i) => (
-                    <span
-                      key={i}
-                      className={`px-1.5 py-0.5 rounded-md ${isTarget ? "bg-white/5 border border-white/5" : "bg-black/80"} text-[9px] ${isTarget ? "text-[var(--text-muted)]" : "text-[var(--soft-gold)]"}`}
-                    >
-                      {am}
-                    </span>
-                  ))}
-              </div>
-            ) : null}
+            {/* Removed amenities and offers badges as requested */}
           </div>
         </div>
 

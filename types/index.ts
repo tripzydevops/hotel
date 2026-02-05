@@ -180,6 +180,7 @@ export interface KeyStatus {
   active_keys: number;
   current_key_index: number;
   quota_per_key: number;
+  monthly_usage?: number;
   keys_status: {
     index: number;
     key_suffix: string;

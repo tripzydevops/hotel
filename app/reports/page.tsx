@@ -25,6 +25,11 @@ import { createClient } from "@/utils/supabase/client";
 import MarketPositionChart from "@/components/analytics/MarketPositionChart";
 import PriceTrendChart from "@/components/analytics/PriceTrendChart";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
+import ProfileModal from "@/components/modals/ProfileModal";
+import SettingsModal from "@/components/modals/SettingsModal";
+import AlertsModal from "@/components/modals/AlertsModal";
+import SubscriptionModal from "@/components/modals/SubscriptionModal";
+import BottomNav from "@/components/layout/BottomNav";
 
 export default function ReportsPage() {
   const { t, locale } = useI18n();
@@ -230,6 +235,50 @@ export default function ReportsPage() {
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
         session={selectedSession}
+      />
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userId={userId || ""}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={profile?.settings || {}}
+        onSave={async (settings) => {
+          try {
+            await api.updateUserSettings(userId!, settings);
+            setProfile({ ...profile, settings });
+          } catch (e) {
+            console.error("Failed to save settings", e);
+          }
+        }}
+      />
+
+      <AlertsModal
+        isOpen={isAlertsOpen}
+        onClose={() => setIsAlertsOpen(false)}
+        userId={userId || ""}
+      />
+
+      <SubscriptionModal
+        isOpen={isBillingOpen}
+        onClose={() => setIsBillingOpen(false)}
+        currentPlan={profile?.plan_type || "trial"}
+        onUpgrade={async () => {
+          setIsBillingOpen(false);
+          window.location.reload();
+        }}
+      />
+
+      <BottomNav
+        onOpenAddHotel={() => (window.location.href = "/?addHotel=true")}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        unreadCount={0}
       />
 
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">

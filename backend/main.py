@@ -1909,13 +1909,24 @@ async def get_admin_stats(db: Client = Depends(get_supabase)):
 
 
 @app.get("/api/admin/api-keys/status")
-async def get_api_key_status(user: Any = Depends(get_current_admin_user)):
+async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
     """Get status of SerpApi keys for monitoring quota usage."""
     try:
         status = serpapi_client.get_key_status()
+        
+        # Calculate monthly usage from query_logs
+        # (This is more accurate as it reflects actual API interactions)
+        now = datetime.now()
+        first_of_month = datetime(now.year, now.month, 1).isoformat()
+        
+        usage_res = db.table("query_logs").select("id", count="exact").gte("created_at", first_of_month).execute()
+        monthly_usage = usage_res.count if usage_res.count is not None else 0
+        
         # Add quota info
         status["quota_per_key"] = 250  # Monthly limit
         status["quota_period"] = "monthly"
+        status["monthly_usage"] = monthly_usage
+        
         return status
     except Exception as e:
         print(f"API Key Status Error: {e}")

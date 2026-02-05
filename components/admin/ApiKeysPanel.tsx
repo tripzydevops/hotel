@@ -154,7 +154,7 @@ const ApiKeysPanel = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-black/20 p-4 rounded-lg">
             <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
               Total Keys
@@ -173,9 +173,17 @@ const ApiKeysPanel = () => {
           </div>
           <div className="bg-black/20 p-4 rounded-lg">
             <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Current Key
+              Monthly Usage
             </div>
             <div className="text-2xl font-bold text-[var(--soft-gold)]">
+              {keyStatus?.monthly_usage || 0}
+            </div>
+          </div>
+          <div className="bg-black/20 p-4 rounded-lg">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Current Key
+            </div>
+            <div className="text-2xl font-bold text-white">
               #{keyStatus?.current_key_index || 1}
             </div>
           </div>
