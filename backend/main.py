@@ -644,7 +644,7 @@ async def run_monitor_background(
 
         # 4. Phase 2: Analyst Agent (Intelligence & Persistence)
         print(f"[Orchestrator] Triggering AnalystAgent for analysis...")
-        analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options)
+        analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options, session_id=session_id)
 
         # 5. Phase 3: Notifier Agent (Communication)
         if analysis["alerts"] and settings:

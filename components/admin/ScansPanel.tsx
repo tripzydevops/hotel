@@ -208,6 +208,136 @@ const ScansPanel = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Reasoning Timeline */}
+              {scanDetails.session?.reasoning_trace &&
+                scanDetails.session.reasoning_trace.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                      Agent Reasoning Timeline
+                    </h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                      {scanDetails.session.reasoning_trace.map(
+                        (trace: string, i: number) => {
+                          const isNormalization =
+                            trace.includes("[Normalization]");
+                          const isSentiment = trace.includes("[Sentiment]");
+                          const isAlert = trace.includes("[Alert]");
+                          const isError = trace.includes("[ERROR]");
+                          const isStart = trace.includes("[Start]");
+
+                          let bgClass = "bg-white/5";
+                          let borderClass = "border-white/10";
+                          let iconEmoji = "📝";
+
+                          if (isNormalization) {
+                            bgClass = "bg-blue-500/10";
+                            borderClass = "border-blue-500/30";
+                            iconEmoji = "🔄";
+                          } else if (isSentiment) {
+                            bgClass = "bg-purple-500/10";
+                            borderClass = "border-purple-500/30";
+                            iconEmoji = "💭";
+                          } else if (isAlert) {
+                            bgClass = "bg-red-500/10";
+                            borderClass = "border-red-500/30";
+                            iconEmoji = "⚠️";
+                          } else if (isError) {
+                            bgClass = "bg-red-600/10";
+                            borderClass = "border-red-600/30";
+                            iconEmoji = "❌";
+                          } else if (isStart) {
+                            bgClass = "bg-green-500/10";
+                            borderClass = "border-green-500/30";
+                            iconEmoji = "▶️";
+                          }
+
+                          return (
+                            <div
+                              key={i}
+                              className={`flex items-start gap-3 p-3 rounded-lg border ${bgClass} ${borderClass}`}
+                            >
+                              <span className="text-sm">{iconEmoji}</span>
+                              <span className="text-xs text-white/80 font-mono leading-relaxed">
+                                {trace}
+                              </span>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              {/* Market Parity Offers */}
+              {scanDetails.logs?.some(
+                (log: any) => log.parity_offers?.length > 0,
+              ) && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    Market Parity (OTA Offers)
+                  </h4>
+                  <div className="space-y-4">
+                    {scanDetails.logs
+                      .filter((log: any) => log.parity_offers?.length > 0)
+                      .map((log: any) => (
+                        <div
+                          key={log.id}
+                          className="bg-black/20 rounded-lg p-4"
+                        >
+                          <p className="text-xs font-medium text-white mb-2">
+                            {log.hotel_name}
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {log.parity_offers.map(
+                              (offer: any, idx: number) => {
+                                const isLowest = log.parity_offers.every(
+                                  (o: any) => offer.price <= o.price,
+                                );
+                                const isHighest = log.parity_offers.every(
+                                  (o: any) => offer.price >= o.price,
+                                );
+
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`p-2 rounded border ${
+                                      isLowest
+                                        ? "border-green-500/50 bg-green-500/10"
+                                        : isHighest
+                                          ? "border-red-500/50 bg-red-500/10"
+                                          : "border-white/10 bg-white/5"
+                                    }`}
+                                  >
+                                    <p className="text-[10px] text-[var(--text-muted)] uppercase">
+                                      {offer.vendor ||
+                                        offer.source ||
+                                        "Unknown"}
+                                    </p>
+                                    <p
+                                      className={`text-sm font-bold ${
+                                        isLowest
+                                          ? "text-green-400"
+                                          : isHighest
+                                            ? "text-red-400"
+                                            : "text-white"
+                                      }`}
+                                    >
+                                      {offer.price?.toLocaleString()}{" "}
+                                      {offer.currency || log.currency}
+                                    </p>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 text-center text-[var(--text-muted)]">
