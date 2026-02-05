@@ -228,9 +228,14 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
         
     except HTTPException as he:
         raise he
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        print(f"Auth Check Error: {e}")
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        print(f"Auth Check CRITICAL: {e}")
+        # Print stack trace for Vercel logs
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Authentication System Failure: {str(e)}")
 
 
 # ===== Helpers =====
@@ -1201,7 +1206,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-@app.get("/api/check-scheduled/{user_id}")
+@app.post("/api/check-scheduled/{user_id}")
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
