@@ -8,7 +8,7 @@ import {
   Trash2,
   Edit2,
 } from "lucide-react";
-import TrendChart from "./TrendChart";
+import TrendChart from "@/components/analytics/TrendChart";
 import { PricePoint } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import HotelTile from "./HotelTile";

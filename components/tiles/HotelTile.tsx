@@ -10,7 +10,8 @@ import {
   Hotel as HotelIcon,
   Tag,
 } from "lucide-react";
-import TrendChart from "./TrendChart";
+import Image from "next/image";
+import TrendChart from "@/components/analytics/TrendChart";
 import { PricePoint, HotelWithPrice } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { ReactNode } from "react";
@@ -156,12 +157,17 @@ export default function HotelTile(props: HotelTileProps) {
             className={`relative ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
           >
             {imageUrl || (images && images.length > 0) ? (
-              <img
+              <Image
                 src={
-                  imageUrl || images?.[0]?.original || images?.[0]?.thumbnail
+                  imageUrl ||
+                  images?.[0]?.original ||
+                  images?.[0]?.thumbnail ||
+                  ""
                 }
                 alt={name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 48px, 64px"
               />
             ) : isTarget ? (
               <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
@@ -169,7 +175,7 @@ export default function HotelTile(props: HotelTileProps) {
               <HotelIcon className="w-5 h-5 text-[var(--text-secondary)]" />
             )}
             {stars && (
-              <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5">
+              <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-md px-1 rounded text-[8px] text-[var(--soft-gold)] font-bold flex items-center gap-0.5 z-10">
                 {stars}★
               </div>
             )}
@@ -257,6 +263,7 @@ export default function HotelTile(props: HotelTileProps) {
               }}
               className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white" : "hover:bg-white/10 text-[var(--soft-gold)] hover:text-white"} transition-all`}
               title={t("common.edit")}
+              aria-label={t("common.edit")}
             >
               <Edit2
                 className={`${isTarget ? "w-4.5 h-4.5" : "w-3.5 h-3.5"}`}
@@ -292,6 +299,7 @@ export default function HotelTile(props: HotelTileProps) {
               }}
               className={`p-2.5 rounded-xl ${isTarget ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/20" : "hover:bg-white/10 text-[var(--text-muted)] hover:text-white"} transition-all`}
               title={t("common.view")}
+              aria-label={t("common.view")}
             >
               {isTarget ? (
                 <Building2 className="w-4.5 h-4.5" />
@@ -308,6 +316,7 @@ export default function HotelTile(props: HotelTileProps) {
               }}
               className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] border border-white/5" : "hover:bg-red-500/20 text-red-500/50 hover:text-red-400"} transition-all`}
               title={t("common.delete")}
+              aria-label={t("common.delete")}
             >
               <Trash2
                 className={`${isTarget ? "w-4.5 h-4.5" : "w-3.5 h-3.5"}`}

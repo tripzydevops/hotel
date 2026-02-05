@@ -9,6 +9,7 @@ import {
   Lock,
   Check,
 } from "lucide-react";
+import NextImage from "next/image";
 import { useI18n } from "@/lib/i18n";
 
 interface HotelDetailsModalProps {
@@ -33,7 +34,11 @@ export default function HotelDetailsModal({
 
   if (!hotel) return null;
 
-  const tabs = [
+  const tabs: {
+    id: "overview" | "amenities" | "offers" | "gallery" | "rooms";
+    label: string;
+    icon: any;
+  }[] = [
     { id: "overview", label: t("hotelDetails.overview"), icon: Building2 },
     { id: "gallery", label: t("hotelDetails.gallery"), icon: ImageIcon },
     { id: "amenities", label: t("hotelDetails.amenities"), icon: List },
@@ -55,11 +60,15 @@ export default function HotelDetailsModal({
         <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-start justify-between bg-white/5 gap-4">
           <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
             {hotel.image_url ? (
-              <img
-                src={hotel.image_url}
-                alt={hotel.name}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover border border-white/10"
-              />
+              <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-white/10">
+                <NextImage
+                  src={hotel.image_url}
+                  alt={hotel.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 48px, 64px"
+                />
+              </div>
             ) : (
               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-white/5 flex items-center justify-center">
                 <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-white/20" />
@@ -86,6 +95,7 @@ export default function HotelDetailsModal({
           <button
             onClick={onClose}
             className="self-end sm:self-start p-2 rounded-full hover:bg-white/10 text-[var(--text-muted)] transition-colors order-1 sm:order-2"
+            aria-label={t("common.close") || "Close"}
           >
             <X className="w-6 h-6" />
           </button>
@@ -96,7 +106,7 @@ export default function HotelDetailsModal({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`
                         flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap
                         ${
@@ -191,12 +201,14 @@ export default function HotelDetailsModal({
                     key={idx}
                     className="aspect-video rounded-lg overflow-hidden bg-white/5 relative group cursor-pointer"
                   >
-                    <img
-                      src={img.original || img.thumbnail}
+                    <NextImage
+                      src={img.original || img.thumbnail || ""}
                       alt={`Gallery ${idx}`}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="(max-width: 768px) 50vw, 33vw"
                     />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
                       <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">
                         {t("common.view")}
                       </span>

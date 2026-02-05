@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Bell, Crown } from "lucide-react";
 import UserMenu from "./UserMenu";
-import SubscriptionModal from "./SubscriptionModal";
+import SubscriptionModal from "@/components/modals/SubscriptionModal";
 
 interface HeaderProps {
   userProfile?: any;
@@ -50,14 +51,14 @@ export default function Header({
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div
-              className="h-10 w-auto"
-              style={{ height: "40px", width: "auto" }}
-            >
-              <img
+            <div className="h-10 w-10 relative">
+              <Image
                 src="/logo.png"
                 alt="Hotel Plus Logo"
-                className="h-full w-auto object-contain"
+                fill
+                className="object-contain"
+                sizes="40px"
+                priority
               />
             </div>
             <div className="flex flex-col">
@@ -111,6 +112,7 @@ export default function Header({
             <button
               onClick={onOpenAlerts}
               className="relative p-2 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-full transition-all"
+              aria-label={t("common.notifications") || "Notifications"}
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (

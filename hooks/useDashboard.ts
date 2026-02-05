@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { UserSettings, ScanOptions, AdminUser } from "@/types";
+import { ScanOptions } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
+import { useSettings } from "@/hooks/useSettings";
+import { useProfile } from "@/hooks/useProfile";
 
 export function useDashboard(
   userId: string | null,
@@ -10,22 +12,25 @@ export function useDashboard(
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // --- Composed Hooks ---
+  const {
+    settings,
+    updateSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useSettings(userId);
+
+  const {
+    profile,
+    setProfile,
+    loading: profileLoading,
+    error: profileError,
+  } = useProfile(userId);
+
   // --- Queries ---
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", userId],
     queryFn: () => api.getDashboard(userId!),
-    enabled: !!userId,
-  });
-
-  const settingsQuery = useQuery({
-    queryKey: ["settings", userId],
-    queryFn: () => api.getSettings(userId!),
-    enabled: !!userId,
-  });
-
-  const profileQuery = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => api.getProfile(userId!),
     enabled: !!userId,
   });
 
@@ -71,31 +76,18 @@ export function useDashboard(
     },
   });
 
-  const updateSettingsMutation = useMutation({
-    mutationFn: (settings: UserSettings) =>
-      api.updateSettings(userId!, settings),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(["settings", userId], variables);
-      // Settings might affect dashboard currency/display, so refresh dashboard too
-      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
-    },
-  });
-
   // --- Legacy Interface Shim ---
 
   // Combine loading states
-  const loading =
-    dashboardQuery.isLoading ||
-    settingsQuery.isLoading ||
-    profileQuery.isLoading;
+  const loading = dashboardQuery.isLoading || settingsLoading || profileLoading;
 
   // Combine errors
   const error = dashboardQuery.error
     ? String(dashboardQuery.error)
-    : settingsQuery.error
-      ? String(settingsQuery.error)
-      : profileQuery.error
-        ? String(profileQuery.error)
+    : settingsError
+      ? String(settingsError)
+      : profileError
+        ? String(profileError)
         : null;
 
   const handleScan = async (options: ScanOptions) => {
@@ -123,14 +115,6 @@ export function useDashboard(
     deleteHotelMutation.mutate(hotelId);
   };
 
-  const updateSettings = async (settings: UserSettings) => {
-    return updateSettingsMutation.mutateAsync(settings);
-  };
-
-  const setProfile = (newProfile: AdminUser) => {
-    queryClient.setQueryData(["profile", userId], newProfile);
-  };
-
   const fetchData = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] }),
@@ -141,8 +125,8 @@ export function useDashboard(
 
   return {
     data: dashboardQuery.data || null,
-    userSettings: settingsQuery.data || undefined,
-    profile: profileQuery.data || null,
+    userSettings: settings,
+    profile,
     loading,
     error,
     isRefreshing: dashboardQuery.isRefetching || scanMutation.isPending,

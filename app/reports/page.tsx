@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Header from "@/components/Header";
+import Header from "@/components/layout/Header";
 import { useI18n } from "@/lib/i18n";
 import {
   FileText,
@@ -19,12 +19,12 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import ScanSessionModal from "@/components/ScanSessionModal";
+import ScanSessionModal from "@/components/modals/ScanSessionModal";
 import { ScanSession, MarketAnalysis } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import MarketPositionChart from "@/components/analytics/MarketPositionChart";
 import PriceTrendChart from "@/components/analytics/PriceTrendChart";
-import { PaywallOverlay } from "@/components/PaywallOverlay";
+import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 
 export default function ReportsPage() {
   const { t, locale } = useI18n();

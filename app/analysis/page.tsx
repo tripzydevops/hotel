@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Header from "@/components/Header";
+import Header from "@/components/layout/Header";
 import { useI18n } from "@/lib/i18n";
 import {
   TrendingUp,
@@ -14,16 +14,16 @@ import {
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
-import AdvisorQuadrant from "@/components/AdvisorQuadrant";
-import DiscoveryShard from "@/components/DiscoveryShard";
-import AnalysisFilters from "@/components/AnalysisFilters";
-import CalendarHeatmap from "@/components/CalendarHeatmap";
-import RateSpreadChart from "@/components/RateSpreadChart";
-import ProfileModal from "@/components/ProfileModal";
-import SettingsModal from "@/components/SettingsModal";
-import AlertsModal from "@/components/AlertsModal";
-import SubscriptionModal from "@/components/SubscriptionModal";
-import SentimentBreakdown from "@/components/SentimentBreakdown";
+import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
+import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
+import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
+import CalendarHeatmap from "@/components/analytics/CalendarHeatmap";
+import RateSpreadChart from "@/components/analytics/RateSpreadChart";
+import ProfileModal from "@/components/modals/ProfileModal";
+import SettingsModal from "@/components/modals/SettingsModal";
+import AlertsModal from "@/components/modals/AlertsModal";
+import SubscriptionModal from "@/components/modals/SubscriptionModal";
+import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
