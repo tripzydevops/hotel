@@ -219,49 +219,99 @@ const ScansPanel = () => {
                     </h4>
                     <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                       {scanDetails.session.reasoning_trace.map(
-                        (trace: string, i: number) => {
-                          const isNormalization =
-                            trace.includes("[Normalization]");
-                          const isSentiment = trace.includes("[Sentiment]");
-                          const isAlert = trace.includes("[Alert]");
-                          const isError = trace.includes("[ERROR]");
-                          const isStart = trace.includes("[Start]");
+                        (trace: any, i: number) => {
+                          // Handle Legacy String Traces
+                          if (typeof trace === "string") {
+                            const isNormalization =
+                              trace.includes("[Normalization]");
+                            const isAlert = trace.includes("[Alert]");
+                            const isError = trace.includes("[ERROR]");
+
+                            let bgClass = "bg-white/5";
+                            let borderClass = "border-white/10";
+                            return (
+                              <div
+                                key={i}
+                                className={`flex items-start gap-3 p-3 rounded-lg border ${bgClass} ${borderClass}`}
+                              >
+                                <span className="text-sm">📝</span>
+                                <span className="text-xs text-white/80 font-mono leading-relaxed">
+                                  {trace}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          // Handle New Structured ReasoningLog
+                          const { step, level, message, timestamp, metadata } =
+                            trace;
 
                           let bgClass = "bg-white/5";
                           let borderClass = "border-white/10";
                           let iconEmoji = "📝";
+                          let textColor = "text-white/80";
 
-                          if (isNormalization) {
-                            bgClass = "bg-blue-500/10";
-                            borderClass = "border-blue-500/30";
-                            iconEmoji = "🔄";
-                          } else if (isSentiment) {
-                            bgClass = "bg-purple-500/10";
-                            borderClass = "border-purple-500/30";
-                            iconEmoji = "💭";
-                          } else if (isAlert) {
-                            bgClass = "bg-red-500/10";
-                            borderClass = "border-red-500/30";
-                            iconEmoji = "⚠️";
-                          } else if (isError) {
-                            bgClass = "bg-red-600/10";
-                            borderClass = "border-red-600/30";
-                            iconEmoji = "❌";
-                          } else if (isStart) {
-                            bgClass = "bg-green-500/10";
-                            borderClass = "border-green-500/30";
-                            iconEmoji = "▶️";
+                          switch (level) {
+                            case "info":
+                              if (step === "Scraping" || step === "API Call") {
+                                bgClass = "bg-blue-500/10";
+                                borderClass = "border-blue-500/30";
+                                iconEmoji = "🌐";
+                                textColor = "text-blue-200";
+                              } else if (step === "Date Generation") {
+                                bgClass = "bg-purple-500/10";
+                                borderClass = "border-purple-500/30";
+                                iconEmoji = "📅";
+                                textColor = "text-purple-200";
+                              }
+                              break;
+                            case "success":
+                              bgClass = "bg-[var(--optimal-green)]/10";
+                              borderClass = "border-[var(--optimal-green)]/30";
+                              iconEmoji = "✅";
+                              textColor = "text-[var(--optimal-green)]";
+                              break;
+                            case "warn":
+                              bgClass = "bg-orange-500/10";
+                              borderClass = "border-orange-500/30";
+                              iconEmoji = "⚠️";
+                              textColor = "text-orange-200";
+                              break;
+                            case "error":
+                              bgClass = "bg-[var(--alert-red)]/10";
+                              borderClass = "border-[var(--alert-red)]/30";
+                              iconEmoji = "❌";
+                              textColor = "text-[var(--alert-red)]";
+                              break;
                           }
 
                           return (
                             <div
                               key={i}
-                              className={`flex items-start gap-3 p-3 rounded-lg border ${bgClass} ${borderClass}`}
+                              className={`flex flex-col gap-1 p-3 rounded-lg border ${bgClass} ${borderClass} transition-all hover:scale-[1.01] hover:shadow-lg`}
                             >
-                              <span className="text-sm">{iconEmoji}</span>
-                              <span className="text-xs text-white/80 font-mono leading-relaxed">
-                                {trace}
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
+                                  {iconEmoji} {step}
+                                </span>
+                                <span className="text-[10px] font-mono text-white/40">
+                                  {timestamp
+                                    ? new Date(
+                                        timestamp * 1000,
+                                      ).toLocaleTimeString()
+                                    : ""}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-sm font-mono leading-relaxed ${textColor}`}
+                              >
+                                {message}
                               </span>
+                              {metadata && Object.keys(metadata).length > 0 && (
+                                <div className="mt-2 text-[10px] font-mono bg-black/20 p-2 rounded text-white/50 w-full overflow-x-auto">
+                                  {JSON.stringify(metadata)}
+                                </div>
+                              )}
                             </div>
                           );
                         },
