@@ -146,10 +146,11 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
             print(f"Admin Auth: {email} allowed via Whitelist")
             return user_obj
-            
+        
+        # 1.5 DB Client Check
         if not db:
              print("Admin Auth: DB Client is None")
-             return None # Fallback for safety
+             raise HTTPException(status_code=503, detail="Database Service Unavailable")
 
         # 2. Check Database Role
         # Use limit(1) instead of single() to avoid crash if no profile
@@ -1200,7 +1201,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-@app.post("/api/check-scheduled/{user_id}")
+@app.get("/api/check-scheduled/{user_id}")
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
