@@ -62,26 +62,31 @@ class ScraperAgent:
 
                 adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
                 
+                # Fallback: Auto-generate dates if not provided (for scheduled scans)
+                if not check_in or not check_out:
+                    from datetime import timedelta
+                    today = date.today()
+                    check_in = today + timedelta(days=1)  # Tomorrow
+                    check_out = today + timedelta(days=2)  # Day after tomorrow
+                    print(f"[Scraper] Auto-generated dates for {hotel_name}: {check_in} to {check_out}")
+                
                 # Fetch price with SerpApi (Original High-Fidelity Source)
                 price_data = None
-                if check_in and check_out:
-                    try:
-                        primary_provider = ProviderFactory.get_provider()
-                        print(f"[Scraper] Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...")
-                        
-                        price_data = await primary_provider.fetch_price(
-                            hotel_name=hotel_name,
-                            location=location,
-                            check_in=check_in,
-                            check_out=check_out,
-                            adults=adults,
-                            currency=options.currency if options and options.currency else "TRY",
-                            serp_api_id=serp_api_id
-                        )
-                    except Exception as e:
-                        print(f"[Scraper] Primary Provider Error for {hotel_name}: {e}")
-                else:
-                    print(f"[Scraper] Validation Failed for {hotel_name}: check_in={check_in} check_out={check_out}. Both are required.")
+                try:
+                    primary_provider = ProviderFactory.get_provider()
+                    print(f"[Scraper] Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...")
+                    
+                    price_data = await primary_provider.fetch_price(
+                        hotel_name=hotel_name,
+                        location=location,
+                        check_in=check_in,
+                        check_out=check_out,
+                        adults=adults,
+                        currency=options.currency if options and options.currency else "TRY",
+                        serp_api_id=serp_api_id
+                    )
+                except Exception as e:
+                    print(f"[Scraper] Primary Provider Error for {hotel_name}: {e}")
                 
                 status = "success" if price_data else "not_found"
                 if price_data and price_data.get("status") == "error":
