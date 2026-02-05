@@ -1206,7 +1206,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-@app.post("/api/check-scheduled/{user_id}")
+@app.api_route("/api/check-scheduled/{user_id}", methods=["GET", "POST"])
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
