@@ -107,28 +107,6 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--soft-gold)]"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
-        <ErrorState
-          title={t("common.errorTitle") || "Unable to load dashboard"}
-          message={error}
-          onRetry={fetchData}
-        />
-      </div>
-    );
-  }
-
-  if (!data && loading) return null;
-
   // Memoized derived values to prevent recalculation on every render
   const effectiveTargetPrice = useMemo(
     () => data?.target_hotel?.price_info?.current_price || 0,
@@ -203,6 +181,28 @@ export default function Dashboard() {
       userSettings?.currency,
     ],
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
+        <LoadingState rows={1} skeleton={<ModalLoading />} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
+        <ErrorState
+          title={t("common.errorTitle") || "Unable to load dashboard"}
+          message={error}
+          onRetry={fetchData}
+        />
+      </div>
+    );
+  }
+
+  if (!data && loading) return null;
 
   return (
     <div className="min-h-screen pb-12 relative">
