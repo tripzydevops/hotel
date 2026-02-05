@@ -47,8 +47,13 @@ class AnalystAgent:
                 currency = price_data.get("currency", "TRY")
                 
                 # Skip if price is 0 or invalid (hotel may be sold out)
+                # Keep the previous price by only updating last_scan timestamp
                 if not current_price or current_price <= 0:
-                    print(f"[AnalystAgent] Skipping {hotel_id} - price is 0 or invalid (hotel may be sold out)")
+                    print(f"[AnalystAgent] No new price for {hotel_id} (sold out or unavailable) - keeping previous price")
+                    # Update last_scan timestamp without changing price
+                    self.db.table("hotels").update({
+                        "last_scan": datetime.now().isoformat()
+                    }).eq("id", hotel_id).execute()
                     continue
                 
                 reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
