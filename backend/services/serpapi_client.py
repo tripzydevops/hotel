@@ -388,10 +388,17 @@ class SerpApiClient:
 
         price = self._clean_price_string(raw_price, default_currency)
         
+        # Combine all possible offer sources for market depth
+        all_offers_raw = []
+        if best_match.get("featured_prices"):
+            all_offers_raw.extend(best_match["featured_prices"])
+        if best_match.get("prices"):
+            all_offers_raw.extend(best_match["prices"])
+
         return {
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": price, "currency": default_currency, "source": "serpapi",
-            "vendor": best_match.get("deal_description", "Unknown"),
+            "vendor": best_match.get("deal_description") or best_match.get("vendor") or (best_match.get("featured_prices")[0].get("source") if best_match.get("featured_prices") else "Unknown"),
             "rating": best_match.get("overall_rating"),
             "review_count": best_match.get("reviews"),
             "stars": best_match.get("extracted_hotel_class"),
@@ -399,7 +406,7 @@ class SerpApiClient:
             "image_url": best_match.get("images", [{}])[0].get("thumbnail"),
             "amenities": best_match.get("amenities", []),
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
-            "offers": self._parse_market_offers(best_match.get("prices", []), default_currency),
+            "offers": self._parse_market_offers(all_offers_raw, default_currency),
             "room_types": self._extract_all_room_types(best_match, default_currency),
             "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "reviews": best_match.get("reviews", []),

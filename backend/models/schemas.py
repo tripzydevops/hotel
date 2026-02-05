@@ -219,6 +219,7 @@ class PriceWithTrend(BaseModel):
     check_out: Optional[date] = None
     adults: Optional[int] = None
     room_types: List[Dict[str, Any]] = []
+    offers: List[Dict[str, Any]] = []
 
     class Config:
         extra = "allow"

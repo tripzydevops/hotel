@@ -300,14 +300,29 @@ class SerpApiProvider(HotelDataProvider):
         price = self._clean_price_string(raw_price, currency)
 
         # Build Offers List (Market intelligence)
-        # SerpApi provides other vendors in 'prices' or 'featured_prices'
-        offers_data = best_match.get("prices", []) or []
+        # Combine all possible offer sources
+        offers_raw = []
+        if best_match.get("prices"):
+            offers_raw.extend(best_match["prices"])
         if best_match.get("featured_prices"):
-            offers_data.extend(best_match["featured_prices"])
+            offers_raw.extend(best_match["featured_prices"])
         
-        offers = self._parse_market_offers(offers_data, currency)
+        # If we are using a Knowledge Graph result, 'prices' might be at the root of 'data'
+        if not offers_raw and "prices" in data:
+            offers_raw.extend(data["prices"])
+        if not offers_raw and "featured_prices" in data:
+            offers_raw.extend(data["featured_prices"])
+            
+        offers = self._parse_market_offers(offers_raw, currency)
+        
         if not offers:
-            print(f"[SerpApi] WARNING: No offers found for {best_match.get('name')}. Prices key exists: {'prices' in best_match}, Featured key exists: {'featured_prices' in best_match}")
+            # Fallback: if there's only one main price, create a single 'offer' for it
+            if price and price > 0:
+                offers.append({
+                    "vendor": best_match.get("deal_description") or best_match.get("source") or "Direct",
+                    "price": price,
+                    "currency": currency
+                })
             
         return {
             "price": price or 0.0,

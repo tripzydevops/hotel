@@ -351,7 +351,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                             "check_in": current_price.get("check_in_date"),
                             "check_out": current_price.get("check_out_date"),
                             "adults": current_price.get("adults"),
-                            "offers": current_price.get("offers") or [],
+                            "offers": current_price.get("parity_offers") or current_price.get("offers") or [],
                             "room_types": current_price.get("room_types") or []
                         }
                     except Exception as e:
@@ -1543,7 +1543,9 @@ async def get_analysis(
                             "name": hotel.get("name"),
                             "price": converted,
                             "rating": hotel.get("rating"),
-                            "is_target": is_target
+                            "is_target": is_target,
+                            "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
+                            "room_types": prices[0].get("room_types") or []
                         })
                         
                         if is_target:
@@ -1660,7 +1662,9 @@ async def get_analysis(
                                 "name": hotel.get("name"),
                                 "price": convert_currency(orig_p, prices[0].get("currency") or "USD", display_currency),
                                 "rating": hotel.get("rating"),
-                                "stars": hotel.get("stars")
+                                "stars": hotel.get("stars"),
+                                "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
+                                "room_types": prices[0].get("room_types") or []
                             })
                     except Exception: continue
 
