@@ -46,6 +46,11 @@ class AnalystAgent:
                 current_price = price_data.get("price", 0.0)
                 currency = price_data.get("currency", "TRY")
                 
+                # Skip if price is 0 or invalid (hotel may be sold out)
+                if not current_price or current_price <= 0:
+                    print(f"[AnalystAgent] Skipping {hotel_id} - price is 0 or invalid (hotel may be sold out)")
+                    continue
+                
                 reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
                 
                 # 2. Currency Normalization (if RapidAPI returns USD but TRY was expected)
