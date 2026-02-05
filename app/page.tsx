@@ -32,6 +32,7 @@ import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ModalLoading from "@/components/ModalLoading";
 import ErrorState from "@/components/ErrorState";
+import LoadingState from "@/components/LoadingState";
 
 // Lazy load heavy modals to improve initial load performance
 const AddHotelModal = lazy(() => import("@/components/AddHotelModal"));
