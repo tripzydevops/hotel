@@ -81,6 +81,12 @@ class ApiKeyManager:
                 active += 1  # Cooldown expired
         return active
     
+    @property
+    def current_key_index(self) -> int:
+        """Get the current key index (1-indexed for display)."""
+        with self._lock:
+            return self._current_index + 1 if self._keys else 0
+    
     def rotate_key(self, reason: str = "quota_exhausted") -> bool:
         """Mark current key as exhausted and rotate to next available key."""
         with self._lock:
