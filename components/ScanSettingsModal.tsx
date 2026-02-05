@@ -95,8 +95,6 @@ export default function ScanSettingsModal({
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
@@ -165,7 +163,7 @@ export default function ScanSettingsModal({
                 </label>
                 <input
                   type="date"
-                  min={today}
+                  min={todayStr}
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
@@ -177,7 +175,7 @@ export default function ScanSettingsModal({
                 </label>
                 <input
                   type="date"
-                  min={checkIn || today}
+                  min={checkIn || todayStr}
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
