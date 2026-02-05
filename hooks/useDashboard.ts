@@ -1,55 +1,105 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { DashboardData, UserSettings, ScanOptions } from "@/types";
+import { UserSettings, ScanOptions, AdminUser } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
 
-export function useDashboard(userId: string | null, t: any) {
+export function useDashboard(
+  userId: string | null,
+  t: (key: string, params?: Record<string, string | number>) => string,
+) {
   const { toast } = useToast();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [userSettings, setUserSettings] = useState<UserSettings | undefined>(undefined);
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchData = useCallback(async () => {
-    if (!userId) return;
-    try {
-      setError(null);
-      const [dashboardData, settings, userProfile] = await Promise.all([
-        api.getDashboard(userId),
-        api.getSettings(userId),
-        api.getProfile(userId),
-      ]);
+  // --- Queries ---
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard", userId],
+    queryFn: () => api.getDashboard(userId!),
+    enabled: !!userId,
+  });
 
-      setData(dashboardData);
-      setUserSettings(settings);
-      setProfile(userProfile);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-      setError(t("common.loadingError") || "Failed to load dashboard data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, t]);
+  const settingsQuery = useQuery({
+    queryKey: ["settings", userId],
+    queryFn: () => api.getSettings(userId!),
+    enabled: !!userId,
+  });
 
-  useEffect(() => {
-    if (userId) {
-      fetchData();
-    }
-  }, [userId, fetchData]);
+  const profileQuery = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => api.getProfile(userId!),
+    enabled: !!userId,
+  });
+
+  // --- Mutations ---
+  const scanMutation = useMutation({
+    mutationFn: (options: ScanOptions) => api.triggerMonitor(userId!, options),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+      queryClient.invalidateQueries({ queryKey: ["recent_sessions", userId] });
+    },
+  });
+
+  const addHotelMutation = useMutation({
+    mutationFn: (variables: {
+      name: string;
+      location: string;
+      isTarget: boolean;
+      currency: string;
+      serpApiId?: string;
+    }) =>
+      api.addHotel(
+        userId!,
+        variables.name,
+        variables.location,
+        variables.isTarget,
+        variables.currency,
+        variables.serpApiId,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+    },
+  });
+
+  const deleteHotelMutation = useMutation({
+    mutationFn: (hotelId: string) => api.deleteHotel(hotelId),
+    onSuccess: () => {
+      toast.success(t("dashboard.removeSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+    },
+    onError: (error) => {
+      console.error("Failed to delete hotel:", error);
+      toast.error(t("dashboard.removeError"));
+    },
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (settings: UserSettings) =>
+      api.updateSettings(userId!, settings),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(["settings", userId], variables);
+      // Settings might affect dashboard currency/display, so refresh dashboard too
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+    },
+  });
+
+  // --- Legacy Interface Shim ---
+
+  // Combine loading states
+  const loading =
+    dashboardQuery.isLoading ||
+    settingsQuery.isLoading ||
+    profileQuery.isLoading;
+
+  // Combine errors
+  const error = dashboardQuery.error
+    ? String(dashboardQuery.error)
+    : settingsQuery.error
+      ? String(settingsQuery.error)
+      : profileQuery.error
+        ? String(profileQuery.error)
+        : null;
 
   const handleScan = async (options: ScanOptions) => {
-    if (!userId) return;
-    setIsRefreshing(true);
-    try {
-      await api.triggerMonitor(userId, options);
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to refresh monitor:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
+    return scanMutation.mutateAsync(options);
   };
 
   const handleAddHotel = async (
@@ -57,43 +107,50 @@ export function useDashboard(userId: string | null, t: any) {
     location: string,
     isTarget: boolean,
     currency: string,
-    serpApiId?: string
+    serpApiId?: string,
   ) => {
-    if (!userId) return;
-    await api.addHotel(userId, name, location, isTarget, currency, serpApiId);
-    await fetchData();
+    return addHotelMutation.mutateAsync({
+      name,
+      location,
+      isTarget,
+      currency,
+      serpApiId,
+    });
   };
 
   const handleDeleteHotel = async (hotelId: string) => {
     if (!userId || !confirm(t("dashboard.removeConfirm"))) return;
-    try {
-      await api.deleteHotel(hotelId);
-      toast.success(t("dashboard.removeSuccess"));
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to delete hotel:", error);
-      toast.error(t("dashboard.removeError"));
-    }
+    deleteHotelMutation.mutate(hotelId);
   };
 
   const updateSettings = async (settings: UserSettings) => {
-    if (!userId) return;
-    await api.updateSettings(userId, settings);
-    setUserSettings(settings);
+    return updateSettingsMutation.mutateAsync(settings);
+  };
+
+  const setProfile = (newProfile: AdminUser) => {
+    queryClient.setQueryData(["profile", userId], newProfile);
+  };
+
+  const fetchData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] }),
+      queryClient.invalidateQueries({ queryKey: ["settings", userId] }),
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] }),
+    ]);
   };
 
   return {
-    data,
-    userSettings,
-    profile,
+    data: dashboardQuery.data || null,
+    userSettings: settingsQuery.data || undefined,
+    profile: profileQuery.data || null,
     loading,
     error,
-    isRefreshing,
+    isRefreshing: dashboardQuery.isRefetching || scanMutation.isPending,
     fetchData,
     handleScan,
     handleAddHotel,
     handleDeleteHotel,
     updateSettings,
-    setProfile, // Exposed for subscription updates
+    setProfile,
   };
 }
