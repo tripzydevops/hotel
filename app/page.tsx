@@ -472,6 +472,7 @@ export default function Dashboard() {
                       isEnterprise={isEnterprise}
                       amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
+                      offers={data.target_hotel.price_info?.offers}
                     />
                   </motion.div>
                 )}
@@ -531,6 +532,7 @@ export default function Dashboard() {
                             isEnterprise={isEnterprise}
                             amenities={competitor.amenities}
                             images={competitor.images}
+                            offers={competitor.price_info?.offers}
                           />
                         </motion.div>
                       );

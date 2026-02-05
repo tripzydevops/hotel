@@ -38,6 +38,7 @@ interface TargetHotelTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: { thumbnail?: string; original?: string }[];
+  offers?: { vendor?: string; price?: number }[];
 }
 
 /**

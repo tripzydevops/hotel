@@ -39,17 +39,30 @@ export default function ScanSettingsModal({
 }: ScanSettingsModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Fix date calculation to use local time instead of UTC
+  const today = new Date();
+  const todayStr =
+    today.getFullYear() +
+    "-" +
+    String(today.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(today.getDate()).padStart(2, "0");
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const tomorrowStr =
+    tomorrow.getFullYear() +
+    "-" +
+    String(tomorrow.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(tomorrow.getDate()).padStart(2, "0");
 
   const [checkIn, setCheckIn] = useState(initialValues?.checkIn || todayStr);
   const [checkOut, setCheckOut] = useState(
     initialValues?.checkOut || tomorrowStr,
   );
   const [adults, setAdults] = useState(initialValues?.adults || 2);
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("TRY");
   const isEnterprise = userPlan === "enterprise";
 
   useEffect(() => {

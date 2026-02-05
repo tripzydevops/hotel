@@ -8,9 +8,10 @@ import {
   Trash2,
   Edit2,
   Hotel as HotelIcon,
+  Tag,
 } from "lucide-react";
 import TrendChart from "./TrendChart";
-import { PricePoint } from "@/types";
+import { PricePoint, HotelWithPrice } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { ReactNode } from "react";
 
@@ -34,8 +35,9 @@ export interface HotelTileProps {
   priceHistory?: PricePoint[];
   checkIn?: string;
   adults?: number;
-  onEdit?: (id: string, hotel: any) => void;
-  onViewDetails?: (hotel: any) => void;
+  offers?: { vendor?: string; price?: number }[];
+  onEdit?: (id: string, hotel: HotelWithPrice) => void;
+  onViewDetails?: (hotel: HotelWithPrice) => void;
   isEnterprise?: boolean;
   amenities?: string[];
   images?: { thumbnail?: string; original?: string }[];
@@ -68,13 +70,14 @@ export default function HotelTile(props: HotelTileProps) {
     priceHistory,
     checkIn,
     adults,
+    offers,
     onEdit,
     onViewDetails,
     isEnterprise = false,
     amenities,
     images,
     variant = "competitor",
-    rank,
+    // rank removed from destructuring
     isUndercut,
     headerBadges,
     footerStats = false,
@@ -198,21 +201,35 @@ export default function HotelTile(props: HotelTileProps) {
               </p>
             )}
 
-            {/* Rich Data: Amenities */}
-            {isEnterprise && amenities && amenities.length > 0 && (
+            {/* Rich Data: Amenities & Offers */}
+            {(isEnterprise && amenities && amenities.length > 0) ||
+            (offers && offers.length > 0) ? (
               <div
                 className={`flex flex-wrap gap-1 mt-2 ${!isTarget ? "absolute -bottom-2 left-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none translate-y-full" : ""}`}
               >
-                {amenities.slice(0, isTarget ? 3 : 2).map((am, i) => (
+                {/* Offers Badge */}
+                {offers && offers.length > 0 && (
                   <span
-                    key={i}
-                    className={`px-1.5 py-0.5 rounded-md ${isTarget ? "bg-white/5 border border-white/5" : "bg-black/80"} text-[9px] ${isTarget ? "text-[var(--text-muted)]" : "text-[var(--soft-gold)]"}`}
+                    className={`px-1.5 py-0.5 rounded-md ${isTarget ? "bg-white/5 border border-white/5" : "bg-black/80"} text-[9px] ${isTarget ? "text-[var(--text-muted)]" : "text-[var(--soft-gold)]"} flex items-center gap-1`}
                   >
-                    {am}
+                    <Tag className="w-2.5 h-2.5" />
+                    {offers.length} offers
                   </span>
-                ))}
+                )}
+
+                {/* Amenities Badges */}
+                {isEnterprise &&
+                  amenities &&
+                  amenities.slice(0, isTarget ? 3 : 2).map((am, i) => (
+                    <span
+                      key={i}
+                      className={`px-1.5 py-0.5 rounded-md ${isTarget ? "bg-white/5 border border-white/5" : "bg-black/80"} text-[9px] ${isTarget ? "text-[var(--text-muted)]" : "text-[var(--soft-gold)]"}`}
+                    >
+                      {am}
+                    </span>
+                  ))}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -222,7 +239,21 @@ export default function HotelTile(props: HotelTileProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onEdit(id, { id, name, location, is_target_hotel: isTarget });
+                onEdit(id, {
+                  id,
+                  name,
+                  location,
+                  is_target_hotel: isTarget,
+                  user_id: "",
+                  created_at: "",
+                  price_info: {
+                    current_price: currentPrice,
+                    currency,
+                    trend,
+                    change_percent: changePercent,
+                    recorded_at: lastUpdated || "",
+                  },
+                } as HotelWithPrice);
               }}
               className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white" : "hover:bg-white/10 text-[var(--soft-gold)] hover:text-white"} transition-all`}
               title={t("common.edit")}
@@ -240,9 +271,24 @@ export default function HotelTile(props: HotelTileProps) {
                   id,
                   name,
                   location,
-                  imageUrl,
-                  price_info: { currency, current_price: currentPrice },
-                });
+                  image_url: imageUrl, // Mapping to correct API field
+                  user_id: "", // Dummy for type satisfaction
+                  created_at: "", // Dummy for type satisfaction
+                  is_target_hotel: isTarget,
+                  price_info: {
+                    currency,
+                    current_price: currentPrice,
+                    offers,
+                    previous_price: previousPrice,
+                    trend,
+                    change_percent: changePercent,
+                    recorded_at: lastUpdated || "",
+                  },
+                  amenities,
+                  images,
+                  stars,
+                  rating,
+                } as HotelWithPrice);
               }}
               className={`p-2.5 rounded-xl ${isTarget ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/20" : "hover:bg-white/10 text-[var(--text-muted)] hover:text-white"} transition-all`}
               title={t("common.view")}
