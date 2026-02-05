@@ -20,7 +20,6 @@ class AnalystAgent:
         user_id: UUID,
         scraper_results: List[Dict[str, Any]],
         threshold: float = 2.0,
-        threshold: float = 2.0,
         options: Optional[ScanOptions] = None,
         session_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
