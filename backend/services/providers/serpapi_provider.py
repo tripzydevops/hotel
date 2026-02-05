@@ -77,14 +77,15 @@ class SerpApiProvider(HotelDataProvider):
     BASE_URL = "https://serpapi.com/search"
 
     def __init__(self):
-        keys = load_api_keys()
-        self._key_manager = ApiKeyManager(keys)
+        # We now use the unified serpapi_client singleton from ..serpapi_client
+        from ..serpapi_client import serpapi_client
+        self._serp_client = serpapi_client
 
     def get_provider_name(self) -> str:
         return "SerpApi"
 
     def get_active_key_index(self) -> int:
-        return self._key_manager.current_key_index
+        return self._serp_client._key_manager.current_key_index
 
     async def fetch_price(
         self, 
@@ -107,7 +108,7 @@ class SerpApiProvider(HotelDataProvider):
                 "currency": currency,
                 "gl": "tr" if currency == "TRY" else "us",
                 "hl": "tr" if currency == "TRY" else "en",
-                "api_key": self._key_manager.current_key
+                "api_key": self._serp_client.api_key
             }
             
             if token:
@@ -117,15 +118,15 @@ class SerpApiProvider(HotelDataProvider):
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(self.BASE_URL, params=params)
-                    current_key_suffix = self._key_manager.current_key[-5:]
+                    current_key_suffix = self._serp_client.api_key[-5:]
                     
                     if self._is_quota_error(response):
                         is_rate_limit = response.status_code == 429
                         print(f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_key_suffix}")
                         
-                        # Only mark as 'permanently' exhausted if it's a quota error (not 429)
-                        if self._key_manager.rotate_key(mark_exhausted=not is_rate_limit):
-                            new_key = self._key_manager.current_key
+                        # Use unified rotation
+                        if self._serp_client._key_manager.rotate_key(reason="quota_exhausted" if not is_rate_limit else "rate_limit"):
+                            new_key = self._serp_client.api_key
                             print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
                             params["api_key"] = new_key
                             response = await client.get(self.BASE_URL, params=params)

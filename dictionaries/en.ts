@@ -77,6 +77,7 @@ export const en = {
     rapidPulseTitle: "Rapid Pulse Real-time",
     agentMeshActive: "Agent-Mesh Active",
     upgradedToPlan: "Upgraded to {plan} plan successfully!",
+    nextScanNote: "Manual scans reset the scheduled countdown.",
   },
   hotelDetails: {
     overview: "Overview",

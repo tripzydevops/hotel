@@ -447,7 +447,8 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             "recent_sessions": recent_sessions,
             "unread_alerts_count": unread_count,
             "next_scan_at": next_scan_at,
-            "last_updated": datetime.now(timezone.utc).isoformat()
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "scheduled_status": "Calculating next scan based on last manual or scheduled update."
         }
         
         return JSONResponse(content=jsonable_encoder(final_response))
@@ -1933,6 +1934,10 @@ async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Cl
         status["quota_per_key"] = 250  # Monthly limit
         status["quota_period"] = "monthly"
         status["monthly_usage"] = monthly_usage
+        
+        # Merge individual key status from SerpApiClient
+        detailed = serpapi_client.get_detailed_status()
+        status["keys_status"] = detailed.get("keys_status", [])
         
         return status
     except Exception as e:

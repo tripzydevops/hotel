@@ -373,9 +373,10 @@ export default function Dashboard() {
           {data?.competitors?.length && (
             <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
               {data.next_scan_at && (
-                <div className="text-right pr-4 border-r border-white/5">
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
+                <div className="text-right pr-4 border-r border-white/5 group relative cursor-help">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest flex items-center justify-end gap-1">
                     {t("dashboard.nextScheduledScan")}
+                    <Info className="w-2.5 h-2.5 opacity-50" />
                   </p>
                   <p className="text-sm font-black text-[var(--soft-gold)]">
                     {new Date(data.next_scan_at).toLocaleTimeString(
@@ -386,6 +387,11 @@ export default function Dashboard() {
                       },
                     )}
                   </p>
+                  {/* Tooltip */}
+                  <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-[10px] text-white leading-tight opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                    {t("dashboard.nextScanNote") ||
+                      "Manual scans reset the scheduled countdown."}
+                  </div>
                 </div>
               )}
               <div className="text-right">

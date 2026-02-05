@@ -77,6 +77,7 @@ export const tr = {
     rapidPulseTitle: "Anlık Pazar Nabzı",
     agentMeshActive: "Agent-Mesh Aktif",
     upgradedToPlan: "{plan} planına başarıyla yükseltildi!",
+    nextScanNote: "Manuel taramalar planlı sayaç süresini sıfırlar.",
   },
   hotelDetails: {
     overview: "Genel Bakış",

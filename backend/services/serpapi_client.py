@@ -51,6 +51,7 @@ class ApiKeyManager:
         self._current_index = 0
         self._lock = threading.Lock()
         self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
+        self._usage_counts: Dict[str, int] = {k: 0 for k in self._keys} # key -> request count
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
     
     @property
@@ -59,7 +60,9 @@ class ApiKeyManager:
         with self._lock:
             if not self._keys:
                 raise ValueError("No API keys configured")
-            return self._keys[self._current_index]
+            key = self._keys[self._current_index]
+            self._usage_counts[key] = self._usage_counts.get(key, 0) + 1
+            return key
 
     @property
     def total_keys(self) -> int:
@@ -139,7 +142,8 @@ class ApiKeyManager:
                     "index": i + 1,
                     "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
                     "is_current": i == self._current_index,
-                    "is_exhausted": key in self._exhausted_keys
+                    "is_exhausted": key in self._exhausted_keys,
+                    "usage": self._usage_counts.get(key, 0)
                 }
                 if key in self._exhausted_keys:
                     key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
@@ -176,6 +180,10 @@ class SerpApiClient:
         if len(current_keys) != self._key_manager.total_keys:
              self._key_manager.reload_keys(current_keys)
         return self._key_manager.get_status()
+
+    def get_detailed_status(self) -> Dict[str, Any]:
+        """Returns comprehensive status including usage per key."""
+        return self.get_key_status()
 
     def _normalize_string(self, text: Optional[str]) -> str:
         if not text: return ""

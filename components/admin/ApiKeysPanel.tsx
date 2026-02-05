@@ -233,8 +233,16 @@ const ApiKeysPanel = () => {
                   <div className="text-white font-mono text-sm">
                     {key.key_suffix}
                   </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase">
+                      Usage:
+                    </span>
+                    <span className="text-xs font-bold text-[var(--soft-gold)]">
+                      {key.usage || 0}
+                    </span>
+                  </div>
                   {key.exhausted_at && (
-                    <div className="text-red-400 text-xs">
+                    <div className="text-red-400 text-xs mt-1">
                       Exhausted: {new Date(key.exhausted_at).toLocaleString()}
                     </div>
                   )}

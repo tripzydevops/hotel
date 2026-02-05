@@ -20,19 +20,32 @@ def cleanup():
 
     db = create_client(url, key)
     
-    print("Fetching pending sessions...")
-    # Fetch pending sessions likely created by the bug (check 'scheduled' if type exists, or just pending)
-    # Based on previous code, type might be 'manual' or 'scheduled' if logic existed.
-    # The user screenshot showed "SCHEDULED" in session type.
+    from datetime import datetime, timedelta, timezone
+    
+    # 1. Clear any 'pending' or 'running' sessions older than 1 hour
+    timeout_limit = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
     
     try:
-        # Delete pending scheduled sessions
-        res = db.table("scan_sessions").delete().eq("status", "pending").eq("session_type", "scheduled").execute()
-        
-        # Also clean up 'completed' ones if they are empty/bugged? No, user just asked to clear "them" (the pending ones).
+        print(f"Cleaning sessions older than: {timeout_limit}")
+        # Clear zombie sessions (any type)
+        res = db.table("scan_sessions") \
+            .update({"status": "failed"}) \
+            .in_("status", ["pending", "running"]) \
+            .lt("created_at", timeout_limit) \
+            .execute()
         
         count = len(res.data) if res.data else 0
-        print(f"Successfully deleted {count} pending scheduled sessions.")
+        print(f"Marked {count} zombie sessions as failed.")
+        
+        # 2. Specifically delete pending scheduled sessions if they are stuck
+        res_del = db.table("scan_sessions") \
+            .delete() \
+            .eq("status", "pending") \
+            .eq("session_type", "scheduled") \
+            .execute()
+        
+        count_del = len(res_del.data) if res_del.data else 0
+        print(f"Deleted {count_del} specific pending scheduled sessions.")
         
     except Exception as e:
         print(f"Error during cleanup: {e}")
