@@ -264,6 +264,21 @@ class QueryLog(BaseModel):
 
 
 
+class ScanSession(BaseModel):
+    id: UUID
+    user_id: UUID
+    status: str  # "queued", "processing", "completed", "failed", "partial_success"
+    hotels_scanned: int = 0
+    hotels_found: int = 0
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    source: str = "manual"
+    reasoning_trace: Optional[List[Dict[str, Any]]] = None
+
+    class Config:
+        from_attributes = True
+
+
 class DashboardResponse(BaseModel):
     """Response for the main dashboard Bento Grid."""
     target_hotel: Optional[HotelWithPrice] = None
