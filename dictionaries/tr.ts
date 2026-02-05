@@ -32,6 +32,7 @@ export const tr = {
     checkIn: "Giriş",
     checkOut: "Çıkış",
     loadingError: "Panel verileri yüklenemedi.",
+    footerCopyright: "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
@@ -72,6 +73,8 @@ export const tr = {
     searchHistoryTitle: "Arama Geçmişi",
     scanHistoryTitle: "Tarama Geçmişi",
     rapidPulseTitle: "Anlık Pazar Nabzı",
+    agentMeshActive: "Agent-Mesh Aktif",
+    upgradedToPlan: "{plan} planına başarıyla yükseltildi!",
   },
   hotelDetails: {
     overview: "Genel Bakış",

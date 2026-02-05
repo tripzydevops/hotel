@@ -13,9 +13,11 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import EmptyState from "@/components/EmptyState";
 
 interface ScanSessionModalProps {
   isOpen: boolean;
@@ -347,12 +349,11 @@ export default function ScanSessionModal({
             </div>
 
             {logs.length === 0 ? (
-              <div className="text-center py-20 bg-white/[0.01] rounded-3xl border border-dashed border-white/10">
-                <AlertCircle className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-20" />
-                <p className="text-[var(--text-muted)] font-medium italic">
-                  {t("scanSession.noRecords")}
-                </p>
-              </div>
+              <EmptyState
+                title={t("scanSession.noRecords") || "No records found"}
+                icon={AlertCircle}
+                className="bg-white/[0.01] border-dashed border-white/10"
+              />
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {logs.map((log) => (

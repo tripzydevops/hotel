@@ -10,7 +10,10 @@ type Dictionary = typeof en;
 interface I18nContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: keyof Dictionary | string) => string;
+  t: (
+    key: keyof Dictionary | string,
+    params?: Record<string, string | number>,
+  ) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -33,7 +36,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("tripzy_locale", locale);
   }, [locale]);
 
-  const t = (key: string) => {
+  const t = (key: string, params?: Record<string, string | number>) => {
     // Simple nested key support (e.g., "auth.login")
     const keys = key.split(".");
     let value: any = dictionary;
@@ -44,6 +47,12 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       } else {
         return key; // Fallback to key if not found
       }
+    }
+
+    if (typeof value === "string" && params) {
+      return Object.entries(params).reduce((acc, [k, v]) => {
+        return acc.replace(new RegExp(`{${k}}`, "g"), String(v));
+      }, value);
     }
 
     return typeof value === "string" ? value : key;

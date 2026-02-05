@@ -1,211 +1,110 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useModals } from "@/hooks/useModals";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import BentoGrid from "@/components/BentoGrid";
 import TargetHotelTile from "@/components/TargetHotelTile";
 import CompetitorTile from "@/components/CompetitorTile";
-import AddHotelModal from "@/components/AddHotelModal";
-import SettingsModal from "@/components/SettingsModal";
-import ProfileModal from "@/components/ProfileModal";
 import { RefreshCw, Plus, Zap, Cpu } from "lucide-react";
 import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
-import { DashboardData, UserSettings } from "@/types";
+import {
+  DashboardData,
+  UserSettings,
+  ScanSession,
+  ScanOptions,
+  Hotel,
+  HotelWithPrice,
+} from "@/types";
 import SearchHistory from "@/components/SearchHistory";
 import SkeletonTile from "@/components/SkeletonTile";
 import ScanHistory from "@/components/ScanHistory";
 import RapidPulseHistory from "@/components/RapidPulseHistory";
-import ScanSessionModal from "@/components/ScanSessionModal";
-import AlertsModal from "@/components/AlertsModal";
-import ScanSettingsModal from "@/components/ScanSettingsModal";
-import EditHotelModal from "@/components/EditHotelModal";
-import SubscriptionModal from "@/components/SubscriptionModal";
-import { ScanSession, ScanOptions, Hotel } from "@/types";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
-import HotelDetailsModal from "@/components/HotelDetailsModal";
 import { useToast } from "@/components/ui/ToastContext";
 import ZeroState from "@/components/ZeroState";
 import { useI18n } from "@/lib/i18n";
 import BottomNav from "@/components/BottomNav";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import ModalLoading from "@/components/ModalLoading";
+import ErrorState from "@/components/ErrorState";
+
+// Lazy load heavy modals to improve initial load performance
+const AddHotelModal = lazy(() => import("@/components/AddHotelModal"));
+const SettingsModal = lazy(() => import("@/components/SettingsModal"));
+const ProfileModal = lazy(() => import("@/components/ProfileModal"));
+const ScanSessionModal = lazy(() => import("@/components/ScanSessionModal"));
+const AlertsModal = lazy(() => import("@/components/AlertsModal"));
+const ScanSettingsModal = lazy(() => import("@/components/ScanSettingsModal"));
+const EditHotelModal = lazy(() => import("@/components/EditHotelModal"));
+const SubscriptionModal = lazy(() => import("@/components/SubscriptionModal"));
+const HotelDetailsModal = lazy(() => import("@/components/HotelDetailsModal"));
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
-  const supabase = createClient();
   const { toast } = useToast();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data,
+    userSettings,
+    profile,
+    loading,
+    error,
+    isRefreshing,
+    fetchData,
+    handleScan,
+    handleAddHotel,
+    handleDeleteHotel,
+    updateSettings,
+    setProfile,
+  } = useDashboard(userId, t);
 
-  const [isAddHotelOpen, setIsAddHotelOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isBillingOpen, setIsBillingOpen] = useState(false);
-  const [userSettings, setUserSettings] = useState<UserSettings | undefined>(
-    undefined,
-  );
-  const [profile, setProfile] = useState<any>(null);
-
-  const [isEditHotelOpen, setIsEditHotelOpen] = useState(false);
-  const [hotelToEdit, setHotelToEdit] = useState<Hotel | null>(null);
-
-  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(
-    null,
-  );
-  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
-  const [isScanSettingsOpen, setIsScanSettingsOpen] = useState(false);
-
-  const [selectedHotelForDetails, setSelectedHotelForDetails] =
-    useState<any>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-
-  const handleOpenDetails = (hotel: any) => {
-    const fullHotel =
-      data?.competitors.find((h) => h.id === hotel.id) ||
-      (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
-    if (fullHotel) {
-      setSelectedHotelForDetails(fullHotel);
-      setIsDetailsModalOpen(true);
-    }
-  };
-  const [reSearchName, setReSearchName] = useState("");
-  const [reSearchLocation, setReSearchLocation] = useState("");
-
-  const handleOpenSession = (session: ScanSession) => {
-    setSelectedSession(session);
-    setIsSessionModalOpen(true);
-  };
-
-  const handleEditHotel = (id: string, hotel: any) => {
-    const fullHotel =
-      data?.competitors.find((h) => h.id === id) ||
-      (data?.target_hotel?.id === id ? data.target_hotel : null);
-    if (fullHotel) {
-      setHotelToEdit(fullHotel);
-      setIsEditHotelOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-      } else {
-        window.location.href = "/login";
-      }
-    };
-    getSession();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchData();
-    }
-  }, [userId]);
-
-  const fetchData = async () => {
-    if (!userId) return;
-    try {
-      setError(null);
-
-      const [dashboardData, settings, userProfile] = await Promise.all([
-        api.getDashboard(userId),
-        api.getSettings(userId),
-        api.getProfile(userId),
-      ]);
-
-      setData(dashboardData);
-      setUserSettings(settings);
-      setProfile(userProfile);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-      setError(t("common.loadingError") || "Failed to load dashboard data.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleScan = async (options: ScanOptions) => {
-    if (!userId) return;
-    setIsRefreshing(true);
-    try {
-      await api.triggerMonitor(userId, options);
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to refresh monitor:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const [scanDefaults, setScanDefaults] = useState<
-    { checkIn?: string; checkOut?: string; adults?: number } | undefined
-  >(undefined);
-
-  const handleRefresh = () => {
-    if (data?.target_hotel?.price_info) {
-      setScanDefaults({
-        checkIn: data.target_hotel.price_info.check_in,
-        checkOut: data.target_hotel.price_info.check_out,
-        adults: data.target_hotel.price_info.adults,
-      });
-    }
-    setIsScanSettingsOpen(true);
-  };
-
-  const handleAddHotel = async (
-    name: string,
-    location: string,
-    isTarget: boolean,
-    currency: string,
-    serpApiId?: string,
-  ) => {
-    if (!userId) return;
-    await api.addHotel(userId, name, location, isTarget, currency, serpApiId);
-    await fetchData();
-  };
-
-  const handleDeleteHotel = async (hotelId: string) => {
-    if (!userId || !confirm(t("dashboard.removeConfirm"))) return;
-    try {
-      await api.deleteHotel(hotelId);
-      toast.success(t("dashboard.removeSuccess"));
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to delete hotel:", error);
-      toast.error(t("dashboard.removeError"));
-    }
-  };
-
-  const handleQuickAdd = async (name: string, location: string) => {
-    if (!userId) return;
-    await handleAddHotel(
-      name,
-      location,
-      false,
-      userSettings?.currency || "TRY",
-    );
-  };
+  const {
+    isAddHotelOpen,
+    setIsAddHotelOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isAlertsOpen,
+    setIsAlertsOpen,
+    isProfileOpen,
+    setIsProfileOpen,
+    isBillingOpen,
+    setIsBillingOpen,
+    isEditHotelOpen,
+    setIsEditHotelOpen,
+    hotelToEdit,
+    setHotelToEdit,
+    isSessionModalOpen,
+    setIsSessionModalOpen,
+    selectedSession,
+    isScanSettingsOpen,
+    setIsScanSettingsOpen,
+    scanDefaults,
+    isDetailsModalOpen,
+    setIsDetailsModalOpen,
+    selectedHotelForDetails,
+    reSearchName,
+    setReSearchName,
+    reSearchLocation,
+    setReSearchLocation,
+    handleOpenDetails,
+    handleOpenSession,
+    handleEditHotel,
+    handleRefresh,
+    handleReSearch,
+  } = useModals();
 
   const handleSaveSettings = async (settings: UserSettings) => {
-    if (!userId) return;
-    await api.updateSettings(userId, settings);
-    setUserSettings(settings);
-    handleRefresh();
-  };
-
-  const handleReSearch = (name: string, location?: string) => {
-    setReSearchName(name);
-    setReSearchLocation(location || "");
-    setIsAddHotelOpen(true);
+    await updateSettings(settings);
+    // Refresh modals defaults if needed
+    if (data) {
+      handleRefresh(data);
+    }
   };
 
   if (loading) {
@@ -218,33 +117,92 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--deep-ocean)] text-white gap-4">
-        <p className="text-red-400">{error}</p>
-        <button
-          onClick={fetchData}
-          className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] rounded-lg font-bold hover:opacity-90 transition-opacity"
-        >
-          {t("common.retry")}
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
+        <ErrorState
+          title={t("common.errorTitle") || "Unable to load dashboard"}
+          message={error}
+          onRetry={fetchData}
+        />
       </div>
     );
   }
 
   if (!data && loading) return null;
 
-  const effectiveTargetPrice =
-    data?.target_hotel?.price_info?.current_price || 0;
+  // Memoized derived values to prevent recalculation on every render
+  const effectiveTargetPrice = useMemo(
+    () => data?.target_hotel?.price_info?.current_price || 0,
+    [data?.target_hotel?.price_info?.current_price],
+  );
 
-  const isLocked =
-    profile?.subscription_status === "past_due" ||
-    profile?.subscription_status === "canceled" ||
-    profile?.subscription_status === "unpaid";
+  const isLocked = useMemo(
+    () =>
+      profile?.subscription_status === "past_due" ||
+      profile?.subscription_status === "canceled" ||
+      profile?.subscription_status === "unpaid",
+    [profile?.subscription_status],
+  );
 
-  const currentHotelCount =
-    (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
+  const currentHotelCount = useMemo(
+    () => (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0),
+    [data?.competitors?.length, data?.target_hotel],
+  );
 
-  const isEnterprise =
-    profile?.plan_type === "enterprise" || profile?.plan_type === "pro";
+  const isEnterprise = useMemo(
+    () => profile?.plan_type === "enterprise" || profile?.plan_type === "pro",
+    [profile?.plan_type],
+  );
+
+  // Memoized market pulse calculation (was calculated inline multiple times)
+  const marketPulseAvg = useMemo(() => {
+    if (!data?.competitors?.length) return 0;
+    return (
+      data.competitors.reduce(
+        (acc, c) => acc + (c.price_info?.change_percent || 0),
+        0,
+      ) / data.competitors.length
+    );
+  }, [data?.competitors]);
+
+  const avgCompetitorPrice = useMemo(() => {
+    if (!data?.competitors?.length) return 0;
+    return Math.round(
+      data.competitors.reduce(
+        (sum, c) => sum + (c.price_info?.current_price || 0),
+        0,
+      ) / data.competitors.length,
+    );
+  }, [data?.competitors]);
+
+  const undercuttingCount = useMemo(
+    () =>
+      (data?.competitors || []).filter(
+        (c) =>
+          c.price_info && c.price_info.current_price < effectiveTargetPrice,
+      ).length,
+    [data?.competitors, effectiveTargetPrice],
+  );
+
+  const pricesDroppedCount = useMemo(
+    () =>
+      (data?.competitors || []).filter((c) => c.price_info?.trend === "down")
+        .length,
+    [data?.competitors],
+  );
+
+  const activeCurrency = useMemo(
+    () =>
+      data?.target_hotel?.price_info?.currency ||
+      data?.competitors?.find((c) => c.price_info?.currency)?.price_info
+        ?.currency ||
+      userSettings?.currency ||
+      "TRY",
+    [
+      data?.target_hotel?.price_info?.currency,
+      data?.competitors,
+      userSettings?.currency,
+    ],
+  );
 
   return (
     <div className="min-h-screen pb-12 relative">
@@ -267,108 +225,112 @@ export default function Dashboard() {
         onOpenBilling={() => setIsBillingOpen(true)}
       />
 
-      <AddHotelModal
-        isOpen={isAddHotelOpen}
-        onClose={() => {
-          setIsAddHotelOpen(false);
-          setReSearchName("");
-          setReSearchLocation("");
-        }}
-        onAdd={handleAddHotel}
-        initialName={reSearchName}
-        initialLocation={reSearchLocation}
-        currentHotelCount={currentHotelCount}
-      />
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={userSettings}
-        onSave={handleSaveSettings}
-      />
-
-      <ScanSessionModal
-        isOpen={isSessionModalOpen}
-        onClose={() => setIsSessionModalOpen(false)}
-        session={selectedSession}
-      />
-
-      <ScanSettingsModal
-        isOpen={isScanSettingsOpen}
-        onClose={() => setIsScanSettingsOpen(false)}
-        onScan={handleScan}
-        onUpgrade={() => {
-          setIsScanSettingsOpen(false);
-          setIsBillingOpen(true);
-        }}
-        initialValues={scanDefaults}
-        userPlan={profile?.role === "admin" ? "enterprise" : profile?.plan_type}
-        dailyLimitReached={
-          profile?.role === "admin"
-            ? false
-            : data?.recent_sessions?.some(
-                (s) =>
-                  s.session_type === "manual" &&
-                  s.created_at.startsWith(
-                    new Date().toISOString().split("T")[0],
-                  ),
-              ) || false
-        }
-      />
-
-      {hotelToEdit && (
-        <EditHotelModal
-          isOpen={isEditHotelOpen}
+      <Suspense fallback={<ModalLoading />}>
+        <AddHotelModal
+          isOpen={isAddHotelOpen}
           onClose={() => {
-            setIsEditHotelOpen(false);
-            setHotelToEdit(null);
+            setIsAddHotelOpen(false);
+            setReSearchName("");
+            setReSearchLocation("");
           }}
-          hotel={hotelToEdit}
+          onAdd={handleAddHotel}
+          initialName={reSearchName}
+          initialLocation={reSearchLocation}
+          currentHotelCount={currentHotelCount}
+        />
+
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          settings={userSettings}
+          onSave={handleSaveSettings}
+        />
+
+        <ScanSessionModal
+          isOpen={isSessionModalOpen}
+          onClose={() => setIsSessionModalOpen(false)}
+          session={selectedSession}
+        />
+
+        <ScanSettingsModal
+          isOpen={isScanSettingsOpen}
+          onClose={() => setIsScanSettingsOpen(false)}
+          onScan={handleScan}
+          onUpgrade={() => {
+            setIsScanSettingsOpen(false);
+            setIsBillingOpen(true);
+          }}
+          initialValues={scanDefaults}
+          userPlan={
+            profile?.role === "admin" ? "enterprise" : profile?.plan_type
+          }
+          dailyLimitReached={
+            profile?.role === "admin"
+              ? false
+              : data?.recent_sessions?.some(
+                  (s) =>
+                    s.session_type === "manual" &&
+                    s.created_at.startsWith(
+                      new Date().toISOString().split("T")[0],
+                    ),
+                ) || false
+          }
+        />
+
+        {hotelToEdit && (
+          <EditHotelModal
+            isOpen={isEditHotelOpen}
+            onClose={() => {
+              setIsEditHotelOpen(false);
+              setHotelToEdit(null);
+            }}
+            hotel={hotelToEdit}
+            onUpdate={fetchData}
+          />
+        )}
+
+        <AlertsModal
+          isOpen={isAlertsOpen}
+          onClose={() => setIsAlertsOpen(false)}
+          userId={userId || ""}
           onUpdate={fetchData}
         />
-      )}
 
-      <AlertsModal
-        isOpen={isAlertsOpen}
-        onClose={() => setIsAlertsOpen(false)}
-        userId={userId || ""}
-        onUpdate={fetchData}
-      />
+        <ProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          userId={userId || ""}
+        />
 
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        userId={userId || ""}
-      />
+        <SubscriptionModal
+          isOpen={isBillingOpen}
+          onClose={() => setIsBillingOpen(false)}
+          currentPlan={profile?.plan_type || "trial"}
+          onUpgrade={async (plan) => {
+            if (!userId) return;
+            setProfile({
+              ...profile,
+              plan_type: plan,
+              subscription_status: "active",
+            });
+            toast.success(t("dashboard.upgradedToPlan", { plan }));
+            setIsBillingOpen(false);
+          }}
+        />
 
-      <SubscriptionModal
-        isOpen={isBillingOpen}
-        onClose={() => setIsBillingOpen(false)}
-        currentPlan={profile?.plan_type || "trial"}
-        onUpgrade={async (plan) => {
-          if (!userId) return;
-          setProfile({
-            ...profile,
-            plan_type: plan,
-            subscription_status: "active",
-          });
-          toast.success(`Upgraded to ${plan} plan successfully!`);
-          setIsBillingOpen(false);
-        }}
-      />
-
-      <HotelDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        hotel={selectedHotelForDetails}
-        isEnterprise={
-          profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
-        }
-        onUpgrade={() => {
-          setIsDetailsModalOpen(false);
-          setIsBillingOpen(true);
-        }}
-      />
+        <HotelDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          hotel={selectedHotelForDetails}
+          isEnterprise={
+            profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
+          }
+          onUpgrade={() => {
+            setIsDetailsModalOpen(false);
+            setIsBillingOpen(true);
+          }}
+        />
+      </Suspense>
 
       <BottomNav
         onOpenAddHotel={() => setIsAddHotelOpen(true)}
@@ -389,7 +351,7 @@ export default function Dashboard() {
               {t("dashboard.title")}
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(255,215,0,0.1)]">
                 <Cpu className="w-2.5 h-2.5" />
-                Agent-Mesh Active
+                {t("dashboard.agentMeshActive")}
               </span>
             </h1>
             <p className="text-[var(--text-secondary)] mt-1 text-xs">
@@ -406,34 +368,16 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 justify-end">
                   <span
                     className={`text-sm font-black ${
-                      data.competitors.reduce(
-                        (acc, c) => acc + (c.price_info?.change_percent || 0),
-                        0,
-                      ) /
-                        (data.competitors.length || 1) >
-                      0
+                      marketPulseAvg > 0
                         ? "text-alert-red"
                         : "text-optimal-green"
                     }`}
                   >
-                    {(
-                      data.competitors.reduce(
-                        (acc, c) => acc + (c.price_info?.change_percent || 0),
-                        0,
-                      ) / (data.competitors.length || 1)
-                    ).toFixed(1)}
-                    %
+                    {marketPulseAvg.toFixed(1)}%
                   </span>
                   <div
                     className={`w-1.5 h-1.5 rounded-full ${
-                      data.competitors.reduce(
-                        (acc, c) => acc + (c.price_info?.change_percent || 0),
-                        0,
-                      ) /
-                        (data.competitors.length || 1) >
-                      0
-                        ? "bg-alert-red"
-                        : "bg-optimal-green"
+                      marketPulseAvg > 0 ? "bg-alert-red" : "bg-optimal-green"
                     }`}
                   />
                 </div>
@@ -443,7 +387,7 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={handleRefresh}
+              onClick={() => handleRefresh(data)}
               disabled={isRefreshing}
               className={`
                 btn-gold flex items-center gap-2 px-6 shadow-lg shadow-[var(--soft-gold)]/20
@@ -468,121 +412,132 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <BentoGrid>
-          {loading || isRefreshing ? (
-            <>
-              <SkeletonTile large />
-              <SkeletonTile />
-              <SkeletonTile />
-              <SkeletonTile />
-            </>
-          ) : !data?.target_hotel &&
-            (!data?.competitors || data.competitors.length === 0) ? (
-            <div className="col-span-full">
-              <ZeroState onAddHotel={() => setIsAddHotelOpen(true)} />
-            </div>
-          ) : (
-            <>
-              {data?.target_hotel && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="sm:col-span-2 lg:col-span-2 lg:row-span-2"
-                >
-                  <TargetHotelTile
-                    id={data.target_hotel.id}
-                    name={data.target_hotel.name}
-                    location={data.target_hotel.location}
-                    currentPrice={effectiveTargetPrice}
-                    previousPrice={data.target_hotel.price_info?.previous_price}
-                    currency={
-                      data.target_hotel.price_info?.currency ||
-                      data.competitors?.[0]?.price_info?.currency ||
-                      userSettings?.currency ||
-                      "TRY"
-                    }
-                    trend={data.target_hotel.price_info?.trend || "stable"}
-                    changePercent={
-                      data.target_hotel.price_info?.change_percent || 0
-                    }
-                    lastUpdated={
-                      data.target_hotel.price_info
-                        ? t("common.justNow")
-                        : t("dashboard.pendingInitial")
-                    }
-                    onDelete={handleDeleteHotel}
-                    rating={data.target_hotel.rating}
-                    stars={data.target_hotel.stars}
-                    imageUrl={data.target_hotel.image_url}
-                    vendor={data.target_hotel.price_info?.vendor}
-                    priceHistory={data.target_hotel.price_history}
-                    checkIn={data.target_hotel.price_info?.check_in}
-                    adults={data.target_hotel.price_info?.adults}
-                    onEdit={handleEditHotel}
-                    onViewDetails={handleOpenDetails}
-                    isEnterprise={isEnterprise}
-                    amenities={data.target_hotel.amenities}
-                    images={data.target_hotel.images}
-                  />
-                </motion.div>
-              )}
+        <ErrorBoundary>
+          <BentoGrid>
+            {loading || isRefreshing ? (
+              <>
+                <SkeletonTile large />
+                <SkeletonTile />
+                <SkeletonTile />
+                <SkeletonTile />
+              </>
+            ) : !data?.target_hotel &&
+              (!data?.competitors || data.competitors.length === 0) ? (
+              <div className="col-span-full">
+                <ZeroState onAddHotel={() => setIsAddHotelOpen(true)} />
+              </div>
+            ) : (
+              <>
+                {data?.target_hotel && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="sm:col-span-2 lg:col-span-2 lg:row-span-2"
+                  >
+                    <TargetHotelTile
+                      id={data.target_hotel.id}
+                      name={data.target_hotel.name}
+                      location={data.target_hotel.location}
+                      currentPrice={effectiveTargetPrice}
+                      previousPrice={
+                        data.target_hotel.price_info?.previous_price
+                      }
+                      currency={
+                        data.target_hotel.price_info?.currency ||
+                        data.competitors?.[0]?.price_info?.currency ||
+                        userSettings?.currency ||
+                        "TRY"
+                      }
+                      trend={data.target_hotel.price_info?.trend || "stable"}
+                      changePercent={
+                        data.target_hotel.price_info?.change_percent || 0
+                      }
+                      lastUpdated={
+                        data.target_hotel.price_info
+                          ? t("common.justNow")
+                          : t("dashboard.pendingInitial")
+                      }
+                      onDelete={handleDeleteHotel}
+                      rating={data.target_hotel.rating}
+                      stars={data.target_hotel.stars}
+                      imageUrl={data.target_hotel.image_url}
+                      vendor={data.target_hotel.price_info?.vendor}
+                      priceHistory={data.target_hotel.price_history}
+                      checkIn={data.target_hotel.price_info?.check_in}
+                      adults={data.target_hotel.price_info?.adults}
+                      onEdit={(id) => handleEditHotel(id, data)}
+                      onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
+                      isEnterprise={isEnterprise}
+                      amenities={data.target_hotel.amenities}
+                      images={data.target_hotel.images}
+                    />
+                  </motion.div>
+                )}
 
-              {data?.competitors &&
-                [...data.competitors]
-                  .sort(
-                    (a, b) =>
-                      (a.price_info?.current_price || 0) -
-                      (b.price_info?.current_price || 0),
-                  )
-                  .map((competitor, index) => {
-                    const isUndercut =
-                      competitor.price_info &&
-                      competitor.price_info.current_price <
-                        effectiveTargetPrice;
+                {data?.competitors &&
+                  [...data.competitors]
+                    .sort(
+                      (a, b) =>
+                        (a.price_info?.current_price || 0) -
+                        (b.price_info?.current_price || 0),
+                    )
+                    .map((competitor, index) => {
+                      const isUndercut =
+                        competitor.price_info &&
+                        competitor.price_info.current_price <
+                          effectiveTargetPrice;
 
-                    return (
-                      <motion.div
-                        key={competitor.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
-                        className="col-span-1"
-                      >
-                        <CompetitorTile
-                          id={competitor.id}
-                          name={competitor.name}
-                          currentPrice={
-                            competitor.price_info?.current_price || 0
-                          }
-                          previousPrice={competitor.price_info?.previous_price}
-                          currency={competitor.price_info?.currency || "TRY"}
-                          trend={competitor.price_info?.trend || "stable"}
-                          changePercent={
-                            competitor.price_info?.change_percent || 0
-                          }
-                          isUndercut={isUndercut}
-                          rank={index + 1}
-                          onDelete={handleDeleteHotel}
-                          rating={competitor.rating}
-                          stars={competitor.stars}
-                          imageUrl={competitor.image_url}
-                          vendor={competitor.price_info?.vendor}
-                          priceHistory={competitor.price_history}
-                          checkIn={competitor.price_info?.check_in}
-                          adults={competitor.price_info?.adults}
-                          onEdit={handleEditHotel}
-                          onViewDetails={handleOpenDetails}
-                          isEnterprise={isEnterprise}
-                          amenities={competitor.amenities}
-                          images={competitor.images}
-                        />
-                      </motion.div>
-                    );
-                  })}
-            </>
-          )}
-        </BentoGrid>
+                      return (
+                        <motion.div
+                          key={competitor.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.4,
+                            delay: 0.1 * (index + 1),
+                          }}
+                          className="col-span-1"
+                        >
+                          <CompetitorTile
+                            id={competitor.id}
+                            name={competitor.name}
+                            currentPrice={
+                              competitor.price_info?.current_price || 0
+                            }
+                            previousPrice={
+                              competitor.price_info?.previous_price
+                            }
+                            currency={competitor.price_info?.currency || "TRY"}
+                            trend={competitor.price_info?.trend || "stable"}
+                            changePercent={
+                              competitor.price_info?.change_percent || 0
+                            }
+                            isUndercut={isUndercut}
+                            rank={index + 1}
+                            onDelete={handleDeleteHotel}
+                            rating={competitor.rating}
+                            stars={competitor.stars}
+                            imageUrl={competitor.image_url}
+                            vendor={competitor.price_info?.vendor}
+                            priceHistory={competitor.price_history}
+                            checkIn={competitor.price_info?.check_in}
+                            adults={competitor.price_info?.adults}
+                            onEdit={(id) => handleEditHotel(id, data)}
+                            onViewDetails={(hotel) =>
+                              handleOpenDetails(hotel, data)
+                            }
+                            isEnterprise={isEnterprise}
+                            amenities={competitor.amenities}
+                            images={competitor.images}
+                          />
+                        </motion.div>
+                      );
+                    })}
+              </>
+            )}
+          </BentoGrid>
+        </ErrorBoundary>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -597,7 +552,7 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-alert-red">
               {
                 (data?.competitors || []).filter(
-                  (c) =>
+                  (c: HotelWithPrice) =>
                     c.price_info &&
                     c.price_info.current_price < effectiveTargetPrice,
                 ).length
@@ -614,7 +569,7 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-optimal-green">
               {
                 (data?.competitors || []).filter(
-                  (c) => c.price_info?.trend === "down",
+                  (c: HotelWithPrice) => c.price_info?.trend === "down",
                 ).length
               }
             </p>
@@ -632,14 +587,16 @@ export default function Dashboard() {
                   {(() => {
                     const activeCurrency =
                       data.target_hotel?.price_info?.currency ||
-                      data.competitors.find((c) => c.price_info?.currency)
-                        ?.price_info?.currency ||
+                      data.competitors.find(
+                        (c: HotelWithPrice) => c.price_info?.currency,
+                      )?.price_info?.currency ||
                       userSettings?.currency ||
                       "TRY";
 
                     const avgPrice = Math.round(
                       (data?.competitors || []).reduce(
-                        (sum, c) => sum + (c.price_info?.current_price || 0),
+                        (sum: number, c: HotelWithPrice) =>
+                          sum + (c.price_info?.current_price || 0),
                         0,
                       ) / (data?.competitors?.length || 1),
                     );
@@ -693,7 +650,7 @@ export default function Dashboard() {
 
         <footer className="mt-20 py-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-[var(--text-muted)] text-sm">
-            © 2026 Hotel Rate Monitor. All rates fetched via SerpApi.
+            {t("common.footerCopyright")}
           </p>
           <div className="flex gap-4">
             <a

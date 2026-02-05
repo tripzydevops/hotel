@@ -32,6 +32,7 @@ export const en = {
     checkIn: "Check-in",
     checkOut: "Check-out",
     loadingError: "Failed to load dashboard data.",
+    footerCopyright: "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
@@ -72,6 +73,8 @@ export const en = {
     searchHistoryTitle: "Search History",
     scanHistoryTitle: "Scan History",
     rapidPulseTitle: "Rapid Pulse Real-time",
+    agentMeshActive: "Agent-Mesh Active",
+    upgradedToPlan: "Upgraded to {plan} plan successfully!",
   },
   hotelDetails: {
     overview: "Overview",

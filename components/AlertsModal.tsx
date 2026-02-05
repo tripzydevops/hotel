@@ -5,6 +5,7 @@ import { X, Bell, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Alert } from "@/types";
 import { useI18n } from "@/lib/i18n";
+import EmptyState from "@/components/EmptyState";
 
 interface AlertsModalProps {
   isOpen: boolean;
@@ -110,16 +111,14 @@ export default function AlertsModal({
               </p>
             </div>
           ) : alerts.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-[var(--optimal-green)]/40" />
-              </div>
-              <p className="text-white font-black text-sm mb-1 uppercase tracking-wider">
-                {t("alerts.emptyTitle")}
-              </p>
-              <p className="text-xs text-[var(--text-muted)]">
-                {t("alerts.emptyDesc")}
-              </p>
+            <div className="py-20">
+              <EmptyState
+                title={t("alerts.emptyTitle")}
+                description={t("alerts.emptyDesc")}
+                icon={CheckCircle}
+                iconClassName="text-[var(--optimal-green)]/40"
+                className="bg-transparent border-none"
+              />
             </div>
           ) : (
             alerts.map((alert) => (
