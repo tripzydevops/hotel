@@ -215,6 +215,17 @@ class ScraperAgent:
                 results.append(result)
                 return result
 
+            except Exception as e:
+                print(f"[ScraperAgent] Critical Error processing {hotel_name}: {e}")
+                error_result = {
+                    "hotel_id": hotel["id"],
+                    "hotel_name": hotel_name,
+                    "status": "error",
+                    "error": str(e)
+                }
+                results.append(error_result)
+                return error_result
+
         # Run all hotels in parallel with semaphore control
         await asyncio.gather(*(fetch_hotel(h) for h in hotels))
         return results
