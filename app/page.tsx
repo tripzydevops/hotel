@@ -372,6 +372,22 @@ export default function Dashboard() {
 
           {data?.competitors?.length && (
             <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
+              {data.next_scan_at && (
+                <div className="text-right pr-4 border-r border-white/5">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
+                    {t("dashboard.nextScheduledScan")}
+                  </p>
+                  <p className="text-sm font-black text-[var(--soft-gold)]">
+                    {new Date(data.next_scan_at).toLocaleTimeString(
+                      locale === "tr" ? "tr-TR" : "en-US",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}
+                  </p>
+                </div>
+              )}
               <div className="text-right">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
                   {t("dashboard.marketPulse")}
@@ -506,8 +522,8 @@ export default function Dashboard() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{
-                            duration: 0.4,
-                            delay: 0.1 * (index + 1),
+                            duration: 0.3,
+                            delay: 0.05 * (index + 1),
                           }}
                           className="col-span-1"
                         >

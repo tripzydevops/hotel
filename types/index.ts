@@ -117,6 +117,7 @@ export interface DashboardData {
   scan_history: QueryLog[];
   recent_sessions: ScanSession[];
   unread_alerts_count: number;
+  next_scan_at?: string;
   last_updated: string;
 }
 

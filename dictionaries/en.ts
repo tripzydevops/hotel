@@ -32,7 +32,8 @@ export const en = {
     checkIn: "Check-in",
     checkOut: "Check-out",
     loadingError: "Failed to load dashboard data.",
-    footerCopyright: "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
+    footerCopyright:
+      "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
@@ -55,6 +56,7 @@ export const en = {
     title: "Rate Monitor",
     subtitle: "Direct intelligence for revenue management",
     marketPulse: "Market Pulse",
+    nextScheduledScan: "Next Scheduled Scan",
     yieldRisk: "Yield Risk Area",
     marketOpportunity: "Market Opportunity",
     avgCompetitor: "Avg Competitor",
@@ -95,11 +97,13 @@ export const en = {
     lockedDesc: "Upgrade to Enterprise to unlock full market intelligence.",
     unlockButton: "Unlock Enterprise Features",
     visualIntel: "Visual Intelligence",
-    visualIntelDesc: "Access high-resolution image galleries to analyze competitor presentation.",
+    visualIntelDesc:
+      "Access high-resolution image galleries to analyze competitor presentation.",
     featureAnalysis: "Feature Analysis",
     featureAnalysisDesc: "Deep dive into competitor amenities and facilities.",
     marketDepth: "Market Depth",
-    marketDepthDesc: "See full competitor pricing across multiple vendors (Expedia, Booking, Agoda, etc.).",
+    marketDepthDesc:
+      "See full competitor pricing across multiple vendors (Expedia, Booking, Agoda, etc.).",
     noImages: "No images captured for this hotel.",
     noAmenities: "No amenities captured for this hotel.",
     noOffers: "No additional offers found in this scan.",
@@ -228,10 +232,13 @@ export const en = {
     marketComparison: "Market Comparison",
     proTip: "Pro Insight",
     noHistoryData: "No historical data available for this period",
-    lowPosition: "You are positioned below the market average. Consider raising rates to capture more yield.",
-    highPosition: "You are positioned above the market average. Monitor occupancy levels closely.",
+    lowPosition:
+      "You are positioned below the market average. Consider raising rates to capture more yield.",
+    highPosition:
+      "You are positioned above the market average. Monitor occupancy levels closely.",
     highVolatility: "High market volatility detected. Review rates daily.",
-    lowVolatility: "Market variances are low. Stable pricing strategy recommended.",
+    lowVolatility:
+      "Market variances are low. Stable pricing strategy recommended.",
     currencyLabel: "Currency",
     strategicIntelligence: "Strategic Intelligence",
     ariLabel: "Average Rate Index (ARI)",
@@ -249,11 +256,13 @@ export const en = {
   },
   subscription: {
     title: "Subscription Plans",
-    subtitle: "Choose the plan that fits your growth. You are currently on {0}.",
+    subtitle:
+      "Choose the plan that fits your growth. You are currently on {0}.",
     mostPopular: "Most Popular",
     currentPlan: "Current Plan",
     upgrade: "Upgrade",
-    contactSales: "Needs enterprise-grade compliance? Contact Sales for volume licensing.",
+    contactSales:
+      "Needs enterprise-grade compliance? Contact Sales for volume licensing.",
   },
   alerts: {
     title: "Alert Center",

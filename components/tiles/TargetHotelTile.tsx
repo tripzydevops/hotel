@@ -53,6 +53,7 @@ export default function TargetHotelTile(props: TargetHotelTileProps) {
       {...props}
       variant="target"
       footerStats={true}
+      priority={true}
       headerBadges={
         <span className="text-[10px] uppercase tracking-widest text-[var(--soft-gold)] font-bold bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-full">
           {t("common.myHotel")}

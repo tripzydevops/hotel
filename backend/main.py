@@ -416,7 +416,29 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             recent_sessions = sess_res.data or []
         except Exception: pass
 
-        # 4. Final Serialized Response
+        # 4. Next Scan calculation
+        next_scan_at = None
+        try:
+            settings_res = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
+            if settings_res.data:
+                freq = settings_res.data[0].get("check_frequency_minutes", 0)
+                if freq > 0 and hotel_ids:
+                    # Use last_log definition from earlier check if possible, or fetch
+                    last_log_res = db.table("price_logs") \
+                        .select("recorded_at") \
+                        .in_("hotel_id", hotel_ids) \
+                        .order("recorded_at", desc=True) \
+                        .limit(1) \
+                        .execute()
+                    
+                    if last_log_res.data:
+                        last_run_iso = last_log_res.data[0]["recorded_at"]
+                        last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
+                        next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
+        except Exception as e:
+            print(f"NextScanCalc Error: {e}")
+
+        # 5. Final Serialized Response
         final_response = {
             "target_hotel": target_hotel,
             "competitors": competitors,
@@ -424,6 +446,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             "scan_history": scan_history,
             "recent_sessions": recent_sessions,
             "unread_alerts_count": unread_count,
+            "next_scan_at": next_scan_at,
             "last_updated": datetime.now(timezone.utc).isoformat()
         }
         

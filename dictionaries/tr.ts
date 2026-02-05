@@ -32,7 +32,8 @@ export const tr = {
     checkIn: "Giriş",
     checkOut: "Çıkış",
     loadingError: "Panel verileri yüklenemedi.",
-    footerCopyright: "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
+    footerCopyright:
+      "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
@@ -55,6 +56,7 @@ export const tr = {
     title: "Fiyat Takibi",
     subtitle: "Gelir yönetimi için doğrudan istihbarat",
     marketPulse: "Pazar Nabzı",
+    nextScheduledScan: "Sonraki Planlı Tarama",
     yieldRisk: "Verimlilik Riski Alanı",
     marketOpportunity: "Pazar Fırsatı",
     avgCompetitor: "Ort. Rakip",
@@ -92,14 +94,18 @@ export const tr = {
     price: "Fiyat",
     diff: "Fark",
     lockedTitle: "{0} Kilitli",
-    lockedDesc: "Tam pazar istihbaratının kilidini açmak için Enterprise'a yükseltin.",
+    lockedDesc:
+      "Tam pazar istihbaratının kilidini açmak için Enterprise'a yükseltin.",
     unlockButton: "Enterprise Özelliklerini Aç",
     visualIntel: "Görsel İstihbarat",
-    visualIntelDesc: "Rakip sunumunu analiz etmek için yüksek çözünürlüklü resim galerilerine erişin.",
+    visualIntelDesc:
+      "Rakip sunumunu analiz etmek için yüksek çözünürlüklü resim galerilerine erişin.",
     featureAnalysis: "Özellik Analizi",
-    featureAnalysisDesc: "Rakip olanaklarını ve tesislerini derinlemesine inceleyin.",
+    featureAnalysisDesc:
+      "Rakip olanaklarını ve tesislerini derinlemesine inceleyin.",
     marketDepth: "Pazar Derinliği",
-    marketDepthDesc: "Birden fazla satıcıda (Expedia, Booking, Agoda vb.) tam rakip fiyatlarını görün.",
+    marketDepthDesc:
+      "Birden fazla satıcıda (Expedia, Booking, Agoda vb.) tam rakip fiyatlarını görün.",
     noImages: "Bu otel için yakalanan resim yok.",
     noAmenities: "Bu otel için yakalanan olanak yok.",
     noOffers: "Bu taramada ek teklif bulunamadı.",
@@ -196,7 +202,8 @@ export const tr = {
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",
-    subtitle: "Geçmiş tarama kayıtları ve dışa aktarılabilir istihbarat özetleri.",
+    subtitle:
+      "Geçmiş tarama kayıtları ve dışa aktarılabilir istihbarat özetleri.",
     weeklySummary: "Haftalık Özet",
     totalPulses: "Toplam Nabız Taraması",
     activeIntelligence: "Aktif İstihbarat",
@@ -228,10 +235,14 @@ export const tr = {
     marketComparison: "Pazar Karşılaştırması",
     proTip: "Profesyonel İpucu",
     noHistoryData: "Bu dönem için geçmiş veri bulunmuyor",
-    lowPosition: "Pazar ortalamasının altındasınız. Getiriyi artırmak için fiyatları yükseltmeyi düşünün.",
-    highPosition: "Pazar ortalamasının üzerindesiniz. Doluluk oranlarını yakından takip edin.",
-    highVolatility: "Yüksek pazar oynaklığı tespit edildi. Oranları günlük olarak inceleyin.",
-    lowVolatility: "Pazar varyansları düşük. İstikrarlı fiyatlandırma stratejisi önerilir.",
+    lowPosition:
+      "Pazar ortalamasının altındasınız. Getiriyi artırmak için fiyatları yükseltmeyi düşünün.",
+    highPosition:
+      "Pazar ortalamasının üzerindesiniz. Doluluk oranlarını yakından takip edin.",
+    highVolatility:
+      "Yüksek pazar oynaklığı tespit edildi. Oranları günlük olarak inceleyin.",
+    lowVolatility:
+      "Pazar varyansları düşük. İstikrarlı fiyatlandırma stratejisi önerilir.",
     currencyLabel: "Para Birimi",
     strategicIntelligence: "Stratejik İstihbarat",
     ariLabel: "Ortalama Fiyat Endeksi (ARI)",
@@ -253,7 +264,8 @@ export const tr = {
     mostPopular: "En Popüler",
     currentPlan: "Mevcut Plan",
     upgrade: "Yükselt",
-    contactSales: "Kurumsal uyumluluk mu gerekiyor? Toplu lisanslama için Satışla İletişime Geçin.",
+    contactSales:
+      "Kurumsal uyumluluk mu gerekiyor? Toplu lisanslama için Satışla İletişime Geçin.",
   },
   alerts: {
     title: "Alarm Merkezi",

@@ -288,6 +288,7 @@ class DashboardResponse(BaseModel):
     scan_history: List[QueryLog] = []
     recent_sessions: List[ScanSession] = []
     unread_alerts_count: int = 0
+    next_scan_at: Optional[datetime] = None
     last_updated: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:

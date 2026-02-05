@@ -50,6 +50,7 @@ export interface HotelTileProps {
   isUndercut?: boolean;
   headerBadges?: ReactNode;
   footerStats?: boolean;
+  priority?: boolean;
 }
 
 export default function HotelTile(props: HotelTileProps) {
@@ -83,6 +84,7 @@ export default function HotelTile(props: HotelTileProps) {
     isUndercut,
     headerBadges,
     footerStats = false,
+    priority = false,
   } = props;
 
   const formatPrice = (price: number) => {
@@ -168,7 +170,8 @@ export default function HotelTile(props: HotelTileProps) {
                 alt={name}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 48px, 64px"
+                sizes={isTarget ? "(max-width: 640px) 100vw, 800px" : "64px"}
+                priority={priority}
                 // @ts-ignore
                 iconClassName={
                   isTarget

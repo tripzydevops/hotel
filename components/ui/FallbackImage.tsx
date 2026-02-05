@@ -7,6 +7,7 @@ import { Hotel, ImageOff } from "lucide-react";
 interface FallbackImageProps extends Omit<ImageProps, "onError"> {
   fallbackType?: "hotel" | "generic";
   iconClassName?: string;
+  priority?: boolean;
 }
 
 export default function FallbackImage({
@@ -14,6 +15,7 @@ export default function FallbackImage({
   alt,
   fallbackType = "hotel",
   iconClassName = "w-8 h-8 text-[var(--text-muted)]",
+  priority = false,
   ...props
 }: FallbackImageProps) {
   const [error, setError] = useState(false);
