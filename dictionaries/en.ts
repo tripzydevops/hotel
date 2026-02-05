@@ -4,6 +4,8 @@ export const en = {
     analysis: "Analysis",
     reports: "Reports",
     settings: "Settings",
+    alerts: "Alerts",
+    profile: "Profile",
     signIn: "Sign In",
     signOut: "Sign Out",
     getStarted: "Get Started",

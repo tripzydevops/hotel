@@ -4,6 +4,8 @@ export const tr = {
     analysis: "Analiz",
     reports: "Raporlar",
     settings: "Ayarlar",
+    alerts: "Alarmlar",
+    profile: "Profil",
     signIn: "Giriş Yap",
     signOut: "Çıkış Yap",
     getStarted: "Başlayın",
