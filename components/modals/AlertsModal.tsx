@@ -5,7 +5,7 @@ import { X, Bell, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Alert } from "@/types";
 import { useI18n } from "@/lib/i18n";
-import EmptyState from "@/components/EmptyState";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface AlertsModalProps {
   isOpen: boolean;

@@ -21,12 +21,6 @@ import {
   HotelWithPrice,
 } from "@/types";
 import AddHotelModal from "@/components/modals/AddHotelModal";
-import ScanSessionModal from "@/components/modals/ScanSessionModal";
-import ScanSettingsModal from "@/components/modals/ScanSettingsModal";
-import HotelDetailsModal from "@/components/modals/HotelDetailsModal";
-import EditHotelModal from "@/components/modals/EditHotelModal";
-import AlertsModal from "@/components/modals/AlertsModal";
-import SubscriptionModal from "@/components/modals/SubscriptionModal";
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
 import SearchHistory from "@/components/features/dashboard/SearchHistory";
@@ -44,12 +38,20 @@ import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 
 // Lazy load heavy modals to improve initial load performance
-const ScanSessionModal = lazy(() => import("@/components/ScanSessionModal"));
-const AlertsModal = lazy(() => import("@/components/AlertsModal"));
-const ScanSettingsModal = lazy(() => import("@/components/ScanSettingsModal"));
-const EditHotelModal = lazy(() => import("@/components/EditHotelModal"));
-const SubscriptionModal = lazy(() => import("@/components/SubscriptionModal"));
-const HotelDetailsModal = lazy(() => import("@/components/HotelDetailsModal"));
+const ScanSessionModal = lazy(
+  () => import("@/components/modals/ScanSessionModal"),
+);
+const AlertsModal = lazy(() => import("@/components/modals/AlertsModal"));
+const ScanSettingsModal = lazy(
+  () => import("@/components/modals/ScanSettingsModal"),
+);
+const EditHotelModal = lazy(() => import("@/components/modals/EditHotelModal"));
+const SubscriptionModal = lazy(
+  () => import("@/components/modals/SubscriptionModal"),
+);
+const HotelDetailsModal = lazy(
+  () => import("@/components/modals/HotelDetailsModal"),
+);
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -262,7 +264,9 @@ export default function Dashboard() {
         <ScanSettingsModal
           isOpen={isScanSettingsOpen}
           onClose={() => setIsScanSettingsOpen(false)}
-          onScan={handleScan}
+          onScan={async (options) => {
+            await handleScan(options);
+          }}
           onUpgrade={() => {
             setIsScanSettingsOpen(false);
             setIsBillingOpen(true);

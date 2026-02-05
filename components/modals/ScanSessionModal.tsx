@@ -17,7 +17,7 @@ import {
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import EmptyState from "@/components/EmptyState";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface ScanSessionModalProps {
   isOpen: boolean;
