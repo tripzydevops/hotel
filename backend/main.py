@@ -9,6 +9,10 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Req
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timezone, timedelta
+try:
+    from backend.debug_routes import *
+except: pass
+
 from uuid import UUID
 from dotenv import load_dotenv
 # Load environment variables from .env and .env.local (Vercel style)
