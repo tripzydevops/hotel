@@ -268,6 +268,26 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         "last_updated": datetime.now(timezone.utc).isoformat()
     }
 
+    # Security: Check if user is accessing their own data OR is an admin
+    if str(current_user.id) != str(user_id):
+        # Check if admin
+        is_admin = False
+        try:
+            # Re-use admin check logic (simplified here)
+            email = current_user.email
+            if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
+                is_admin = True
+            else:
+                # DB check
+                profile = db.table("user_profiles").select("role").eq("user_id", current_user.id).limit(1).execute()
+                if profile.data and profile.data[0].get("role") == "admin":
+                    is_admin = True
+        except Exception as e:
+            print(f"Impersonation Auth Check Failed: {e}")
+        
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Unauthorized access to this dashboard")
+
     try:
         if not db:
             return JSONResponse(content=fallback_data)
