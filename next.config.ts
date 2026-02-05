@@ -23,6 +23,30 @@ const nextConfig = {
         protocol: "https",
         hostname: "q-xx.bstatic.com",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.trvl-media.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media-cdn.tripadvisor.com",
+      },
+      {
+        protocol: "https",
+        hostname: "encrypted-tbn0.gstatic.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.expedia.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.hotels.com",
+      },
     ],
   },
 };

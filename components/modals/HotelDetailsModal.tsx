@@ -9,7 +9,7 @@ import {
   Lock,
   Check,
 } from "lucide-react";
-import NextImage from "next/image";
+import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
 
 interface HotelDetailsModalProps {
@@ -61,7 +61,7 @@ export default function HotelDetailsModal({
           <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
             {hotel.image_url ? (
               <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-white/10">
-                <NextImage
+                <FallbackImage
                   src={hotel.image_url}
                   alt={hotel.name}
                   fill
@@ -201,12 +201,14 @@ export default function HotelDetailsModal({
                     key={idx}
                     className="aspect-video rounded-lg overflow-hidden bg-white/5 relative group cursor-pointer"
                   >
-                    <NextImage
+                    <FallbackImage
                       src={img.original || img.thumbnail || ""}
                       alt={`Gallery ${idx}`}
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
                       sizes="(max-width: 768px) 50vw, 33vw"
+                      // @ts-ignore
+                      iconClassName="w-6 h-6 text-white/20"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
                       <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">

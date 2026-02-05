@@ -10,7 +10,8 @@ import {
   Hotel as HotelIcon,
   Tag,
 } from "lucide-react";
-import Image from "next/image";
+import FallbackImage from "@/components/ui/FallbackImage";
+
 import TrendChart from "@/components/analytics/TrendChart";
 import { PricePoint, HotelWithPrice } from "@/types";
 import { useI18n } from "@/lib/i18n";
@@ -157,7 +158,7 @@ export default function HotelTile(props: HotelTileProps) {
             className={`relative ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
           >
             {imageUrl || (images && images.length > 0) ? (
-              <Image
+              <FallbackImage
                 src={
                   imageUrl ||
                   images?.[0]?.original ||
@@ -168,6 +169,12 @@ export default function HotelTile(props: HotelTileProps) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 48px, 64px"
+                // @ts-ignore
+                iconClassName={
+                  isTarget
+                    ? "w-8 h-8 text-[var(--soft-gold)]"
+                    : "w-5 h-5 text-[var(--text-secondary)]"
+                }
               />
             ) : isTarget ? (
               <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
