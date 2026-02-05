@@ -1165,7 +1165,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
                     await run_monitor_background(
                         user_id=UUID(user_id),
                         hotels=hotels,
-                        check_in=None,
+                        options=None,
                         db=db,
                         session_id=session_id
                     )
