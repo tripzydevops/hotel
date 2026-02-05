@@ -131,7 +131,30 @@ class ApiKeyManager:
             self._current_index = 0
             self._exhausted_keys.clear()
             print(f"[SerpApi] Reloaded keys. Total: {len(self._keys)}")
-
+    
+    def get_detailed_status(self) -> Dict[str, Any]:
+        """Get detailed status including per-key usage."""
+        with self._lock:
+            keys_status = []
+            for i, key in enumerate(self._keys):
+                key_info = {
+                    "index": i + 1,
+                    "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
+                    "is_current": i == self._current_index,
+                    "is_exhausted": key in self._exhausted_keys,
+                    "usage": self._usage_counts.get(key, 0)
+                }
+                if key in self._exhausted_keys:
+                    key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
+                keys_status.append(key_info)
+            
+            return {
+                "total_keys": len(self._keys),
+                "active_keys": self.active_keys,
+                "current_index": self._current_index + 1 if self._keys else 0,
+                "keys_status": keys_status
+            }
+    
     def get_status(self) -> Dict[str, Any]:
         """Get current status of all API keys."""
         with self._lock:

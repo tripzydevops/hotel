@@ -56,7 +56,13 @@ const HotelDetailsModal = lazy(
 export default function Dashboard() {
   const { t, locale } = useI18n();
   const { toast } = useToast();
-  const { userId } = useAuth();
+  const { userId: authUserId } = useAuth();
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : null;
+  const impersonateId = searchParams?.get("impersonate");
+  const userId = impersonateId || authUserId;
 
   const {
     data,
@@ -223,7 +229,12 @@ export default function Dashboard() {
   if (!data && loading) return null;
 
   return (
-    <div className="min-h-screen pb-12 relative">
+    <div className="min-h-screen pb-24 relative">
+      {impersonateId && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-white px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-white/20 animate-pulse">
+          IMPERSONATING USER: {impersonateId.split("-")[0]}...
+        </div>
+      )}
       {isLocked && (
         <PaywallOverlay
           reason={

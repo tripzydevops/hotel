@@ -262,23 +262,6 @@ class QueryLog(BaseModel):
         extra = "allow"
 
 
-class ScanSession(BaseModel):
-    id: UUID
-    user_id: UUID
-    session_type: str = "manual"
-    status: str = "pending"
-    hotels_count: int = 0
-    created_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    logs: Optional[List[QueryLog]] = None
-    check_in_date: Optional[date] = None
-    check_out_date: Optional[date] = None
-    adults: Optional[int] = 2
-    currency: Optional[str] = "TRY"
-
-    class Config:
-        from_attributes = True
-        extra = "allow"
 
 
 class DashboardResponse(BaseModel):

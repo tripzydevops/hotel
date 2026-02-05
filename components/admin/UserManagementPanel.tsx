@@ -8,7 +8,9 @@ import {
   Trash2,
   RefreshCw,
   CheckCircle2,
+  CheckCircle2,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { AdminUser } from "@/types";
@@ -218,6 +220,15 @@ const UserManagementPanel = () => {
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() =>
+                        window.open(`/?impersonate=${u.id}`, "_blank")
+                      }
+                      className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
+                      title="View Dashboard (Impersonate)"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => setUserToEdit(u)}
                       className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
