@@ -69,6 +69,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    error_header = f"CRITICAL 500: {str(exc)}"
+    print(error_header)
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": error_header, "trace": traceback.format_exc()},
+    )
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     print(f"VALIDATION ERROR: {exc.errors()}")
@@ -1210,7 +1221,7 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
     return results
 
 
-@app.post("/api/trigger-scan/{user_id}")
+@app.api_route("/api/trigger-scan/{user_id}", methods=["GET", "POST", "OPTIONS"])
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
