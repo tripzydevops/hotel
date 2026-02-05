@@ -177,6 +177,15 @@ const ApiKeysPanel = () => {
             </div>
             <div className="text-2xl font-bold text-[var(--soft-gold)]">
               {keyStatus?.monthly_usage || 0}
+              <span className="text-xs text-[var(--text-muted)] ml-2 font-normal">
+                /{" "}
+                {Math.max(
+                  0,
+                  (keyStatus?.quota_per_key || 250) -
+                    (keyStatus?.monthly_usage || 0),
+                )}{" "}
+                left
+              </span>
             </div>
           </div>
           <div className="bg-black/20 p-4 rounded-lg">

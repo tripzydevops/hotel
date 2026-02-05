@@ -1914,12 +1914,15 @@ async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Cl
     try:
         status = serpapi_client.get_key_status()
         
-        # Calculate monthly usage from query_logs
-        # (This is more accurate as it reflects actual API interactions)
+        # Calculate monthly usage from scan_sessions
         now = datetime.now()
         first_of_month = datetime(now.year, now.month, 1).isoformat()
         
-        usage_res = db.table("query_logs").select("id", count="exact").gte("created_at", first_of_month).execute()
+        usage_res = db.table("scan_sessions") \
+            .select("id", count="exact") \
+            .gte("created_at", first_of_month) \
+            .in_("status", ["completed", "partial"]) \
+            .execute()
         monthly_usage = usage_res.count if usage_res.count is not None else 0
         
         # Add quota info
