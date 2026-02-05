@@ -8,38 +8,37 @@ const API_BASE_URL =
 class ApiClient {
   private async getToken(): Promise<string | null> {
     try {
-        const { createClient } = await import("@/utils/supabase/client");
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        return data.session?.access_token || null;
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token || null;
     } catch (e) {
-        console.error("[ApiClient] Error getting token:", e);
-        return null;
+      console.error("[ApiClient] Error getting token:", e);
+      return null;
     }
   }
 
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    
     // Get session token safely
     const token = await this.getToken();
     if (!token) {
-        console.log("[ApiClient] No token found in session");
+      console.log("[ApiClient] No token found in session");
     }
 
     const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...options?.headers,
+      "Content-Type": "application/json",
+      ...options?.headers,
     };
 
     if (token) {
-        (headers as any)["Authorization"] = `Bearer ${token}`;
+      (headers as any)["Authorization"] = `Bearer ${token}`;
     } else {
-        console.warn(`[ApiClient] Sending request to ${endpoint} WITHOUT token`);
+      console.warn(`[ApiClient] Sending request to ${endpoint} WITHOUT token`);
     }
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
     console.log(`[ApiClient] Fetching from ${API_BASE_URL}: ${fullUrl}`);
-    
+
     const response = await fetch(fullUrl, {
       ...options,
       cache: "no-store",
@@ -50,7 +49,11 @@ class ApiClient {
       let errorMessage = response.statusText;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage;
+        errorMessage =
+          errorData.detail ||
+          errorData.message ||
+          errorData.error ||
+          errorMessage;
       } catch (e) {
         // Ignore JSON parse error, stick to statusText
       }
@@ -64,7 +67,15 @@ class ApiClient {
     return this.fetch<DashboardData>(`/api/dashboard/${userId}`);
   }
 
-  async triggerMonitor(userId: string, options?: { check_in?: string; check_out?: string; adults?: number; currency?: string }): Promise<MonitorResult> {
+  async triggerMonitor(
+    userId: string,
+    options?: {
+      check_in?: string;
+      check_out?: string;
+      adults?: number;
+      currency?: string;
+    },
+  ): Promise<MonitorResult> {
     return this.fetch<MonitorResult>(`/api/monitor/${userId}`, {
       method: "POST",
       body: options ? JSON.stringify(options) : undefined,
@@ -118,14 +129,16 @@ class ApiClient {
     return this.fetch<any>(`/api/profile/${userId}`);
   }
 
-
-
   async searchDirectory(query: string): Promise<any[]> {
     const url = `/api/v1/directory/search?q=${encodeURIComponent(query)}`;
     console.log("[API] Searching:", url);
     return this.fetch<any[]>(url);
   }
-  async addHotelToDirectory(name: string, location: string, serpApiId?: string): Promise<void> {
+  async addHotelToDirectory(
+    name: string,
+    location: string,
+    serpApiId?: string,
+  ): Promise<void> {
     return this.fetch<void>(`/api/admin/directory`, {
       method: "POST",
       body: JSON.stringify({ name, location, serp_api_id: serpApiId }),
@@ -157,7 +170,10 @@ class ApiClient {
     return this.fetch<any>(`/api/analysis/${userId}${params}`);
   }
 
-  async getAnalysisWithFilters(userId: string, queryParams: string): Promise<any> {
+  async getAnalysisWithFilters(
+    userId: string,
+    queryParams: string,
+  ): Promise<any> {
     const params = queryParams ? `?${queryParams}` : "";
     return this.fetch<any>(`/api/analysis/${userId}${params}`);
   }
@@ -178,7 +194,7 @@ class ApiClient {
     const url = `${API_BASE_URL}/api/reports/${userId}/export?format=${format}`;
     const response = await fetch(url, {
       method: "POST",
-      headers
+      headers,
     });
 
     if (!response.ok) throw new Error("Export failed");
@@ -187,29 +203,36 @@ class ApiClient {
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = downloadUrl;
-    a.download = `report_${userId}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `report_${userId}_${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(downloadUrl);
     document.body.removeChild(a);
   }
 
-  async checkScheduledScan(userId: string): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
-    return this.fetch<{ triggered: boolean; session_id?: string; reason?: string }>(`/api/check-scheduled/${userId}`, {
+  async checkScheduledScan(
+    userId: string,
+  ): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
+    return this.fetch<{
+      triggered: boolean;
+      session_id?: string;
+      reason?: string;
+    }>(`/api/trigger-scan/${userId}`, {
       method: "POST",
     });
   }
 
-
-
-  async updateProfile(userId: string, profile: {
-    display_name?: string;
-    company_name?: string;
-    job_title?: string;
-    phone?: string;
-    avatar_url?: string;
-    timezone?: string;
-  }): Promise<any> {
+  async updateProfile(
+    userId: string,
+    profile: {
+      display_name?: string;
+      company_name?: string;
+      job_title?: string;
+      phone?: string;
+      avatar_url?: string;
+      timezone?: string;
+    },
+  ): Promise<any> {
     return this.fetch<any>(`/api/profile/${userId}`, {
       method: "PUT",
       body: JSON.stringify(profile),
@@ -255,7 +278,7 @@ class ApiClient {
   }
 
   // ===== Admin Edit Operations =====
-  
+
   async updateAdminUser(userId: string, updates: any): Promise<any> {
     return this.fetch<any>(`/api/admin/users/${userId}`, {
       method: "PATCH",
