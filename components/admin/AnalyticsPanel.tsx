@@ -4,22 +4,19 @@ import { useState, useEffect } from "react";
 import VisibilityChart from "./VisibilityChart";
 import CompsetGraph from "./CompsetGraph";
 import HeatmapPanel from "./HeatmapPanel";
+import { api } from "@/lib/api";
 export default function AnalyticsPanel() {
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        setLoading(true);
+        setError(null);
         // Fetch from the dashboard API which returns enriched hotel data
         const DEMO_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
-        const res = await fetch(`/api/dashboard/${DEMO_USER_ID}`);
-        if (res.ok) {
-          const dashboardData = await res.json();
-
-          // Format for internal modules
-          setData({
             visibility: dashboardData.scan_history || [],
             network: {
               nodes: [
@@ -48,8 +45,9 @@ export default function AnalyticsPanel() {
             ].filter(Boolean),
           });
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch analytics data:", err);
+        setError(err.message || "Failed to load intelligence data");
       } finally {
         setLoading(false);
       }
@@ -59,6 +57,21 @@ export default function AnalyticsPanel() {
 
   if (loading)
     return <div className="p-8 text-white/50">Loading Intelligence Hub...</div>;
+
+  if (error || !data) {
+    return (
+      <div className="p-8 glass-card border-red-500/20 bg-red-500/5 text-center">
+        <p className="text-red-400 mb-2">Error Loading Intelligence Hub</p>
+        <p className="text-sm text-red-300/60">{error || "No data available."}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm transition-all"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
