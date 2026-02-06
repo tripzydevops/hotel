@@ -35,3 +35,11 @@ The design system embodies a **Sophisticated, Enterprise-Grade** atmosphere. It 
 - **Grid:** Data-dense layouts with max-width containers (`max-w-7xl`).
 - **Whitespace:** Balanced but efficient. Priority is given to data visibility without clutter.
 - **Animations:** Smooth transitions (0.3s cubic-bezier) and subtle fade-ins for a "living" dashboard feel.
+  38:
+  39: ## 6. Branding & Logo Integration
+  40:
+  41: - **Logo Presence**: The logo is the primary anchor of the brand. It should be prominent and clear.
+  42: - **Logo Size**: Minimum height of 40px in the header to ensure legibility of the "Sentinel" motif.
+  43: - **Placement**: Placed with a minimum of 24px padding from the left edge (desktop).
+  44: - **Hierarchy**: The logo icon is the primary visual, followed by the "Hotel Rate Sentinel" name in Montserrat 700.
+  45: - **Transparency**: Assets must have a transparent alpha channel to blend with the glassmorphism header.
