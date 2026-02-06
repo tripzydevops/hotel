@@ -31,7 +31,7 @@ from backend.models.schemas import (
     PlanCreate, PlanUpdate, MembershipPlan,
     LocationRegistry,
     # Admin Models
-    AdminStats, AdminUserCreate, AdminUser, AdminDirectoryEntry, 
+    AdminStats, AdminUserCreate, AdminUser, AdminUserUpdate, AdminDirectoryEntry, 
     AdminLog, AdminDataResponse, AdminSettings, AdminSettingsUpdate
 )
 # Fix: explicit imports to avoid module/instance shadowing
