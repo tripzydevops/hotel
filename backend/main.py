@@ -2543,8 +2543,43 @@ async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase), a
         print(f"Admin Scans Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
         
+
+@app.get("/api/admin/scans/{scan_id}")
+async def get_admin_scan_details(scan_id: str, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """Get full details for a specific scan session."""
+    # Force Service Role for Admin Actions (Bypass RLS)
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
         
-# ===== Admin Global Settings =====
+    try:
+        # 1. Fetch Session
+        session_res = db.table("scan_sessions").select("*").eq("id", scan_id).single().execute()
+        if not session_res.data:
+            raise HTTPException(status_code=404, detail="Scan session not found")
+        
+        session = session_res.data
+        
+        # 2. Fetch Logs (Hotels Checked)
+        logs_res = db.table("query_logs").select("*").eq("session_id", scan_id).execute()
+        logs = logs_res.data or []
+        
+        # 3. Fetch Parity Offers (if we stored them in a separate table, otherwise they might be in logs or we mock them for now. 
+        # In this project, parity offers seem to be part of the analysis result, likely stored in query_logs or computed.
+        # Looking at schema, query_logs has 'parity_offers' JSONB column in some versions, or we just rely on logs.)
+        
+        return {
+            "session": session,
+            "logs": logs
+        }
+    except Exception as e:
+        print(f"Admin Scan Details Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 import time
 import json
