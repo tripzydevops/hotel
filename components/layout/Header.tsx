@@ -46,16 +46,16 @@ export default function Header({
       : "text-[var(--text-secondary)] text-sm hover:text-white transition-colors";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 shadow-2xl shadow-black/40">
+    <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 shadow-lg shadow-black/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-32">
+        <div className="flex items-center justify-between h-24">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-6 group transition-transform duration-300 hover:scale-[1.01]"
+            className="flex items-center gap-4 transition-opacity hover:opacity-90"
           >
-            <div className="flex items-center gap-6">
-              <div className="h-24 w-24 relative drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 relative">
                 <Image
                   src="/logo.png"
                   alt="Hotel Rate Sentinel"
@@ -65,11 +65,11 @@ export default function Header({
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-white font-bold text-3xl leading-none tracking-tighter">
+                <span className="text-white font-bold text-xl leading-none tracking-tight">
                   Hotel Rate{" "}
                   <span className="text-[var(--soft-gold)]">Sentinel</span>
                 </span>
-                <span className="text-sm text-[var(--soft-gold)]/70 uppercase tracking-[0.3em] font-bold mt-2">
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-semibold mt-1">
                   Autonomous Intelligence
                 </span>
               </div>
