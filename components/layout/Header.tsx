@@ -46,16 +46,16 @@ export default function Header({
       : "text-[var(--text-secondary)] text-sm hover:text-white transition-colors";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 shadow-2xl shadow-black/20">
+    <header className="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 shadow-2xl shadow-black/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-32">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-4 group transition-transform duration-300 hover:scale-[1.02]"
+            className="flex items-center gap-6 group transition-transform duration-300 hover:scale-[1.01]"
           >
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 relative drop-shadow-[0_0_15px_rgba(212,175,55,0.2)] group-hover:drop-shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all duration-300">
+            <div className="flex items-center gap-6">
+              <div className="h-24 w-24 relative drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all duration-300">
                 <Image
                   src="/logo.png"
                   alt="Hotel Rate Sentinel"
@@ -65,11 +65,11 @@ export default function Header({
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-white font-bold text-lg leading-none tracking-tight">
+                <span className="text-white font-bold text-3xl leading-none tracking-tighter">
                   Hotel Rate{" "}
                   <span className="text-[var(--soft-gold)]">Sentinel</span>
                 </span>
-                <span className="text-[11px] text-[var(--soft-gold)]/60 uppercase tracking-widest font-semibold mt-1">
+                <span className="text-sm text-[var(--soft-gold)]/70 uppercase tracking-[0.3em] font-bold mt-2">
                   Autonomous Intelligence
                 </span>
               </div>
