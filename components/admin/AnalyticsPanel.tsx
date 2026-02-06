@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import VisibilityChart from "./VisibilityChart";
 import CompsetGraph from "./CompsetGraph";
 import HeatmapPanel from "./HeatmapPanel";
-import { useState, useEffect } from "react";
-
 export default function AnalyticsPanel() {
   const [loading, setLoading] = useState(true);
 
