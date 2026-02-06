@@ -2168,7 +2168,7 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
             if uid not in users_map:
                 users_map[uid] = {
                     "id": uid,
-                    "created_at": p["created_at"],
+                    "created_at": p.get("created_at") or datetime.now().isoformat(),
                     "email": None,
                     "display_name": p.get("display_name"),
                     "company_name": p.get("company_name"),
@@ -2192,11 +2192,12 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 users_map[uid]["plan_type"] = sub_data.get("plan_type") or p.get("plan_type") or "trial"
                 users_map[uid]["subscription_status"] = sub_data.get("subscription_status") or p.get("subscription_status") or "trial"
                 
+                # Check created_at fallback
+                if not users_map[uid].get("created_at"):
+                     users_map[uid]["created_at"] = p.get("created_at") or datetime.now().isoformat()
+                
         # Enrich with counts and schedule info
         final_users = []
-        
-        # Batch fetch last logs for all users to minimize queries
-        # (Naive optimization: fetch recent 1000 logs and group in memory, or just N+1 for now as stats are light)
         
         for uid, udata in users_map.items():
             try:
@@ -2207,16 +2208,20 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 udata["hotel_count"] = h_count
                 udata["scan_count"] = s_count
                 
-                # Schedule Logic
+                # Schedule Logic - Fetch FRESH setting to ensure accuracy
                 user_settings = next((s for s in settings_data if s["user_id"] == uid), None)
+                
+                # Default values
+                udata["scan_frequency_minutes"] = 0
+                udata["next_scan_at"] = None
+
                 if user_settings:
                     freq = user_settings.get("check_frequency_minutes", 0)
                     udata["scan_frequency_minutes"] = freq
                     
-                    if freq > 0:
+                    if freq and freq > 0:
                         # Find last scan time
                         try:
-                            # We need ANY hotel owned by this user
                             last_log = db.table("scan_sessions") \
                                 .select("created_at") \
                                 .eq("user_id", uid) \
@@ -2232,8 +2237,8 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                             else:
                                 # Never scanned, so due now
                                 udata["next_scan_at"] = datetime.now(timezone.utc)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            print(f"Schedule Calc Error for {uid}: {e}")
 
                 final_users.append(AdminUser(**udata))
             except Exception as user_err:
