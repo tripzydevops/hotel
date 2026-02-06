@@ -2978,7 +2978,7 @@ async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(
                 
             queue.append(SchedulerQueueEntry(
                 user_id=uid,
-                user_name=profiles_map.get(uid, "Unknown"),
+                user_name=profiles_map.get(uid) or f"User {str(uid)[:8]}",
                 scan_frequency_minutes=freq,
                 last_scan_at=last_scan_at,
                 next_scan_at=next_scan_at,
