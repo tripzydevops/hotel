@@ -51,14 +51,25 @@ export default function Header({
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="h-10 w-auto relative aspect-[3/1] min-w-[120px]">
-              <Image
-                src="/logo.png"
-                alt="Hotel Plus Logo"
-                fill
-                className="object-contain object-left"
-                priority
-              />
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 relative">
+                <Image
+                  src="/logo.png"
+                  alt="Hotel Rate Sentinel"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white font-bold text-base leading-tight tracking-wide">
+                  Hotel Map{" "}
+                  <span className="text-[var(--soft-gold)]">Sentinel</span>
+                </span>
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-medium">
+                  Rate Intelligence
+                </span>
+              </div>
             </div>
           </Link>
 
