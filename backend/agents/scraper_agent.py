@@ -150,20 +150,6 @@ class ScraperAgent:
                         check_in=check_in,
                         adults=adults
                     )
-                await log_query(
-                    db=self.db,
-                    user_id=user_id,
-                    hotel_name=hotel_name,
-                    location=location,
-                    action_type="monitor",
-                    status=status,
-                    price=price_data.get("price") if price_data else None,
-                    currency=price_data.get("currency") if price_data else None,
-                    vendor=price_data.get("vendor") if price_data else None,
-                    session_id=session_id,
-                    check_in=check_in,
-                    adults=adults
-                )
 
                 result = {
                     "hotel_id": hotel_id,
