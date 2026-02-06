@@ -377,6 +377,15 @@ class AdminDataResponse(BaseModel):
     directory: List[AdminDirectoryEntry] = []
     logs: List[AdminLog] = []
 
+class SchedulerQueueEntry(BaseModel):
+    user_id: UUID
+    user_name: Optional[str] = "Unknown"
+    scan_frequency_minutes: int
+    last_scan_at: Optional[datetime] = None
+    next_scan_at: datetime
+    status: str = "pending" # pending, overdue, running
+    hotel_count: int = 0
+    hotels: List[str] = []
 
 class MarketAnalysis(BaseModel):
     hotel_id: Optional[str] = None

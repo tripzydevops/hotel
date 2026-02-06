@@ -32,7 +32,7 @@ from backend.models.schemas import (
     LocationRegistry,
     # Admin Models
     AdminStats, AdminUserCreate, AdminUser, AdminUserUpdate, AdminDirectoryEntry, 
-    AdminLog, AdminDataResponse, AdminSettings, AdminSettingsUpdate
+    AdminLog, AdminDataResponse, AdminSettings, AdminSettingsUpdate, SchedulerQueueEntry
 )
 # Fix: explicit imports to avoid module/instance shadowing
 from backend.services.serpapi_client import serpapi_client
@@ -977,11 +977,11 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
         # Return a mock response matching schema so UI doesn't crash
         return {
             "user_id": str(user_id),
-            "threshold_percent": settings.threshold_percent,
-            "check_frequency_minutes": settings.check_frequency_minutes,
-            "notifications_enabled": settings.notifications_enabled,
-            "push_enabled": settings.push_enabled,
-            "currency": settings.currency,
+            "threshold_percent": settings.threshold_percent or 2.0,
+            "check_frequency_minutes": settings.check_frequency_minutes if settings.check_frequency_minutes is not None else 144,
+            "notifications_enabled": settings.notifications_enabled if settings.notifications_enabled is not None else True,
+            "push_enabled": settings.push_enabled if settings.push_enabled is not None else False,
+            "currency": settings.currency or "USD",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -989,7 +989,8 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
     # Check if settings exist
     existing = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
     
-    update_data = {k: v for k, v in settings.model_dump().items() if v is not None}
+    update_data = settings.model_dump(exclude_unset=True)
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     if not existing.data:
         # Insert
@@ -1001,7 +1002,10 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
         # Update
         result = db.table("settings").update(update_data).eq("user_id", str(user_id)).execute()
         
-    return result.data[0] if result.data else None
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to update settings")
+        
+    return result.data[0]
 
 
 # ===== User Profile =====
@@ -1231,11 +1235,12 @@ async def scheduled_monitor(background_tasks: BackgroundTasks, db: Client = Depe
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
+    force: bool = Query(False),
     db: Optional[Client] = Depends(get_supabase)
 ):
     """
     Lazy cron workaround for Vercel free tier.
-    Called on dashboard load - checks if user's scan is due and triggers if needed.
+    Called on dashboard load or manually by admin (force=true).
     """
     if not db:
         return {"triggered": False, "reason": "DB_UNAVAILABLE"}
@@ -1249,7 +1254,8 @@ async def check_scheduled_scan(
         settings = settings_result.data[0]
         freq_minutes = settings.get("check_frequency_minutes", 0)
         
-        if freq_minutes <= 0:
+        # If not forcing, check frequency
+        if not force and freq_minutes <= 0:
             return {"triggered": False, "reason": "MANUAL_ONLY"}
         
         # Get user's hotels
@@ -1261,16 +1267,7 @@ async def check_scheduled_scan(
         
         hotel_ids = [h["id"] for h in hotels]
         
-        # Check last scan time
-        last_log = db.table("price_logs") \
-            .select("recorded_at") \
-            .in_("hotel_id", hotel_ids) \
-            .order("recorded_at", desc=True) \
-            .limit(1) \
-            .execute()
-            
         # [Fix: Scan Spam] Check if a scan is ALREADY pending or running in the last 60 mins
-        # This prevents loop triggers if the background task is slow or failed silently.
         pending_scan = db.table("scan_sessions") \
             .select("created_at") \
             .eq("user_id", str(user_id)) \
@@ -1282,18 +1279,28 @@ async def check_scheduled_scan(
         if pending_scan.data:
             pending_time = datetime.fromisoformat(pending_scan.data[0]["created_at"].replace("Z", "+00:00"))
             if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600: # 1 hour timeout
-                 return {"triggered": False, "reason": "ALREADY_PENDING"}
+                 if not force:
+                    return {"triggered": False, "reason": "ALREADY_PENDING"}
         
-        should_run = False
-        if not last_log.data:
-            should_run = True
-        else:
-            last_run_iso = last_log.data[0]["recorded_at"]
-            last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
-            minutes_since = (datetime.now(timezone.utc) - last_run).total_seconds() / 60
-            
-            if minutes_since >= freq_minutes:
+        should_run = force
+        if not should_run:
+            # Check last scan time
+            last_log = db.table("price_logs") \
+                .select("recorded_at") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(1) \
+                .execute()
+                
+            if not last_log.data:
                 should_run = True
+            else:
+                last_run_iso = last_log.data[0]["recorded_at"]
+                last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
+                minutes_since = (datetime.now(timezone.utc) - last_run).total_seconds() / 60
+                
+                if minutes_since >= freq_minutes:
+                    should_run = True
         
         if should_run:
             # Create session
@@ -1301,7 +1308,7 @@ async def check_scheduled_scan(
             try:
                 session_result = db.table("scan_sessions").insert({
                     "user_id": str(user_id),
-                    "session_type": "scheduled",
+                    "session_type": "scheduled" if not force else "manual_admin",
                     "hotels_count": len(hotels),
                     "status": "pending"
                 }).execute()
@@ -2894,3 +2901,99 @@ async def delete_admin_plan(plan_id: UUID, db: Optional[Client] = Depends(get_su
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(400, f"Failed to delete plan: {str(e)}")
+
+
+@app.get("/api/admin/scheduler/queue", response_model=List[SchedulerQueueEntry])
+async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """Fetch upcoming scheduled scans for all active users."""
+    # Force Service Role for Admin Actions
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+
+    try:
+        # 1. Fetch all users with frequencies > 0
+        settings_res = db.table("settings").select("user_id, check_frequency_minutes").gt("check_frequency_minutes", 0).execute()
+        user_settings = settings_res.data or []
+        
+        if not user_settings:
+            return []
+            
+        user_ids = [s["user_id"] for s in user_settings]
+        
+        # 2. Fetch user names
+        profiles_res = db.table("user_profiles").select("user_id, display_name").in_("user_id", user_ids).execute()
+        profiles_map = {p["user_id"]: p.get("display_name", "Unknown") for p in (profiles_res.data or [])}
+        
+        # 3. Fetch hotel counts
+        hotels_res = db.table("hotels").select("user_id, name").in_("user_id", user_ids).execute()
+        hotels_data = hotels_res.data or []
+        user_hotels = {}
+        for h in hotels_data:
+            uid = h["user_id"]
+            if uid not in user_hotels: user_hotels[uid] = []
+            user_hotels[uid].append(h["name"])
+            
+        # 4. Fetch latest scan sessions
+        sessions_res = db.table("scan_sessions") \
+            .select("user_id, created_at, status") \
+            .in_("user_id", user_ids) \
+            .order("created_at", desc=True) \
+            .execute()
+            
+        # Group by user (first one is latest)
+        latest_sessions = {}
+        for s in (sessions_res.data or []):
+            if s["user_id"] not in latest_sessions:
+                latest_sessions[s["user_id"]] = s
+                
+        # 5. Build Queue Entries
+        queue = []
+        now = datetime.now(timezone.utc)
+        
+        for s in user_settings:
+            uid = s["user_id"]
+            freq = s["check_frequency_minutes"]
+            last_session = latest_sessions.get(uid)
+            
+            last_scan_at = None
+            next_scan_at = None
+            status = "pending"
+            
+            if last_session:
+                last_scan_at = datetime.fromisoformat(last_session["created_at"].replace("Z", "+00:00"))
+                next_scan_at = last_scan_at + timedelta(minutes=freq)
+                
+                if last_session["status"] == "processing" or last_session["status"] == "queued":
+                    status = "running"
+                elif next_scan_at < now:
+                    status = "overdue"
+            else:
+                # Never scanned, due now
+                next_scan_at = now
+                status = "pending"
+                
+            queue.append(SchedulerQueueEntry(
+                user_id=uid,
+                user_name=profiles_map.get(uid, "Unknown"),
+                scan_frequency_minutes=freq,
+                last_scan_at=last_scan_at,
+                next_scan_at=next_scan_at,
+                status=status,
+                hotel_count=len(user_hotels.get(uid, [])),
+                hotels=user_hotels.get(uid, [])[:5] # Limit hotel names shown
+            ))
+            
+        # Sort by next_scan_at
+        queue.sort(key=lambda x: x.next_scan_at)
+        
+        return queue
+        
+    except Exception as e:
+        print(f"Scheduler Queue Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

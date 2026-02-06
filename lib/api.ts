@@ -1,4 +1,15 @@
-import { DashboardData, MonitorResult, Alert, QueryLog } from "@/types";
+import {
+  DashboardData,
+  MonitorResult,
+  Alert,
+  QueryLog,
+  AdminStats,
+  AdminUser,
+  AdminDirectoryEntry,
+  DirectoryEntry,
+  AdminLog,
+  KeyStatus,
+} from "@/types";
 
 const isProduction = process.env.NODE_ENV === "production";
 const API_BASE_URL =
@@ -212,12 +223,14 @@ class ApiClient {
 
   async checkScheduledScan(
     userId: string,
+    force: boolean = false,
   ): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
+    const params = force ? "?force=true" : "";
     return this.fetch<{
       triggered: boolean;
       session_id?: string;
       reason?: string;
-    }>(`/api/trigger-scan/${userId}`, {
+    }>(`/api/trigger-scan/${userId}${params}`, {
       method: "POST",
     });
   }
@@ -390,6 +403,10 @@ class ApiClient {
 
   async getAdminProviders() {
     return this.fetch<any[]>("/api/admin/providers");
+  }
+
+  async getSchedulerQueue() {
+    return this.fetch<any[]>("/api/admin/scheduler/queue");
   }
 }
 
