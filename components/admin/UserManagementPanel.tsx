@@ -180,6 +180,7 @@ const UserManagementPanel = () => {
             <tr>
               <th className="p-4">User</th>
               <th className="p-4">Plan / Status</th>
+              <th className="p-4">Schedule</th>
               <th className="p-4">Hotels</th>
               <th className="p-4">Scans</th>
               <th className="p-4">Created</th>
@@ -211,6 +212,26 @@ const UserManagementPanel = () => {
                       {u.subscription_status || "trial"}
                     </span>
                   </div>
+                </td>
+                <td className="p-4">
+                  {u.scan_frequency_minutes && u.scan_frequency_minutes > 0 ? (
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1 text-[var(--soft-gold)] text-xs font-bold">
+                        <RefreshCw className="w-3 h-3" />
+                        Every {Math.round(u.scan_frequency_minutes / 60)}h
+                      </div>
+                      <span className="text-[10px] text-[var(--text-muted)] mt-1">
+                        Next:{" "}
+                        {u.next_scan_at
+                          ? new Date(u.next_scan_at).toLocaleString()
+                          : "Pending"}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[var(--text-muted)] text-xs">
+                      Manual Only
+                    </span>
+                  )}
                 </td>
                 <td className="p-4 text-white">{u.hotel_count}</td>
                 <td className="p-4 text-white">{u.scan_count}</td>

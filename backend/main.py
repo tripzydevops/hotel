@@ -2079,7 +2079,7 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
     try:
         # Get base user info from profiles
         profiles = db.table("user_profiles").select("*").execute().data or []
-        settings_data = db.table("settings").select("user_id, created_at, notification_email").execute().data or []
+        settings_data = db.table("settings").select("user_id, created_at, notification_email, check_frequency_minutes").execute().data or []
         sub_profiles = db.table("profiles").select("*").execute().data or []
         
         # Create map of sub profiles
@@ -2132,8 +2132,12 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 users_map[uid]["plan_type"] = sub_data.get("plan_type") or p.get("plan_type") or "trial"
                 users_map[uid]["subscription_status"] = sub_data.get("subscription_status") or p.get("subscription_status") or "trial"
                 
-        # Enrich with counts (this could be slow with many users, optimize later)
+        # Enrich with counts and schedule info
         final_users = []
+        
+        # Batch fetch last logs for all users to minimize queries
+        # (Naive optimization: fetch recent 1000 logs and group in memory, or just N+1 for now as stats are light)
+        
         for uid, udata in users_map.items():
             try:
                 # Count hotels
@@ -2142,10 +2146,38 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
                 
                 udata["hotel_count"] = h_count
                 udata["scan_count"] = s_count
+                
+                # Schedule Logic
+                user_settings = next((s for s in settings_data if s["user_id"] == uid), None)
+                if user_settings:
+                    freq = user_settings.get("check_frequency_minutes", 0)
+                    udata["scan_frequency_minutes"] = freq
+                    
+                    if freq > 0:
+                        # Find last scan time
+                        try:
+                            # We need ANY hotel owned by this user
+                            last_log = db.table("scan_sessions") \
+                                .select("created_at") \
+                                .eq("user_id", uid) \
+                                .order("created_at", desc=True) \
+                                .limit(1) \
+                                .execute()
+                                
+                            if last_log.data:
+                                last_run_iso = last_log.data[0]["created_at"]
+                                last_run = datetime.fromisoformat(last_run_iso.replace("Z", "+00:00"))
+                                next_run = last_run + timedelta(minutes=freq)
+                                udata["next_scan_at"] = next_run
+                            else:
+                                # Never scanned, so due now
+                                udata["next_scan_at"] = datetime.now(timezone.utc)
+                        except Exception:
+                            pass
+
                 final_users.append(AdminUser(**udata))
             except Exception as user_err:
                 print(f"Error processing user {uid}: {user_err}")
-                # Still include user with 0 counts
                 final_users.append(AdminUser(**udata))
             
         return final_users

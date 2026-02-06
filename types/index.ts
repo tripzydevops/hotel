@@ -158,6 +158,8 @@ export interface AdminUser {
   plan_type?: "trial" | "starter" | "pro" | "enterprise";
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
   current_period_end?: string;
+  scan_frequency_minutes?: number;
+  next_scan_at?: string;
 }
 
 export interface DirectoryEntry {

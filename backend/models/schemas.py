@@ -340,6 +340,8 @@ class AdminUser(BaseModel):
     last_active: Optional[datetime] = None
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
+    scan_frequency_minutes: Optional[int] = 0
+    next_scan_at: Optional[datetime] = None
 
 class AdminDirectoryEntry(BaseModel):
     id: Any  # Can be UUID string or int depending on DB
