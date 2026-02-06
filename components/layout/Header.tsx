@@ -52,7 +52,7 @@ export default function Header({
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 relative">
+              <div className="h-12 w-12 relative">
                 <Image
                   src="/logo.png"
                   alt="Hotel Rate Sentinel"
