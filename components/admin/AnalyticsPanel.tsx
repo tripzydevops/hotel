@@ -17,6 +17,11 @@ export default function AnalyticsPanel() {
         setError(null);
         // Fetch from the dashboard API which returns enriched hotel data
         const DEMO_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+        const dashboardData = await api.getDashboard(DEMO_USER_ID);
+
+        if (dashboardData) {
+          // Format for internal modules
+          setData({
             visibility: dashboardData.scan_history || [],
             network: {
               nodes: [
@@ -44,6 +49,7 @@ export default function AnalyticsPanel() {
               ...(dashboardData.competitors || []),
             ].filter(Boolean),
           });
+        }
         }
       } catch (err: any) {
         console.error("Failed to fetch analytics data:", err);
