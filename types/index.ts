@@ -167,6 +167,13 @@ export interface DirectoryEntry {
   name: string;
   location?: string;
   serp_api_id?: string;
+  property_token?: string; // Added to match backend
+}
+
+export interface AdminDirectoryEntry extends DirectoryEntry {
+  has_alert: boolean;
+  last_price?: number;
+  last_updated?: string;
 }
 
 export interface AdminLog {
@@ -220,4 +227,13 @@ export interface MarketAnalysis {
   quadrant_x: number;
   quadrant_y: number;
   quadrant_label: string;
+}
+
+export interface AdminStats {
+  total_users: number;
+  total_hotels: number;
+  total_scans: number;
+  api_calls_today: number;
+  directory_size: number;
+  service_role_active: boolean;
 }
