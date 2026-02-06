@@ -1981,6 +1981,13 @@ async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Cl
         # Merge individual key status from SerpApiClient
         detailed = serpapi_client.get_detailed_status()
         status["keys_status"] = detailed.get("keys_status", [])
+
+        # Enrich with env debug (ADMIN ONLY)
+        status["env_debug"] = {
+            "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
+            "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
+            "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing"
+        }
         
         return status
     except Exception as e:
@@ -2357,6 +2364,33 @@ async def get_admin_logs(limit: int = 50, db: Client = Depends(get_supabase), ad
             ))
     return logs
 
+
+@app.get("/api/admin/feed")
+async def get_admin_feed(limit: int = 50, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """Get live agent feed logs."""
+    # Force Service Role for Admin Actions (Bypass RLS)
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if admin_key and url:
+        db = create_client(url, admin_key)
+    elif not db:
+        raise HTTPException(status_code=503, detail="Database credentials missing.")
+        
+    try:
+        # Fetch generic query logs
+        # We want the most recent activity across all sessions
+        logs_res = db.table("query_logs") \
+            .select("id, hotel_name, action_type, status, created_at, price, currency") \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+            
+        return logs_res.data or []
+    except Exception as e:
+        print(f"Admin Feed Error: {e}")
+        # Return empty list on failure to keep UI alive
+        return []
 
 # ===== Admin User Edit =====
 

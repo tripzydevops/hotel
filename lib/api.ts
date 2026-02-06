@@ -242,6 +242,10 @@ class ApiClient {
     return this.fetch<AdminStats>("/api/admin/stats");
   }
 
+  async getAdminFeed(limit: number = 50): Promise<any[]> {
+    return this.fetch(`/api/admin/feed?limit=${limit}`);
+  }
+
   async getAdminUsers(): Promise<any[]> {
     return this.fetch<any[]>("/api/admin/users");
   }

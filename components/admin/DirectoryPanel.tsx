@@ -23,11 +23,16 @@ const DirectoryPanel = () => {
   const [dirName, setDirName] = useState("");
   const [dirLocation, setDirLocation] = useState("");
   const [dirSerpId, setDirSerpId] = useState("");
-  const [dirSuccess, setDirSuccess] = useState(false);
 
-  useEffect(() => {
-    loadDirectory();
-  }, []);
+  // Edit State
+  const [entryToEdit, setEntryToEdit] = useState<DirectoryEntry | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    location: "",
+    serp_api_id: "",
+  });
+
+  const [dirSuccess, setDirSuccess] = useState(false);
 
   const loadDirectory = async () => {
     setLoading(true);
@@ -41,6 +46,10 @@ const DirectoryPanel = () => {
     }
   };
 
+  useEffect(() => {
+    loadDirectory();
+  }, []);
+
   const handleAddDirectory = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -49,12 +58,11 @@ const DirectoryPanel = () => {
         dirLocation,
         dirSerpId || undefined,
       );
-      setDirSuccess(true);
       setDirName("");
       setDirLocation("");
       setDirSerpId("");
       loadDirectory();
-      setTimeout(() => setDirSuccess(false), 3000);
+      toast.success("Added to directory");
     } catch (err: any) {
       toast.error("Failed to add: " + err.message);
     }
@@ -78,6 +86,18 @@ const DirectoryPanel = () => {
       loadDirectory();
     } catch (err: any) {
       toast.error("Sync failed: " + err.message);
+    }
+  };
+
+  const handleUpdateDirectory = async () => {
+    if (!entryToEdit) return;
+    try {
+      await api.updateAdminDirectory(String(entryToEdit.id), editForm);
+      setEntryToEdit(null);
+      loadDirectory();
+      toast.success("Updated successfully");
+    } catch (err: any) {
+      toast.error("Failed to update: " + err.message);
     }
   };
 
@@ -173,12 +193,20 @@ const DirectoryPanel = () => {
                     {d.serp_api_id || "-"}
                   </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => handleDeleteDirectory(d.id)}
-                      className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setEntryToEdit(d)}
+                        className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDirectory(d.id)}
+                        className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -186,6 +214,63 @@ const DirectoryPanel = () => {
           </table>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {entryToEdit && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-card p-6 border border-white/10 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Edit Entry</h3>
+              <button
+                onClick={() => setEntryToEdit(null)}
+                className="text-[var(--text-muted)] hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <input
+                placeholder="Name"
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+              />
+              <input
+                placeholder="Location"
+                value={editForm.location}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, location: e.target.value })
+                }
+                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+              />
+              <input
+                placeholder="SerpApi ID"
+                value={editForm.serp_api_id}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, serp_api_id: e.target.value })
+                }
+                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEntryToEdit(null)}
+                  className="flex-1 py-2 bg-white/5 rounded text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateDirectory}
+                  className="flex-1 py-2 bg-[var(--soft-gold)] text-black font-bold rounded"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

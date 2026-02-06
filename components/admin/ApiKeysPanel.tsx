@@ -278,6 +278,31 @@ const ApiKeysPanel = () => {
             </div>
           )}
         </div>
+
+        {/* Env Debug Section (New) */}
+        {keyStatus?.env_debug && (
+          <div className="bg-black/20 p-4 rounded-lg border border-white/5 font-mono text-xs">
+            <div className="text-[var(--text-muted)] uppercase tracking-wider mb-2 font-bold">
+              Environment Variables
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(keyStatus.env_debug).map(([k, v]) => (
+                <div key={k} className="flex justify-between">
+                  <span className="text-[var(--text-muted)]">{k}</span>
+                  <span
+                    className={
+                      v === "Set"
+                        ? "text-[var(--optimal-green)]"
+                        : "text-red-400"
+                    }
+                  >
+                    {String(v)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
