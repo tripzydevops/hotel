@@ -13,7 +13,8 @@ export default function AnalyticsPanel() {
     async function fetchData() {
       try {
         // Fetch from the dashboard API which returns enriched hotel data
-        const res = await fetch("/api/dashboard");
+        const DEMO_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+        const res = await fetch(`/api/dashboard/${DEMO_USER_ID}`);
         if (res.ok) {
           const dashboardData = await res.json();
 

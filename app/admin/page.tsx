@@ -41,10 +41,6 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
   const loadStats = useCallback(async () => {
     setLoading(true);
     try {
@@ -60,6 +56,10 @@ export default function AdminPage() {
       setLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const TabButton = ({
     id,
