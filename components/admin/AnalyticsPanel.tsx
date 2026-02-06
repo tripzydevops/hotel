@@ -50,7 +50,6 @@ export default function AnalyticsPanel() {
             ].filter(Boolean),
           });
         }
-        }
       } catch (err: any) {
         console.error("Failed to fetch analytics data:", err);
         setError(err.message || "Failed to load intelligence data");
@@ -68,8 +67,10 @@ export default function AnalyticsPanel() {
     return (
       <div className="p-8 glass-card border-red-500/20 bg-red-500/5 text-center">
         <p className="text-red-400 mb-2">Error Loading Intelligence Hub</p>
-        <p className="text-sm text-red-300/60">{error || "No data available."}</p>
-        <button 
+        <p className="text-sm text-red-300/60">
+          {error || "No data available."}
+        </p>
+        <button
           onClick={() => window.location.reload()}
           className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm transition-all"
         >
