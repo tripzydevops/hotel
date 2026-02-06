@@ -63,7 +63,7 @@ export default function Header({
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold text-base leading-tight tracking-wide">
-                  Hotel Map{" "}
+                  Hotel Rate{" "}
                   <span className="text-[var(--soft-gold)]">Sentinel</span>
                 </span>
                 <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-medium">
