@@ -28,6 +28,8 @@ class HotelBase(BaseModel):
     is_target_hotel: bool = False
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     rating: Optional[float] = None
     review_count: Optional[int] = None
     stars: Optional[float] = None
@@ -82,6 +84,7 @@ class PriceLogBase(BaseModel):
     vendor: Optional[str] = Field(default=None, description="The specific booking site (e.g. Booking.com)")
     offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    search_rank: Optional[int] = None
 
 
 class PriceLogCreate(PriceLogBase):
@@ -220,6 +223,7 @@ class PriceWithTrend(BaseModel):
     adults: Optional[int] = None
     room_types: List[Dict[str, Any]] = []
     offers: List[Dict[str, Any]] = []
+    search_rank: Optional[int] = None
 
     class Config:
         extra = "allow"

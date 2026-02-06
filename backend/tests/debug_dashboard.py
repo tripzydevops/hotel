@@ -4,8 +4,6 @@ import sys
 import asyncio
 from dotenv import load_dotenv
 from uuid import UUID
-from datetime import datetime, timezone
-import json
 
 # Add project root to path
 sys.path.append(os.getcwd())
@@ -52,7 +50,7 @@ async def debug_dashboard():
                 # We mock the dependency injection by passing db directly
                 response = await get_dashboard(user_id=user_id, db=db)
                 print(f"   SUCCESS. Hotels: {len(response.competitors) + (1 if response.target_hotel else 0)}")
-            except Exception as e:
+            except Exception:
                 print(f"\n!!! CRASH DETECTED for USER {uid_str} !!!")
                 import traceback
                 traceback.print_exc()

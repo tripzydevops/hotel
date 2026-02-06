@@ -1,6 +1,5 @@
 
 import os
-import asyncio
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -24,7 +23,7 @@ def check_hotel():
     print(f"Checking DB for: {target_name}")
     
     # 1. Search by name (fuzzy)
-    response = supabase.table("hotels").select("*").ilike("name", f"%Ramada Resort by Wyndham Kazdaglari%").execute()
+    response = supabase.table("hotels").select("*").ilike("name", "%Ramada Resort by Wyndham Kazdaglari%").execute()
     
     hotels = response.data
     

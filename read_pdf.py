@@ -1,6 +1,5 @@
 
 import sys
-import os
 
 try:
     from pypdf import PdfReader

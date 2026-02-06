@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote, urlencode
 import time
 import re
-from typing import List, Dict, Optional
+from typing import List, Optional
 from dataclasses import dataclass
 
 # Your Scrape.do API Token

@@ -1,7 +1,6 @@
 
 import os
 import asyncio
-import re
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -70,7 +69,7 @@ async def cleanup():
         except Exception as e:
             print(f"Failed to update {h_id}: {e}")
 
-    print(f"Cleanup complete. Successfully processed updates.")
+    print("Cleanup complete. Successfully processed updates.")
 
 if __name__ == "__main__":
     asyncio.run(cleanup())

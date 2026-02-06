@@ -249,7 +249,7 @@ export default function ReportsPage() {
         settings={profile?.settings || {}}
         onSave={async (settings) => {
           try {
-            await api.updateUserSettings(userId!, settings);
+            await api.updateSettings(userId!, settings);
             setProfile({ ...profile, settings });
           } catch (e) {
             console.error("Failed to save settings", e);
@@ -261,6 +261,7 @@ export default function ReportsPage() {
         isOpen={isAlertsOpen}
         onClose={() => setIsAlertsOpen(false)}
         userId={userId || ""}
+        onUpdate={() => {}}
       />
 
       <SubscriptionModal

@@ -1,7 +1,7 @@
 
 import os
 import asyncio
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -92,7 +92,7 @@ async def backfill_metadata():
         except Exception as e:
             print(f"Error updating session {sid}: {e}")
 
-    print(f"--- Backfill Complete ---")
+    print("--- Backfill Complete ---")
     print(f"Sessions Updated: {updated_sessions}")
     print(f"Logs Updated: {updated_logs}")
 

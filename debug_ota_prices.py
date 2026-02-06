@@ -1,6 +1,4 @@
 import asyncio
-import os
-import json
 from datetime import date, timedelta
 from backend.services.serpapi_client import serpapi_client
 

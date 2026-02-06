@@ -6,7 +6,6 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 import time
-import json
 import re
 
 # Your Scrape.do API Token

@@ -1,5 +1,5 @@
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from backend.services.notification_service import notification_service
 
 class NotifierAgent:

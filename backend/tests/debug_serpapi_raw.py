@@ -22,7 +22,7 @@ async def debug_serpapi():
 
     check_in = (date.today() + timedelta(days=30)).strftime("%Y-%m-%d")
     check_out = (date.today() + timedelta(days=31)).strftime("%Y-%m-%d")
-    query = f"Hilton Garden Inn Balikesir"
+    query = "Hilton Garden Inn Balikesir"
     
     params = {
         "engine": "google_hotels",

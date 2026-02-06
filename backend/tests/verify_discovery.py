@@ -39,7 +39,7 @@ async def test_discovery():
     print(f"  -> Content: Stars: {target.get('stars')}, Rating: {target.get('rating')}")
     
     # 2. Trigger Discovery
-    print(f"\n[SCAN] Scouting for similar rivals...")
+    print("\n[SCAN] Scouting for similar rivals...")
     rivals = await analyst.discover_rivals(target['id'], limit=5)
     
     if not rivals:

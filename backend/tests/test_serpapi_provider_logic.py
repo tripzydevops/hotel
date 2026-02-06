@@ -1,10 +1,7 @@
 
 import asyncio
-import json
 import sys
 import os
-from unittest.mock import MagicMock, AsyncMock
-import httpx
 
 sys.path.append(os.getcwd())
 from backend.services.providers.serpapi_provider import SerpApiProvider

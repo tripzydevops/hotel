@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # Add project root
 sys.path.append(os.getcwd())
 
-from backend.models.schemas import HotelCreate, ScanOptions
+from backend.models.schemas import ScanOptions
 from backend.agents.scraper_agent import ScraperAgent
 from backend.services.provider_factory import ProviderFactory
 from supabase import create_client

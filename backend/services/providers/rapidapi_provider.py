@@ -1,7 +1,6 @@
 import httpx
-import json
 from typing import Optional, Dict, Any, Tuple
-from datetime import date, timedelta
+from datetime import date
 from backend.services.data_provider_interface import HotelDataProvider
 
 class RapidApiProvider(HotelDataProvider):

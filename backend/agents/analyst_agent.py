@@ -1,8 +1,8 @@
-from datetime import datetime, date
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
-from backend.models.schemas import MarketAnalysis, PricePoint, ScanOptions
+from backend.models.schemas import ScanOptions
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
@@ -78,6 +78,7 @@ class AnalystAgent:
                     "check_in_date": check_in_str,
                     "source": price_data.get("source", "serpapi"),
                     "vendor": price_data.get("vendor", "Unknown"),
+                    "search_rank": price_data.get("search_rank"),
                     # Deep Data: Parity Offers & Room Metadata
                     "parity_offers": price_data.get("offers", []), # Mapped from 'offers' in scraper to 'parity_offers' in DB
                     "room_types": price_data.get("room_types", [])
@@ -96,7 +97,10 @@ class AnalystAgent:
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
+                if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
+                if price_data.get("latitude"): meta_update["latitude"] = price_data["latitude"]
+                if price_data.get("longitude"): meta_update["longitude"] = price_data["longitude"]
                 
                 print(f"[AnalystAgent] Updating hotel {hotel_id} metadata: {meta_update}")
                 update_res = self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()

@@ -106,7 +106,7 @@ export default function PriceTrendChart({
               boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
               color: "#fff",
             }}
-            formatter={(value: number) => [
+            formatter={(value: any) => [
               formatPrice(value),
               t("hotelDetails.price"),
             ]}

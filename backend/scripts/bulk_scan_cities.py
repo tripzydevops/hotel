@@ -130,7 +130,7 @@ async def main():
     cities = [args.city] if args.city else TARGET_CITIES
     star_ratings = [4, 5]
     
-    print(f"Starting Bulk Scan")
+    print("Starting Bulk Scan")
     print(f"Dry Run: {args.dry_run}")
     print("="*60)
     

@@ -8,10 +8,9 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 import time
 import re
-import json
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 

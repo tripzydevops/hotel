@@ -1,7 +1,4 @@
 import httpx
-import pytest
-import time
-from uuid import UUID
 
 API_URL = "http://127.0.0.1:8000"
 MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000"

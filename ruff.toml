@@ -1,0 +1,13 @@
+exclude = [
+    ".agent",
+    "backend/scripts",
+    "backend/tests",
+    "scripts",
+    "tests",
+    "log_dump.json",
+    "price_logs_dump.json"
+]
+
+[lint]
+[lint.per-file-ignores]
+"backend/main.py" = ["E402"]

@@ -1,5 +1,4 @@
 import asyncio
-import os
 import json
 from datetime import date, timedelta
 from backend.services.providers.serpapi_provider import SerpApiProvider

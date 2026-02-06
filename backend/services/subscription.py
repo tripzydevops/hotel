@@ -1,7 +1,6 @@
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Tuple
-from uuid import UUID
+from datetime import datetime, timezone
+from typing import Dict, Any, Tuple
 
 # Mock Config (In production, load from DB table 'tier_config')
 TIERS = {

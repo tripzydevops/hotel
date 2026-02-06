@@ -6,8 +6,7 @@ Compares new prices against historical data and generates alerts.
 from typing import Optional, List, Tuple
 from datetime import datetime
 from backend.models import (
-    TrendDirection, AlertType, PriceWithTrend,
-    HotelWithPrice, Alert
+    TrendDirection, AlertType, PriceWithTrend
 )
 
 

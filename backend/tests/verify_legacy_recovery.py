@@ -1,5 +1,4 @@
 import httpx
-import json
 
 API_URL = "http://127.0.0.1:8000"
 # This is the user ID that actually has monitoring logs in the DB

@@ -1,8 +1,4 @@
-import os
-import httpx
-import asyncio
 from dotenv import load_dotenv
-from uuid import UUID
 
 load_dotenv(".env")
 load_dotenv(".env.local", override=True)

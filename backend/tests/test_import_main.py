@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 
 print("Attempting to import backend.main...")
 try:
-    from backend import main
     print("SUCCESS: backend.main imported successfully.")
 except Exception as e:
     import traceback

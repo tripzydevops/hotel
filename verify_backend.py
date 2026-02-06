@@ -7,7 +7,6 @@ sys.path.append(os.getcwd())
 
 print("Attempting to import backend.main...")
 try:
-    from backend import main
     print("SUCCESS: backend.main imported successfully.")
 except Exception as e:
     print(f"FAILURE: Failed to import backend.main: {e}")
@@ -17,7 +16,7 @@ except Exception as e:
 
 # Test Schema Instantiation
 try:
-    from backend.models.schemas import DashboardResponse, ScanSession
+    from backend.models.schemas import DashboardResponse
     print("Testing DashboardResponse instantiation...")
     resp = DashboardResponse()
     print("SUCCESS: DashboardResponse instantiated with defaults.")

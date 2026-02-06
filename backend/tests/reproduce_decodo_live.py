@@ -26,7 +26,7 @@ async def debug_decodo():
     check_in = date.today() + timedelta(days=30)
     check_out = check_in + timedelta(days=1)
     
-    print(f"Querying for: Willmont Hotel Balikesir")
+    print("Querying for: Willmont Hotel Balikesir")
     print(f"Dates: {check_in} to {check_out}")
 
     try:

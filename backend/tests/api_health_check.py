@@ -9,7 +9,7 @@ load_dotenv()
 from backend.services.provider_factory import ProviderFactory
 
 async def test_providers():
-    print(f"--- API Health Check ---")
+    print("--- API Health Check ---")
     print(f"RAPIDAPI_KEY: {'Present' if os.getenv('RAPIDAPI_KEY') else 'MISSING'}")
     print(f"SERPER_API_KEY: {'Present' if os.getenv('SERPER_API_KEY') else 'MISSING'}")
     print(f"SERPAPI_API_KEY: {'Present' if os.getenv('SERPAPI_API_KEY') else 'MISSING'}")
@@ -36,7 +36,7 @@ async def test_providers():
             if res:
                 print(f"  SUCCESS: Price = {res.get('price')} {res.get('currency')} via {res.get('vendor')}")
             else:
-                print(f"  FAILED: Returned None")
+                print("  FAILED: Returned None")
         except Exception as e:
             print(f"  ERROR: {e}")
 

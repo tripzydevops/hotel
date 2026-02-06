@@ -1,5 +1,5 @@
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 def mock_parse_rich_data(data: Dict[str, Any]) -> Dict[str, Any]:
     # Logic copied from serpapi_client.py

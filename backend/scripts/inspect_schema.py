@@ -13,7 +13,7 @@ print(f"DEBUG: Loaded URL: '{url}'")
 print(f"DEBUG: Loaded KEY: '{key[:5]}...' if key else 'None'")
 
 if not url or not key:
-    print(f"Error: Env vars not set.")
+    print("Error: Env vars not set.")
     exit(1)
 
 supabase: Client = create_client(url, key)

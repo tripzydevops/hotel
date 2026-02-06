@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends
+from fastapi import Depends
 from backend.main import get_current_active_user, app
 
 @app.get("/api/debug-auth")

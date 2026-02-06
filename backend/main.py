@@ -4,7 +4,6 @@ Main application with monitoring and API endpoints.
 """
 
 import os
-import asyncio
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
@@ -21,23 +20,18 @@ from fastapi.encoders import jsonable_encoder
 
 from backend.models.schemas import (
     Hotel, HotelCreate, HotelUpdate,
-    PriceLog, PriceLogCreate,
     Settings, SettingsUpdate,
-    Alert, AlertCreate,
-    DashboardResponse, HotelWithPrice, MonitorResult,
-    TrendDirection, QueryLog, PricePoint,
-    MarketAnalysis, ReportsResponse, ScanSession, ScanOptions,
+    Alert, MonitorResult,
+    QueryLog, ScanOptions,
     UserProfile, UserProfileUpdate,
-    PlanCreate, PlanUpdate, MembershipPlan,
-    LocationRegistry,
+    PlanCreate, PlanUpdate, LocationRegistry,
     # Admin Models
     AdminStats, AdminUserCreate, AdminUser, AdminUserUpdate, AdminDirectoryEntry, 
-    AdminLog, AdminDataResponse, AdminSettings, AdminSettingsUpdate, SchedulerQueueEntry
+    AdminLog, AdminSettings, AdminSettingsUpdate, SchedulerQueueEntry
 )
 # Fix: explicit imports to avoid module/instance shadowing
 from backend.services.serpapi_client import serpapi_client
 from backend.services.price_comparator import price_comparator
-from backend.services.notification_service import notification_service
 from backend.services.location_service import LocationService
 from backend.services.provider_factory import ProviderFactory
 
@@ -399,7 +393,8 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                             "check_out": current_price.get("check_out_date"),
                             "adults": current_price.get("adults"),
                             "offers": current_price.get("parity_offers") or current_price.get("offers") or [],
-                            "room_types": current_price.get("room_types") or []
+                            "room_types": current_price.get("room_types") or [],
+                            "search_rank": current_price.get("search_rank")
                         }
                     except Exception as e:
                         print(f"Error building price_info for {hotel.get('name')}: {e}")
@@ -714,7 +709,7 @@ async def run_monitor_background(
         scraper_results = await scraper.run_scan(user_id, hotels, options, session_id)
 
         # 4. Phase 2: Analyst Agent (Intelligence & Persistence)
-        print(f"[Orchestrator] Triggering AnalystAgent for analysis...")
+        print("[Orchestrator] Triggering AnalystAgent for analysis...")
         analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options, session_id=session_id)
 
         # 5. Phase 3: Notifier Agent (Communication)
@@ -2686,7 +2681,6 @@ async def get_admin_scan_details(scan_id: str, db: Client = Depends(get_supabase
 
 
 import time
-import json
 
 
 # Remove local file storage

@@ -2,7 +2,6 @@ import os
 import asyncio
 import json
 from datetime import datetime, timezone
-from uuid import UUID
 from dotenv import load_dotenv
 
 # Set up environment

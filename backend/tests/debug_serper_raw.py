@@ -22,8 +22,8 @@ async def debug_serper():
     # Variations to test
     variations = [
         f"Hilton Garden Inn Balikesir booking {check_in} {check_out}",
-        f"hotel Hilton Garden Inn Balikesir",
-        f"Hilton Garden Inn Balikesir gecelik fiyat", # Turkish intent
+        "hotel Hilton Garden Inn Balikesir",
+        "Hilton Garden Inn Balikesir gecelik fiyat", # Turkish intent
     ]
     
     headers = {

@@ -2,8 +2,6 @@
 import os
 import asyncio
 import sys
-import io
-from typing import List
 from dotenv import load_dotenv
 
 # Force UTF-8 output
@@ -126,7 +124,7 @@ async def main():
     # Randomize to avoid getting stuck on one region if interrupted
     random.shuffle(unique_locations)
     
-    print(f"Starting Premium Population Scan")
+    print("Starting Premium Population Scan")
     print(f"Total target locations: {len(unique_locations)}")
     print("=" * 60)
     

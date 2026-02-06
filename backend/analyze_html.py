@@ -4,7 +4,6 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 from bs4 import BeautifulSoup
 import json
-import re
 
 with open('trivago_debug.html', 'r', encoding='utf-8') as f:
     html = f.read()

@@ -3,10 +3,9 @@ Location Service for Autonomous Location Discovery.
 Handles tracking and deduplication of countries, cities, and towns.
 """
 
-from typing import List, Optional
+from typing import List
 from datetime import datetime
 from supabase import Client
-from backend.models.schemas import LocationRegistry
 
 class LocationService:
     def __init__(self, db: Client):

@@ -1,7 +1,5 @@
-import os
 import asyncio
 import httpx
-from uuid import UUID
 from dotenv import load_dotenv
 
 load_dotenv(".env")
@@ -15,7 +13,7 @@ async def test_search_logging():
     
     async with httpx.AsyncClient() as client:
         # 0. Health check
-        print(f"Step 0: Checking health...")
+        print("Step 0: Checking health...")
         health_resp = await client.get(f"{API_URL}/api/health")
         print(f"  Health: {health_resp.status_code} - {health_resp.text}")
 
@@ -34,7 +32,7 @@ async def test_search_logging():
             return
 
         # 2. Check dashboard for the new log
-        print(f"Step 2: Checking dashboard for log...")
+        print("Step 2: Checking dashboard for log...")
         dashboard_response = await client.get(f"{API_URL}/api/dashboard/{USER_ID}")
         
         if dashboard_response.status_code == 200:

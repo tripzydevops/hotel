@@ -6,7 +6,6 @@ import sys
 import os
 import io
 import asyncio
-from typing import List
 from dotenv import load_dotenv
 
 # Force UTF-8 output

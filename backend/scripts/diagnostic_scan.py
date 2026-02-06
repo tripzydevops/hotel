@@ -1,6 +1,5 @@
 
 import asyncio
-import os
 from datetime import date, timedelta
 from backend.services.serpapi_client import serpapi_client
 from dotenv import load_dotenv

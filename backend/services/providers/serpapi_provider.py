@@ -262,7 +262,7 @@ class SerpApiProvider(HotelDataProvider):
         # 1. Knowledge Graph Result (if ID match failed)
         if not best_match and data.get("rate_per_night"):
              best_match = data
-             print(f"[SerpApi] Using knowledge graph result")
+             print("[SerpApi] Using knowledge graph result")
 
         # 2. Fuzzy Name Match
         if not best_match:

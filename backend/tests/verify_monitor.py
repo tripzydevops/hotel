@@ -1,10 +1,8 @@
 
 import os
 import uuid
-import datetime
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, AsyncMock
-from backend.models.schemas import MonitorResult
 
 # Set env vars before importing main
 os.environ["NEXT_PUBLIC_SUPABASE_URL"] = "https://mock.supabase.co"

@@ -1,5 +1,4 @@
 
-import pytest
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from uuid import uuid4

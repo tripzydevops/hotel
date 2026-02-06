@@ -8,7 +8,7 @@ export async function createUser(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const companyName = formData.get("companyName") as string;
+  // const companyName = formData.get("companyName") as string;
 
   // 1. Create Auth User
   const { data: user, error: createError } =

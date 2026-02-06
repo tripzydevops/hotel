@@ -191,6 +191,9 @@ class ScraperAgent:
                         elif "reviews" in price_data and isinstance(price_data["reviews"], list):
                             update_payload["reviews"] = price_data["reviews"][:5]
 
+                        if price_data.get("latitude"): update_payload["latitude"] = price_data["latitude"]
+                        if price_data.get("longitude"): update_payload["longitude"] = price_data["longitude"]
+
                         if update_payload:
                             self.db.table("hotels").update(update_payload).eq("id", str(hotel_id)).execute()
                             # print(f"[Scraper] Updated metadata for {hotel_name}")

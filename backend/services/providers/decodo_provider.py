@@ -1,6 +1,5 @@
 import os
 import httpx
-import json
 from typing import Dict, Any, Optional
 from datetime import date
 from ..data_provider_interface import HotelDataProvider

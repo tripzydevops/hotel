@@ -9,7 +9,7 @@ load_dotenv(".env.local", override=True)
 
 import asyncio
 from uuid import UUID
-from datetime import date, datetime
+from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 # Mock SerpApi BEFORE importing main
@@ -56,7 +56,7 @@ async def verify_implementation():
     print("--- Pre-cleanup: Removing old test hotels ---")
     db.table("hotels").delete().eq("user_id", str(test_user_id)).execute()
     
-    print(f"--- Step 1: Creating test hotel with EUR currency ---")
+    print("--- Step 1: Creating test hotel with EUR currency ---")
     hotel_data = HotelCreate(
         name=test_hotel_name,
         location="Berlin, Germany",
@@ -70,7 +70,7 @@ async def verify_implementation():
 
     try:
         # Scenario 1: Success
-        print(f"--- Step 2: Triggering monitor scan (Success Scenario) ---")
+        print("--- Step 2: Triggering monitor scan (Success Scenario) ---")
         await run_monitor_background(
             user_id=test_user_id, 
             hotels=[new_hotel], 
@@ -80,13 +80,13 @@ async def verify_implementation():
         )
         
         # Scenario 2: Partial (No Price)
-        print(f"--- Step 3: Triggering monitor scan (Partial Scenario) ---")
+        print("--- Step 3: Triggering monitor scan (Partial Scenario) ---")
         # We need to temporarily force mock to return no price
         # But since we use side_effect in main block, we can't easily change it here without refactoring.
         # Instead, let's just inspect the logs from Step 2 to ensure NO duplicates.
-        print(f"Monitor execution complete")
+        print("Monitor execution complete")
 
-        print(f"--- Step 3: Verifying price_logs currency ---")
+        print("--- Step 3: Verifying price_logs currency ---")
         price_logs = db.table("price_logs").select("*").eq("hotel_id", str(hotel_id)).order("recorded_at", desc=True).limit(1).execute()
         
         if price_logs.data:
@@ -99,7 +99,7 @@ async def verify_implementation():
         else:
             print("FAILURE: No price logs found for test hotel")
 
-        print(f"--- Step 4: Verifying scan history entry ---")
+        print("--- Step 4: Verifying scan history entry ---")
         q_logs = db.table("query_logs").select("*").eq("hotel_name", test_hotel_name).execute()
         if not q_logs.data:
             print("FAILURE: No query log found for test hotel")
@@ -123,7 +123,7 @@ async def verify_implementation():
              print(f"FAILURE: Expected 1 monitor log, found {len(monitor_logs)}")
 
     finally:
-        print(f"--- Step 5: Cleanup ---")
+        print("--- Step 5: Cleanup ---")
         db.table("hotels").delete().eq("id", str(hotel_id)).execute()
         print(f"Deleted test hotel: {hotel_id}")
 

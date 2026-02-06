@@ -45,7 +45,7 @@ async def test_resolution(hotel_name, location):
                 for item in results[:3]:
                     print(f"  - [{item.get('dest_type')}] {item.get('label')} (ID: {item.get('dest_id')})")
                     if item.get('dest_type') == 'hotel':
-                        print(f"  ✅ MATCH FOUND!")
+                        print("  ✅ MATCH FOUND!")
                         return True
             except Exception as e:
                 print(f"Exception: {e}")

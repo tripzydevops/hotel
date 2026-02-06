@@ -51,7 +51,7 @@ async def main():
             images = result.get('raw_data', {}).get('images', [])
             offers = result.get('raw_data', {}).get('prices', [])
             
-            print(f"\n[RICH DATA CHECK]")
+            print("\n[RICH DATA CHECK]")
             print(f" - Amenities Header Found: {len(amenities)} items")
             print(f" - Images Header Found: {len(images)} items")
             print(f" - Offers Header Found: {len(offers)} items")

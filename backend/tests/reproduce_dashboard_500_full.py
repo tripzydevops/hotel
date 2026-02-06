@@ -1,8 +1,7 @@
 import os
 import asyncio
-from supabase import create_client, Client
+from supabase import create_client
 from dotenv import load_dotenv
-from uuid import UUID
 from datetime import datetime, timezone
 import json
 

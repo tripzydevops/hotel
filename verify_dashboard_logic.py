@@ -2,7 +2,6 @@
 import sys
 import os
 import asyncio
-from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -10,7 +9,6 @@ from uuid import uuid4
 sys.path.append(os.getcwd())
 
 from backend.main import get_dashboard
-from backend.models.schemas import DashboardResponse
 
 # Mock Supabase Client
 class MockDB:

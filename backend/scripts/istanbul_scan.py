@@ -110,7 +110,7 @@ async def scan_neighborhood(neighborhood: str):
         print(f"[{neighborhood}] Failed: {e}")
 
 async def main():
-    print(f"Starting Istanbul Neighborhood Scan.")
+    print("Starting Istanbul Neighborhood Scan.")
     print(f"Zones: {', '.join(NEIGHBORHOODS)}")
     print("=" * 60)
     

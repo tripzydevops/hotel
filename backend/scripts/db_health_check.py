@@ -46,8 +46,8 @@ async def check_health():
                 if res.data:
                     print(f"    Columns: {list(res.data[0].keys())}")
                 else:
-                    print(f"    Columns: (No data found to inspect columns)")
-            except Exception as e:
+                    print("    Columns: (No data found to inspect columns)")
+            except Exception:
                 print(f"  [FAILED] {table}")
         
         # 3. Check for 'profiles' or 'users' as a mirror

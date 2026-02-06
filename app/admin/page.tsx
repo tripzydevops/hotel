@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Building2,
@@ -15,6 +15,7 @@ import {
   Loader2,
   LayoutDashboard,
   Crown,
+  LineChart,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -29,7 +30,9 @@ import UserManagementPanel from "@/components/admin/UserManagementPanel";
 import DirectoryPanel from "@/components/admin/DirectoryPanel";
 import LogsPanel from "@/components/admin/LogsPanel";
 import ScansPanel from "@/components/admin/ScansPanel";
+
 import NeuralFeed from "@/components/admin/NeuralFeed";
+import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -40,19 +43,23 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [loadStats]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.getAdminStats();
       setStats(data);
-    } catch (err: any) {
-      toast.error("Failed to load stats: " + err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error("Failed to load stats: " + err.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const TabButton = ({
     id,
@@ -112,6 +119,7 @@ export default function AdminPage() {
           <TabButton id="users" label="Users" icon={Users} />
           <TabButton id="directory" label="Directory" icon={Building2} />
           <TabButton id="scans" label="Scans" icon={Activity} />
+          <TabButton id="analytics" label="Intelligence" icon={LineChart} />
           <TabButton id="plans" label="Plans" icon={Crown} />
           <TabButton id="keys" label="API Keys" icon={Key} />
           <TabButton id="logs" label="System Logs" icon={Database} />
@@ -215,6 +223,7 @@ export default function AdminPage() {
           {activeTab === "users" && <UserManagementPanel />}
           {activeTab === "directory" && <DirectoryPanel />}
           {activeTab === "scans" && <ScansPanel />}
+          {activeTab === "analytics" && <AnalyticsPanel />}
           {activeTab === "plans" && <MembershipPlansPanel />}
           {activeTab === "keys" && <ApiKeysPanel />}
           {activeTab === "logs" && <LogsPanel />}

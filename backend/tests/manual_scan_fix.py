@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 from supabase import create_client
 import sys
-from datetime import date, datetime
+from datetime import date
 
 # Load environment variables FIRST
 load_dotenv(".env")

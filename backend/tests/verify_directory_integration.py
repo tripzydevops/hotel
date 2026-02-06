@@ -1,9 +1,8 @@
 
 import os
 import uuid
-import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Set env vars before importing main to avoid errors if they are used at module level
 os.environ["NEXT_PUBLIC_SUPABASE_URL"] = "https://mock.supabase.co"

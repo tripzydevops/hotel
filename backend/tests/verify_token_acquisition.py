@@ -3,7 +3,6 @@ import asyncio
 import sys
 import os
 from unittest.mock import MagicMock, AsyncMock
-from datetime import date
 
 # Add backend to path
 sys.path.append(os.path.join(os.getcwd(), "backend"))

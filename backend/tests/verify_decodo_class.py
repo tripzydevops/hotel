@@ -1,5 +1,4 @@
 import asyncio
-import os
 from datetime import date, timedelta
 from dotenv import load_dotenv
 from backend.services.providers.decodo_provider import DecodoProvider

@@ -12,7 +12,7 @@ from typing import List, Dict, Optional
 import re
 
 # Import scrapers
-from booking_scraper import scrape_booking_hotels, HotelResult as BookingHotel
+from booking_scraper import scrape_booking_hotels
 
 
 @dataclass
@@ -154,8 +154,8 @@ def main():
     print("📊 SUMMARY")
     print("=" * 70)
     print(f"   Total hotels found: {len(comparisons)}")
-    print(f"   Data sources used: Booking.com")
-    print(f"   Note: Trivago requires complex authentication (pending)")
+    print("   Data sources used: Booking.com")
+    print("   Note: Trivago requires complex authentication (pending)")
 
 
 if __name__ == "__main__":

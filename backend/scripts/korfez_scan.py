@@ -111,7 +111,7 @@ async def scan_town(town: str):
         print(f"[{town}] Failed: {e}")
 
 async def main():
-    print(f"Starting Balikesir Korfez Scan.")
+    print("Starting Balikesir Korfez Scan.")
     print(f"Targets: {', '.join(TARGETS)}")
     print("=" * 60)
     

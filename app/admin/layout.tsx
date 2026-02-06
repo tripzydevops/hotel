@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Database,
-  LayoutDashboard,
-  Settings,
-  LogOut,
-  Building2,
-  List,
-} from "lucide-react";
+import { Database, LayoutDashboard, Settings, List } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 

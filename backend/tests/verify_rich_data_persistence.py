@@ -1,5 +1,4 @@
 
-import asyncio
 import sys
 import os
 import uuid
@@ -62,7 +61,7 @@ def verify_persistence():
         print("  (Did you run the SQL migration?)")
         
     # 2. Test PriceLog Offers
-    print(f"  -> Inserting Test Price Log...")
+    print("  -> Inserting Test Price Log...")
     rich_offers = [{"vendor": "Expedia", "price": 99}, {"vendor": "Booking", "price": 105}]
     
     try:

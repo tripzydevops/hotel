@@ -1,5 +1,4 @@
 import asyncio
-import os
 from dotenv import load_dotenv
 # Explicitly load env vars if needed
 load_dotenv()

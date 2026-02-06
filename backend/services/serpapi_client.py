@@ -432,6 +432,15 @@ class SerpApiClient:
         if best_match.get("prices"):
             all_offers_raw.extend(best_match["prices"])
 
+        # Determine rank
+        rank = None
+        if properties and best_match:
+            try:
+                # Find index in properties list (1-based)
+                rank = properties.index(best_match) + 1
+            except ValueError:
+                pass
+
         return {
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": price, "currency": default_currency, "source": "serpapi",
@@ -447,6 +456,9 @@ class SerpApiClient:
             "room_types": self._extract_all_room_types(best_match, default_currency),
             "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "reviews": best_match.get("reviews", []),
+            "search_rank": rank,
+            "latitude": best_match.get("gps_coordinates", {}).get("latitude"),
+            "longitude": best_match.get("gps_coordinates", {}).get("longitude"),
             "raw_data": best_match
         }
 
