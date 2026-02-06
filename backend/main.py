@@ -2065,6 +2065,66 @@ async def reload_api_keys(user: Any = Depends(get_current_admin_user), db: Clien
         )
 
 
+@app.patch("/api/admin/users/{user_id}")
+async def admin_update_user(
+    user_id: UUID, 
+    updates: AdminUserUpdate, 
+    user: Any = Depends(get_current_admin_user), 
+    db: Client = Depends(get_supabase)
+):
+    """Admin: Update user details including schedule and settings."""
+    try:
+        # 1. Update Profile Fields
+        profile_fields = {}
+        if updates.display_name is not None: profile_fields["display_name"] = updates.display_name
+        if updates.company_name is not None: profile_fields["company_name"] = updates.company_name
+        if updates.job_title is not None: profile_fields["job_title"] = updates.job_title
+        if updates.phone is not None: profile_fields["phone"] = updates.phone
+        if updates.timezone is not None: profile_fields["timezone"] = updates.timezone
+        if updates.plan_type is not None: profile_fields["plan_type"] = updates.plan_type
+        if updates.subscription_status is not None: profile_fields["subscription_status"] = updates.subscription_status
+        
+        if profile_fields:
+            # Upsert into user_profiles
+            db.table("user_profiles").update(profile_fields).eq("user_id", str(user_id)).execute()
+            
+            # Also sync to profiles (legacy table) if needed
+            # For plan/status, we must sync to profiles
+            if "plan_type" in profile_fields or "subscription_status" in profile_fields:
+                db.table("profiles").update({
+                    k: v for k, v in profile_fields.items() 
+                    if k in ["plan_type", "subscription_status"]
+                }).eq("id", str(user_id)).execute()
+
+        # 2. Update Settings Fields (Schedule)
+        settings_fields = {}
+        if updates.check_frequency_minutes is not None: 
+            settings_fields["check_frequency_minutes"] = updates.check_frequency_minutes
+        
+        if settings_fields:
+            # Ensure settings exist
+            existing = db.table("settings").select("user_id").eq("user_id", str(user_id)).execute()
+            if not existing.data:
+                db.table("settings").insert({
+                    "user_id": str(user_id), 
+                    **settings_fields,
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }).execute()
+            else:
+                db.table("settings").update(settings_fields).eq("user_id", str(user_id)).execute()
+
+        # 3. Update Auth Fields (Email/Password) - Requires Admin Client
+        # (For now, we skip Auth updates or implement via Admin API if crucial)
+        # TODO: Implement Supabase Admin Auth update for email/password
+
+        return {"status": "success", "message": "User updated successfully"}
+        
+    except Exception as e:
+        print(f"Admin Update User Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/users", response_model=List[AdminUser])
 async def get_admin_users(db: Client = Depends(get_supabase)):
     """List all users with stats."""

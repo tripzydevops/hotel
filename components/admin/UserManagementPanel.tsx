@@ -36,6 +36,7 @@ const UserManagementPanel = () => {
     job_title: "",
     phone: "",
     timezone: "UTC",
+    check_frequency_minutes: 0,
   });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
@@ -53,6 +54,7 @@ const UserManagementPanel = () => {
         job_title: userToEdit.job_title || "",
         phone: userToEdit.phone || "",
         timezone: userToEdit.timezone || "UTC",
+        check_frequency_minutes: userToEdit.scan_frequency_minutes || 0,
       });
     }
   }, [userToEdit]);
@@ -100,6 +102,7 @@ const UserManagementPanel = () => {
         job_title: editUserForm.job_title,
         phone: editUserForm.phone,
         timezone: editUserForm.timezone,
+        check_frequency_minutes: editUserForm.check_frequency_minutes,
       });
       setUserToEdit(null);
       loadUsers();
@@ -236,7 +239,9 @@ const UserManagementPanel = () => {
                 <td className="p-4 text-white">{u.hotel_count}</td>
                 <td className="p-4 text-white">{u.scan_count}</td>
                 <td className="p-4 text-[var(--text-muted)]">
-                  {new Date(u.created_at).toLocaleDateString()}
+                  {u.created_at
+                    ? new Date(u.created_at).toLocaleDateString()
+                    : "-"}
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2">
@@ -342,6 +347,27 @@ const UserManagementPanel = () => {
                   }
                   className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
                 />
+              </div>
+              <div>
+                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
+                  Scan Frequency
+                </label>
+                <select
+                  value={editUserForm.check_frequency_minutes}
+                  onChange={(e) =>
+                    setEditUserForm({
+                      ...editUserForm,
+                      check_frequency_minutes: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                >
+                  <option value={0}>Manual Only</option>
+                  <option value={60}>Every Hour</option>
+                  <option value={360}>Every 6 Hours (4x/day)</option>
+                  <option value={720}>Every 12 Hours (2x/day)</option>
+                  <option value={1440}>Every 24 Hours (Daily)</option>
+                </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button

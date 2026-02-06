@@ -326,6 +326,18 @@ class AdminUserCreate(BaseModel):
     password: str
     display_name: Optional[str] = None
 
+class AdminUserUpdate(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
+    display_name: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    timezone: Optional[str] = None
+    plan_type: Optional[str] = None
+    subscription_status: Optional[str] = None
+    check_frequency_minutes: Optional[int] = None
+
 class AdminUser(BaseModel):
     id: UUID
     display_name: Optional[str] = None
