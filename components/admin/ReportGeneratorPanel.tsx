@@ -34,9 +34,7 @@ export default function ReportGeneratorPanel() {
       setLoadingHotels(true);
       try {
         // Fetch from market intelligence endpoint which returns hotels by city
-        const res = await api.fetch(
-          `/api/admin/market-intelligence?city=${encodeURIComponent(selectedCity)}&limit=50`,
-        );
+        const res = await api.getMarketIntelligence(selectedCity);
         if (res.hotels) {
           setHotels(
             res.hotels.map((h: any) => ({
@@ -72,16 +70,13 @@ export default function ReportGeneratorPanel() {
           ? `In-depth Analysis: ${hotels.find((h) => String(h.id) === selectedHotels[0])?.name}`
           : `Comparison Report - ${new Date().toLocaleDateString()}`;
 
-      const res = await api.fetch("/api/admin/reports/generate", {
-        method: "POST",
-        body: JSON.stringify({
-          hotel_ids: selectedHotels,
-          period_months: periodMonths,
-          comparison_mode: reportType === "comparison",
-          title,
-        }),
+      const res = await api.generateReport({
+        hotel_ids: selectedHotels,
+        period_months: periodMonths,
+        comparison_mode: reportType === "comparison",
+        title,
       });
-      setGeneratedReport(res.data);
+      setGeneratedReport(res);
     } catch (err) {
       console.error(err);
       alert("Failed to generate report");

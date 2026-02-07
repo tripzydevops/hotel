@@ -420,6 +420,18 @@ class ApiClient {
   async getSchedulerQueue() {
     return this.fetch<any[]>("/api/admin/scheduler/queue");
   }
+
+  async generateReport(params: {
+    hotel_ids: string[];
+    period_months: number;
+    comparison_mode: boolean;
+    title: string;
+  }) {
+    return this.fetch<any>("/api/admin/reports/generate", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
 }
 
 export const api = new ApiClient();

@@ -177,7 +177,9 @@ export interface DirectoryEntry {
   name: string;
   location?: string;
   serp_api_id?: string;
-  property_token?: string; // Added to match backend
+  property_token?: string;
+  rating?: number;
+  stars?: number;
 }
 
 export interface AdminDirectoryEntry extends DirectoryEntry {
