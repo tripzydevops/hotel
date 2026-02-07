@@ -19,7 +19,7 @@ from supabase import create_client, Client
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
-from weasyprint import HTML
+# from weasyprint import HTML # Moved to local import
 
 from backend.models.schemas import (
     Hotel, HotelCreate, HotelUpdate,
