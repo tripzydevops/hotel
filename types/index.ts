@@ -172,6 +172,12 @@ export interface AdminUser {
   next_scan_at?: string;
 }
 
+export interface AdminUserUpdate {
+  plan_type?: "trial" | "starter" | "pro" | "enterprise";
+  subscription_status?: "active" | "trial" | "past_due" | "canceled";
+  scan_frequency_minutes?: number;
+}
+
 export interface DirectoryEntry {
   id: number;
   name: string;
