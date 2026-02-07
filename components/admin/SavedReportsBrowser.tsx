@@ -11,23 +11,12 @@ export default function SavedReportsBrowser() {
   const [selectedRepo, setSelectedRepo] = useState<Report | null>(null);
 
   useEffect(() => {
-    // Mock fetch for now, replace with api.getReports()
     async function load() {
       try {
-        // In production: const res = await api.fetch<Report[]>("/api/admin/reports");
-        // Mock data
-        const mockReports: Report[] = [
-          {
-            id: "1",
-            title: "Market Analysis - Istanbul (Q1 2025)",
-            report_type: "comparison",
-            created_at: new Date().toISOString(),
-            report_data: { hotels: [], ai_insights: [] },
-          },
-        ];
-        setReports(mockReports);
+        const data = await api.getAdminReports();
+        setReports(data);
       } catch (e) {
-        console.error(e);
+        console.error("Failed to load reports:", e);
       } finally {
         setLoading(false);
       }
@@ -38,8 +27,9 @@ export default function SavedReportsBrowser() {
   const downloadPdf = async (id: string, title: string) => {
     try {
       // Trigger browser download
+      const headers = await api.getHeaders();
       const res = await fetch(`${api.baseURL}/api/admin/reports/${id}/pdf`, {
-        headers: { ...api.getHeaders() },
+        headers,
       });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

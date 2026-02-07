@@ -179,7 +179,7 @@ export interface AdminUserUpdate {
 }
 
 export interface DirectoryEntry {
-  id: number;
+  id: string;
   name: string;
   location?: string;
   serp_api_id?: string;

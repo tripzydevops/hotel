@@ -19,6 +19,19 @@ const API_BASE_URL =
   (isProduction ? "" : "http://localhost:8000");
 
 class ApiClient {
+  public readonly baseURL = API_BASE_URL;
+
+  public async getHeaders(): Promise<HeadersInit> {
+    const token = await this.getToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      (headers as any)["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   private async getToken(): Promise<string | null> {
     try {
       const { createClient } = await import("@/utils/supabase/client");
@@ -434,6 +447,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(params),
     });
+  }
+
+  async getAdminReports(): Promise<Report[]> {
+    return this.fetch<Report[]>("/api/admin/reports");
   }
 }
 

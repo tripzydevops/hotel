@@ -3049,7 +3049,7 @@ async def generate_report(
                 "ai_insights": ai_insights
             },
             "title": req.title or f"Market Report - {end_date.strftime('%Y-%m-%d')}",
-            "created_by": admin["id"]  # Assuming admin object has ID
+            "created_by": admin.id  # Assuming admin search object has ID
         }
         
         result = db.table("reports").insert(report_entry).execute()
