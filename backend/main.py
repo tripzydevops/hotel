@@ -2835,9 +2835,9 @@ async def get_market_intelligence(
     """
     try:
         # 1. Fetch hotels in city (limit for map performance)
-        # Using hotel_directory for broader market view
-        hotels_query = db.table("hotel_directory") \
-            .select("id, name, location, rating, stars, created_at") \
+        # Prioritize 'hotels' table (Real scanned data with coordinates/prices)
+        hotels_query = db.table("hotels") \
+            .select("id, name, location, latitude, longitude, rating, stars") \
             .ilike("location", f"%{city}%") \
             .limit(limit) \
             .execute()
@@ -2845,30 +2845,32 @@ async def get_market_intelligence(
         hotels = hotels_query.data or []
         
         if not hotels:
-            # Fallback to user-added hotels if directory is empty for this query
-            hotels_query = db.table("hotels") \
-                .select("id, name, location, latitude, longitude, rating, stars") \
+            # Fallback to directory if no scanned data (broader view, but likely no coords/prices)
+            hotels_query = db.table("hotel_directory") \
+                .select("id, name, location, rating, stars, created_at") \
                 .ilike("location", f"%{city}%") \
                 .limit(limit) \
                 .execute()
             hotels = hotels_query.data or []
 
-        # 2. Mocking Price Data for Intelligence Demo (since we don't have directory prices yet)
+        # 2. Real Data Processing
         # In production, we'd join with a `directory_prices` table or similar.
-        # For now, we simulate a realistic distribution based on "avg_price" if available or random
-        import random
-        
+        # For now, we trust the data we have or default to legitimate placeholders (not random)
         enriched_hotels = []
         prices = []
         
         for h in hotels:
-            # Simulate price between $50 and $250
-            sim_price = random.randint(50, 250)
-            prices.append(sim_price)
+            # Use actual price if we had it, otherwise None/0
+            # We are not mocking anymore.
+            current_price = h.get("latest_price", 0) 
+            if current_price and current_price > 0:
+                prices.append(current_price)
+                
             enriched_hotels.append({
                 **h,
-                "latest_price": sim_price,
-                "rating": round(random.uniform(3.5, 5.0), 1)
+                "latest_price": current_price,
+                # Use actual rating from DB (which might be null)
+                "rating": h.get("rating")
             })
 
         # 3. Calculate Summary Metrics

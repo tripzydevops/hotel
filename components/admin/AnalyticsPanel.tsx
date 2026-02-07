@@ -38,20 +38,17 @@ export default function AnalyticsPanel() {
 
         if (marketData) {
           // Transform for visualizations
-          // 1. Mock visibility trend (aggregated)
-          const mockVisibility = Array.from({ length: 14 }, (_, i) => ({
-            date: new Date(Date.now() - (13 - i) * 86400000)
-              .toISOString()
-              .split("T")[0],
-            rank: Math.floor(Math.random() * 5) + 3, // Avg rank 3-8
-          }));
+          // 1. Visibility - Real data not yet available in this aggregate endpoint
+          // Leaving empty to show "No Data" state rather than mock
+          const visibilityData: any[] = [];
 
-          // 2. Mock Network (Cluster)
+          // 2. Network (Cluster) - Use real hotel data
+          // Value will be 0 if no price data available (which is correct for directory)
           const nodes = marketData.hotels.slice(0, 8).map((h: any) => ({
             id: h.id,
             label: h.name,
             type: h.id === marketData.hotels[0].id ? "target" : "competitor",
-            value: h.latest_price,
+            value: h.latest_price || 0,
           }));
 
           const links = nodes.slice(1).map((n: any) => ({
@@ -63,7 +60,7 @@ export default function AnalyticsPanel() {
           setData({
             summary: marketData.summary,
             hotels: marketData.hotels,
-            visibility: mockVisibility,
+            visibility: visibilityData,
             network: { nodes, links },
           });
         }
