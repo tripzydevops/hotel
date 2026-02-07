@@ -34,23 +34,28 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] flex">
       {/* Admin Sidebar */}
-      <aside className="w-64 bg-black/30 border-r border-white/5 flex flex-col fixed inset-y-0 z-50">
-        <div className="p-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <span className="text-[var(--deep-ocean)] font-bold text-lg">
-                H
+      <aside className="w-64 bg-[var(--deep-ocean-card)]/50 backdrop-blur-xl border-r border-white/10 flex flex-col fixed inset-y-0 z-50 shadow-2xl">
+        <div className="p-8">
+          <Link href="/" className="flex flex-col gap-1 group">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--soft-gold)] to-[#b49020] flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.2)] group-hover:scale-110 transition-transform duration-300">
+                <span className="text-[var(--deep-ocean)] font-black text-lg">
+                  H
+                </span>
+              </div>
+              <span className="text-xl font-bold text-white tracking-tight font-[var(--font-montserrat)]">
+                Admin<span className="text-[var(--soft-gold)]">Panel</span>
               </span>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight">
-              Admin<span className="text-[var(--soft-gold)]">Panel</span>
+            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-10">
+              Enterprise Control
             </span>
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
-          <div className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest px-2 mb-2 mt-4">
-            Management
+        <nav className="flex-1 px-6 space-y-2">
+          <div className="text-[10px] uppercase font-black text-[var(--text-muted)] tracking-widest px-2 mb-4 mt-2 opacity-50">
+            Navigation
           </div>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -59,10 +64,10 @@ export default function AdminLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${
                   isActive
-                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-lg shadow-[var(--soft-gold)]/20"
-                    : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-lg shadow-[var(--soft-gold)]/20 scale-[1.02]"
+                    : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5"
                 }`}
               >
                 <Icon
@@ -74,19 +79,21 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        <div className="p-6 border-t border-white/5">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all group uppercase tracking-widest"
           >
-            <LayoutDashboard className="w-4 h-4" />
-            User Dashboard
+            <LayoutDashboard className="w-4 h-4 text-[var(--soft-gold)] group-hover:rotate-12 transition-transform" />
+            Exit to App
           </Link>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 p-8">{children}</main>
+      <main className="flex-1 ml-64 p-10 bg-gradient-to-br from-transparent via-black/5 to-black/10 min-h-screen">
+        <div className="max-w-7xl mx-auto">{children}</div>
+      </main>
     </div>
   );
 }

@@ -1,45 +1,50 @@
-# Design System: Hotel Rate Sentinel
+# Design System: Hotel Rate Sentinel (Professional & Crisp)
 
-**Project Identity:** Autonomous Market Intelligence Engine
+> This document defines the visual language for the full UI revamp of the Hotel Rate Sentinel project.
 
-## 1. Visual Theme & Atmosphere
+## 1. Vision & Tone
 
-The design system embodies a **Sophisticated, Enterprise-Grade** atmosphere. It uses a "Deep Ocean" base to convey stability and depth, contrasted by "Soft Gold" accents representing premium value and intelligence. The mood is **Precise, Reliable, and Future-Forward**.
+- **Crisp**: Sharp edges, fine lines, high-definition typography.
+- **Professional**: Balanced layouts, sophisticated interactions, no clutter.
+- **Advanced**: Use of subtle blur effects (glassmorphism), depth via shadows, and high-performance micro-animations.
 
-## 2. Color Palette & Roles
+## 2. Color Palette
 
-| Name                | Hex       | Role                                                |
-| ------------------- | --------- | --------------------------------------------------- |
-| **Deep Ocean**      | `#0B1F3B` | Main background and base foundation.                |
-| **Ocean Card**      | `#15294A` | Surface color for cards and secondary containers.   |
-| **Ocean Accent**    | `#1E3A5F` | Tertiary surfaces and subtle borders.               |
-| **Soft Gold**       | `#D4AF37` | Primary accent for CTAs, Sentinels, and highlights. |
-| **Soft Gold Hover** | `#E5C55D` | Hover states for gold elements.                     |
-| **Sentinel White**  | `#FFFFFF` | Primary text and high-contrast elements.            |
-| **Slate Metadata**  | `#94A3B8` | Secondary labels and descriptive text.              |
+- **Primary (Deep Ocean)**: `#0B1F3B` (Backgrounds, dark cards)
+- **Accent (Soft Gold)**: `#D4AF37` (Primary actions, active states, premium branding)
+- **Success (Emerald)**: `#10B981` (Price drops, optimal states)
+- **Danger (Coral)**: `#EF4444` (Price hikes, yield risks)
+- **Neutral (Slate)**:
+  - Text Primary: `#FFFFFF`
+  - Text Secondary: `#94A3B8`
+  - Borders: `rgba(255, 255, 255, 0.1)`
 
-## 3. Typography Rules
+## 3. Typography
 
-- **Headings:** **Montserrat** (700). Used for titles and KPI headers to provide a strong, authoritative feel.
-- **Body:** **Inter** (400-600). Used for all data points, descriptions, and functional UI for maximum legibility.
-- **Character:** Tracking is wide for headers (`tracking-wide`) and tight for data points to emphasize precision.
+- **Headings**: Montserrat (Bold, 700+)
+  - Letter spacing: `-0.025em`
+- **Body**: Inter (Thin/Medium/Semi-bold)
+  - Letter spacing: `normal`
 
-## 4. Component Stylings
+## 4. Components & Atoms
 
-- **Buttons:** Subtly rounded (10px). The `btn-gold` uses a linear gradient from `#D4AF37` to `#B49020` with a subtle elevation shadow.
-- **Cards (Glass-Card):** High-density cards with a `16px` blur, 1px white/5 border, and a subtle lift on hover.
-- **Glassmorphism:** Navigation and overlays use `rgba(21, 41, 74, 0.95)` with a `16px` backdrop blur.
+- **Cards (Glass)**:
+  - Background: `rgba(21, 41, 74, 0.95)`
+  - Border: `1px solid rgba(255, 255, 255, 0.1)`
+  - Border Radius: `12px`
+  - Shadow: Soft elevation shadow.
+- **Buttons (Gold)**:
+  - Gradient: `linear-gradient(135deg, #D4AF37 0%, #B49020 100%)`
+  - Hover: Brighter gradient, subtle scale up.
+- **Inputs**:
+  - Dark background, subtle gold border on focus.
 
-## 5. Layout Principles
+## 5. Visual Techniques
 
-- **Grid:** Data-dense layouts with max-width containers (`max-w-7xl`).
-- **Whitespace:** Balanced but efficient. Priority is given to data visibility without clutter.
-- **Animations:** Smooth transitions (0.3s cubic-bezier) and subtle fade-ins for a "living" dashboard feel.
-  38:
-  39: ## 6. Branding & Logo Integration
-  40:
-  41: - **Logo Presence**: The logo is the primary anchor of the brand. It should be prominent and clear.
-  42: - **Logo Size**: Minimum height of 40px in the header to ensure legibility of the "Sentinel" motif.
-  43: - **Placement**: Placed with a minimum of 24px padding from the left edge (desktop).
-  44: - **Hierarchy**: The logo icon is the primary visual, followed by the "Hotel Rate Sentinel" name in Montserrat 700.
-  45: - **Transparency**: Assets must have a transparent alpha channel to blend with the glassmorphism header.
+- **Glassmorphism**: 16px blur on overlays and navigation.
+- **Gradients**: Subtle radial gradients to create depth in the background.
+- **Micro-interactions**: Hover transforms (translateY -4px) for cards.
+
+## 6. Design System Notes for Stitch Generation
+
+> **Note to Stitch**: When generating screens, strictly follow the "Deep Ocean & Soft Gold" theme. All cards must be semi-transparent with blur effects. Use Montserrat for titles and Inter for data. Layouts should be "Bento-style" grids for the dashboard.

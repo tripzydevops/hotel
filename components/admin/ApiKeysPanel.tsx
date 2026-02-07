@@ -7,6 +7,9 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
+  RotateCcw,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { KeyStatus } from "@/types";
@@ -55,19 +58,11 @@ const ApiKeysPanel = () => {
     setActionLoading(true);
     try {
       const data = await api.reloadAdminKeys();
-
       setKeyStatus((curr) =>
         curr ? { ...curr, total_keys: data.total_keys } : null,
       );
       loadKeyStatus();
-
-      const debugMsg = [
-        `Reloaded! Found ${data.total_keys} keys.`,
-        `Keys: ${data.keys_found?.join(", ")}`,
-        `Env Check: ${JSON.stringify(data.env_debug, null, 2)}`,
-      ].join("\n");
-
-      alert(debugMsg);
+      alert("Successfully reloaded keys from environment.");
     } catch (err: any) {
       alert("Reload Failed: " + err.message);
     } finally {
@@ -100,249 +95,217 @@ const ApiKeysPanel = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="glass-card p-6 border border-white/10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Key className="w-6 h-6 text-[var(--soft-gold)]" />
-            <h3 className="text-xl font-bold text-white">
-              SerpApi Key Management
-            </h3>
+    <div className="space-y-10 animate-in fade-in duration-500">
+      {/* Header Info */}
+      <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border border-blue-500/20 rounded-2xl shadow-xl overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12">
+          <Key className="w-20 h-20 text-blue-400" />
+        </div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6 text-blue-400" />
           </div>
+          <div>
+            <span className="text-white text-base font-bold tracking-tight">
+              API Gateway Control
+            </span>
+            <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-widest mt-0.5">
+              Automated key rotation and quota management
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-4 z-10">
           <button
-            onClick={loadKeyStatus}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-sm rounded-lg"
+            onClick={handleReload}
+            disabled={actionLoading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/5"
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+            {actionLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            Sync Registry
           </button>
         </div>
+      </div>
 
-        {/* Providers Status */}
-        <div className="mb-8">
-          <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider text-[var(--text-muted)]">
-            Active Data Providers
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {providers.map((p) => (
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Activity className="w-12 h-12 text-[var(--soft-gold)]" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
+            Global Throughput
+          </p>
+          <p className="text-3xl font-black text-white tabular-nums">
+            {keyStatus?.monthly_usage || 0}
+          </p>
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
               <div
-                key={p.name}
-                className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-2 h-2 rounded-full ${p.enabled ? "bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" : "bg-red-500/50"}`}
-                  />
-                  <div>
-                    <div className="text-sm font-bold text-white">{p.name}</div>
-                    <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                      {p.type}
-                    </div>
-                    {p.limit && (
-                      <div className="text-[10px] text-[var(--soft-gold)] mt-0.5 opacity-80">
-                        Limit: {p.limit} • Reset: {p.refresh}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="text-xs font-mono text-[var(--soft-gold)] opacity-70">
-                  P{p.priority}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-black/20 p-4 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Total Keys
-            </div>
-            <div className="text-2xl font-bold text-white">
-              {keyStatus?.total_keys || 0}
-            </div>
-          </div>
-          <div className="bg-black/20 p-4 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Active Keys
-            </div>
-            <div className="text-2xl font-bold text-[var(--optimal-green)]">
-              {keyStatus?.active_keys || 0}
-            </div>
-          </div>
-          <div className="bg-black/20 p-4 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Monthly Usage
-            </div>
-            <div className="text-2xl font-bold text-[var(--soft-gold)]">
-              {keyStatus?.monthly_usage || 0}
-              <span className="text-xs text-[var(--text-muted)] ml-2 font-normal">
-                /{" "}
-                {Math.max(
-                  0,
-                  (keyStatus?.quota_per_key || 250) -
-                    (keyStatus?.monthly_usage || 0),
-                )}{" "}
-                left
-              </span>
-            </div>
-          </div>
-          <div className="bg-black/20 p-4 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Current Key
-            </div>
-            <div className="text-2xl font-bold text-white">
-              #{keyStatus?.current_key_index || 1}
-            </div>
-          </div>
-          <div className="bg-black/20 p-4 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Quota/Key
-            </div>
-            <div className="text-2xl font-bold text-white">
-              {keyStatus?.quota_per_key || 250}/mo
+                className="h-full bg-[var(--soft-gold)] shadow-[0_0_10px_rgba(212,175,55,0.5)] transition-all duration-1000"
+                style={{
+                  width: `${Math.min(100, ((keyStatus?.monthly_usage || 0) / ((keyStatus?.total_keys || 1) * (keyStatus?.quota_per_key || 2500))) * 100)}%`,
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* Keys List */}
-        <div className="space-y-3">
-          {keyStatus?.keys_status?.map((key) => (
+        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <CheckCircle2 className="w-12 h-12 text-[var(--optimal-green)]" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
+            Operational Keys
+          </p>
+          <p className="text-3xl font-black text-[var(--optimal-green)] tabular-nums">
+            {keyStatus?.active_keys || 0}
+          </p>
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mt-2 italic uppercase">
+            System healthy and ready
+          </p>
+        </div>
+
+        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <AlertCircle className="w-12 h-12 text-red-400" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
+            Exhausted Nodes
+          </p>
+          <p className="text-3xl font-black text-red-500 tabular-nums">
+            {(keyStatus?.total_keys || 0) - (keyStatus?.active_keys || 0)}
+          </p>
+          <p className="text-[10px] font-bold text-[var(--text-muted)] mt-2 italic uppercase">
+            Requiring rotation soon
+          </p>
+        </div>
+      </div>
+
+      {/* Network Providers */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-black uppercase tracking-widest text-white px-1">
+          Network Providers
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
+          {providers?.map((p) => (
             <div
-              key={key.index}
-              className={`flex items-center justify-between p-4 rounded-lg border ${
-                key.is_current
-                  ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)]/30"
-                  : key.is_exhausted
-                    ? "bg-red-500/10 border-red-500/30"
-                    : "bg-white/5 border-white/10"
-              }`}
+              key={p.name}
+              className="glass-card p-4 border border-white/5 hover:border-white/10 transition-all group"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-black text-white uppercase tracking-tighter">
+                  {p.name}
+                </span>
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                    key.is_current
-                      ? "bg-[var(--soft-gold)] text-black"
-                      : "bg-white/10 text-white"
-                  }`}
-                >
-                  {key.index}
-                </div>
-                <div>
-                  <div className="text-white font-mono text-sm">
-                    {key.key_suffix}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-[var(--text-muted)] uppercase">
-                      Usage:
-                    </span>
-                    <span className="text-xs font-bold text-[var(--soft-gold)]">
-                      {key.usage || 0}
-                    </span>
-                  </div>
-                  {key.exhausted_at && (
-                    <div className="text-red-400 text-xs mt-1">
-                      Exhausted: {new Date(key.exhausted_at).toLocaleString()}
-                    </div>
-                  )}
-                </div>
+                  className={`w-2 h-2 rounded-full ${p.enabled ? "bg-[var(--optimal-green)] shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500"}`}
+                />
               </div>
-              <div className="flex items-center gap-2">
-                {key.is_current && (
-                  <span className="px-2 py-1 bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-xs rounded font-medium">
-                    ACTIVE
-                  </span>
-                )}
-                {key.is_exhausted && !key.is_current && (
-                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded font-medium">
-                    EXHAUSTED
-                  </span>
-                )}
-                {!key.is_exhausted && !key.is_current && (
-                  <span className="px-2 py-1 bg-white/10 text-[var(--text-muted)] text-xs rounded">
-                    Standby
-                  </span>
-                )}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-lg font-black text-white tracking-tighter tabular-nums">
+                  {p.priority}
+                </span>
+                <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                  Priority Ranking
+                </span>
               </div>
             </div>
           ))}
-
-          {(!keyStatus?.keys_status || keyStatus.keys_status.length === 0) && (
-            <div className="p-6 text-center text-[var(--text-muted)] bg-white/5 rounded-lg">
-              <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No API keys configured.</p>
-              <p className="text-xs mt-1">
-                Add SERPAPI_API_KEY to environment variables.
-              </p>
-            </div>
-          )}
         </div>
-
-        {/* Env Debug Section (New) */}
-        {keyStatus?.env_debug && (
-          <div className="bg-black/20 p-4 rounded-lg border border-white/5 font-mono text-xs">
-            <div className="text-[var(--text-muted)] uppercase tracking-wider mb-2 font-bold">
-              Environment Variables
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(keyStatus.env_debug).map(([k, v]) => (
-                <div key={k} className="flex justify-between">
-                  <span className="text-[var(--text-muted)]">{k}</span>
-                  <span
-                    className={
-                      v === "Set"
-                        ? "text-[var(--optimal-green)]"
-                        : "text-red-400"
-                    }
-                  >
-                    {String(v)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-4">
-        <button
-          onClick={handleRotate}
-          disabled={actionLoading || (keyStatus?.total_keys || 0) <= 1}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors disabled:opacity-50"
-        >
-          {actionLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-          Force Rotate to Next Key
-        </button>
-        <button
-          onClick={handleReload}
-          disabled={actionLoading}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] font-bold rounded-lg hover:bg-[var(--soft-gold)]/30 disabled:opacity-50"
-        >
-          {actionLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-          Reload from Env
-        </button>
-        <button
-          onClick={handleReset}
-          disabled={actionLoading}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50"
-        >
-          {actionLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4" />
-          )}
-          Reset All Keys (New Month)
-        </button>
+      {/* Keys Table */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xs font-black uppercase tracking-widest text-white">
+            Active Key Clusters
+          </h3>
+          <div className="flex gap-3">
+            <button
+              onClick={handleReset}
+              disabled={actionLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+            >
+              Reset Quotas
+            </button>
+            <button
+              onClick={handleRotate}
+              disabled={actionLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--soft-gold)]/10 hover:bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[var(--soft-gold)]/20"
+            >
+              {actionLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RotateCcw className="w-3 h-3" />
+              )}
+              Force Manual Rotation
+            </button>
+          </div>
+        </div>
+
+        <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-blue-500/10">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+              <tr>
+                <th className="p-5">Cluster Node</th>
+                <th className="p-5">Credential Fragment</th>
+                <th className="p-5">Health Status</th>
+                <th className="p-5 text-right">Temporal Usage</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.03]">
+              {keyStatus?.keys_status?.map((key) => (
+                <tr
+                  key={key.index}
+                  className={`hover:bg-white/[0.02] transition-colors group ${key.is_current ? "bg-[var(--soft-gold)]/5" : ""}`}
+                >
+                  <td className="p-5 text-white font-black tabular-nums">
+                    NODE_{String(key.index).padStart(2, "0")}
+                    {key.is_current && (
+                      <span className="ml-2 text-[8px] bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-1 rounded">
+                        ACTIVE
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-5">
+                    <code className="text-[10px] font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-[var(--soft-gold)] transition-colors">
+                      {key.key_suffix}
+                    </code>
+                  </td>
+                  <td className="p-5">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        !key.is_exhausted
+                          ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                          : "bg-red-500/10 text-red-500 border border-red-500/20"
+                      }`}
+                    >
+                      {key.is_exhausted ? "Exhausted" : "Active"}
+                    </span>
+                  </td>
+                  <td className="p-5 text-right">
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-black tabular-nums">
+                          {key.usage || 0}
+                        </span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-tight">
+                          Requests
+                        </span>
+                      </div>
+                      <div className="text-[8px] font-bold text-[var(--text-muted)] tracking-widest uppercase opacity-50 italic">
+                        Limit: {keyStatus?.quota_per_key || 2500} / mo
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

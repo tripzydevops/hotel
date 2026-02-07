@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import {
   Users,
   Building2,
@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { AdminStats } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
+import { motion } from "framer-motion";
 
 // Modular Components
 import StatCard from "@/components/admin/StatCard";
@@ -74,155 +75,187 @@ export default function AdminPage() {
   }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden group ${
         activeTab === id
-          ? "bg-[var(--soft-gold)] text-black font-bold shadow-lg shadow-[var(--soft-gold)]/20"
-          : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
+          ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold shadow-lg shadow-[var(--soft-gold)]/20 scale-[1.02]"
+          : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5"
       }`}
     >
-      <Icon className="w-4 h-4" />
-      {label}
+      <Icon
+        className={`w-4 h-4 transition-transform duration-300 ${activeTab === id ? "scale-110" : "group-hover:scale-110"}`}
+      />
+      <span className="text-sm tracking-tight">{label}</span>
+      {activeTab === id && (
+        <motion.div
+          layoutId="activeTabGlow"
+          className="absolute inset-0 bg-white/20 pointer-events-none"
+          initial={false}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
     </button>
   );
 
   if (loading && !stats) {
     return (
-      <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)]" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mb-4" />
+        <p className="text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest animate-pulse">
+          Establishing Neural Link...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] text-white pb-12">
-      {/* Header */}
-      <div className="border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--soft-gold)] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-black" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">Admin Console</h1>
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* Page Header */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center shadow-inner">
+            <Shield className="w-5 h-5 text-[var(--soft-gold)]" />
           </div>
-          <button
-            onClick={() => router.push("/")}
-            className="text-sm text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1"
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            User Dashboard
-          </button>
+          <div>
+            <h1 className="text-3xl font-black text-white tracking-tight font-[var(--font-montserrat)]">
+              Enterprise{" "}
+              <span className="text-[var(--soft-gold)]">Intelligence</span>
+            </h1>
+            <p className="text-[var(--text-muted)] text-sm font-medium">
+              Real-time market monitoring and system orchestration.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 mt-8">
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-black/30 p-1 rounded-xl border border-white/5 w-fit">
-          <TabButton id="overview" label="Overview" icon={LayoutDashboard} />
-          <TabButton id="users" label="Users" icon={Users} />
-          <TabButton id="directory" label="Directory" icon={Building2} />
-          <TabButton id="scans" label="Scans" icon={Activity} />
-          <TabButton id="analytics" label="Intelligence" icon={LineChart} />
-          <TabButton id="reports" label="Reports" icon={FileText} />
-          <TabButton id="plans" label="Plans" icon={Crown} />
-          <TabButton id="keys" label="API Keys" icon={Key} />
-          <TabButton id="logs" label="System Logs" icon={Database} />
-        </div>
+      {/* Navigation Tabs - Dock Style */}
+      <div className="flex items-center p-1.5 bg-[var(--deep-ocean-card)]/40 backdrop-blur-md rounded-2xl border border-white/5 w-fit shadow-2xl">
+        <TabButton id="overview" label="Overview" icon={LayoutDashboard} />
+        <div className="w-px h-6 bg-white/5 mx-1" />
+        <TabButton id="users" label="Users" icon={Users} />
+        <TabButton id="directory" label="Directory" icon={Building2} />
+        <TabButton id="scans" label="Scans" icon={Activity} />
+        <TabButton id="analytics" label="Intelligence" icon={LineChart} />
+        <TabButton id="reports" label="Reports" icon={FileText} />
+        <div className="w-px h-6 bg-white/5 mx-1" />
+        <TabButton id="plans" label="Plans" icon={Crown} />
+        <TabButton id="keys" label="API Keys" icon={Key} />
+        <TabButton id="logs" label="System Logs" icon={Database} />
+      </div>
 
-        {/* Overview Tab Content */}
-        {activeTab === "overview" && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Neural Feed */}
-            <NeuralFeed />
+      {/* Overview Tab Content */}
+      {activeTab === "overview" && (
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {/* Neural Feed - Integrated Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <NeuralFeed />
+            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Quick Stats Column */}
+            <div className="grid grid-cols-1 gap-6">
               <StatCard
                 label="Total Users"
                 value={stats?.total_users || 0}
                 icon={Users}
               />
               <StatCard
-                label="Total Hotels"
+                label="Active Hotels"
                 value={stats?.total_hotels || 0}
                 icon={Building2}
               />
               <StatCard
-                label="Total Scans"
+                label="Global Scans"
                 value={stats?.total_scans || 0}
                 icon={Search}
               />
-              <StatCard
-                label="Shared Directory"
-                value={stats?.directory_count || 0}
-                icon={Database}
-              />
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="glass-card p-6 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                    <UserPlus className="w-5 h-5" />
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors" />
-                </div>
-                <h3 className="text-lg font-bold mb-1">Manage Users</h3>
-                <p className="text-sm text-[var(--text-muted)] mb-4">
-                  Review registrations, usage quotas, and manage user sessions.
-                </p>
-                <button
-                  onClick={() => setActiveTab("users")}
-                  className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Go to Users
-                </button>
-              </div>
-
-              <div className="glass-card p-6 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors" />
-                </div>
-                <h3 className="text-lg font-bold mb-1">System Audit</h3>
-                <p className="text-sm text-[var(--text-muted)] mb-4">
-                  Check logs for scraping errors, API key rotations, and system
-                  health.
-                </p>
-                <button
-                  onClick={() => setActiveTab("logs")}
-                  className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
-                >
-                  View Logs
-                </button>
-              </div>
-
-              <div className="glass-card p-6 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-[var(--soft-gold)]/10 flex items-center justify-center text-[var(--soft-gold)]">
-                    <Key className="w-5 h-5" />
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors" />
-                </div>
-                <h3 className="text-lg font-bold mb-1">API Health</h3>
-                <p className="text-sm text-[var(--text-muted)] mb-4">
-                  Monitor SerpApi key usage, rotation history, and quota status.
-                </p>
-                <button
-                  onClick={() => setActiveTab("keys")}
-                  className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Manage Keys
-                </button>
-              </div>
             </div>
           </div>
-        )}
 
-        {/* Tab Content Panels */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Quick Actions - Bento Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="glass-card p-8 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all duration-500 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Users className="w-24 h-24 text-[var(--soft-gold)]" />
+              </div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                  <UserPlus className="w-6 h-6" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">User Access</h3>
+              <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed">
+                Review registrations, usage quotas, and manage active user
+                sessions.
+              </p>
+              <button
+                onClick={() => setActiveTab("users")}
+                className="w-full py-3 bg-white/5 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Launch Manager
+              </button>
+            </div>
+
+            <div className="glass-card p-8 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all duration-500 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Database className="w-24 h-24 text-[var(--soft-gold)]" />
+              </div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                System Audit
+              </h3>
+              <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed">
+                Monitor scraping performance, API key health, and diagnostic
+                logs.
+              </p>
+              <button
+                onClick={() => setActiveTab("logs")}
+                className="w-full py-3 bg-white/5 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Open Console
+              </button>
+            </div>
+
+            <div className="glass-card p-8 border border-white/10 hover:border-[var(--soft-gold)]/30 transition-all duration-500 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Key className="w-24 h-24 text-[var(--soft-gold)]" />
+              </div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center text-[var(--soft-gold)] group-hover:scale-110 transition-transform">
+                  <Key className="w-6 h-6" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">API Gateway</h3>
+              <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed">
+                Manage rotation policies and track quota across various
+                providers.
+              </p>
+              <button
+                onClick={() => setActiveTab("keys")}
+                className="w-full py-3 bg-white/5 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                Manage Keys
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content Panels */}
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <Suspense
+          fallback={
+            <div className="p-20 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)] mx-auto" />
+            </div>
+          }
+        >
           {activeTab === "users" && <UserManagementPanel />}
           {activeTab === "directory" && <DirectoryPanel />}
           {activeTab === "scans" && <ScansPanel />}
@@ -231,7 +264,7 @@ export default function AdminPage() {
           {activeTab === "plans" && <MembershipPlansPanel />}
           {activeTab === "keys" && <ApiKeysPanel />}
           {activeTab === "logs" && <LogsPanel />}
-        </div>
+        </Suspense>
       </div>
     </div>
   );

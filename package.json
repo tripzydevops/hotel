@@ -29,6 +29,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@supabase/mcp-server-supabase": "^0.6.3",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
@@ -36,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "stitch-mcp": "^1.3.1",
     "supabase": "^2.72.8",
     "tailwindcss": "^4",
     "typescript": "^5"

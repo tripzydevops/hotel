@@ -3,7 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, AlertCircle } from "lucide-react";
+import {
+  Clock,
+  Loader2,
+  AlertCircle,
+  Search,
+  Activity,
+  History,
+  List,
+  Calendar,
+  Info,
+  CheckCircle2,
+  RefreshCw,
+  Trash2,
+  Plus,
+} from "lucide-react";
 import { useToast } from "@/components/ui/ToastContext";
 
 const ScansPanel = () => {
@@ -92,14 +106,14 @@ const ScansPanel = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tab Controls */}
-      <div className="flex space-x-4 border-b border-white/10 pb-2">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Tab Controls - Sub-dock */}
+      <div className="flex bg-[var(--deep-ocean-card)]/30 p-1.5 rounded-xl border border-white/5 w-fit shadow-lg">
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-4 py-2 font-bold text-sm transition-colors ${
+          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
             activeTab === "history"
-              ? "text-[var(--soft-gold)] border-b-2 border-[var(--soft-gold)]"
+              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
               : "text-[var(--text-muted)] hover:text-white"
           }`}
         >
@@ -107,9 +121,9 @@ const ScansPanel = () => {
         </button>
         <button
           onClick={() => setActiveTab("queue")}
-          className={`px-4 py-2 font-bold text-sm transition-colors ${
+          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
             activeTab === "queue"
-              ? "text-[var(--soft-gold)] border-b-2 border-[var(--soft-gold)]"
+              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
               : "text-[var(--text-muted)] hover:text-white"
           }`}
         >
@@ -118,139 +132,170 @@ const ScansPanel = () => {
       </div>
 
       {activeTab === "queue" && (
-        <div className="glass-card border border-white/10 overflow-hidden">
+        <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
           {queueLoading ? (
-            <div className="p-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)] mx-auto" />
+            <div className="p-20 text-center">
+              <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mx-auto opacity-50" />
             </div>
           ) : queue.length === 0 ? (
-            <div className="p-8 text-center text-[var(--text-muted)]">
-              No scheduled scans found. Configure users to enable scheduling.
+            <div className="p-16 text-center text-[var(--text-muted)] group">
+              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <Clock className="w-8 h-8 opacity-20" />
+              </div>
+              <p className="font-medium">No scheduled scans found.</p>
+              <p className="text-xs opacity-50 mt-1">
+                Configure users to enable automated market snapshots.
+              </p>
             </div>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
-                <tr>
-                  <th className="p-4">User</th>
-                  <th className="p-4">Frequency</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Next Run</th>
-                  <th className="p-4 text-right">Hotels</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {queue.map((item, idx) => {
-                  const isOverdue = item.status === "overdue";
-                  return (
-                    <tr key={idx} className="hover:bg-white/5">
-                      <td className="p-4 font-medium text-white">
-                        {item.user_name}
-                      </td>
-                      <td className="p-4 text-[var(--soft-gold)] text-xs font-bold">
-                        Every {Math.round(item.scan_frequency_minutes / 60)}h
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                            isOverdue
-                              ? "bg-red-500/20 text-red-400"
-                              : "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-white">
-                        <div className="flex flex-col">
-                          <span>
-                            {new Date(item.next_scan_at).toLocaleString()}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+                  <tr>
+                    <th className="p-5">User Profile</th>
+                    <th className="p-5">Frequency</th>
+                    <th className="p-5">System Priority</th>
+                    <th className="p-5">Next Execution</th>
+                    <th className="p-5 text-right">Monitored Assets</th>
+                    <th className="p-5 text-right">Control</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                  {queue.map((item, idx) => {
+                    const isOverdue = item.status === "overdue";
+                    return (
+                      <tr
+                        key={idx}
+                        className="hover:bg-white/[0.02] transition-colors group"
+                      >
+                        <td className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/10 flex items-center justify-center font-bold text-[var(--soft-gold)] group-hover:bg-[var(--soft-gold)]/10 transition-colors">
+                              {item.user_name?.[0] || "U"}
+                            </div>
+                            <span className="font-bold text-white tracking-tight">
+                              {item.user_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <span className="text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/5 px-2 py-1 rounded border border-[var(--soft-gold)]/10">
+                            EVERY {Math.round(item.scan_frequency_minutes / 60)}
+                            H
                           </span>
-                          <span className="text-xs text-[var(--text-muted)]">
-                            {formatDistanceToNow(new Date(item.next_scan_at), {
-                              addSuffix: true,
-                            })}
+                        </td>
+                        <td className="p-5">
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                              isOverdue
+                                ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                            }`}
+                          >
+                            {item.status}
                           </span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right text-white">
-                        <div className="flex flex-col items-end">
-                          <span className="font-bold">{item.hotel_count}</span>
-                          <span className="text-[10px] text-[var(--text-muted)] max-w-[150px] truncate">
-                            {item.hotels.join(", ")}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button
-                          onClick={() => handleTriggerNow(item.user_id)}
-                          className="px-3 py-1 bg-white/10 hover:bg-[var(--soft-gold)] hover:text-black text-white text-xs font-bold rounded transition-colors"
-                        >
-                          Trigger Now
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="p-5 text-white">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold tabular-nums">
+                              {new Date(item.next_scan_at).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </span>
+                            <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-tight">
+                              {formatDistanceToNow(
+                                new Date(item.next_scan_at),
+                                {
+                                  addSuffix: true,
+                                },
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-5 text-right text-white">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="font-black text-lg tabular-nums group-hover:text-[var(--soft-gold)] transition-colors">
+                              {item.hotel_count}
+                            </span>
+                            <span className="text-[10px] font-medium text-[var(--text-muted)] max-w-[180px] truncate uppercase tracking-tighter">
+                              {item.hotels.join(", ")}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-5 text-right">
+                          <button
+                            onClick={() => handleTriggerNow(item.user_id)}
+                            className="bg-white/5 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] text-white text-[10px] font-black px-4 py-2 rounded-lg transition-all border border-white/5 hover:scale-105 active:scale-95 uppercase tracking-widest"
+                          >
+                            Trigger Now
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {activeTab === "history" && (
         <>
-          <div className="glass-card border border-white/10 overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
-                <tr>
-                  <th className="p-4">Time</th>
-                  <th className="p-4">User</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Hotels</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {scans.map((scan) => (
-                  <tr
-                    key={scan.id}
-                    className={`hover:bg-white/5 cursor-pointer transition-colors ${selectedScanId === scan.id ? "bg-white/5" : ""}`}
-                    onClick={() => setSelectedScanId(scan.id)}
-                  >
-                    <td className="p-4 text-[var(--text-muted)] whitespace-nowrap">
-                      {formatDistanceToNow(new Date(scan.created_at), {
-                        addSuffix: true,
-                      })}
-                    </td>
-                    <td className="p-4 text-white font-medium">
-                      {scan.user_name}
-                    </td>
-                    <td className="p-4">
-                      <span className="bg-white/10 px-2 py-1 rounded text-xs text-white capitalize">
-                        {scan.session_type}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${
-                          scan.status === "completed"
-                            ? "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
-                            : scan.status === "running"
-                              ? "bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]"
-                              : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
-                        {scan.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right text-white">
-                      {scan.hotels_count}
-                    </td>
+          <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+                  <tr>
+                    <th className="p-5">Temporal Index</th>
+                    <th className="p-5">Operator</th>
+                    <th className="p-5">Session Matrix</th>
+                    <th className="p-5">Neural Status</th>
+                    <th className="p-5 text-right">Entity Volume</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                  {scans.map((scan) => (
+                    <tr
+                      key={scan.id}
+                      className={`hover:bg-white/[0.04] cursor-pointer transition-all group ${selectedScanId === scan.id ? "bg-white/[0.06] border-l-2 border-l-[var(--soft-gold)]" : ""}`}
+                      onClick={() => setSelectedScanId(scan.id)}
+                    >
+                      <td className="p-5 text-[var(--text-muted)] tabular-nums group-hover:text-white transition-colors">
+                        {formatDistanceToNow(new Date(scan.created_at), {
+                          addSuffix: true,
+                        })}
+                      </td>
+                      <td className="p-5 text-white font-bold group-hover:text-[var(--soft-gold)] transition-colors">
+                        {scan.user_name}
+                      </td>
+                      <td className="p-5">
+                        <span className="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white group-hover:border-[var(--soft-gold)]/30 transition-colors">
+                          {scan.session_type}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
+                            scan.status === "completed"
+                              ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                              : scan.status === "running"
+                                ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 animate-pulse"
+                                : "bg-red-500/10 text-red-400 border border-red-500/20"
+                          }`}
+                        >
+                          {scan.status}
+                        </span>
+                      </td>
+                      <td className="p-5 text-right text-white font-black text-lg group-hover:scale-110 transition-transform tabular-nums">
+                        {scan.hotels_count}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {selectedScanId && (

@@ -10,10 +10,14 @@ import {
   CheckCircle2,
   Loader2,
   Eye,
+  UserPlus,
+  Mail,
+  Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { AdminUser } from "@/types";
+import { AdminUser, AdminUserUpdate } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const UserManagementPanel = () => {
   const { toast } = useToast();
@@ -37,6 +41,8 @@ const UserManagementPanel = () => {
     phone: "",
     timezone: "UTC",
     check_frequency_minutes: 0,
+    plan_type: "trial" as AdminUser["plan_type"],
+    subscription_status: "trial" as AdminUser["subscription_status"],
   });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
@@ -55,6 +61,8 @@ const UserManagementPanel = () => {
         phone: userToEdit.phone || "",
         timezone: userToEdit.timezone || "UTC",
         check_frequency_minutes: userToEdit.scan_frequency_minutes || 0,
+        plan_type: userToEdit.plan_type || "trial",
+        subscription_status: userToEdit.subscription_status || "trial",
       });
     }
   }, [userToEdit]);
@@ -64,8 +72,11 @@ const UserManagementPanel = () => {
     try {
       const data = await api.getAdminUsers();
       setUsers(data);
-    } catch (err: any) {
-      toast.error("Failed to load users: " + err.message);
+    } catch (err: unknown) {
+      toast.error(
+        "An error occurred: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     } finally {
       setLoading(false);
     }
@@ -85,8 +96,12 @@ const UserManagementPanel = () => {
       setNewUserName("");
       loadUsers();
       setTimeout(() => setUserSuccess(false), 3000);
-    } catch (err: any) {
-      toast.error("Failed to create user: " + err.message);
+      toast.success("User created successfully");
+    } catch (err: unknown) {
+      toast.error(
+        "An error occurred: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
@@ -95,19 +110,19 @@ const UserManagementPanel = () => {
     setUserSaveLoading(true);
     try {
       await api.updateAdminUser(userToEdit.id, {
-        email: editUserForm.email,
-        display_name: editUserForm.display_name,
-        password: editUserForm.password || undefined,
-        company_name: editUserForm.company_name,
-        job_title: editUserForm.job_title,
-        phone: editUserForm.phone,
-        timezone: editUserForm.timezone,
-        check_frequency_minutes: editUserForm.check_frequency_minutes,
+        plan_type: editUserForm.plan_type as AdminUserUpdate["plan_type"],
+        subscription_status:
+          editUserForm.subscription_status as AdminUserUpdate["subscription_status"],
+        scan_frequency_minutes: editUserForm.check_frequency_minutes,
       });
       setUserToEdit(null);
       loadUsers();
-    } catch (err: any) {
-      toast.error("Failed to update: " + err.message);
+      toast.success("User updated");
+    } catch (err: unknown) {
+      toast.error(
+        "An error occurred: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     } finally {
       setUserSaveLoading(false);
     }
@@ -123,203 +138,283 @@ const UserManagementPanel = () => {
     try {
       await api.deleteAdminUser(userId);
       loadUsers();
-    } catch (err: any) {
-      toast.error("Failed to delete user: " + err.message);
+      toast.success("User deleted");
+    } catch (err: unknown) {
+      toast.error(
+        "An error occurred: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10 animate-in fade-in duration-500">
       {/* Add User Form */}
-      <div className="glass-card p-6 border border-white/10">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-lg font-bold text-white">Create New User</h3>
-          {userSuccess && (
-            <span className="text-[var(--optimal-green)] text-xs flex items-center">
-              <CheckCircle2 className="w-3 h-3 mr-1" /> User created!
-            </span>
-          )}
+      <div className="glass-card p-8 border border-white/5 relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[var(--soft-gold)]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-[var(--soft-gold)]" />
+            </div>
+            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">
+              Provision New User
+            </h3>
+          </div>
+          <AnimatePresence>
+            {userSuccess && (
+              <motion.span
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="text-[var(--optimal-green)] text-[10px] font-black uppercase tracking-widest flex items-center bg-[var(--optimal-green)]/10 px-3 py-1.5 rounded-lg border border-[var(--optimal-green)]/20 shadow-lg shadow-[var(--optimal-green)]/10"
+              >
+                <CheckCircle2 className="w-3 h-3 mr-2" /> Vector Link
+                Established
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
         <form
           onSubmit={handleCreateUser}
-          className="flex flex-col md:flex-row gap-4"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
         >
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-          />
-          <input
-            type="text"
-            placeholder="Display Name (Opt)"
-            value={newUserName}
-            onChange={(e) => setNewUserName(e.target.value)}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            minLength={6}
-            value={newUserPass}
-            onChange={(e) => setNewUserPass(e.target.value)}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-          />
-          <button
-            type="submit"
-            className="bg-[var(--soft-gold)] text-black font-bold px-6 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 justify-center"
-          >
-            <Plus className="w-4 h-4" /> Create User
-          </button>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
+              <Mail className="w-3 h-3" /> Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="operator@nexus.com"
+              required
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
+              <Users className="w-3 h-3" /> Display Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. John Doe"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
+              <Lock className="w-3 h-3" /> Initial Secret
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              required
+              minLength={6}
+              value={newUserPass}
+              onChange={(e) => newUserPass && setNewUserPass(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="w-full bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-black px-8 py-3.5 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[var(--soft-gold)]/10 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group"
+            >
+              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />{" "}
+              Create Account
+            </button>
+          </div>
         </form>
       </div>
 
-      <div className="glass-card border border-white/10 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-white/5 text-[var(--text-muted)] font-medium">
-            <tr>
-              <th className="p-4">User</th>
-              <th className="p-4">Plan / Status</th>
-              <th className="p-4">Schedule</th>
-              <th className="p-4">Hotels</th>
-              <th className="p-4">Scans</th>
-              <th className="p-4">Created</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {users.map((u) => (
-              <tr key={u.id} className="hover:bg-white/5">
-                <td className="p-4">
-                  <div className="font-medium text-white">
-                    {u.display_name || u.email?.split("@")[0] || "Unknown"}
-                  </div>
-                  <div className="text-[var(--text-muted)] text-xs">
-                    {u.email}
-                  </div>
-                  <div className="text-[var(--text-muted)] text-xs font-mono">
-                    {u.id}
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex flex-col">
-                    <span className="uppercase text-[10px] font-bold text-white">
-                      {u.plan_type || "TRIAL"}
-                    </span>
-                    <span
-                      className={`text-xs ${u.subscription_status === "active" ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
-                    >
-                      {u.subscription_status || "trial"}
-                    </span>
-                  </div>
-                </td>
-                <td className="p-4">
-                  {u.scan_frequency_minutes && u.scan_frequency_minutes > 0 ? (
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1 text-[var(--soft-gold)] text-xs font-bold">
-                        <RefreshCw className="w-3 h-3" />
-                        Every {Math.round(u.scan_frequency_minutes / 60)}h
+      {/* Users Table */}
+      <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+        {loading && users.length === 0 ? (
+          <div className="p-24 text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mx-auto opacity-50" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+                <tr>
+                  <th className="p-5">Operator Profile</th>
+                  <th className="p-5">Tier / Integrity</th>
+                  <th className="p-5 text-center">Entity Allocation</th>
+                  <th className="p-5 text-center">Sync Matrix</th>
+                  <th className="p-5">Temporal Index</th>
+                  <th className="p-5 text-right">Matrix Ops</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {users.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="hover:bg-white/[0.02] transition-colors group"
+                  >
+                    <td className="p-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[var(--soft-gold)]/10 group-hover:border-[var(--soft-gold)]/30 transition-all overflow-hidden relative">
+                          {u.display_name?.[0] || u.email?.[0] || "U"}
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-white font-bold tracking-tight text-base group-hover:text-[var(--soft-gold)] transition-colors">
+                            {u.display_name ||
+                              u.email?.split("@")[0] ||
+                              "Unknown"}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono opacity-50 lowercase">
+                            {u.email}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-[var(--text-muted)] mt-1">
-                        Next:{" "}
-                        {u.next_scan_at
-                          ? new Date(u.next_scan_at).toLocaleString()
-                          : "Pending"}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-[var(--text-muted)] text-xs">
-                      Manual Only
-                    </span>
-                  )}
-                </td>
-                <td className="p-4 text-white">{u.hotel_count}</td>
-                <td className="p-4 text-white">{u.scan_count}</td>
-                <td className="p-4 text-[var(--text-muted)]">
-                  {u.created_at
-                    ? new Date(u.created_at).toLocaleDateString()
-                    : "-"}
-                </td>
-                <td className="p-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() =>
-                        window.open(`/?impersonate=${u.id}`, "_blank")
-                      }
-                      className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
-                      title="View Dashboard (Impersonate)"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setUserToEdit(u)}
-                      className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Promote user to PRO for 30 days?")) {
-                          api
-                            .updateAdminUser(u.id, {
-                              plan_type: "pro",
-                              subscription_status: "active",
-                              extend_trial_days: 30,
-                            })
-                            .then(loadUsers);
-                        }
-                      }}
-                      className="p-2 hover:bg-white/10 rounded text-blue-400 transition-colors"
-                      title="Quick Upgrade"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="p-2 hover:bg-red-500/20 rounded text-red-400 hover:text-red-200 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col gap-1.5">
+                        <span
+                          className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
+                            u.plan_type === "pro" ||
+                            u.plan_type === "enterprise"
+                              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                              : "bg-white/5 text-white/50 border-white/10"
+                          }`}
+                        >
+                          {u.plan_type || "TRIAL"}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${u.subscription_status === "active" ? "bg-[var(--optimal-green)] animate-pulse shadow-[0_0_5px_var(--optimal-green)]" : "bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"}`}
+                          />
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-tighter ${u.subscription_status === "active" ? "text-[var(--optimal-green)]" : "text-red-400 opacity-70"}`}
+                          >
+                            {u.subscription_status || "trial"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5 text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg font-black text-white tabular-nums group-hover:scale-110 transition-transform group-hover:text-[var(--soft-gold)]">
+                          {u.hotel_count}
+                        </span>
+                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-40">
+                          Objects
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-5 text-center">
+                      {u.scan_frequency_minutes &&
+                      u.scan_frequency_minutes > 0 ? (
+                        <div className="flex flex-col items-center gap-1 group/sync relative">
+                          <div className="flex items-center gap-1.5 text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/10 px-2 py-1 rounded border border-[var(--soft-gold)]/20">
+                            <RefreshCw className="w-3 h-3" />
+                            {Math.round(u.scan_frequency_minutes / 60)}H
+                          </div>
+                          <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
+                            Next Scan Trace
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] border border-white/5 px-2 py-1 rounded opacity-30 italic">
+                          Manual_Only
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col text-[var(--text-muted)]">
+                        <span className="text-xs font-bold tabular-nums group-hover:text-white transition-colors">
+                          {u.created_at
+                            ? new Date(u.created_at).toLocaleDateString()
+                            : "-"}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-tighter opacity-40 mt-0.5">
+                          Registration Epoch
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-5 text-right">
+                      <div className="flex justify-end gap-2.5">
+                        <button
+                          onClick={() =>
+                            window.open(`/?impersonate=${u.id}`, "_blank")
+                          }
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
+                          title="Impersonate Matrix"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setUserToEdit(u)}
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
+                          title="Recode Profile"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(u.id)}
+                          className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-95"
+                          title="Purge Identity"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Edit User Modal */}
       {userToEdit && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 border border-white/10 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Edit User</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="glass-card p-8 border border-white/10 w-full max-w-lg shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--soft-gold)]/5 blur-3xl pointer-events-none" />
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center border border-[var(--soft-gold)]/20">
+                  <Edit2 className="w-5 h-5 text-[var(--soft-gold)]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-widest">
+                    Recode Identity
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 opacity-50 lowercase">
+                    {userToEdit.email}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setUserToEdit(null)}
-                className="text-[var(--text-muted)] hover:text-white"
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-[var(--text-muted)] hover:text-white transition-all"
               >
                 ✕
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
-                  Email
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Email Terminal
                 </label>
                 <input
                   value={editUserForm.email}
                   onChange={(e) =>
                     setEditUserForm({ ...editUserForm, email: e.target.value })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
-                  Name
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Display Alias
                 </label>
                 <input
                   value={editUserForm.display_name}
@@ -329,28 +424,12 @@ const UserManagementPanel = () => {
                       display_name: e.target.value,
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
-                  Pass (Leave blank to keep current)
-                </label>
-                <input
-                  type="password"
-                  value={editUserForm.password}
-                  onChange={(e) =>
-                    setEditUserForm({
-                      ...editUserForm,
-                      password: e.target.value,
-                    })
-                  }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
-                  Scan Frequency
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Frequency Matrix
                 </label>
                 <select
                   value={editUserForm.check_frequency_minutes}
@@ -360,34 +439,52 @@ const UserManagementPanel = () => {
                       check_frequency_minutes: parseInt(e.target.value),
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
                 >
-                  <option value={0}>Manual Only</option>
-                  <option value={60}>Every Hour</option>
-                  <option value={360}>Every 6 Hours (4x/day)</option>
-                  <option value={720}>Every 12 Hours (2x/day)</option>
-                  <option value={1440}>Every 24 Hours (Daily)</option>
+                  <option value={0}>MANUAL_ONLY</option>
+                  <option value={60}>HOURLY_SYNC</option>
+                  <option value={360}>QUARTER_DAY_SYNC</option>
+                  <option value={720}>HALF_DAY_SYNC</option>
+                  <option value={1440}>DAILY_SYNC</option>
                 </select>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setUserToEdit(null)}
-                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateUser}
-                  disabled={userSaveLoading}
-                  className="flex-1 py-2 bg-[var(--soft-gold)] text-black font-bold rounded-lg hover:opacity-90 disabled:opacity-50"
-                >
-                  {userSaveLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Reset Key (Optional)
+                </label>
+                <input
+                  type="password"
+                  value={editUserForm.password}
+                  placeholder="NEW_SECRET_KEY"
+                  onChange={(e) =>
+                    setEditUserForm({
+                      ...editUserForm,
+                      password: e.target.value,
+                    })
+                  }
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
+                />
               </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setUserToEdit(null)}
+                className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white rounded-xl transition-all border border-white/5"
+              >
+                Abort
+              </button>
+              <button
+                onClick={handleUpdateUser}
+                disabled={userSaveLoading}
+                className="flex-[1.5] py-3.5 bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-[var(--soft-gold)]/10 disabled:opacity-50 flex items-center justify-center"
+              >
+                {userSaveLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Overwrite Identity"
+                )}
+              </button>
             </div>
           </div>
         </div>
