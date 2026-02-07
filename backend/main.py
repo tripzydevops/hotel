@@ -161,7 +161,7 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         print(f"Admin Auth: Verified {email} ({user_id})")
 
         # 1. Check strict whitelist (Hardcoded for MVP safety)
-        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
+        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
             print(f"Admin Auth: {email} allowed via Whitelist")
             return user_obj
         
@@ -175,8 +175,8 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         try:
             profile = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
             
-            if profile.data and profile.data[0].get("role") == "admin":
-                print(f"Admin Auth: {email} allowed via DB Role")
+            if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
+                print(f"Admin Auth: {email} allowed via DB Role ({profile.data[0].get('role')})")
                 return user_obj
         except Exception as db_e:
             print(f"Admin Auth: DB Profile lookup failed: {db_e}")
@@ -299,12 +299,12 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         try:
             # Re-use admin check logic (simplified here)
             email = current_user.email
-            if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
+            if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
                 is_admin = True
             else:
                 # DB check
                 profile = db.table("user_profiles").select("role").eq("user_id", current_user.id).limit(1).execute()
-                if profile.data and profile.data[0].get("role") == "admin":
+                if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                     is_admin = True
         except Exception as e:
             print(f"Impersonation Auth Check Failed: {e}")
@@ -546,14 +546,14 @@ async def trigger_monitor(
         email = getattr(current_user, 'email', None)
         
         # 1. Whitelist Check
-        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com"] or email.endswith("@hotel.plus")):
+        if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
             is_admin = True
         
         # 2. DB Role Check (if not already whitelisted)
         if not is_admin:
             try:
                 profile_res = db.table("user_profiles").select("role").eq("user_id", str(current_user.id)).execute()
-                if profile_res.data and profile_res.data[0].get("role") == "admin":
+                if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                     is_admin = True
             except Exception:
                 pass
@@ -2145,12 +2145,19 @@ async def get_admin_users(db: Client = Depends(get_supabase)):
 # ... create_admin_user ... skipped for snippet ...
 
 @app.get("/api/admin/directory", response_model=List[AdminDirectoryEntry])
-async def get_admin_directory(limit: int = 100, db: Client = Depends(get_supabase)):
+async def get_admin_directory(limit: int = 100, city: Optional[str] = None, db: Client = Depends(get_supabase)):
     """List directory entries."""
     if not db:
         raise HTTPException(status_code=503, detail="Database credentials missing.")
     try:
-        result = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit).execute()
+        query = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(limit)
+        
+        if city:
+            # Filter by location containing the city name (case-insensitive if possible, but ILIKE is good)
+            # Utilizing Supabase's ilike for location
+            query = query.ilike("location", f"%{city}%")
+            
+        result = query.execute()
         entries = []
         if result.data:
             for item in result.data:
@@ -2918,12 +2925,25 @@ async def generate_report(
         
         for hotel_id in req.hotel_ids:
             # Get Hotel Details
-            hotel = db.table("hotels").select("*").eq("id", hotel_id).single().execute()
-            if not hotel.data:
-                # Try directory if not in tracked hotels
-                hotel = db.table("hotel_directory").select("*").eq("id", hotel_id).single().execute()
+            h_data = None
+            try:
+                # Try hotels (UUID)
+                hotel = db.table("hotels").select("*").eq("id", hotel_id).single().execute()
+                h_data = hotel.data
+            except Exception:
+                # Might fail if hotel_id is not UUID (e.g. directory ID)
+                pass
+                
+            if not h_data:
+                try:
+                    # Try directory (Integer ID)
+                    hotel = db.table("hotel_directory").select("*").eq("id", hotel_id).single().execute()
+                    h_data = hotel.data
+                except Exception:
+                    pass
             
-            h_data = hotel.data
+            if not h_data:
+                continue # Skip if not found in either
             
             # Get Price History
             # Note: mocking history if not available for directory hotels

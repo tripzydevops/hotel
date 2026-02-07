@@ -278,8 +278,9 @@ class ApiClient {
     });
   }
 
-  async getAdminDirectory(limit = 100): Promise<any[]> {
-    return this.fetch<any[]>(`/api/admin/directory?limit=${limit}`);
+  async getAdminDirectory(limit = 100, city?: string): Promise<any[]> {
+    const query = city ? `&city=${encodeURIComponent(city)}` : "";
+    return this.fetch<any[]>(`/api/admin/directory?limit=${limit}${query}`);
   }
 
   async deleteAdminDirectory(entryId: number): Promise<void> {

@@ -33,16 +33,17 @@ export default function ReportGeneratorPanel() {
     async function loadHotels() {
       setLoadingHotels(true);
       try {
-        // Fetch from market intelligence endpoint which returns hotels by city
-        const res = await api.getMarketIntelligence(selectedCity);
-        if (res.hotels) {
+        // Fetch from directory endpoint with city filter
+        const directoryEntries = await api.getAdminDirectory(100, selectedCity);
+
+        if (directoryEntries) {
           setHotels(
-            res.hotels.map((h: any) => ({
+            directoryEntries.map((h: any) => ({
               id: h.id,
               name: h.name,
               location: h.location || selectedCity,
-              rating: h.rating,
-              stars: h.stars,
+              rating: h.rating, // Might be undefined from directory
+              stars: h.stars, // Might be undefined from directory
             })),
           );
         }
