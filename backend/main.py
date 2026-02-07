@@ -2830,7 +2830,7 @@ async def get_market_intelligence(
         # 1. Fetch hotels in city (limit for map performance)
         # Using hotel_directory for broader market view
         hotels_query = db.table("hotel_directory") \
-            .select("id, name, location, latitude, longitude, created_at") \
+            .select("id, name, location, rating, stars, created_at") \
             .ilike("location", f"%{city}%") \
             .limit(limit) \
             .execute()
@@ -2840,7 +2840,7 @@ async def get_market_intelligence(
         if not hotels:
             # Fallback to user-added hotels if directory is empty for this query
             hotels_query = db.table("hotels") \
-                .select("id, name, location, latitude, longitude") \
+                .select("id, name, location, latitude, longitude, rating, stars") \
                 .ilike("location", f"%{city}%") \
                 .limit(limit) \
                 .execute()
