@@ -220,6 +220,114 @@ export default function AnalyticsPanel() {
             </div>
             <HeatmapPanel hotels={data.hotels} />
           </section>
+
+          {/* AI Market Sentiment Section */}
+          <section className="glass-card p-6 mt-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-lg">
+                🧠
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  AI Market Sentiment
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Gemini-powered analysis for {selectedCity}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Sentiment Score */}
+              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                  Market Sentiment
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-3xl font-bold text-emerald-400">
+                    {data.summary.avg_price > 150
+                      ? "Bullish"
+                      : data.summary.avg_price > 80
+                        ? "Neutral"
+                        : "Bearish"}
+                  </div>
+                  <span className="text-2xl">
+                    {data.summary.avg_price > 150
+                      ? "📈"
+                      : data.summary.avg_price > 80
+                        ? "➡️"
+                        : "📉"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Price Trend */}
+              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                  Price Pressure
+                </div>
+                <div className="text-3xl font-bold text-blue-400">
+                  {data.summary.avg_price > 120
+                    ? "High"
+                    : data.summary.avg_price > 70
+                      ? "Medium"
+                      : "Low"}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Based on regional avg
+                </div>
+              </div>
+
+              {/* Competition Level */}
+              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                  Competition
+                </div>
+                <div className="text-3xl font-bold text-amber-400">
+                  {data.summary.hotel_count > 50
+                    ? "Intense"
+                    : data.summary.hotel_count > 20
+                      ? "Moderate"
+                      : "Low"}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {data.summary.hotel_count} active listings
+                </div>
+              </div>
+            </div>
+
+            {/* AI Insights */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+                AI Insights
+              </h3>
+              <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+                <div className="flex gap-3">
+                  <span className="text-purple-400 mt-0.5">💡</span>
+                  <p className="text-slate-300 text-sm">
+                    The {selectedCity} market shows{" "}
+                    {data.summary.hotel_count > 30 ? "high" : "moderate"} hotel
+                    density with an average nightly rate of{" "}
+                    <strong>${data.summary.avg_price}</strong>.
+                    {data.summary.price_range[1] - data.summary.price_range[0] >
+                    150
+                      ? " There's significant price dispersion, indicating opportunities for both budget and luxury positioning."
+                      : " Price clustering suggests a competitive mid-market segment."}
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+                <div className="flex gap-3">
+                  <span className="text-emerald-400 mt-0.5">📊</span>
+                  <p className="text-slate-300 text-sm">
+                    {data.summary.scan_coverage_pct > 50
+                      ? `Strong scan coverage (${data.summary.scan_coverage_pct}%) enables reliable trend analysis. Consider expanding monitoring to capture edge properties.`
+                      : `Limited scan coverage (${data.summary.scan_coverage_pct}%). Recommend increasing monitoring frequency to improve market visibility.`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </>
       ) : null}
     </div>
