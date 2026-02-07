@@ -33,6 +33,8 @@ import ScansPanel from "@/components/admin/ScansPanel";
 
 import NeuralFeed from "@/components/admin/NeuralFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
+import ReportGeneratorPanel from "@/components/admin/ReportGeneratorPanel";
+import { FileText } from "lucide-react";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -120,6 +122,7 @@ export default function AdminPage() {
           <TabButton id="directory" label="Directory" icon={Building2} />
           <TabButton id="scans" label="Scans" icon={Activity} />
           <TabButton id="analytics" label="Intelligence" icon={LineChart} />
+          <TabButton id="reports" label="Reports" icon={FileText} />
           <TabButton id="plans" label="Plans" icon={Crown} />
           <TabButton id="keys" label="API Keys" icon={Key} />
           <TabButton id="logs" label="System Logs" icon={Database} />
@@ -224,6 +227,7 @@ export default function AdminPage() {
           {activeTab === "directory" && <DirectoryPanel />}
           {activeTab === "scans" && <ScansPanel />}
           {activeTab === "analytics" && <AnalyticsPanel />}
+          {activeTab === "reports" && <ReportGeneratorPanel />}
           {activeTab === "plans" && <MembershipPlansPanel />}
           {activeTab === "keys" && <ApiKeysPanel />}
           {activeTab === "logs" && <LogsPanel />}

@@ -296,7 +296,19 @@ class ApiClient {
 
   // ===== Admin Edit Operations =====
 
-  async updateAdminUser(userId: string, updates: any): Promise<any> {
+  async getMarketIntelligence(
+    city: string,
+  ): Promise<MarketIntelligenceResponse> {
+    const response = await this.fetch<MarketIntelligenceResponse>(
+      `/api/admin/market-intelligence?city=${encodeURIComponent(city)}`,
+    );
+    return response;
+  }
+
+  async updateAdminUser(
+    userId: string,
+    updates: AdminUserUpdate,
+  ): Promise<void> {
     return this.fetch<any>(`/api/admin/users/${userId}`, {
       method: "PATCH",
       body: JSON.stringify(updates),

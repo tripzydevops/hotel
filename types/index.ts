@@ -144,6 +144,16 @@ export interface AdminStats {
   service_role_active: boolean;
 }
 
+export interface MarketIntelligenceResponse {
+  summary: {
+    hotel_count: number;
+    avg_price: number;
+    price_range: [number, number];
+    scan_coverage_pct: number;
+  };
+  hotels: Hotel[];
+}
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -236,4 +246,15 @@ export interface AdminStats {
   api_calls_today: number;
   directory_size: number;
   service_role_active: boolean;
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  report_type: "single" | "comparison";
+  created_at: string;
+  report_data?: {
+    hotels: any[];
+    ai_insights: string[];
+  };
 }
