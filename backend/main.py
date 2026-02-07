@@ -319,7 +319,9 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
         # 1. Fetch hotels
         try:
             hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-            hotels = hotels_result.data or []
+            all_hotels = hotels_result.data or []
+            # Filter out hotels without a property_token or serp_api_id (unusable for scans)
+            hotels = [h for h in all_hotels if h.get("property_token") or h.get("serp_api_id")]
         except Exception as e:
             print(f"Hotels fetch failed: {e}")
             return JSONResponse(content=fallback_data)
@@ -1861,7 +1863,7 @@ async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Cl
         status["env_debug"] = {
             "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
             "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
-            "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing"
+            "SERPAPI_API_KEY_3": "Set" if os.getenv("SERPAPI_API_KEY_3") else "Missing"
         }
         
         return status
@@ -1923,7 +1925,7 @@ async def reload_api_keys(user: Any = Depends(get_current_admin_user), db: Clien
             "env_debug": {
                 "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
                 "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
-                "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing"
+                "SERPAPI_API_KEY_3": "Set" if os.getenv("SERPAPI_API_KEY_3") else "Missing"
             },
             "current_status": full_status
         }

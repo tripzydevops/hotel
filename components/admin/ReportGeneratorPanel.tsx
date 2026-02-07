@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { DirectoryEntry } from "@/types";
+import SavedReportsBrowser from "./SavedReportsBrowser";
 
 type ReportType = "in-depth" | "comparison";
 
@@ -95,8 +96,8 @@ export default function ReportGeneratorPanel() {
       if (selectedHotels.includes(id)) {
         setSelectedHotels((prev) => prev.filter((h) => h !== id));
       } else {
-        if (selectedHotels.length >= 3) {
-          alert("Max 3 hotels for comparison.");
+        if (selectedHotels.length >= 5) {
+          alert("Max 5 hotels for comparison.");
           return;
         }
         setSelectedHotels((prev) => [...prev, id]);
@@ -345,6 +346,9 @@ export default function ReportGeneratorPanel() {
           )}
         </div>
       </div>
+
+      {/* Saved Reports */}
+      <SavedReportsBrowser />
     </div>
   );
 }
