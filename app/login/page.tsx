@@ -38,21 +38,33 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-10 relative z-10">
           <div className="relative group/logo">
             <div className="absolute inset-0 bg-[var(--soft-gold)]/20 blur-2xl group-hover/logo:blur-3xl transition-all duration-500 rounded-full" />
-            <div className="w-24 h-24 relative z-10 metallic-gold p-[1.5px] rounded-2xl animate-float transition-transform group-hover:scale-110 duration-500">
-              <div className="bg-[#050B18] rounded-[15px] flex items-center justify-center h-full w-full p-3">
+            <div className="metallic-gold p-[1.5px] rounded-2xl animate-float transition-transform group-hover:scale-110 duration-500">
+              <div className="bg-[#050B18] rounded-[15px] flex items-center justify-center h-20 w-20 p-2">
                 <div className="relative w-full h-full flex items-center justify-center">
-                  <div className="relative w-full h-full flex items-end justify-center gap-[2px] pb-1">
-                    <div className="w-2 h-[40%] bg-[var(--soft-gold)] rounded-t-sm animate-pulse shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
-                    <div className="w-2 h-[70%] bg-[var(--soft-gold)] rounded-t-sm shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
-                    <div className="w-2 h-[100%] bg-[var(--soft-gold)] rounded-t-sm shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
+                  <div className="relative w-12 h-12">
+                    <div className="absolute left-0 top-0 w-3.5 h-full bg-[#003366] rounded-sm"></div>
+                    <div className="absolute right-0 top-0 w-3.5 h-full bg-[#003366] rounded-sm"></div>
+                    <div className="absolute left-0 top-[42%] w-full h-2.5 bg-[#003366]"></div>
+                    <div className="absolute left-[20%] bottom-0 flex items-end gap-[2px]">
+                      <div className="w-1.5 h-3.5 bg-[#F6C344]"></div>
+                      <div className="w-1.5 h-6 bg-[#F6C344]"></div>
+                      <div className="w-1.5 h-8 bg-[#F6C344]"></div>
+                    </div>
+                    <div className="absolute -right-1.5 -top-1.5 w-5 h-5 flex items-center justify-center">
+                      <div className="absolute w-4 h-1.5 bg-[#F6C344] rounded-full"></div>
+                      <div className="absolute w-1.5 h-4 bg-[#F6C344] rounded-full"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter text-center">
-            Hotel Rate <span className="text-[var(--soft-gold)]">Sentinel</span>
+          <h1 className="text-4xl font-black text-white tracking-tighter text-center mt-6">
+            Hotel <span className="text-[var(--soft-gold)]">Plus</span>
           </h1>
+          <p className="text-[10px] text-[#F6C344]/80 uppercase tracking-[0.5em] font-black mt-2">
+            Rate Sentinel
+          </p>
           <p className="text-[var(--text-secondary)] mt-3 text-sm text-center font-medium uppercase tracking-widest opacity-80">
             {isLogin ? t("auth.loginSubtitle") : t("auth.signupSubtitle")}
           </p>
