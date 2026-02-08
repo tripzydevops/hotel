@@ -526,21 +526,21 @@ export default function SentimentPage() {
               <div className="flex-1 relative bg-[#0a1628]/50 rounded-lg p-4 overflow-hidden border border-white/5">
                 <div className="flex flex-wrap gap-2 content-center justify-center h-full">
                   {/* Generate insight tags based on actual data */}
-                  {targetHotel.rating >= 4.5 && (
+                  {(targetHotel.rating ?? 0) >= 4.5 && (
                     <KeywordTag
                       text="Highly Rated"
                       sentiment="positive"
                       size="lg"
                     />
                   )}
-                  {targetHotel.rating >= marketAvgRating && (
+                  {(targetHotel.rating ?? 0) >= marketAvgRating && (
                     <KeywordTag
                       text="Above Average"
                       sentiment="positive"
                       size="md"
                     />
                   )}
-                  {targetHotel.rating < marketAvgRating && (
+                  {(targetHotel.rating ?? 0) < marketAvgRating && (
                     <KeywordTag
                       text="Below Market Avg"
                       sentiment="negative"
@@ -589,7 +589,7 @@ export default function SentimentPage() {
                     {isTargetLeader
                       ? "You're currently the market leader! Maintain your competitive edge by monitoring competitor pricing."
                       : `You're ranked ${getRank(targetHotel.id)} in your competitive set. ${
-                          targetHotel.rating < marketAvgRating
+                          (targetHotel.rating ?? 0) < marketAvgRating
                             ? "Consider improving guest experience to boost ratings."
                             : "Your rating is competitive. Focus on value proposition."
                         }`}
