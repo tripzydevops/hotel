@@ -219,9 +219,13 @@ class AnalystAgent:
             if not target_embedding:
                 text = format_hotel_for_embedding(target_data)
                 target_embedding = await get_embedding(text)
+            
+            # Get target coordinates
+            target_lat = target_data.get("latitude")
+            target_lng = target_data.get("longitude")
                 
             # 3. Perform Vector Search (RPC) - request more results to filter by location
-            search_limit = limit * 4  # Fetch more to filter
+            search_limit = limit * 6  # Fetch more to filter by distance
             res = self.db.rpc("match_hotels", {
                 "query_embedding": target_embedding,
                 "match_threshold": 0.5,
@@ -232,31 +236,48 @@ class AnalystAgent:
             if not res or not hasattr(res, 'data') or not res.data:
                 return []
             
-            # 4. Filter by Location (same city/region)
+            # 4. Filter by Location (coordinates first, then fallback to string match)
             filtered_results = []
             for rival in res.data:
-                rival_location = rival.get("location", "")
-                rival_city = self._extract_city(rival_location)
+                rival_lat = rival.get("latitude")
+                rival_lng = rival.get("longitude")
                 
-                # Check if same city or at least same region
-                if target_city and rival_city:
-                    if target_city.lower() == rival_city.lower():
-                        # Same city - high priority
-                        rival["location_match"] = "city"
+                # Try coordinate-based distance first
+                if target_lat and target_lng and rival_lat and rival_lng:
+                    distance_km = self._haversine_distance(
+                        target_lat, target_lng, rival_lat, rival_lng
+                    )
+                    rival["distance_km"] = round(distance_km, 1)
+                    
+                    # Filter: only include hotels within 50km
+                    if distance_km <= 25:
+                        rival["location_match"] = "nearby"  # Very close
                         filtered_results.append(rival)
-                    elif self._same_region(target_location, rival_location):
-                        # Same region - medium priority
-                        rival["location_match"] = "region"
+                    elif distance_km <= 50:
+                        rival["location_match"] = "region"  # Same region
                         filtered_results.append(rival)
-                elif not target_city:
-                    # If we can't determine target city, include all
-                    filtered_results.append(rival)
+                    # Skip hotels > 50km away
+                else:
+                    # Fallback to string-based location matching
+                    rival_location = rival.get("location", "")
+                    rival_city = self._extract_city(rival_location)
+                    
+                    if target_city and rival_city:
+                        if target_city.lower() == rival_city.lower():
+                            rival["location_match"] = "city"
+                            filtered_results.append(rival)
+                        elif self._same_region(target_location, rival_location):
+                            rival["location_match"] = "region"
+                            filtered_results.append(rival)
+                    elif not target_city:
+                        # If we can't determine target city, include all
+                        filtered_results.append(rival)
             
-            # 5. Sort by location match priority, then similarity
+            # 5. Sort by distance (if available) then similarity
             def sort_key(r):
-                loc_priority = 0 if r.get("location_match") == "city" else 1
+                distance = r.get("distance_km", 999)  # Default high for no coords
                 sim = r.get("similarity", 0) or 0
-                return (loc_priority, -sim)
+                return (distance, -sim)
             
             filtered_results.sort(key=sort_key)
             
@@ -272,6 +293,21 @@ class AnalystAgent:
             import traceback
             traceback.print_exc()
             return []
+
+    def _haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """Calculate distance between two points using Haversine formula. Returns km."""
+        import math
+        R = 6371  # Earth's radius in km
+        
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        delta_lat = math.radians(lat2 - lat1)
+        delta_lon = math.radians(lon2 - lon1)
+        
+        a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        
+        return R * c
 
     def _extract_city(self, location: str) -> str:
         """Extract city name from location string like 'Istanbul, Turkey' or 'Balikesir, Turkey'"""
@@ -295,4 +331,5 @@ class AnalystAgent:
         if len(parts1) >= 2 and len(parts2) >= 2:
             return parts1[-1] == parts2[-1]
         return False
+
 
