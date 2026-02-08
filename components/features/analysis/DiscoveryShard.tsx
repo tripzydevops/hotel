@@ -173,7 +173,10 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                           MATCH
                         </span>
                         <span className="text-[10px] font-black text-white">
-                          {Math.round(rival.similarity * 100)}%
+                          {rival.similarity
+                            ? Math.round(rival.similarity * 100)
+                            : "--"}
+                          %
                         </span>
                       </div>
                     </div>

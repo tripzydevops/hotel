@@ -184,6 +184,8 @@ class AnalystAgent:
         Pillar 3: Autonomous Discovery.
         Uses vector search to find 'Ghost Competitors' in the directory.
         'target_identifier' can be a hotel ID (UUID) or SerpApi ID.
+        
+        2026 Update: Now filters by location (same city/region) to ensure relevant results.
         """
         try:
             # 1. Get Target Hotel Info (Try SerpApi ID first, then UUID)
@@ -208,23 +210,89 @@ class AnalystAgent:
             target_data = target.data[0]
             serp_api_id = target_data.get("serp_api_id")
             
+            # Extract target location for filtering
+            target_location = target_data.get("location", "")
+            target_city = self._extract_city(target_location)
+            
             # 2. Generate Embedding for Target (if not exists in directory yet)
             target_embedding = target_data.get("embedding")
             if not target_embedding:
                 text = format_hotel_for_embedding(target_data)
                 target_embedding = await get_embedding(text)
                 
-            # 3. Perform Vector Search (RPC)
+            # 3. Perform Vector Search (RPC) - request more results to filter by location
+            search_limit = limit * 4  # Fetch more to filter
             res = self.db.rpc("match_hotels", {
                 "query_embedding": target_embedding,
                 "match_threshold": 0.5,
-                "match_count": limit,
+                "match_count": search_limit,
                 "target_hotel_id": serp_api_id or str(target_data.get("id"))
             }).execute()
             
-            if res and hasattr(res, 'data') and res.data:
-                return res.data
-            return []
+            if not res or not hasattr(res, 'data') or not res.data:
+                return []
+            
+            # 4. Filter by Location (same city/region)
+            filtered_results = []
+            for rival in res.data:
+                rival_location = rival.get("location", "")
+                rival_city = self._extract_city(rival_location)
+                
+                # Check if same city or at least same region
+                if target_city and rival_city:
+                    if target_city.lower() == rival_city.lower():
+                        # Same city - high priority
+                        rival["location_match"] = "city"
+                        filtered_results.append(rival)
+                    elif self._same_region(target_location, rival_location):
+                        # Same region - medium priority
+                        rival["location_match"] = "region"
+                        filtered_results.append(rival)
+                elif not target_city:
+                    # If we can't determine target city, include all
+                    filtered_results.append(rival)
+            
+            # 5. Sort by location match priority, then similarity
+            def sort_key(r):
+                loc_priority = 0 if r.get("location_match") == "city" else 1
+                sim = r.get("similarity", 0) or 0
+                return (loc_priority, -sim)
+            
+            filtered_results.sort(key=sort_key)
+            
+            # Ensure similarity values are valid numbers
+            for rival in filtered_results[:limit]:
+                if rival.get("similarity") is None:
+                    rival["similarity"] = 0.0
+            
+            return filtered_results[:limit]
+            
         except Exception as e:
             print(f"[AnalystAgent] Discovery error: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+
+    def _extract_city(self, location: str) -> str:
+        """Extract city name from location string like 'Istanbul, Turkey' or 'Balikesir, Turkey'"""
+        if not location:
+            return ""
+        # Split by comma and take first part (usually city)
+        parts = [p.strip() for p in location.split(",")]
+        if parts:
+            return parts[0]
+        return location
+    
+    def _same_region(self, loc1: str, loc2: str) -> bool:
+        """Check if two locations are in the same region/country"""
+        if not loc1 or not loc2:
+            return False
+        # Extract country (usually last part after comma)
+        parts1 = [p.strip().lower() for p in loc1.split(",")]
+        parts2 = [p.strip().lower() for p in loc2.split(",")]
+        
+        # Check if countries match (last part)
+        if len(parts1) >= 2 and len(parts2) >= 2:
+            return parts1[-1] == parts2[-1]
+        return False
+
