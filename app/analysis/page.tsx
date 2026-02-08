@@ -196,7 +196,7 @@ export default function AnalysisPage() {
         </div>
 
         {/* Global KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 overflow-visible">
           <KPICard
             title={t("analysis.marketAverage")}
             value={
@@ -646,7 +646,7 @@ function KPICard({
 
   return (
     <div
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative hover:z-30`}
+      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative hover:z-50 cursor-pointer overflow-visible`}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
@@ -676,8 +676,8 @@ function KPICard({
 
       {/* Hover Tooltip */}
       {hoverData && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-[100] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200">
-          <div className="mx-4 p-4 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl">
+        <div className="absolute left-0 right-0 top-full mt-2 z-[200] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100">
+          <div className="mx-4 p-4 bg-[#0a0a14]/95 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl">
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
                 <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">

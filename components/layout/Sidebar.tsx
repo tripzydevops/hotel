@@ -43,7 +43,7 @@ export default function Sidebar({
       icon: FileText,
     },
     {
-      label: "Inventory Control",
+      label: "Parity Monitor",
       href: "/parity-monitor",
       icon: Share2,
     },
