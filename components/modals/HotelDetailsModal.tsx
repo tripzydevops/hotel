@@ -1,3 +1,5 @@
+"use client";
+
 import { HotelWithPrice } from "@/types";
 import { useState } from "react";
 import {

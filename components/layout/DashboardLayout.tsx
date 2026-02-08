@@ -1,3 +1,5 @@
+"use client";
+
 import React, { lazy, Suspense } from "react";
 import Sidebar from "./Sidebar";
 import UserMenu from "./UserMenu";
