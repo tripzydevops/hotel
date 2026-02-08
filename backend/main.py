@@ -301,7 +301,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
             email = current_user.email
             if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
                 is_admin = True
-            else:
+            elif db:
                 # DB check
                 profile = db.table("user_profiles").select("role").eq("user_id", current_user.id).limit(1).execute()
                 if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
@@ -624,12 +624,12 @@ async def trigger_monitor(
         if current_hour >= 18:
             check_in = today + timedelta(days=1)
             print(f"[Monitor] Late night detected ({current_hour}:00 UTC). Advancing check-in to {check_in}")
-        elif not check_in:
-            check_in = today
-            
+    if not check_in:
+        check_in = today
+        
     if not check_out:
         check_out = check_in + timedelta(days=1)
-    elif check_out <= check_in:
+    elif isinstance(check_out, date) and isinstance(check_in, date) and check_out <= check_in:
         check_out = check_in + timedelta(days=1)
         
     adults = options.adults if options and options.adults else 2
