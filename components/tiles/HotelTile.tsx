@@ -491,6 +491,6 @@ export default function HotelTile(props: HotelTileProps) {
           </p>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

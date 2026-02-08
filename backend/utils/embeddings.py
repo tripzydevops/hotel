@@ -36,7 +36,11 @@ def format_hotel_for_embedding(hotel: dict) -> str:
     rating = hotel.get("rating", "N/A")
     location = hotel.get("location", "Unknown")
     
-    # Enrich with snippets if available (from SerpApi metadata)
-    snippets = ", ".join(hotel.get("snippets", []))
+    # Extract city context from location string
+    city = location.split(",")[0] if "," in location else location
     
-    return f"Hotel: {name}. Stars: {stars}. Rating: {rating}. Location: {location}. Features: {snippets}"
+    # Enrich with snippets and amenities if available
+    snippets = ", ".join(hotel.get("snippets", []))
+    amenities = ", ".join(hotel.get("amenities", [])) if isinstance(hotel.get("amenities"), list) else ""
+    
+    return f"Hotel Name: {name}. Stars: {stars}. Rating: {rating}. City Context: {city}. Full Location: {location}. Amenities: {amenities}. Snippets: {snippets}"

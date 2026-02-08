@@ -1340,6 +1340,43 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
         print(f"Error fetching session logs: {e}")
         return []
 
+@app.post("/api/analysis/discovery/{hotel_id}")
+async def discover_competitors(
+    hotel_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Triggers Autonomous Discovery to find Ghost Competitors (rivals in directory not yet tracked).
+    Uses Vector Similarity Search (pgvector).
+    """
+    try:
+        analyst = AnalystAgent(db)
+        
+        # 1. Get the hotel record to get its SerpApi ID
+        hotel = db.table("hotels").select("*").eq("id", str(hotel_id)).single().execute()
+        if not hotel.data:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+            
+        serp_api_id = hotel.data.get("serp_api_id")
+        if not serp_api_id:
+            # If no SerpApi ID, we try to discover by name/location context
+            print(f"[Discovery] Warning: No SerpApi ID for {hotel_id}. Falling back to name-based context.")
+            serp_api_id = str(hotel_id)
+
+        # 2. Run Autonomous Discovery
+        discoveries = await analyst.discover_rivals(serp_api_id)
+        
+        return {
+            "status": "success",
+            "matches": discoveries,
+            "count": len(discoveries)
+        }
+    except Exception as e:
+        print(f"[Discovery] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/analysis/{user_id}")
 async def get_analysis(
     user_id: UUID, 
