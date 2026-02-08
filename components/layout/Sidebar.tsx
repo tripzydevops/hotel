@@ -28,7 +28,7 @@ export default function Sidebar({
 
   const navItems = [
     {
-      label: "Rate Intelligence Grid",
+      label: "Market Price Search",
       href: "/",
       icon: LayoutGrid,
     },

@@ -193,16 +193,19 @@ export default function CalendarHeatmap({
           })}
         </div>
 
-        {/* Hover Popup */}
+        {/* Hover Popup - positioned left for better visibility */}
         {hoveredData && (
-          <div className="absolute top-0 right-0 z-50 w-72 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl p-4">
+          <div className="absolute top-0 left-0 z-[100] w-72 bg-[#0a0a14]/98 border border-white/10 rounded-xl shadow-2xl p-4 backdrop-blur-xl pointer-events-none">
             <div className="text-xs font-bold text-[var(--text-muted)] mb-2">
-              {new Date(hoveredData.date).toLocaleDateString("en-US", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {new Date(hoveredData.date + "T12:00:00").toLocaleDateString(
+                "en-US",
+                {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                },
+              )}
             </div>
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
               <div className="text-center">
