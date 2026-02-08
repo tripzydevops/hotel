@@ -3,6 +3,7 @@ export const tr = {
     dashboard: "Panel",
     analysis: "Analiz",
     reports: "Raporlar",
+    parityMonitor: "Parite İzleyici",
     settings: "Ayarlar",
     alerts: "Alarmlar",
     profile: "Profil",

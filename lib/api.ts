@@ -208,6 +208,10 @@ class ApiClient {
     return this.fetch<any>(`/api/reports/${userId}`);
   }
 
+  async discoverCompetitors(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/discovery/${hotelId}`);
+  }
+
   async getLocations(): Promise<any[]> {
     return this.fetch<any[]>("/api/locations");
   }

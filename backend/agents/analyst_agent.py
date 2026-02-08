@@ -69,6 +69,8 @@ class AnalystAgent:
 
                 # 3. Log to price_logs (This updates the dashboard)
                 check_in = res.get("check_in")
+                if not check_in:
+                    check_in = datetime.now().date()
                 check_in_str = check_in.isoformat() if hasattr(check_in, "isoformat") else str(check_in)
                 
                 self.db.table("price_logs").insert({
@@ -177,25 +179,39 @@ class AnalystAgent:
         res = self.db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         return res.data or []
 
-    async def discover_rivals(self, target_hotel_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def discover_rivals(self, target_identifier: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
         Pillar 3: Autonomous Discovery.
         Uses vector search to find 'Ghost Competitors' in the directory.
+        'target_identifier' can be a hotel ID (UUID) or SerpApi ID.
         """
         try:
-            # 1. Get Target Hotel Info from the master Directory
-            target = self.db.table("hotel_directory").select("*").eq("id", target_hotel_id).single().execute()
+            # 1. Get Target Hotel Info (Try SerpApi ID first, then UUID)
+            target = self.db.table("hotel_directory").select("*").eq("serp_api_id", target_identifier).execute()
             if not target.data:
-                # If not in directory, try the user's hotels list
-                target = self.db.table("hotels").select("*").eq("id", target_hotel_id).single().execute()
+                # Try UUID
+                try:
+                    target = self.db.table("hotel_directory").select("*").eq("id", target_identifier).execute()
+                except:
+                    target = None
+            
+            if not target or not target.data:
+                # If still not found, check the user's active hotels list
+                target = self.db.table("hotels").select("*").eq("id", target_identifier).execute()
+                if not target.data:
+                    target = self.db.table("hotels").select("*").eq("serp_api_id", target_identifier).execute()
                 
-            if not target.data:
+            if not target or not target.data:
+                print(f"[AnalystAgent] Target {target_identifier} not found for discovery.")
                 return []
             
+            target_data = target.data[0]
+            serp_api_id = target_data.get("serp_api_id")
+            
             # 2. Generate Embedding for Target (if not exists in directory yet)
-            target_embedding = target.data.get("embedding")
+            target_embedding = target_data.get("embedding")
             if not target_embedding:
-                text = format_hotel_for_embedding(target.data)
+                text = format_hotel_for_embedding(target_data)
                 target_embedding = await get_embedding(text)
                 
             # 3. Perform Vector Search (RPC)
@@ -203,10 +219,12 @@ class AnalystAgent:
                 "query_embedding": target_embedding,
                 "match_threshold": 0.5,
                 "match_count": limit,
-                "target_hotel_id": target_hotel_id
+                "target_hotel_id": serp_api_id or str(target_data.get("id"))
             }).execute()
             
-            return res.data or []
+            if res and hasattr(res, 'data') and res.data:
+                return res.data
+            return []
         except Exception as e:
             print(f"[AnalystAgent] Discovery error: {e}")
             return []

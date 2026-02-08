@@ -81,6 +81,12 @@ export default function Header({
             <Link href="/" className={navLinkClass("/")}>
               {t("common.dashboard")}
             </Link>
+            <Link
+              href="/parity-monitor"
+              className={navLinkClass("/parity-monitor")}
+            >
+              {t("common.parityMonitor") || "Parity Monitor"}
+            </Link>
             <Link href="/analysis" className={navLinkClass("/analysis")}>
               {t("common.analysis")}
             </Link>
@@ -193,6 +199,12 @@ export default function Header({
                 className="text-[var(--text-secondary)] hover:text-white"
               >
                 {t("common.dashboard")}
+              </Link>
+              <Link
+                href="/parity-monitor"
+                className="text-[var(--text-secondary)] hover:text-white"
+              >
+                {t("common.parityMonitor") || "Parity Monitor"}
               </Link>
               <Link
                 href="/analysis"

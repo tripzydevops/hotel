@@ -2,9 +2,13 @@
 -- Description: Enable pgvector and implement semantic search for Ghost Competitors
 -- 1. Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
--- 2. Add embedding column to hotel_directory
+-- 2. Add rich metadata columns to hotel_directory
 ALTER TABLE hotel_directory
-ADD COLUMN IF NOT EXISTS embedding vector(768);
+ADD COLUMN IF NOT EXISTS embedding vector(768),
+    ADD COLUMN IF NOT EXISTS stars numeric,
+    ADD COLUMN IF NOT EXISTS rating numeric,
+    ADD COLUMN IF NOT EXISTS amenities text [],
+    ADD COLUMN IF NOT EXISTS image_url text;
 -- 3. Create HNSW index for high-speed similarity search
 CREATE INDEX IF NOT EXISTS idx_hotel_directory_embedding ON hotel_directory USING hnsw (embedding vector_cosine_ops);
 -- 4. Implement match_hotels RPC 

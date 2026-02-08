@@ -3,6 +3,7 @@ export const en = {
     dashboard: "Dashboard",
     analysis: "Analysis",
     reports: "Reports",
+    parityMonitor: "Parity Monitor",
     settings: "Settings",
     alerts: "Alerts",
     profile: "Profile",

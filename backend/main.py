@@ -277,6 +277,32 @@ async def health_check():
 
 # ===== Dashboard Endpoint =====
 
+@app.get("/api/v1/discovery/{hotel_id}")
+async def discover_competitors(hotel_id: str, limit: int = 5, current_user = Depends(get_current_active_user), db: Client = Depends(get_supabase)):
+    """
+    Endpoint for Autonomous Rival Discovery.
+    Uses AnalystAgent to perform vector similarity search.
+    """
+    try:
+        # Ensure db is available
+        if not db:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
+        
+        # Import AnalystAgent here to avoid circular dependencies or unnecessary imports
+        # if it's only used in this specific endpoint.
+        from backend.agents.analyst_agent import AnalystAgent 
+        
+        agent = AnalystAgent(db)
+        rivals = await agent.discover_rivals(hotel_id, limit=limit)
+        return rivals
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Error in /api/v1/discovery/{hotel_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
 @app.get("/api/dashboard/{user_id}")
 async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Get dashboard data with target hotel and competitors."""
@@ -382,7 +408,8 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
                         change = 0.0
                         try:
                             t, change = price_comparator.calculate_trend(current, previous)
-                            trend_val = t.value if hasattr(t, "value") else str(t)
+                            # Use getattr to safely get .value if it's an Enum, or fallback to str
+                            trend_val = str(getattr(t, "value", t))
                         except Exception:
                             pass
 
@@ -1457,20 +1484,27 @@ async def get_analysis(
         target_hotel_id = None
         target_hotel_name = None
         target_sentiment = 0.0
-        market_sentiments = []
+        market_sentiments: List[float] = []
         target_history = []
         
         # 4. Map Prices and Find Target
         for hotel in hotels:
             hid = str(hotel["id"])
-            hotel_rating = hotel.get("rating") or 0.0
-            market_sentiments.append(hotel_rating)
+            hotel_rating = float(hotel.get("rating") or 0.0)
+            reviews = int(hotel.get("review_count") or 0)
+            
+            # Scientific Weighting: Boost rating slightly by volume (log scale) to differentiate 5.0 (1 rev) vs 4.8 (1000 revs)
+            import math
+            weight = math.log10(reviews + 10) / 2.0 # Scale 0..~1.5
+            weighted_sentiment = hotel_rating * weight
+            
+            market_sentiments.append(weighted_sentiment)
             
             # Explicit target check
             if hotel.get("is_target_hotel"):
                 target_hotel_id = hid
                 target_hotel_name = hotel.get("name")
-                target_sentiment = hotel_rating
+                target_sentiment = weighted_sentiment
 
         # FALLBACK: If no explicit target, pick the first one
         # FALLBACK: If no explicit target, pick the first one
@@ -1508,15 +1542,16 @@ async def get_analysis(
                         
                         if is_target:
                             target_price = converted
-                            target_history = []
-                            for p in prices[:30]:  # Last 30 entries for history
+                            # Ensure prices is a list before slicing to satisfy linter
+                            p_list = prices if isinstance(prices, list) else []
+                            for p in p_list[:30]:  # Last 30 entries for history
                                 try:
                                     if p.get("price") is not None:
                                         target_history.append({
                                             "price": convert_currency(float(p["price"]), p.get("currency") or "USD", display_currency),
                                             "recorded_at": p.get("recorded_at")
                                         })
-                                except Exception: continue
+                                except (Exception, TypeError): continue
                 except Exception as e:
                     print(f"Error processing price for hotel {hid}: {e}")
 
@@ -1568,9 +1603,9 @@ async def get_analysis(
                         vs_comp = ((data["target"] - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0
                         daily_prices.append({
                             "date": date_str,
-                            "price": round(data["target"], 2),
-                            "comp_avg": round(comp_avg, 2),
-                            "vs_comp": round(vs_comp, 1),
+                            "price": round(float(data["target"]), 2),
+                            "comp_avg": round(float(comp_avg), 2),
+                            "vs_comp": round(float(vs_comp), 1),
                             "competitors": unique_competitors
                         })
 
@@ -1578,6 +1613,11 @@ async def get_analysis(
         market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
         market_min = min(current_prices) if current_prices else 0.0
         market_max = max(current_prices) if current_prices else 0.0
+        
+        # Ensure values are floats for rounding
+        market_avg = float(market_avg)
+        market_min = float(market_min)
+        market_max = float(market_max)
         
         # Find min/max hotels for spread tooltip
         min_hotel = None
@@ -1595,15 +1635,30 @@ async def get_analysis(
         rank = sorted_prices.index(target_price) + 1 if target_price is not None and target_price in sorted_prices else 0
         
         # 7. Advisory & Quadrant
-        advisory = "Overall market position is stable."
-        if ari > 105:
-            advisory = "Your rates are above market average. Ensure your high sentiment justifications are clear."
-            if sentiment_index > 105:
-                advisory = "Your premium pricing is well-supported by superior guest sentiment."
-        elif ari < 95:
-            advisory = "Your aggressive pricing is attracting volume. Monitor quality levels."
-        elif sentiment_index < 90:
-            advisory = "Your pricing is currently higher than supported by your guest sentiment."
+        # 7. Advisory & Quadrant Logic
+        # Mapping: 100 is at center (0,0)
+        q_x = max(-50, min(50, ari - 100))
+        q_y = max(-50, min(50, sentiment_index - 100))
+        
+        # Quadrant Label Logic
+        if ari >= 100 and sentiment_index >= 100:
+            q_label = "Premium King"
+            advisory = "Strategic Peak: Your premium pricing is well-supported by superior guest sentiment."
+        elif ari < 100 and sentiment_index >= 100:
+            q_label = "Value Leader"
+            advisory = "Expansion Opportunity: You offer the best value to price ratio in the market."
+        elif ari >= 100 and sentiment_index < 100:
+            q_label = "Danger Zone"
+            advisory = "Caution: Your pricing is currently higher than supported by market guest sentiment."
+        else: # Both < 100
+            q_label = "Budget / Economy"
+            advisory = "Volume Strategy: Your low rates are attracting budget-conscious guests."
+
+        # Specific secondary advice
+        if sentiment_index < 90:
+            advisory += " Focus on reputation management."
+        elif ari > 120:
+             advisory += " Monitor competitors for aggressive price cuts."
             
         # 8. Extract Competitors (non-target hotels with prices)
         competitors_list = []
@@ -1634,25 +1689,25 @@ async def get_analysis(
         analysis_data = {
             "hotel_id": target_hotel_id,
             "hotel_name": target_hotel_name,
-            "market_average": round(market_avg, 2),
-            "market_avg": round(market_avg, 2),  # alias for frontend
-            "market_min": round(market_min, 2),
-            "market_max": round(market_max, 2),
-            "target_price": round(target_price, 2) if target_price else None,
+            "market_average": round(float(market_avg or 0), 2),
+            "market_avg": round(float(market_avg or 0), 2),  # alias for frontend
+            "market_min": round(float(market_min or 0), 2),
+            "market_max": round(float(market_max or 0), 2),
+            "target_price": round(float(target_price), 2) if target_price is not None else None,
             "competitive_rank": rank,
             "market_rank": rank,  # NEW: for Market Spread UI
             "total_hotels": len(hotels),
             "competitors": competitors_list,
             "price_history": target_history,
             "display_currency": display_currency,
-            "ari": round(ari, 1),
-            "sentiment_index": round(sentiment_index, 1),
+            "ari": round(float(ari or 0.0), 1),
+            "sentiment_index": round(float(sentiment_index or 0.0), 1),
             "advisory_msg": advisory,
-            "quadrant_x": round(ari / 2, 1),
-            "quadrant_y": round(sentiment_index / 2, 1),
-            "quadrant_label": "Value Leader" if sentiment_index > 100 and ari < 100 else "Neutral",
-            "target_rating": round(target_sentiment, 1),
-            "market_rating": round(avg_sentiment, 1),
+            "quadrant_x": round(float(q_x), 1),
+            "quadrant_y": round(float(q_y), 1),
+            "quadrant_label": q_label,
+            "target_rating": round(float(target_h.get("rating") or 0.0), 1) if target_h else 0.0,
+            "market_rating": round(float(sum(float(h.get("rating") or 0) for h in hotels) / len(hotels)), 1) if hotels else 0.0,
             # NEW fields for enhanced UI
             "price_rank_list": price_rank_list,
             "daily_prices": daily_prices,
