@@ -3,6 +3,7 @@ import { Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/ToastContext";
+import { ModalProvider } from "@/components/ui/ModalContext";
 import QueryProvider from "@/components/providers/QueryProvider";
 
 const montserrat = Montserrat({
@@ -21,6 +22,8 @@ export const metadata: Metadata = {
   description: "B2B Hotel Competitive Rate Monitor",
 };
 
+import DashboardLayout from "@/components/layout/DashboardLayout";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,7 +34,11 @@ export default function RootLayout({
       <body className={`${montserrat.variable} ${inter.variable} antialiased`}>
         <I18nProvider>
           <QueryProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              <ModalProvider>
+                <DashboardLayout>{children}</DashboardLayout>
+              </ModalProvider>
+            </ToastProvider>
           </QueryProvider>
         </I18nProvider>
       </body>

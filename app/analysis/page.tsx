@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Header from "@/components/layout/Header";
 import { useI18n } from "@/lib/i18n";
 import {
   TrendingUp,
@@ -24,6 +23,7 @@ import SettingsModal from "@/components/modals/SettingsModal";
 import AlertsModal from "@/components/modals/AlertsModal";
 import SubscriptionModal from "@/components/modals/SubscriptionModal";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
+import { useModalContext } from "@/components/ui/ModalContext";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -36,13 +36,13 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export default function AnalysisPage() {
   const { t, locale } = useI18n();
   const supabase = createClient();
-  /* Profile State for Header */
-  const [profile, setProfile] = useState<any>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isBillingOpen, setIsBillingOpen] = useState(false);
-  const [userSettings, setUserSettings] = useState<any>(undefined);
+  /* Modal Context */
+  const {
+    setIsProfileOpen,
+    setIsAlertsOpen,
+    setIsSettingsOpen,
+    setIsBillingOpen,
+  } = useModalContext();
   const hotelCount = 0;
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -67,12 +67,9 @@ export default function AnalysisPage() {
         setUserId(session.user.id);
         try {
           const userProfile = await api.getProfile(session.user.id);
-          setProfile(userProfile);
-          // Fetch settings for the modal
-          const settings = await api.getSettings(session.user.id);
-          setUserSettings(settings);
+          // Profile handled by DashboardLayout now
         } catch (e) {
-          console.error("Failed to fetch profile/settings", e);
+          console.error("Failed to fetch profile", e);
         }
       } else {
         window.location.href = "/login";
@@ -158,73 +155,11 @@ export default function AnalysisPage() {
       : 0;
 
   return (
-    <div className="min-h-screen pb-12 bg-[var(--deep-ocean)]">
-      <Header
-        userProfile={profile}
-        hotelCount={hotelCount}
-        unreadCount={0}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenBilling={() => setIsBillingOpen(true)}
-      />
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        userId={userId || ""}
-      />
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={userSettings}
-        onSave={async (settings) => {
-          if (userId) {
-            try {
-              await api.updateSettings(userId, settings);
-              setUserSettings(settings);
-              setIsSettingsOpen(false);
-            } catch (error) {
-              console.error("Failed to save settings:", error);
-              // Ideally show a toast here, but for now ensure we don't crash
-              setIsSettingsOpen(false); // Close anyway for now if it preserves specific behavior, or keep open?
-              // User said "pop up doesnt disappear", so let's close it but log it.
-              // Actually better to keep open if it fails, but the schema update should fix the failure.
-              // I'll stick to: if it fails, Log it. I'll let the user retry if they want,
-              // but closing it might hide the error.
-              // But the user complained it "doesn't disappear", implying they expect it to.
-              // With the 422 fixed, it SHOULD save.
-            }
-          }
-        }}
-      />
-      <AlertsModal
-        isOpen={isAlertsOpen}
-        onClose={() => setIsAlertsOpen(false)}
-        userId={userId || ""}
-        onUpdate={() => {}}
-      />
-      <SubscriptionModal
-        isOpen={isBillingOpen}
-        onClose={() => setIsBillingOpen(false)}
-        currentPlan={profile?.plan_type || "trial"}
-        onUpgrade={async () => setIsBillingOpen(false)}
-      />
-
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="min-h-screen pb-12">
+      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-                <Zap className="w-5 h-5" />
-              </div>
-              <h1 className="text-3xl font-black text-white tracking-tight">
-                {t("analysis.title")}
-              </h1>
-            </div>
-
+        <div className="mb-4">
+          <div className="flex items-center justify-end mb-2">
             {/* Currency Selector */}
             <select
               value={currency}
@@ -242,9 +177,6 @@ export default function AnalysisPage() {
               ))}
             </select>
           </div>
-          <p className="text-[var(--text-secondary)] font-medium">
-            {t("analysis.subtitle")}
-          </p>
         </div>
 
         {/* Analysis Filters */}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Header from "@/components/layout/Header";
 import { useI18n } from "@/lib/i18n";
 import {
   FileText,
@@ -18,18 +17,14 @@ import {
   BarChart3,
   Lightbulb,
 } from "lucide-react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import ScanSessionModal from "@/components/modals/ScanSessionModal";
+import { useModalContext } from "@/components/ui/ModalContext";
 import { ScanSession, MarketAnalysis } from "@/types";
 import { createClient } from "@/utils/supabase/client";
 import MarketPositionChart from "@/components/analytics/MarketPositionChart";
 import PriceTrendChart from "@/components/analytics/PriceTrendChart";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
-import ProfileModal from "@/components/modals/ProfileModal";
-import SettingsModal from "@/components/modals/SettingsModal";
-import AlertsModal from "@/components/modals/AlertsModal";
-import SubscriptionModal from "@/components/modals/SubscriptionModal";
-import BottomNav from "@/components/layout/BottomNav";
 
 export default function ReportsPage() {
   const { t, locale } = useI18n();
@@ -39,17 +34,18 @@ export default function ReportsPage() {
   const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<ScanSession | null>(
-    null,
-  );
-  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
-
   const [profile, setProfile] = useState<any>(null);
   const [currency, setCurrency] = useState("TRY");
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isBillingOpen, setIsBillingOpen] = useState(false);
+
+  /* Modal Context */
+  const {
+    setIsProfileOpen,
+    setIsSettingsOpen,
+    setIsAlertsOpen,
+    setIsBillingOpen,
+    setIsSessionModalOpen,
+    setSelectedSession,
+  } = useModalContext();
   const hotelCount = 0; // Updated dynamically if needed via context or separate fetch
 
   useEffect(() => {
@@ -61,10 +57,7 @@ export default function ReportsPage() {
         setUserId(session.user.id);
         try {
           const userProfile = await api.getProfile(session.user.id);
-          setProfile(userProfile);
-          if (userProfile?.preferred_currency) {
-            setCurrency(userProfile.preferred_currency);
-          }
+          // Profile handled by DashboardLayout now, but we keep userId logic here for data fetching
         } catch (e) {
           console.error("Failed to fetch profile", e);
         }
@@ -211,7 +204,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-12 bg-[var(--deep-ocean)] transition-all">
+    <div className="min-h-screen pb-12 transition-all">
       {isLocked && (
         <PaywallOverlay
           reason={
@@ -221,82 +214,19 @@ export default function ReportsPage() {
           }
         />
       )}
-      <Header
-        userProfile={profile}
-        hotelCount={hotelCount}
-        unreadCount={0}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenBilling={() => setIsBillingOpen(true)}
-      />
 
-      <ScanSessionModal
-        isOpen={isSessionModalOpen}
-        onClose={() => setIsSessionModalOpen(false)}
-        session={selectedSession}
-      />
-
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        userId={userId || ""}
-      />
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={profile?.settings || {}}
-        onSave={async (settings) => {
-          try {
-            await api.updateSettings(userId!, settings);
-            setProfile({ ...profile, settings });
-          } catch (e) {
-            console.error("Failed to save settings", e);
-          }
-        }}
-      />
-
-      <AlertsModal
-        isOpen={isAlertsOpen}
-        onClose={() => setIsAlertsOpen(false)}
-        userId={userId || ""}
-        onUpdate={() => {}}
-      />
-
-      <SubscriptionModal
-        isOpen={isBillingOpen}
-        onClose={() => setIsBillingOpen(false)}
-        currentPlan={profile?.plan_type || "trial"}
-        onUpgrade={async () => {
-          setIsBillingOpen(false);
-          window.location.reload();
-        }}
-      />
-
-      <BottomNav
-        onOpenAddHotel={() => (window.location.href = "/?addHotel=true")}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        unreadCount={0}
-      />
-
-      <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+              <div className="p-2 rounded-xl bg-white/5 text-[var(--soft-gold)]">
                 <BarChart3 className="w-6 h-6" />
               </div>
-              <h1 className="text-3xl font-black text-white tracking-tight">
-                {t("reports.title")}
-              </h1>
+              <p className="text-[var(--text-secondary)] font-medium">
+                Comprehensive performance and parity overview
+              </p>
             </div>
-            <p className="text-[var(--text-secondary)] font-medium">
-              {t("reports.subtitle")}
-            </p>
           </div>
 
           <div className="flex items-center gap-3">

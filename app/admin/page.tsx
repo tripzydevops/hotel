@@ -109,24 +109,6 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Page Header */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center shadow-inner">
-            <Shield className="w-5 h-5 text-[var(--soft-gold)]" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight font-[var(--font-montserrat)]">
-              Enterprise{" "}
-              <span className="text-[var(--soft-gold)]">Intelligence</span>
-            </h1>
-            <p className="text-[var(--text-muted)] text-sm font-medium">
-              Real-time market monitoring and system orchestration.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Navigation Tabs - Dock Style */}
       <div className="flex items-center p-1.5 bg-[var(--deep-ocean-card)]/40 backdrop-blur-md rounded-2xl border border-white/5 w-fit shadow-2xl">
         <TabButton id="overview" label="Overview" icon={LayoutDashboard} />

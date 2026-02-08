@@ -5,7 +5,6 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { useModals } from "@/hooks/useModals";
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Header from "@/components/layout/Header";
 import BentoGrid from "@/components/ui/BentoGrid";
 import TargetHotelTile from "@/components/tiles/TargetHotelTile";
 import CompetitorTile from "@/components/tiles/CompetitorTile";
@@ -31,24 +30,12 @@ import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 import { useToast } from "@/components/ui/ToastContext";
 import ZeroState from "@/components/ui/ZeroState";
 import { useI18n } from "@/lib/i18n";
-import BottomNav from "@/components/layout/BottomNav";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import ModalLoading from "@/components/ui/ModalLoading";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
+import { useModalContext } from "@/components/ui/ModalContext";
 
-// Lazy load heavy modals to improve initial load performance
-const ScanSessionModal = lazy(
-  () => import("@/components/modals/ScanSessionModal"),
-);
-const AlertsModal = lazy(() => import("@/components/modals/AlertsModal"));
-const ScanSettingsModal = lazy(
-  () => import("@/components/modals/ScanSettingsModal"),
-);
-const EditHotelModal = lazy(() => import("@/components/modals/EditHotelModal"));
-const SubscriptionModal = lazy(
-  () => import("@/components/modals/SubscriptionModal"),
-);
 const HotelDetailsModal = lazy(
   () => import("@/components/modals/HotelDetailsModal"),
 );
@@ -89,39 +76,32 @@ export default function Dashboard() {
   }, [userId]);
 
   const {
-    isAddHotelOpen,
     setIsAddHotelOpen,
-    isSettingsOpen,
-    setIsSettingsOpen,
-    isAlertsOpen,
-    setIsAlertsOpen,
-    isProfileOpen,
-    setIsProfileOpen,
-    isBillingOpen,
     setIsBillingOpen,
-    isEditHotelOpen,
-    setIsEditHotelOpen,
-    hotelToEdit,
     setHotelToEdit,
-    isSessionModalOpen,
+    setIsEditHotelOpen,
+    setSelectedSession,
     setIsSessionModalOpen,
-    selectedSession,
-    isScanSettingsOpen,
-    setIsScanSettingsOpen,
-    scanDefaults,
-    isDetailsModalOpen,
+    setSelectedHotelForDetails,
     setIsDetailsModalOpen,
-    selectedHotelForDetails,
-    reSearchName,
     setReSearchName,
-    reSearchLocation,
     setReSearchLocation,
     handleOpenDetails,
     handleOpenSession,
     handleEditHotel,
     handleRefresh,
     handleReSearch,
-  } = useModals();
+    reSearchName,
+    reSearchLocation,
+    isScanSettingsOpen,
+    selectedSession,
+    scanDefaults,
+    hotelToEdit,
+    isEditHotelOpen,
+    isSessionModalOpen,
+    isDetailsModalOpen,
+    selectedHotelForDetails,
+  } = useModalContext();
 
   const handleSaveSettings = async (settings: UserSettings) => {
     await updateSettings(settings);
@@ -230,10 +210,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">
-      {/* Cinematic Background Layers */}
-      <div className="radial-glow" />
-      <div className="bg-grain" />
-
       {impersonateId && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-white px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-white/20 animate-pulse">
           IMPERSONATING USER: {impersonateId.split("-")[0]}...
@@ -248,200 +224,9 @@ export default function Dashboard() {
           }
         />
       )}
-      <Header
-        userProfile={profile}
-        hotelCount={currentHotelCount}
-        unreadCount={data?.unread_alerts_count}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenBilling={() => setIsBillingOpen(true)}
-      />
 
-      <Suspense fallback={<ModalLoading />}>
-        <AddHotelModal
-          isOpen={isAddHotelOpen}
-          onClose={() => {
-            setIsAddHotelOpen(false);
-            setReSearchName("");
-            setReSearchLocation("");
-          }}
-          onAdd={handleAddHotel}
-          initialName={reSearchName}
-          initialLocation={reSearchLocation}
-          currentHotelCount={currentHotelCount}
-        />
-
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          settings={userSettings}
-          onSave={handleSaveSettings}
-        />
-
-        <ScanSessionModal
-          isOpen={isSessionModalOpen}
-          onClose={() => setIsSessionModalOpen(false)}
-          session={selectedSession}
-        />
-
-        <ScanSettingsModal
-          isOpen={isScanSettingsOpen}
-          onClose={() => setIsScanSettingsOpen(false)}
-          onScan={async (options) => {
-            await handleScan(options);
-          }}
-          onUpgrade={() => {
-            setIsScanSettingsOpen(false);
-            setIsBillingOpen(true);
-          }}
-          initialValues={scanDefaults}
-          userPlan={
-            profile?.role === "admin" ? "enterprise" : profile?.plan_type
-          }
-          dailyLimitReached={
-            profile?.role === "admin"
-              ? false
-              : data?.recent_sessions?.some(
-                  (s) =>
-                    s.session_type === "manual" &&
-                    s.created_at.startsWith(
-                      new Date().toISOString().split("T")[0],
-                    ),
-                ) || false
-          }
-        />
-
-        {hotelToEdit && (
-          <EditHotelModal
-            isOpen={isEditHotelOpen}
-            onClose={() => {
-              setIsEditHotelOpen(false);
-              setHotelToEdit(null);
-            }}
-            hotel={hotelToEdit}
-            onUpdate={fetchData}
-          />
-        )}
-
-        <AlertsModal
-          isOpen={isAlertsOpen}
-          onClose={() => setIsAlertsOpen(false)}
-          userId={userId || ""}
-          onUpdate={fetchData}
-        />
-
-        <ProfileModal
-          isOpen={isProfileOpen}
-          onClose={() => setIsProfileOpen(false)}
-          userId={userId || ""}
-        />
-
-        <SubscriptionModal
-          isOpen={isBillingOpen}
-          onClose={() => setIsBillingOpen(false)}
-          currentPlan={profile?.plan_type || "trial"}
-          onUpgrade={async (plan) => {
-            if (!userId) return;
-            setProfile({
-              ...profile,
-              plan_type: plan,
-              subscription_status: "active",
-            });
-            toast.success(t("dashboard.upgradedToPlan", { plan }));
-            setIsBillingOpen(false);
-          }}
-        />
-
-        <HotelDetailsModal
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
-          hotel={selectedHotelForDetails}
-          isEnterprise={
-            profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
-          }
-          onUpgrade={() => {
-            setIsDetailsModalOpen(false);
-            setIsBillingOpen(true);
-          }}
-        />
-      </Suspense>
-
-      <BottomNav
-        onOpenAddHotel={() => setIsAddHotelOpen(true)}
-        onOpenAlerts={() => setIsAlertsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        unreadCount={data?.unread_alerts_count}
-      />
-
-      <main className="pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-2xl sm:text-4xl font-black text-white flex items-center gap-3 tracking-tighter">
-              {t("dashboard.title")}
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F6C344]/10 border border-[#F6C344]/20 text-[9px] font-black text-[#F6C344] uppercase tracking-widest animate-pulse">
-                <Cpu className="w-3 h-3" />
-                {t("dashboard.agentMeshActive")}
-              </span>
-            </h1>
-            <p className="text-[var(--text-secondary)] mt-1 text-xs">
-              {t("dashboard.subtitle")}
-            </p>
-          </motion.div>
-
-          {data?.competitors?.length && (
-            <div className="hidden xl:flex items-center gap-4 px-4 border-l border-white/5">
-              {data.next_scan_at && (
-                <div className="text-right pr-4 border-r border-white/5 group relative cursor-help">
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest flex items-center justify-end gap-1">
-                    {t("dashboard.nextScheduledScan")}
-                    <Info className="w-2.5 h-2.5 opacity-50" />
-                  </p>
-                  <p className="text-sm font-black text-[#F6C344]">
-                    {new Date(data.next_scan_at).toLocaleTimeString(
-                      locale === "tr" ? "tr-TR" : "en-US",
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      },
-                    )}
-                  </p>
-                  {/* Tooltip */}
-                  <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-[10px] text-white leading-tight opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
-                    {t("dashboard.nextScanNote") ||
-                      "Manual scans reset the scheduled countdown."}
-                  </div>
-                </div>
-              )}
-              <div className="text-right">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
-                  {t("dashboard.marketPulse")}
-                </p>
-                <div className="flex items-center gap-3 justify-end">
-                  <span
-                    className={`text-sm font-black ${
-                      marketPulseAvg > 0 ? "text-rose-400" : "text-emerald-400"
-                    }`}
-                  >
-                    {marketPulseAvg.toFixed(1)}%
-                  </span>
-                  <div
-                    className={`w-2 h-2 rounded-full shadow-[0_0_8px] ${
-                      marketPulseAvg > 0
-                        ? "bg-rose-500 shadow-rose-500/50 animate-pulse"
-                        : "bg-emerald-500 shadow-emerald-500/50"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
+      <main className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleRefresh(data)}
