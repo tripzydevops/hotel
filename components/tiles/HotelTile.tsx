@@ -194,17 +194,32 @@ export default function HotelTile(props: HotelTileProps) {
             {/* Star rating removed from image as it was deemed "cheap" looking */}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              {headerBadges}
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              {/* Primary Label */}
+              <span
+                className={`text-[10px] uppercase tracking-widest font-black px-2.5 py-1 rounded-full border shadow-sm ${
+                  isTarget
+                    ? "text-[#F6C344] bg-[#F6C344]/10 border-[#F6C344]/20"
+                    : "text-slate-400 bg-white/5 border-white/10"
+                }`}
+              >
+                {isTarget ? t("common.myHotel") : t("common.competitor")}
+              </span>
+
+              {/* Rating */}
               {rating && (
-                <span className="text-[10px] uppercase tracking-widest text-[#F6C344] font-bold bg-[#F6C344]/10 px-2 py-0.5 rounded-full">
-                  {isTarget ? t("common.myHotel") : t("common.competitor")} ★{" "}
-                  {rating.toFixed(1)}
+                <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded-full flex items-center gap-1 border border-white/5">
+                  ★ {rating.toFixed(1)}
                 </span>
               )}
+
+              {/* Custom Header Badges (like Rank) */}
+              {headerBadges}
+
+              {/* Undercut Status */}
               {isUndercut && (
-                <span className="text-[10px] text-alert-red font-bold flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-alert-red animate-pulse" />
+                <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1.5 bg-rose-500/10 px-2 py-1 rounded-full border border-rose-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                   {t("dashboard.undercut")}
                 </span>
               )}
@@ -259,13 +274,15 @@ export default function HotelTile(props: HotelTileProps) {
                   },
                 } as HotelWithPrice);
               }}
-              className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white" : "hover:bg-white/10 text-[#F6C344] hover:text-white"} transition-all`}
+              className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                isTarget
+                  ? "bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
+                  : "hover:bg-white/10 text-[#F6C344] hover:text-white"
+              }`}
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
-              <Edit2
-                className={`${isTarget ? "w-4.5 h-4.5" : "w-3.5 h-3.5"}`}
-              />
+              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
             </button>
           )}
           {onViewDetails && (
@@ -276,9 +293,9 @@ export default function HotelTile(props: HotelTileProps) {
                   id,
                   name,
                   location,
-                  image_url: imageUrl, // Mapping to correct API field
-                  user_id: "", // Dummy for type satisfaction
-                  created_at: "", // Dummy for type satisfaction
+                  image_url: imageUrl,
+                  user_id: "",
+                  created_at: "",
                   is_target_hotel: isTarget,
                   price_info: {
                     currency,
@@ -295,15 +312,17 @@ export default function HotelTile(props: HotelTileProps) {
                   rating,
                 } as HotelWithPrice);
               }}
-              className={`p-2.5 rounded-xl ${isTarget ? "bg-[#F6C344]/10 text-[#F6C344] hover:bg-[#F6C344]/20 border border-[#F6C344]/20" : "hover:bg-white/10 text-slate-500 hover:text-white"} transition-all`}
+              className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                isTarget
+                  ? "bg-[#F6C344] text-[#050B18] hover:bg-[#EAB308] hover:scale-110 active:scale-95"
+                  : "hover:bg-white/10 text-slate-500 hover:text-white"
+              }`}
               title={t("common.view")}
               aria-label={t("common.view")}
             >
-              {isTarget ? (
-                <Building2 className="w-4.5 h-4.5" />
-              ) : (
-                <HotelIcon className="w-3.5 h-3.5" />
-              )}
+              <Building2
+                className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`}
+              />
             </button>
           )}
           {onDelete && (
@@ -312,13 +331,15 @@ export default function HotelTile(props: HotelTileProps) {
                 e.stopPropagation();
                 onDelete(id);
               }}
-              className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-[var(--text-muted)] hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] border border-white/5" : "hover:bg-red-500/20 text-red-500/50 hover:text-red-400"} transition-all`}
+              className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                isTarget
+                  ? "bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:scale-110 active:scale-95"
+                  : "hover:bg-red-500/20 text-red-500/50 hover:text-red-400"
+              }`}
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >
-              <Trash2
-                className={`${isTarget ? "w-4.5 h-4.5" : "w-3.5 h-3.5"}`}
-              />
+              <Trash2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
             </button>
           )}
 
