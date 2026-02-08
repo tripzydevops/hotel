@@ -248,7 +248,8 @@ export default function Dashboard() {
 
             <button
               onClick={() => setIsAddHotelOpen(true)}
-              className="p-3 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all hover:scale-105 active:scale-95 shadow-xl"
+              className="p-3 rounded-xl bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/30 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/30 transition-all hover:scale-105 active:scale-95 shadow-xl"
+              title="Add Hotel"
             >
               <Plus className="w-5 h-5" />
             </button>
