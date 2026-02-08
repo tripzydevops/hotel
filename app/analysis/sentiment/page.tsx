@@ -569,14 +569,18 @@ export default function SentimentPage() {
                   category="Cleanliness"
                   myScore={
                     targetHotel.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Cleanliness",
-                    )?.rating || 4.2
+                      (s: any) =>
+                        s.name === "Cleanliness" ||
+                        s.category === "Cleanliness",
+                    )?.rating || 0
                   }
                   leaderName={leader?.name}
                   leaderScore={
                     leader?.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Cleanliness",
-                    )?.rating || 4.5
+                      (s: any) =>
+                        s.name === "Cleanliness" ||
+                        s.category === "Cleanliness",
+                    )?.rating || 0
                   }
                   marketAvg={marketAvgRating}
                 />
@@ -585,14 +589,16 @@ export default function SentimentPage() {
                   category="Service"
                   myScore={
                     targetHotel.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Service",
-                    )?.rating || 4.5
+                      (s: any) =>
+                        s.name === "Service" || s.category === "Service",
+                    )?.rating || 0
                   }
                   leaderName={leader?.name}
                   leaderScore={
                     leader?.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Service",
-                    )?.rating || 4.8
+                      (s: any) =>
+                        s.name === "Service" || s.category === "Service",
+                    )?.rating || 0
                   }
                   marketAvg={marketAvgRating - 0.2}
                 />
@@ -601,16 +607,34 @@ export default function SentimentPage() {
                   category="Location"
                   myScore={
                     targetHotel.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Location",
-                    )?.rating || 4.8
+                      (s: any) =>
+                        s.name === "Location" || s.category === "Location",
+                    )?.rating || 0
                   }
                   leaderName={leader?.name}
                   leaderScore={
                     leader?.sentiment_breakdown?.find(
-                      (s: any) => s.category === "Location",
-                    )?.rating || 4.9
+                      (s: any) =>
+                        s.name === "Location" || s.category === "Location",
+                    )?.rating || 0
                   }
                   marketAvg={marketAvgRating + 0.1}
+                />
+                {/* Value */}
+                <CategoryBar
+                  category="Value"
+                  myScore={
+                    targetHotel.sentiment_breakdown?.find(
+                      (s: any) => s.name === "Value" || s.category === "Value",
+                    )?.rating || 0
+                  }
+                  leaderName={leader?.name}
+                  leaderScore={
+                    leader?.sentiment_breakdown?.find(
+                      (s: any) => s.name === "Value" || s.category === "Value",
+                    )?.rating || 0
+                  }
+                  marketAvg={marketAvgRating}
                 />
               </div>
             </motion.div>
@@ -627,84 +651,57 @@ export default function SentimentPage() {
                   <Brain className="w-5 h-5 text-green-400" />
                   {t("sentiment.guestMentions")}
                 </h3>
-                <Link
-                  href="#"
-                  className="text-xs text-blue-400 hover:underline"
-                >
-                  {t("sentiment.viewAll")}
-                </Link>
               </div>
 
               <div className="flex-1">
                 <div className="flex flex-wrap gap-3 mb-8">
-                  {/* Positive Mentions */}
-                  <KeywordTag
-                    text="Spotless Room"
-                    count={124}
-                    sentiment="positive"
-                    size="lg"
-                  />
-                  <KeywordTag
-                    text="Great Location"
-                    count={215}
-                    sentiment="positive"
-                    size="lg"
-                  />
-                  <KeywordTag
-                    text="Tasty Breakfast"
-                    count={45}
-                    sentiment="positive"
-                    size="md"
-                  />
-                  <KeywordTag
-                    text="Comfy Bed"
-                    count={88}
-                    sentiment="positive"
-                    size="md"
-                  />
-                  <KeywordTag
-                    text="Parking Fees"
-                    sentiment="neutral"
-                    size="sm"
-                  />
-
-                  {/* Negative Mentions */}
-                  <KeywordTag text="Pool View" sentiment="neutral" size="sm" />
-                  <KeywordTag
-                    text="Noisy AC"
-                    count={32}
-                    sentiment="negative"
-                    size="lg"
-                  />
-                  <KeywordTag
-                    text="Slow WiFi"
-                    count={28}
-                    sentiment="negative"
-                    size="md"
-                  />
-                  <KeywordTag
-                    text="Elevator Wait"
-                    count={15}
-                    sentiment="negative"
-                    size="sm"
-                  />
+                  {targetHotel.guest_mentions &&
+                  targetHotel.guest_mentions.length > 0 ? (
+                    targetHotel.guest_mentions.map(
+                      (mention: any, idx: number) => (
+                        <KeywordTag
+                          key={idx}
+                          text={mention.text}
+                          count={mention.count}
+                          sentiment={mention.sentiment}
+                          size={
+                            mention.count > 50
+                              ? "lg"
+                              : mention.count > 20
+                                ? "md"
+                                : "sm"
+                          }
+                        />
+                      ),
+                    )
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      {t("sentiment.noMentions")}
+                    </p>
+                  )}
                 </div>
 
                 {/* AI Insight */}
-                <div className="p-4 bg-blue-900/10 border border-blue-800/20 rounded-xl flex items-start gap-4">
-                  <Sparkles className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="text-sm font-bold text-blue-300 mb-1">
-                      {t("sentiment.aiInsight")}
-                    </h4>
-                    <p className="text-xs text-blue-200/80 leading-relaxed">
-                      Mentions of{" "}
-                      <span className="text-red-400 font-bold">"Noisy AC"</span>{" "}
-                      have increased by 15% since last week. Consider
-                      maintenance check on 4th floor.
-                    </p>
-                  </div>
-                </div>
+                {targetHotel.guest_mentions &&
+                  targetHotel.guest_mentions.length > 0 && (
+                    <div className="p-4 bg-blue-900/10 border border-blue-800/20 rounded-xl flex items-start gap-4">
+                      <Sparkles className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-sm font-bold text-blue-300 mb-1">
+                          {t("sentiment.aiInsight")}
+                        </h4>
+                        <p className="text-xs text-blue-200/80 leading-relaxed">
+                          Analysis indicates a strong positive trend in{" "}
+                          <span className="text-green-400 font-bold">
+                            {targetHotel.guest_mentions.find(
+                              (m: any) => m.sentiment === "positive",
+                            )?.text || "Service"}
+                          </span>
+                          . Keep up the good work!
+                        </p>
+                      </div>
+                    </div>
+                  )}
               </div>
             </motion.div>
           </div>
@@ -840,46 +837,6 @@ export default function SentimentPage() {
                   })}
 
                   {/* Tooltip Indicator / Event Hub (Design Matching) */}
-                  <g className="cursor-pointer group">
-                    <line
-                      x1="600"
-                      y1="0"
-                      x2="600"
-                      y2="100"
-                      stroke="#3b82f6"
-                      strokeWidth="1"
-                      strokeDasharray="4,4"
-                    />
-                    <rect
-                      x="535"
-                      y="30"
-                      width="130"
-                      height="40"
-                      rx="4"
-                      fill="#0a1628"
-                      stroke="#3b82f6"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x="545"
-                      y="45"
-                      fontSize="8"
-                      fontWeight="bold"
-                      fill="#3b82f6"
-                      className="uppercase tracking-tighter"
-                    >
-                      Event Detected
-                    </text>
-                    <text
-                      x="545"
-                      y="60"
-                      fontSize="10"
-                      fontWeight="bold"
-                      fill="white"
-                    >
-                      Lobby Renovation Finished
-                    </text>
-                  </g>
                 </svg>
               </div>
 

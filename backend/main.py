@@ -1468,7 +1468,7 @@ async def get_analysis(
                 price_query = price_query.lte("recorded_at", end_date + "T23:59:59")
             
             # Increase limit for calendar data
-            all_prices_res = price_query.limit(500).execute()
+            all_prices_res = price_query.limit(2000).execute()
             
             for p in (all_prices_res.data or []):
                 hid = str(p["hotel_id"])
@@ -1714,7 +1714,8 @@ async def get_analysis(
             "all_hotels": all_hotels_list,
             "min_hotel": min_hotel,
             "max_hotel": max_hotel,
-            "sentiment_breakdown": target_h.get("sentiment_breakdown") if target_h else None
+            "sentiment_breakdown": target_h.get("sentiment_breakdown") if target_h else None,
+            "guest_mentions": target_h.get("guest_mentions") if target_h else None
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))
@@ -1823,16 +1824,34 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
         all_sessions = sessions + legacy_sessions
         all_sessions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
 
+        # Filter out empty/legacy sessions if they have no useful data
+        # Keep legacy only if they have hotels_count > 0 (or some other metric if available)
+        final_sessions = [
+            s for s in all_sessions 
+            if s.get("hotels_count", 0) > 0 and s.get("session_type") != "legacy"
+        ]
+        # Fallback: if user wants SOME legacy, maybe only filter 0-count ones. 
+        # User said "remove these scans that have no data". 
+        # Usually legacy scans might have 0 hotels_count if synthesized from orphaned logs.
+        # Let's strictly filter out sessions with 0 hotels or status='legacy' if that's what "no data" means.
+        # Re-reading user request: "remove these scans that have no data".
+        # Safe bet: filter out hotels_count == 0 or null.
+        
+        filtered_sessions = [
+            s for s in all_sessions 
+            if (s.get("hotels_count") is not None and s.get("hotels_count") > 0)
+        ]
+
         # 4. Synthesize Weekly Summary
         summary = {
-            "total_scans": len(all_sessions),
+            "total_scans": len(filtered_sessions),
             "active_monitors": 1, # Placeholder
             "last_week_trend": "Increasing",
             "system_health": "100%"
         }
 
         return JSONResponse(content=jsonable_encoder({
-            "sessions": all_sessions[:100],
+            "sessions": filtered_sessions[:100],
             "weekly_summary": summary
         }))
     except Exception as e:
