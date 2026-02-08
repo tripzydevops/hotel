@@ -28,14 +28,14 @@ export default function Sidebar({
 
   const navItems = [
     {
+      label: "Rate Intelligence Grid",
+      href: "/",
+      icon: LayoutGrid,
+    },
+    {
       label: "Market Analysis",
       href: "/analysis",
       icon: BarChart3,
-    },
-    {
-      label: "Rate Grid",
-      href: "/",
-      icon: LayoutGrid,
     },
     {
       label: "Reports",
