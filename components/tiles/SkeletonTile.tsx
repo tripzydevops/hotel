@@ -3,7 +3,7 @@
 export default function SkeletonTile({ large = false }: { large?: boolean }) {
   return (
     <div
-      className={`glass-card ${large ? "p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2" : "p-5"} flex flex-col gap-4 overflow-hidden`}
+      className={`card-blur rounded-[2rem] ${large ? "p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2" : "p-5"} flex flex-col gap-4 overflow-hidden`}
     >
       <div className="flex items-center gap-4">
         <div

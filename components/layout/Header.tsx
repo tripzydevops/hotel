@@ -42,7 +42,7 @@ export default function Header({
 
   const navLinkClass = (path: string) =>
     isActive(path)
-      ? "text-white text-sm font-medium border-b-2 border-[var(--soft-gold)] pb-1"
+      ? "text-white text-sm font-medium border-b-2 border-[#F6C344] pb-1"
       : "text-[var(--text-secondary)] text-sm hover:text-white transition-colors";
 
   return (
@@ -55,22 +55,32 @@ export default function Header({
             className="flex items-center gap-5 transition-all hover:opacity-90 active:scale-95 group"
           >
             <div className="flex items-center gap-5">
-              <div className="h-24 w-24 relative logo-glow transition-transform group-hover:scale-110 duration-500">
-                <Image
-                  src="/logo.png"
-                  alt="Hotel Rate Sentinel"
-                  fill
-                  className="object-contain"
-                  priority
-                />
+              <div className="metallic-gold p-[1.5px] rounded-xl shadow-2xl shadow-yellow-500/10 transition-transform group-hover:scale-110 duration-500">
+                <div className="bg-[#050B18] rounded-[11px] flex items-center justify-center h-16 w-16 p-2">
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-10 h-10">
+                      <div className="absolute left-0 top-0 w-3 h-full bg-[#003366] rounded-sm"></div>
+                      <div className="absolute right-0 top-0 w-3 h-full bg-[#003366] rounded-sm"></div>
+                      <div className="absolute left-0 top-[42%] w-full h-2 bg-[#003366]"></div>
+                      <div className="absolute left-[20%] bottom-0 flex items-end gap-[2px]">
+                        <div className="w-1.5 h-3 bg-[#F6C344]"></div>
+                        <div className="w-1.5 h-5 bg-[#F6C344]"></div>
+                        <div className="w-1.5 h-7 bg-[#F6C344]"></div>
+                      </div>
+                      <div className="absolute -right-1 -top-1 w-4 h-4 flex items-center justify-center">
+                        <div className="absolute w-3.5 h-1 bg-[#F6C344] rounded-full"></div>
+                        <div className="absolute w-1 h-3.5 bg-[#F6C344] rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-black text-2xl tracking-tighter leading-none">
-                  Hotel Rate{" "}
-                  <span className="text-[var(--soft-gold)]">Sentinel</span>
+                  Hotel Plus
                 </span>
-                <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.4em] font-black mt-2 opacity-80">
-                  Autonomous Intelligence
+                <span className="text-[10px] text-[#F6C344]/80 uppercase tracking-[0.4em] font-black mt-2">
+                  Rate Sentinel
                 </span>
               </div>
             </div>

@@ -382,10 +382,10 @@ export default function Dashboard() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+            <h1 className="text-2xl sm:text-4xl font-black text-white flex items-center gap-3 tracking-tighter">
               {t("dashboard.title")}
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(255,215,0,0.1)]">
-                <Cpu className="w-2.5 h-2.5" />
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F6C344]/10 border border-[#F6C344]/20 text-[9px] font-black text-[#F6C344] uppercase tracking-widest animate-pulse">
+                <Cpu className="w-3 h-3" />
                 {t("dashboard.agentMeshActive")}
               </span>
             </h1>
@@ -402,7 +402,7 @@ export default function Dashboard() {
                     {t("dashboard.nextScheduledScan")}
                     <Info className="w-2.5 h-2.5 opacity-50" />
                   </p>
-                  <p className="text-sm font-black text-[var(--soft-gold)]">
+                  <p className="text-sm font-black text-[#F6C344]">
                     {new Date(data.next_scan_at).toLocaleTimeString(
                       locale === "tr" ? "tr-TR" : "en-US",
                       {
@@ -422,19 +422,19 @@ export default function Dashboard() {
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
                   {t("dashboard.marketPulse")}
                 </p>
-                <div className="flex items-center gap-2 justify-end">
+                <div className="flex items-center gap-3 justify-end">
                   <span
                     className={`text-sm font-black ${
-                      marketPulseAvg > 0
-                        ? "text-alert-red"
-                        : "text-optimal-green"
+                      marketPulseAvg > 0 ? "text-rose-400" : "text-emerald-400"
                     }`}
                   >
                     {marketPulseAvg.toFixed(1)}%
                   </span>
                   <div
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      marketPulseAvg > 0 ? "bg-alert-red" : "bg-optimal-green"
+                    className={`w-2 h-2 rounded-full shadow-[0_0_8px] ${
+                      marketPulseAvg > 0
+                        ? "bg-rose-500 shadow-rose-500/50 animate-pulse"
+                        : "bg-emerald-500 shadow-emerald-500/50"
                     }`}
                   />
                 </div>
@@ -447,24 +447,25 @@ export default function Dashboard() {
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}
               className={`
-                btn-gold flex items-center gap-2 px-6 shadow-lg shadow-[var(--soft-gold)]/20
+                metallic-gold p-[1px] rounded-xl shadow-2xl shadow-yellow-500/10 transition-all active:scale-95
                 ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
               `}
             >
-              <RefreshCw
-                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="font-bold">
-                {isRefreshing ? t("common.scanning") : t("common.scanNow")}
-              </span>
+              <div className="bg-[#050B18] hover:bg-[#0A1629] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors">
+                <RefreshCw
+                  className={`w-4 h-4 text-[#F6C344] ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                <span className="font-bold text-white text-sm uppercase tracking-widest">
+                  {isRefreshing ? t("common.scanning") : t("common.scanNow")}
+                </span>
+              </div>
             </button>
 
             <button
               onClick={() => setIsAddHotelOpen(true)}
-              className="btn-gold flex items-center gap-2"
+              className="p-3 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all hover:scale-105 active:scale-95 shadow-xl"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("common.addHotel")}</span>
+              <Plus className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -607,9 +608,9 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-[var(--soft-gold)]/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
           >
-            <p className="text-2xl font-bold text-alert-red">
+            <p className="text-3xl font-black text-rose-500 tracking-tighter mb-1">
               {
                 (data?.competitors || []).filter(
                   (c: HotelWithPrice) =>
@@ -618,32 +619,32 @@ export default function Dashboard() {
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-secondary)] group-hover:text-alert-red transition-colors">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 group-hover:text-rose-400 transition-colors">
               {t("dashboard.yieldRisk")}
             </p>
           </motion.div>
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-optimal-green/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
           >
-            <p className="text-2xl font-bold text-optimal-green">
+            <p className="text-3xl font-black text-emerald-400 tracking-tighter mb-1">
               {
                 (data?.competitors || []).filter(
                   (c: HotelWithPrice) => c.price_info?.trend === "down",
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-secondary)] group-hover:text-optimal-green transition-colors">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 group-hover:text-emerald-400 transition-colors">
               {t("dashboard.marketOpportunity")}
             </p>
           </motion.div>
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-white/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
           >
-            <p className="text-2xl font-bold text-white">
+            <p className="text-3xl font-black text-white tracking-tighter mb-1">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
@@ -677,17 +678,19 @@ export default function Dashboard() {
                 "—"
               )}
             </p>
-            <p className="text-xs text-[var(--text-secondary)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               {t("dashboard.avgCompetitor")}
             </p>
           </motion.div>
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-white/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
           >
-            <p className="text-2xl font-bold text-white">{currentHotelCount}</p>
-            <p className="text-xs text-[var(--text-secondary)]">
+            <p className="text-3xl font-black text-white tracking-tighter mb-1">
+              {currentHotelCount}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               {t("dashboard.hotelsTracked")}
             </p>
           </motion.div>

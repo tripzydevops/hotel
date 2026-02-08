@@ -30,7 +30,7 @@ export default function SearchHistory({
     <div className="mt-12">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+          <div className="p-2 rounded-xl bg-[#F6C344]/10 text-[#F6C344]">
             <History className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
@@ -47,11 +47,11 @@ export default function SearchHistory({
           <button
             key={search.id}
             onClick={() => onReSearch(search.hotel_name, search.location)}
-            className="group glass-card p-4 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[var(--soft-gold)]/30 text-left flex flex-col justify-between"
+            className="group card-blur rounded-[1.5rem] p-4 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[#F6C344]/30 text-left flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="p-1.5 rounded-lg bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
+                <div className="p-1.5 rounded-lg bg-white/5 text-slate-500 group-hover:text-[#F6C344] transition-colors">
                   <Search className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
@@ -59,7 +59,7 @@ export default function SearchHistory({
                 </span>
               </div>
 
-              <h3 className="text-sm font-black text-white mb-1 truncate group-hover:text-[var(--soft-gold)] transition-colors">
+              <h3 className="text-sm font-black text-white mb-1 truncate group-hover:text-[#F6C344] transition-colors">
                 {search.hotel_name}
               </h3>
 
@@ -71,7 +71,7 @@ export default function SearchHistory({
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 mt-2 text-[var(--soft-gold)] group-hover:text-white transition-colors">
+            <div className="flex items-center gap-1.5 mt-2 text-[#F6C344] group-hover:text-white transition-colors">
               <span className="text-[9px] font-black uppercase tracking-widest">
                 {t("history.reSearch")}
               </span>

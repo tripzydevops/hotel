@@ -150,11 +150,11 @@ export default function HotelTile(props: HotelTileProps) {
     <motion.div
       whileHover={{ scale: 1.01, translateY: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`command-card ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden ${isUndercut ? "ring-2 ring-red-500/50" : ""}`}
+      className={`card-blur ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden rounded-[2rem] ${isUndercut ? "ring-2 ring-rose-500/50" : ""}`}
     >
       {/* Target Gradient Overlay */}
       {isTarget && (
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#F6C344]/5 to-transparent pointer-events-none" />
       )}
       {/* Header */}
       <div
@@ -197,8 +197,8 @@ export default function HotelTile(props: HotelTileProps) {
             <div className="flex items-center gap-2 mb-0.5">
               {headerBadges}
               {rating && (
-                <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  ★ {rating.toFixed(1)}
+                <span className="text-[10px] uppercase tracking-widest text-[#F6C344] font-bold bg-[#F6C344]/10 px-2 py-0.5 rounded-full">
+                  {t("common.myHotel")} ★ {rating.toFixed(1)}
                 </span>
               )}
               {isUndercut && (
@@ -215,11 +215,11 @@ export default function HotelTile(props: HotelTileProps) {
               {name}
             </h2>
             {stars && (
-              <div className="flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 w-fit">
+              <div className="flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-md bg-[#F6C344]/10 border border-[#F6C344]/20 w-fit">
                 {[...Array(Math.min(5, stars))].map((_, i) => (
                   <span
                     key={i}
-                    className="text-[10px] text-[var(--soft-gold)] font-bold"
+                    className="text-[10px] text-[#F6C344] font-bold"
                   >
                     ★
                   </span>
@@ -258,7 +258,7 @@ export default function HotelTile(props: HotelTileProps) {
                   },
                 } as HotelWithPrice);
               }}
-              className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white" : "hover:bg-white/10 text-[var(--soft-gold)] hover:text-white"} transition-all`}
+              className={`p-2.5 rounded-xl ${isTarget ? "bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white" : "hover:bg-white/10 text-[#F6C344] hover:text-white"} transition-all`}
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
@@ -294,7 +294,7 @@ export default function HotelTile(props: HotelTileProps) {
                   rating,
                 } as HotelWithPrice);
               }}
-              className={`p-2.5 rounded-xl ${isTarget ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/20" : "hover:bg-white/10 text-[var(--text-muted)] hover:text-white"} transition-all`}
+              className={`p-2.5 rounded-xl ${isTarget ? "bg-[#F6C344]/10 text-[#F6C344] hover:bg-[#F6C344]/20 border border-[#F6C344]/20" : "hover:bg-white/10 text-slate-500 hover:text-white"} transition-all`}
               title={t("common.view")}
               aria-label={t("common.view")}
             >
@@ -372,8 +372,8 @@ export default function HotelTile(props: HotelTileProps) {
             </>
           ) : (
             <>
-              <p className="text-[10px] font-bold tracking-widest text-[var(--soft-gold)] mb-2 uppercase flex items-center justify-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+              <p className="text-[10px] font-bold tracking-widest text-[#F6C344] mb-2 uppercase flex items-center justify-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-[#F6C344] animate-pulse" />
                 {t("dashboard.liveRate")}
               </p>
               <div className="relative inline-block mb-1">
@@ -404,7 +404,7 @@ export default function HotelTile(props: HotelTileProps) {
           {/* Check-in info shared */}
           {(checkIn || (adults && adults !== 2)) && (
             <span
-              className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border ${isTarget ? "mt-2 font-bold text-[var(--soft-gold)] border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5" : "text-[var(--soft-gold)] font-bold ml-1 border-[var(--soft-gold)]/20 py-0.5 bg-[var(--soft-gold)]/5"}`}
+              className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border ${isTarget ? "mt-2 font-bold text-[#F6C344] border-[#F6C344]/20 bg-[#F6C344]/5" : "text-[#F6C344] font-bold ml-1 border-[#F6C344]/20 py-0.5 bg-[#F6C344]/5"}`}
             >
               {!isTarget && "• "}
               {checkIn

@@ -40,7 +40,7 @@ export default function ScanHistory({
     <div className="mt-12">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+          <div className="p-2 rounded-xl bg-[#F6C344]/10 text-[#F6C344]">
             <Database className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
@@ -57,13 +57,13 @@ export default function ScanHistory({
           <button
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group glass-card px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-all border border-white/5 hover:border-white/10 text-left"
+            className="group card-blur rounded-[1.5rem] px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-all border border-white/5 hover:border-[#F6C344]/30 text-left"
           >
             <div className="flex items-center gap-6">
               <div
                 className={`p-3 rounded-2xl ${
                   session.status === "completed"
-                    ? "bg-optimal-green/10 text-optimal-green border border-optimal-green/20"
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                 }`}
               >
@@ -109,7 +109,7 @@ export default function ScanHistory({
                 <span
                   className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
                     session.status === "completed"
-                      ? "text-optimal-green bg-optimal-green/5"
+                      ? "text-emerald-400 bg-emerald-500/5"
                       : "text-amber-500 bg-amber-500/5"
                   }`}
                 >

@@ -32,7 +32,7 @@ export default function RapidPulseHistory({
     <div className="mt-12">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+          <div className="p-2 rounded-xl bg-[#F6C344]/10 text-[#F6C344]">
             <Zap className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
@@ -46,14 +46,14 @@ export default function RapidPulseHistory({
           <button
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group glass-card p-5 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[var(--soft-gold)]/30 text-left relative overflow-hidden"
+            className="group card-blur rounded-[2rem] p-5 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[#F6C344]/30 text-left relative overflow-hidden"
           >
             {/* Background Glow */}
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[var(--soft-gold)]/5 blur-2xl group-hover:bg-[var(--soft-gold)]/10 transition-all rounded-full" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#F6C344]/5 blur-2xl group-hover:bg-[#F6C344]/10 transition-all rounded-full" />
 
             <div className="flex flex-col gap-4 relative z-10">
               <div className="flex items-center justify-between">
-                <div className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
+                <div className="p-2 rounded-lg bg-white/5 text-slate-500 group-hover:text-[#F6C344] transition-colors">
                   <Activity className="w-4 h-4" />
                 </div>
                 <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-white uppercase tracking-widest">
@@ -62,7 +62,7 @@ export default function RapidPulseHistory({
               </div>
 
               <div>
-                <p className="text-sm font-black text-white mb-1 group-hover:text-[var(--soft-gold)] transition-colors">
+                <p className="text-sm font-black text-white mb-1 group-hover:text-[#F6C344] transition-colors">
                   {t("history.propertiesBatch").replace(
                     "{0}",
                     session.hotels_count.toString(),
@@ -72,7 +72,7 @@ export default function RapidPulseHistory({
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
                       session.status === "completed"
-                        ? "bg-optimal-green"
+                        ? "bg-emerald-500"
                         : "bg-amber-500"
                     }`}
                   />
