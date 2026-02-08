@@ -312,11 +312,9 @@ export default function SentimentPage() {
   // Initialize selected hotels once data is loaded
   useEffect(() => {
     if (targetHotel && selectedHotelIds.length === 0) {
-      // Default to target + all competitors (up to 4)
-      setSelectedHotelIds([
-        targetHotel.id,
-        ...competitors.map((c: any) => c.id),
-      ]);
+      // Default to target + all competitors (up to 5 total)
+      const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
+      setSelectedHotelIds(initialIds.slice(0, 5));
     }
   }, [targetHotel, competitors, selectedHotelIds.length]);
 
@@ -410,11 +408,13 @@ export default function SentimentPage() {
             {targetHotel && (
               <button
                 onClick={() => {
-                  setSelectedHotelIds((prev) =>
-                    prev.includes(targetHotel.id)
-                      ? prev.filter((id) => id !== targetHotel.id)
-                      : [...prev, targetHotel.id],
-                  );
+                  setSelectedHotelIds((prev) => {
+                    const exists = prev.includes(targetHotel.id);
+                    if (exists)
+                      return prev.filter((id) => id !== targetHotel.id);
+                    if (prev.length >= 5) return prev;
+                    return [...prev, targetHotel.id];
+                  });
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
                   selectedHotelIds.includes(targetHotel.id)
@@ -430,11 +430,12 @@ export default function SentimentPage() {
               <button
                 key={comp.id}
                 onClick={() => {
-                  setSelectedHotelIds((prev) =>
-                    prev.includes(comp.id)
-                      ? prev.filter((id) => id !== comp.id)
-                      : [...prev, comp.id],
-                  );
+                  setSelectedHotelIds((prev) => {
+                    const exists = prev.includes(comp.id);
+                    if (exists) return prev.filter((id) => id !== comp.id);
+                    if (prev.length >= 5) return prev;
+                    return [...prev, comp.id];
+                  });
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
                   selectedHotelIds.includes(comp.id)
@@ -464,8 +465,8 @@ export default function SentimentPage() {
         </div>
       ) : (
         <>
-          {/* Score Cards Grid - Up to 5 hotels (1 target + 4 competitors) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+          {/* Score Cards Grid - Up to 5 hotels selectable */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
             {/* Target Hotel Card */}
             {isTargetSelected && targetHotel && (
               <ScoreCard
@@ -494,7 +495,7 @@ export default function SentimentPage() {
             )}
 
             {/* Competitor Cards */}
-            {visibleCompetitors.slice(0, 4).map((comp: any, idx: number) => {
+            {visibleCompetitors.map((comp: any, idx: number) => {
               const isCompLeader =
                 !isTargetLeader && allHotels[0]?.id === comp.id;
               return (

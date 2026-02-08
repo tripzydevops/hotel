@@ -106,9 +106,11 @@ export default function RateMatrix({
 
   const toggleHotel = (hotelId: string) => {
     setSelectedHotels((prev) => {
-      if (prev.includes(hotelId)) {
+      const exists = prev.includes(hotelId);
+      if (exists) {
         return prev.filter((h) => h !== hotelId);
       }
+      if (prev.length >= 5) return prev;
       return [...prev, hotelId];
     });
   };
@@ -207,10 +209,11 @@ export default function RateMatrix({
                         }
                         onChange={() => {
                           if (selectedHotels.length === 0) {
-                            // Initialize with all except this one
+                            // Initialize with all except this one (max 5)
                             setSelectedHotels(
                               competitors
                                 .filter((c) => c.id !== hotel.id)
+                                .slice(0, 5)
                                 .map((c) => c.id),
                             );
                           } else {

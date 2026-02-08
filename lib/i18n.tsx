@@ -19,27 +19,26 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>("en");
-  const [dictionary, setDictionary] = useState<Dictionary>(en);
+  const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
     // Load saved locale from localStorage if available
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("tripzy_locale") as Locale;
       if (saved && (saved === "en" || saved === "tr")) {
-        setLocale(saved);
+        setLocaleState(saved);
       }
     }
   }, []);
 
-  useEffect(() => {
-    if (locale === "tr") setDictionary(tr);
-    else setDictionary(en);
-
+  const setLocale = (newLocale: Locale) => {
+    setLocaleState(newLocale);
     if (typeof window !== "undefined") {
-      localStorage.setItem("tripzy_locale", locale);
+      localStorage.setItem("tripzy_locale", newLocale);
     }
-  }, [locale]);
+  };
+
+  const dictionary = locale === "tr" ? tr : en;
 
   const t = (key: string, params?: Record<string, string | number>) => {
     // Simple nested key support (e.g., "auth.login")
