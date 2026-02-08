@@ -150,7 +150,7 @@ export default function HotelTile(props: HotelTileProps) {
     <motion.div
       whileHover={{ scale: 1.01, translateY: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`card-blur ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden rounded-[2rem] ${isUndercut ? "ring-2 ring-rose-500/50" : ""}`}
+      className={`card-blur ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden rounded-[2rem]`}
     >
       {/* Target Gradient Overlay */}
       {isTarget && (
@@ -198,7 +198,8 @@ export default function HotelTile(props: HotelTileProps) {
               {headerBadges}
               {rating && (
                 <span className="text-[10px] uppercase tracking-widest text-[#F6C344] font-bold bg-[#F6C344]/10 px-2 py-0.5 rounded-full">
-                  {t("common.myHotel")} ★ {rating.toFixed(1)}
+                  {isTarget ? t("common.myHotel") : t("common.competitor")} ★{" "}
+                  {rating.toFixed(1)}
                 </span>
               )}
               {isUndercut && (

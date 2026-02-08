@@ -6,10 +6,28 @@ import ParityHeader from "@/components/layout/ParityHeader";
 import ParityStats from "@/components/analytics/ParityStats";
 import RateMatrix from "@/components/analytics/RateMatrix";
 import ViolatingChannels from "@/components/analytics/ViolatingChannels";
-import { Calendar, RefreshCw } from "lucide-react";
+import { Calendar, RefreshCw, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useI18n } from "@/lib/i18n";
 
 export default function ParityMonitorPage() {
+  const { t } = useI18n();
+  const { userId } = useAuth();
+  const { data, loading, handleScan } = useDashboard(userId, t);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050B18] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[var(--soft-gold)] animate-spin" />
+      </div>
+    );
+  }
+
+  const targetHotel = data?.target_hotel;
+  const competitors = data?.competitors || [];
+
   return (
     <div className="text-slate-100 min-h-screen flex flex-col relative overflow-hidden bg-[#050B18]">
       <div className="radial-glow pointer-events-none" />
@@ -41,8 +59,11 @@ export default function ParityMonitorPage() {
             <button className="px-6 py-3 bg-[#142541] border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-300 hover:bg-[#1e3459] transition-all flex items-center gap-2">
               <Calendar className="w-4 h-4" /> Oct 2024
             </button>
-            <button className="px-6 py-3 bg-[#F6C344] rounded-xl text-xs font-bold uppercase tracking-widest text-[#050B18] hover:bg-[#EAB308] hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95">
-              <RefreshCw className="w-4 h-4" /> Scan Now
+            <button
+              onClick={() => handleScan({})}
+              className="px-6 py-3 bg-[#F6C344] rounded-xl text-xs font-bold uppercase tracking-widest text-[#050B18] hover:bg-[#EAB308] hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95"
+            >
+              <RefreshCw className="w-4 h-4" /> {t("dashboard.scanNow")}
             </button>
           </motion.div>
         </div>
@@ -55,7 +76,10 @@ export default function ParityMonitorPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <ParityStats />
+              <ParityStats
+                targetHotel={targetHotel}
+                competitors={competitors}
+              />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -63,7 +87,7 @@ export default function ParityMonitorPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex-grow"
             >
-              <RateMatrix />
+              <RateMatrix targetHotel={targetHotel} competitors={competitors} />
             </motion.div>
           </div>
           <motion.div
@@ -72,7 +96,10 @@ export default function ParityMonitorPage() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="col-span-12 lg:col-span-4"
           >
-            <ViolatingChannels />
+            <ViolatingChannels
+              targetHotel={targetHotel}
+              competitors={competitors}
+            />
           </motion.div>
         </div>
       </main>

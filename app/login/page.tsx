@@ -29,21 +29,26 @@ export default function LoginPage() {
       <div className="radial-glow" />
       <div className="bg-grain" />
 
-      <div className="w-full max-w-md command-card p-10 shadow-2xl relative z-10 group">
+      <div className="w-full max-w-lg card-blur p-12 shadow-2xl relative z-10 group rounded-[3rem] border border-white/5">
         {/* Decorative Background Elements */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-[var(--soft-gold)]/10 rounded-full blur-3xl group-hover:bg-[var(--soft-gold)]/20 transition-all duration-1000" />
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-1000" />
 
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-10 relative z-10">
-          <div className="w-24 h-24 relative logo-glow mb-6 animate-float transition-transform group-hover:scale-110 duration-500">
-            <Image
-              src="/logo.png"
-              alt="Hotel Rate Sentinel"
-              fill
-              className="object-contain"
-              priority
-            />
+          <div className="relative group/logo">
+            <div className="absolute inset-0 bg-[var(--soft-gold)]/20 blur-2xl group-hover/logo:blur-3xl transition-all duration-500 rounded-full" />
+            <div className="w-24 h-24 relative z-10 metallic-gold p-[1.5px] rounded-2xl animate-float transition-transform group-hover:scale-110 duration-500">
+              <div className="bg-[#050B18] rounded-[15px] flex items-center justify-center h-full w-full p-3">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <div className="relative w-full h-full flex items-end justify-center gap-[2px] pb-1">
+                    <div className="w-2 h-[40%] bg-[var(--soft-gold)] rounded-t-sm animate-pulse shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
+                    <div className="w-2 h-[70%] bg-[var(--soft-gold)] rounded-t-sm shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
+                    <div className="w-2 h-[100%] bg-[var(--soft-gold)] rounded-t-sm shadow-[0_0_10px_rgba(246,195,68,0.3)]"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter text-center">
             Hotel Rate <span className="text-[var(--soft-gold)]">Sentinel</span>
