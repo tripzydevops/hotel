@@ -253,7 +253,9 @@ export default function HotelTile(props: HotelTileProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div
+          className={`flex items-center ${isTarget ? "gap-3" : "gap-1.5"} flex-shrink-0`}
+        >
           {onEdit && (
             <button
               onClick={(e) => {
@@ -274,7 +276,7 @@ export default function HotelTile(props: HotelTileProps) {
                   },
                 } as HotelWithPrice);
               }}
-              className={`p-2 rounded-xl transition-all shadow-lg ${
+              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
                 isTarget
                   ? "bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
                   : "bg-white/5 hover:bg-white/10 text-[var(--soft-gold)] hover:text-white border border-white/5"
@@ -282,7 +284,7 @@ export default function HotelTile(props: HotelTileProps) {
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
-              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-4 h-4"}`} />
+              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
             </button>
           )}
           {onViewDetails && (
@@ -312,7 +314,7 @@ export default function HotelTile(props: HotelTileProps) {
                   rating,
                 } as HotelWithPrice);
               }}
-              className={`p-2 rounded-xl transition-all shadow-lg ${
+              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
                 isTarget
                   ? "bg-[#F6C344] text-[#050B18] hover:bg-[#EAB308] hover:scale-110 active:scale-95"
                   : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
@@ -320,7 +322,9 @@ export default function HotelTile(props: HotelTileProps) {
               title={t("common.view")}
               aria-label={t("common.view")}
             >
-              <Building2 className={`${isTarget ? "w-5 h-5" : "w-4 h-4"}`} />
+              <Building2
+                className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`}
+              />
             </button>
           )}
           {onDelete && (
@@ -329,7 +333,7 @@ export default function HotelTile(props: HotelTileProps) {
                 e.stopPropagation();
                 onDelete(id);
               }}
-              className={`p-2 rounded-xl transition-all shadow-lg ${
+              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
                 isTarget
                   ? "bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:scale-110 active:scale-95"
                   : "bg-white/5 hover:bg-red-500/20 text-red-400/50 hover:text-red-400 border border-white/5"
@@ -337,7 +341,7 @@ export default function HotelTile(props: HotelTileProps) {
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >
-              <Trash2 className={`${isTarget ? "w-5 h-5" : "w-4 h-4"}`} />
+              <Trash2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
             </button>
           )}
 

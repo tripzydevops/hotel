@@ -1,22 +1,55 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
   LayoutGrid,
   FileText,
-  Share2,
   Settings,
   HelpCircle,
   Download,
   ChevronRight,
+  ChevronDown,
+  Calendar,
+  Radar,
+  Heart,
+  Share2,
+  Shield,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { useModalContext } from "@/components/ui/ModalContext";
-import { Shield } from "lucide-react";
+
+// Sub-menu items for Market Analysis
+const analysisSubItems = [
+  {
+    label: "Overview",
+    href: "/analysis",
+    icon: BarChart3,
+  },
+  {
+    label: "Rate Calendar",
+    href: "/analysis/calendar",
+    icon: Calendar,
+  },
+  {
+    label: "Discovery Engine",
+    href: "/analysis/discovery",
+    icon: Radar,
+  },
+  {
+    label: "Sentiment",
+    href: "/analysis/sentiment",
+    icon: Heart,
+  },
+  {
+    label: "Parity Monitor",
+    href: "/analysis/parity",
+    icon: Share2,
+  },
+];
 
 export default function Sidebar({
   profile,
@@ -25,6 +58,9 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const { setIsSettingsOpen } = useModalContext();
+  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(
+    pathname.startsWith("/analysis"),
+  );
 
   const navItems = [
     {
@@ -33,19 +69,9 @@ export default function Sidebar({
       icon: LayoutGrid,
     },
     {
-      label: "Market Analysis",
-      href: "/analysis",
-      icon: BarChart3,
-    },
-    {
       label: "Reports",
       href: "/reports",
       icon: FileText,
-    },
-    {
-      label: "Parity Monitor",
-      href: "/parity-monitor",
-      icon: Share2,
     },
   ];
 
@@ -54,6 +80,8 @@ export default function Sidebar({
     href: "/admin",
     icon: Shield,
   };
+
+  const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
     <aside className="w-72 bg-[#050B18] border-r border-white/5 flex flex-col h-screen sticky top-0 z-40">
@@ -86,38 +114,117 @@ export default function Sidebar({
       </div>
 
       {/* Primary Navigation */}
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
-                isActive
-                  ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
-                />
-              )}
-              <item.icon
-                className={`w-5 h-5 ${isActive ? "text-white" : "group-hover:text-white transition-colors"}`}
-              />
-              <span className="text-sm font-bold tracking-tight">
-                {item.label}
-              </span>
-              {isActive && (
-                <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        {/* Market Price Search */}
+        <Link
+          href="/"
+          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
+            pathname === "/"
+              ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          {pathname === "/" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
+            />
+          )}
+          <LayoutGrid className="w-5 h-5" />
+          <span className="text-sm font-bold tracking-tight">
+            Market Price Search
+          </span>
+          {pathname === "/" && (
+            <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
+          )}
+        </Link>
 
+        {/* Market Analysis - Collapsible */}
+        <div>
+          <button
+            onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
+            className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
+              isAnalysisActive
+                ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            {isAnalysisActive && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
+              />
+            )}
+            <BarChart3 className="w-5 h-5" />
+            <span className="text-sm font-bold tracking-tight">
+              Market Analysis
+            </span>
+            <motion.div
+              animate={{ rotate: isAnalysisExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="ml-auto"
+            >
+              <ChevronDown className="w-4 h-4 opacity-50" />
+            </motion.div>
+          </button>
+
+          {/* Sub-menu */}
+          <AnimatePresence>
+            {isAnalysisExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="ml-4 mt-1 pl-4 border-l border-white/10 space-y-1">
+                  {analysisSubItems.map((subItem) => {
+                    const isSubActive = pathname === subItem.href;
+                    return (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${
+                          isSubActive
+                            ? "bg-white/10 text-white font-bold"
+                            : "text-slate-500 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <subItem.icon className="w-4 h-4" />
+                        <span>{subItem.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Reports */}
+        <Link
+          href="/reports"
+          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
+            pathname === "/reports"
+              ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          {pathname === "/reports" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
+            />
+          )}
+          <FileText className="w-5 h-5" />
+          <span className="text-sm font-bold tracking-tight">Reports</span>
+          {pathname === "/reports" && (
+            <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
+          )}
+        </Link>
+
+        {/* Admin Section */}
         {profile?.role === "admin" && (
           <>
             <div className="pt-4 pb-2 px-4">
