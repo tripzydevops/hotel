@@ -24,16 +24,21 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Load saved locale from localStorage if available
-    const saved = localStorage.getItem("tripzy_locale") as Locale;
-    if (saved && (saved === "en" || saved === "tr")) {
-      setLocale(saved);
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("tripzy_locale") as Locale;
+      if (saved && (saved === "en" || saved === "tr")) {
+        setLocale(saved);
+      }
     }
   }, []);
 
   useEffect(() => {
     if (locale === "tr") setDictionary(tr);
     else setDictionary(en);
-    localStorage.setItem("tripzy_locale", locale);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tripzy_locale", locale);
+    }
   }, [locale]);
 
   const t = (key: string, params?: Record<string, string | number>) => {

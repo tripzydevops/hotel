@@ -36,8 +36,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
-  const { t } = useI18n();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  const { t, locale, setLocale } = useI18n();
   const { userId } = useAuth();
   const {
     data,
@@ -80,12 +85,16 @@ export default function DashboardLayout({
     setReSearchLocation,
   } = useModalContext();
 
-  // Hide sidebar on login and admin pages (admin has its own layout for now)
-  if (
-    pathname === "/login" ||
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/")
-  ) {
+  // Hide sidebar on login and admin pages
+  const isLoginPage = pathname === "/login";
+  const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  if (!mounted) {
+    if (isLoginPage || isAdminPage) return <>{children}</>;
+    return null;
+  }
+
+  if (isLoginPage || isAdminPage) {
     return <>{children}</>;
   }
 
@@ -147,6 +156,32 @@ export default function DashboardLayout({
                 <Bell className="w-5 h-5 text-slate-300" />
                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#050B18]" />
               </button>
+
+              <div className="h-8 w-[1px] bg-white/5 mx-1" />
+
+              {/* Language Toggle */}
+              <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                <button
+                  onClick={() => setLocale("en")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                    locale === "en"
+                      ? "bg-[#F6C344] text-[#050B18]"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLocale("tr")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                    locale === "tr"
+                      ? "bg-[#F6C344] text-[#050B18]"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  TR
+                </button>
+              </div>
 
               <div className="h-8 w-[1px] bg-white/5 mx-1" />
 
