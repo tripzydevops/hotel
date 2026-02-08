@@ -11,6 +11,7 @@ import {
   Tag,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
+import { motion } from "framer-motion";
 
 import TrendChart from "@/components/analytics/TrendChart";
 import { PricePoint, HotelWithPrice } from "@/types";
@@ -146,9 +147,15 @@ export default function HotelTile(props: HotelTileProps) {
   const imageSize = isTarget ? "w-12 h-12 sm:w-16 sm:h-16" : "w-10 h-10";
 
   return (
-    <div
-      className={`glass-card ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden ${isUndercut ? "ring-2 ring-red-500/50" : ""}`}
+    <motion.div
+      whileHover={{ scale: 1.01, translateY: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`command-card ${padding} flex flex-col ${isTarget ? "" : "justify-between"} group/card relative overflow-hidden ${isUndercut ? "ring-2 ring-red-500/50" : ""}`}
     >
+      {/* Target Gradient Overlay */}
+      {isTarget && (
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/5 to-transparent pointer-events-none" />
+      )}
       {/* Header */}
       <div
         className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-4"}`}

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 interface BentoGridProps {
   children: ReactNode;
@@ -41,7 +42,7 @@ interface BentoTileProps {
 
 /**
  * Individual Bento Tile
- * Glassmorphism styled tile with size variants
+ * Command Center styled tile with size variants and spring motion
  */
 export function BentoTile({
   children,
@@ -56,19 +57,19 @@ export function BentoTile({
   };
 
   return (
-    <div
+    <motion.div
       onClick={onClick}
+      whileHover={{ scale: 1.01, translateY: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={`
-        glass-card p-4 sm:p-6
+        command-card p-4 sm:p-6
         flex flex-col
-        transition-all duration-300
-        hover:scale-[1.02]
         ${onClick ? "cursor-pointer" : ""}
         ${sizeClasses[size]}
         ${className}
       `}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }

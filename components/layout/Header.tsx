@@ -52,10 +52,10 @@ export default function Header({
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-4 transition-opacity hover:opacity-90"
+            className="flex items-center gap-5 transition-all hover:opacity-90 active:scale-95 group"
           >
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 relative">
+            <div className="flex items-center gap-5">
+              <div className="h-24 w-24 relative logo-glow transition-transform group-hover:scale-110 duration-500">
                 <Image
                   src="/logo.png"
                   alt="Hotel Rate Sentinel"
@@ -65,11 +65,11 @@ export default function Header({
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-white font-bold text-xl leading-none tracking-tight">
+                <span className="text-white font-black text-2xl tracking-tighter leading-none">
                   Hotel Rate{" "}
                   <span className="text-[var(--soft-gold)]">Sentinel</span>
                 </span>
-                <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-semibold mt-1">
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.4em] font-black mt-2 opacity-80">
                   Autonomous Intelligence
                 </span>
               </div>

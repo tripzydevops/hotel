@@ -1,0 +1,4 @@
+[stitch-mcp] Ôä╣´©Å  Starting Stitch MCP Server v1.0.0 (win32)
+[stitch-mcp] Ôä╣´©Å  Project: gen-lang-client-0597498789
+[stitch-mcp] ÔØî Failed to get access token
+[stitch-mcp] ÔØî Fatal Startup Error: Authentication failed. Run: gcloud auth application-default login

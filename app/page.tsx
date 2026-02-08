@@ -229,7 +229,11 @@ export default function Dashboard() {
   if (!data && loading) return null;
 
   return (
-    <div className="min-h-screen pb-24 relative">
+    <div className="min-h-screen pb-24 relative overflow-hidden">
+      {/* Cinematic Background Layers */}
+      <div className="radial-glow" />
+      <div className="bg-grain" />
+
       {impersonateId && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-white px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-white/20 animate-pulse">
           IMPERSONATING USER: {impersonateId.split("-")[0]}...
@@ -601,8 +605,9 @@ export default function Dashboard() {
           className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4"
         >
           <motion.div
-            whileHover={{ y: -5 }}
-            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-[var(--soft-gold)]/30 shadow-lg hover:shadow-[var(--soft-gold)]/5"
+            whileHover={{ y: -5, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-[var(--soft-gold)]/5"
           >
             <p className="text-2xl font-bold text-alert-red">
               {
@@ -613,13 +618,14 @@ export default function Dashboard() {
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-alert-red transition-colors">
+            <p className="text-xs text-[var(--text-secondary)] group-hover:text-alert-red transition-colors">
               {t("dashboard.yieldRisk")}
             </p>
           </motion.div>
           <motion.div
-            whileHover={{ y: -5 }}
-            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-optimal-green/30 shadow-lg hover:shadow-optimal-green/5"
+            whileHover={{ y: -5, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-optimal-green/5"
           >
             <p className="text-2xl font-bold text-optimal-green">
               {
@@ -628,13 +634,14 @@ export default function Dashboard() {
                 ).length
               }
             </p>
-            <p className="text-xs text-[var(--text-muted)] group-hover:text-optimal-green transition-colors">
+            <p className="text-xs text-[var(--text-secondary)] group-hover:text-optimal-green transition-colors">
               {t("dashboard.marketOpportunity")}
             </p>
           </motion.div>
           <motion.div
-            whileHover={{ y: -5 }}
-            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-white/20 shadow-lg hover:shadow-white/5"
+            whileHover={{ y: -5, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-white/5"
           >
             <p className="text-2xl font-bold text-white">
               {data?.competitors && data.competitors.length > 0 ? (
@@ -670,16 +677,17 @@ export default function Dashboard() {
                 "—"
               )}
             </p>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-[var(--text-secondary)]">
               {t("dashboard.avgCompetitor")}
             </p>
           </motion.div>
           <motion.div
-            whileHover={{ y: -5 }}
-            className="glass-card p-4 text-center group cursor-default transition-all duration-300 hover:border-white/20 shadow-lg hover:shadow-white/5"
+            whileHover={{ y: -5, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="command-card p-4 text-center group cursor-default shadow-lg hover:shadow-white/5"
           >
             <p className="text-2xl font-bold text-white">{currentHotelCount}</p>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-[var(--text-secondary)]">
               {t("dashboard.hotelsTracked")}
             </p>
           </motion.div>

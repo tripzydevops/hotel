@@ -262,7 +262,7 @@ export interface Report {
   report_type: "single" | "comparison";
   created_at: string;
   report_data?: {
-    hotels: any[];
+    hotels: unknown[];
     ai_insights: string[];
   };
 }

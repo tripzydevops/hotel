@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Terminal,
@@ -9,8 +7,10 @@ import {
   Shield,
   Globe,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FeedItem {
   id: string;
@@ -26,23 +26,16 @@ const NeuralFeed = () => {
   const [logs, setLogs] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-
-  // Ref to track visibility for performance (Zero-Lag)
   const feedRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
 
-  // Poll for new data
   useEffect(() => {
     let interval: NodeJS.Timeout;
-
     const fetchLogs = async () => {
-      // Only fetch if tab is visible and component is in view
       if (!isVisible || document.hidden) return;
-
       try {
-        const data = await api.getAdminFeed(50);
+        const data = await api.getAdminFeed(30);
         if (data && Array.isArray(data)) {
-          // Simple diff check could happen here, but React handles diffing well
           setLogs(data);
           setLastUpdate(new Date());
         }
@@ -53,24 +46,16 @@ const NeuralFeed = () => {
       }
     };
 
-    // Initial fetch
     fetchLogs();
-
-    // Poll every 5s
     interval = setInterval(fetchLogs, 5000);
-
     return () => clearInterval(interval);
   }, [isVisible]);
 
-  // Visibility Observer
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
+      ([entry]) => setIsVisible(entry.isIntersecting),
       { threshold: 0.1 },
     );
-
     if (feedRef.current) observer.observe(feedRef.current);
     return () => observer.disconnect();
   }, []);
@@ -78,147 +63,172 @@ const NeuralFeed = () => {
   return (
     <div
       ref={feedRef}
-      className="glass-card border border-white/5 overflow-hidden flex flex-col h-[520px] shadow-2xl relative group"
+      className="command-card flex flex-col h-[600px] relative group"
     >
-      {/* Dynamic Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+      {/* Immersive Scanning Line Overlay */}
+      <div className="absolute inset-x-0 h-[2px] bg-[var(--soft-gold)]/10 animate-[scan_4s_linear_infinite] pointer-events-none z-20" />
 
-      {/* Header */}
-      <div className="p-5 bg-black/40 border-b border-white/5 flex justify-between items-center relative z-10">
+      {/* Header Overlay */}
+      <div className="p-6 bg-black/40 border-b border-white/5 flex justify-between items-center relative z-10 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-[var(--soft-gold)]/30 transition-all duration-500">
-            <Terminal className="w-5 h-5 text-[var(--soft-gold)]" />
+          <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+            <Terminal className="w-6 h-6 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <h3 className="text-xs font-black text-white flex items-center gap-2 uppercase tracking-widest">
-              Neural Signal Stream
-              <span className="flex h-1.5 w-1.5 relative">
+            <h3 className="text-[10px] font-black text-white flex items-center gap-3 uppercase tracking-[0.3em]">
+              Primary Signal Stream
+              <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--optimal-green)] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--optimal-green)]"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--optimal-green)]"></span>
               </span>
             </h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-tighter flex items-center gap-1">
-                <Globe className="w-2.5 h-2.5" /> Global Sync Active
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-widest flex items-center gap-2">
+                <Globe className="w-3 h-3 text-blue-400/50" /> Network Sync:
+                ACTIVE
               </span>
-              <span className="text-[9px] text-[var(--soft-gold)] font-mono opacity-50">
-                •
-              </span>
-              <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-tighter">
-                {logs.length} Vectors Buffered
+              <span className="w-1 h-1 rounded-full bg-white/10" />
+              <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-widest">
+                Nodes: [03/09] Online
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex flex-col items-end mr-4">
+
+        <div className="flex items-center gap-6">
+          <div className="hidden lg:flex flex-col items-end">
+            <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
+              Load Matrix
+            </span>
             <div className="flex gap-1">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className={`w-1 h-3 rounded-full ${i < 4 ? "bg-[var(--optimal-green)]/40" : "bg-white/10"} animate-pulse`}
-                  style={{ animationDelay: `${i * 150}ms` }}
+                  className={`w-1 h-4 rounded-full ${i < 6 ? "bg-[var(--soft-gold)]/40" : "bg-white/5"}`}
                 />
               ))}
             </div>
-            <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">
-              System Health
-            </span>
           </div>
-          <div className="text-[10px] bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-[var(--text-muted)] font-mono flex items-center gap-2">
-            <Activity className="w-3 h-3 text-[var(--soft-gold)] animate-pulse" />
-            LIVE_FEED.CAP
+          <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[var(--soft-gold)] font-mono text-[10px] flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5" /> Encrypted Channel
           </div>
         </div>
       </div>
 
       {/* Terminal Output */}
-      <div className="flex-1 overflow-y-auto p-6 font-mono text-[11px] leading-relaxed space-y-4 bg-black/30 relative z-10 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent">
-        {loading && logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-40">
-            <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)]" />
-            <span className="text-[10px] font-mono tracking-widest uppercase">
-              Initializing neural link...
-            </span>
-          </div>
-        ) : (
-          logs.map((log, idx) => (
-            <div
-              key={log.id}
-              className="group flex gap-4 hover:bg-white/[0.02] -mx-2 px-2 py-1.5 rounded-lg transition-all duration-300 animate-in fade-in slide-in-from-left-2"
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
-              <div className="text-[var(--text-muted)] w-20 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity flex flex-col pt-0.5">
-                <span className="font-bold border-l border-white/10 pl-2">
-                  {new Date(log.created_at).toLocaleTimeString([], {
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}
-                </span>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center flex-wrap gap-x-2">
-                  <span
-                    className={`font-black text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded
-                              ${
-                                log.status === "success"
-                                  ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)]"
-                                  : log.status === "error"
-                                    ? "bg-red-500/10 text-red-400"
-                                    : "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]"
-                              }`}
-                  >
-                    {log.action_type || "TASK"}
-                  </span>
-                  <span className="text-white/90 font-medium group-hover:text-white transition-colors">
-                    {log.hotel_name || "KERNEL_PROCESS"}
-                  </span>
-                  {log.price && (
-                    <div className="flex items-center gap-1 ml-auto md:ml-0 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                      <Zap className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-                      <span className="text-[var(--soft-gold)] font-bold tabular-nums">
-                        {log.price.toLocaleString()} {log.currency}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {/* Secondary Detail Line */}
-                <div className="mt-1 flex items-center gap-3 text-[9px] font-medium text-[var(--text-muted)] opacity-60 group-hover:opacity-100 transition-opacity">
-                  <span className="uppercase flex items-center gap-1">
-                    <Cpu className="w-2.5 h-2.5" /> Node 0{idx % 9}
-                  </span>
-                  <span className="text-white/10">/</span>
-                  <span className="uppercase flex items-center gap-1">
-                    <Shield className="w-2.5 h-2.5" /> Status_{log.status}
-                  </span>
-                </div>
-              </div>
+      <div className="flex-1 overflow-y-auto p-8 font-mono text-[11px] space-y-5 bg-black/20 scrollbar-thin scrollbar-thumb-white/5">
+        <AnimatePresence mode="popLayout">
+          {loading && logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-40">
+              <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)]" />
+              <span className="text-[9px] uppercase tracking-[0.4em]">
+                Establishing Neural Gate...
+              </span>
             </div>
-          ))
-        )}
+          ) : (
+            logs.map((log, idx) => (
+              <motion.div
+                key={log.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="group flex gap-6 hover:bg-white/[0.03] -mx-4 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5"
+              >
+                <div className="text-[var(--text-muted)] w-24 shrink-0 flex flex-col pt-1">
+                  <span className="font-black text-[9px] opacity-40 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    [
+                    {new Date(log.created_at).toLocaleTimeString([], {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                    ]
+                  </span>
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center flex-wrap gap-3">
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest
+                      ${
+                        log.status === "success"
+                          ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                          : log.status === "error"
+                            ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                            : "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.05)]"
+                      }`}
+                    >
+                      {log.action_type || "SIGNAL"}
+                    </span>
+                    <span className="text-white font-bold tracking-tight text-sm">
+                      {log.hotel_name || "SYSTEM_KERNEL"}
+                    </span>
+                    {log.price && (
+                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5 ml-auto">
+                        <Zap className="w-3 h-3 text-[var(--soft-gold)]" />
+                        <span className="text-[var(--soft-gold)] font-black tabular-nums">
+                          {log.price?.toLocaleString()} {log.currency}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-[9px] font-bold text-[var(--text-muted)] opacity-50 group-hover:opacity-100 transition-opacity uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5">
+                      <Cpu className="w-3 h-3" /> Core_Link_{idx % 4}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span className="flex items-center gap-1.5">
+                      <Shield className="w-3 h-3" /> Integrity_Verified
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Footer Status */}
-      <div className="px-5 py-3 bg-black/40 border-t border-white/5 text-[9px] text-[var(--text-muted)] font-mono flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] shadow-[0_0_5px_rgba(212,175,55,0.5)]" />
-            <span className="uppercase tracking-widest">Latency: 42ms</span>
+      {/* Footer System Status */}
+      <div className="px-8 py-4 bg-black/40 border-t border-white/5 flex justify-between items-center text-[9px] font-mono text-[var(--text-muted)]">
+        <div className="flex gap-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] shadow-[0_0_10px_rgba(212,175,55,0.4)]" />
+            <span className="uppercase tracking-[0.2em]">LATENCY: 18ms</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-            <span className="uppercase tracking-widest">Uptime: 99.9%</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+            <span className="uppercase tracking-[0.2em]">
+              GATE_UPTIME: 99.98%
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-          <span className="uppercase opacity-50">Sync_Clock:</span>
-          <span className="text-white font-bold">
+        <div className="flex items-center gap-3">
+          <span className="opacity-40 uppercase">Last Sync:</span>
+          <span className="text-white font-black">
             {lastUpdate.toLocaleTimeString()}
           </span>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes scan {
+          0% {
+            top: 0%;
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          90% {
+            opacity: 1;
+          }
+          100% {
+            top: 100%;
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };

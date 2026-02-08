@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { login, signup } from "./actions";
 import { useI18n } from "@/lib/i18n";
@@ -23,24 +24,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)] px-4">
-      <div className="w-full max-w-md bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)] px-4 relative overflow-hidden">
+      {/* Cinematic Background Layers */}
+      <div className="radial-glow" />
+      <div className="bg-grain" />
+
+      <div className="w-full max-w-md command-card p-10 shadow-2xl relative z-10 group">
         {/* Decorative Background Elements */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--soft-gold)]/10 rounded-full blur-3xl group-hover:bg-[var(--soft-gold)]/20 transition-all duration-700" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-[var(--soft-gold)]/10 rounded-full blur-3xl group-hover:bg-[var(--soft-gold)]/20 transition-all duration-1000" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-1000" />
 
         {/* Logo Section */}
-        <div className="flex flex-col items-center mb-8 relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center mb-4 shadow-lg shadow-[var(--soft-gold)]/20 animate-float">
-            <span className="text-[var(--deep-ocean)] font-bold text-3xl">
-              H
-            </span>
+        <div className="flex flex-col items-center mb-10 relative z-10">
+          <div className="w-24 h-24 relative logo-glow mb-6 animate-float transition-transform group-hover:scale-110 duration-500">
+            <Image
+              src="/logo.png"
+              alt="Hotel Rate Sentinel"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            Hotel Plus{" "}
-            <span className="text-[var(--soft-gold)]">Rate Sentinel</span>
+          <h1 className="text-3xl font-black text-white tracking-tighter text-center">
+            Hotel Rate <span className="text-[var(--soft-gold)]">Sentinel</span>
           </h1>
-          <p className="text-[var(--text-secondary)] mt-2 text-sm text-center">
+          <p className="text-[var(--text-secondary)] mt-3 text-sm text-center font-medium uppercase tracking-widest opacity-80">
             {isLogin ? t("auth.loginSubtitle") : t("auth.signupSubtitle")}
           </p>
         </div>
