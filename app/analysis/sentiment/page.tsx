@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { api } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -33,13 +34,13 @@ const RadialProgress = ({
     <div
       className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center"
       style={{
-        background: `conic-gradient(${color} ${percentage}%, #0a1628 0deg)`,
+        background: `conic-gradient(${color} ${percentage * 3.6}deg, #0a1628 0deg)`,
       }}
     >
       <div className="absolute w-[100px] h-[100px] bg-[#15294A] rounded-full" />
       <div className="relative z-10 flex flex-col items-center">
         <span className="text-3xl font-bold text-white">{score}</span>
-        <span className="text-xs text-gray-400">GRI Score</span>
+        <span className="text-xs text-gray-400">Rating</span>
       </div>
     </div>
   );
@@ -54,19 +55,19 @@ const ScoreCard = ({
   trendValue,
   rank,
   reviews,
-  responses,
-  color,
+  price,
+  currency,
   icon: Icon,
 }: {
-  type: string;
+  type: "my-hotel" | "leader" | "competitor";
   name: string;
   score: number;
-  trend: "up" | "down";
+  trend: "up" | "down" | "neutral";
   trendValue: string;
   rank: string;
-  reviews: string;
-  responses?: string;
-  color: string;
+  reviews?: number;
+  price?: number;
+  currency?: string;
   icon: any;
 }) => {
   const borderColor =
@@ -85,6 +86,9 @@ const ScoreCard = ({
 
   const progressColor =
     type === "my-hotel" ? "#1152d4" : type === "leader" ? "#D4AF37" : "#64748b";
+
+  // Convert rating to percentage (assuming 5-star scale)
+  const percentage = (score / 5) * 100;
 
   return (
     <motion.div
@@ -107,27 +111,31 @@ const ScoreCard = ({
                 ? "Market Leader"
                 : "Competitor"}
           </p>
-          <h3 className="text-xl font-bold text-white">{name}</h3>
+          <h3 className="text-xl font-bold text-white truncate max-w-[180px]">
+            {name}
+          </h3>
         </div>
-        <div
-          className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 ${
-            trend === "up"
-              ? "bg-green-500/20 text-green-400"
-              : "bg-red-500/20 text-red-400"
-          }`}
-        >
-          {trend === "up" ? (
-            <TrendingUp className="w-3.5 h-3.5" />
-          ) : (
-            <TrendingDown className="w-3.5 h-3.5" />
-          )}
-          {trendValue}
-        </div>
+        {trend !== "neutral" && (
+          <div
+            className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 ${
+              trend === "up"
+                ? "bg-green-500/20 text-green-400"
+                : "bg-red-500/20 text-red-400"
+            }`}
+          >
+            {trend === "up" ? (
+              <TrendingUp className="w-3.5 h-3.5" />
+            ) : (
+              <TrendingDown className="w-3.5 h-3.5" />
+            )}
+            {trendValue}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-6">
         <RadialProgress
-          percentage={(score / 100) * 360}
+          percentage={percentage}
           score={score}
           color={progressColor}
         />
@@ -140,13 +148,21 @@ const ScoreCard = ({
               {rank}
             </span>
           </div>
-          <div className="text-sm text-gray-400">
-            Reviews: <span className="text-white font-bold">{reviews}</span>
-          </div>
-          {responses && (
+          {price !== undefined && (
             <div className="text-sm text-gray-400">
-              Responses:{" "}
-              <span className="text-white font-bold">{responses}</span>
+              Price:{" "}
+              <span className="text-white font-bold">
+                {currency}
+                {price?.toLocaleString()}
+              </span>
+            </div>
+          )}
+          {reviews !== undefined && reviews > 0 && (
+            <div className="text-sm text-gray-400">
+              Reviews:{" "}
+              <span className="text-white font-bold">
+                {reviews?.toLocaleString()}
+              </span>
             </div>
           )}
         </div>
@@ -174,13 +190,13 @@ const CategoryBar = ({
       <div className="flex justify-between mb-2">
         <span className="text-sm font-medium text-gray-300">{category}</span>
         <span className="text-sm font-bold text-blue-500">
-          {myScore.toFixed(1)}/10
+          {myScore.toFixed(1)}/5
         </span>
       </div>
       <div className="w-full h-8 bg-[#0a1628] rounded-full relative overflow-hidden flex items-center px-1">
         <div
           className="h-5 rounded-full bg-blue-500 relative group"
-          style={{ width: `${myScore * 10}%` }}
+          style={{ width: `${(myScore / 5) * 100}%` }}
         >
           <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
             You: {myScore.toFixed(1)}
@@ -189,11 +205,13 @@ const CategoryBar = ({
       </div>
       <div className="mt-2 space-y-1">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 w-24">{leaderName}</span>
+          <span className="text-xs text-gray-500 w-24 truncate">
+            {leaderName}
+          </span>
           <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-[#D4AF37]"
-              style={{ width: `${leaderScore * 10}%` }}
+              style={{ width: `${(leaderScore / 5) * 100}%` }}
             />
           </div>
           <span className="text-xs text-[#D4AF37] font-bold w-8 text-right">
@@ -205,7 +223,7 @@ const CategoryBar = ({
           <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-gray-600"
-              style={{ width: `${marketAvg * 10}%` }}
+              style={{ width: `${(marketAvg / 5) * 100}%` }}
             />
           </div>
           <span className="text-xs text-gray-400 w-8 text-right">
@@ -234,7 +252,6 @@ const KeywordTag = ({
     md: "px-3 py-1 text-sm",
     lg: "px-4 py-2 text-base font-bold",
   };
-
   const colorClasses = {
     positive: "bg-green-900/40 text-green-300 border-green-700/50",
     negative: "bg-red-900/40 text-red-300 border-red-700/50",
@@ -245,115 +262,64 @@ const KeywordTag = ({
     <span
       className={`${sizeClasses[size]} ${colorClasses[sentiment]} rounded-lg border`}
     >
-      {text} {count && (sentiment === "positive" ? `+${count}` : `-${count}`)}
+      {text}{" "}
+      {count &&
+        (sentiment === "positive"
+          ? `+${count}`
+          : sentiment === "negative"
+            ? `-${count}`
+            : "")}
     </span>
   );
 };
 
 export default function SentimentPage() {
   const { t } = useI18n();
-  const supabase = createClient();
-
-  const [userId, setUserId] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { userId } = useAuth();
+  const { data, loading } = useDashboard(userId, t);
   const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">(
     "weekly",
   );
 
-  useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-      } else {
-        window.location.href = "/login";
-      }
-    };
-    getSession();
-  }, []);
+  // Build hotel list from real data
+  const targetHotel = data?.target_hotel;
+  const competitors = data?.competitors || [];
 
-  const loadData = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const result = await api.getAnalysisWithFilters(userId, "");
-      setData(result);
-    } catch (e) {
-      console.error("Failed to load sentiment data", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
+  // Sort all hotels by rating to determine ranks
+  const allHotels = [
+    ...(targetHotel ? [{ ...targetHotel, isTarget: true }] : []),
+    ...competitors.map((c: any) => ({ ...c, isTarget: false })),
+  ].sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Find the leader (highest rated)
+  const leader = allHotels[0];
+  const isTargetLeader = leader?.isTarget;
 
-  // Mock data for demo (replace with real data when available)
-  const mockScores = {
-    myHotel: {
-      name: "Hotel Plus",
-      score: 88,
-      trend: "up" as const,
-      trendValue: "2.4%",
-      rank: "2nd",
-      reviews: "1,240",
-      responses: "98%",
-    },
-    leader: {
-      name: "Grand Plaza",
-      score: 92,
-      trend: "up" as const,
-      trendValue: "0.8%",
-      rank: "1st",
-      reviews: "2,105",
-    },
-    competitors: [
-      {
-        name: "Ocean View Resort",
-        score: 79,
-        trend: "down" as const,
-        trendValue: "1.2%",
-        rank: "3rd",
-        reviews: "892",
-      },
-      {
-        name: "City Central",
-        score: 72,
-        trend: "down" as const,
-        trendValue: "3.5%",
-        rank: "4th",
-        reviews: "1,050",
-      },
-    ],
+  // Calculate market average
+  const marketAvgRating =
+    allHotels.length > 0
+      ? allHotels.reduce((sum, h) => sum + (h.rating || 0), 0) /
+        allHotels.length
+      : 0;
+
+  // Get rank for a hotel
+  const getRank = (hotelId: string) => {
+    const idx = allHotels.findIndex((h) => h.id === hotelId);
+    if (idx === 0) return "1st";
+    if (idx === 1) return "2nd";
+    if (idx === 2) return "3rd";
+    return `${idx + 1}th`;
   };
 
-  const mockCategories = [
-    { category: "Cleanliness", myScore: 9.2, leaderScore: 9.5, marketAvg: 8.4 },
-    { category: "Service", myScore: 8.5, leaderScore: 8.8, marketAvg: 7.9 },
-    { category: "Location", myScore: 9.8, leaderScore: 9.0, marketAvg: 8.2 },
-    { category: "Value", myScore: 8.0, leaderScore: 8.5, marketAvg: 7.5 },
-  ];
-
-  const mockKeywords = {
-    positive: [
-      { text: "Great Location", count: 215, size: "lg" as const },
-      { text: "Spotless Room", count: 124, size: "md" as const },
-      { text: "Comfy Bed", count: 88, size: "md" as const },
-      { text: "Tasty Breakfast", count: 45, size: "sm" as const },
-    ],
-    negative: [
-      { text: "Noisy AC", count: 32, size: "lg" as const },
-      { text: "Slow WiFi", count: 28, size: "md" as const },
-      { text: "Elevator Wait", count: 15, size: "sm" as const },
-    ],
-    neutral: [
-      { text: "Parking Fees", size: "sm" as const },
-      { text: "Pool View", size: "md" as const },
-    ],
+  // Currency symbol
+  const getCurrencySymbol = (currency: string) => {
+    const symbols: Record<string, string> = {
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      TRY: "₺",
+    };
+    return symbols[currency] || "$";
   };
 
   return (
@@ -382,27 +348,15 @@ export default function SentimentPage() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-400">Comparing with:</span>
           <div className="flex -space-x-2">
-            <div
-              className="w-8 h-8 rounded-full border-2 border-[#0a1628] bg-gray-700 flex items-center justify-center text-xs font-bold"
-              title="Grand Plaza"
-            >
-              GP
-            </div>
-            <div
-              className="w-8 h-8 rounded-full border-2 border-[#0a1628] bg-gray-600 flex items-center justify-center text-xs font-bold"
-              title="Ocean View"
-            >
-              OV
-            </div>
-            <div
-              className="w-8 h-8 rounded-full border-2 border-[#0a1628] bg-gray-500 flex items-center justify-center text-xs font-bold"
-              title="City Central"
-            >
-              CC
-            </div>
-            <button className="w-8 h-8 rounded-full border-2 border-[#0a1628] bg-blue-600 flex items-center justify-center hover:bg-blue-500 transition-colors">
-              <span className="text-sm">+</span>
-            </button>
+            {competitors.slice(0, 4).map((comp: any, idx: number) => (
+              <div
+                key={comp.id}
+                className="w-8 h-8 rounded-full border-2 border-[#0a1628] bg-gray-600 flex items-center justify-center text-xs font-bold"
+                title={comp.name}
+              >
+                {comp.name?.substring(0, 2).toUpperCase()}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -411,47 +365,70 @@ export default function SentimentPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
         </div>
+      ) : !targetHotel ? (
+        <div className="bg-[#15294A] rounded-xl p-8 text-center text-gray-400">
+          No hotel data available. Please add a target hotel first.
+        </div>
       ) : (
         <>
-          {/* Score Cards Grid */}
+          {/* Score Cards Grid - Up to 5 hotels (1 target + 4 competitors) */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            {/* Target Hotel Card */}
             <ScoreCard
-              type="my-hotel"
-              name={data?.target_hotel_name || mockScores.myHotel.name}
-              score={mockScores.myHotel.score}
-              trend={mockScores.myHotel.trend}
-              trendValue={mockScores.myHotel.trendValue}
-              rank={mockScores.myHotel.rank}
-              reviews={mockScores.myHotel.reviews}
-              responses={mockScores.myHotel.responses}
-              color="#1152d4"
-              icon={Hotel}
+              type={isTargetLeader ? "leader" : "my-hotel"}
+              name={targetHotel.name || "My Hotel"}
+              score={Number((targetHotel.rating || 0).toFixed(1))}
+              trend={
+                targetHotel.price_info?.trend === "up"
+                  ? "up"
+                  : targetHotel.price_info?.trend === "down"
+                    ? "down"
+                    : "neutral"
+              }
+              trendValue={
+                targetHotel.price_info?.change_percent
+                  ? `${Math.abs(targetHotel.price_info.change_percent).toFixed(1)}%`
+                  : ""
+              }
+              rank={getRank(targetHotel.id)}
+              price={targetHotel.price_info?.current_price}
+              currency={getCurrencySymbol(
+                targetHotel.price_info?.currency || "USD",
+              )}
+              icon={isTargetLeader ? Trophy : Hotel}
             />
-            <ScoreCard
-              type="leader"
-              name={mockScores.leader.name}
-              score={mockScores.leader.score}
-              trend={mockScores.leader.trend}
-              trendValue={mockScores.leader.trendValue}
-              rank={mockScores.leader.rank}
-              reviews={mockScores.leader.reviews}
-              color="#D4AF37"
-              icon={Trophy}
-            />
-            {mockScores.competitors.map((comp, idx) => (
-              <ScoreCard
-                key={idx}
-                type="competitor"
-                name={comp.name}
-                score={comp.score}
-                trend={comp.trend}
-                trendValue={comp.trendValue}
-                rank={comp.rank}
-                reviews={comp.reviews}
-                color="#64748b"
-                icon={Building2}
-              />
-            ))}
+
+            {/* Competitor Cards */}
+            {competitors.slice(0, 4).map((comp: any, idx: number) => {
+              const isCompLeader =
+                !isTargetLeader && allHotels[0]?.id === comp.id;
+              return (
+                <ScoreCard
+                  key={comp.id}
+                  type={isCompLeader ? "leader" : "competitor"}
+                  name={comp.name || `Competitor ${idx + 1}`}
+                  score={Number((comp.rating || 0).toFixed(1))}
+                  trend={
+                    comp.price_info?.trend === "up"
+                      ? "up"
+                      : comp.price_info?.trend === "down"
+                        ? "down"
+                        : "neutral"
+                  }
+                  trendValue={
+                    comp.price_info?.change_percent
+                      ? `${Math.abs(comp.price_info.change_percent).toFixed(1)}%`
+                      : ""
+                  }
+                  rank={getRank(comp.id)}
+                  price={comp.price_info?.current_price}
+                  currency={getCurrencySymbol(
+                    comp.price_info?.currency || "USD",
+                  )}
+                  icon={isCompLeader ? Trophy : Building2}
+                />
+              );
+            })}
           </div>
 
           {/* Category Breakdown & Keywords */}
@@ -466,7 +443,7 @@ export default function SentimentPage() {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-blue-500" />
-                  Category Breakdown
+                  Rating Comparison
                 </h3>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
@@ -475,26 +452,60 @@ export default function SentimentPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-[#D4AF37]" />
-                    <span className="text-gray-400">Grand Plaza</span>
+                    <span className="text-gray-400">Leader</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-gray-600" />
-                    <span className="text-gray-400">Avg. Comp.</span>
+                    <span className="text-gray-400">Avg.</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-6">
-                {mockCategories.map((cat, idx) => (
-                  <CategoryBar
-                    key={idx}
-                    category={cat.category}
-                    myScore={cat.myScore}
-                    leaderName="Grand Plaza"
-                    leaderScore={cat.leaderScore}
-                    marketAvg={cat.marketAvg}
-                  />
-                ))}
+                {/* Overall Rating Category */}
+                <CategoryBar
+                  category="Overall Rating"
+                  myScore={targetHotel.rating || 0}
+                  leaderName={leader?.name || "Leader"}
+                  leaderScore={leader?.rating || 0}
+                  marketAvg={marketAvgRating}
+                />
+                {/* Price Comparison as a visual */}
+                {targetHotel.price_info?.current_price && (
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-300">
+                        Price Position
+                      </span>
+                      <span className="text-sm font-bold text-blue-500">
+                        {getCurrencySymbol(
+                          targetHotel.price_info.currency || "USD",
+                        )}
+                        {targetHotel.price_info.current_price?.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Market range:{" "}
+                      {getCurrencySymbol(
+                        targetHotel.price_info.currency || "USD",
+                      )}
+                      {Math.min(
+                        ...allHotels
+                          .map((h) => h.price_info?.current_price || 0)
+                          .filter((p) => p > 0),
+                      )?.toLocaleString()}{" "}
+                      -
+                      {getCurrencySymbol(
+                        targetHotel.price_info.currency || "USD",
+                      )}
+                      {Math.max(
+                        ...allHotels.map(
+                          (h) => h.price_info?.current_price || 0,
+                        ),
+                      )?.toLocaleString()}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -508,41 +519,62 @@ export default function SentimentPage() {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Brain className="w-5 h-5 text-green-400" />
-                  Guest Mentions
+                  Quick Insights
                 </h3>
-                <button className="text-xs text-blue-500 hover:text-white transition-colors">
-                  View All
-                </button>
               </div>
 
               <div className="flex-1 relative bg-[#0a1628]/50 rounded-lg p-4 overflow-hidden border border-white/5">
                 <div className="flex flex-wrap gap-2 content-center justify-center h-full">
-                  {mockKeywords.positive.map((kw, idx) => (
+                  {/* Generate insight tags based on actual data */}
+                  {targetHotel.rating >= 4.5 && (
                     <KeywordTag
-                      key={`pos-${idx}`}
-                      text={kw.text}
-                      count={kw.count}
+                      text="Highly Rated"
                       sentiment="positive"
-                      size={kw.size}
+                      size="lg"
                     />
-                  ))}
-                  {mockKeywords.neutral.map((kw, idx) => (
+                  )}
+                  {targetHotel.rating >= marketAvgRating && (
                     <KeywordTag
-                      key={`neu-${idx}`}
-                      text={kw.text}
-                      sentiment="neutral"
-                      size={kw.size}
+                      text="Above Average"
+                      sentiment="positive"
+                      size="md"
                     />
-                  ))}
-                  {mockKeywords.negative.map((kw, idx) => (
+                  )}
+                  {targetHotel.rating < marketAvgRating && (
                     <KeywordTag
-                      key={`neg-${idx}`}
-                      text={kw.text}
-                      count={kw.count}
+                      text="Below Market Avg"
                       sentiment="negative"
-                      size={kw.size}
+                      size="md"
                     />
-                  ))}
+                  )}
+                  {targetHotel.price_info?.trend === "up" && (
+                    <KeywordTag
+                      text="Price Rising"
+                      sentiment="neutral"
+                      size="sm"
+                    />
+                  )}
+                  {targetHotel.price_info?.trend === "down" && (
+                    <KeywordTag
+                      text="Price Dropping"
+                      sentiment="positive"
+                      size="sm"
+                    />
+                  )}
+                  {isTargetLeader && (
+                    <KeywordTag
+                      text="Market Leader"
+                      sentiment="positive"
+                      size="lg"
+                    />
+                  )}
+                  {competitors.length > 0 && (
+                    <KeywordTag
+                      text={`${competitors.length} Competitors`}
+                      sentiment="neutral"
+                      size="sm"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -554,8 +586,13 @@ export default function SentimentPage() {
                     AI Insight
                   </p>
                   <p className="text-xs text-blue-300 leading-relaxed">
-                    Mentions of "Noisy AC" have increased by 15% since last
-                    week. Consider maintenance check on 4th floor.
+                    {isTargetLeader
+                      ? "You're currently the market leader! Maintain your competitive edge by monitoring competitor pricing."
+                      : `You're ranked ${getRank(targetHotel.id)} in your competitive set. ${
+                          targetHotel.rating < marketAvgRating
+                            ? "Consider improving guest experience to boost ratings."
+                            : "Your rating is competitive. Focus on value proposition."
+                        }`}
                   </p>
                 </div>
               </div>
@@ -572,7 +609,7 @@ export default function SentimentPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <LineChart className="w-5 h-5 text-purple-400" />
-                6-Month Sentiment Trend
+                Competitive Position
               </h3>
               <div className="flex gap-2">
                 {(["daily", "weekly", "monthly"] as const).map((tf) => (
@@ -591,109 +628,48 @@ export default function SentimentPage() {
               </div>
             </div>
 
-            {/* SVG Chart */}
-            <div className="relative h-64 w-full border-b border-l border-gray-700">
-              {/* Grid Lines */}
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-full h-px bg-gray-800/50" />
-                ))}
-              </div>
-
-              {/* Y-Axis Labels */}
-              <div className="absolute -left-8 inset-y-0 flex flex-col justify-between text-xs text-gray-500 py-2">
-                <span>100</span>
-                <span>90</span>
-                <span>80</span>
-                <span>70</span>
-                <span>60</span>
-              </div>
-
-              {/* Chart SVG */}
-              <div className="absolute inset-0 flex items-end px-4 gap-4">
-                <svg
-                  className="w-full h-full overflow-visible"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  <defs>
-                    <linearGradient
-                      id="gradientPrimary"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#1152d4" stopOpacity="0.5" />
-                      <stop offset="100%" stopColor="#1152d4" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* My Hotel Area */}
-                  <path
-                    d="M0,40 Q10,35 20,30 T40,25 T60,20 T80,15 T100,12 L100,100 L0,100 Z"
-                    fill="url(#gradientPrimary)"
-                  />
-
-                  {/* My Hotel Line */}
-                  <path
-                    d="M0,40 Q10,35 20,30 T40,25 T60,20 T80,15 T100,12"
-                    fill="none"
-                    stroke="#1152d4"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-
-                  {/* Grand Plaza Line (dashed) */}
-                  <path
-                    d="M0,30 Q10,25 20,20 T40,15 T60,10 T80,10 T100,8"
-                    fill="none"
-                    stroke="#D4AF37"
-                    strokeWidth="2"
-                    strokeDasharray="4"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-
-                  {/* Market Avg Line */}
-                  <path
-                    d="M0,50 Q10,55 20,52 T40,55 T60,50 T80,45 T100,48"
-                    fill="none"
-                    stroke="#64748b"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-              </div>
-
-              {/* X-Axis Labels */}
-              <div className="absolute -bottom-6 inset-x-0 flex justify-between px-4 text-xs text-gray-500">
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Aug</span>
-                <span>Sep</span>
-                <span>Oct</span>
-                <span>Nov</span>
-              </div>
+            {/* Visual Ranking Display */}
+            <div className="space-y-4">
+              {allHotels.map((hotel, idx) => (
+                <div key={hotel.id} className="flex items-center gap-4">
+                  <span className="text-sm font-bold text-gray-400 w-8">
+                    #{idx + 1}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span
+                        className={`text-sm font-medium ${hotel.isTarget ? "text-blue-400" : "text-gray-300"}`}
+                      >
+                        {hotel.name}
+                      </span>
+                      <span className="text-sm font-bold text-white">
+                        {(hotel.rating || 0).toFixed(1)} ★
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${hotel.isTarget ? "bg-blue-500" : idx === 0 ? "bg-[#D4AF37]" : "bg-gray-600"}`}
+                        style={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap justify-center gap-6 mt-10">
+            <div className="flex flex-wrap justify-center gap-6 mt-8">
               <div className="flex items-center gap-2">
                 <span className="w-4 h-1 bg-blue-600 rounded-full" />
                 <span className="text-sm text-gray-300">My Hotel</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-4 h-1 bg-[#D4AF37] rounded-full border-dashed" />
-                <span className="text-sm text-gray-300">
-                  Grand Plaza (Leader)
-                </span>
+                <span className="w-4 h-1 bg-[#D4AF37] rounded-full" />
+                <span className="text-sm text-gray-300">Market Leader</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-4 h-1 bg-gray-500 rounded-full" />
-                <span className="text-sm text-gray-300">Market Avg.</span>
+                <span className="text-sm text-gray-300">Competitors</span>
               </div>
             </div>
           </motion.div>
