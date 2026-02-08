@@ -1746,6 +1746,28 @@ async def get_discovery_rivals(
         print(f"Discovery error: {e}")
         return JSONResponse(status_code=500, content={"error": "Discovery Fail", "detail": str(e)})
 
+@app.get("/api/analysis/{hotel_id}/sentiment-history")
+async def get_sentiment_history(
+    hotel_id: str,
+    days: int = Query(30, description="Number of days of history to fetch"),
+    db: Client = Depends(get_supabase),
+    current_active_user = Depends(get_current_active_user)
+):
+    """Fetch historical sentiment data for a specific hotel."""
+    try:
+        # Fetch from sentiment_history table
+        res = db.table("sentiment_history")\
+            .select("*")\
+            .eq("hotel_id", hotel_id)\
+            .order("created_at", desc=True)\
+            .limit(days)\
+            .execute()
+        
+        return JSONResponse(content={"history": res.data or []})
+    except Exception as e:
+        print(f"Sentiment history error: {e}")
+        return JSONResponse(status_code=500, content={"error": "Sentiment History Fail", "detail": str(e)})
+
 @app.get("/api/reports/{user_id}")
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Fetch data for reporting and historical audit (Optimized)."""

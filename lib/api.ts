@@ -456,6 +456,12 @@ class ApiClient {
   async getAdminReports(): Promise<Report[]> {
     return this.fetch<Report[]>("/api/admin/reports");
   }
+
+  async getSentimentHistory(hotelId: string, days: number = 30): Promise<any> {
+    return this.fetch<any>(
+      `/api/analysis/${hotelId}/sentiment-history?days=${days}`,
+    );
+  }
 }
 
 export const api = new ApiClient();

@@ -60,3 +60,22 @@ export function getStarRating(rating: number): string {
     "☆".repeat(5 - fullStars - (hasHalf ? 1 : 0))
   );
 }
+
+/**
+ * Get currency symbol
+ */
+export function getCurrencySymbol(currency: string = "USD"): string {
+  try {
+    return (0)
+      .toLocaleString("en-US", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })
+      .replace(/\d/g, "")
+      .trim();
+  } catch (e) {
+    return currency === "TRY" ? "₺" : "$";
+  }
+}
