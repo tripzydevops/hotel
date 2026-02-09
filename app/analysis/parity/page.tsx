@@ -43,9 +43,19 @@ export default function ParityPage() {
       </div>
 
       {/* Parity Content */}
-      {loading ? (
+      {/* 
+        Show loading spinner if:
+        1. userId is null (still checking auth)
+        2. Dashboard data is loading
+      */}
+      {!userId || loading ? (
         <div className="glass-card p-8 flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full" />
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full" />
+            <p className="text-sm text-slate-400">
+              {!userId ? "Authenticating..." : "Loading parity data..."}
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-8">
