@@ -161,10 +161,10 @@ export default function HotelTile(props: HotelTileProps) {
         className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-4"}`}
       >
         <div
-          className={`flex items-center ${isTarget ? "gap-3 sm:gap-4" : "gap-3"}`}
+          className={`flex items-center min-w-0 flex-1 ${isTarget ? "gap-3 sm:gap-4" : "gap-3"}`}
         >
           <div
-            className={`relative ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
+            className={`relative flex-shrink-0 ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
           >
             {imageUrl || (images && images.length > 0) ? (
               <FallbackImage
@@ -193,7 +193,7 @@ export default function HotelTile(props: HotelTileProps) {
             )}
             {/* Star rating removed from image as it was deemed "cheap" looking */}
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               {/* Primary Label */}
               <span
@@ -225,7 +225,7 @@ export default function HotelTile(props: HotelTileProps) {
               )}
             </div>
             <h2
-              className={`${titleSize} font-bold text-white leading-tight mb-1`}
+              className={`${titleSize} font-bold text-white leading-tight mb-1 truncate pr-2`}
               title={name}
             >
               {name}
@@ -243,7 +243,7 @@ export default function HotelTile(props: HotelTileProps) {
               </div>
             )}
             {location && (
-              <p className="text-sm text-[var(--text-muted)] mt-0.5">
+              <p className="text-sm text-[var(--text-muted)] mt-0.5 truncate">
                 {location}
               </p>
             )}
@@ -254,7 +254,7 @@ export default function HotelTile(props: HotelTileProps) {
 
         {/* Actions */}
         <div
-          className={`flex items-center ${isTarget ? "gap-3" : "gap-1.5"} flex-shrink-0`}
+          className={`flex items-center ${isTarget ? "gap-3" : "gap-1.5"} flex-shrink-0 ml-2`}
         >
           {onEdit && (
             <button

@@ -130,24 +130,9 @@ export default function DashboardLayout({
             <h2 className="text-xl font-bold text-white tracking-tight">
               {getPageTitle()}
             </h2>
-
-            <div className="hidden xl:flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <Calendar className="w-3.5 h-3.5 text-[#F6C344]" />
-              OCT 12 - OCT 26, 2024
-            </div>
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center relative group">
-              <Search className="absolute left-3 w-4 h-4 text-slate-500 group-focus-within:text-[#F6C344] transition-colors" />
-              <input
-                type="text"
-                placeholder="Search rates or hotels..."
-                className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-[#F6C344]/50 focus:bg-white/10 transition-all w-64"
-              />
-            </div>
-
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsAlertsOpen(true)}
