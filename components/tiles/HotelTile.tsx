@@ -168,36 +168,36 @@ export default function HotelTile(props: HotelTileProps) {
         <div
           className={`flex items-center min-w-0 flex-1 ${isTarget ? "gap-3 sm:gap-4" : "gap-3"}`}
         >
-          <div
-            className={`relative flex-shrink-0 ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
-          >
-            {imageUrl || (images && images.length > 0) ? (
-              <FallbackImage
-                src={
-                  imageUrl ||
-                  images?.[0]?.original ||
-                  images?.[0]?.thumbnail ||
-                  ""
-                }
-                alt={name}
-                fill
-                className="object-cover"
-                sizes={isTarget ? "(max-width: 640px) 100vw, 800px" : "64px"}
-                priority={priority}
-                // @ts-ignore
-                iconClassName={
-                  isTarget
-                    ? "w-8 h-8 text-[var(--soft-gold)]"
-                    : "w-5 h-5 text-[var(--text-secondary)]"
-                }
-              />
-            ) : isTarget ? (
-              <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
-            ) : (
-              <HotelIcon className="w-5 h-5 text-[var(--text-secondary)]" />
-            )}
-            {/* Star rating removed from image as it was deemed "cheap" looking */}
-          </div>
+          {isTarget && (
+            <div
+              className={`relative flex-shrink-0 ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
+            >
+              {imageUrl || (images && images.length > 0) ? (
+                <FallbackImage
+                  src={
+                    imageUrl ||
+                    images?.[0]?.original ||
+                    images?.[0]?.thumbnail ||
+                    ""
+                  }
+                  alt={name}
+                  fill
+                  className="object-cover"
+                  sizes={isTarget ? "(max-width: 640px) 100vw, 800px" : "64px"}
+                  priority={priority}
+                  // @ts-ignore
+                  iconClassName={
+                    isTarget
+                      ? "w-8 h-8 text-[var(--soft-gold)]"
+                      : "w-5 h-5 text-[var(--text-secondary)]"
+                  }
+                />
+              ) : (
+                <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
+              )}
+              {/* Star rating removed from image as it was deemed "cheap" looking */}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               {/* Primary Label */}
