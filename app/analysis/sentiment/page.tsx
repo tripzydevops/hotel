@@ -679,7 +679,8 @@ export default function SentimentPage() {
                   <SentimentBreakdown
                     items={
                       targetHotel.sentiment_breakdown?.map((s: any) => {
-                        const total = s.total || s.total_mentioned || 100;
+                        let total = Number(s.total || s.total_mentioned);
+                        if (Number.isNaN(total) || total <= 0) total = 100;
                         let rating = Number(s.rating);
                         if (Number.isNaN(rating)) rating = 0;
 
@@ -765,10 +766,10 @@ export default function SentimentPage() {
                           Analysis indicates a strong positive trend in{" "}
                           <span className="text-green-400 font-bold">
                             {targetHotel.guest_mentions.find(
-                              (m: any) => m.sentiment === "positive",
+                              (m) => m.sentiment === "positive",
                             )?.keyword ||
                               targetHotel.guest_mentions.find(
-                                (m: any) => m.sentiment === "positive",
+                                (m) => m.sentiment === "positive",
                               )?.text ||
                               "Service"}
                           </span>

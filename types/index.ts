@@ -37,6 +37,7 @@ export interface Hotel {
   }>;
   guest_mentions?: Array<{
     text: string;
+    keyword?: string;
     count: number;
     sentiment: "positive" | "negative" | "neutral";
   }>;
