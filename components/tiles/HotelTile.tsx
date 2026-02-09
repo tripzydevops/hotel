@@ -142,8 +142,9 @@ export default function HotelTile(props: HotelTileProps) {
   };
 
   const isTarget = variant === "target";
-  const padding = isTarget ? "p-4 sm:p-8" : "p-5";
-  const titleSize = isTarget ? "text-xl sm:text-2xl" : "text-sm";
+  // User Request: Make "My Hotel" card smaller
+  const padding = isTarget ? "p-4 sm:p-6" : "p-4";
+  const titleSize = isTarget ? "text-lg sm:text-xl" : "text-xs font-bold";
   const imageSize = isTarget ? "w-12 h-12 sm:w-16 sm:h-16" : "w-10 h-10";
 
   return (
@@ -158,7 +159,7 @@ export default function HotelTile(props: HotelTileProps) {
       )}
       {/* Header */}
       <div
-        className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-4"}`}
+        className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-3"}`}
       >
         {/* 
           Main Content Container: Added min-w-0 and flex-1 to verify 
@@ -218,19 +219,10 @@ export default function HotelTile(props: HotelTileProps) {
                 </span>
               )}
 
-              {/* Custom Header Badges (like Rank) */}
-              {headerBadges}
-
-              {/* Undercut Status */}
-              {isUndercut && (
-                <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1.5 bg-rose-500/10 px-2 py-1 rounded-full border border-rose-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                  {t("dashboard.undercut")}
-                </span>
-              )}
+              {/* User Request: Removed Rank Badges and Undercut Status to fix layout overlap */}
             </div>
             <h2
-              className={`${titleSize} font-bold text-white leading-tight mb-1 truncate pr-2`}
+              className={`${titleSize} text-white leading-tight mb-1 line-clamp-2 pr-2`}
               title={name}
             >
               {name}
@@ -408,7 +400,7 @@ export default function HotelTile(props: HotelTileProps) {
               <div className="relative inline-block mb-1">
                 {currentPrice > 0 ? (
                   <div className="flex flex-col items-center">
-                    <p className="text-3xl sm:text-5xl font-black text-white tracking-tighter transition-all">
+                    <p className="text-2xl sm:text-4xl font-black text-white tracking-tighter transition-all">
                       {formatPrice(currentPrice)}
                     </p>
                     {vendor && (
