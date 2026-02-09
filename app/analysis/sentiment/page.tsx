@@ -813,13 +813,11 @@ export default function SentimentPage() {
                         : "none";
                     if (gradient === "none") return null;
 
-                    const points = history
-                      .map((h, i) => {
-                        const x = (i / (history.length - 1)) * 1000;
-                        const y = (1 - h.rating / 5) * 100;
-                        return `${x},${y}`;
-                      })
-                      .reverse();
+                    const points = history.map((h, i) => {
+                      const x = (i / (history.length - 1)) * 1000;
+                      const y = (1 - h.rating / 5) * 100;
+                      return `${x},${y}`;
+                    });
 
                     const areaPoints = `0,100 ${points.join(" ")} 1000,100`;
 
@@ -855,7 +853,6 @@ export default function SentimentPage() {
                             const y = (1 - h.rating / 5) * 100;
                             return `${x},${y}`;
                           })
-                          .reverse()
                           .join(" ")}
                         fill="none"
                         stroke={color}
