@@ -472,7 +472,7 @@ export default function SentimentPage() {
       ) : (
         <>
           {/* Score Cards Grid - Up to 5 hotels selectable */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             {/* Target Hotel Card */}
             {isTargetSelected && targetHotel && (
               <ScoreCard
@@ -533,45 +533,38 @@ export default function SentimentPage() {
             })}
           </div>
 
-          {/* Category Breakdown & Keywords */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Category Breakdown */}
+          {/* Intelligence Hub: Radar, Breakdown, AI Insight, Keywords */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            {/* Left Hub: Radar + Category Bars (2/3) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="lg:col-span-2 bg-[#15294A] rounded-xl p-6 border border-white/5"
+              className="lg:col-span-8 bg-[#15294A] rounded-xl p-6 border border-white/5"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-blue-500" />
-                  {t("sentiment.categoryBreakdown")}
+                  Performance Pulse
                 </h3>
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-blue-500" />
-                    <span className="text-gray-400">
-                      {t("sentiment.myHotel")}
-                    </span>
+                <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-sm bg-blue-500" />
+                    <span className="text-gray-400">My Hotel</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#D4AF37]" />
-                    <span className="text-gray-400">
-                      {leader?.name || t("sentiment.leader")}
-                    </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-sm bg-[#D4AF37]" />
+                    <span className="text-gray-400">Leader</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-gray-600" />
-                    <span className="text-gray-400">
-                      {t("sentiment.avgComp")}
-                    </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-sm bg-gray-600" />
+                    <span className="text-gray-400">Market Avg</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-10">
-                {/* Radar Chart */}
-                <div className="h-[300px] mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <div className="h-[280px]">
                   {(() => {
                     const categories = [
                       "Cleanliness",
@@ -589,7 +582,6 @@ export default function SentimentPage() {
                           ? allHotels.reduce((sum, h) => sum + getScore(h), 0) /
                             allHotels.length
                           : 0;
-
                       return {
                         subject: cat,
                         A: getScore(targetHotel),
@@ -602,215 +594,149 @@ export default function SentimentPage() {
                   })()}
                 </div>
 
-                {/* Cleanliness */}
-                <CategoryBar
-                  category="Cleanliness"
-                  myScore={
-                    targetHotel.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Cleanliness" ||
-                        s.category === "Cleanliness",
-                    )?.rating || 0
-                  }
-                  leaderName={leader?.name}
-                  leaderScore={
-                    leader?.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Cleanliness" ||
-                        s.category === "Cleanliness",
-                    )?.rating || 0
-                  }
-                  marketAvg={marketAvgRating}
-                />
-                {/* Service */}
-                <CategoryBar
-                  category="Service"
-                  myScore={
-                    targetHotel.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Service" || s.category === "Service",
-                    )?.rating || 0
-                  }
-                  leaderName={leader?.name}
-                  leaderScore={
-                    leader?.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Service" || s.category === "Service",
-                    )?.rating || 0
-                  }
-                  marketAvg={marketAvgRating - 0.2}
-                />
-                {/* Location */}
-                <CategoryBar
-                  category="Location"
-                  myScore={
-                    targetHotel.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Location" || s.category === "Location",
-                    )?.rating || 0
-                  }
-                  leaderName={leader?.name}
-                  leaderScore={
-                    leader?.sentiment_breakdown?.find(
-                      (s: any) =>
-                        s.name === "Location" || s.category === "Location",
-                    )?.rating || 0
-                  }
-                  marketAvg={marketAvgRating + 0.1}
-                />
-                {/* Value */}
-                <CategoryBar
-                  category="Value"
-                  myScore={
-                    targetHotel.sentiment_breakdown?.find(
-                      (s: any) => s.name === "Value" || s.category === "Value",
-                    )?.rating || 0
-                  }
-                  leaderName={leader?.name}
-                  leaderScore={
-                    leader?.sentiment_breakdown?.find(
-                      (s: any) => s.name === "Value" || s.category === "Value",
-                    )?.rating || 0
-                  }
-                  marketAvg={marketAvgRating}
-                />
-
-                {/* Deep Dive Section (Moved from Overview) */}
-                <div className="pt-8 border-t border-white/5 mt-8">
-                  <SentimentBreakdown
-                    items={
-                      targetHotel.sentiment_breakdown?.map((s: any) => {
-                        let total = Number(s.total || s.total_mentioned);
-                        if (Number.isNaN(total) || total <= 0) total = 100;
-                        let rating = Number(s.rating);
-                        if (Number.isNaN(rating)) rating = 0;
-
-                        return {
-                          name: s.name || s.category || "General",
-                          total_mentioned: total,
-                          // Use existing positive/negative if available, else approximate from rating
-                          positive:
-                            typeof s.positive === "number" &&
-                            !Number.isNaN(s.positive)
-                              ? s.positive
-                              : Math.round((rating / 5) * total),
-                          negative:
-                            typeof s.negative === "number" &&
-                            !Number.isNaN(s.negative)
-                              ? s.negative
-                              : Math.round(((5 - rating) / 5) * total * 0.2),
-                          neutral:
-                            typeof s.neutral === "number" &&
-                            !Number.isNaN(s.neutral)
-                              ? s.neutral
-                              : Math.round(((5 - rating) / 5) * total * 0.8),
-                          serpapi_link: s.serpapi_link,
-                        };
-                      }) || []
-                    }
-                  />
+                <div className="space-y-6">
+                  {["Cleanliness", "Service", "Location", "Value"].map(
+                    (cat) => (
+                      <CategoryBar
+                        key={cat}
+                        category={cat}
+                        myScore={
+                          targetHotel.sentiment_breakdown?.find(
+                            (s: any) => s.name === cat || s.category === cat,
+                          )?.rating || 0
+                        }
+                        leaderName={leader?.name}
+                        leaderScore={
+                          leader?.sentiment_breakdown?.find(
+                            (s: any) => s.name === cat || s.category === cat,
+                          )?.rating || 0
+                        }
+                        marketAvg={marketAvgRating}
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             </motion.div>
 
-            {/* Competitive Weakness Analysis */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-            >
-              <CompetitiveWeakness competitors={visibleCompetitors} t={t} />
-            </motion.div>
-
-            {/* Guest Mentions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-[#15294A] rounded-xl p-6 border border-white/5 flex flex-col"
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            {/* Right Hub: AI Insight + Keywords (1/3) */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+              {/* Keywords Hub */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-[#15294A] rounded-xl p-6 border border-white/5 flex-1"
+              >
+                <div className="flex items-center gap-2 mb-6">
                   <Brain className="w-5 h-5 text-green-400" />
-                  {t("sentiment.guestMentions")}
-                </h3>
-              </div>
+                  <h3 className="text-lg font-bold text-white">
+                    Sentiment Voices
+                  </h3>
+                </div>
 
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-3 mb-8">
-                  {targetHotel.guest_mentions &&
-                  targetHotel.guest_mentions.length > 0 ? (
-                    targetHotel.guest_mentions.map(
-                      (mention: any, idx: number) => (
-                        <KeywordTag
-                          key={idx}
-                          text={mention.keyword || mention.text || "N/A"} // Fix: Prioritize 'keyword' from DB
-                          count={mention.count}
-                          sentiment={mention.sentiment}
-                          size={
-                            mention.count > 50
-                              ? "lg"
-                              : mention.count > 20
-                                ? "md"
-                                : "sm"
-                          }
-                        />
-                      ),
-                    )
-                  ) : (
-                    <p className="text-gray-500 text-sm italic">
-                      {t("sentiment.noMentions")}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {targetHotel.guest_mentions
+                    ?.slice(0, 10)
+                    .map((mention: any, idx: number) => (
+                      <KeywordTag
+                        key={idx}
+                        text={mention.keyword || mention.text || "N/A"}
+                        count={mention.count}
+                        sentiment={mention.sentiment}
+                        size="sm"
+                      />
+                    )) || (
+                    <p className="text-gray-500 italic text-xs">
+                      No mentions found
                     </p>
                   )}
                 </div>
 
-                {/* AI Insight */}
+                {/* AI Insight Nested */}
                 {targetHotel.guest_mentions &&
                   targetHotel.guest_mentions.length > 0 && (
-                    <div className="p-4 bg-blue-900/10 border border-blue-800/20 rounded-xl flex items-start gap-4">
-                      <Sparkles className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-                      <div>
-                        <h4 className="text-sm font-bold text-blue-300 mb-1">
-                          {t("sentiment.aiInsight")}
+                    <div className="p-4 bg-blue-900/10 border border-blue-800/20 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-blue-400" />
+                        <h4 className="text-xs font-bold text-blue-300">
+                          Agent Intelligence
                         </h4>
-                        <p className="text-xs text-blue-200/80 leading-relaxed">
-                          Analysis indicates a strong positive trend in{" "}
-                          <span className="text-green-400 font-bold">
-                            {targetHotel.guest_mentions.find(
-                              (m) => m.sentiment === "positive",
-                            )?.keyword ||
-                              targetHotel.guest_mentions.find(
-                                (m) => m.sentiment === "positive",
-                              )?.text ||
-                              "Service"}
-                          </span>
-                          .
+                      </div>
+                      <p className="text-[11px] text-blue-200/80 leading-relaxed mb-4">
+                        Top driver:{" "}
+                        <span className="text-green-400 font-bold">
+                          {targetHotel.guest_mentions.find(
+                            (m) => m.sentiment === "positive",
+                          )?.keyword || "Service"}
+                        </span>
+                        .
+                      </p>
+                      <div className="pt-3 border-t border-blue-400/10">
+                        <p className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest mb-1.5">
+                          Reasoning Logic
                         </p>
-                        <div className="mt-3 pt-3 border-t border-blue-400/10">
-                          <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <Brain className="w-3 h-3" /> Reasoning Logic
-                          </p>
-                          <p className="text-[11px] text-blue-300/60 italic leading-snug">
-                            {/* Option C: Dynamic Logic Explainer */}
-                            Identifying "
-                            {targetHotel.guest_mentions.find(
-                              (m) => m.sentiment === "positive",
-                            )?.keyword || "Service"}
-                            " as top driver based on{" "}
-                            {targetHotel.guest_mentions.find(
-                              (m) => m.sentiment === "positive",
-                            )?.count || "multiple"}{" "}
-                            positive guest signals with an overall category
-                            average of {targetHotel.rating?.toFixed(1) || "4.5"}
-                            .
-                          </p>
-                        </div>
+                        <p className="text-[10px] text-blue-300/50 italic font-medium leading-relaxed">
+                          Extracted{" "}
+                          {targetHotel.guest_mentions.find(
+                            (m) => m.sentiment === "positive",
+                          )?.count || "multiple"}{" "}
+                          positive guest signals for this hotel.
+                        </p>
                       </div>
                     </div>
                   )}
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
+
+          {/* Row 2: Competitive Vulnerability analysis (Full Width) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <CompetitiveWeakness competitors={visibleCompetitors} t={t} />
+          </motion.div>
+
+          {/* Row 3: Sentiment Deep Dive Breakdown (Full Width) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-8"
+          >
+            <SentimentBreakdown
+              items={
+                targetHotel.sentiment_breakdown?.map((s: any) => {
+                  let total = Number(s.total || s.total_mentioned);
+                  if (Number.isNaN(total) || total <= 0) total = 100;
+                  let rating = Number(s.rating);
+                  if (Number.isNaN(rating)) rating = 0;
+                  return {
+                    name: s.name || s.category || "General",
+                    total_mentioned: total,
+                    positive:
+                      typeof s.positive === "number" &&
+                      !Number.isNaN(s.positive)
+                        ? s.positive
+                        : Math.round((rating / 5) * total),
+                    negative:
+                      typeof s.negative === "number" &&
+                      !Number.isNaN(s.negative)
+                        ? s.negative
+                        : Math.round(((5 - rating) / 5) * total * 0.2),
+                    neutral:
+                      typeof s.neutral === "number" && !Number.isNaN(s.neutral)
+                        ? s.neutral
+                        : Math.round(((5 - rating) / 5) * total * 0.8),
+                    serpapi_link: s.serpapi_link,
+                  };
+                }) || []
+              }
+            />
+          </motion.div>
 
           {/* Sentiment Trend Chart */}
           <motion.div
