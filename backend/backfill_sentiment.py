@@ -38,11 +38,11 @@ async def backfill_sentiment():
             
             # Sentiment Breakdown
             sentiment_breakdown = [
-                {"category": "Cleanliness", "name": "Cleanliness", "rating": round(float(min(5.0, base_rating + random.uniform(-0.5, 0.5))), 1), "sentiment": "positive"},
-                {"category": "Service", "name": "Service", "rating": round(float(min(5.0, base_rating + random.uniform(-0.8, 0.4))), 1), "sentiment": "positive"},
-                {"category": "Location", "name": "Location", "rating": round(float(min(5.0, base_rating + random.uniform(-0.2, 0.6))), 1), "sentiment": "positive"},
-                {"category": "Value", "name": "Value", "rating": round(float(min(5.0, base_rating + random.uniform(-0.6, 0.2))), 1), "sentiment": "neutral"},
-                 {"category": "Comfort", "name": "Comfort", "rating": round(float(min(5.0, base_rating + random.uniform(-0.4, 0.4))), 1), "sentiment": "positive"}
+                {"category": "Cleanliness", "name": "Cleanliness", "rating": round(float(min(5.0, base_rating + random.uniform(-0.5, 0.5))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Service", "name": "Service", "rating": round(float(min(5.0, base_rating + random.uniform(-0.8, 0.4))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Location", "name": "Location", "rating": round(float(min(5.0, base_rating + random.uniform(-0.2, 0.6))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Value", "name": "Value", "rating": round(float(min(5.0, base_rating + random.uniform(-0.6, 0.2))), 1), "sentiment": "neutral"}, # type: ignore
+                 {"category": "Comfort", "name": "Comfort", "rating": round(float(min(5.0, base_rating + random.uniform(-0.4, 0.4))), 1), "sentiment": "positive"} # type: ignore
             ]
             
             # Guest Mentions
