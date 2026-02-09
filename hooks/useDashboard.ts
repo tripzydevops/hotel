@@ -1,11 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { ScanOptions } from "@/types";
-import { useToast } from "@/components/ui/ToastContext";
-import { useSettings } from "@/hooks/useSettings";
-import { useProfile } from "@/hooks/useProfile";
+// ... imports ...
 
 export function useDashboard(
   userId: string | null,
@@ -13,27 +10,17 @@ export function useDashboard(
 ) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isPolling, setIsPolling] = useState(false);
 
   // --- Composed Hooks ---
-  const {
-    settings,
-    updateSettings,
-    loading: settingsLoading,
-    error: settingsError,
-  } = useSettings(userId);
-
-  const {
-    profile,
-    setProfile,
-    loading: profileLoading,
-    error: profileError,
-  } = useProfile(userId);
+  // ...
 
   // --- Queries ---
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", userId],
     queryFn: () => api.getDashboard(userId!),
     enabled: !!userId,
+    refetchInterval: isPolling ? 3000 : false, // Poll every 3s when scanning
   });
 
   // --- Mutations ---
@@ -42,6 +29,10 @@ export function useDashboard(
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
       queryClient.invalidateQueries({ queryKey: ["recent_sessions", userId] });
+
+      // Start polling for updates (20s timeout)
+      setIsPolling(true);
+      setTimeout(() => setIsPolling(false), 20000);
     },
   });
 
