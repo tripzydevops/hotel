@@ -20,17 +20,25 @@ export function useDashboard(
     queryKey: ["dashboard", userId],
     queryFn: () => api.getDashboard(userId!),
     enabled: !!userId,
-    refetchInterval: isPolling ? 3000 : false, // Poll every 3s when scanning
+    // EXPLANATION: Polling Strategy
+    // When a scan is manually triggered, we set `isPolling` to true.
+    // This enables `refetchInterval` to auto-fetch data every 3 seconds.
+    // This ensures the UI updates automatically when the background scan completes.
+    refetchInterval: isPolling ? 3000 : false,
   });
 
   // --- Mutations ---
   const scanMutation = useMutation({
     mutationFn: (options: ScanOptions) => api.triggerMonitor(userId!, options),
     onSuccess: () => {
+      // Immediate invalidation to clear/refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
       queryClient.invalidateQueries({ queryKey: ["recent_sessions", userId] });
 
-      // Start polling for updates (20s timeout)
+      // EXPLANATION: Async Update Handling
+      // The backend scan runs asynchronously. To reflect the new data without
+      // a manual page refresh, we enable polling for a fixed duration (20s).
+      // This gives the backend enough time to finish the scan.
       setIsPolling(true);
       setTimeout(() => setIsPolling(false), 20000);
     },
