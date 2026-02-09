@@ -84,7 +84,7 @@ export default function Sidebar({
   const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
-    <aside className="w-72 bg-[#050B18] border-r border-white/5 flex flex-col h-screen sticky top-0 z-40">
+    <aside className="w-64 bg-[#050B18] border-r border-white/5 flex flex-col h-screen sticky top-0 z-40">
       {/* Logo Section */}
       <div className="p-8 mb-4">
         <div className="flex items-center gap-4">

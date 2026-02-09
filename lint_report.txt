@@ -1,0 +1,224 @@
+
+> hotel@0.1.0 lint
+> eslint
+
+(node:26488) ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. Switch to using the "ignores" property in "eslint.config.js": https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+C:\projects\hotel\.agent\mcp\vercel-mcp-server\dist\index.js
+  3:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:20  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:15  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:25  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\projects\hotel\app\analysis\calendar\page.tsx
+  32:6  warning  React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\app\analysis\discovery\page.tsx
+  37:6  warning  React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\app\analysis\page.tsx
+   79:6   warning  React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+  109:6   warning  React Hook useCallback has a missing dependency: 'allHotels.length'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  322:19  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                        react/no-unescaped-entities
+  322:39  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                        react/no-unescaped-entities
+
+C:\projects\hotel\app\analysis\sentiment\page.tsx
+  310:9  warning  The 'competitors' logical expression could make the dependencies of useEffect Hook (at line 319) change on every render. To fix this, wrap the initialization of 'competitors' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  317:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\projects\hotel\app\analysis\sentiment\page.tsx:317:7
+  315 |       // Default to target + all competitors (up to 5 total)
+  316 |       const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
+> 317 |       setSelectedHotelIds(initialIds.slice(0, 5));
+      |       ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  318 |     }
+  319 |   }, [targetHotel, competitors, selectedHotelIds.length]);
+  320 |  react-hooks/set-state-in-effect
+
+C:\projects\hotel\app\reports\page.tsx
+  69:6  warning  React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\admin\DirectoryPanel.tsx
+  52:6  warning  React Hook useEffect has a missing dependency: 'loadDirectory'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\admin\HeatmapMap.tsx
+  31:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\projects\hotel\components\admin\HeatmapMap.tsx:31:5
+  29 |
+  30 |   useEffect(() => {
+> 31 |     setMounted(true);
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |   }, []);
+  33 |
+  34 |   if (!mounted)  react-hooks/set-state-in-effect
+
+C:\projects\hotel\components\admin\NeuralFeed.tsx
+  50:5  error  'interval' is never reassigned. Use 'const' instead  prefer-const
+
+C:\projects\hotel\components\admin\ScansPanel.tsx
+  48:6  warning  React Hook useEffect has a missing dependency: 'fetchScanDetails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\admin\UserManagementPanel.tsx
+  51:6  warning  React Hook useEffect has a missing dependency: 'loadUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\admin\VisibilityChart.tsx
+  86:13  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+
+C:\projects\hotel\components\analytics\RateSpreadChart.tsx
+  306:32  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\projects\hotel\components\analytics\RateSpreadChart.tsx:306:32
+  304 |               width={60}
+  305 |             />
+> 306 |             <Tooltip content={<CustomTooltip />} />
+      |                                ^^^^^^^^^^^^^ This component is created during render
+  307 |
+  308 |             {/* Spread area (min to max) */}
+  309 |             <Area
+
+C:\projects\hotel\components\analytics\RateSpreadChart.tsx:103:25
+  101 |
+  102 |   // Custom tooltip
+> 103 |   const CustomTooltip = ({ active, payload }: any) => {
+      |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 104 |     if (!active || !payload || !payload.length) return null;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 105 |
+      ÔÇĞ
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 200 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 201 |   };
+      | ^^^^ The component is created during render here
+  202 |
+  203 |   if (chartData.length === 0) {
+  204 |     return (  react-hooks/static-components
+
+C:\projects\hotel\components\features\analysis\DiscoveryShard.tsx
+   52:6   warning  React Hook useEffect has a missing dependency: 'discover'. Either include it or remove the dependency array                                                                                                                                                                              react-hooks/exhaustive-deps
+  153:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\projects\hotel\components\layout\UserMenu.tsx
+  31:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\projects\hotel\components\layout\UserMenu.tsx:31:7
+  29 |   useEffect(() => {
+  30 |     if (initialProfile) {
+> 31 |       setProfile(initialProfile);
+     |       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |     }
+  33 |   }, [initialProfile]);
+  34 |  react-hooks/set-state-in-effect
+  79:17  warning  Expected an assignment or function call and instead saw an expression                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-expressions
+
+C:\projects\hotel\components\modals\AlertsModal.tsx
+  31:6  warning  React Hook useEffect has a missing dependency: 'loadAlerts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\modals\ProfileModal.tsx
+  45:6  warning  React Hook useEffect has a missing dependency: 'loadProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\modals\ScanSessionModal.tsx
+  41:7  error    Error: Cannot access variable before it is declared
+
+`fetchSessionLogs` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\projects\hotel\components\modals\ScanSessionModal.tsx:41:7
+  39 |
+  40 |     if (isOpen && session) {
+> 41 |       fetchSessionLogs();
+     |       ^^^^^^^^^^^^^^^^ `fetchSessionLogs` accessed before it is declared
+  42 |
+  43 |       // Poll for updates if scan is not finished
+  44 |       if (session.status === "running" || session.status === "pending") {
+
+C:\projects\hotel\components\modals\ScanSessionModal.tsx:54:3
+  52 |   }, [isOpen, session]);
+  53 |
+> 54 |   const fetchSessionLogs = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 55 |     if (!session) return;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 56 |     try {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |       const result = await api.getSessionLogs(session.id);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 58 |       setLogs(result);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 59 |     } catch (error) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 60 |       console.error("Failed to fetch session logs:", error);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 61 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 62 |   };
+     | ^^^^^ `fetchSessionLogs` is declared here
+  63 |
+  64 |   if (!isOpen || !session) return null;
+  65 |  react-hooks/immutability
+  52:6  warning  React Hook useEffect has a missing dependency: 'fetchSessionLogs'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/exhaustive-deps
+
+C:\projects\hotel\components\ui\FallbackImage.tsx
+  25:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\projects\hotel\components\ui\FallbackImage.tsx:25:5
+  23 |
+  24 |   useEffect(() => {
+> 25 |     setImgSrc(src);
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |     setError(false);
+  27 |   }, [src]);
+  28 |  react-hooks/set-state-in-effect
+
+C:\projects\hotel\hooks\useAdminGuard.ts
+  64:6  warning  React Hook useEffect has a missing dependency: 'supabase'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\hotel\lib\i18n.tsx
+  29:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\projects\hotel\lib\i18n.tsx:29:9
+  27 |       const saved = localStorage.getItem("tripzy_locale") as Locale;
+  28 |       if (saved && (saved === "en" || saved === "tr")) {
+> 29 |         setLocaleState(saved);
+     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |       }
+  31 |     }
+  32 |   }, []);  react-hooks/set-state-in-effect
+
+Ô£û 32 problems (15 errors, 17 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

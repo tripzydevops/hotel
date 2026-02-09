@@ -65,7 +65,7 @@ export default function SettingsModal({
       const registration = await navigator.serviceWorker.register("/sw.js");
 
       // Wait for the service worker to be ready (active)
-      let sw =
+      const sw =
         registration.installing || registration.waiting || registration.active;
       if (sw) {
         if (sw.state !== "activated") {

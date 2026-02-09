@@ -413,8 +413,8 @@ const ScansPanel = () => {
                                 const isAlert = trace.includes("[Alert]");
                                 const isError = trace.includes("[ERROR]");
 
-                                let bgClass = "bg-white/5";
-                                let borderClass = "border-white/10";
+                                const bgClass = "bg-white/5";
+                                const borderClass = "border-white/10";
                                 return (
                                   <div
                                     key={i}

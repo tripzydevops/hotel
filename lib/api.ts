@@ -11,6 +11,7 @@ import {
   AdminLog,
   KeyStatus,
   MarketIntelligenceResponse,
+  Report,
 } from "@/types";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -300,7 +301,7 @@ class ApiClient {
     return this.fetch<any[]>(`/api/admin/directory?limit=${limit}${query}`);
   }
 
-  async deleteAdminDirectory(entryId: number): Promise<void> {
+  async deleteAdminDirectory(entryId: string): Promise<void> {
     return this.fetch<void>(`/api/admin/directory/${entryId}`, {
       method: "DELETE",
     });

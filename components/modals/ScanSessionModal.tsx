@@ -34,6 +34,16 @@ export default function ScanSessionModal({
   const [logs, setLogs] = useState<QueryLog[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const fetchSessionLogs = async () => {
+    if (!session) return;
+    try {
+      const result = await api.getSessionLogs(session.id);
+      setLogs(result);
+    } catch (error) {
+      console.error("Failed to fetch session logs:", error);
+    }
+  };
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -50,16 +60,6 @@ export default function ScanSessionModal({
       if (interval) clearInterval(interval);
     };
   }, [isOpen, session]);
-
-  const fetchSessionLogs = async () => {
-    if (!session) return;
-    try {
-      const result = await api.getSessionLogs(session.id);
-      setLogs(result);
-    } catch (error) {
-      console.error("Failed to fetch session logs:", error);
-    }
-  };
 
   if (!isOpen || !session) return null;
 

@@ -143,9 +143,9 @@ export default function HotelTile(props: HotelTileProps) {
 
   const isTarget = variant === "target";
   // User Request: Make "My Hotel" card smaller
-  const padding = isTarget ? "p-4 sm:p-6" : "p-4";
-  const titleSize = isTarget ? "text-lg sm:text-xl" : "text-xs font-bold";
-  const imageSize = isTarget ? "w-12 h-12 sm:w-16 sm:h-16" : "w-10 h-10";
+  const padding = isTarget ? "p-4 sm:p-5" : "p-4";
+  const titleSize = isTarget ? "text-lg font-bold" : "text-xs font-bold";
+  const imageSize = isTarget ? "w-10 h-10 sm:w-14 sm:h-14" : "w-10 h-10";
 
   return (
     <motion.div
@@ -159,7 +159,7 @@ export default function HotelTile(props: HotelTileProps) {
       )}
       {/* Header */}
       <div
-        className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-3"}`}
+        className={`flex items-start justify-between ${isTarget ? "mb-4" : "mb-3"}`}
       >
         {/* 
           Main Content Container: Added min-w-0 and flex-1 to verify 
@@ -167,7 +167,7 @@ export default function HotelTile(props: HotelTileProps) {
           action buttons out of the card.
         */}
         <div
-          className={`flex items-center min-w-0 flex-1 ${isTarget ? "gap-3 sm:gap-4" : "gap-3"}`}
+          className={`flex items-center min-w-0 flex-1 ${isTarget ? "gap-3" : "gap-3"}`}
         >
           {isTarget && (
             <div
@@ -222,7 +222,7 @@ export default function HotelTile(props: HotelTileProps) {
               {/* User Request: Removed Rank Badges and Undercut Status to fix layout overlap */}
             </div>
             <h2
-              className={`${titleSize} text-white leading-tight mb-1 line-clamp-2 pr-2`}
+              className={`${titleSize} text-white leading-tight mb-1 line-clamp-2 pr-1`}
               title={name}
             >
               {name}
@@ -251,7 +251,7 @@ export default function HotelTile(props: HotelTileProps) {
 
         {/* Actions */}
         <div
-          className={`flex items-center ${isTarget ? "gap-3" : "gap-1.5"} flex-shrink-0 ml-2`}
+          className={`flex items-center ${isTarget ? "gap-2" : "gap-1.5"} flex-shrink-0 ml-1`}
         >
           {onEdit && (
             <button
@@ -273,15 +273,15 @@ export default function HotelTile(props: HotelTileProps) {
                   },
                 } as HotelWithPrice);
               }}
-              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
+              className={`${isTarget ? "p-2.5" : "p-2"} rounded-xl transition-all shadow-lg ${
                 isTarget
                   ? "bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
-                  : "bg-white/5 hover:bg-white/10 text-[var(--soft-gold)] hover:text-white border border-white/5"
+                  : "bg-white/10 hover:bg-white/20 text-white hover:text-[#F6C344] border border-white/10"
               }`}
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
-              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
+              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-4 h-4"}`} />
             </button>
           )}
           {onViewDetails && (

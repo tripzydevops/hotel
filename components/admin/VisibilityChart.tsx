@@ -83,7 +83,6 @@ export default function VisibilityChart({
             }}
             itemStyle={{ color: "#fff" }}
             labelStyle={{ color: "rgba(255,255,255,0.5)" }}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [`#${value}`, "Rank"]}
           />
           <ReferenceLine y={1} stroke="#10b981" strokeDasharray="3 3" />
