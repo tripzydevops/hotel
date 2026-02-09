@@ -847,21 +847,34 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
         
+    # =======================================================
     # Determine Limit based on Plan
+    # Default: 3 hotels (Trial users)
+    # Enterprise/Pro: 5 hotels (1 target + 4 competitors)
+    # Dev User: 10 hotels (for testing)
+    # =======================================================
     limit = 3  # Default / Trial
     
     # 1. Dev User Override
     if str(user_id) == "123e4567-e89b-12d3-a456-426614174000":
         limit = 10
     else:
-        # 2. Check Plan
+        # 2. Check Plan from BOTH tables to ensure we find it
+        plan = "trial"
         try:
-            # Check user_profiles for plan_type
-            profile_res = db.table("user_profiles").select("plan_type").eq("user_id", str(user_id)).execute()
-            if profile_res.data:
-                plan = profile_res.data[0].get("plan_type", "trial")
-                if plan == "enterprise":
-                    limit = 5
+            # Primary: Check profiles table (source of truth for subscription)
+            profiles_res = db.table("profiles").select("plan_type").eq("id", str(user_id)).execute()
+            if profiles_res.data and profiles_res.data[0].get("plan_type"):
+                plan = profiles_res.data[0].get("plan_type")
+            else:
+                # Fallback: Check user_profiles table
+                user_profiles_res = db.table("user_profiles").select("plan_type").eq("user_id", str(user_id)).execute()
+                if user_profiles_res.data:
+                    plan = user_profiles_res.data[0].get("plan_type", "trial")
+            
+            # Enterprise and Pro both get 5 hotels
+            if plan in ["enterprise", "pro", "professional"]:
+                limit = 5
         except Exception as e:
             print(f"Plan check failed: {e}")
 
