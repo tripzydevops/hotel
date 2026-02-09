@@ -847,10 +847,28 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable in Dev Mode")
         
-    # Check hotel limit (Max 5 for demo) - STRICT ENFORCEMENT
+    # Determine Limit based on Plan
+    limit = 3  # Default / Trial
+    
+    # 1. Dev User Override
+    if str(user_id) == "123e4567-e89b-12d3-a456-426614174000":
+        limit = 10
+    else:
+        # 2. Check Plan
+        try:
+            # Check user_profiles for plan_type
+            profile_res = db.table("user_profiles").select("plan_type").eq("user_id", str(user_id)).execute()
+            if profile_res.data:
+                plan = profile_res.data[0].get("plan_type", "trial")
+                if plan == "enterprise":
+                    limit = 5
+        except Exception as e:
+            print(f"Plan check failed: {e}")
+
+    # Check hotel limit - STRICT ENFORCEMENT
     existing = db.table("hotels").select("id").eq("user_id", str(user_id)).execute()
-    if existing.data and len(existing.data) >= 5:
-        raise HTTPException(status_code=403, detail="Hotel limit reached (Max 5). Please upgrade to add more.")
+    if existing.data and len(existing.data) >= limit:
+        raise HTTPException(status_code=403, detail=f"Hotel limit reached (Max {limit}). Please upgrade to Enterprise for more.")
         
     
     # Check for duplicates via SerpApi ID

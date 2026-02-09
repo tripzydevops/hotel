@@ -661,7 +661,7 @@ export default function SentimentPage() {
                       (mention: any, idx: number) => (
                         <KeywordTag
                           key={idx}
-                          text={mention.text}
+                          text={mention.keyword || mention.text} // Fix: Handle both 'keyword' (DB) and 'text' keys
                           count={mention.count}
                           sentiment={mention.sentiment}
                           size={
@@ -695,7 +695,11 @@ export default function SentimentPage() {
                           <span className="text-green-400 font-bold">
                             {targetHotel.guest_mentions.find(
                               (m: any) => m.sentiment === "positive",
-                            )?.text || "Service"}
+                            )?.keyword ||
+                              targetHotel.guest_mentions.find(
+                                (m: any) => m.sentiment === "positive",
+                              )?.text ||
+                              "Service"}
                           </span>
                           . Keep up the good work!
                         </p>
