@@ -9,7 +9,10 @@ interface SentimentItem {
   negative: number;
   neutral: number;
   description?: string;
+  serpapi_link?: string;
 }
+
+import { ExternalLink } from "lucide-react";
 
 interface SentimentBreakdownProps {
   items: SentimentItem[];
@@ -57,11 +60,22 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
               className="relative group lg:px-4"
             >
               <div className="flex items-center justify-between mb-2">
-                <div>
+                <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
                     {item.name}
                   </h4>
-                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter mt-0.5">
+                  {item.serpapi_link && (
+                    <a
+                      href={item.serpapi_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-[var(--soft-gold)] transition-all"
+                      title="View Source on Google"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter ml-auto">
                     {item.total_mentioned} MENTIONS
                   </p>
                 </div>

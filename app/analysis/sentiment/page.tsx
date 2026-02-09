@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import { SentimentRadar } from "@/components/analytics/SentimentRadar";
+import { CompetitiveWeakness } from "@/components/analytics/CompetitiveWeakness";
 
 // Radial Progress Component
 const RadialProgress = ({
@@ -703,12 +704,22 @@ export default function SentimentPage() {
                             !Number.isNaN(s.neutral)
                               ? s.neutral
                               : Math.round(((5 - rating) / 5) * total * 0.8),
+                          serpapi_link: s.serpapi_link,
                         };
                       }) || []
                     }
                   />
                 </div>
               </div>
+            </motion.div>
+
+            {/* Competitive Weakness Analysis */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <CompetitiveWeakness competitors={visibleCompetitors} t={t} />
             </motion.div>
 
             {/* Guest Mentions */}
@@ -773,8 +784,27 @@ export default function SentimentPage() {
                               )?.text ||
                               "Service"}
                           </span>
-                          . Keep up the good work!
+                          .
                         </p>
+                        <div className="mt-3 pt-3 border-t border-blue-400/10">
+                          <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <Brain className="w-3 h-3" /> Reasoning Logic
+                          </p>
+                          <p className="text-[11px] text-blue-300/60 italic leading-snug">
+                            {/* Option C: Dynamic Logic Explainer */}
+                            Identifying "
+                            {targetHotel.guest_mentions.find(
+                              (m) => m.sentiment === "positive",
+                            )?.keyword || "Service"}
+                            " as top driver based on{" "}
+                            {targetHotel.guest_mentions.find(
+                              (m) => m.sentiment === "positive",
+                            )?.count || "multiple"}{" "}
+                            positive guest signals with an overall category
+                            average of {targetHotel.rating?.toFixed(1) || "4.5"}
+                            .
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
