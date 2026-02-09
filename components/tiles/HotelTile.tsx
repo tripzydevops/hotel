@@ -222,7 +222,7 @@ export default function HotelTile(props: HotelTileProps) {
               {/* User Request: Removed Rank Badges and Undercut Status to fix layout overlap */}
             </div>
             <h2
-              className={`${titleSize} text-white leading-tight mb-1 line-clamp-2 pr-1`}
+              className={`${titleSize} text-white leading-tight mb-1 line-clamp-3 pr-1`}
               title={name}
             >
               {name}
@@ -251,117 +251,182 @@ export default function HotelTile(props: HotelTileProps) {
 
         {/* Actions */}
         <div
-          className={`flex items-center ${isTarget ? "gap-2" : "gap-1.5"} flex-shrink-0 ml-1`}
+          className={`flex ${isTarget ? "flex-row items-center gap-2" : "flex-row items-start gap-1"} flex-shrink-0 ml-1`}
         >
-          {onEdit && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(id, {
-                  id,
-                  name,
-                  location,
-                  is_target_hotel: isTarget,
-                  user_id: "",
-                  created_at: "",
-                  price_info: {
-                    current_price: currentPrice,
-                    currency,
-                    trend,
-                    change_percent: changePercent,
-                    recorded_at: lastUpdated || "",
-                  },
-                } as HotelWithPrice);
-              }}
-              className={`${isTarget ? "p-2.5" : "p-2"} rounded-xl transition-all shadow-lg ${
-                isTarget
-                  ? "bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
-                  : "bg-white/10 hover:bg-white/20 text-white hover:text-[#F6C344] border border-white/10"
-              }`}
-              title={t("common.edit")}
-              aria-label={t("common.edit")}
-            >
-              <Edit2 className={`${isTarget ? "w-5 h-5" : "w-4 h-4"}`} />
-            </button>
-          )}
-          {onViewDetails && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails({
-                  id,
-                  name,
-                  location,
-                  image_url: imageUrl,
-                  user_id: "",
-                  created_at: "",
-                  is_target_hotel: isTarget,
-                  price_info: {
-                    currency,
-                    current_price: currentPrice,
-                    offers,
-                    previous_price: previousPrice,
-                    trend,
-                    change_percent: changePercent,
-                    recorded_at: lastUpdated || "",
-                  },
-                  amenities,
-                  images,
-                  stars,
-                  rating,
-                } as HotelWithPrice);
-              }}
-              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
-                isTarget
-                  ? "bg-[#F6C344] text-[#050B18] hover:bg-[#EAB308] hover:scale-110 active:scale-95"
-                  : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
-              }`}
-              title={t("common.view")}
-              aria-label={t("common.view")}
-            >
-              <Building2
-                className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`}
-              />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className={`${isTarget ? "p-2.5" : "p-1.5"} rounded-xl transition-all shadow-lg ${
-                isTarget
-                  ? "bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:scale-110 active:scale-95"
-                  : "bg-white/5 hover:bg-red-500/20 text-red-400/50 hover:text-red-400 border border-white/5"
-              }`}
-              title={t("common.delete")}
-              aria-label={t("common.delete")}
-            >
-              <Trash2 className={`${isTarget ? "w-5 h-5" : "w-3.5 h-3.5"}`} />
-            </button>
-          )}
-
-          {isTarget && (
-            <div
-              className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}
-            >
-              {getTrendIcon("w-8 h-8")}
-            </div>
-          )}
-
-          {!isTarget && (
-            <div
-              className={`px-2 py-1 rounded-md ${getTrendBgColor()} flex items-center gap-1`}
-            >
-              {getTrendIcon()}
-              <span
-                className={`text-xs font-medium ${isTarget ? getTrendColor() : trend === "up" ? "text-optimal-green" : trend === "down" ? "text-alert-red" : "text-[var(--text-muted)]"}`}
+          {isTarget ? (
+            // Target Hotel: Horizontal Layout
+            <>
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(id, {
+                      id,
+                      name,
+                      location,
+                      is_target_hotel: isTarget,
+                      user_id: "",
+                      created_at: "",
+                      price_info: {
+                        current_price: currentPrice,
+                        currency,
+                        trend,
+                        change_percent: changePercent,
+                        recorded_at: lastUpdated || "",
+                      },
+                    } as HotelWithPrice);
+                  }}
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
+                  title={t("common.edit")}
+                  aria-label={t("common.edit")}
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
+              )}
+              {onViewDetails && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetails({
+                      id,
+                      name,
+                      location,
+                      image_url: imageUrl,
+                      user_id: "",
+                      created_at: "",
+                      is_target_hotel: isTarget,
+                      price_info: {
+                        currency,
+                        current_price: currentPrice,
+                        offers,
+                        previous_price: previousPrice,
+                        trend,
+                        change_percent: changePercent,
+                        recorded_at: lastUpdated || "",
+                      },
+                      amenities,
+                      images,
+                      stars,
+                      rating,
+                    } as HotelWithPrice);
+                  }}
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-[#F6C344] text-[#050B18] hover:bg-[#EAB308] hover:scale-110 active:scale-95"
+                  title={t("common.view")}
+                  aria-label={t("common.view")}
+                >
+                  <Building2 className="w-5 h-5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(id);
+                  }}
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:scale-110 active:scale-95"
+                  title={t("common.delete")}
+                  aria-label={t("common.delete")}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
+              <div
+                className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}
               >
-                {changePercent > 0 ? "+" : ""}
-                {changePercent.toFixed(1)}%
-              </span>
-            </div>
+                {getTrendIcon("w-8 h-8")}
+              </div>
+            </>
+          ) : (
+            // Competitor: Vertical Layout for Buttons to save width
+            <>
+              <div
+                className={`px-1.5 py-1 rounded-md ${getTrendBgColor()} flex flex-col items-center justify-center gap-0.5 self-center mr-1 min-w-[45px]`}
+              >
+                {getTrendIcon("w-3 h-3")}
+                <span
+                  className={`text-[10px] font-medium leading-none ${changePercent > 0 ? "text-optimal-green" : changePercent < 0 ? "text-alert-red" : "text-[var(--text-muted)]"}`}
+                >
+                  {changePercent > 0 ? "+" : ""}
+                  {Math.abs(changePercent).toFixed(1)}%
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                {/* View on Top */}
+                {onViewDetails && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails({
+                        id,
+                        name,
+                        location,
+                        image_url: imageUrl,
+                        user_id: "",
+                        created_at: "",
+                        is_target_hotel: isTarget,
+                        price_info: {
+                          currency,
+                          current_price: currentPrice,
+                          offers,
+                          previous_price: previousPrice,
+                          trend,
+                          change_percent: changePercent,
+                          recorded_at: lastUpdated || "",
+                        },
+                        amenities,
+                        images,
+                        stars,
+                        rating,
+                      } as HotelWithPrice);
+                    }}
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
+                    title={t("common.view")}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {/* Edit Under View */}
+                {onEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(id, {
+                        id,
+                        name,
+                        location,
+                        is_target_hotel: isTarget,
+                        user_id: "",
+                        created_at: "",
+                        price_info: {
+                          current_price: currentPrice,
+                          currency,
+                          trend,
+                          change_percent: changePercent,
+                          recorded_at: lastUpdated || "",
+                        },
+                      } as HotelWithPrice);
+                    }}
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-white/10 text-slate-400 hover:text-[#F6C344] border border-white/5"
+                    title={t("common.edit")}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(id);
+                    }}
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-red-500/20 text-red-400/50 hover:text-red-400 border border-white/5"
+                    title={t("common.delete")}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
