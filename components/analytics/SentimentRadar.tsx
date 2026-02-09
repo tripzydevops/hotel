@@ -20,7 +20,7 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="w-full h-[400px] min-h-[400px] relative">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
           <PolarGrid stroke="#374151" />

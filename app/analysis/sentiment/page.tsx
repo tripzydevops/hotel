@@ -678,17 +678,32 @@ export default function SentimentPage() {
                 <div className="pt-8 border-t border-white/5 mt-8">
                   <SentimentBreakdown
                     items={
-                      targetHotel.sentiment_breakdown?.map((s: any) => ({
-                        name: s.name || s.category,
-                        total_mentioned: s.total || 100, // Fallback if missing
-                        positive: Math.round((s.rating / 5) * (s.total || 100)), // Approximate
-                        negative: Math.round(
-                          ((5 - s.rating) / 5) * (s.total || 100) * 0.2,
-                        ), // Approx
-                        neutral: Math.round(
-                          ((5 - s.rating) / 5) * (s.total || 100) * 0.8,
-                        ), // Approx
-                      })) || []
+                      targetHotel.sentiment_breakdown?.map((s: any) => {
+                        const total = s.total || s.total_mentioned || 100;
+                        let rating = Number(s.rating);
+                        if (Number.isNaN(rating)) rating = 0;
+
+                        return {
+                          name: s.name || s.category || "General",
+                          total_mentioned: total,
+                          // Use existing positive/negative if available, else approximate from rating
+                          positive:
+                            typeof s.positive === "number" &&
+                            !Number.isNaN(s.positive)
+                              ? s.positive
+                              : Math.round((rating / 5) * total),
+                          negative:
+                            typeof s.negative === "number" &&
+                            !Number.isNaN(s.negative)
+                              ? s.negative
+                              : Math.round(((5 - rating) / 5) * total * 0.2),
+                          neutral:
+                            typeof s.neutral === "number" &&
+                            !Number.isNaN(s.neutral)
+                              ? s.neutral
+                              : Math.round(((5 - rating) / 5) * total * 0.8),
+                        };
+                      }) || []
                     }
                   />
                 </div>
@@ -717,7 +732,7 @@ export default function SentimentPage() {
                       (mention: any, idx: number) => (
                         <KeywordTag
                           key={idx}
-                          text={mention.text} // Fix: Handle 'text' key from DB
+                          text={mention.keyword || mention.text || "N/A"} // Fix: Prioritize 'keyword' from DB
                           count={mention.count}
                           sentiment={mention.sentiment}
                           size={
@@ -751,7 +766,11 @@ export default function SentimentPage() {
                           <span className="text-green-400 font-bold">
                             {targetHotel.guest_mentions.find(
                               (m: any) => m.sentiment === "positive",
-                            )?.text || "Service"}
+                            )?.keyword ||
+                              targetHotel.guest_mentions.find(
+                                (m: any) => m.sentiment === "positive",
+                              )?.text ||
+                              "Service"}
                           </span>
                           . Keep up the good work!
                         </p>
