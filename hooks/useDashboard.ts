@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// ... imports ...
+import { api } from "@/lib/api";
+import { ScanOptions } from "@/types";
+import { useToast } from "@/components/ui/ToastContext";
+import { useSettings } from "@/hooks/useSettings";
+import { useProfile } from "@/hooks/useProfile";
 
 export function useDashboard(
   userId: string | null,
@@ -13,7 +17,19 @@ export function useDashboard(
   const [isPolling, setIsPolling] = useState(false);
 
   // --- Composed Hooks ---
-  // ...
+  const {
+    settings,
+    updateSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useSettings(userId);
+
+  const {
+    profile,
+    setProfile,
+    loading: profileLoading,
+    error: profileError,
+  } = useProfile(userId);
 
   // --- Queries ---
   const dashboardQuery = useQuery({
