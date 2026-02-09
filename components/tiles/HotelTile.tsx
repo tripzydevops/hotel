@@ -160,6 +160,11 @@ export default function HotelTile(props: HotelTileProps) {
       <div
         className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-4"}`}
       >
+        {/* 
+          Main Content Container: Added min-w-0 and flex-1 to verify 
+          that the text container can shrink and doesn't push the 
+          action buttons out of the card.
+        */}
         <div
           className={`flex items-center min-w-0 flex-1 ${isTarget ? "gap-3 sm:gap-4" : "gap-3"}`}
         >

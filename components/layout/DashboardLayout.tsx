@@ -130,6 +130,10 @@ export default function DashboardLayout({
             <h2 className="text-xl font-bold text-white tracking-tight">
               {getPageTitle()}
             </h2>
+            {/* 
+              User Request: Removed Date Display ("OCT 12 - OCT 26") 
+              and Search Bar to clean up the header UI. 
+            */}
           </div>
 
           <div className="flex items-center gap-6">
