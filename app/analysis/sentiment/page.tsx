@@ -564,7 +564,7 @@ export default function SentimentPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-                <div className="h-[280px]">
+                <div className="h-[300px] w-full">
                   {(() => {
                     const categories = [
                       "Cleanliness",
