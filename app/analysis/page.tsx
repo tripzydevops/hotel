@@ -14,7 +14,6 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
-import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
 import CalendarHeatmap from "@/components/analytics/CalendarHeatmap";
 import RateSpreadChart from "@/components/analytics/RateSpreadChart";
@@ -301,11 +300,6 @@ export default function AnalysisPage() {
             />
           </div>
         )}
-
-        {/* Rival Discovery Engine */}
-        <div className="mb-12">
-          <DiscoveryShard hotelId={data?.hotel_id} />
-        </div>
 
         {/* Agent Advisory Shard */}
         {data?.advisory_msg && (
