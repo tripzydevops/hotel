@@ -16,12 +16,15 @@ export default function ParityStats({
   const targetPrice = targetHotel?.price_info?.current_price || 0;
 
   // Calculate real metrics
+  // Filter for competitors where our price is higher (we are being undercut)
   const undercuts = competitors.filter(
     (c) =>
       c.price_info?.current_price && c.price_info.current_price < targetPrice,
   );
 
   const activeDiscrepancies = undercuts.length;
+
+  // Parity Score: Percentage of competitors NOT undercutting us
   const parityScore =
     competitors.length > 0
       ? Math.round(
@@ -29,6 +32,7 @@ export default function ParityStats({
         )
       : 100;
 
+  // Revenue Risk: Sum of price differences where we are losing on price
   const revenueRisk = undercuts.reduce((acc, c) => {
     const diff = targetPrice - (c.price_info?.current_price || 0);
     return acc + diff;

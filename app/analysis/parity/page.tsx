@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 export default function ParityPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
+  // Fetch real-time dashboard data including competitors and target hotel
   const { data, loading } = useDashboard(userId, t);
 
   return (

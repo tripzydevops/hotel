@@ -149,12 +149,13 @@ export default function RateMatrix({
 
         {/* Filter Row */}
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Stats badges */}
+          {/* Stats badges - Displays how many items are currently visible vs total available */}
           <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-1 rounded-full">
-            {displayedCompetitors.length} of {competitors.length} Hotels
+            Showing {displayedCompetitors.length} of {competitors.length}{" "}
+            Competitors
           </span>
           <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-1 rounded-full">
-            {displayedOTAs.length} of {allOTAs.length} OTAs
+            Showing {displayedOTAs.length} of {allOTAs.length} OTAs
           </span>
 
           <div className="flex-1" />

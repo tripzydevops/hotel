@@ -38,12 +38,14 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-12">
         {items.map((item, idx) => {
-          const posPercent = Math.round(
-            (item.positive / item.total_mentioned) * 100,
-          );
-          const negPercent = Math.round(
-            (item.negative / item.total_mentioned) * 100,
-          );
+          const posPercent =
+            item.total_mentioned > 0
+              ? Math.round((item.positive / item.total_mentioned) * 100)
+              : 0;
+          const negPercent =
+            item.total_mentioned > 0
+              ? Math.round((item.negative / item.total_mentioned) * 100)
+              : 0;
 
           return (
             <motion.div
