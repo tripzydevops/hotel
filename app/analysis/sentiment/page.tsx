@@ -803,8 +803,15 @@ export default function SentimentPage() {
                   {/* Render Area Fills First */}
                   {selectedHotelIds.map((id, hotelIdx) => {
                     const hotel = allHotels.find((h) => h.id === id);
-                    const history = sentimentHistory[id] || [];
-                    if (history.length < 2) return null;
+                    const rawHistory = sentimentHistory[id] || [];
+                    if (rawHistory.length < 2) return null;
+
+                    // 1. Sort Chronologically
+                    const history = [...rawHistory].sort(
+                      (a, b) =>
+                        new Date(a.recorded_at).getTime() -
+                        new Date(b.recorded_at).getTime(),
+                    );
 
                     const gradient = hotel?.isTarget
                       ? "url(#blue-area)"
@@ -813,18 +820,25 @@ export default function SentimentPage() {
                         : "none";
                     if (gradient === "none") return null;
 
-                    const points = history.map((h, i) => {
-                      const x = (i / (history.length - 1)) * 1000;
-                      const y = (1 - h.rating / 5) * 100;
+                    const startTime = new Date(
+                      history[0].recorded_at,
+                    ).getTime();
+                    const endTime = new Date(
+                      history[history.length - 1].recorded_at,
+                    ).getTime();
+                    const totalTime = endTime - startTime || 1;
+
+                    const points = history.map((h) => {
+                      const time = new Date(h.recorded_at).getTime();
+                      const x = ((time - startTime) / totalTime) * 1000;
+                      const y = (1 - (Number(h.rating) || 0) / 5) * 100;
                       return `${x},${y}`;
                     });
-
-                    const areaPoints = `0,100 ${points.join(" ")} 1000,100`;
 
                     return (
                       <polygon
                         key={`area-${id}`}
-                        points={areaPoints}
+                        points={`0,100 ${points.join(" ")} 1000,100`}
                         fill={gradient}
                         className="transition-all duration-700"
                       />
@@ -834,8 +848,14 @@ export default function SentimentPage() {
                   {/* Render Lines */}
                   {selectedHotelIds.map((id, hotelIdx) => {
                     const hotel = allHotels.find((h) => h.id === id);
-                    const history = sentimentHistory[id] || [];
-                    if (history.length < 2) return null;
+                    const rawHistory = sentimentHistory[id] || [];
+                    if (rawHistory.length < 2) return null;
+
+                    const history = [...rawHistory].sort(
+                      (a, b) =>
+                        new Date(a.recorded_at).getTime() -
+                        new Date(b.recorded_at).getTime(),
+                    );
 
                     const color = hotel?.isTarget
                       ? "#3b82f6"
@@ -844,13 +864,22 @@ export default function SentimentPage() {
                         : "#6b7280";
                     const isDashed = !hotel?.isTarget && hotelIdx !== 0;
 
+                    const startTime = new Date(
+                      history[0].recorded_at,
+                    ).getTime();
+                    const endTime = new Date(
+                      history[history.length - 1].recorded_at,
+                    ).getTime();
+                    const totalTime = endTime - startTime || 1;
+
                     return (
                       <polyline
                         key={`line-${id}`}
                         points={history
-                          .map((h, i) => {
-                            const x = (i / (history.length - 1)) * 1000;
-                            const y = (1 - h.rating / 5) * 100;
+                          .map((h) => {
+                            const time = new Date(h.recorded_at).getTime();
+                            const x = ((time - startTime) / totalTime) * 1000;
+                            const y = (1 - (Number(h.rating) || 0) / 5) * 100;
                             return `${x},${y}`;
                           })
                           .join(" ")}
@@ -869,14 +898,43 @@ export default function SentimentPage() {
                 </svg>
               </div>
 
-              {/* X-Axis Labels */}
-              <div className="flex justify-between mt-6 text-[11px] text-gray-500 font-bold uppercase tracking-widest">
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Aug</span>
-                <span>Sep</span>
-                <span>Oct</span>
-                <span>Nov</span>
+              {/* Dynamic X-Axis Labels */}
+              <div className="flex justify-between mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1">
+                {(() => {
+                  const id = selectedHotelIds[0];
+                  const history = sentimentHistory[id] || [];
+                  if (history.length < 2) {
+                    return timeframe === "daily" ? (
+                      <span>Mon</span>
+                    ) : (
+                      <span>Jun</span>
+                    );
+                  }
+
+                  const sorted = [...history].sort(
+                    (a, b) =>
+                      new Date(a.recorded_at).getTime() -
+                      new Date(b.recorded_at).getTime(),
+                  );
+
+                  const start = new Date(sorted[0].recorded_at);
+                  const end = new Date(sorted[sorted.length - 1].recorded_at);
+
+                  // Return 4 points across the period
+                  return [0, 0.33, 0.66, 1].map((pct, idx) => {
+                    const date = new Date(
+                      start.getTime() + (end.getTime() - start.getTime()) * pct,
+                    );
+                    return (
+                      <span key={idx}>
+                        {date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
