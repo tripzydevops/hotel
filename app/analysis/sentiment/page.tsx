@@ -19,8 +19,11 @@ import {
   Hotel,
   Trophy,
   Building2,
+  Radar,
 } from "lucide-react";
 import Link from "next/link";
+import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
+import { SentimentRadar } from "@/components/analytics/SentimentRadar";
 
 // Radial Progress Component
 const RadialProgress = ({
@@ -209,19 +212,21 @@ const CategoryBar = ({
         </span>
         <div className="flex items-center gap-1">
           <span className="text-xl font-bold text-white">
-            {myScore.toFixed(1)}
+            {myScore > 0 ? myScore.toFixed(1) : "N/A"}
           </span>
           <span className="text-[10px] text-gray-500 font-bold">/ 5.0</span>
         </div>
       </div>
       <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative border border-white/5">
         <div
-          className="h-full bg-blue-500 relative group"
-          style={{ width: `${(myScore / 5) * 100}%` }}
+          className={`h-full relative group ${myScore > 0 ? "bg-blue-500" : "bg-gray-700/30"}`}
+          style={{ width: `${(Math.max(myScore, 0.5) / 5) * 100}%` }}
         >
-          <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-            {t("sentiment.myHotel")}: {myScore.toFixed(1)}
-          </div>
+          {myScore > 0 && (
+            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+              {t("sentiment.myHotel")}: {myScore.toFixed(1)}
+            </div>
+          )}
         </div>
       </div>
       <div className="mt-2 space-y-1">
@@ -564,6 +569,38 @@ export default function SentimentPage() {
               </div>
 
               <div className="space-y-10">
+                {/* Radar Chart */}
+                <div className="h-[300px] mb-6">
+                  {(() => {
+                    const categories = [
+                      "Cleanliness",
+                      "Service",
+                      "Location",
+                      "Value",
+                    ];
+                    const radarData = categories.map((cat) => {
+                      const getScore = (hotel: any) =>
+                        hotel?.sentiment_breakdown?.find(
+                          (s: any) => s.name === cat || s.category === cat,
+                        )?.rating || 0;
+                      const marketAvgCat =
+                        allHotels.length > 0
+                          ? allHotels.reduce((sum, h) => sum + getScore(h), 0) /
+                            allHotels.length
+                          : 0;
+
+                      return {
+                        subject: cat,
+                        A: getScore(targetHotel),
+                        B: getScore(leader),
+                        C: Number(marketAvgCat.toFixed(1)),
+                        fullMark: 5,
+                      };
+                    });
+                    return <SentimentRadar data={radarData} />;
+                  })()}
+                </div>
+
                 {/* Cleanliness */}
                 <CategoryBar
                   category="Cleanliness"
@@ -636,6 +673,25 @@ export default function SentimentPage() {
                   }
                   marketAvg={marketAvgRating}
                 />
+
+                {/* Deep Dive Section (Moved from Overview) */}
+                <div className="pt-8 border-t border-white/5 mt-8">
+                  <SentimentBreakdown
+                    items={
+                      targetHotel.sentiment_breakdown?.map((s: any) => ({
+                        name: s.name || s.category,
+                        total_mentioned: s.total || 100, // Fallback if missing
+                        positive: Math.round((s.rating / 5) * (s.total || 100)), // Approximate
+                        negative: Math.round(
+                          ((5 - s.rating) / 5) * (s.total || 100) * 0.2,
+                        ), // Approx
+                        neutral: Math.round(
+                          ((5 - s.rating) / 5) * (s.total || 100) * 0.8,
+                        ), // Approx
+                      })) || []
+                    }
+                  />
+                </div>
               </div>
             </motion.div>
 

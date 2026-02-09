@@ -190,10 +190,10 @@ export default function AnalysisPage() {
           onDateChange={handleDateChange}
         />
 
-        {/* 2. Sentiment Analysis Breakdown */}
-        <div className="mb-8">
+        {/* 2. Sentiment Analysis Breakdown - MOVED TO SENTIMENT PAGE */}
+        {/* <div className="mb-8">
           <SentimentBreakdown items={data?.sentiment_breakdown} />
-        </div>
+        </div> */}
 
         {/* Global KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 overflow-visible">

@@ -26,7 +26,15 @@ export interface Hotel {
   created_at: string;
   amenities?: string[];
   images?: Array<{ thumbnail?: string; original?: string }>;
-  sentiment_breakdown?: Array<{ name: string; rating: number; total?: number }>;
+  sentiment_breakdown?: Array<{
+    name: string;
+    rating: number;
+    total?: number;
+    positive?: number;
+    negative?: number;
+    neutral?: number;
+    category?: string;
+  }>;
   guest_mentions?: Array<{
     text: string;
     count: number;
