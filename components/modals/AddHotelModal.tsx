@@ -44,8 +44,10 @@ export default function AddHotelModal({
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
-  const limit = PLAN_LIMITS[userPlan] || 5;
+  const limit = PLAN_LIMITS[userPlan] || 999;
   const isLimitReached = currentHotelCount >= limit;
+  // NOTE: The backend also enforces limits in create_hotel with admin bypass.
+  // We show a warning but do NOT disable the form — backend is the source of truth.
 
   // Update state if initial values change
   useEffect(() => {
@@ -417,7 +419,6 @@ export default function AddHotelModal({
               type="checkbox"
               id="isTarget"
               checked={isTarget}
-              disabled={isLimitReached}
               onChange={(e) => setIsTarget(e.target.checked)}
               className="w-4 h-4 rounded border-white/10 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -432,7 +433,7 @@ export default function AddHotelModal({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading || isLimitReached || (!city && !isManualEntry)}
+              disabled={loading || (!city && !isManualEntry)}
               className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold text-sm py-3.5 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
             >
               {loading ? (
