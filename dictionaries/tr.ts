@@ -351,5 +351,12 @@ export const tr = {
       rd: ".",
       th: ".",
     },
+    sentimentVoices: "Duygu Sesleri",
+    competitiveVulnerabilities: "Rekabetçi Zayıf Yönler",
+    agentIntelligence: "Ajan İstihbaratı",
+    topDriver: "Ana Faktör",
+    reasoningLogic: "Mantıksal Çıkarım",
+    extracted: "Çıkarılan",
+    positiveSignals: "pozitif misafir sinyali",
   },
 };

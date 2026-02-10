@@ -32,13 +32,21 @@ export default function RateMatrix({
   const [selectedOTAs, setSelectedOTAs] = useState<string[]>([]);
   const [showOTAFilter, setShowOTAFilter] = useState(false);
 
-  // Filtered competitors
-  const displayedCompetitors = useMemo(() => {
-    if (selectedHotels.length === 0) {
-      return competitors;
+  // Filtered hotels (Competitors + Target)
+  const displayedHotels = useMemo(() => {
+    // Start with competitors
+    let list = [...competitors];
+
+    // Prepend target hotel if it exists and isn't already in the list
+    if (targetHotel && !list.find((h) => h.id === targetHotel.id)) {
+      list = [targetHotel, ...list];
     }
-    return competitors.filter((c) => selectedHotels.includes(c.id));
-  }, [selectedHotels, competitors]);
+
+    if (selectedHotels.length === 0) {
+      return list;
+    }
+    return list.filter((c) => selectedHotels.includes(c.id));
+  }, [selectedHotels, competitors, targetHotel]);
 
   // Discover all unique OTAs from target hotel and all competitors
   const allOTAs = useMemo(() => {
@@ -151,8 +159,7 @@ export default function RateMatrix({
         <div className="flex items-center gap-3 flex-wrap">
           {/* Stats badges - Displays how many items are currently visible vs total available */}
           <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-1 rounded-full">
-            Showing {displayedCompetitors.length} of {competitors.length}{" "}
-            Competitors
+            Showing {displayedHotels.length} Hotels
           </span>
           <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-1 rounded-full">
             Showing {displayedOTAs.length} of {allOTAs.length} OTAs
@@ -339,27 +346,34 @@ export default function RateMatrix({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {displayedCompetitors.map((comp, idx) => {
+            {displayedHotels.map((comp, idx) => {
               const compPrice = comp.price_info?.current_price;
               const offers = comp.price_info?.offers || [];
+              const isTarget = targetHotel && comp.id === targetHotel.id;
 
               return (
                 <tr
                   key={comp.id || idx}
-                  className="group hover:bg-white/5 transition-all"
+                  className={`group hover:bg-white/5 transition-all ${isTarget ? "bg-blue-500/5 hover:bg-blue-500/10" : ""}`}
                 >
                   <td className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[#050B18]/90 backdrop-blur-sm z-10">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
-                      <span className="text-[10px] font-bold text-slate-500">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isTarget ? "bg-blue-500/20 border-blue-500/30" : "bg-white/5 border-white/5"}`}
+                    >
+                      <span
+                        className={`text-[10px] font-bold ${isTarget ? "text-blue-400" : "text-slate-500"}`}
+                      >
                         #{idx + 1}
                       </span>
                     </div>
                     <div>
-                      <p className="font-bold text-white text-xs">
+                      <p
+                        className={`font-bold text-xs ${isTarget ? "text-blue-400" : "text-white"}`}
+                      >
                         {comp.name}
                       </p>
                       <p className="text-[9px] text-slate-500 uppercase tracking-tighter">
-                        Competitor
+                        {isTarget ? "My Hotel" : "Competitor"}
                       </p>
                     </div>
                   </td>
@@ -396,7 +410,7 @@ export default function RateMatrix({
         </table>
       </div>
 
-      {displayedCompetitors.length === 0 && (
+      {displayedHotels.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-sm text-slate-500">No competitor data available</p>
           <p className="text-xs text-slate-600 mt-1">

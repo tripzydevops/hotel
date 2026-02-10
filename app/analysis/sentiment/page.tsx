@@ -213,7 +213,7 @@ const CategoryBar = ({
         </span>
         <div className="flex items-center gap-1">
           <span className="text-xl font-bold text-white">
-            {myScore > 0 ? myScore.toFixed(1) : "N/A"}
+            {myScore > 0 ? myScore.toFixed(2) : "N/A"}
           </span>
           <span className="text-[10px] text-gray-500 font-bold">/ 5.0</span>
         </div>
@@ -225,7 +225,7 @@ const CategoryBar = ({
         >
           {myScore > 0 && (
             <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-              {t("sentiment.myHotel")}: {myScore.toFixed(1)}
+              {t("sentiment.myHotel")}: {myScore.toFixed(2)}
             </div>
           )}
         </div>
@@ -242,7 +242,7 @@ const CategoryBar = ({
             />
           </div>
           <span className="text-xs text-[#D4AF37] font-bold w-8 text-right">
-            {leaderScore.toFixed(1)}
+            {leaderScore.toFixed(2)}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -256,7 +256,7 @@ const CategoryBar = ({
             />
           </div>
           <span className="text-xs text-gray-400 w-8 text-right">
-            {marketAvg.toFixed(1)}
+            {marketAvg.toFixed(2)}
           </span>
         </div>
       </div>
@@ -478,7 +478,7 @@ export default function SentimentPage() {
               <ScoreCard
                 type={isTargetLeader ? "leader" : "my-hotel"}
                 name={targetHotel.name || "My Hotel"}
-                score={Number((targetHotel.rating || 0).toFixed(1))}
+                score={Number((targetHotel.rating || 0).toFixed(2))}
                 trend={
                   targetHotel.price_info?.trend === "up"
                     ? "up"
@@ -509,7 +509,7 @@ export default function SentimentPage() {
                   key={comp.id}
                   type={isCompLeader ? "leader" : "competitor"}
                   name={comp.name || `Competitor ${idx + 1}`}
-                  score={Number((comp.rating || 0).toFixed(1))}
+                  score={Number((comp.rating || 0).toFixed(2))}
                   trend={
                     comp.price_info?.trend === "up"
                       ? "up"
