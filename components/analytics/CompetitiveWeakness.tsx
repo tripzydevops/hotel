@@ -64,10 +64,10 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
         <ShieldAlert className="w-6 h-6 text-red-400" />
         <div>
           <h3 className="text-xl font-bold text-white">
-            Competitive Vulnerabilities
+            {t("sentiment.competitiveVulnerabilities")}
           </h3>
           <p className="text-xs text-gray-400">
-            Identified areas where competitors are underperforming
+            {t("sentiment.vulnerabilityDesc")}
           </p>
         </div>
       </div>
@@ -86,7 +86,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
               className="bg-[#15294A] rounded-xl p-4 border border-red-500/10 hover:border-red-500/30 transition-all group relative overflow-hidden flex flex-col h-full"
             >
               <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500/10 text-red-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-red-500/10">
-                Threat Detected
+                {t("sentiment.threatDetected")}
               </div>
 
               <div className="flex items-center gap-2.5 mb-4">
@@ -99,10 +99,10 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                   </h4>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">
-                      Opportunity:
+                      {t("sentiment.opportunity")}:
                     </span>
                     <span className="text-[8px] text-green-400 font-bold">
-                      High
+                      {t("sentiment.high")}
                     </span>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                       <div className="flex items-start gap-1">
                         <TrendingDown className="w-2.5 h-2.5 text-red-500/50 mt-0.5" />
                         <p className="text-[10px] text-gray-500 leading-tight">
-                          Guest complaint:{" "}
+                          {t("sentiment.guestComplaint")}:{" "}
                           <span className="text-red-300 font-bold italic">
                             "{w.keyword}"
                           </span>

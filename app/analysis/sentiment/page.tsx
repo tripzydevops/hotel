@@ -545,7 +545,7 @@ export default function SentimentPage() {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-blue-500" />
-                  Performance Pulse
+                  {t("sentiment.performancePulse")}
                 </h3>
                 <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold">
                   <div className="flex items-center gap-1.5">
@@ -631,7 +631,7 @@ export default function SentimentPage() {
                 <div className="flex items-center gap-2 mb-6">
                   <Brain className="w-5 h-5 text-green-400" />
                   <h3 className="text-lg font-bold text-white">
-                    Sentiment Voices
+                    {t("sentiment.sentimentVoices")}
                   </h3>
                 </div>
 
@@ -648,7 +648,7 @@ export default function SentimentPage() {
                       />
                     )) || (
                     <p className="text-gray-500 italic text-xs">
-                      No mentions found
+                      {t("sentiment.noMentions")}
                     </p>
                   )}
                 </div>
@@ -660,11 +660,11 @@ export default function SentimentPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-blue-400" />
                         <h4 className="text-xs font-bold text-blue-300">
-                          Agent Intelligence
+                          {t("sentiment.agentIntelligence")}
                         </h4>
                       </div>
                       <p className="text-[11px] text-blue-200/80 leading-relaxed mb-4">
-                        Top driver:{" "}
+                        {t("sentiment.topDriver")}:{" "}
                         <span className="text-green-400 font-bold">
                           {targetHotel.guest_mentions.find(
                             (m) => m.sentiment === "positive",
@@ -674,15 +674,13 @@ export default function SentimentPage() {
                       </p>
                       <div className="pt-3 border-t border-blue-400/10">
                         <p className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest mb-1.5">
-                          Reasoning Logic
+                          {t("sentiment.reasoningLogic")}
                         </p>
-                        <p className="text-[10px] text-blue-300/50 italic font-medium leading-relaxed">
-                          Extracted{" "}
-                          {targetHotel.guest_mentions.find(
-                            (m) => m.sentiment === "positive",
-                          )?.count || "multiple"}{" "}
-                          positive guest signals for this hotel.
-                        </p>
+                        {t("sentiment.extracted")}{" "}
+                        {targetHotel.guest_mentions.find(
+                          (m) => m.sentiment === "positive",
+                        )?.count || t("sentiment.multiple")}{" "}
+                        {t("sentiment.positiveSignals")}.
                       </div>
                     </div>
                   )}

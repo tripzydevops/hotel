@@ -358,5 +358,13 @@ export const tr = {
     reasoningLogic: "Mantıksal Çıkarım",
     extracted: "Çıkarılan",
     positiveSignals: "pozitif misafir sinyali",
+    performancePulse: "Performans Nabzı",
+    vulnerabilityDesc: "Rakiplerin düşük performans gösterdiği alanlar",
+    threatDetected: "TEHDİT ALGILANDI",
+    opportunity: "Fırsat",
+    guestComplaint: "Misafir Şikayeti",
+    high: "Yüksek",
+    noMentions: "Bahse değer yorum bulunamadı",
+    multiple: "birden çok",
   },
 };
