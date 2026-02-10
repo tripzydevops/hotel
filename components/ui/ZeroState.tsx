@@ -31,7 +31,7 @@ export default function ZeroState({ onAddHotel }: ZeroStateProps) {
 
       <button
         onClick={onAddHotel}
-        className="btn-gold text-lg px-8 py-4 shadow-[0_0_20px_rgba(255,215,0,0.15)] hover:shadow-[0_0_30px_rgba(255,215,0,0.3)] transform hover:-translate-y-1 transition-all"
+        className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-extrabold text-lg px-8 py-4 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transform hover:-translate-y-1 transition-all"
       >
         {t("common.addHotel")}
       </button>

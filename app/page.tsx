@@ -248,10 +248,16 @@ export default function Dashboard() {
 
             <button
               onClick={() => setIsAddHotelOpen(true)}
-              className="p-3 rounded-xl bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/30 text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/30 transition-all hover:scale-105 active:scale-95 shadow-xl"
-              title="Add Hotel"
+              className="
+                group relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 p-[1px] shadow-2xl shadow-amber-500/20 transition-all active:scale-95 hover:scale-105
+              "
             >
-              <Plus className="w-5 h-5" />
+              <div className="relative flex items-center gap-2 bg-[#050B18] px-5 py-2.5 rounded-[11px] transition-colors group-hover:bg-gradient-to-r group-hover:from-amber-500 group-hover:to-yellow-500">
+                <Plus className="w-4 h-4 text-amber-400 transition-colors group-hover:text-black stroke-[3px]" />
+                <span className="font-bold text-amber-400 text-sm uppercase tracking-widest transition-colors group-hover:text-black">
+                  {t("common.addHotel")}
+                </span>
+              </div>
             </button>
           </div>
         </div>
