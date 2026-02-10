@@ -1435,6 +1435,49 @@ async def discover_competitors(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+def _transform_serp_links(breakdown):
+    """
+    Transforms raw SerpApi JSON links into user-friendly Google Travel URLs.
+    Extracts 'property_token' to construct: https://www.google.com/travel/hotels/entity/{token}/reviews
+    """
+    if not breakdown or not isinstance(breakdown, list):
+        return breakdown
+    
+    import re
+    
+    transformed = []
+    for item in breakdown:
+        # Safety check for dict items
+        if not isinstance(item, dict):
+            transformed.append(item)
+            continue
+            
+        new_item = item.copy()
+        link = new_item.get("serpapi_link")
+        
+        # Check if it's a SerpApi link that needs fixing
+        if link and "serpapi.com" in link:
+            try:
+                # Decode URL first to handle encoded characters
+                from urllib.parse import unquote
+                decoded_link = unquote(link)
+                
+                # Extract property_token (e.g. CgoI...) - catch anywhere
+                token_match = re.search(r"property_token=([^&]+)", decoded_link)
+                
+                if token_match:
+                    token = token_match.group(1)
+                    # Construct Google Travel URL
+                    new_item["serpapi_link"] = f"https://www.google.com/travel/hotels/entity/{token}/reviews"
+            except Exception:
+                pass # Fail silently and keep original link
+            
+        transformed.append(new_item)
+        
+    return transformed
+
+
 @app.get("/api/analysis/{user_id}")
 async def get_analysis(
     user_id: UUID, 
@@ -1745,7 +1788,7 @@ async def get_analysis(
             "all_hotels": all_hotels_list,
             "min_hotel": min_hotel,
             "max_hotel": max_hotel,
-            "sentiment_breakdown": target_h.get("sentiment_breakdown") if target_h else None,
+            "sentiment_breakdown": _transform_serp_links(target_h.get("sentiment_breakdown")) if target_h else None,
             "guest_mentions": target_h.get("guest_mentions") if target_h else None
         }
         
@@ -3416,3 +3459,7 @@ async def run_scheduler_check():
                 
     except Exception as e:
         print(f"CRON ERROR: {e}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
