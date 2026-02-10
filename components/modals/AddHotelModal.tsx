@@ -210,14 +210,12 @@ export default function AddHotelModal({
                 type="text"
                 required
                 value={name}
-                disabled={isLimitReached}
                 onChange={(e) => {
                   setName(e.target.value);
                   setSerpApiId(undefined); // Reset ID if user types manually
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
-                  !isLimitReached &&
                   name.length >= 2 &&
                   setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
                   setShowSuggestions(true)
@@ -228,7 +226,7 @@ export default function AddHotelModal({
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={t("addHotel.namePlaceholder")}
               />
-              {name.length > 0 && !isSearching && !isLimitReached && (
+              {name.length > 0 && !isSearching && (
                 <button
                   type="button"
                   onClick={() => {
@@ -301,7 +299,7 @@ export default function AddHotelModal({
                 <div className="relative">
                   <select
                     value={country}
-                    disabled={isLimitReached || isManualEntry}
+                    disabled={isManualEntry}
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50 transition-all"
                   >
@@ -382,7 +380,6 @@ export default function AddHotelModal({
                 </label>
                 <select
                   value={currency}
-                  disabled={isLimitReached}
                   onChange={(e) => setCurrency(e.target.value)}
                   className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50"
                 >
