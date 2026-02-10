@@ -278,6 +278,49 @@ export const en = {
     upgrade: "Upgrade",
     contactSales:
       "Needs enterprise-grade compliance? Contact Sales for volume licensing.",
+    // Plan-specific keys used by SubscriptionModal.tsx
+    price: {
+      starter: "$49",
+      pro: "$149",
+      enterprise: "$399",
+    },
+    period: {
+      mo: "/mo",
+      custom: "/custom",
+    },
+    starter: {
+      name: "Starter",
+      description:
+        "Perfect for small hotels getting started with rate monitoring.",
+      features: {
+        0: "Up to 5 hotels tracked",
+        1: "Daily rate scans",
+        2: "Basic competitor analysis",
+        3: "Email alerts",
+      },
+    },
+    pro: {
+      name: "Professional",
+      description: "Advanced intelligence for growing hotel chains.",
+      features: {
+        0: "Up to 25 hotels tracked",
+        1: "Hourly rate scans",
+        2: "AI-powered competitor insights",
+        3: "Multi-channel alerts",
+        4: "Revenue optimization reports",
+      },
+    },
+    enterprise: {
+      name: "Enterprise",
+      description: "Full-scale intelligence for hotel groups and chains.",
+      features: {
+        0: "Unlimited hotels tracked",
+        1: "Real-time rate monitoring",
+        2: "Custom AI agent workflows",
+        3: "Dedicated account manager",
+        4: "API access & integrations",
+      },
+    },
   },
   alerts: {
     title: "Alert Center",
