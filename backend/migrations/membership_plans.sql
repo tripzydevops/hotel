@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS membership_plans (
     name TEXT NOT NULL UNIQUE,
     price_monthly NUMERIC(10, 2) NOT NULL DEFAULT 0,
     hotel_limit INTEGER NOT NULL DEFAULT 1,
+    monthly_scan_limit INTEGER NOT NULL DEFAULT 100,
     scan_frequency_limit TEXT DEFAULT 'daily' CHECK (
         scan_frequency_limit IN ('hourly', 'daily', 'weekly')
     ),
@@ -16,6 +17,7 @@ INSERT INTO membership_plans (
         name,
         price_monthly,
         hotel_limit,
+        monthly_scan_limit,
         scan_frequency_limit,
         features
     )
@@ -23,6 +25,7 @@ VALUES (
         'Trial',
         0,
         1,
+        100,
         'daily',
         '["1 Hotel Monitor", "Daily Scans", "Email Alerts"]'
     ),
@@ -30,6 +33,7 @@ VALUES (
         'Starter',
         29,
         5,
+        500,
         'daily',
         '["5 Hotel Monitors", "Daily Scans", "Email & Push Alerts", "Basic Reports"]'
     ),
@@ -37,6 +41,7 @@ VALUES (
         'Pro',
         99,
         25,
+        2500,
         'hourly',
         '["25 Hotel Monitors", "Hourly Scans", "All Alert Types", "Advanced Analytics", "Priority Support"]'
     ),
@@ -44,6 +49,7 @@ VALUES (
         'Enterprise',
         299,
         100,
+        10000,
         'hourly',
         '["100+ Hotel Monitors", "Hourly High-Frequency", "Dedicated Account Manager", "Custom Integrations"]'
     ) ON CONFLICT (name) DO NOTHING;

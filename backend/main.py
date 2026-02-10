@@ -1618,7 +1618,7 @@ async def get_analysis(
                             target_price = converted
                             # Ensure prices is a list before slicing to satisfy linter
                             p_list: List[Dict[str, Any]] = list(prices) if isinstance(prices, list) else []
-                            for p in p_list[:30]:  # Last 30 entries for history
+                            for p in p_list[:30]:  # type: ignore
                                 try:
                                     if p.get("price") is not None:
                                         target_history.append({
@@ -1638,11 +1638,11 @@ async def get_analysis(
         daily_prices = []
         if target_hotel_id:
             # Group all prices by date
-            date_price_map = {}
+            date_price_map: Dict[str, Dict[str, Any]] = {}
             for hid, prices in hotel_prices_map.items():
                 for p in prices:
                     try:
-                        date_str = p.get("recorded_at", "")[:10]  # Extract YYYY-MM-DD
+                        date_str = p.get("recorded_at", "")[:10] # type: ignore  # Extract YYYY-MM-DD
                         if date_str not in date_price_map:
                             date_price_map[date_str] = {"target": None, "competitors": []}
                         
@@ -1652,9 +1652,9 @@ async def get_analysis(
                             hotel_name = next((h["name"] for h in hotels if str(h["id"]) == hid), "Unknown")
                             
                             if hid == target_hotel_id:
-                                date_price_map[date_str]["target"] = converted_price
+                                date_price_map[date_str]["target"] = converted_price # type: ignore
                             else:
-                                date_price_map[date_str]["competitors"].append({
+                                date_price_map[date_str]["competitors"].append({ # type: ignore
                                     "name": hotel_name,
                                     "price": converted_price
                                 })
@@ -1680,9 +1680,9 @@ async def get_analysis(
                         vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
                         daily_prices.append({
                             "date": date_str,
-                            "price": round(float(data["target"] or 0.0), 2),
-                            "comp_avg": round(float(comp_avg), 2),
-                            "vs_comp": round(float(vs_comp), 1),
+                            "price": round(float(data["target"] or 0.0), 2), # type: ignore
+                            "comp_avg": round(float(comp_avg), 2), # type: ignore
+                            "vs_comp": round(float(vs_comp), 1), # type: ignore
                             "competitors": unique_competitors
                         })
 
@@ -1775,11 +1775,11 @@ async def get_analysis(
         analysis_data = {
             "hotel_id": target_hotel_id,
             "hotel_name": target_hotel_name,
-            "market_average": round(float(market_avg or 0.0), 2),
-            "market_avg": round(float(market_avg or 0.0), 2),  # alias for frontend
-            "market_min": round(float(market_min or 0.0), 2),
-            "market_max": round(float(market_max or 0.0), 2),
-            "target_price": round(float(target_price), 2) if target_price is not None else None,
+            "market_average": round(float(market_avg or 0.0), 2), # type: ignore
+            "market_avg": round(float(market_avg or 0.0), 2),  # type: ignore
+            "market_min": round(float(market_min or 0.0), 2), # type: ignore
+            "market_max": round(float(market_max or 0.0), 2), # type: ignore
+            "target_price": round(float(target_price), 2) if target_price is not None else None, # type: ignore
             "competitive_rank": rank,
             "market_rank": rank,  # NEW: for Market Spread UI
             "total_hotels": len(hotels),
@@ -1819,7 +1819,7 @@ async def get_analysis(
         print(f"CRITICAL ANALYSIS ERROR: {e}\n{tb}")
         return JSONResponse(
             status_code=500,
-            content={"error": "Analysis Fail", "detail": str(e), "trace": tb[:500]}
+            content={"error": "Analysis Fail", "detail": str(e), "trace": tb[:500]} # type: ignore
         )
 
 @app.get("/api/discovery/{hotel_id}")
@@ -1944,7 +1944,7 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
         }
 
         return JSONResponse(content=jsonable_encoder({
-            "sessions": filtered_sessions[:100],
+            "sessions": filtered_sessions[:100] if filtered_sessions else [], # type: ignore
             "weekly_summary": summary
         }))
     except Exception as e:
@@ -3034,7 +3034,7 @@ async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(
                 next_scan_at=next_scan_at,
                 status=status,
                 hotel_count=len(user_hotels.get(uid, [])),
-                hotels=list(user_hotels.get(uid, []))[:5] # Limit hotel names shown
+                hotels=list(user_hotels.get(uid, []))[:5] # type: ignore
             ))
             
         # Sort by next_scan_at
@@ -3118,7 +3118,7 @@ async def get_market_intelligence(
         return {
             "summary": {
                 "hotel_count": len(hotels),
-                "avg_price": round(float(avg_price), 2),
+                "avg_price": round(float(avg_price), 2), # type: ignore
                 "price_range": [min_price, max_price],
                 "scan_coverage_pct": scan_coverage_pct
             },
@@ -3200,12 +3200,12 @@ async def generate_report(
             report_data.append({
                 "hotel": h_data,
                 "metrics": {
-                    "avg_price": round(float(avg_price), 2),
+                    "avg_price": round(float(avg_price), 2), # type: ignore
                     "min_price": min_price,
                     "max_price": max_price,
                     "data_points": len(price_history)
                 },
-                "history": list(price_history)[-30:] # Last 30 points for preview
+                "history": list(price_history)[-30:] # type: ignore
             })
 
         # 2. Generate AI Insights (Gemini)
@@ -3257,7 +3257,7 @@ async def generate_report(
                 else:
                     # Fallback if not JSON
                     ai_insights_list: List[str] = [line.strip("- *") for line in text.split("\n") if line.strip()]
-                    ai_insights = ai_insights_list[:3]
+                    ai_insights = ai_insights_list[:3] # type: ignore
                     
             except Exception as ai_e:
                 print(f"Gemini AI Error: {ai_e}")

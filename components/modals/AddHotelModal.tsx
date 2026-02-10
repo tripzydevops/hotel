@@ -18,14 +18,10 @@ interface AddHotelModalProps {
   initialName?: string;
   initialLocation?: string;
   currentHotelCount?: number;
+  userPlan?: string;
 }
 
-const PLAN_LIMITS: Record<string, number> = {
-  trial: 1,
-  starter: 5,
-  pro: 25,
-  enterprise: 999,
-};
+import { PLAN_LIMITS } from "@/lib/constants";
 
 export default function AddHotelModal({
   isOpen,
@@ -188,7 +184,7 @@ export default function AddHotelModal({
         {isLimitReached && (
           <div className="absolute top-0 left-0 right-0 bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2 justify-center">
             <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
-              {t("addHotel.limitReached")}
+              {t("addHotel.limitReached", { 0: limit })}
             </span>
           </div>
         )}
@@ -212,7 +208,7 @@ export default function AddHotelModal({
             <div className="absolute inset-0 z-10 bg-[var(--deep-ocean-card)]/50 backdrop-blur-[1px] flex items-center justify-center top-[80px]">
               <div className="bg-black/80 px-4 py-3 rounded-lg border border-white/10 text-center shadow-2xl">
                 <p className="text-white font-bold mb-1">
-                  {t("addHotel.limitReached")}
+                  {t("addHotel.limitReached", { 0: limit })}
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">
                   {t("addHotel.limitDesc")}
@@ -446,7 +442,7 @@ export default function AddHotelModal({
                   <Plus className="w-4 h-4 text-black stroke-[3px]" />
                   <span>
                     {isLimitReached
-                      ? t("addHotel.limitReached")
+                      ? t("addHotel.limitReached", { 0: limit })
                       : t("addHotel.submitButton")}
                   </span>
                 </>

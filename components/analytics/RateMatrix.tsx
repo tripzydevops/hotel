@@ -13,13 +13,17 @@ import { HotelWithPrice } from "@/types";
 interface RateMatrixProps {
   targetHotel?: HotelWithPrice | null;
   competitors?: HotelWithPrice[];
+  userPlan?: string;
 }
 
 const DEFAULT_OTA_COUNT = 6;
 
+import { PLAN_LIMITS } from "@/lib/constants";
+
 export default function RateMatrix({
   targetHotel,
   competitors = [],
+  userPlan = "trial",
 }: RateMatrixProps) {
   const targetPrice = targetHotel?.price_info?.current_price || 0;
   const currency = targetHotel?.price_info?.currency || "TRY";
@@ -118,7 +122,8 @@ export default function RateMatrix({
       if (exists) {
         return prev.filter((h) => h !== hotelId);
       }
-      if (prev.length >= 5) return prev;
+      const limit = PLAN_LIMITS[userPlan] || 5;
+      if (prev.length >= limit) return prev;
       return [...prev, hotelId];
     });
   };

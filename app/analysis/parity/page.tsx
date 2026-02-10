@@ -14,7 +14,7 @@ export default function ParityPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
   // Fetch real-time dashboard data including competitors and target hotel
-  const { data, loading } = useDashboard(userId, t);
+  const { data, profile, loading } = useDashboard(userId, t);
 
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
@@ -79,6 +79,7 @@ export default function ParityPage() {
             <RateMatrix
               targetHotel={data?.target_hotel}
               competitors={data?.competitors || []}
+              userPlan={profile?.plan_type || "trial"}
             />
           </motion.div>
 

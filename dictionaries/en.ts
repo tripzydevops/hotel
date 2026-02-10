@@ -122,7 +122,7 @@ export const en = {
     currencyLabel: "Currency",
     targetLabel: "This is my hotel (Target Hotel)",
     submitButton: "Add Hotel Monitor",
-    limitReached: "Hotel Limit Reached (Max 5)",
+    limitReached: "Hotel Limit Reached (Max {0})",
     limitDesc: "Upgrade to add more hotels.",
     globalMatch: "Global",
     noMatch: "No database matches",

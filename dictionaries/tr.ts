@@ -124,7 +124,7 @@ export const tr = {
     currencyLabel: "Para Birimi",
     targetLabel: "Bu benim otelim (Hedef Otel)",
     submitButton: "Otel Takibini Ekle",
-    limitReached: "Otel Limitine Ulaşıldı (Maks 5)",
+    limitReached: "Otel Limitine Ulaşıldı (Maks {0})",
     limitDesc: "Daha fazla otel eklemek için yükseltin.",
     globalMatch: "Küresel",
     noMatch: "Veritabanı eşleşmesi yok",
