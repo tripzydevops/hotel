@@ -1617,7 +1617,7 @@ async def get_analysis(
                         if is_target:
                             target_price = converted
                             # Ensure prices is a list before slicing to satisfy linter
-                            p_list = list(prices) if isinstance(prices, list) else []
+                            p_list: List[Dict[str, Any]] = list(prices) if isinstance(prices, list) else []
                             for p in p_list[:30]:  # Last 30 entries for history
                                 try:
                                     if p.get("price") is not None:
@@ -1667,7 +1667,8 @@ async def get_analysis(
                     # Deduplicate competitors by hotel name (keep first/latest price)
                     seen_hotels = set()
                     unique_competitors = []
-                    for c in data["competitors"]:
+                    comps = data.get("competitors") or []
+                    for c in comps:
                         if c["name"] not in seen_hotels:
                             seen_hotels.add(c["name"])
                             unique_competitors.append(c)
@@ -1679,7 +1680,7 @@ async def get_analysis(
                         vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
                         daily_prices.append({
                             "date": date_str,
-                            "price": round(float(data["target"]), 2),
+                            "price": round(float(data["target"] or 0.0), 2),
                             "comp_avg": round(float(comp_avg), 2),
                             "vs_comp": round(float(vs_comp), 1),
                             "competitors": unique_competitors
@@ -1718,24 +1719,32 @@ async def get_analysis(
         q_y = max(-50.0, min(50.0, float(sentiment_index) - 100.0))
         
         # Quadrant Label Logic
+        # Quadrant Label Logic
+        advisory_keys = []
         if ari >= 100 and sentiment_index >= 100:
             q_label = "Premium King"
             advisory = "Strategic Peak: Your premium pricing is well-supported by superior guest sentiment."
+            advisory_keys.append("premium")
         elif ari < 100 and sentiment_index >= 100:
             q_label = "Value Leader"
             advisory = "Expansion Opportunity: You offer the best value to price ratio in the market."
+            advisory_keys.append("value")
         elif ari >= 100 and sentiment_index < 100:
             q_label = "Danger Zone"
             advisory = "Caution: Your pricing is currently higher than supported by market guest sentiment."
+            advisory_keys.append("danger")
         else: # Both < 100
             q_label = "Budget / Economy"
             advisory = "Volume Strategy: Your low rates are attracting budget-conscious guests."
+            advisory_keys.append("volume")
 
         # Specific secondary advice
         if sentiment_index < 90:
             advisory += " Focus on reputation management."
+            advisory_keys.append("reputation_focus")
         elif ari > 120:
              advisory += " Monitor competitors for aggressive price cuts."
+             advisory_keys.append("aggressive_monitoring")
             
         # 8. Extract Competitors (non-target hotels with prices)
         competitors_list = []
@@ -1766,10 +1775,10 @@ async def get_analysis(
         analysis_data = {
             "hotel_id": target_hotel_id,
             "hotel_name": target_hotel_name,
-            "market_average": round(float(market_avg or 0), 2),
-            "market_avg": round(float(market_avg or 0), 2),  # alias for frontend
-            "market_min": round(float(market_min or 0), 2),
-            "market_max": round(float(market_max or 0), 2),
+            "market_average": round(float(market_avg or 0.0), 2),
+            "market_avg": round(float(market_avg or 0.0), 2),  # alias for frontend
+            "market_min": round(float(market_min or 0.0), 2),
+            "market_max": round(float(market_max or 0.0), 2),
             "target_price": round(float(target_price), 2) if target_price is not None else None,
             "competitive_rank": rank,
             "market_rank": rank,  # NEW: for Market Spread UI
@@ -1777,14 +1786,21 @@ async def get_analysis(
             "competitors": competitors_list,
             "price_history": target_history,
             "display_currency": display_currency,
-            "ari": round(float(ari or 0.0), 1),
-            "sentiment_index": round(float(sentiment_index or 0.0), 1),
+            "market_rank": rank,  # NEW: for Market Spread UI
+            "total_hotels": len(hotels),
+            "competitors": competitors_list,
+            "price_history": target_history,
+            "display_currency": display_currency,
+            "ari": round(float(ari or 0.0), 1), # type: ignore
+            "sentiment_index": round(float(sentiment_index or 0.0), 1), # type: ignore
+            "sentimet_index": round(float(sentiment_index or 0.0), 1), # type: ignore
             "advisory_msg": advisory,
-            "quadrant_x": round(float(q_x), 1),
-            "quadrant_y": round(float(q_y), 1),
+            "advisory_keys": advisory_keys,
+            "quadrant_x": round(float(q_x), 1), # type: ignore
+            "quadrant_y": round(float(q_y), 1), # type: ignore
             "quadrant_label": q_label,
-            "target_rating": round(float(target_h.get("rating") or 0.0), 1) if target_h else 0.0,
-            "market_rating": round(float(sum(float(h.get("rating") or 0) for h in hotels) / len(hotels)), 1) if hotels else 0.0,
+            "target_rating": round(float(target_h.get("rating") or 0.0), 1) if target_h else 0.0, # type: ignore
+            "market_rating": round(float(sum(float(h.get("rating") or 0) for h in hotels) / len(hotels)), 1) if hotels else 0.0, # type: ignore
             # NEW fields for enhanced UI
             "price_rank_list": price_rank_list,
             "daily_prices": daily_prices,
@@ -1914,7 +1930,7 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
         # Re-reading user request: "remove these scans that have no data".
         # Safe bet: filter out hotels_count == 0 or null.
         
-        filtered_sessions = [
+        filtered_sessions: List[Dict[str, Any]] = [
             s for s in all_sessions 
             if (s.get("hotels_count") is not None and s.get("hotels_count") > 0)
         ]
@@ -3018,7 +3034,7 @@ async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(
                 next_scan_at=next_scan_at,
                 status=status,
                 hotel_count=len(user_hotels.get(uid, [])),
-                hotels=user_hotels.get(uid, [])[:5] # Limit hotel names shown
+                hotels=list(user_hotels.get(uid, []))[:5] # Limit hotel names shown
             ))
             
         # Sort by next_scan_at
@@ -3102,7 +3118,7 @@ async def get_market_intelligence(
         return {
             "summary": {
                 "hotel_count": len(hotels),
-                "avg_price": round(avg_price, 2),
+                "avg_price": round(float(avg_price), 2),
                 "price_range": [min_price, max_price],
                 "scan_coverage_pct": scan_coverage_pct
             },
@@ -3184,12 +3200,12 @@ async def generate_report(
             report_data.append({
                 "hotel": h_data,
                 "metrics": {
-                    "avg_price": round(avg_price, 2),
+                    "avg_price": round(float(avg_price), 2),
                     "min_price": min_price,
                     "max_price": max_price,
                     "data_points": len(price_history)
                 },
-                "history": price_history[-30:] # Last 30 points for preview
+                "history": list(price_history)[-30:] # Last 30 points for preview
             })
 
         # 2. Generate AI Insights (Gemini)
@@ -3240,7 +3256,8 @@ async def generate_report(
                     ai_insights = json.loads(text)
                 else:
                     # Fallback if not JSON
-                    ai_insights = [line.strip("- *") for line in text.split("\n") if line.strip()][:3]
+                    ai_insights_list: List[str] = [line.strip("- *") for line in text.split("\n") if line.strip()]
+                    ai_insights = ai_insights_list[:3]
                     
             except Exception as ai_e:
                 print(f"Gemini AI Error: {ai_e}")

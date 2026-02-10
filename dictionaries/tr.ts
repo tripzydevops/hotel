@@ -202,6 +202,22 @@ export const tr = {
     minLabel: "Min",
     maxLabel: "Maks",
     processing: "İstihbarat İşleniyor...",
+    advisory: {
+      title: "Ajan İstihbarat Tavsiyesi",
+      generatedBy:
+        "Otonom Analist Ajan tarafından oluşturuldu • Gerçek zamanlı Rehberlik",
+      premium:
+        "Stratejik Zirve: Premium fiyatlandırmanız üstün misafir memnuniyeti ile destekleniyor.",
+      value:
+        "Genişleme Fırsatı: Pazarda fiyat/performans oranı en iyi olan sizsiniz.",
+      danger:
+        "Dikkat: Fiyatlandırmanız şu anda pazar misafir memnuniyeti tarafından desteklenenden yüksek.",
+      volume:
+        "Hacim Stratejisi: Düşük fiyatlarınız bütçe dostu misafirleri çekiyor.",
+      reputation_focus: "İtibar yönetimine odaklanın.",
+      aggressive_monitoring:
+        "Agresif fiyat indirimleri için rakipleri izleyin.",
+    },
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",
@@ -261,15 +277,7 @@ export const tr = {
     soWhat: "Peki, Sonuç?",
     stealthPattern: "Gizli Fiyat Deseni Tespit Edildi",
   },
-  subscription: {
-    title: "Abonelik Planları",
-    subtitle: "Büyümenize uygun planı seçin. Şu anki planınız: {0}.",
-    mostPopular: "En Popüler",
-    currentPlan: "Mevcut Plan",
-    upgrade: "Yükselt",
-    contactSales:
-      "Kurumsal uyumluluk mu gerekiyor? Toplu lisanslama için Satışla İletişime Geçin.",
-  },
+
   alerts: {
     title: "Alarm Merkezi",
     subtitle: "Gerçek zamanlı pazar istihbaratı",
@@ -366,5 +374,55 @@ export const tr = {
     high: "Yüksek",
     noMentions: "Bahse değer yorum bulunamadı",
     multiple: "birden çok",
+  },
+  subscription: {
+    title: "Abonelik Planları",
+    subtitle: "Büyümenize uygun planı seçin. Şu anki planınız: {0}.",
+    mostPopular: "En Popüler",
+    currentPlan: "Mevcut Plan",
+    upgrade: "Yükselt",
+    contactSales:
+      "Kurumsal uyumluluk mu gerekiyor? Toplu lisanslama için Satışla İletişime Geçin.",
+    starter: {
+      name: "Başlangıç",
+      description: "Yeni başlayan küçük oteller için",
+      features: [
+        "5 otele kadar takip",
+        "Günlük fiyat güncellemeleri",
+        "Temel e-posta alarmları",
+        "7 günlük geçmiş verisi",
+      ],
+    },
+    pro: {
+      name: "Profesyonel",
+      description: "Ciddi gelir yöneticileri için",
+      features: [
+        "25 otele kadar takip",
+        "Saatlik fiyat güncellemeleri",
+        "Anlık fiyat düşüş alarmları",
+        "Sınırsız geçmiş",
+        "Excel/CSV Dışa Aktarma",
+      ],
+    },
+    enterprise: {
+      name: "Kurumsal",
+      description: "Zincir oteller ve büyük gruplar için",
+      features: [
+        "Sınırsız otel takibi",
+        "Gerçek zamanlı API Erişimi",
+        "Özel hesap yöneticisi",
+        "Özel kurulum desteği",
+        "Logosuz (Whitelabel) raporlar",
+      ],
+    },
+    period: {
+      mo: "/ay",
+      custom: "",
+    },
+    price: {
+      starter: "₺999",
+      pro: "₺2.499",
+      enterprise: "Özel",
+    },
   },
 };

@@ -20,6 +20,13 @@ interface AddHotelModalProps {
   currentHotelCount?: number;
 }
 
+const PLAN_LIMITS: Record<string, number> = {
+  trial: 1,
+  starter: 5,
+  pro: 25,
+  enterprise: 999,
+};
+
 export default function AddHotelModal({
   isOpen,
   onClose,
@@ -27,6 +34,7 @@ export default function AddHotelModal({
   initialName = "",
   initialLocation = "",
   currentHotelCount = 0,
+  userPlan = "trial",
 }: AddHotelModalProps) {
   const { t } = useI18n();
   const [locationsRegistry, setLocationsRegistry] = useState<any[]>([]);
@@ -40,7 +48,8 @@ export default function AddHotelModal({
   const [serpApiId, setSerpApiId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
-  const isLimitReached = currentHotelCount >= 5;
+  const limit = PLAN_LIMITS[userPlan] || 5;
+  const isLimitReached = currentHotelCount >= limit;
 
   // Update state if initial values change
   useEffect(() => {

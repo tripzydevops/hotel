@@ -245,7 +245,13 @@ export default function Dashboard() {
                 </span>
               </div>
             </button>
-
+            <AddHotelModal
+              isOpen={isAddHotelOpen}
+              onClose={() => setIsAddHotelOpen(false)}
+              onAdd={handleAddHotel}
+              currentHotelCount={currentHotelCount}
+              userPlan={profile?.plan_type || "trial"}
+            />
             <button
               onClick={() => setIsAddHotelOpen(true)}
               className="
