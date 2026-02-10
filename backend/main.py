@@ -596,9 +596,9 @@ async def trigger_monitor(
             monthly_total_limit = 500  # Default
             plan_type = "starter"
             
-            profile_res = db.table("profiles").select("plan_type").eq("user_id", str(user_id)).execute()
-            if profile_res.data:
-                plan_type = profile_res.data[0].get("plan_type", "starter")
+            profiles_res = db.table("profiles").select("plan_type").eq("id", str(user_id)).execute()
+            if profiles_res.data:
+                plan_type = profiles_res.data[0].get("plan_type", "starter")
                 
                 # Fetch tier config
                 tier_res = db.table("tier_configs").select("manual_scans_per_day").eq("plan_type", plan_type).execute()
@@ -853,11 +853,23 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
     # Enterprise/Pro: 5 hotels (1 target + 4 competitors)
     # Dev User: 10 hotels (for testing)
     # =======================================================
-    limit = 3  # Default / Trial
+    limit = 1 # Default / Trial
     
-    # 1. Dev User Override
-    if str(user_id) == "123e4567-e89b-12d3-a456-426614174000":
-        limit = 10
+    # Check Admin Status first for Bypass
+    is_admin = False
+    email = getattr(current_user, 'email', None)
+    if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
+        is_admin = True
+    else:
+        try:
+            profile_res = db.table("user_profiles").select("role").eq("user_id", str(user_id)).execute()
+            if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
+                is_admin = True
+        except: pass
+
+    # 1. Admin/Dev Override
+    if is_admin or str(user_id) == "123e4567-e89b-12d3-a456-426614174000":
+        limit = 999
     else:
         # 2. Check Plan from BOTH tables to ensure we find it
         plan = "trial"
@@ -872,9 +884,15 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
                 if user_profiles_res.data:
                     plan = user_profiles_res.data[0].get("plan_type", "trial")
             
-            # Enterprise and Pro both get 5 hotels
-            if plan in ["enterprise", "pro", "professional"]:
-                limit = 5
+            # Map plan to limit (Sync with constants.ts)
+            PLAN_LIMITS = {
+                "trial": 1,
+                "starter": 5,
+                "pro": 25,
+                "professional": 25,
+                "enterprise": 999
+            }
+            limit = PLAN_LIMITS.get(plan, 1)
         except Exception as e:
             print(f"Plan check failed: {e}")
 
