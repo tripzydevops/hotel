@@ -217,12 +217,15 @@ export const tr = {
       reputation_focus: "İtibar yönetimine odaklanın.",
       aggressive_monitoring:
         "Agresif fiyat indirimleri için rakipleri izleyin.",
-      },
+    },
+  },
+  sentiment: {
     performancePulse: "Performans Nabzı",
     sentimentVoices: "Misafir Sesleri",
     agentIntelligence: "Ajan İstihbaratı",
     competitiveVulnerabilities: "Rakip Zayıf Noktaları",
-    vulnerabilityDesc: "Rakiplerin zayıf olduğu ve sizin öne geçebileceğiniz alanlar.",
+    vulnerabilityDesc:
+      "Rakiplerin zayıf olduğu ve sizin öne geçebileceğiniz alanlar.",
     topDriver: "Ana Etken",
     reasoningLogic: "Mantık Zinciri",
     extracted: "Tespit edilen",
@@ -246,7 +249,6 @@ export const tr = {
       rd: ". (Üçüncü)",
       th: ". (Sıra)",
     },
-  },
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",
