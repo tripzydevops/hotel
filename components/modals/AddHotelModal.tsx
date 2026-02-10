@@ -182,14 +182,7 @@ export default function AddHotelModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative overflow-hidden">
-        {/* Limit Warning Banner */}
-        {isLimitReached && (
-          <div className="absolute top-0 left-0 right-0 bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2 justify-center">
-            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
-              {t("addHotel.limitReached", { 0: limit })} ({userPlan})
-            </span>
-          </div>
-        )}
+        {/* Limit info removed - backend enforces limits in create_hotel */}
 
         <div className="flex items-center justify-between mb-6 mt-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -205,19 +198,7 @@ export default function AddHotelModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Form Disabled Overlay if Limit Reached */}
-          {isLimitReached && (
-            <div className="absolute inset-0 z-10 bg-[var(--deep-ocean-card)]/50 backdrop-blur-[1px] flex items-center justify-center top-[80px]">
-              <div className="bg-black/80 px-4 py-3 rounded-lg border border-white/10 text-center shadow-2xl">
-                <p className="text-white font-bold mb-1">
-                  {t("addHotel.limitReached", { 0: limit })}
-                </p>
-                <p className="text-xs text-[var(--text-muted)]">
-                  {t("addHotel.limitDesc")}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Form overlay removed - backend enforces limits */}
 
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
@@ -441,11 +422,7 @@ export default function AddHotelModal({
               ) : (
                 <>
                   <Plus className="w-4 h-4 text-black stroke-[3px]" />
-                  <span>
-                    {isLimitReached
-                      ? t("addHotel.limitReached", { 0: limit })
-                      : t("addHotel.submitButton")}
-                  </span>
+                  <span>{t("addHotel.submitButton")}</span>
                 </>
               )}
             </button>
