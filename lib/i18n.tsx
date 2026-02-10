@@ -55,7 +55,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof value === "string" && params) {
       return Object.entries(params).reduce((acc, [k, v]) => {
-        return acc.replace(new RegExp(`{${k}}`, "g"), String(v));
+        return acc.replace(new RegExp(`\\{${k}\\x7d`, "g"), String(v));
       }, value);
     }
 
