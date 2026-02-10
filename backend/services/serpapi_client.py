@@ -454,13 +454,54 @@ class SerpApiClient:
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
             "offers": self._parse_market_offers(all_offers_raw, default_currency),
             "room_types": self._extract_all_room_types(best_match, default_currency),
-            "reviews_breakdown": best_match.get("reviews_breakdown", []),
+            "reviews_breakdown": self._normalize_reviews_breakdown(best_match.get("reviews_breakdown", []), best_match.get("overall_rating")),
             "reviews": best_match.get("reviews", []),
             "search_rank": rank,
             "latitude": best_match.get("gps_coordinates", {}).get("latitude"),
             "longitude": best_match.get("gps_coordinates", {}).get("longitude"),
             "raw_data": best_match
         }
+
+    def _normalize_reviews_breakdown(self, breakdown: List[Dict[str, Any]], overall_rating: Optional[float] = None) -> List[Dict[str, Any]]:
+        """Ensures the 4 core pillars (Cleanliness, Service, Location, Value) exist."""
+        valid = breakdown or []
+        
+        # Standardize keys
+        standard_map = {
+            "cleanliness": "Cleanliness", "clean": "Cleanliness", "room": "Cleanliness",
+            "service": "Service", "staff": "Service", 
+            "location": "Location", "neighborhood": "Location",
+            "value": "Value", "price": "Value", "comfort": "Value"
+        }
+        
+        # Create a dictionary of existing scores
+        existing = {}
+        for item in valid:
+            name = item.get("name", "").lower()
+            if name in standard_map:
+                existing[standard_map[name]] = item.get("rating") or item.get("total_score")
+            else:
+                existing[name.title()] = item.get("rating")
+                
+        # Fill missing core categories with overall rating (fallback) or 0
+        core_categories = ["Cleanliness", "Service", "Location", "Value"]
+        final_breakdown = []
+        
+        for cat in core_categories:
+            if cat in existing:
+                final_breakdown.append({"name": cat, "rating": existing[cat], "sentiment": "neutral"})
+            else:
+                # Fallback: If we have an overall rating, use it (minus penalty to be conservative), else 0
+                fallback = (overall_rating - 0.5) if overall_rating else 0
+                final_breakdown.append({"name": cat, "rating": max(0, fallback), "sentiment": "neutral", "is_inferred": True})
+        
+        # Add any other non-core categories found
+        for item in valid:
+            name = item.get("name", "").title()
+            if name not in core_categories and name not in ["Total"]:
+                final_breakdown.append(item)
+                
+        return final_breakdown
 
     async def fetch_multiple_hotels(self, hotels: List[Dict[str, str]], check_in: Optional[date] = None, 
                                    check_out: Optional[date] = None, currency: str = "USD") -> Dict[str, Any]:
