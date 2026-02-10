@@ -3465,8 +3465,15 @@ async def export_report_pdf(
         """
 
         # 3. Generate PDF
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        try:
+            from weasyprint import HTML
+            pdf_bytes = HTML(string=html_content).write_pdf()
+        except ImportError:
+            print("PDF Error: weasyprint not installed (Skipping PDF Generation)")
+            raise HTTPException(
+                status_code=501, 
+                detail="PDF generation is currently unavailable on this environment (weasyprint missing)."
+            )
         
         return Response(
             content=pdf_bytes,
