@@ -64,17 +64,7 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
                   <h4 className="text-sm font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
                     {item.name}
                   </h4>
-                  {item.serpapi_link && (
-                    <a
-                      href={item.serpapi_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-[var(--soft-gold)] transition-all"
-                      title="View Source on Google"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+                  {/* Link removed as per user request */}
                   <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter ml-auto">
                     {item.total_mentioned} MENTIONS
                   </p>
