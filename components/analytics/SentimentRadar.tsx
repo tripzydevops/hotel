@@ -42,7 +42,11 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
             }}
             itemStyle={{ color: "#E5E7EB" }}
           />
-          <Legend />
+          <Legend
+            wrapperStyle={{ paddingTop: "20px" }}
+            verticalAlign="bottom"
+            height={36}
+          />
           <Radar
             name="My Hotel"
             dataKey="A"
