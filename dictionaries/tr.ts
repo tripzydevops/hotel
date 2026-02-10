@@ -278,57 +278,6 @@ export const tr = {
     stealthPattern: "Gizli Fiyat Deseni Tespit Edildi",
   },
 
-  subscription: {
-    title: "Abonelik Planları",
-    subtitle: "Büyümenize uygun planı seçin. Şu anda {0} planındasınız.",
-    mostPopular: "En Popüler",
-    currentPlan: "Mevcut Plan",
-    upgrade: "Yükselt",
-    contactSales:
-      "Kurumsal düzeyde uyumluluk mu gerekiyor? Toplu lisanslama için Satış ekibiyle iletişime geçin.",
-    price: {
-      starter: "$49",
-      pro: "$149",
-      enterprise: "$399",
-    },
-    period: {
-      mo: "/ay",
-      custom: "/özel",
-    },
-    starter: {
-      name: "Başlangıç",
-      description: "Fiyat takibine yeni başlayan küçük oteller için ideal.",
-      features: {
-        0: "5 otele kadar takip",
-        1: "Günlük fiyat taramaları",
-        2: "Temel rakip analizi",
-        3: "E-posta bildirimleri",
-      },
-    },
-    pro: {
-      name: "Profesyonel",
-      description: "Büyüyen otel zincirleri için gelişmiş istihbarat.",
-      features: {
-        0: "25 otele kadar takip",
-        1: "Saatlik fiyat taramaları",
-        2: "Yapay zeka destekli rakip içgörüleri",
-        3: "Çok kanallı bildirimler",
-        4: "Gelir optimizasyon raporları",
-      },
-    },
-    enterprise: {
-      name: "Kurumsal",
-      description: "Otel grupları ve zincirler için tam ölçekli istihbarat.",
-      features: {
-        0: "Sınırsız otel takibi",
-        1: "Gerçek zamanlı fiyat izleme",
-        2: "Özel yapay zeka iş akışları",
-        3: "Özel hesap yöneticisi",
-        4: "API erişimi ve entegrasyonlar",
-      },
-    },
-  },
-
   alerts: {
     title: "Alarm Merkezi",
     subtitle: "Gerçek zamanlı pazar istihbaratı",
