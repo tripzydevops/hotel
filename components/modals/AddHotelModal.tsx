@@ -260,7 +260,7 @@ export default function AddHotelModal({
 
               {/* Suggestions Dropdown */}
               {showSuggestions && name.length >= 2 && !isSearching && (
-                <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 ring-1 ring-black/20">
+                <div className="absolute z-[100] left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 ring-1 ring-black/50">
                   <div className="max-h-40 overflow-y-auto">
                     {suggestions.length > 0 ? (
                       suggestions.map((item, idx) => (
@@ -268,21 +268,21 @@ export default function AddHotelModal({
                           key={idx}
                           type="button"
                           onClick={() => handleSelectSuggestion(item)}
-                          className="w-full px-3 py-2 text-left hover:bg-white/5 flex flex-col transition-colors border-b border-white/5 last:border-none"
+                          className="w-full px-3 py-2 text-left hover:bg-white/10 flex flex-col transition-colors border-b border-white/5 last:border-none"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-white font-medium text-xs">
                               {item.name}
                             </span>
                             {item.source === "serpapi" && (
-                              <span className="text-[8px] bg-white/10 text-[var(--text-muted)] py-0.5 px-1 rounded uppercase tracking-widest font-bold">
+                              <span className="text-[8px] bg-blue-500/20 text-blue-300 py-0.5 px-1 rounded uppercase tracking-widest font-bold">
                                 {t("addHotel.globalMatch")}
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-2.5 h-2.5 text-[var(--text-muted)]" />
-                            <span className="text-[var(--text-muted)] text-[10px]">
+                            <MapPin className="w-2.5 h-2.5 text-gray-400" />
+                            <span className="text-gray-400 text-[10px]">
                               {item.location}
                             </span>
                           </div>
@@ -290,10 +290,10 @@ export default function AddHotelModal({
                       ))
                     ) : name.length >= 2 && !isSearching ? (
                       <div className="px-3 py-4 text-center bg-white/[0.02]">
-                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mb-1">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">
                           {t("addHotel.noMatch")}
                         </p>
-                        <p className="text-[9px] text-[var(--text-muted)]">
+                        <p className="text-[9px] text-gray-500">
                           {t("addHotel.checkingLocation")}
                         </p>
                       </div>
@@ -315,7 +315,7 @@ export default function AddHotelModal({
                     value={country}
                     disabled={isLimitReached || isManualEntry}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50 transition-all"
+                    className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50 transition-all"
                   >
                     {countries.map((c) => (
                       <option key={c} value={c}>
@@ -340,7 +340,7 @@ export default function AddHotelModal({
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder={t("addHotel.locationPlaceholder")}
-                      className="w-full bg-white/5 border border-[var(--soft-gold)]/50 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                      className="w-full bg-slate-900/50 border border-[var(--soft-gold)]/50 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
                     />
                   ) : (
                     <select
@@ -354,7 +354,7 @@ export default function AddHotelModal({
                           setCity(e.target.value);
                         }
                       }}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] transition-all"
+                      className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 transition-all"
                     >
                       <option value="">{t("addHotel.selectCity")}</option>
                       {filteredCities.map((c) => (
@@ -364,7 +364,7 @@ export default function AddHotelModal({
                       ))}
                       <option
                         value="__NEW__"
-                        className="text-[var(--soft-gold)] font-bold"
+                        className="text-[var(--soft-gold)] font-bold bg-slate-900"
                       >
                         + {t("addHotel.addNewLocation")}
                       </option>
@@ -396,7 +396,7 @@ export default function AddHotelModal({
                   value={currency}
                   disabled={isLimitReached}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] disabled:opacity-50"
+                  className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
@@ -428,13 +428,13 @@ export default function AddHotelModal({
             <button
               type="submit"
               disabled={loading || isLimitReached || (!city && !isManualEntry)}
-              className="w-full btn-gold py-3 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold text-sm py-3.5 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-[var(--deep-ocean)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 text-black stroke-[3px]" />
                   <span>
                     {isLimitReached
                       ? t("addHotel.limitReached")
