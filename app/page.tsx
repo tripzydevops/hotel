@@ -76,6 +76,7 @@ export default function Dashboard() {
   }, [userId]);
 
   const {
+    isAddHotelOpen,
     setIsAddHotelOpen,
     setIsBillingOpen,
     setHotelToEdit,
