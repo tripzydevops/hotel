@@ -547,6 +547,7 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 # ===== Monitor Endpoint =====
 
 @app.post("/api/monitor/{user_id}", response_model=MonitorResult)
+@app.post("/api/trigger-scan/{user_id}", response_model=MonitorResult)
 async def trigger_monitor(
     user_id: UUID,
     background_tasks: BackgroundTasks,
@@ -871,6 +872,12 @@ async def create_hotel(user_id: UUID, hotel: HotelCreate, db: Optional[Client] =
             if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                 is_admin = True
         except: pass
+
+    # 3. Specific Bypass for User ID: eb284dd9-7198-47be-acd0-fdb0403bcd0a
+    specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+    if str(user_id) == specific_admin_id:
+        is_admin = True
+        print(f"[CreateHotel] Specific ID Bypass for {user_id}")
 
     # 1. Admin/Dev Override
     if is_admin or str(user_id) == "123e4567-e89b-12d3-a456-426614174000":
