@@ -1124,18 +1124,22 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     
     plan = "trial"
     status = "trial"
+    bypass_active = False
+    
     if sub_data:
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
     
     # Force Enterprise for Admins/Whitelisted emails
+    admin_email_found = None
     try:
         if admin_key and url:
             admin_db = create_client(url, admin_key)
             user_auth = admin_db.auth.admin.get_user_by_id(str(user_id))
-            email = user_auth.user.email if user_auth and user_auth.user else None
+            if user_auth and user_auth.user:
+                admin_email_found = user_auth.user.email
             
-            is_admin_email = email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus"))
+            is_admin_email = admin_email_found and (admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or admin_email_found.endswith("@hotel.plus"))
             
             # Check DB Role as well
             is_admin_role = False
@@ -1145,16 +1149,22 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             if is_admin_email or is_admin_role:
                 plan = "enterprise"
                 status = "active"
-                print(f"[Profile] Admin Bypass: Forced Enterprise for {email or user_id}")
+                bypass_active = True
+                print(f"[Profile] Admin Bypass OK: {admin_email_found or user_id} (Role: {is_admin_role})")
+            else:
+                print(f"[Profile] No Bypass: {admin_email_found or user_id} (Not an admin)")
+        else:
+            print(f"[Profile] Warning: SUPABASE_SERVICE_ROLE_KEY or URL missing")
     except Exception as e:
-        print(f"Admin Plan check failed: {e}")
+        print(f"[Profile] Admin Bypass Error: {e}")
 
     # 3. Fallback logic: Use user_profiles data if profiles sync failed
     if not sub_data and result.data:
         # Check if the base profile has the data (from migration backfill or double-write)
         base_plan = result.data[0].get("plan_type")
         base_status = result.data[0].get("subscription_status")
-        if not (is_admin_email or is_admin_role):
+        # Only fallback if bypass didn't already set it higher
+        if not bypass_active:
             if base_plan: plan = base_plan
             if base_status: status = base_status
 
@@ -1162,12 +1172,24 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     if is_dev_user:
         plan = "enterprise"
         status = "active"
+        bypass_active = True
 
     if result.data:
         p = result.data[0]
         p["plan_type"] = plan
         p["subscription_status"] = status
+        p["is_admin_bypass"] = bypass_active
         return p
+    
+    # Final Fallback return
+    return UserProfile(
+        user_id=user_id,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        plan_type=plan,
+        subscription_status=status,
+        is_admin_bypass=bypass_active
+    )
     
     # Return a default profile if none exists
     # Force PRO for the Dev/Demo User ID

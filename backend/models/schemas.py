@@ -166,6 +166,7 @@ class UserProfile(UserProfileBase):
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
     role: Optional[str] = "user"
+    is_admin_bypass: bool = False
     
     class Config:
         from_attributes = True
