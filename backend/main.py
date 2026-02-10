@@ -547,7 +547,6 @@ async def get_dashboard(user_id: UUID, db: Optional[Client] = Depends(get_supaba
 # ===== Monitor Endpoint =====
 
 @app.post("/api/monitor/{user_id}", response_model=MonitorResult)
-@app.post("/api/trigger-scan/{user_id}", response_model=MonitorResult)
 async def trigger_monitor(
     user_id: UUID,
     background_tasks: BackgroundTasks,
