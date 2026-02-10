@@ -1133,11 +1133,18 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     # Force Enterprise for Admins/Whitelisted emails
     admin_email_found = None
     try:
+        # USER ID from console: eb284dd9-7198-47be-acd0-fdb0403bcd0a
+        specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+        is_specific_admin = str(user_id) == specific_admin_id
+        
         if admin_key and url:
             admin_db = create_client(url, admin_key)
-            user_auth = admin_db.auth.admin.get_user_by_id(str(user_id))
-            if user_auth and user_auth.user:
-                admin_email_found = user_auth.user.email
+            try:
+                user_auth = admin_db.auth.admin.get_user_by_id(str(user_id))
+                if user_auth and user_auth.user:
+                    admin_email_found = user_auth.user.email
+            except Exception as auth_err:
+                print(f"[Profile] Auth Lookup Error for {user_id}: {auth_err}")
             
             is_admin_email = admin_email_found and (admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or admin_email_found.endswith("@hotel.plus"))
             
@@ -1146,20 +1153,27 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             if result.data and result.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                 is_admin_role = True
                 
-            if is_admin_email or is_admin_role:
+            if is_admin_email or is_admin_role or is_specific_admin:
                 plan = "enterprise"
                 status = "active"
                 bypass_active = True
-                print(f"[Profile] Admin Bypass OK: {admin_email_found or user_id} (Role: {is_admin_role})")
+                print(f"[Profile] Admin Bypass OK: {admin_email_found or user_id} (Role: {is_admin_role}, ID Match: {is_specific_admin})")
             else:
                 print(f"[Profile] No Bypass: {admin_email_found or user_id} (Not an admin)")
         else:
-            print(f"[Profile] Warning: SUPABASE_SERVICE_ROLE_KEY or URL missing")
+            # Emergency bypass even if keys missing
+            if is_specific_admin:
+                plan = "enterprise"
+                status = "active"
+                bypass_active = True
+                print(f"[Profile] Emergency ID Bypass for {user_id}")
+            else:
+                print(f"[Profile] Warning: SUPABASE_SERVICE_ROLE_KEY or URL missing")
     except Exception as e:
-        print(f"[Profile] Admin Bypass Error: {e}")
+        print(f"[Profile] Admin Bypass Logic Error: {e}")
 
     # 3. Fallback logic: Use user_profiles data if profiles sync failed
-    if not sub_data and result.data:
+    if (not sub_data or plan == "trial") and result.data:
         # Check if the base profile has the data (from migration backfill or double-write)
         base_plan = result.data[0].get("plan_type")
         base_status = result.data[0].get("subscription_status")
@@ -1167,6 +1181,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         if not bypass_active:
             if base_plan: plan = base_plan
             if base_status: status = base_status
+            print(f"[Profile] Using Fallback Plan: {plan}")
 
     # Force PRO for Dev/Demo User (Legacy check)
     if is_dev_user:
