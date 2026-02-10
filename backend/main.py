@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timezone, timedelta
 from uuid import UUID
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 # Load environment variables from .env and .env.local (Vercel style)
 load_dotenv()
 load_dotenv(".env.local", override=True)
