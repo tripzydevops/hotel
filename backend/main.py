@@ -9,8 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timezone, timedelta
 from uuid import UUID
-from dotenv import load_dotenv
-from typing import List, Optional
 from pydantic import BaseModel, Field
 # Load environment variables from .env and .env.local (Vercel style)
 load_dotenv()
@@ -271,7 +269,7 @@ async def health_check():
         "status": "healthy", 
         "supabase_configured": bool(url and has_key),
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.6-hotfix"
+        "version": "1.0.7-bypass-fix"
     }
 
 
@@ -587,8 +585,14 @@ async def trigger_monitor(
             except Exception:
                 pass
 
+        # 3. Specific Bypass for User ID: eb284dd9-7198-47be-acd0-fdb0403bcd0a
+        specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+        if str(user_id) == specific_admin_id:
+            is_admin = True
+            print(f"[Monitor] Specific ID Bypass for {user_id}")
+
         if is_admin:
-            print(f"[Monitor] Admin Bypass for {email} (User: {user_id})")
+            print(f"[Monitor] Admin Bypass ACTIVE for {email or user_id}")
         else:
             # ENFORCE LIMITS (Standard/Enterprise Users)
             # 1. Get User Plan Limits from tier_configs
@@ -1146,7 +1150,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             except Exception as auth_err:
                 print(f"[Profile] Auth Lookup Error for {user_id}: {auth_err}")
             
-            is_admin_email = admin_email_found and (admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or admin_email_found.endswith("@hotel.plus"))
+            is_admin_email = admin_email_found and (admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "yusuf@tripzy.travel"] or admin_email_found.endswith("@hotel.plus"))
             
             # Check DB Role as well
             is_admin_role = False
@@ -1171,6 +1175,12 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
                 print(f"[Profile] Warning: SUPABASE_SERVICE_ROLE_KEY or URL missing")
     except Exception as e:
         print(f"[Profile] Admin Bypass Logic Error: {e}")
+
+    # FORCE Enterprise for this specific User ID regardless of above
+    if str(user_id) == "eb284dd9-7198-47be-acd0-fdb0403bcd0a":
+        plan = "enterprise"
+        status = "active"
+        bypass_active = True
 
     # 3. Fallback logic: Use user_profiles data if profiles sync failed
     if (not sub_data or plan == "trial") and result.data:
@@ -3104,7 +3114,7 @@ async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(
                 
             queue.append(SchedulerQueueEntry(
                 user_id=uid,
-                user_name=profiles_map.get(uid) or f"User {str(uid)[:8]}",
+                user_name=profiles_map.get(uid) or f"User {str(uid)[0:8]}",
                 scan_frequency_minutes=freq,
                 last_scan_at=last_scan_at,
                 next_scan_at=next_scan_at,

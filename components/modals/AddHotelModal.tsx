@@ -184,7 +184,7 @@ export default function AddHotelModal({
         {isLimitReached && (
           <div className="absolute top-0 left-0 right-0 bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2 justify-center">
             <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
-              {t("addHotel.limitReached", { 0: limit })}
+              {t("addHotel.limitReached", { 0: limit })} ({userPlan})
             </span>
           </div>
         )}
