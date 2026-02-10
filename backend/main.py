@@ -1617,7 +1617,7 @@ async def get_analysis(
                         if is_target:
                             target_price = converted
                             # Ensure prices is a list before slicing to satisfy linter
-                            p_list = prices if isinstance(prices, list) else []
+                            p_list = list(prices) if isinstance(prices, list) else []
                             for p in p_list[:30]:  # Last 30 entries for history
                                 try:
                                     if p.get("price") is not None:
@@ -1673,8 +1673,10 @@ async def get_analysis(
                             unique_competitors.append(c)
                     
                     if unique_competitors:
-                        comp_avg = sum(c["price"] for c in unique_competitors) / len(unique_competitors)
-                        vs_comp = ((data["target"] - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0
+                        comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
+                        # Ensure target is float for subtraction
+                        target_val = float(data["target"])
+                        vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
                         daily_prices.append({
                             "date": date_str,
                             "price": round(float(data["target"]), 2),
@@ -1711,8 +1713,9 @@ async def get_analysis(
         # 7. Advisory & Quadrant
         # 7. Advisory & Quadrant Logic
         # Mapping: 100 is at center (0,0)
-        q_x = max(-50, min(50, ari - 100))
-        q_y = max(-50, min(50, sentiment_index - 100))
+        # Use 50.0 (float) to satisfy linter expecting matching types for min/max
+        q_x = max(-50.0, min(50.0, float(ari) - 100.0))
+        q_y = max(-50.0, min(50.0, float(sentiment_index) - 100.0))
         
         # Quadrant Label Logic
         if ari >= 100 and sentiment_index >= 100:
