@@ -1128,16 +1128,37 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
     
-    
+    # Force Enterprise for Admins/Whitelisted emails
+    try:
+        if admin_key and url:
+            admin_db = create_client(url, admin_key)
+            user_auth = admin_db.auth.admin.get_user_by_id(str(user_id))
+            email = user_auth.user.email if user_auth and user_auth.user else None
+            
+            is_admin_email = email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus"))
+            
+            # Check DB Role as well
+            is_admin_role = False
+            if result.data and result.data[0].get("role") in ["admin", "market_admin", "market admin"]:
+                is_admin_role = True
+                
+            if is_admin_email or is_admin_role:
+                plan = "enterprise"
+                status = "active"
+                print(f"[Profile] Admin Bypass: Forced Enterprise for {email or user_id}")
+    except Exception as e:
+        print(f"Admin Plan check failed: {e}")
+
     # 3. Fallback logic: Use user_profiles data if profiles sync failed
     if not sub_data and result.data:
         # Check if the base profile has the data (from migration backfill or double-write)
         base_plan = result.data[0].get("plan_type")
         base_status = result.data[0].get("subscription_status")
-        if base_plan: plan = base_plan
-        if base_status: status = base_status
+        if not (is_admin_email or is_admin_role):
+            if base_plan: plan = base_plan
+            if base_status: status = base_status
 
-    # Force PRO for Dev/Demo User
+    # Force PRO for Dev/Demo User (Legacy check)
     if is_dev_user:
         plan = "enterprise"
         status = "active"
