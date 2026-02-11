@@ -15,7 +15,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
-import CalendarHeatmap from "@/components/analytics/CalendarHeatmap";
+import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
 import RateSpreadChart from "@/components/analytics/RateSpreadChart";
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
@@ -279,13 +279,14 @@ export default function AnalysisPage() {
           />
         </div>
 
-        {/* Calendar Heatmap */}
+        {/* Rate Intelligence Grid (Replaces Heatmap) */}
         {data?.daily_prices && data.daily_prices.length > 0 && (
           <div className="mb-12">
-            <CalendarHeatmap
+            <RateIntelligenceGrid
               dailyPrices={data.daily_prices}
-              targetHotelName={data?.hotel_name || "Your Hotel"}
+              competitors={data.competitors}
               currency={currency}
+              hotelName={data?.hotel_name}
             />
           </div>
         )}
