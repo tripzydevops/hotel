@@ -1629,14 +1629,22 @@ async def get_analysis(
                 .in_("hotel_id", hotel_ids) \
                 .order("recorded_at", desc=True)
             
-            # Apply date filters if provided
+            # Apply date filters if provided (Filter primarily by check-in date for Calendar view)
             if start_date:
-                price_query = price_query.gte("recorded_at", start_date)
+                # Use check_in_date for future availability/pricing analysis
+                price_query = price_query.gte("check_in_date", start_date)
+            else:
+                # Default to today if no date provided, to show upcoming rates
+                from datetime import datetime
+                today = datetime.now().strftime("%Y-%m-%d")
+                price_query = price_query.gte("check_in_date", today)
+                
             if end_date:
-                price_query = price_query.lte("recorded_at", end_date + "T23:59:59")
-            
-            # Increase limit for calendar data
-            all_prices_res = price_query.limit(2000).execute()
+                price_query = price_query.lte("check_in_date", end_date)
+
+            # Increase limit for calendar data (fetching enough future dates)
+            # Order by recorded_at desc ensures we get the LATEST scan for each check-in date
+            all_prices_res = price_query.limit(5000).execute()
             
             for p in (all_prices_res.data or []):
                 hid = str(p["hotel_id"])

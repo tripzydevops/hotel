@@ -48,6 +48,16 @@ export default function CalendarPage() {
     try {
       const params = new URLSearchParams();
       params.set("currency", currency);
+
+      // Calculate Date Range (Fetch a wide window for smooth navigation, e.g. -2 to +60 days)
+      const start = new Date(viewDate);
+      start.setDate(start.getDate() - 2); // Buffer
+      const end = new Date(viewDate);
+      end.setDate(end.getDate() + 60); // 2 months forward
+
+      params.set("start_date", start.toISOString().split("T")[0]);
+      params.set("end_date", end.toISOString().split("T")[0]);
+
       if (roomType) params.set("room_type", roomType);
 
       const result = await api.getAnalysisWithFilters(
@@ -58,12 +68,30 @@ export default function CalendarPage() {
       if (result.display_currency) setCurrency(result.display_currency);
       if (result.all_hotels && allHotels.length === 0)
         setAllHotels(result.all_hotels);
+
+      // Auto-select "Standard Room" if no room type selected yet & available
+      if (
+        !roomType &&
+        result.available_room_types &&
+        result.available_room_types.length > 0
+      ) {
+        // Look for "Standard" or "Double" or "King" - or just default to first
+        const standard = result.available_room_types.find((rt: string) =>
+          rt.toLowerCase().includes("standard"),
+        );
+        if (standard) setRoomType(standard);
+        else setRoomType(result.available_room_types[0]);
+      }
     } catch (e) {
       console.error("Failed to load calendar data", e);
     } finally {
       setLoading(false);
     }
-  }, [userId, currency, roomType, allHotels.length]);
+  }, [userId, currency, roomType, allHotels.length, viewDate]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     loadData();

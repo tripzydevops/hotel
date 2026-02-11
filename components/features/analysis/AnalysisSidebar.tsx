@@ -48,41 +48,46 @@ export default function AnalysisSidebar({
           </span>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => onRoomTypeChange("")}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
-              !roomType
-                ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 font-bold"
-                : "text-white/60 hover:bg-white/5 hover:text-white"
-            }`}
+        {/* Room Type Filter (Dropdown) */}
+        <div className="flex flex-col gap-2 relative">
+          <select
+            value={roomType}
+            onChange={(e) => onRoomTypeChange(e.target.value)}
+            className="w-full appearance-none bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer"
           >
-            <span>All Room Types</span>
-            {!roomType && (
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] shadow-[0_0_5px_var(--soft-gold)]" />
-            )}
-          </button>
-
-          {availableRoomTypes.map((rt) => (
-            <button
-              key={rt}
-              onClick={() => onRoomTypeChange(rt)}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
-                roomType === rt
-                  ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 font-bold"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
-              }`}
+            <option value="" className="bg-[var(--deep-ocean)] text-white/60">
+              All Room Types
+            </option>
+            {availableRoomTypes.map((rt) => (
+              <option
+                key={rt}
+                value={rt}
+                className="bg-[var(--deep-ocean)] text-white"
+              >
+                {rt}
+              </option>
+            ))}
+          </select>
+          {/* Custom Arrow */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--soft-gold)]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span className="truncate">{rt}</span>
-              {roomType === rt && (
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] shadow-[0_0_5px_var(--soft-gold)]" />
-              )}
-            </button>
-          ))}
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
 
           {availableRoomTypes.length === 0 && (
-            <div className="text-[10px] text-white/20 italic px-3">
-              No room types found
+            <div className="text-[10px] text-white/20 italic px-1 mt-1">
+              No types found
             </div>
           )}
         </div>
