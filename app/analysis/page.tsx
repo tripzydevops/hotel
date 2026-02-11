@@ -64,13 +64,14 @@ export default function AnalysisPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Set default date range to next 30 days
+  // Set default date range to current month
   useEffect(() => {
     const today = new Date();
-    const future = new Date();
-    future.setDate(today.getDate() + 30);
-    setStartDate(today.toISOString().split("T")[0]);
-    setEndDate(future.toISOString().split("T")[0]);
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    setStartDate(firstDay.toISOString().split("T")[0]);
+    setEndDate(lastDay.toISOString().split("T")[0]);
   }, []);
 
   useEffect(() => {

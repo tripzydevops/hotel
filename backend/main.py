@@ -1894,7 +1894,10 @@ async def get_analysis(
             for hid, prices in hotel_prices_map.items():
                 for p in prices:
                     try:
-                        date_str = p.get("check_in_date", "") # type: ignore  # Use Check-in Date for Future Rate Spread
+                        # Normalize date to YYYY-MM-DD to match loop keys
+                        raw_date = str(p.get("check_in_date", ""))
+                        date_str = raw_date.split('T')[0]
+                        
                         if date_str not in date_price_map:
                             date_price_map[date_str] = {"target": None, "competitors": []}
                         
@@ -1918,28 +1921,33 @@ async def get_analysis(
             from datetime import datetime, timedelta
             
             # Determine date range
+            # Determine date range
             range_start = None
             range_end = None
             
             if start_date:
-               try: range_start = datetime.strptime(start_date, "%Y-%m-%d")
+               try: range_start = datetime.strptime(start_date.split('T')[0], "%Y-%m-%d")
                except: pass
             
             if end_date:
-               try: range_end = datetime.strptime(end_date, "%Y-%m-%d")
+               try: range_end = datetime.strptime(end_date.split('T')[0], "%Y-%m-%d")
                except: pass
             
-            # If no start date, default to today
+            # If no start date, default to 1st of current month
+            now = datetime.now()
             if not range_start:
-               range_start = datetime.now()
+               range_start = datetime(now.year, now.month, 1)
             
-            # If no end date, default to start + 30 days
+            # If no end date, default to last day of current month
             if not range_end:
-               range_end = range_start + timedelta(days=30)
+               import calendar
+               last_day = calendar.monthrange(now.year, now.month)[1]
+               range_end = datetime(now.year, now.month, last_day)
                
             # Iterate through range
             curr = range_start
-            while curr <= range_end:
+            # Use date() comparison to avoid time component issues
+            while curr.date() <= range_end.date():
                 d_str = curr.strftime("%Y-%m-%d")
                 
                 data = date_price_map.get(d_str)
@@ -1972,26 +1980,32 @@ async def get_analysis(
                     })
                 else:
                     # Gap filling with partial or empty data
-                    # If we have competitor data but no target, or nothing at all
-                    # We still want the date on the X-axis
+                    # Use existing data if available, otherwise defaults
                     unique_competitors = []
                     comp_avg = 0.0
-                    if data and data.get("competitors"):
-                         # We have competitors but no target price?
+                    target_val = None
+                    target_price = 0.0
+                    
+                    if data:
+                        target_val = data.get("target")
+                        target_price = float(target_val) if target_val is not None else 0.0
+                        
                         comps = data.get("competitors") or []
                         seen_hotels = set()
                         for c in comps:
                             if c["name"] not in seen_hotels:
                                 seen_hotels.add(c["name"])
                                 unique_competitors.append(c)
+                        
                         if unique_competitors:
-                             comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
-                    
+                            comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
+
+                    # Ensure we ALWAYS append a record for the date
                     daily_prices.append({
                         "date": d_str,
-                        "price": None, # No target price
-                        "comp_avg": round(float(comp_avg), 2) if comp_avg > 0 else None,
-                        "vs_comp": 0.0,
+                        "price": round(target_price, 2) if target_val is not None else None,
+                        "comp_avg": round(float(comp_avg), 2),
+                        "vs_comp": 0.0, # Neutral if data missing
                         "competitors": unique_competitors
                     })
                 

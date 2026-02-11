@@ -60,6 +60,11 @@ export default function RateSpreadChart({
     const month = currentMonth.getMonth();
 
     return dailyPrices.filter((d) => {
+      // Parse date string (YYYY-MM-DD) safely
+      const [dYear, dMonth] = d.date.split("-").map(Number);
+      // JS months are 0-indexed, but split gives 1-indexed. Adjust accordingly if needed.
+      // Actually standard ISO date YYYY-MM-DD:
+      // new Date(d.date) is reliable, but let's be explicit to avoid timezone shifts
       const date = new Date(d.date);
       return date.getFullYear() === year && date.getMonth() === month;
     });
