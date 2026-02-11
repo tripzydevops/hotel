@@ -1595,12 +1595,14 @@ async def get_analysis(
     end_date: Optional[str] = Query(None, description="End date for analysis (ISO format)"),
     exclude_hotel_ids: Optional[str] = Query(None, description="Comma-separated hotel IDs to exclude"),
     room_type: Optional[str] = Query(None, description="Filter by specific room type (e.g. 'Deluxe Suite')"),
+    search_query: Optional[str] = Query(None, description="Semantic search query to filter hotels"),
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
     """Predictive market analysis with currency normalization, date filtering, and hotel exclusion."""
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
+    from backend.utils.embeddings import get_embedding
     
     try:
         # 1. Fetch Currency Settings
@@ -1616,7 +1618,33 @@ async def get_analysis(
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         hotels = hotels_result.data or []
         
-        # 2b. Filter out excluded hotels
+        # 2b. Semantic Search Filter
+        if search_query:
+            try:
+                # Generate embedding for the query
+                query_embedding = await get_embedding(search_query)
+                if query_embedding:
+                    # Find semantic matches in the user's hotel set
+                    # We utilize the existing 'match_hotels' RPC but filter by user_id implicitly by intersection
+                    # Or we can just compute cosine similarity in python if list is small, 
+                    # but RPC is better if 'embedding' column exists.
+                    # Assuming 'hotels' table has 'sentiment_embedding' or 'embedding'.
+                    # AnalystAgent updates 'sentiment_embedding'.
+                    
+                    matches = db.rpc("match_hotels", {
+                        "query_embedding": query_embedding,
+                        "match_threshold": 0.6, # Lower threshold for broad matching
+                        "match_count": 50
+                    }).execute()
+                    
+                    if matches.data:
+                        matched_ids = set([str(m["id"]) for m in matches.data])
+                        # Filter hotels list to only include matches
+                        hotels = [h for h in hotels if str(h["id"]) in matched_ids]
+            except Exception as e:
+                print(f"Semantic search failed: {e}")
+
+        # 2c. Filter out excluded hotels
         excluded_ids = set()
         if exclude_hotel_ids:
             excluded_ids = set(exclude_hotel_ids.split(","))
@@ -1654,6 +1682,7 @@ async def get_analysis(
                 from datetime import datetime
                 today = datetime.now().strftime("%Y-%m-%d")
                 price_query = price_query.gte("check_in_date", today)
+                start_date = today # Ensure we have a start date for gap filling
                 
             if end_date:
                 price_query = price_query.lte("check_in_date", end_date)
@@ -1885,9 +1914,38 @@ async def get_analysis(
                         continue
             
             # Calculate vs_comp for each date
-            for date_str, data in sorted(date_price_map.items()):
-                if data["target"] is not None and data["competitors"]:
-                    # Deduplicate competitors by hotel name (keep first/latest price)
+            # Calculate vs_comp for each date and Fill Gaps
+            from datetime import datetime, timedelta
+            
+            # Determine date range
+            range_start = None
+            range_end = None
+            
+            if start_date:
+               try: range_start = datetime.strptime(start_date, "%Y-%m-%d")
+               except: pass
+            
+            if end_date:
+               try: range_end = datetime.strptime(end_date, "%Y-%m-%d")
+               except: pass
+            
+            # If no start date, default to today
+            if not range_start:
+               range_start = datetime.now()
+            
+            # If no end date, default to start + 30 days
+            if not range_end:
+               range_end = range_start + timedelta(days=30)
+               
+            # Iterate through range
+            curr = range_start
+            while curr <= range_end:
+                d_str = curr.strftime("%Y-%m-%d")
+                
+                data = date_price_map.get(d_str)
+                
+                if data and data["target"] is not None:
+                     # Deduplicate competitors by hotel name (keep first/latest price)
                     seen_hotels = set()
                     unique_competitors = []
                     comps = data.get("competitors") or []
@@ -1896,18 +1954,51 @@ async def get_analysis(
                             seen_hotels.add(c["name"])
                             unique_competitors.append(c)
                     
+                    comp_avg = 0.0
+                    vs_comp = 0.0
+                    
                     if unique_competitors:
                         comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
                         # Ensure target is float for subtraction
                         target_val = float(data["target"])
                         vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
-                        daily_prices.append({
-                            "date": date_str,
-                            "price": round(float(data["target"] or 0.0), 2), # type: ignore
-                            "comp_avg": round(float(comp_avg), 2), # type: ignore
-                            "vs_comp": round(float(vs_comp), 1), # type: ignore
-                            "competitors": unique_competitors
-                        })
+                        
+                    daily_prices.append({
+                        "date": d_str,
+                        "price": round(float(data["target"] or 0.0), 2), 
+                        "comp_avg": round(float(comp_avg), 2),
+                        "vs_comp": round(float(vs_comp), 1),
+                        "competitors": unique_competitors
+                    })
+                else:
+                    # Gap filling with partial or empty data
+                    # If we have competitor data but no target, or nothing at all
+                    # We still want the date on the X-axis
+                    unique_competitors = []
+                    comp_avg = 0.0
+                    if data and data.get("competitors"):
+                         # We have competitors but no target price?
+                        comps = data.get("competitors") or []
+                        seen_hotels = set()
+                        for c in comps:
+                            if c["name"] not in seen_hotels:
+                                seen_hotels.add(c["name"])
+                                unique_competitors.append(c)
+                        if unique_competitors:
+                             comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
+                    
+                    daily_prices.append({
+                        "date": d_str,
+                        "price": None, # No target price
+                        "comp_avg": round(float(comp_avg), 2) if comp_avg > 0 else None,
+                        "vs_comp": 0.0,
+                        "competitors": unique_competitors
+                    })
+                
+                curr += timedelta(days=1)
+                
+            # Sort by date (already sequential, but safety)
+            daily_prices.sort(key=lambda x: x["date"])
 
         # 6. Calculate Stats
         market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0

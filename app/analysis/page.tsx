@@ -102,6 +102,9 @@ export default function AnalysisPage() {
       if (roomType) params.set("room_type", roomType);
       if (excludedHotelIds.length > 0)
         params.set("exclude_hotel_ids", excludedHotelIds.join(","));
+      if (searchQuery) {
+        params.set("search_query", searchQuery);
+      }
 
       const result = await api.getAnalysisWithFilters(
         userId,
@@ -119,7 +122,15 @@ export default function AnalysisPage() {
     } finally {
       setLoading(false);
     }
-  }, [userId, currency, startDate, endDate, excludedHotelIds, roomType]);
+  }, [
+    userId,
+    currency,
+    startDate,
+    endDate,
+    excludedHotelIds,
+    roomType,
+    searchQuery,
+  ]);
 
   useEffect(() => {
     loadData();
@@ -147,6 +158,10 @@ export default function AnalysisPage() {
     }
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
   if (loading && !data) {
     return (
       <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
@@ -172,9 +187,7 @@ export default function AnalysisPage() {
       <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-8">
-          <SemanticSearchBar
-            onSearch={(q) => console.log("Vector Search:", q)}
-          />
+          <SemanticSearchBar onSearch={handleSearch} />
           <div className="flex items-center justify-end mb-2">
             {/* Currency Selector */}
             <select
@@ -625,12 +638,6 @@ export default function AnalysisPage() {
             </Link>
           </div>
         </div>
-        {/* Vector Discovery Engine */}
-        {data?.hotel_id && (
-          <div className="mb-12 mt-12">
-            <DiscoveryShard hotelId={data.hotel_id} />
-          </div>
-        )}
       </main>
     </div>
   );
