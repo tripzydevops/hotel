@@ -2066,9 +2066,17 @@ async def get_analysis(
         advisory_keys = []
         advisory = ""
         
+        # Helper to safely convert price to int for display
+        def safe_int_price(p):
+            try:
+                if p is None: return 0
+                return int(float(p))
+            except:
+                return 0
+
         if ari >= 100 and sentiment_index >= 100:
             q_label = "Premium King"
-            advisory = f"Strategic Peak: You are commanding a premium price (${int(target_price)}) with superior sentiment."
+            advisory = f"Strategic Peak: You are commanding a premium price (${safe_int_price(target_price)}) with superior sentiment."
             advisory_keys.append("premium")
         elif ari < 100 and sentiment_index >= 100:
             q_label = "Value Leader"
@@ -2080,7 +2088,8 @@ async def get_analysis(
             diff = int(ari - 100)
             advisory = f"Caution: Your rate is {diff}% above market."
             if cheapest_competitor:
-                 advisory += f" Compare with {cheapest_competitor['name']} (${int(cheapest_competitor['price'])})."
+                 cmp_price = safe_int_price(cheapest_competitor['price'])
+                 advisory += f" Compare with {cheapest_competitor['name']} (${cmp_price})."
             else:
                  advisory += " Guest sentiment does not support this premium."
             advisory_keys.append("danger")
