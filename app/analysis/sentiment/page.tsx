@@ -403,7 +403,25 @@ export default function SentimentPage() {
       return aliases[target]?.includes(name);
     });
 
-    return item?.rating || 0;
+    if (!item) return 0;
+
+    // Use existing rating if available
+    if (item.rating !== undefined && item.rating !== null) {
+      return Number(item.rating);
+    }
+
+    // Fallback: Calculate rating from sentiment counts if missing
+    const pos = Number(item.positive) || 0;
+    const neu = Number(item.neutral) || 0;
+    const neg = Number(item.negative) || 0;
+    const total = pos + neu + neg;
+
+    // Formula: (5*pos + 3*neu + 1*neg) / total
+    if (total > 0) {
+      return (pos * 5 + neu * 3 + neg * 1) / total;
+    }
+
+    return 0;
   };
 
   return (
@@ -417,29 +435,6 @@ export default function SentimentPage() {
           <ArrowLeft className="w-4 h-4" />
           {t("sentiment.backToOverview")}
         </Link>
-      </div>
-
-      {/* DEBUG DUMP (Top of Page) */}
-      <div className="mb-8 p-4 bg-black/80 border border-green-500/50 rounded-xl overflow-auto max-h-[300px]">
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="text-green-400 font-bold">
-            DEBUG v2: Data Inspection
-          </h4>
-          <span className="text-xs text-gray-500">Params: {userId}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-4 text-[10px] font-mono whitespace-pre-wrap text-green-300">
-          <div>
-            <strong>Target Hotel ID:</strong> {targetHotel?.id} <br />
-            <strong>Name:</strong> {targetHotel?.name} <br />
-            <strong>Rating:</strong> {targetHotel?.rating} <br />
-            <strong>Breakdown Raw:</strong>
-            {JSON.stringify(targetHotel?.sentiment_breakdown, null, 2)}
-          </div>
-          <div>
-            <strong>Guest Mentions Raw:</strong>
-            {JSON.stringify(targetHotel?.guest_mentions?.slice(0, 3), null, 2)}
-          </div>
-        </div>
       </div>
 
       {/* Page Header */}
