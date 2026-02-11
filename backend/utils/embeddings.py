@@ -11,7 +11,7 @@ api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
 
-async def get_embedding(text: str, model: str = "models/embedding-001") -> List[float]:
+async def get_embedding(text: str, model: str = "models/gemini-embedding-001") -> List[float]:
     """Generates a semantic embedding for the given text using Gemini."""
     if not api_key:
         print("[Embedding] Warning: GOOGLE_API_KEY not set. Returning dummy zeros.")
@@ -22,7 +22,8 @@ async def get_embedding(text: str, model: str = "models/embedding-001") -> List[
             model=model,
             content=text,
             task_type="retrieval_document",
-            title="Hotel Metadata"
+            title="Hotel Metadata",
+            output_dimensionality=768
         )
         return result['embedding']
     except Exception as e:

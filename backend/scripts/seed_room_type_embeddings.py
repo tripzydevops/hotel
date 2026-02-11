@@ -130,17 +130,16 @@ async def seed_room_type_embeddings():
                 print(f"  ⚠ Failed to embed: {room_name}")
                 continue
 
-            # 6. Upsert into room_type_catalog
+            # 6. Insert into catalog (upsert failed due to missing constraint 42P10)
             try:
-                supabase.table("room_type_catalog").upsert(
+                supabase.table("room_type_catalog").insert(
                     {
                         "hotel_id": hotel_id,
                         "original_name": room_name,
                         "embedding": embedding,
                         "avg_price": avg_price,
-                        "currency": "TRY",
-                    },
-                    on_conflict="hotel_id,original_name",
+                        # "currency": "TRY",  # Removed to fix schema cache error, defaults to TRY DB-side
+                    }
                 ).execute()
                 total_embedded += 1
                 print(f"  ✓ Embedded: {room_name} (avg: {avg_price:.0f} TRY)" if avg_price else f"  ✓ Embedded: {room_name}")

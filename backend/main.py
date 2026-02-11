@@ -1678,26 +1678,94 @@ async def get_analysis(
         target_sentiment = 0.0
         market_sentiments: List[float] = []
         target_history = []
+
+        # -------------------------------------------------------------
+        # Phase 1: Semantic Room Matching
+        # If a room_type is requested, use vector search to find 
+        # the equivalent room names for EACH hotel (e.g. "Standard" -> "Standart Oda")
+        # -------------------------------------------------------------
+        allowed_room_names_map: Dict[str, set] = {} # hotel_id -> set(allowed_names)
         
-        # Helper to extract price for specific room type
+        if room_type:
+            try:
+                # 1. Get embedding for the requested room type name (seed)
+                # We look in the catalog for ANY hotel that has this room name to get a "seed" embedding.
+                catalog_res = db.table("room_type_catalog") \
+                    .select("embedding") \
+                    .eq("original_name", room_type) \
+                    .limit(1) \
+                    .execute()
+                
+                if catalog_res.data:
+                    embedding = catalog_res.data[0]["embedding"]
+                    
+                    # 2. Find matches across ALL hotels using the seed embedding
+                    # RPC returns: hotel_id, original_name, similarity
+                    matches_res = db.rpc("match_room_types", {
+                        "query_embedding": embedding,
+                        "match_threshold": 0.82,  # 82% similarity threshold
+                        "match_count": 100 
+                    }).execute()
+                    
+                    for match in (matches_res.data or []):
+                        hid = str(match["hotel_id"])
+                        if hid not in allowed_room_names_map:
+                            allowed_room_names_map[hid] = set()
+                        allowed_room_names_map[hid].add(match["original_name"])
+                    
+                    # Ensure the EXACT requested name is always allowed for all hotels (fallback)
+                    for h in hotels:
+                        hid = str(h["id"])
+                        if hid not in allowed_room_names_map:
+                            allowed_room_names_map[hid] = set()
+                        allowed_room_names_map[hid].add(room_type)
+                        
+                else:
+                     # No embedding found (e.g. custom name). Fallback to exact string match everywhere.
+                     pass 
+
+            except Exception as e:
+                print(f"Semantic room matching failed: {e}")
+                # Fallback: allowed_room_names_map stays empty, use string matching
+        
+        # -------------------------------------------------------------
+        # Helper to extract price for specific room type (Semantic + Exact)
+        # -------------------------------------------------------------
         def get_price_for_room(price_log, target_room_type):
+            # If no filter, return the lead price (cheapest)
             if not target_room_type:
                 return float(price_log["price"]) if price_log.get("price") is not None else None
             
             # Check room_types array
             r_types = price_log.get("room_types") or []
             if isinstance(r_types, list):
+                # 1. Check for Semantic Match first (if map exists)
+                hid = str(price_log.get("hotel_id", ""))
+                allowed_names = allowed_room_names_map.get(hid)
+                
+                if allowed_names:
+                    # Semantic Mode: Only accept room names in the allowed set
+                    for r in r_types:
+                        if isinstance(r, dict) and r.get("name") in allowed_names:
+                             return _extract_price(r.get("price"))
+                
+                # 2. Fallback: String Match (Substring)
+                # Used if semantic lookup failed or room type not in catalog
                 for r in r_types:
                     if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
-                        raw = r.get("price")
-                        if raw is not None:
-                            try:
-                                if isinstance(raw, str):
-                                    import re
-                                    clean = re.sub(r'[^\d.]', '', raw)
-                                    return float(clean)
-                                return float(raw)
-                            except: pass
+                        return _extract_price(r.get("price"))
+                        
+            return None
+
+        def _extract_price(raw):
+            if raw is not None:
+                try:
+                    if isinstance(raw, str):
+                        import re
+                        clean = re.sub(r'[^\d.]', '', raw)
+                        return float(clean)
+                    return float(raw)
+                except: pass
             return None
 
         # Collect all available rooms 
