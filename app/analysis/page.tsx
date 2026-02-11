@@ -61,6 +61,9 @@ export default function AnalysisPage() {
     { id: string; name: string; is_target: boolean }[]
   >([]);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
   // Set default date range to next 30 days
   useEffect(() => {
     const today = new Date();
