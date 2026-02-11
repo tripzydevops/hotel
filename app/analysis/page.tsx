@@ -58,6 +58,15 @@ export default function AnalysisPage() {
     { id: string; name: string; is_target: boolean }[]
   >([]);
 
+  // Set default date range to next 30 days
+  useEffect(() => {
+    const today = new Date();
+    const future = new Date();
+    future.setDate(today.getDate() + 30);
+    setStartDate(today.toISOString().split("T")[0]);
+    setEndDate(future.toISOString().split("T")[0]);
+  }, []);
+
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -268,19 +277,6 @@ export default function AnalysisPage() {
             subtitle="Reputation vs Market"
             icon={<Zap className="w-5 h-5" />}
             trend={data?.sentiment_index > 100 ? "up" : "down"}
-          />
-        </div>
-
-        {/* Strategic Map: Advisor Quadrant */}
-        <div className="mb-12">
-          <AdvisorQuadrant
-            x={data?.quadrant_x || 0}
-            y={data?.quadrant_y || 0}
-            label={data?.quadrant_label || "Standard"}
-            ari={data?.ari}
-            sentiment={data?.sentiment_index}
-            targetRating={data?.target_rating}
-            marketRating={data?.market_rating}
           />
         </div>
 
