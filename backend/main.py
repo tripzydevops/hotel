@@ -1945,7 +1945,10 @@ async def get_analysis(
                range_end = datetime(now.year, now.month, last_day)
                
             # Iterate through range
+            # Iterate through range
             curr = range_start
+            last_known_target = None
+            
             # Use date() comparison to avoid time component issues
             while curr.date() <= range_end.date():
                 d_str = curr.strftime("%Y-%m-%d")
@@ -1953,6 +1956,9 @@ async def get_analysis(
                 data = date_price_map.get(d_str)
                 
                 if data and data["target"] is not None:
+                     # Update last known valid price (LOCF)
+                    last_known_target = float(data["target"])
+                    
                      # Deduplicate competitors by hotel name (keep first/latest price)
                     seen_hotels = set()
                     unique_competitors = []
@@ -1986,10 +1992,13 @@ async def get_analysis(
                     target_val = None
                     target_price = 0.0
                     
+                    # If we have a last known price, use it (LOCF Strategy)
+                    if last_known_target is not None:
+                        target_val = last_known_target
+                        target_price = last_known_target
+                    
                     if data:
-                        target_val = data.get("target")
-                        target_price = float(target_val) if target_val is not None else 0.0
-                        
+                        # Even if no target, we might have competitors
                         comps = data.get("competitors") or []
                         seen_hotels = set()
                         for c in comps:
@@ -2027,7 +2036,14 @@ async def get_analysis(
         # Find min/max hotels for spread tooltip
         min_hotel = None
         max_hotel = None
+        cheapest_competitor = None
+        
         if price_rank_list:
+            # Filter out target hotel from finding cheapest competitor
+            others = [p for p in price_rank_list if str(p.get("id")) != target_hotel_id]
+            if others:
+                cheapest_competitor = others[0] # List is already sorted by price
+                
             min_hotel = {"name": price_rank_list[0]["name"], "price": price_rank_list[0]["price"]}
             max_hotel = {"name": price_rank_list[-1]["name"], "price": price_rank_list[-1]["price"]}
         
@@ -2047,23 +2063,30 @@ async def get_analysis(
         q_y = max(-50.0, min(50.0, float(sentiment_index) - 100.0))
         
         # Quadrant Label Logic
-        # Quadrant Label Logic
         advisory_keys = []
+        advisory = ""
+        
         if ari >= 100 and sentiment_index >= 100:
             q_label = "Premium King"
-            advisory = "Strategic Peak: Your premium pricing is well-supported by superior guest sentiment."
+            advisory = f"Strategic Peak: You are commanding a premium price (${int(target_price)}) with superior sentiment."
             advisory_keys.append("premium")
         elif ari < 100 and sentiment_index >= 100:
             q_label = "Value Leader"
-            advisory = "Expansion Opportunity: You offer the best value to price ratio in the market."
+            diff = int(100 - ari)
+            advisory = f"Expansion Opportunity: Your price is {diff}% below market avg despite high guest satisfaction."
             advisory_keys.append("value")
         elif ari >= 100 and sentiment_index < 100:
             q_label = "Danger Zone"
-            advisory = "Caution: Your pricing is currently higher than supported by market guest sentiment."
+            diff = int(ari - 100)
+            advisory = f"Caution: Your rate is {diff}% above market."
+            if cheapest_competitor:
+                 advisory += f" Compare with {cheapest_competitor['name']} (${int(cheapest_competitor['price'])})."
+            else:
+                 advisory += " Guest sentiment does not support this premium."
             advisory_keys.append("danger")
         else: # Both < 100
             q_label = "Budget / Economy"
-            advisory = "Volume Strategy: Your low rates are attracting budget-conscious guests."
+            advisory = "Volume Strategy: Your lower rates are attracting budget-conscious guests."
             advisory_keys.append("volume")
 
         # Specific secondary advice
