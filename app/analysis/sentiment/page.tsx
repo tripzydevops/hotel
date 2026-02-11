@@ -999,6 +999,19 @@ export default function SentimentPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* DEBUG DUMP */}
+          <div className="mt-8 p-6 bg-black/50 border border-red-500/30 rounded-xl overflow-auto max-h-[300px]">
+            <h4 className="text-red-400 font-bold mb-2">
+              Technical Debug Data
+            </h4>
+            <pre className="text-[10px] text-green-400 font-mono whitespace-pre-wrap">
+              UserId: {userId}
+              TargetHotel: {targetHotel?.name} ({targetHotel?.id}) Sentiment
+              Breakdown:
+              {JSON.stringify(targetHotel?.sentiment_breakdown, null, 2)}
+            </pre>
+          </div>
         </>
       )}
     </div>
