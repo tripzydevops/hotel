@@ -2096,7 +2096,12 @@ async def get_analysis(
             advisory_keys.append("danger")
         else: # Both < 100
             q_label = "Budget / Economy"
-            advisory = "Volume Strategy: Your lower rates are attracting budget-conscious guests."
+            diff = int(100 - ari)
+            advisory = f"Volume Strategy: Your rate is {diff}% below market average."
+            if sentiment_index < 85:
+                advisory += " Recommendation: Focus on boosting guest sentiment before raising rates."
+            else:
+                advisory += " Recommendation: If occupancy is high, test a 5% daily rate increase."
             advisory_keys.append("volume")
 
         # Specific secondary advice
