@@ -1861,7 +1861,7 @@ async def get_analysis(
             for hid, prices in hotel_prices_map.items():
                 for p in prices:
                     try:
-                        date_str = p.get("recorded_at", "")[:10] # type: ignore  # Extract YYYY-MM-DD
+                        date_str = p.get("check_in_date", "") # type: ignore  # Use Check-in Date for Future Rate Spread
                         if date_str not in date_price_map:
                             date_price_map[date_str] = {"target": None, "competitors": []}
                         
