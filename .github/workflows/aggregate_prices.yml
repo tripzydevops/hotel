@@ -34,3 +34,12 @@ jobs:
         run: |
           # Run the script with default 90 days retention
           python -m backend.scripts.aggregate_daily_prices --days 90
+
+      - name: Run Pricing DNA Generation
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          # Run DNA generation (skips hotels < 30 days history)
+          python -m backend.scripts.update_pricing_dna --min-days 30

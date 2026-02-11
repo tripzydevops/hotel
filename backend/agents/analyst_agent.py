@@ -112,6 +112,13 @@ class AnalystAgent:
                 update_res = self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
                 print(f"[AnalystAgent] Update result for {hotel_id}: {update_res.data}")
                 
+                # 4a. Update Sentiment Embedding if data changed
+                if "sentiment_breakdown" in meta_update or "reviews" in meta_update:
+                     try:
+                         await self._update_sentiment_embedding(hotel_id, meta_update)
+                     except Exception as e:
+                         print(f"[AnalystAgent] Failed to update sentiment embedding: {e}")
+                
                 # 4b. Insert Sentiment History (New Quality Velocity)
                 if price_data.get("rating"):
                      try:
@@ -336,5 +343,68 @@ class AnalystAgent:
         if len(parts1) >= 2 and len(parts2) >= 2:
             return parts1[-1] == parts2[-1]
         return False
+
+    async def _update_sentiment_embedding(self, hotel_id: str, meta_update: Dict[str, Any]):
+        """Generates and saves the sentiment embedding based on new metadata."""
+        # 1. Fetch current full hotel data (to get name, location etc combined with new update)
+        # We need the full context to build the profile string
+        res = self.db.table("hotels").select("*").eq("id", hotel_id).execute()
+        if not res.data:
+            return
+            
+        hotel = res.data[0]
+        # Overlay the new update
+        hotel.update(meta_update)
+        
+        # 2. Format profile
+        
+        name = hotel.get("name", "Unknown Hotel")
+        stars = hotel.get("stars", "?")
+        location = hotel.get("location", "Unknown Location")
+        breakdown = hotel.get("sentiment_breakdown") or {}
+        reviews = hotel.get("reviews") or []
+        
+        stats_text = ""
+        if isinstance(breakdown, dict):
+            parts = []
+            for k, v in breakdown.items():
+                if isinstance(v, (int, float)):
+                     parts.append(f"{k}: {v}")
+                elif isinstance(v, dict) and "score" in v:
+                     parts.append(f"{k}: {v['score']}")
+            stats_text = ", ".join(parts)
+
+        reviews_text = ""
+        if isinstance(reviews, list):
+            snippets = []
+            reviews_list = reviews # Explicit list
+            for r in reviews_list[:3]:
+                if isinstance(r, dict):
+                    text = r.get("title") or r.get("snippet") or r.get("text")
+                    if isinstance(text, str):
+                        snippets.append(f"\"{text}\"")
+                elif isinstance(r, str):
+                    snippets.append(f"\"{r}\"")
+            reviews_text = " ".join(snippets)
+
+        profile = f"""
+Hotel: {name}
+Stars: {stars}
+Location: {location}
+Sentiment Stats: {stats_text}
+Top Reviews: {reviews_text}
+        """.strip()
+        
+        # 3. Generate Embedding
+        if stats_text or reviews_text:
+            print(f"[AnalystAgent] Generating sentiment embedding for {hotel_id}...")
+            # Ensure we await the async function
+            embedding = await get_embedding(profile)
+            
+            if embedding and len(embedding) == 768:
+                self.db.table("hotels").update({"sentiment_embedding": embedding}).eq("id", hotel_id).execute()
+                print(f"[AnalystAgent] Saved sentiment embedding for {hotel_id}")
+            else:
+                print(f"[AnalystAgent] Embedding failed or dimension mismatch: {len(embedding) if embedding else 'None'}")
 
 

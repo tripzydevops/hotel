@@ -25,7 +25,10 @@ async def get_embedding(text: str, model: str = "models/gemini-embedding-001") -
             title="Hotel Metadata",
             output_dimensionality=768
         )
-        return result['embedding']
+        emb = result['embedding']
+        if len(emb) != 768:
+            print(f"[Embedding] DEBUG: Generated {len(emb)} dims. Model: {model}. Keys: {result.keys()}")
+        return emb
     except Exception as e:
         print(f"[Embedding] Error generating embedding: {e}")
         return [0.0] * 768
