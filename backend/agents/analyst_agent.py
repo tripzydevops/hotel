@@ -48,13 +48,12 @@ class AnalystAgent:
                 
                 # Skip if price is 0 or invalid (hotel may be sold out)
                 # Keep the previous price by only updating last_scan timestamp
+                # Skip if price is 0 or invalid (hotel may be sold out)
+                # But continue to update metadata if available
                 if not current_price or current_price <= 0:
-                    print(f"[AnalystAgent] No new price for {hotel_id} (sold out or unavailable) - keeping previous price")
-                    # Update last_scan timestamp without changing price
-                    self.db.table("hotels").update({
-                        "last_scan": datetime.now().isoformat()
-                    }).eq("id", hotel_id).execute()
-                    continue
+                     print(f"[AnalystAgent] No new price for {hotel_id} (sold out or unavailable). Skipping price logic but check meta.")
+                     # We do NOT continue here anymore, we proceed to check for meta updates
+
                 
                 reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
                 
@@ -67,38 +66,43 @@ class AnalystAgent:
                     currency = "TRY"
                     reasoning_log.append(f"[Normalization] Converted {old_price} USD -> {current_price} TRY (Rate mismatch detected)")
 
-                # 3. Log to price_logs (This updates the dashboard)
+                # 3. Log to price_logs (Only if price is valid)
                 check_in = res.get("check_in")
                 if not check_in:
                     check_in = datetime.now().date()
                 check_in_str = check_in.isoformat() if hasattr(check_in, "isoformat") else str(check_in)
                 
-                self.db.table("price_logs").insert({
-                    "hotel_id": hotel_id,
-                    "price": current_price,
-                    "currency": currency,
-                    "check_in_date": check_in_str,
-                    "source": price_data.get("source", "serpapi"),
-                    "vendor": price_data.get("vendor", "Unknown"),
-                    "search_rank": price_data.get("search_rank"),
-                    # Deep Data: Parity Offers & Room Metadata
-                    "parity_offers": price_data.get("offers", []), # Mapped from 'offers' in scraper to 'parity_offers' in DB
-                    "room_types": price_data.get("room_types", [])
-                }).execute()
-                analysis_summary["prices_updated"] += 1
+                # Only insert into price_logs if we have a valid price
+                if current_price and current_price > 0:
+                    self.db.table("price_logs").insert({
+                        "hotel_id": hotel_id,
+                        "price": current_price,
+                        "currency": currency,
+                        "check_in_date": check_in_str,
+                        "source": price_data.get("source", "serpapi"),
+                        "vendor": price_data.get("vendor", "Unknown"),
+                        "search_rank": price_data.get("search_rank"),
+                        "parity_offers": price_data.get("offers", []),
+                        "room_types": price_data.get("room_types", [])
+                    }).execute()
+                    analysis_summary["prices_updated"] += 1
+                else:
+                    print(f"[AnalystAgent] No valid price for {hotel_id} - skipping price log.")
                 
                 # 4. Update hotel meta (Dashboard card metadata)
                 vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
                 meta_update = {
-                    "current_price": current_price,
-                    "currency": currency,
                     "last_scan": datetime.now().isoformat(),
                     "vendor_source": vendor
                 }
                 
+                # Only update current_price if we have a valid one
+                if current_price and current_price > 0:
+                    meta_update["current_price"] = current_price
+                    meta_update["currency"] = currency
+                
                 if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
                 if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
-                if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
                 if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
                 if price_data.get("latitude"): meta_update["latitude"] = price_data["latitude"]
@@ -121,34 +125,35 @@ class AnalystAgent:
                      except Exception as e:
                          print(f"[AnalystAgent] Sentiment history error: {e}")
 
-                # 5. Check for Threshold Breaches (Comparison with Previous)
-                prev_res = self.db.table("price_logs") \
-                    .select("price, currency") \
-                    .eq("hotel_id", hotel_id) \
-                    .order("recorded_at", desc=True) \
-                    .limit(2) \
-                    .execute()
-                
-                if len(prev_res.data) > 1:
-                    previous_price = prev_res.data[1]["price"]
-                    previous_currency = prev_res.data[1].get("currency", "USD")
+                # 5. Check for Threshold Breaches (Only if price is valid)
+                if current_price and current_price > 0:
+                    prev_res = self.db.table("price_logs") \
+                        .select("price, currency") \
+                        .eq("hotel_id", hotel_id) \
+                        .order("recorded_at", desc=True) \
+                        .limit(2) \
+                        .execute()
                     
-                    # Normalize if currencies differ
-                    if currency != previous_currency:
-                        previous_price = convert_currency(previous_price, previous_currency, currency)
+                    if len(prev_res.data) > 1:
+                        previous_price = prev_res.data[1]["price"]
+                        previous_currency = prev_res.data[1].get("currency", "USD")
+                        
+                        # Normalize if currencies differ
+                        if currency != previous_currency:
+                            previous_price = convert_currency(previous_price, previous_currency, currency)
 
-                    alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
-                    if alert:
-                        reasoning_log.append(f"[Alert] BREACH Detected! Current: {current_price}, Prev: {previous_price}. Diff: {alert['change_percent']}%")
-                        alert_data = {
-                            "user_id": str(user_id),
-                            "hotel_id": hotel_id,
-                            "currency": currency,
-                            **alert
-                        }
-                        analysis_summary["alerts"].append(alert_data)
-                        # Persist Alert
-                        self.db.table("alerts").insert(alert_data).execute()
+                        alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
+                        if alert:
+                            reasoning_log.append(f"[Alert] BREACH Detected! Current: {current_price}, Prev: {previous_price}. Diff: {alert['change_percent']}%")
+                            alert_data = {
+                                "user_id": str(user_id),
+                                "hotel_id": hotel_id,
+                                "currency": currency,
+                                **alert
+                            }
+                            analysis_summary["alerts"].append(alert_data)
+                            # Persist Alert
+                            self.db.table("alerts").insert(alert_data).execute()
 
             except Exception as e:
                 print(f"[AnalystAgent] CRITICAL error processing hotel {res.get('hotel_id')}: {e}")
