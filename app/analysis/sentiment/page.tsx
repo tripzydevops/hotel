@@ -419,6 +419,29 @@ export default function SentimentPage() {
         </Link>
       </div>
 
+      {/* DEBUG DUMP (Top of Page) */}
+      <div className="mb-8 p-4 bg-black/80 border border-green-500/50 rounded-xl overflow-auto max-h-[300px]">
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="text-green-400 font-bold">
+            DEBUG v2: Data Inspection
+          </h4>
+          <span className="text-xs text-gray-500">Params: {userId}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 text-[10px] font-mono whitespace-pre-wrap text-green-300">
+          <div>
+            <strong>Target Hotel ID:</strong> {targetHotel?.id} <br />
+            <strong>Name:</strong> {targetHotel?.name} <br />
+            <strong>Rating:</strong> {targetHotel?.rating} <br />
+            <strong>Breakdown Raw:</strong>
+            {JSON.stringify(targetHotel?.sentiment_breakdown, null, 2)}
+          </div>
+          <div>
+            <strong>Guest Mentions Raw:</strong>
+            {JSON.stringify(targetHotel?.guest_mentions?.slice(0, 3), null, 2)}
+          </div>
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
