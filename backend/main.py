@@ -4,6 +4,11 @@ Main application with monitoring and API endpoints.
 """
 
 import os
+import sys
+
+# Ensure backend module is resolvable
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any

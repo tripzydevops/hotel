@@ -169,22 +169,29 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Date Controls */}
-        <div className="flex items-center gap-4 bg-[var(--card-bg-dark)] p-1 rounded-xl border border-white/5">
+        {/* Date Controls (Styled Slider) */}
+        <div className="flex items-center p-1 rounded-xl bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 shadow-lg shadow-black/20">
           <button
             onClick={() => handleNav(-7)}
-            className="p-2 hover:bg-white/10 rounded-lg text-white/70"
+            className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-bold text-white min-w-[150px] text-center bg-white/5 py-1 rounded">
-            {visibleRangeLabel}
-          </span>
+
+          <div className="px-6 py-1.5 flex flex-col items-center min-w-[180px] border-x border-white/5 mx-1">
+            <span className="text-[10px] font-black uppercase text-[var(--soft-gold)] tracking-widest mb-0.5">
+              Viewing Range
+            </span>
+            <span className="text-sm font-bold text-white whitespace-nowrap">
+              {visibleRangeLabel}
+            </span>
+          </div>
+
           <button
             onClick={() => handleNav(7)}
-            className="p-2 hover:bg-white/10 rounded-lg text-white/70"
+            className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
