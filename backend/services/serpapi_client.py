@@ -468,10 +468,10 @@ class SerpApiClient:
         
         # Standardize keys
         standard_map = {
-            "cleanliness": "Cleanliness", "clean": "Cleanliness", "room": "Cleanliness",
-            "service": "Service", "staff": "Service", 
-            "location": "Location", "neighborhood": "Location",
-            "value": "Value", "price": "Value", "comfort": "Value"
+            "cleanliness": "Cleanliness", "clean": "Cleanliness", "room": "Cleanliness", "temizlik": "Cleanliness",
+            "service": "Service", "staff": "Service", "hizmet": "Service", "personel": "Service",
+            "location": "Location", "neighborhood": "Location", "konum": "Location", "mevki": "Location",
+            "value": "Value", "price": "Value", "comfort": "Value", "değer": "Value", "fiyat": "Value", "kalite": "Value"
         }
         
         # Create a dictionary of existing scores
