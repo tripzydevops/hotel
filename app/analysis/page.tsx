@@ -284,17 +284,18 @@ export default function AnalysisPage() {
           />
         </div>
 
-        {/* Rate Intelligence Grid (Replaces Heatmap) */}
-        {data?.daily_prices && data.daily_prices.length > 0 && (
-          <div className="mb-12">
-            <RateIntelligenceGrid
-              dailyPrices={data.daily_prices}
-              competitors={data.competitors}
-              currency={currency}
-              hotelName={data?.hotel_name}
-            />
-          </div>
-        )}
+        {/* Strategic Map: Advisor Quadrant */}
+        <div className="mb-12">
+          <AdvisorQuadrant
+            x={data?.quadrant_x || 0}
+            y={data?.quadrant_y || 0}
+            label={data?.quadrant_label || "Standard"}
+            ari={data?.ari}
+            sentiment={data?.sentiment_index}
+            targetRating={data?.target_rating}
+            marketRating={data?.market_rating}
+          />
+        </div>
 
         {/* Rate Spread Chart */}
         {data?.daily_prices && data.daily_prices.length > 0 && (
