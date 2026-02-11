@@ -2078,21 +2078,24 @@ async def get_analysis(
         if ari >= 100 and sentiment_index >= 100:
             q_label = "Premium King"
             advisory = f"Strategic Peak: You are commanding a premium price (${safe_int_price(target_price)}) with superior sentiment."
+            advisory += " Recommendation: Maintain rate parity but offer exclusive perks to lock in loyalty."
             advisory_keys.append("premium")
         elif ari < 100 and sentiment_index >= 100:
             q_label = "Value Leader"
             diff = int(100 - ari)
             advisory = f"Expansion Opportunity: Your price is {diff}% below market avg despite high guest satisfaction."
+            advisory += f" Recommendation: Your sentiment supports a {min(diff, 10)}% rate increase to capture missed revenue."
             advisory_keys.append("value")
         elif ari >= 100 and sentiment_index < 100:
             q_label = "Danger Zone"
             diff = int(ari - 100)
-            advisory = f"Caution: Your rate is {diff}% above market."
+            rec_drop = min(diff, 10)
+            advisory = f"Caution: Your rate is {diff}% above market, unsupported by current sentiment."
             if cheapest_competitor:
                  cmp_price = safe_int_price(cheapest_competitor['price'])
-                 advisory += f" Compare with {cheapest_competitor['name']} (${cmp_price})."
+                 advisory += f" Recommendation: consider matching {cheapest_competitor['name']} (${cmp_price}) or lowering rates by {rec_drop}%."
             else:
-                 advisory += " Guest sentiment does not support this premium."
+                 advisory += f" Recommendation: Lower rates by {rec_drop}% or launch a review campaign immediately."
             advisory_keys.append("danger")
         else: # Both < 100
             q_label = "Budget / Economy"
