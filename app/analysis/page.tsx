@@ -14,9 +14,12 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
+import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
 import RateSpreadChart from "@/components/analytics/RateSpreadChart";
+import RoomTypeMapper from "@/components/features/analysis/RoomTypeMapper";
+import SemanticSearchBar from "@/components/features/analysis/SemanticSearchBar";
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
 import AlertsModal from "@/components/modals/AlertsModal";
@@ -168,7 +171,10 @@ export default function AnalysisPage() {
     <div className="min-h-screen pb-12">
       <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-4">
+        <div className="mb-8">
+          <SemanticSearchBar
+            onSearch={(q) => console.log("Vector Search:", q)}
+          />
           <div className="flex items-center justify-end mb-2">
             {/* Currency Selector */}
             <select
@@ -201,6 +207,20 @@ export default function AnalysisPage() {
           roomType={roomType}
           onRoomTypeChange={setRoomType}
           availableRoomTypes={data?.available_room_types || []}
+        />
+
+        {/* Semantic Room Mapping Visualization */}
+        <RoomTypeMapper
+          selectedRoomType={roomType}
+          matches={
+            data?.price_rank_list
+              ?.map((hotel: any) => ({
+                hotelName: hotel.is_target ? "Target" : hotel.name,
+                matchedRoomName: hotel.matched_room_name || null,
+                matchScore: hotel.match_score || 0,
+              }))
+              .filter((h: any) => h.hotelName !== "Target") || []
+          }
         />
 
         {/* 2. Sentiment Analysis Breakdown - MOVED TO SENTIMENT PAGE */}
@@ -605,6 +625,12 @@ export default function AnalysisPage() {
             </Link>
           </div>
         </div>
+        {/* Vector Discovery Engine */}
+        {data?.hotel_id && (
+          <div className="mb-12 mt-12">
+            <DiscoveryShard hotelId={data.hotel_id} />
+          </div>
+        )}
       </main>
     </div>
   );

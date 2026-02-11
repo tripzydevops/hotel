@@ -1734,7 +1734,7 @@ async def get_analysis(
         def get_price_for_room(price_log, target_room_type):
             # If no filter, return the lead price (cheapest)
             if not target_room_type:
-                return float(price_log["price"]) if price_log.get("price") is not None else None
+                return float(price_log["price"]) if price_log.get("price") is not None else None, "Lead Price", 1.0
             
             # Check room_types array
             r_types = price_log.get("room_types") or []
@@ -1747,15 +1747,16 @@ async def get_analysis(
                     # Semantic Mode: Only accept room names in the allowed set
                     for r in r_types:
                         if isinstance(r, dict) and r.get("name") in allowed_names:
-                             return _extract_price(r.get("price"))
+                             # For now we assume high confidence if it was in the allowed map (which used 0.82 threshold)
+                             return _extract_price(r.get("price")), r.get("name"), 0.82 + (0.1 * int(r.get("name") == target_room_type))
                 
                 # 2. Fallback: String Match (Substring)
                 # Used if semantic lookup failed or room type not in catalog
                 for r in r_types:
                     if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
-                        return _extract_price(r.get("price"))
+                        return _extract_price(r.get("price")), r.get("name"), 0.9 if r.get("name") == target_room_type else 0.75
                         
-            return None
+            return None, None, 0.0
 
         def _extract_price(raw):
             if raw is not None:
@@ -1815,7 +1816,8 @@ async def get_analysis(
                     # Use lead price currency as fallback
                     lead_currency = prices[0].get("currency") or "USD"
                     
-                    orig_price = get_price_for_room(prices[0], room_type)
+                    
+                    orig_price, matched_room, match_score = get_price_for_room(prices[0], room_type)
                     
                     if orig_price is not None:
                         converted = convert_currency(orig_price, lead_currency, display_currency)
@@ -1829,7 +1831,9 @@ async def get_analysis(
                             "rating": hotel.get("rating"),
                             "is_target": is_target,
                             "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
-                            "room_types": prices[0].get("room_types") or []
+                            "room_types": prices[0].get("room_types") or [],
+                            "matched_room_name": matched_room,
+                            "match_score": match_score
                         })
                         
                         if is_target:
@@ -1838,7 +1842,7 @@ async def get_analysis(
                             p_list: List[Dict[str, Any]] = list(prices) if isinstance(prices, list) else []
                             for p in p_list[:30]:  # type: ignore
                                 try:
-                                    hist_price = get_price_for_room(p, room_type)
+                                    hist_price, _, _ = get_price_for_room(p, room_type)
                                     if hist_price is not None:
                                         target_history.append({
                                             "price": convert_currency(hist_price, p.get("currency") or "USD", display_currency),

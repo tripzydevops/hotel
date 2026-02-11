@@ -51,6 +51,42 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
     }
   }, [hotelId]);
 
+  const [trackingId, setTrackingId] = useState<string | null>(null);
+
+  const trackCompetitor = async (rival: DiscoveryRival) => {
+    setTrackingId(rival.id);
+    try {
+      // 1. Get current user
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user?.id) throw new Error("No user session");
+
+      // 2. Add to tracked hotels
+      await api.addHotel(
+        session.user.id,
+        rival.name,
+        rival.location,
+        false, // isTarget
+        "TRY", // Default currency, could be dynamic
+        undefined, // serpApiId - backend handles discovery/matching if missing, but we should pass if we had it.
+        // The API addHotel doesn't strictly require serpApiId but good to have if possible.
+        // We don't have serpApiId in DiscoveryRival interface explicitly unless we add it.
+        // For now, name/location is enough for the backend to start tracking.
+      );
+
+      // 3. Update local state to show "Tracked"
+      // In a real app we might want to refresh the global hotel list context
+    } catch (err) {
+      console.error("Failed to track:", err);
+    } finally {
+      setTrackingId(null);
+    }
+  };
+
   return (
     <div className="command-card p-6 min-h-[400px] flex flex-col relative overflow-hidden group">
       {/* Cinematic Background Radar */}
@@ -193,12 +229,22 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                     </div>
                   </div>
 
-                  {/* Match Indicator */}
+                  {/* Actions */}
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-1 text-[9px] font-black text-[var(--optimal-green)] bg-[var(--optimal-green)]/10 px-2 py-0.5 rounded-full uppercase">
-                      <ShieldCheck className="w-3 h-3" />
-                      Verified
-                    </div>
+                    <button
+                      onClick={() => trackCompetitor(rival)}
+                      disabled={trackingId === rival.id}
+                      className="flex items-center gap-1 text-[9px] font-black text-[var(--deep-ocean)] bg-[var(--soft-gold)] px-3 py-1.5 rounded-lg uppercase hover:bg-white transition-colors disabled:opacity-50"
+                    >
+                      {trackingId === rival.id ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <>
+                          <Radar className="w-3 h-3" />
+                          Track
+                        </>
+                      )}
+                    </button>
                     <button className="text-[var(--text-muted)] group-hover/item:text-[var(--soft-gold)] transition-colors">
                       <ExternalLink className="w-4 h-4" />
                     </button>
