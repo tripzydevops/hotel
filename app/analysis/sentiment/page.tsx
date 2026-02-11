@@ -385,6 +385,27 @@ export default function SentimentPage() {
     return `${idx + 1}${t("sentiment.rankSuffix.th")}`;
   };
 
+  // Helper to match categories (English + Turkish)
+  const getCategoryScore = (hotel: any, category: string) => {
+    if (!hotel?.sentiment_breakdown) return 0;
+
+    const target = category.toLowerCase();
+    const aliases: Record<string, string[]> = {
+      cleanliness: ["temizlik", "clean", "room", "cleanliness"],
+      service: ["hizmet", "staff", "personel", "service"],
+      location: ["konum", "neighborhood", "mevki", "location"],
+      value: ["değer", "fiyat", "price", "comfort", "kalite", "value"],
+    };
+
+    const item = hotel.sentiment_breakdown.find((s: any) => {
+      const name = (s.name || s.category || "").toLowerCase();
+      if (name === target) return true;
+      return aliases[target]?.includes(name);
+    });
+
+    return item?.rating || 0;
+  };
+
   return (
     <div className="min-h-screen bg-[#0a1628] p-8">
       {/* Breadcrumb */}
@@ -574,11 +595,7 @@ export default function SentimentPage() {
                     ];
                     const radarData = categories.map((cat) => {
                       const getScore = (hotel: any) =>
-                        hotel?.sentiment_breakdown?.find(
-                          (s: any) =>
-                            (s.name || s.category || "").toLowerCase() ===
-                            cat.toLowerCase(),
-                        )?.rating || 0;
+                        getCategoryScore(hotel, cat);
                       const marketAvgCat =
                         allHotels.length > 0
                           ? allHotels.reduce((sum, h) => sum + getScore(h), 0) /
@@ -602,21 +619,9 @@ export default function SentimentPage() {
                       <CategoryBar
                         key={cat}
                         category={cat}
-                        myScore={
-                          targetHotel.sentiment_breakdown?.find(
-                            (s: any) =>
-                              (s.name || s.category || "").toLowerCase() ===
-                              cat.toLowerCase(),
-                          )?.rating || 0
-                        }
+                        myScore={getCategoryScore(targetHotel, cat)}
                         leaderName={leader?.name}
-                        leaderScore={
-                          leader?.sentiment_breakdown?.find(
-                            (s: any) =>
-                              (s.name || s.category || "").toLowerCase() ===
-                              cat.toLowerCase(),
-                          )?.rating || 0
-                        }
+                        leaderScore={getCategoryScore(leader, cat)}
                         marketAvg={marketAvgRating}
                       />
                     ),
