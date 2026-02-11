@@ -53,6 +53,7 @@ export default function AnalysisPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [excludedHotelIds, setExcludedHotelIds] = useState<string[]>([]);
+  const [roomType, setRoomType] = useState<string>("");
   const [allHotels, setAllHotels] = useState<
     { id: string; name: string; is_target: boolean }[]
   >([]);
@@ -86,6 +87,7 @@ export default function AnalysisPage() {
       if (currency) params.set("currency", currency);
       if (startDate) params.set("start_date", startDate);
       if (endDate) params.set("end_date", endDate);
+      if (roomType) params.set("room_type", roomType);
       if (excludedHotelIds.length > 0)
         params.set("exclude_hotel_ids", excludedHotelIds.join(","));
 
@@ -105,7 +107,7 @@ export default function AnalysisPage() {
     } finally {
       setLoading(false);
     }
-  }, [userId, currency, startDate, endDate, excludedHotelIds]);
+  }, [userId, currency, startDate, endDate, excludedHotelIds, roomType]);
 
   useEffect(() => {
     loadData();
@@ -187,6 +189,9 @@ export default function AnalysisPage() {
           startDate={startDate}
           endDate={endDate}
           onDateChange={handleDateChange}
+          roomType={roomType}
+          onRoomTypeChange={setRoomType}
+          availableRoomTypes={data?.available_room_types || []}
         />
 
         {/* 2. Sentiment Analysis Breakdown - MOVED TO SENTIMENT PAGE */}

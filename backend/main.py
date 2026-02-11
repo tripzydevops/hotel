@@ -1578,6 +1578,7 @@ async def get_analysis(
     start_date: Optional[str] = Query(None, description="Start date for analysis (ISO format)"),
     end_date: Optional[str] = Query(None, description="End date for analysis (ISO format)"),
     exclude_hotel_ids: Optional[str] = Query(None, description="Comma-separated hotel IDs to exclude"),
+    room_type: Optional[str] = Query(None, description="Filter by specific room type (e.g. 'Deluxe Suite')"),
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
@@ -1654,26 +1655,54 @@ async def get_analysis(
         market_sentiments: List[float] = []
         target_history = []
         
+        # Helper to extract price for specific room type
+        def get_price_for_room(price_log, target_room_type):
+            if not target_room_type:
+                return float(price_log["price"]) if price_log.get("price") is not None else None
+            
+            # Check room_types array
+            r_types = price_log.get("room_types") or []
+            if isinstance(r_types, list):
+                for r in r_types:
+                    if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
+                        raw = r.get("price")
+                        if raw is not None:
+                            try:
+                                if isinstance(raw, str):
+                                    import re
+                                    clean = re.sub(r'[^\d.]', '', raw)
+                                    return float(clean)
+                                return float(raw)
+                            except: pass
+            return None
+
+        # Collect all available rooms 
+        available_room_types = set()
+        for hid, prices in hotel_prices_map.items():
+            for p in prices:
+                rt = p.get("room_types")
+                if isinstance(rt, list):
+                    for r in rt:
+                        if isinstance(r, dict) and r.get("name"):
+                            available_room_types.add(r["name"])
+
         # 4. Map Prices and Find Target
         for hotel in hotels:
             hid = str(hotel["id"])
             hotel_rating = float(hotel.get("rating") or 0.0)
             reviews = int(hotel.get("review_count") or 0)
             
-            # Scientific Weighting: Boost rating slightly by volume (log scale) to differentiate 5.0 (1 rev) vs 4.8 (1000 revs)
             import math
-            weight = math.log10(reviews + 10) / 2.0 # Scale 0..~1.5
+            weight = math.log10(reviews + 10) / 2.0 
             weighted_sentiment = hotel_rating * weight
             
             market_sentiments.append(weighted_sentiment)
             
-            # Explicit target check
             if hotel.get("is_target_hotel"):
                 target_hotel_id = hid
                 target_hotel_name = hotel.get("name")
                 target_sentiment = weighted_sentiment
 
-        # FALLBACK: If no explicit target, pick the first one
         # FALLBACK: If no explicit target, pick the first one
         if not target_hotel_id and hotels:
             target_hotel_id = str(hotels[0]["id"])
@@ -1690,10 +1719,14 @@ async def get_analysis(
             prices = hotel_prices_map.get(hid, [])
             if prices:
                 try:
-                    orig_price = float(prices[0]["price"]) if prices[0].get("price") is not None else None
+                    # Resolve price based on room_type filter
+                    # Use lead price currency as fallback
+                    lead_currency = prices[0].get("currency") or "USD"
+                    
+                    orig_price = get_price_for_room(prices[0], room_type)
+                    
                     if orig_price is not None:
-                        orig_currency = prices[0].get("currency") or "USD"
-                        converted = convert_currency(orig_price, orig_currency, display_currency)
+                        converted = convert_currency(orig_price, lead_currency, display_currency)
                         current_prices.append(converted)
                         
                         # Add to price rank list
@@ -1713,9 +1746,10 @@ async def get_analysis(
                             p_list: List[Dict[str, Any]] = list(prices) if isinstance(prices, list) else []
                             for p in p_list[:30]:  # type: ignore
                                 try:
-                                    if p.get("price") is not None:
+                                    hist_price = get_price_for_room(p, room_type)
+                                    if hist_price is not None:
                                         target_history.append({
-                                            "price": convert_currency(float(p["price"]), p.get("currency") or "USD", display_currency),
+                                            "price": convert_currency(hist_price, p.get("currency") or "USD", display_currency),
                                             "recorded_at": p.get("recorded_at")
                                         })
                                 except (Exception, TypeError): continue
@@ -1901,7 +1935,8 @@ async def get_analysis(
             "min_hotel": min_hotel,
             "max_hotel": max_hotel,
             "sentiment_breakdown": _transform_serp_links(target_h.get("sentiment_breakdown")) if target_h else None,
-            "guest_mentions": target_h.get("guest_mentions") if target_h else None
+            "guest_mentions": target_h.get("guest_mentions") if target_h else None,
+            "available_room_types": sorted(list(available_room_types))
         }
         
         return JSONResponse(content=jsonable_encoder(analysis_data))

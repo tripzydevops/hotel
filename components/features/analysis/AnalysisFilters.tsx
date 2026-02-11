@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, ChevronDown, X, Filter, Star } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  X,
+  Filter,
+  Star,
+  BedDouble,
+} from "lucide-react";
 
 interface Hotel {
   id: string;
@@ -17,6 +24,9 @@ interface AnalysisFiltersProps {
   startDate: string;
   endDate: string;
   onDateChange: (start: string, end: string) => void;
+  roomType?: string;
+  onRoomTypeChange?: (type: string) => void;
+  availableRoomTypes?: string[];
 }
 
 const DATE_PRESETS = [
@@ -34,9 +44,13 @@ export default function AnalysisFilters({
   startDate,
   endDate,
   onDateChange,
+  roomType = "",
+  onRoomTypeChange,
+  availableRoomTypes = [],
 }: AnalysisFiltersProps) {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showHotelDropdown, setShowHotelDropdown] = useState(false);
+  const [showRoomDropdown, setShowRoomDropdown] = useState(false);
 
   const applyPreset = (days: number) => {
     if (days === 0) {
@@ -115,6 +129,50 @@ export default function AnalysisFilters({
             )}
           </div>
         </div>
+
+        {/* Room Type Filter (New) */}
+        {availableRoomTypes &&
+          availableRoomTypes.length > 0 &&
+          onRoomTypeChange && (
+            <div className="relative">
+              <button
+                onClick={() => setShowRoomDropdown(!showRoomDropdown)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+              >
+                <BedDouble className="w-4 h-4 text-[var(--text-muted)]" />
+                <span className="truncate max-w-[150px]">
+                  {roomType || "All Room Types"}
+                </span>
+                <ChevronDown className="w-3 h-3 text-white/40" />
+              </button>
+
+              {showRoomDropdown && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-[var(--deep-ocean)] border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
+                  <button
+                    onClick={() => {
+                      onRoomTypeChange("");
+                      setShowRoomDropdown(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-xs hover:bg-white/10 transition-colors ${!roomType ? "text-[var(--soft-gold)] font-bold" : "text-white/80"}`}
+                  >
+                    All Room Types
+                  </button>
+                  {availableRoomTypes.map((rt) => (
+                    <button
+                      key={rt}
+                      onClick={() => {
+                        onRoomTypeChange(rt);
+                        setShowRoomDropdown(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-xs hover:bg-white/10 transition-colors ${roomType === rt ? "text-[var(--soft-gold)] font-bold" : "text-white/80"}`}
+                    >
+                      {rt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Hotel Filter */}
         <div className="relative">
