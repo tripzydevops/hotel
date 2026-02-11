@@ -1993,7 +1993,8 @@ async def get_analysis(
                     target_price = 0.0
                     
                     # If we have a last known price, use it (LOCF Strategy)
-                    if last_known_target is not None:
+                    # BUT ONLY for past/present dates (not future)
+                    if last_known_target is not None and curr.date() <= datetime.now().date():
                         target_val = last_known_target
                         target_price = last_known_target
                     
