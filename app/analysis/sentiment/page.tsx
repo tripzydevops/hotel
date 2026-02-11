@@ -575,7 +575,9 @@ export default function SentimentPage() {
                     const radarData = categories.map((cat) => {
                       const getScore = (hotel: any) =>
                         hotel?.sentiment_breakdown?.find(
-                          (s: any) => s.name === cat || s.category === cat,
+                          (s: any) =>
+                            (s.name || s.category || "").toLowerCase() ===
+                            cat.toLowerCase(),
                         )?.rating || 0;
                       const marketAvgCat =
                         allHotels.length > 0
@@ -602,13 +604,17 @@ export default function SentimentPage() {
                         category={cat}
                         myScore={
                           targetHotel.sentiment_breakdown?.find(
-                            (s: any) => s.name === cat || s.category === cat,
+                            (s: any) =>
+                              (s.name || s.category || "").toLowerCase() ===
+                              cat.toLowerCase(),
                           )?.rating || 0
                         }
                         leaderName={leader?.name}
                         leaderScore={
                           leader?.sentiment_breakdown?.find(
-                            (s: any) => s.name === cat || s.category === cat,
+                            (s: any) =>
+                              (s.name || s.category || "").toLowerCase() ===
+                              cat.toLowerCase(),
                           )?.rating || 0
                         }
                         marketAvg={marketAvgRating}
