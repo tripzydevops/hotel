@@ -754,6 +754,17 @@ async def run_monitor_background(
         print("[Orchestrator] Triggering AnalystAgent for analysis...")
         analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options, session_id=session_id)
 
+        # 4.5 Phase 2.5: Room Type Catalog (Embedding new room types)
+        # Automatically embeds newly discovered room types for cross-hotel matching.
+        # Only processes NEW room types — skips already-cataloged ones to minimize API calls.
+        try:
+            from backend.services.room_type_service import update_room_type_catalog
+            print("[Orchestrator] Triggering RoomTypeCatalog update...")
+            await update_room_type_catalog(db, scraper_results, hotels)
+        except Exception as e:
+            # Non-critical — don't fail the scan if embedding fails
+            print(f"[Orchestrator] RoomTypeCatalog update failed (non-critical): {e}")
+
         # 5. Phase 3: Notifier Agent (Communication)
         if analysis["alerts"] and settings:
             print(f"[Orchestrator] Triggering NotifierAgent for {len(analysis['alerts'])} alerts...")
