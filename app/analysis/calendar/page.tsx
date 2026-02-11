@@ -71,16 +71,36 @@ export default function CalendarPage() {
 
       // Auto-select "Standard Room" if no room type selected yet & available
       if (
-        !roomType &&
+        (!roomType || !result.available_room_types.includes(roomType)) &&
         result.available_room_types &&
         result.available_room_types.length > 0
       ) {
         // Look for "Standard" or "Double" or "King" - or just default to first
-        const standard = result.available_room_types.find((rt: string) =>
-          rt.toLowerCase().includes("standard"),
-        );
-        if (standard) setRoomType(standard);
-        else setRoomType(result.available_room_types[0]);
+        // Added Turkish "Standart" and "Klasik"
+        const priorityKeywords = [
+          "standard",
+          "standart",
+          "classic",
+          "klasik",
+          "double",
+          "queen",
+          "king",
+        ];
+
+        let defaultRoom = result.available_room_types[0];
+
+        // Try to find best match based on priority
+        for (const keyword of priorityKeywords) {
+          const found = result.available_room_types.find((rt: string) =>
+            rt.toLowerCase().includes(keyword),
+          );
+          if (found) {
+            defaultRoom = found;
+            break;
+          }
+        }
+
+        setRoomType(defaultRoom);
       }
     } catch (e) {
       console.error("Failed to load calendar data", e);

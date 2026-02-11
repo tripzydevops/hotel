@@ -55,9 +55,17 @@ export default function AnalysisSidebar({
             onChange={(e) => onRoomTypeChange(e.target.value)}
             className="w-full appearance-none bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer"
           >
-            <option value="" className="bg-[var(--deep-ocean)] text-white/60">
-              All Room Types
-            </option>
+            {/* Disabled placeholder if no selection yet */}
+            {!roomType && (
+              <option
+                value=""
+                disabled
+                className="bg-[var(--deep-ocean)] text-white/40"
+              >
+                Select Room Type
+              </option>
+            )}
+
             {availableRoomTypes.map((rt) => (
               <option
                 key={rt}
