@@ -9,6 +9,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onUpdate?: (profile: any) => void;
 }
 
 const TIMEZONES = [
@@ -26,6 +27,7 @@ export default function ProfileModal({
   isOpen,
   onClose,
   userId,
+  onUpdate,
 }: ProfileModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,8 @@ export default function ProfileModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.updateProfile(userId, profile);
+      const updated = await api.updateProfile(userId, profile);
+      if (onUpdate) onUpdate(updated);
       onClose();
     } catch (err) {
       console.error("Failed to save profile:", err);

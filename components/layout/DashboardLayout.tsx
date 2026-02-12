@@ -278,6 +278,7 @@ export default function DashboardLayout({
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           userId={userId || ""}
+          onUpdate={(updated) => setProfile(updated)}
         />
 
         <SubscriptionModal

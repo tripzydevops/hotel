@@ -825,6 +825,29 @@ async def search_hotel_directory(
             .limit(5) \
             .execute()
         
+        local_results = result.data or []
+        
+        # 2026 Strategy: Live Fallback
+        # If local results are sparse AND query is high-quality (>3 chars),
+        # trigger a real-time SerpApi search to bridge the gap for new hotels.
+        merged_results = local_results
+        if len(local_results) < 3 and len(q_trimmed) >= 3:
+            print(f"DEBUG SEARCH: Sparse local results ({len(local_results)}). Triggering SerpApi Fallback...")
+            try:
+                live_results = await serpapi_client.search_hotels(q_trimmed, limit=5)
+                # Ensure source is set for UI badge
+                for lr in live_results:
+                    lr["source"] = "serpapi"
+                
+                # De-duplicate: Don't add if already in local_results
+                local_keys = {f"{h['name'].lower()}|{h.get('location', '').lower()}" for h in local_results}
+                for lr in live_results:
+                    key = f"{lr['name'].lower()}|{lr['location'].lower()}"
+                    if key not in local_keys:
+                        merged_results.append(lr)
+            except Exception as se:
+                print(f"DEBUG SEARCH: SerpApi Fallback Error: {se}")
+
         # Log this search if user_id is provided
         if user_id:
             await log_query(
@@ -833,11 +856,11 @@ async def search_hotel_directory(
                 hotel_name=q_trimmed,
                 location=None,
                 action_type="search",
-                status="success"
+                status="success" if merged_results else "no_results"
             )
         
-        print(f"DEBUG SEARCH: Found {len(result.data)} results")
-        return result.data or []
+        print(f"DEBUG SEARCH: Found {len(merged_results)} results total")
+        return merged_results[:10]
     except Exception as e:
         print(f"Error searching directory: {e}")
         return []

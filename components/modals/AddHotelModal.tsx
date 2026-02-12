@@ -221,6 +221,7 @@ export default function AddHotelModal({
                 onChange={(e) => {
                   setName(e.target.value);
                   setSerpApiId(undefined); // Reset ID if user types manually
+                  setSuggestions([]); // Clear suggestions while typing
                   setShowSuggestions(true);
                 }}
                 onFocus={() =>
