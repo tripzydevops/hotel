@@ -1,0 +1,52 @@
+
+============================================================
+[LINT RUNNER] Unified Linting
+============================================================
+Project: C:\projects\hotel
+Time: 2026-02-12 20:47:51
+Type: python
+Linters: 3
+------------------------------------------------------------
+
+Running: npm lint...
+  [PASS] npm lint
+
+Running: tsc...
+  [PASS] tsc
+
+Running: ruff...
+  [FAIL] ruff
+
+============================================================
+SUMMARY
+============================================================
+[PASS] npm lint
+[PASS] tsc
+[FAIL] ruff
+
+{
+  "script": "lint_runner",
+  "project": "C:\\projects\\hotel",
+  "type": "python",
+  "checks": [
+    {
+      "name": "npm lint",
+      "passed": true,
+      "output": "\n> hotel@0.1.0 lint\n> eslint\n\n",
+      "error": "(node:30520) ESLintIgnoreWarning: The \".eslintignore\" file is no longer supported. Switch to using the \"ignores\" property in \"eslint.config.js\": https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "tsc",
+      "passed": true,
+      "output": "",
+      "error": ""
+    },
+    {
+      "name": "ruff",
+      "passed": false,
+      "output": "E402 Module level import not at top of file\n  --> api\\index.py:10:1\n   |\n 9 | # Import the FastAPI application from backend.main\n10 | from backend.main import app as _app\n   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n11 |\n12 | # Vercel requires the app variable to be exposed\n   |\n\nF401 [*] `backend.main.app` imported but unused\n  --> api\\index.py:10:33\n   |\n 9 | # Import the FastAPI application from backend.main\n10 | from backend.main import app as _app\n   |                                 ^^^^\n11 |\n12 | # Vercel requires the app variable to be exposed\n   |\nhelp: Remove unused import: `backend.main.app`\n\nE701 Multiple statements on one line (colon)\n   --> backend\\agents\\analyst_agent.py:112:46\n    |\n110 |                 if price_data.get(\"reviews_breakdown\"): \n111 |                     meta_update[\"sentiment_breakdown\"] = price_data[\"reviews_breakdown\"]\n112 |                 if price_data.get(\"latitude\"): meta_update[\"latitude\"] = price_data[\"latitude\"]\n    |                                              ^\n113 |                 if price_data.get(\"longitude\"): meta_update[\"longitude\"] = price_data[\"longitude\"]\n    |\n\nE701 Multiple statements on one line (colon)\n   --> backend\\agents\\analyst_agent.py:113:47\n    |\n111 |                     meta_update[\"sentiment_breakdown\"] = price_data[\"reviews_breakdown\"]\n112 |                 if price_data.get(\"latitude\"): meta_update[\"latitude\"] = price_data[\"latitude\"]\n113 |                 if price_data.get(\"longitude\"): meta_update[\"longitude\"] = price_data[\"longitude\"]\n    |                                               ^\n114 |                 \n115 |                 print(f\"[AnalystAgent] Updating hotel {hotel_id} metadata: {meta_update}\")\n    |\n\nF841 Local variable `target_res` is assigned to but never used\n   --> backend\\agents\\analyst_agent.py:187:9\n    |\n186 | \u2026     # 4. Competitor Undercut Detection (Multi-hotel reasoning)\n187 | \u2026     target_res = [r for r in scraper_results if r.get(\"price_data\") and r[\"price_data\"].get(\"pric",
+      "error": ""
+    }
+  ],
+  "passed": false
+}

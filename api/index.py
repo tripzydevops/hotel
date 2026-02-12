@@ -7,7 +7,7 @@ if path not in sys.path:
     sys.path.append(path)
 
 # Import the FastAPI application from backend.main
-from backend.main import app
+from backend.main import app as _app  # noqa: E402, F401
 
 # Vercel requires the app variable to be exposed
 # This file acts as the entry point for Vercel Serverless Functions

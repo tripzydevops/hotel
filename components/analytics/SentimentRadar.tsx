@@ -41,7 +41,9 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
               color: "#F3F4F6",
             }}
             itemStyle={{ color: "#E5E7EB" }}
-            formatter={(value: number) => value.toFixed(2)}
+            formatter={(value: number | string | undefined) =>
+              typeof value === "number" ? value.toFixed(2) : value
+            }
           />
           <Legend
             wrapperStyle={{ paddingTop: "20px" }}

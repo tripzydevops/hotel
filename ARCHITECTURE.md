@@ -1,47 +1,70 @@
-# Hotel Rate Sentinel Technical Architecture
+# Tripzy.travel Backend Architecture (Speed-Optimized)
 
-## 🏗️ 3-Layer Architecture
+The Tripzy backend is built with FastAPI and follows a 3-Layer Modular Architecture designed for scalability, AI navigability, and performance.
 
-This project follows a strict 3-Layer Architecture to solve the "Cold Start" problem in travel recommendations.
+## 🏗️ Core Structure
 
-### LAYER 1: User Interface & Signal Collection
+```mermaid
+graph TD
+    A[main.py - Entry Point] --> B[API Router Layer]
+    B --> B1[admin_routes.py]
+    B --> B2[hotel_routes.py]
+    B --> B3[monitor_routes.py]
+    B --> B4[dashboard_routes.py]
+    B --> B5[analysis_routes.py]
+    B --> B6[profile_routes.py]
 
-- **Frontend:** Next.js (Web) / React Native (Mobile)
-- **Signal Collection:** Implemented a "User Signal Collection Module" that buffers interactions.
-- **Recent Update:** Reports page localization and currency selection for enterprise-grade analytics.
+    B1 --> C[Service Layer]
+    B2 --> C
+    B3 --> C
 
-### LAYER 2: Autonomous Reasoning Engine (The "Brain")
+    C --> C1[admin_service.py]
+    C --> C2[hotel_service.py]
+    C --> C3[monitor_service.py]
+    C --> C4[profile_service.py]
 
-- **Architecture:** Transitioned to an **Agent-Mesh** structure (Orchestrator, Scraper, Analyst, Notifier).
-- **Backend:** Python (FastAPI).
-- **Discovery Engine:** Autonomous "Ghost Competitor" discovery using Gemini embeddings and `pgvector`.
-- **Strategic Benchmarking:** Implemented **ARI (Average Rate Index)** and **GRI (Sentiment Index)** to normalize market positioning.
-- **Logic:** Autonomous Quadrant Advisor analyzes Price vs. Value to provide revenue management "So What?" reasoning.
-- **Reasoning:** Gemini-compatible reasoning engine explains recommendation logic based on market spread.
+    C --> D[Agent Layer]
+    D --> D1[ScraperAgent]
+    D --> D2[AnalystAgent - pgvector]
+    D --> D3[NotifierAgent]
 
-### LAYER 3: Data & Algorithms (The Infrastructure)
+    C --> E[Data Layer - Supabase]
+    E --> E1[PostgreSQL]
+    E --> E2[pgvector Semantic Search]
+```
 
-- **Database:** Supabase (PostgreSQL)
-- **Vector Search:** `pgvector` enabled with HNSW indexing for high-speed semantic matchmaking.
-- **Embeddings:** 768-dimensional vectors generated via Gemini (`embedding-001`) for hotel metadata.
-- **Recommendation:** Hybrid approach (Collaborative Filtering + Vector-Based Semantic Search).
-- **Location Discovery:** Self-learning `location_registry` that standardizes market data through hierarchical selection and autonomous ingestion during hotel creation.
+### 1. The Entry Point (`main.py`)
 
-## 📊 Core Features
+Acts purely as the application orchestrator. Responsible for:
 
-### 1. Market Intelligence Reports
+- Environment loading and configuration.
+- Global exception handling.
+- Middleware (CORS).
+- Router registration.
 
-- **Localization:** Full support for EN/TR locales with dynamic dictionaries.
-- **Currency Normalization:** Real-time conversion between USD, EUR, TRY, and GBP for competitor analysis.
-- **Export:** High-quality PDF and CSV export for revenue management.
+### 2. API Routing Layer (`backend/api/`)
 
-### 2. Autonomous Monitoring
+Endpoints are isolated into logical domains. This reduces context noise and allows for faster AI processing.
 
-- **SerpApi Integration:** Automated extraction of market hotel rates.
-- **Enterprise Gating:** Room-level intelligence gated for Enterprise tier users.
+- `admin_routes.py`: System stats, user management, and global settings.
+- `hotel_routes.py`: Hotel CRUD and directory search (with "Cold Start" logic).
+- `monitor_routes.py`: Asynchronous price monitoring triggers and scan sessions.
+- `analysis_routes.py`: Market intelligence and autonomous rival discovery.
 
-## 🛠️ Tech Stack
+### 3. Service Layer (`backend/services/`)
 
-- **Frontend:** Next.js 14, Tailwind CSS, Lucide Icons, Recharts.
-- **Backend:** Python 3.11+, FastAPI, Pydantic, Supabase-py.
-- **Intelligence:** SerpApi, Gemini (LLM).
+Contains the core business logic. Separation from routes ensures that logic is reusable (e.g., by both API and background cron tasks).
+
+### 4. Autonomous Agent Mesh (`backend/agents/`)
+
+Specialized LLM-powered agents:
+
+- **ScraperAgent:** Multi-provider data extraction.
+- **AnalystAgent:** Vector-based reasoning and parity detection.
+- **NotifierAgent:** Intelligent alerting based on user preferences.
+
+## ⚡ Speed & AI Optimization
+
+- **Router Isolation:** Files are kept under 500 lines to ensure the AI can process them in a single pass.
+- **Lazy Loading Strategy:** Heavy agents and service-role DB clients are initialized only when needed.
+- **Decoupled Logic:** `main.py` size has been reduced by 95%, making IDE autocompletion and linting significantly faster.

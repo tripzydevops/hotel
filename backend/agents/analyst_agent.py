@@ -24,7 +24,7 @@ class AnalystAgent:
         session_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """Analyzes scraped data, logs prices, and detects alerts. (Now with Reasoning Trace)"""
-        analysis_summary = {
+        analysis_summary: Dict[str, Any] = {
             "prices_updated": 0,
             "alerts": [],
             "target_price": None
@@ -101,12 +101,18 @@ class AnalystAgent:
                     meta_update["current_price"] = current_price
                     meta_update["currency"] = currency
                 
-                if price_data.get("rating"): meta_update["rating"] = price_data["rating"]
-                if price_data.get("property_token"): meta_update["serp_api_id"] = price_data["property_token"]
-                if price_data.get("image_url"): meta_update["image_url"] = price_data["image_url"]
-                if price_data.get("reviews_breakdown"): meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
-                if price_data.get("latitude"): meta_update["latitude"] = price_data["latitude"]
-                if price_data.get("longitude"): meta_update["longitude"] = price_data["longitude"]
+                if price_data.get("rating"): 
+                    meta_update["rating"] = price_data["rating"]
+                if price_data.get("property_token"): 
+                    meta_update["serp_api_id"] = price_data["property_token"]
+                if price_data.get("image_url"): 
+                    meta_update["image_url"] = price_data["image_url"]
+                if price_data.get("reviews_breakdown"): 
+                    meta_update["sentiment_breakdown"] = price_data["reviews_breakdown"]
+                if price_data.get("latitude"): 
+                    meta_update["latitude"] = price_data["latitude"]
+                if price_data.get("longitude"): 
+                    meta_update["longitude"] = price_data["longitude"]
                 
                 print(f"[AnalystAgent] Updating hotel {hotel_id} metadata: {meta_update}")
                 update_res = self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
@@ -158,7 +164,9 @@ class AnalystAgent:
                                 "currency": currency,
                                 **alert
                             }
-                            analysis_summary["alerts"].append(alert_data)
+                            alerts_list: List[Dict[str, Any]] = analysis_summary.get("alerts", [])
+                            alerts_list.append(alert_data)
+                            analysis_summary["alerts"] = alerts_list
                             # Persist Alert
                             self.db.table("alerts").insert(alert_data).execute()
 
@@ -180,7 +188,7 @@ class AnalystAgent:
                 print(f"[AnalystAgent] Failed to save reasoning trace: {e}")
 
         # 4. Competitor Undercut Detection (Multi-hotel reasoning)
-        target_res = [r for r in scraper_results if r.get("price_data") and r["price_data"].get("price") and any(h['id'] == r['hotel_id'] and h.get('is_target_hotel') for h in self._get_hotels(user_id))]
+        # target_res = [r for r in scraper_results if r.get("price_data") and r["price_data"].get("price") and any(h['id'] == r['hotel_id'] and h.get('is_target_hotel') for h in self._get_hotels(user_id))]
         # Note: In a real mesh, we'd pass the hotel list or fetch it once.
         # For efficiency, we'll assume the caller might pass the target price or we fetch it.
         # Let's keep it simple for now and just handle single-hotel alerts.
@@ -206,7 +214,7 @@ class AnalystAgent:
                 # Try UUID
                 try:
                     target = self.db.table("hotel_directory").select("*").eq("id", target_identifier).execute()
-                except:
+                except Exception:
                     target = None
             
             if not target or not target.data:
@@ -219,7 +227,10 @@ class AnalystAgent:
                 print(f"[AnalystAgent] Target {target_identifier} not found for discovery.")
                 return []
             
-            target_data = target.data[0]
+            target_data: Dict[str, Any] = target.data[0] if target and hasattr(target, 'data') and target.data else {}
+            if not target_data:
+                print(f"[AnalystAgent] Target {target_identifier} has no data.")
+                return []
             serp_api_id = target_data.get("serp_api_id")
             
             # Extract target location for filtering
@@ -256,16 +267,16 @@ class AnalystAgent:
                 
                 # Try coordinate-based distance first
                 if target_lat and target_lng and rival_lat and rival_lng:
-                    distance_km = self._haversine_distance(
+                    dist_km: float = float(self._haversine_distance(
                         target_lat, target_lng, rival_lat, rival_lng
-                    )
-                    rival["distance_km"] = round(distance_km, 1)
+                    ))
+                    rival["distance_km"] = round(dist_km, 1)
                     
                     # Filter: only include hotels within 50km
-                    if distance_km <= 25:
+                    if dist_km <= 25:
                         rival["location_match"] = "nearby"  # Very close
                         filtered_results.append(rival)
-                    elif distance_km <= 50:
+                    elif dist_km <= 50:
                         rival["location_match"] = "region"  # Same region
                         filtered_results.append(rival)
                     # Skip hotels > 50km away
@@ -294,11 +305,12 @@ class AnalystAgent:
             filtered_results.sort(key=sort_key)
             
             # Ensure similarity values are valid numbers
-            for rival in filtered_results[:limit]:
+            rivals_subset: List[Dict[str, Any]] = filtered_results[:limit]
+            for rival in rivals_subset:
                 if rival.get("similarity") is None:
                     rival["similarity"] = 0.0
             
-            return filtered_results[:limit]
+            return rivals_subset
             
         except Exception as e:
             print(f"[AnalystAgent] Discovery error: {e}")
@@ -364,7 +376,6 @@ class AnalystAgent:
         breakdown = hotel.get("sentiment_breakdown") or {}
         reviews = hotel.get("reviews") or []
         
-        stats_text = ""
         if isinstance(breakdown, dict):
             parts = []
             for k, v in breakdown.items():
@@ -372,20 +383,19 @@ class AnalystAgent:
                      parts.append(f"{k}: {v}")
                 elif isinstance(v, dict) and "score" in v:
                      parts.append(f"{k}: {v['score']}")
-            stats_text = ", ".join(parts)
+            stats_text = str(", ".join(parts))
 
         reviews_text = ""
         if isinstance(reviews, list):
             snippets = []
-            reviews_list = reviews # Explicit list
-            for r in reviews_list[:3]:
+            for r in reviews[:3]:
                 if isinstance(r, dict):
                     text = r.get("title") or r.get("snippet") or r.get("text")
                     if isinstance(text, str):
                         snippets.append(f"\"{text}\"")
                 elif isinstance(r, str):
                     snippets.append(f"\"{r}\"")
-            reviews_text = " ".join(snippets)
+            reviews_text = str(" ".join(snippets))
 
         profile = f"""
 Hotel: {name}

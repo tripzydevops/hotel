@@ -9,9 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  defs,
-  linearGradient,
-  stop,
 } from "recharts";
 import {
   ChevronLeft,

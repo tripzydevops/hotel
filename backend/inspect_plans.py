@@ -3,7 +3,6 @@ import asyncio
 import os
 # Force reload if needed
 from dotenv import load_dotenv
-import os
 from supabase import create_client, Client
 
 # Try loading from possible locations

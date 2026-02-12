@@ -1,9 +1,9 @@
 import sys
 import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
-from bs4 import BeautifulSoup
 import json
+from bs4 import BeautifulSoup
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 with open('trivago_debug.html', 'r', encoding='utf-8') as f:
     html = f.read()
