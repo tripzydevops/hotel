@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Building2, MapPin, Loader2, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/components/ui/ToastContext";
 
 interface AddHotelModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function AddHotelModal({
   userPlan = "trial",
 }: AddHotelModalProps) {
   const { t } = useI18n();
+  const { toast } = useToast();
   const [locationsRegistry, setLocationsRegistry] = useState<any[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [country, setCountry] = useState("Turkey");
@@ -155,7 +157,12 @@ export default function AddHotelModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLimitReached) return;
+    if (isLimitReached) {
+      toast.error(
+        t("dashboard.limitReached") || "Hotel limit reached. Please upgrade.",
+      );
+      return;
+    }
 
     setLoading(true);
     try {
@@ -172,8 +179,9 @@ export default function AddHotelModal({
       setIsTarget(false);
       setIsManualEntry(false);
       setSerpApiId(undefined);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding hotel:", error);
+      toast.error(error.message || "Failed to add hotel");
     } finally {
       setLoading(false);
     }
