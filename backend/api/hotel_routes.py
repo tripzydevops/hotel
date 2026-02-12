@@ -21,12 +21,16 @@ router = APIRouter(prefix="/api", tags=["hotels"])
 async def search_hotel_directory(
     q: str, 
     user_id: Optional[UUID] = Query(None), 
+    city: Optional[str] = Query(None),
     db: Optional[Client] = Depends(get_supabase)
 ):
     """Search hotel directory (local + live callback)."""
     if not q or len(q.strip()) < 2 or not db:
         return []
-    return await search_hotel_directory_logic(q, user_id, db)
+    return await search_hotel_directory_logic(q, user_id, db, city)
+    # EXPLANATION: Search Route Enhancement
+    # Added 'city' parameter to endpoints to support the frontend's 
+    # new smart filtering capability in the Add Hotel modal.
 
 @router.get("/hotels/{user_id}", response_model=List[Hotel])
 async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
@@ -64,6 +68,7 @@ async def add_hotel_to_account(
 async def search_hotel_directory_v2(
     query: str, 
     limit: int = 20, 
+    city: Optional[str] = Query(None),
     db: Client = Depends(get_supabase),
     current_active_user = Depends(get_current_active_user)
 ):
@@ -72,7 +77,7 @@ async def search_hotel_directory_v2(
     Used for onboarding new hotels to a user's account.
     Returns semantic matches even for partial strings.
     """
-    return await search_hotel_directory_logic(query, limit, db)
+    return await search_hotel_directory_logic(query, None, db, city)
 
 @router.post("/hotels/{user_id}", response_model=Hotel)
 async def create_hotel(

@@ -57,7 +57,9 @@ export default function UserMenu({
           <div className="absolute right-0 mt-3 w-56 bg-[#0A1629] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
             <div className="px-4 py-3 border-b border-white/5 mb-2">
               <p className="text-xs font-black text-white uppercase tracking-tighter truncate">
-                {profile?.full_name || "Enterprise User"}
+                {/* EXPLANATION: Field Standardization
+                    Standardized on 'display_name' to ensure UI updates immediately after profile edits. */}
+                {profile?.display_name || "Enterprise User"}
               </p>
               <p className="text-[10px] text-slate-500 font-bold truncate">
                 {profile?.email || "hotel-plus-core"}

@@ -177,7 +177,9 @@ export default function DashboardLayout({
               <div className="flex items-center gap-3">
                 <div className="flex flex-col items-end items-end hidden sm:flex">
                   <span className="text-xs font-bold text-white">
-                    {profile?.full_name || "Enterprise User"}
+                    {/* EXPLANATION: Profile Name Sync
+                        Changed from full_name to display_name to match backend and profile modal storage. */}
+                    {profile?.display_name || "Enterprise User"}
                   </span>
                   <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
                     {profile?.role === "admin"

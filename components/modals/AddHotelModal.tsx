@@ -109,7 +109,10 @@ export default function AddHotelModal({
 
       setIsSearching(true);
       try {
-        const results = await api.searchDirectory(name);
+        // EXPLANATION: City-Aware Search
+        // We pass the selected 'city' to the API to filter suggestions.
+        // This ensures users see relevant local hotels first when a city is picked.
+        const results = await api.searchDirectory(name, city);
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
       } catch (error) {
@@ -121,7 +124,7 @@ export default function AddHotelModal({
 
     const timeoutId = setTimeout(searchHotels, 500);
     return () => clearTimeout(timeoutId);
-  }, [name]);
+  }, [name, city]);
 
   // Close suggestions on click outside
   useEffect(() => {

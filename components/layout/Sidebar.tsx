@@ -54,7 +54,7 @@ const analysisSubItems = [
 export default function Sidebar({
   profile,
 }: {
-  profile: { role?: string; full_name?: string } | null;
+  profile: { role?: string; display_name?: string } | null;
 }) {
   const pathname = usePathname();
   const { setIsSettingsOpen } = useModalContext();

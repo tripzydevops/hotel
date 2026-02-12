@@ -160,8 +160,13 @@ class ApiClient {
     return this.fetch<any>(`/api/profile/${userId}`);
   }
 
-  async searchDirectory(query: string): Promise<any[]> {
-    const url = `/api/v1/directory/search?q=${encodeURIComponent(query)}`;
+  async searchDirectory(query: string, city?: string): Promise<any[]> {
+    // EXPLANATION: Parameterized Search
+    // Updated to support an optional city filter in the query string.
+    let url = `/api/v1/directory/search?q=${encodeURIComponent(query)}`;
+    if (city) {
+      url += `&city=${encodeURIComponent(city)}`;
+    }
     console.log("[API] Searching:", url);
     return this.fetch<any[]>(url);
   }

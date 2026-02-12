@@ -13,8 +13,12 @@ from backend.utils.helpers import log_query
 async def search_hotel_directory_logic(
     q: str, 
     user_id: Optional[UUID], 
-    db: Client
+    db: Client,
+    city: Optional[str] = None
 ) -> List[Dict[str, Any]]:
+    # EXPLANATION: City-Based Filtering
+    # We added an optional 'city' parameter to allow users to narrow down 
+    # hotel search results to a specific region, improving accuracy.
     """
     Searches the local hotel directory and falls back to serpapi if results are sparse.
     
@@ -29,6 +33,13 @@ async def search_hotel_directory_logic(
     q_words = q_trimmed.split()
     query = db.table("hotel_directory").select("name, location, serp_api_id")
     
+    # Apply city filter if provided
+    if city:
+        # EXPLANATION: Strict City Filtering
+        # Restrict the database lookup to only hotels matching the selected city.
+        # This prevents "noise" from global results when a specific city is chosen.
+        query = query.ilike("location", f"%{city}%")
+
     if len(q_words) > 1:
         # For multiple words, we use a slightly more complex filter or just rely on the first word + limit
         # Improved strategy: Search for the first word and filter local
@@ -52,7 +63,22 @@ async def search_hotel_directory_logic(
     # 2. Live Fallback: Trigger if local results are sparse (<3) and query is specific (>=3 chars)
     if len(local_results) < 3 and len(q_trimmed) >= 3:
         try:
-            live_results = await serpapi_client.search_hotels(q_trimmed, limit=5)
+            live_query = q_trimmed
+            if city:
+                live_query = f"{q_trimmed} {city}"
+
+            live_results = await serpapi_client.search_hotels(live_query, limit=10)
+            
+            # Filter live results by city if provided to ensure strictness
+            if city:
+                # EXPLANATION: Live Results Filtering
+                # SerpApi searches globally. We filter the live results post-fetch 
+                # to ensure they match the user's selected city strictly.
+                live_results = [
+                    r for r in live_results 
+                    if city.lower() in r.get("location", "").lower()
+                ]
+
             lr: Dict[str, Any]
             for lr in live_results:
                 lr["source"] = "serpapi" # Badge for UI differentiation
