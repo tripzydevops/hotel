@@ -26,7 +26,7 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     base_data = result.data[0] if result.data else None
     return await get_enriched_profile_logic(user_id, base_data, db)
 
-@router.put("/api/profile/{user_id}", response_model=UserProfile)
+@router.put("/profile/{user_id}", response_model=UserProfile)
 async def update_profile(user_id: UUID, profile: UserProfileUpdate, db: Optional[Client] = Depends(get_supabase)):
     """Update user profile (upsert)."""
     if not db:

@@ -10,4 +10,4 @@ if path not in sys.path:
 from backend.main import app as _app  # noqa: E402, F401
 
 # Vercel requires the app variable to be exposed
-# This file acts as the entry point for Vercel Serverless Functions
+app = _app
