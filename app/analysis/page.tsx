@@ -9,6 +9,7 @@ import {
   Info,
   Zap,
   LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Link from "next/link";
@@ -192,6 +193,30 @@ export default function AnalysisPage() {
         {/* Page Header */}
         <div className="mb-8">
           <SemanticSearchBar onSearch={handleSearch} />
+
+          {/* Search Feedback Banner */}
+          {searchQuery && !loading && (
+            <div className="mb-6 mx-auto max-w-2xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 rounded-lg p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
+                <span className="text-sm text-white">
+                  Found{" "}
+                  <span className="font-bold text-[var(--soft-gold)]">
+                    {data?.price_rank_list?.length || 0}
+                  </span>{" "}
+                  hotels matching{" "}
+                  <span className="italic">"{searchQuery}"</span>
+                </span>
+              </div>
+              <button
+                onClick={() => handleSearch("")}
+                className="text-xs text-white/50 hover:text-white hover:underline uppercase tracking-wider font-bold"
+              >
+                Clear Filter
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-end mb-2">
             {/* Currency Selector */}
             <select
