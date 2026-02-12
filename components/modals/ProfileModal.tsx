@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, User, Building2, Briefcase, Phone, Globe } from "lucide-react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/components/ui/ToastContext";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export default function ProfileModal({
   onUpdate,
 }: ProfileModalProps) {
   const { t } = useI18n();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
@@ -65,13 +67,25 @@ export default function ProfileModal({
   };
 
   const handleSave = async () => {
+    if (!userId) {
+      console.error("[ProfileModal] No userId provided to handleSave");
+      toast.error("User ID is missing. Please refresh the page.");
+      return;
+    }
+
     setSaving(true);
+    console.log("[ProfileModal] Saving profile for:", userId, profile);
+
     try {
       const updated = await api.updateProfile(userId, profile);
+      console.log("[ProfileModal] Profile updated successfully:", updated);
+
       if (onUpdate) onUpdate(updated);
+      toast.success(t("profile.saveSuccess") || "Profile updated successfully");
       onClose();
-    } catch (err) {
-      console.error("Failed to save profile:", err);
+    } catch (err: any) {
+      console.error("[ProfileModal] Failed to save profile:", err);
+      toast.error(err.message || "Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
     }

@@ -76,11 +76,15 @@ class ApiClient {
       let errorMessage = response.statusText;
       try {
         const errorData = await response.json();
-        errorMessage =
-          errorData.detail ||
-          errorData.message ||
-          errorData.error ||
-          errorMessage;
+        if (typeof errorData.detail === "string") {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail
+            .map((e: any) => `${e.loc?.join(".") || "unknown"}: ${e.msg}`)
+            .join(", ");
+        } else {
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        }
       } catch (e) {
         // Ignore JSON parse error, stick to statusText
       }

@@ -1137,145 +1137,112 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
 # ===== User Profile =====
 
 @app.get("/api/profile/{user_id}", response_model=UserProfile)
-async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
-    """Get user profile information."""
-    # Define check early
-    is_dev_user = str(user_id) == "123e4567-e89b-12d3-a456-426614174000"
-
-    if not db:
-        # Return default mock profile for dev mode
-        return UserProfile(
-            user_id=user_id,
-            display_name="Demo User",
-            company_name="My Hotel",
-            job_title="Manager",
-            timezone="UTC",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-            plan_type="enterprise",
-            subscription_status="active"
-        )
+async def _get_enriched_profile(user_id: UUID, base_data: Optional[dict], db: Client) -> dict:
+    """Enriches profile data with subscription and admin info."""
+    user_id_str = str(user_id)
+    is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
     
-    # Fetch base profile
-    result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
-    
-    # Fetch subscription info (truth source) - Use Service Role to bypass RLS
-    try:
-        admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-        viewer_db = db
-        if admin_key and url:
-             viewer_db = create_client(url, admin_key)
-        
-        sub_data = viewer_db.table("profiles").select("plan_type, subscription_status").eq("id", str(user_id)).execute().data
-    except Exception as e:
-        print(f"Profile Sync Error: {e}")
-        sub_data = []
+    # 1. Fetch subscription info (truth source) - Use Service Role to bypass RLS
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     
     plan = "trial"
     status = "trial"
     bypass_active = False
+    sub_data = []
+
+    try:
+        viewer_db = db
+        if admin_key and url:
+             viewer_db = create_client(url, admin_key)
+        
+        result = viewer_db.table("profiles").select("plan_type, subscription_status").eq("id", user_id_str).execute()
+        sub_data = result.data
+    except Exception as e:
+        print(f"Profile Sync Error: {e}")
     
     if sub_data:
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
     
-    # Force Enterprise for Admins/Whitelisted emails
+    # 2. Admin Bypass Logic
     admin_email_found = None
     try:
-        # USER ID from console: eb284dd9-7198-47be-acd0-fdb0403bcd0a
         specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
-        is_specific_admin = str(user_id) == specific_admin_id
+        is_specific_admin = user_id_str == specific_admin_id
         
         if admin_key and url:
             admin_db = create_client(url, admin_key)
             try:
-                user_auth = admin_db.auth.admin.get_user_by_id(str(user_id))
+                user_auth = admin_db.auth.admin.get_user_by_id(user_id_str)
                 if user_auth and user_auth.user:
                     admin_email_found = user_auth.user.email
-            except Exception as auth_err:
-                print(f"[Profile] Auth Lookup Error for {user_id}: {auth_err}")
+            except Exception:
+                pass
             
-            is_admin_email = admin_email_found and (admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "yusuf@tripzy.travel"] or admin_email_found.endswith("@hotel.plus"))
+            is_admin_email = admin_email_found and (
+                admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "yusuf@tripzy.travel"] 
+                or admin_email_found.endswith("@hotel.plus")
+            )
             
-            # Check DB Role as well
-            is_admin_role = False
-            if result.data and result.data[0].get("role") in ["admin", "market_admin", "market admin"]:
-                is_admin_role = True
+            is_admin_role = base_data and base_data.get("role") in ["admin", "market_admin", "market admin"]
                 
             if is_admin_email or is_admin_role or is_specific_admin:
                 plan = "enterprise"
                 status = "active"
                 bypass_active = True
-                print(f"[Profile] Admin Bypass OK: {admin_email_found or user_id} (Role: {is_admin_role}, ID Match: {is_specific_admin})")
-            else:
-                print(f"[Profile] No Bypass: {admin_email_found or user_id} (Not an admin)")
-        else:
-            # Emergency bypass even if keys missing
-            if is_specific_admin:
-                plan = "enterprise"
-                status = "active"
-                bypass_active = True
-                print(f"[Profile] Emergency ID Bypass for {user_id}")
-            else:
-                print(f"[Profile] Warning: SUPABASE_SERVICE_ROLE_KEY or URL missing")
+
+        elif is_specific_admin:
+            plan = "enterprise"
+            status = "active"
+            bypass_active = True
     except Exception as e:
-        print(f"[Profile] Admin Bypass Logic Error: {e}")
+        print(f"[Profile] Bypass Logic Error: {e}")
 
-    # FORCE Enterprise for this specific User ID regardless of above
-    if str(user_id) == "eb284dd9-7198-47be-acd0-fdb0403bcd0a":
-        plan = "enterprise"
-        status = "active"
-        bypass_active = True
-
-    # 3. Fallback logic: Use user_profiles data if profiles sync failed
-    if (not sub_data or plan == "trial") and result.data:
-        # Check if the base profile has the data (from migration backfill or double-write)
-        base_plan = result.data[0].get("plan_type")
-        base_status = result.data[0].get("subscription_status")
-        # Only fallback if bypass didn't already set it higher
+    # Fallback to base_data if sub lookup failed
+    if (not sub_data or plan == "trial") and base_data:
         if not bypass_active:
-            if base_plan: plan = base_plan
-            if base_status: status = base_status
-            print(f"[Profile] Using Fallback Plan: {plan}")
+            plan = base_data.get("plan_type") or plan
+            status = base_data.get("subscription_status") or status
 
-    # Force PRO for Dev/Demo User (Legacy check)
+    # Force Enterprise for Dev User
     if is_dev_user:
         plan = "enterprise"
         status = "active"
         bypass_active = True
 
-    if result.data:
-        p = result.data[0]
-        p["plan_type"] = plan
-        p["subscription_status"] = status
-        p["is_admin_bypass"] = bypass_active
-        return p
+    # Merge data
+    profile = base_data.copy() if base_data else {"user_id": user_id_str}
+    profile["plan_type"] = plan
+    profile["subscription_status"] = status
+    profile["is_admin_bypass"] = bypass_active
     
-    # Final Fallback return
-    return UserProfile(
-        user_id=user_id,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-        plan_type=plan,
-        subscription_status=status,
-        is_admin_bypass=bypass_active
-    )
+    if "created_at" not in profile: profile["created_at"] = datetime.now(timezone.utc).isoformat()
+    if "updated_at" not in profile: profile["updated_at"] = datetime.now(timezone.utc).isoformat()
     
-    # Return a default profile if none exists
-    # Force PRO for the Dev/Demo User ID
+    return profile
+
+
+@app.get("/api/profile/{user_id}", response_model=UserProfile)
+async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+    """Get user profile information."""
+    if not db:
+        # Emergency fallback for dev/local without DB
+        return UserProfile(
+            user_id=user_id,
+            display_name="Demo User",
+            plan_type="enterprise",
+            subscription_status="active",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
     
-    return UserProfile(
-        user_id=user_id,
-        display_name="Demo User" if is_dev_user else None,
-        company_name="My Hotel" if is_dev_user else None,
-        job_title=None,
-        timezone="UTC",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-        plan_type="enterprise" if is_dev_user else plan,
-        subscription_status="active" if is_dev_user else status
-    )
+    # 1. Fetch base profile
+    result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
+    base_data = result.data[0] if result.data else None
+    
+    # 2. Enrich and return
+    return await _get_enriched_profile(user_id, base_data, db)
 
 
 @app.put("/api/profile/{user_id}", response_model=UserProfile)
@@ -1285,21 +1252,24 @@ async def update_profile(user_id: UUID, profile: UserProfileUpdate, db: Optional
         raise HTTPException(status_code=503, detail="Database unavailable")
     
     update_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+    user_id_str = str(user_id)
     
-    # Check if profile exists
-    existing = db.table("user_profiles").select("user_id").eq("user_id", str(user_id)).execute()
-    
-    if not existing.data:
-        # Insert new profile
-        result = db.table("user_profiles").insert({
-            "user_id": str(user_id),
-            **update_data
-        }).execute()
-    else:
-        # Update existing profile
-        result = db.table("user_profiles").update(update_data).eq("user_id", str(user_id)).execute()
-    
-    return result.data[0] if result.data else None
+    try:
+        # Upsert logic
+        existing = db.table("user_profiles").select("user_id").eq("user_id", user_id_str).execute()
+        
+        if not existing.data:
+            result = db.table("user_profiles").insert({"user_id": user_id_str, **update_data}).execute()
+        else:
+            result = db.table("user_profiles").update(update_data).eq("user_id", user_id_str).execute()
+        
+        if not result.data:
+             raise HTTPException(status_code=500, detail="Database update failed")
+
+        # Return enriched profile
+        return await _get_enriched_profile(user_id, result.data[0], db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ===== Alerts =====

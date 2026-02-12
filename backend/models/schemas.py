@@ -45,7 +45,6 @@ class HotelBase(BaseModel):
     reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
     class Config:
-        extra = "allow"
         from_attributes = True
 
 
@@ -70,8 +69,6 @@ class Hotel(HotelBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
 
 
 # ===== Price Log Models =====
@@ -96,8 +93,6 @@ class PriceLog(PriceLogBase):
     hotel_id: UUID
     recorded_at: datetime
     
-    class Config:
-        from_attributes = True
 
 
 # ===== Settings Models =====
@@ -136,8 +131,6 @@ class Settings(SettingsBase):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
 
 
 # ===== User Profile Models =====
@@ -149,6 +142,10 @@ class UserProfileBase(BaseModel):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     timezone: str = Field(default="UTC")
+
+    class Config:
+        from_attributes = True
+        extra = "allow"
 
 
 class UserProfileCreate(UserProfileBase):
@@ -168,8 +165,6 @@ class UserProfile(UserProfileBase):
     role: Optional[str] = "user"
     is_admin_bypass: bool = False
     
-    class Config:
-        from_attributes = True
 
 
 # ===== Location Models =====
@@ -204,8 +199,6 @@ class Alert(AlertBase):
     is_read: bool = False
     created_at: datetime
     
-    class Config:
-        from_attributes = True
 
 
 # ===== Dashboard / Response Models =====
@@ -226,9 +219,6 @@ class PriceWithTrend(BaseModel):
     offers: List[Dict[str, Any]] = []
     search_rank: Optional[int] = None
 
-    class Config:
-        extra = "allow"
-        from_attributes = True
 
 
 
@@ -242,9 +232,6 @@ class HotelWithPrice(Hotel):
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
     
-    class Config:
-        from_attributes = True
-        extra = "allow"
 
 
 
