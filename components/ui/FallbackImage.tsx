@@ -19,18 +19,18 @@ export default function FallbackImage({
   ...props
 }: FallbackImageProps) {
   const [error, setError] = useState(false);
-  const [imgSrc, setImgSrc] = useState(src);
+  const [prevSrc, setPrevSrc] = useState(src);
 
-  useEffect(() => {
-    setImgSrc(src);
+  if (src !== prevSrc) {
+    setPrevSrc(src);
     setError(false);
-  }, [src]);
+  }
 
   const handleError = () => {
     setError(true);
   };
 
-  if (error || !imgSrc) {
+  if (error || !src) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[var(--soft-gold)]/5">
         {fallbackType === "hotel" ? (
@@ -42,5 +42,5 @@ export default function FallbackImage({
     );
   }
 
-  return <Image {...props} src={imgSrc} alt={alt} onError={handleError} />;
+  return <Image {...props} src={src} alt={alt} onError={handleError} />;
 }

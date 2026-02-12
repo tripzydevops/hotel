@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { getCurrencySymbol } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -22,9 +22,13 @@ import {
   Radar,
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
-import { SentimentRadar } from "@/components/analytics/SentimentRadar";
-import { CompetitiveWeakness } from "@/components/analytics/CompetitiveWeakness";
+
+// Dynamically import heavy analytics components to improve initial page performance
+// and ensure library initialization only occurs on the client side.
+const SentimentRadar = dynamic(() => import("@/components/analytics/SentimentRadar").then(m => m.SentimentRadar), { ssr: false });
+const CompetitiveWeakness = dynamic(() => import("@/components/analytics/CompetitiveWeakness").then(m => m.CompetitiveWeakness), { ssr: false });
 
 // Radial Progress Component
 const RadialProgress = ({
@@ -310,19 +314,18 @@ export default function SentimentPage() {
     "weekly",
   );
   const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   // Build hotel list from real data
   const targetHotel = data?.target_hotel;
-  const competitors = data?.competitors || [];
+  const competitors = useMemo(() => data?.competitors || [], [data?.competitors]);
 
   // Initialize selected hotels once data is loaded
-  useEffect(() => {
-    if (targetHotel && selectedHotelIds.length === 0) {
-      // Default to target + all competitors (up to 5 total)
-      const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
-      setSelectedHotelIds(initialIds.slice(0, 5));
-    }
-  }, [targetHotel, competitors, selectedHotelIds.length]);
+  if (targetHotel && !initialized) {
+    const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
+    setSelectedHotelIds(initialIds.slice(0, 5));
+    setInitialized(true);
+  }
 
   // Sort all hotels by rating to determine ranks
   const allHotels = [

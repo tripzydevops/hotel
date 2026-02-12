@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -34,20 +34,7 @@ const ScansPanel = () => {
   const [scanDetails, setScanDetails] = useState<any>(null);
   const [scanDetailsLoading, setScanDetailsLoading] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === "history") loadScans();
-    if (activeTab === "queue") loadQueue();
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (selectedScanId) {
-      fetchScanDetails(selectedScanId);
-    } else {
-      setScanDetails(null);
-    }
-  }, [selectedScanId]);
-
-  const loadScans = async () => {
+  const loadScans = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.getAdminScans();
@@ -57,9 +44,9 @@ const ScansPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadQueue = async () => {
+  const loadQueue = useCallback(async () => {
     setQueueLoading(true);
     try {
       const data = await api.getSchedulerQueue();
@@ -69,7 +56,7 @@ const ScansPanel = () => {
     } finally {
       setQueueLoading(false);
     }
-  };
+  }, []);
 
   const handleTriggerNow = async (userId: string) => {
     toast.success("Triggering scan...");
@@ -83,7 +70,7 @@ const ScansPanel = () => {
     }
   };
 
-  const fetchScanDetails = async (id: string) => {
+  const fetchScanDetails = useCallback(async (id: string) => {
     setScanDetailsLoading(true);
     try {
       const data = await api.getAdminScanDetails(id);
@@ -94,7 +81,20 @@ const ScansPanel = () => {
     } finally {
       setScanDetailsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (activeTab === "history") loadScans();
+    if (activeTab === "queue") loadQueue();
+  }, [activeTab, loadScans, loadQueue]);
+
+  useEffect(() => {
+    if (selectedScanId) {
+      fetchScanDetails(selectedScanId);
+    } else {
+      setScanDetails(null);
+    }
+  }, [selectedScanId, fetchScanDetails]);
 
   /* Loading State */
   if (loading && scans.length === 0 && activeTab === "history") {

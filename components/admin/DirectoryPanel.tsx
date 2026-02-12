@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Building2,
   List,
@@ -35,7 +35,7 @@ const DirectoryPanel = () => {
 
   const [dirSuccess, setDirSuccess] = useState(false);
 
-  const loadDirectory = async () => {
+  const loadDirectory = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.getAdminDirectory();
@@ -45,11 +45,11 @@ const DirectoryPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadDirectory();
-  }, []);
+  }, [loadDirectory]);
 
   const handleAddDirectory = async (e: React.FormEvent) => {
     e.preventDefault();

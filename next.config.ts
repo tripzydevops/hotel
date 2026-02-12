@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
         : [],
     ].flat();
   },
+  // Enable built-in asset compression (Gzip/Brotli) for static files
+  compress: true,
+  experimental: {
+    // optimizePackageImports reduces bundle size by only importing the parts of 
+    // these heavy libraries that are actually used in each page.
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
   images: {
     remotePatterns: [
       {

@@ -24,13 +24,13 @@ export default function UserMenu({
 }: UserMenuProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<any>(initialProfile);
+  const [prevInitialProfile, setPrevInitialProfile] = useState<any>(initialProfile);
   const supabase = createClient();
 
-  useEffect(() => {
-    if (initialProfile) {
-      setProfile(initialProfile);
-    }
-  }, [initialProfile]);
+  if (initialProfile !== prevInitialProfile) {
+    setProfile(initialProfile);
+    setPrevInitialProfile(initialProfile);
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

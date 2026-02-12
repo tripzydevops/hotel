@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Zap,
   Search,
@@ -30,7 +30,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const discover = async () => {
+  const discover = useCallback(async () => {
     if (!hotelId) return;
     setLoading(true);
     setError(null);
@@ -43,13 +43,13 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hotelId]);
 
   useEffect(() => {
     if (hotelId) {
       discover();
     }
-  }, [hotelId]);
+  }, [hotelId, discover]);
 
   const [trackingId, setTrackingId] = useState<string | null>(null);
 

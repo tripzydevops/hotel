@@ -19,17 +19,16 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
-
-  useEffect(() => {
+  const [locale, setLocaleState] = useState<Locale>(() => {
     // Load saved locale from localStorage if available
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("tripzy_locale") as Locale;
       if (saved && (saved === "en" || saved === "tr")) {
-        setLocaleState(saved);
+        return saved;
       }
     }
-  }, []);
+    return "en";
+  });
 
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);

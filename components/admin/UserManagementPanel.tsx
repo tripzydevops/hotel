@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Plus,
@@ -46,9 +46,24 @@ const UserManagementPanel = () => {
   });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getAdminUsers();
+      setUsers(data);
+    } catch (err: unknown) {
+      toast.error(
+        "An error occurred: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   useEffect(() => {
     if (userToEdit) {
@@ -66,21 +81,6 @@ const UserManagementPanel = () => {
       });
     }
   }, [userToEdit]);
-
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getAdminUsers();
-      setUsers(data);
-    } catch (err: unknown) {
-      toast.error(
-        "An error occurred: " +
-          (err instanceof Error ? err.message : String(err)),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();

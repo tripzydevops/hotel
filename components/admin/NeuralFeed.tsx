@@ -29,25 +29,22 @@ const NeuralFeed = () => {
   const feedRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    const fetchLogs = async () => {
-      if (!isVisible || document.hidden) return;
-      try {
-        const data = await api.getAdminFeed(30);
-        if (data && Array.isArray(data)) {
-          setLogs(data);
-          setLastUpdate(new Date());
-        }
-      } catch (err) {
-        console.error("Feed poll error", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchLogs = React.useCallback(async () => {
+    if (!isVisible) return;
+    try {
+      const data = await api.getAdminFeed();
+      setLogs(data);
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error("Neural Feed Error", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isVisible]);
 
+  useEffect(() => {
     fetchLogs();
-    interval = setInterval(fetchLogs, 5000);
+    const interval = setInterval(fetchLogs, 5000);
     return () => clearInterval(interval);
   }, [isVisible]);
 

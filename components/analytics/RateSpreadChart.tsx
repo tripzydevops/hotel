@@ -106,77 +106,77 @@ export default function RateSpreadChart({
     });
   };
 
-  // Premium Custom Tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !payload.length) return null;
+// Premium Custom Tooltip
+const CustomTooltip = ({ active, payload, symbol }: any) => {
+  if (!active || !payload || !payload.length) return null;
 
-    const data = payload[0].payload;
-    const dateStr = data.fullDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+  const data = payload[0].payload;
+  const dateStr = data.fullDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 
-    // Sort competitors by price for the tooltip table
-    const sortedCompetitors = [...(data.competitors || [])].sort(
-      (a, b) => b.price - a.price, // Highest price first
-    );
+  // Sort competitors by price for the tooltip table
+  const sortedCompetitors = [...(data.competitors || [])].sort(
+    (a, b) => b.price - a.price, // Highest price first
+  );
 
-    return (
-      <div className="backdrop-blur-md bg-black/80 border border-white/10 rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-          <span className="text-sm font-medium text-white/90">{dateStr}</span>
-          <div
-            className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${data.vsComp < 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
-          >
-            {data.vsComp < 0 ? (
-              <TrendingDown className="w-3 h-3" />
-            ) : (
-              <TrendingUp className="w-3 h-3" />
-            )}
-            {Math.abs(data.vsComp).toFixed(1)}% vs Mkt
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {/* Your Hotel Hero */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] shadow-[0_0_8px_var(--soft-gold)]"></div>
-              <span className="text-xs text-white/70">Your Rate</span>
-            </div>
-            <span className="text-lg font-black text-[var(--soft-gold)]">
-              {symbol}
-              {data.yourPrice?.toFixed(0)}
-            </span>
-          </div>
-
-          {/* Competitor List */}
-          <div className="space-y-1 pt-2 border-t border-white/10">
-            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
-              Market Snapshot
-            </div>
-            {sortedCompetitors.slice(0, 5).map((comp: any, i: number) => (
-              <div key={i} className="flex justify-between text-xs py-0.5">
-                <span className="text-white/60 truncate max-w-[140px]">
-                  {comp.name}
-                </span>
-                <span className="font-medium text-white/80">
-                  {symbol}
-                  {comp.price?.toFixed(0)}
-                </span>
-              </div>
-            ))}
-            {sortedCompetitors.length > 5 && (
-              <div className="text-[10px] text-white/30 pt-1">
-                +{sortedCompetitors.length - 5} more...
-              </div>
-            )}
-          </div>
+  return (
+    <div className="backdrop-blur-md bg-black/80 border border-white/10 rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+        <span className="text-sm font-medium text-white/90">{dateStr}</span>
+        <div
+          className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${data.vsComp < 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+        >
+          {data.vsComp < 0 ? (
+            <TrendingDown className="w-3 h-3" />
+          ) : (
+            <TrendingUp className="w-3 h-3" />
+          )}
+          {Math.abs(data.vsComp).toFixed(1)}% vs Mkt
         </div>
       </div>
-    );
-  };
+
+      <div className="space-y-3">
+        {/* Your Hotel Hero */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] shadow-[0_0_8px_var(--soft-gold)]"></div>
+            <span className="text-xs text-white/70">Your Rate</span>
+          </div>
+          <span className="text-lg font-black text-[var(--soft-gold)]">
+            {symbol}
+            {data.yourPrice?.toFixed(0)}
+          </span>
+        </div>
+
+        {/* Competitor List */}
+        <div className="space-y-1 pt-2 border-t border-white/10">
+          <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
+            Market Snapshot
+          </div>
+          {sortedCompetitors.slice(0, 5).map((comp: any, i: number) => (
+            <div key={i} className="flex justify-between text-xs py-0.5">
+              <span className="text-white/60 truncate max-w-[140px]">
+                {comp.name}
+              </span>
+              <span className="font-medium text-white/80">
+                {symbol}
+                {comp.price?.toFixed(0)}
+              </span>
+            </div>
+          ))}
+          {sortedCompetitors.length > 5 && (
+            <div className="text-[10px] text-white/30 pt-1">
+              +{sortedCompetitors.length - 5} more...
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
   const yDomain =
     chartData.length > 0
@@ -294,7 +294,7 @@ export default function RateSpreadChart({
               />
 
               <Tooltip
-                content={<CustomTooltip />}
+                content={<CustomTooltip symbol={symbol} />}
                 cursor={{
                   stroke: "white",
                   strokeWidth: 1,

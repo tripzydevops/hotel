@@ -113,10 +113,6 @@ export default function CalendarPage() {
     loadData();
   }, [loadData]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleSetTarget = async (hotelId: string) => {
     if (!userId) return;
     try {

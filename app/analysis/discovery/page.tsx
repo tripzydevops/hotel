@@ -34,7 +34,7 @@ export default function DiscoveryPage() {
       setLoading(false);
     };
     getSession();
-  }, []);
+  }, [supabase]);
 
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] p-8">

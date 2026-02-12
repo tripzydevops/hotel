@@ -18,8 +18,12 @@ import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
 import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
-import RateSpreadChart from "@/components/analytics/RateSpreadChart";
+import dynamic from "next/dynamic";
 import RoomTypeMapper from "@/components/features/analysis/RoomTypeMapper";
+
+// Heavy chart components are loaded dynamically on the client side only to 
+// optimize the main application bundle size and initial painting speed.
+const RateSpreadChart = dynamic(() => import("@/components/analytics/RateSpreadChart"), { ssr: false });
 import SemanticSearchBar from "@/components/features/analysis/SemanticSearchBar";
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
@@ -204,8 +208,7 @@ export default function AnalysisPage() {
                   <span className="font-bold text-[var(--soft-gold)]">
                     {data?.price_rank_list?.length || 0}
                   </span>{" "}
-                  hotels matching{" "}
-                  <span className="italic">"{searchQuery}"</span>
+                  hotels matching <span className="italic">&quot;{searchQuery}&quot;</span>
                 </span>
               </div>
               <button

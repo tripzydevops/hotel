@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   Calendar,
@@ -34,7 +34,7 @@ export default function ScanSessionModal({
   const [logs, setLogs] = useState<QueryLog[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchSessionLogs = async () => {
+  const fetchSessionLogs = useCallback(async () => {
     if (!session) return;
     try {
       const result = await api.getSessionLogs(session.id);
@@ -42,24 +42,24 @@ export default function ScanSessionModal({
     } catch (error) {
       console.error("Failed to fetch session logs:", error);
     }
-  };
+  }, [session]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout | undefined;
 
     if (isOpen && session) {
       fetchSessionLogs();
 
       // Poll for updates if scan is not finished
       if (session.status === "running" || session.status === "pending") {
-        interval = setInterval(fetchSessionLogs, 3000);
+        intervalId = setInterval(fetchSessionLogs, 3000);
       }
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, [isOpen, session]);
+  }, [isOpen, session, fetchSessionLogs]);
 
   if (!isOpen || !session) return null;
 

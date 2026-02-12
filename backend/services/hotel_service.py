@@ -6,6 +6,7 @@ Handles business logic for hotel management and directory searching.
 from uuid import UUID
 from typing import Optional, List, Dict, Any
 from supabase import Client
+from fastapi import HTTPException
 from backend.services.serpapi_client import serpapi_client
 from backend.utils.helpers import log_query
 
@@ -99,3 +100,42 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
             continue
             
     return {"status": "success", "count": count}
+
+async def add_hotel_to_account_logic(
+    hotel_data: Dict[str, Any], 
+    user_id: UUID, 
+    db: Client
+) -> Dict[str, Any]:
+    """
+    Associates a hotel with a user account.
+    
+    Why: Separates the API routing from the core business logic of hotel 
+    association, allowing for validation and side-effects (like logging).
+    """
+    try:
+        # Prepare data for insertion
+        data = {
+            "user_id": str(user_id),
+            "name": hotel_data.get("name"),
+            "location": hotel_data.get("location"),
+            "is_target_hotel": hotel_data.get("is_target_hotel", False),
+            "serp_api_id": hotel_data.get("serp_api_id"),
+            "preferred_currency": hotel_data.get("preferred_currency", "USD")
+        }
+        
+        # Insert into user's hotels list
+        result = db.table("hotels").insert(data).execute()
+        
+        if result.data:
+            await log_query(
+                db=db, 
+                user_id=user_id, 
+                hotel_name=data["name"], 
+                action_type="add_to_account"
+            )
+            return result.data[0]
+        
+        return {"error": "Failed to add hotel"}
+    except Exception as e:
+        print(f"Add Hotel Logic Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

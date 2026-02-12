@@ -13,6 +13,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+# GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -48,6 +50,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enable Gzip compression for all responses larger than 1000 bytes
+# This significantly improves performance for data-heavy API endpoints
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Global Exception Handlers
 @app.exception_handler(Exception)

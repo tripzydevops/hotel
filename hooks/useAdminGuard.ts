@@ -61,7 +61,7 @@ export function useAdminGuard() {
     };
 
     checkAdmin();
-  }, [router]);
+  }, [router, supabase]);
 
   return { loading, authorized };
 }

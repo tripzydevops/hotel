@@ -22,9 +22,14 @@ import { api } from "@/lib/api";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { ScanSession, MarketAnalysis } from "@/types";
 import { createClient } from "@/utils/supabase/client";
-import MarketPositionChart from "@/components/analytics/MarketPositionChart";
-import PriceTrendChart from "@/components/analytics/PriceTrendChart";
+import dynamic from "next/dynamic";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
+
+// Using dynamic imports with ssr: false for heavy chart components to:
+// 1. Reduce initial JS bundle size for faster page load
+// 2. Prevent hydration errors as Recharts requires a client-side window object
+const MarketPositionChart = dynamic(() => import("@/components/analytics/MarketPositionChart"), { ssr: false });
+const PriceTrendChart = dynamic(() => import("@/components/analytics/PriceTrendChart"), { ssr: false });
 
 export default function ReportsPage() {
   const { t, locale } = useI18n();
@@ -66,7 +71,7 @@ export default function ReportsPage() {
       }
     };
     getSession();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     async function loadData() {
