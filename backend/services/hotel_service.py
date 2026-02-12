@@ -24,13 +24,29 @@ async def search_hotel_directory_logic(
     q_trimmed = q.strip()
     
     # 1. Local Lookup (Primary)
-    result = db.table("hotel_directory") \
-        .select("name, location, serp_api_id") \
-        .ilike("name", f"%{q_trimmed}%") \
-        .limit(5) \
-        .execute()
+    # Search in both name and location for better discoverability
+    # Multi-word support: if multiple words, search for all as a combo
+    q_words = q_trimmed.split()
+    query = db.table("hotel_directory").select("name, location, serp_api_id")
     
-    local_results = result.data or []
+    if len(q_words) > 1:
+        # For multiple words, we use a slightly more complex filter or just rely on the first word + limit
+        # Improved strategy: Search for the first word and filter local
+        result = query.or_(f"name.ilike.%{q_words[0]}%,location.ilike.%{q_words[0]}%") \
+            .limit(50) \
+            .execute()
+        
+        filtered = []
+        for h in (result.data or []):
+            name_loc = (h.get("name", "") + " " + h.get("location", "")).lower()
+            if all(w.lower() in name_loc for w in q_words):
+                filtered.append(h)
+        local_results = filtered[:20]
+    else:
+        result = query.or_(f"name.ilike.%{q_trimmed}%,location.ilike.%{q_trimmed}%") \
+            .limit(20) \
+            .execute()
+        local_results = result.data or []
     merged_results: List[Dict[str, Any]] = list(local_results)
     
     # 2. Live Fallback: Trigger if local results are sparse (<3) and query is specific (>=3 chars)
