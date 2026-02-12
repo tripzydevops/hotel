@@ -259,10 +259,40 @@ class SerpApiProvider(HotelDataProvider):
                     print(f"[SerpApi] Exact ID match found: {prop.get('name')}")
                     break
 
+
+        # Helper: Simple Name Similarity Check
+        def is_name_match(query_name: str, result_name: str) -> bool:
+            if not query_name or not result_name: return False
+            q = query_name.lower().replace("hotel", "").replace("resort", "").replace("&", "and").strip()
+            r = result_name.lower().replace("hotel", "").replace("resort", "").replace("&", "and").strip()
+            
+            # 1. Exact substring match (if long enough)
+            if len(q) > 4 and q in r: return True
+            if len(r) > 4 and r in q: return True
+            
+            # 2. Token overlap
+            q_tokens = set(q.split())
+            r_tokens = set(r.split())
+            common = q_tokens.intersection(r_tokens)
+            # Require at least 2 common tokens if query is multi-word, or 1 if very unique?
+            # Let's be strict: If query has "ramada", result MUST have "ramada"
+            important_keywords = ["ramada", "hilton", "marriott", "hyatt", "holiday", "wyndham", "radisson", "sheraton"]
+            for kw in important_keywords:
+                if kw in q and kw not in r:
+                    print(f"[SerpApi] Mismatch: Query '{query_name}' expects '{kw}' but result is '{result_name}'")
+                    return False
+            
+            return len(common) >= 1
+
         # 1. Knowledge Graph Result (if ID match failed)
         if not best_match and data.get("rate_per_night"):
-             best_match = data
-             print("[SerpApi] Using knowledge graph result")
+             candidate = data
+             # VALIDATE NAME MATCH
+             if is_name_match(target_hotel, candidate.get("name", "")):
+                 best_match = candidate
+                 print(f"[SerpApi] Using knowledge graph result: {candidate.get('name')}")
+             else:
+                 print(f"[SerpApi] Knowledge Graph result '{candidate.get('name')}' mismatch with '{target_hotel}'. Skipping.")
 
         # 2. Fuzzy Name Match
         if not best_match:
@@ -275,17 +305,24 @@ class SerpApiProvider(HotelDataProvider):
             
             for prop in properties:
                 name = prop.get("name", "").lower()
-                if target_norm in name or (len(target_norm) > 3 and target_norm[:5] in name):
+                # Use the new helper for better matching
+                if is_name_match(target_hotel, prop.get("name", "")):
                     best_match = prop
                     print(f"[SerpApi] Name match found: {prop.get('name')}")
                     break
         
         # 3. Fallback to first property if results exist
         if not best_match and properties:
-             best_match = properties[0]
-             print(f"[SerpApi] Falling back to first property: {best_match.get('name')}")
-             
+             # ONLY fallback if name is somewhat similar
+             candidate = properties[0]
+             if is_name_match(target_hotel, candidate.get("name", "")):
+                 best_match = candidate
+                 print(f"[SerpApi] Falling back to first property: {best_match.get('name')}")
+             else:
+                 print(f"[SerpApi] First property '{candidate.get('name')}' mismatch with '{target_hotel}'. No fallback.")
+              
         if not best_match: return None
+
 
         # Extract Raw Price safely using the robust cleaner
         raw_price = None

@@ -219,6 +219,7 @@ export default function DashboardLayout({
           initialName={reSearchName}
           initialLocation={reSearchLocation}
           currentHotelCount={hotelCount}
+          userPlan={profile?.plan_type || "trial"}
         />
 
         <SettingsModal

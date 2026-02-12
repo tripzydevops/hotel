@@ -66,13 +66,23 @@ export default function UserMenu({
 
             <button
               onClick={() => {
+                onOpenProfile?.();
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-3 transition-colors"
+            >
+              <User className="w-4 h-4 text-slate-500" />
+              Account Profile
+            </button>
+            <button
+              onClick={() => {
                 onOpenSettings?.();
                 setIsOpen(false);
               }}
               className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-3 transition-colors"
             >
               <Settings className="w-4 h-4 text-slate-500" />
-              Settings
+              Scan Settings
             </button>
             <button
               onClick={() => {

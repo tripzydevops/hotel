@@ -19,9 +19,6 @@ import {
   Hotel,
   HotelWithPrice,
 } from "@/types";
-import AddHotelModal from "@/components/modals/AddHotelModal";
-import ProfileModal from "@/components/modals/ProfileModal";
-import SettingsModal from "@/components/modals/SettingsModal";
 import SearchHistory from "@/components/features/dashboard/SearchHistory";
 import SkeletonTile from "@/components/tiles/SkeletonTile";
 import ScanHistory from "@/components/features/dashboard/ScanHistory";
@@ -35,10 +32,6 @@ import ModalLoading from "@/components/ui/ModalLoading";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 import { useModalContext } from "@/components/ui/ModalContext";
-
-const HotelDetailsModal = lazy(
-  () => import("@/components/modals/HotelDetailsModal"),
-);
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -246,13 +239,7 @@ export default function Dashboard() {
                 </span>
               </div>
             </button>
-            <AddHotelModal
-              isOpen={isAddHotelOpen}
-              onClose={() => setIsAddHotelOpen(false)}
-              onAdd={handleAddHotel}
-              currentHotelCount={currentHotelCount}
-              userPlan={profile?.plan_type || "trial"}
-            />
+
             <button
               onClick={() => setIsAddHotelOpen(true)}
               className="
