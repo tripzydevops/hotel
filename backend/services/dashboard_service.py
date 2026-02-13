@@ -49,16 +49,42 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         # 1. Fetch hotels
         hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         all_hotels = hotels_result.data or []
-        hotels = [h for h in all_hotels if h.get("property_token") or h.get("serp_api_id")]
+        
+        # EXPLANATION: Master Directory Join
+        # Individual user hotels often lack metadata (images, ratings).
+        # We enrich them by joining with the 3,670-entry hotel_directory via serp_api_id.
+        enriched_hotels = []
+        serp_ids = [h.get("serp_api_id") for h in all_hotels if h.get("serp_api_id")]
+        
+        directory_map = {}
+        if serp_ids:
+            dir_res = db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()
+            for drecord in (dir_res.data or []):
+                directory_map[drecord["serp_api_id"]] = drecord
+        
+        for h in all_hotels:
+            token = h.get("property_token") or h.get("serp_api_id")
+            if not token: continue # Skip untracked hotels
+            
+            # Merge directory data if available
+            dir_data = directory_map.get(h.get("serp_api_id"), {})
+            enriched = {
+                **dir_data, # Use directory as base (images, rating, etc)
+                **h,        # Override with user-specific data (name preferred, currency)
+            }
+            enriched_hotels.append(enriched)
+
+        hotels = enriched_hotels
         
         if not hotels:
             return fallback_data
 
         # 1.1 BATCH FETCH Price Logs
         hotel_ids = [str(h["id"]) for h in hotels]
+        hotel_names = [h["name"] for h in hotels]
         hotel_prices_map = {}
         try:
-            # Fetch last 10 logs per hotel group in a single query
+            # Fetch latest from price_logs (Rich format)
             all_prices_res = db.table("price_logs") \
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
@@ -72,6 +98,34 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                     hotel_prices_map[hid] = []
                 if len(hotel_prices_map[hid]) < 10:
                     hotel_prices_map[hid].append(p)
+            
+            # EXPLANATION: Data Continuity Fallback
+            # If price_logs (new system) are sparse, we backfill from query_logs (legacy audit).
+            # This ensures users don't see "N/A" Trend/Change % after a database migration.
+            q_logs_res = db.table("query_logs") \
+                .select("hotel_name, price, currency, created_at, vendor") \
+                .in_("hotel_name", hotel_names) \
+                .in_("action_type", ["monitor", "search"]) \
+                .not_.is_("price", "null") \
+                .order("created_at", desc=True) \
+                .limit(200) \
+                .execute()
+            
+            for qp in (q_logs_res.data or []):
+                hid = next((str(h["id"]) for h in hotels if h["name"] == qp["hotel_name"]), None)
+                if hid and (hid not in hotel_prices_map or len(hotel_prices_map[hid]) < 10):
+                    if hid not in hotel_prices_map: hotel_prices_map[hid] = []
+                    # Append unique records by timestamp approx
+                    timestamps = [str(l.get("recorded_at")) for l in hotel_prices_map[hid]]
+                    if str(qp["created_at"]) not in timestamps:
+                        hotel_prices_map[hid].append({
+                            "hotel_id": hid,
+                            "price": qp["price"],
+                            "currency": qp["currency"] or "TRY",
+                            "recorded_at": qp["created_at"],
+                            "vendor": qp["vendor"] or "SerpApi",
+                            "source": "legacy_query_log"
+                        })
         except Exception as e:
             print(f"Dashboard: Batch price fetch failed: {e}")
 

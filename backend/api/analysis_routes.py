@@ -67,17 +67,44 @@ async def get_market_intelligence(
         if not hotels:
             return {"summary": {}, "hotels": []}
 
-        # EXPLANATION: Fetch Price History
-        # We must fetch historical price logs to populate the Rate Calendar and
-        # calculate trends. The previous implementation incorrectly used a single 'latest_price'.
+        # EXPLANATION: Unified Price History
+        # Historical price data is split across 'price_logs' (new detailed format)
+        # and 'query_logs' (legacy audit format). To prevent "N/A" on charts, 
+        # we aggregate both, using serp_api_id for cross-table matching.
+        
+        # 1. Fetch from price_logs
         price_logs_res = db.table("price_logs") \
             .select("*") \
             .in_("hotel_id", [str(h["id"]) for h in hotels]) \
             .order("recorded_at", desc=True) \
             .limit(1000) \
             .execute()
-            
         logs_data = price_logs_res.data or []
+        
+        # 2. Fetch from query_logs (Fallback for historical depth)
+        hotel_names = [h["name"] for h in hotels]
+        query_logs_res = db.table("query_logs") \
+            .select("hotel_name, action_type, price, currency, created_at, vendor") \
+            .in_("hotel_name", hotel_names) \
+            .in_("action_type", ["monitor", "search"]) \
+            .not_.is_("price", "null") \
+            .order("created_at", desc=True) \
+            .limit(1000) \
+            .execute()
+        
+        # Normalize query_logs to match price_logs schema for the aggregator
+        for q_log in (query_logs_res.data or []):
+            hid = next((str(h["id"]) for h in hotels if h["name"] == q_log["hotel_name"]), None)
+            if hid:
+                logs_data.append({
+                    "hotel_id": hid,
+                    "price": q_log["price"],
+                    "currency": q_log["currency"] or "TRY",
+                    "recorded_at": q_log["created_at"],
+                    "vendor": q_log["vendor"] or "SerpApi",
+                    "check_in_date": q_log["created_at"].split('T')[0], # Fallback date
+                    "source": "legacy_query_log"
+                })
         
         # Group logs by hotel_id
         hotel_prices_map = {}
