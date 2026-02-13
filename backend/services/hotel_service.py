@@ -162,6 +162,12 @@ async def search_hotel_directory_logic(
                 
                 # Inclusion Rule: Has token OR matches at least one keyword
                 if has_token or any(w in lr_norm for w in q_words):
+                    # FIX: Backfill location if missing using the strong signal from the city filter
+                    if lr.get("location") == "Unknown" and city:
+                         lr["location"] = city.title()
+                    elif lr.get("location") == "Unknown" and effective_city:
+                         lr["location"] = effective_city.title()
+                         
                     valid_live.append(lr)
 
             # Badge and de-duplicate
@@ -192,7 +198,13 @@ async def search_hotel_directory_logic(
     sorted_results = sorted(merged_results, key=result_score, reverse=True)
 
     if user_id:
-        await log_query(db=db, user_id=user_id, hotel_name=q_trimmed, action_type="search")
+        await log_query(
+            db=db, 
+            user_id=user_id, 
+            hotel_name=q_trimmed, 
+            location=city, # Pass city if available
+            action_type="search"
+        )
     
     return sorted_results[:10]
 
@@ -260,6 +272,7 @@ async def add_hotel_to_account_logic(
                 db=db, 
                 user_id=user_id, 
                 hotel_name=data["name"], 
+                location=data.get("location"),
                 action_type="add_to_account"
             )
             

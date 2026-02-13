@@ -156,7 +156,13 @@ async def create_hotel(
     result = db.table("hotels").insert({"user_id": str(user_id), **hotel_data}).execute()
     
     if result.data:
-        await log_query(db=db, user_id=user_id, hotel_name=hotel_data["name"], action_type="create")
+        await log_query(
+            db=db, 
+            user_id=user_id, 
+            hotel_name=hotel_data["name"], 
+            location=hotel_data.get("location"),
+            action_type="create"
+        )
         # EXPLANATION: Data-Rich Auto-Sync
         # Automatically populates the global directory with high-quality metadata 
         # (coordinates, ratings, images) to benefit the entire system.
