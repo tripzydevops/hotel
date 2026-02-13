@@ -311,6 +311,7 @@ class AdminStats(BaseModel):
     total_scans: int
     api_calls_today: int
     directory_size: int
+    scraper_health: float = 100.0  # Percentage of successful scans in last 24h
     service_role_active: bool = False
 
 class AdminUserCreate(BaseModel):

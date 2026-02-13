@@ -7,7 +7,7 @@ and system-level reporting.
 import os
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from fastapi import HTTPException
@@ -57,12 +57,26 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         if recent_scans.data:
             api_calls = sum(s.get("hotels_count", 0) for s in recent_scans.data)
             
+        # 5. Scraper Health (Last 24h)
+        # EXPLANATION: Operational Health Index
+        # We calculate health as the percentage of successful or partially successful
+        # scans over the last 24 hours. This allows administrators to quickly 
+        # identify if an external provider (like SerpApi) is experiencing global issues.
+        last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        recent_sessions_health = db.table("scan_sessions").select("status").gte("created_at", last_24h).execute()
+        health = 100.0
+        if recent_sessions_health.data:
+            total_recent = len(recent_sessions_health.data)
+            successes = sum(1 for s in recent_sessions_health.data if s["status"] in ["completed", "partial"])
+            health = (successes / total_recent) * 100
+
         return AdminStats(
             total_users=users_count,
             total_hotels=hotels_count,
             total_scans=scans_count,
             api_calls_today=api_calls,
             directory_size=directory_count,
+            scraper_health=round(health, 1),
             service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ
         )
     except Exception as e:
@@ -545,6 +559,80 @@ async def get_admin_settings_logic(db: Client) -> AdminSettings:
         default_currency="USD",
         updated_at=datetime.now(timezone.utc)
     )
+
+async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
+    """
+    Consolidated logic to sync active hotels into the global directory.
+    Replaces fragmented backfill_*.py scripts.
+    """
+    try:
+        # 1. Fetch all hotels from active 'hotels' table
+        hotels_res = db.table("hotels").select("*").execute()
+        active_hotels = hotels_res.data or []
+        
+        synced_count = 0
+        updated_count = 0
+        
+        for hotel in active_hotels:
+            # 2. Check if already in directory (by SerpApi ID or exact name+location)
+            serp_id = hotel.get("serp_api_id")
+            
+            existing = None
+            if serp_id:
+                existing_res = db.table("hotel_directory").select("id").eq("serp_api_id", serp_id).execute()
+                existing = existing_res.data[0] if existing_res.data else None
+            
+            if not existing:
+                existing_res = db.table("hotel_directory").select("id").eq("name", hotel["name"]).eq("location", hotel["location"]).execute()
+                existing = existing_res.data[0] if existing_res.data else None
+            
+            dir_data = {
+                "name": hotel["name"],
+                "location": hotel["location"],
+                "serp_api_id": serp_id,
+                "rating": hotel.get("rating"),
+                "stars": hotel.get("stars"),
+                "image_url": hotel.get("image_url"),
+                "latitude": hotel.get("latitude"),
+                "longitude": hotel.get("longitude")
+            }
+            
+            if existing:
+                db.table("hotel_directory").update(dir_data).eq("id", existing["id"]).execute()
+                updated_count += 1
+            else:
+                db.table("hotel_directory").insert(dir_data).execute()
+                synced_count += 1
+                
+        return {
+            "status": "success",
+            "hotels_processed": len(active_hotels),
+            "new_entries": synced_count,
+            "updated_entries": updated_count
+        }
+    except Exception as e:
+        print(f"Admin: Directory Sync Error: {e}")
+        return {"status": "error", "message": str(e)}
+
+async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:
+    """
+    Removes test records and artifacts from the system.
+    """
+    try:
+        # Delete items with 'test' or 'dummy' in name (CAUTION: Admin only)
+        # For safety, we only delete from hotels table specifically marked or known test hotels
+        test_hotels = db.table("hotels").select("id").ilike("name", "%test%").execute()
+        hotel_ids = [h["id"] for h in (test_hotels.data or [])]
+        
+        if hotel_ids:
+            db.table("price_logs").delete().in_("hotel_id", hotel_ids).execute()
+            db.table("alerts").delete().in_("hotel_id", hotel_ids).execute()
+            db.table("hotels").delete().in_("id", hotel_ids).execute()
+            
+        return {"status": "success", "deleted_count": len(hotel_ids)}
+    except Exception as e:
+        print(f"Admin: Cleanup Error: {e}")
+        return {"status": "error", "message": str(e)}
 
 async def update_admin_settings_logic(updates: AdminSettingsUpdate, db: Client) -> AdminSettings:
     """Update global settings."""

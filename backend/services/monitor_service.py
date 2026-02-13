@@ -42,19 +42,8 @@ async def trigger_monitor_logic(
     # 1. ADMIN BYPASS / LIMIT ENFORCEMENT
     try:
         is_admin = False
-        # Whitelist
-        whitelist = ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"]
-        if current_user_email and (current_user_email in whitelist or current_user_email.endswith("@hotel.plus")):
-            is_admin = True
-        
-        # Role Check
-        if not is_admin:
-            profile_res = db.table("user_profiles").select("role").eq("user_id", str(current_user_id)).execute()
-            if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
-                is_admin = True
-
-        # Specific ID Bypass
-        if str(user_id) == "eb284dd9-7198-47be-acd0-fdb0403bcd0a":
+        profile_res = db.table("user_profiles").select("role").eq("user_id", str(current_user_id)).execute()
+        if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
             is_admin = True
 
         if not is_admin:

@@ -41,19 +41,16 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         user_id = user_obj.id
         email = user_obj.email
         
-        # 1. Check strict whitelist (Hardcoded for MVP safety)
-        whitelist = ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"]
-        if email and (email in whitelist or email.endswith("@hotel.plus")):
-            return user_obj
-        
-        # 2. Check Database Role
+        # Verify admin role in database
         try:
-            profile = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
-            if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
+            profile_res = db.table("user_profiles").select("role").eq("user_id", user_id).limit(1).execute()
+            if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                 return user_obj
-        except Exception:
+        except Exception as db_e:
+            print(f"Admin RBAC Error for {email}: {db_e}")
             pass
             
+        print(f"Access Denied: User {email} attempted admin access without sufficient role.")
         raise HTTPException(status_code=403, detail="Admin Access Required")
         
     except HTTPException as he:

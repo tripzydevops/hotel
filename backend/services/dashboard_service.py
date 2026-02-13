@@ -35,13 +35,9 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
     is_authorized = str(current_user_id) == str(user_id)
     if not is_authorized:
         # Admin check
-        whitelist = ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"]
-        if current_user_email and (current_user_email in whitelist or current_user_email.endswith("@hotel.plus")):
+        profile = db.table("user_profiles").select("role").eq("user_id", current_user_id).limit(1).execute()
+        if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
             is_authorized = True
-        else:
-            profile = db.table("user_profiles").select("role").eq("user_id", current_user_id).limit(1).execute()
-            if profile.data and profile.data[0].get("role") in ["admin", "market_admin", "market admin"]:
-                is_authorized = True
 
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Unauthorized access to this dashboard")

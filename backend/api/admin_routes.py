@@ -35,7 +35,9 @@ from backend.services.admin_service import (
     get_admin_plans_logic,
     create_admin_plan_logic,
     update_admin_plan_logic,
-    delete_admin_plan_logic
+    delete_admin_plan_logic,
+    sync_hotel_directory_logic,
+    cleanup_test_data_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -269,10 +271,18 @@ async def update_admin_settings(settings: dict, db: Client = Depends(get_supabas
 async def sync_directory(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """
     Triggers a manual sync between user hotels and the global directory.
+    Uses the consolidated sync_hotel_directory_logic for stability.
     """
     # EXPLANATION: Manual Directory Sync
     # Merges unique user-added hotels into the global searchable directory.
-    return await sync_directory_manual_logic(db)
+    return await sync_hotel_directory_logic(db)
+
+@router.post("/cleanup-test-data")
+async def cleanup_test_data(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Removes test records and artifacts from the system.
+    """
+    return await cleanup_test_data_logic(db)
 
 @router.get("/market-intelligence")
 async def get_market_intelligence(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):

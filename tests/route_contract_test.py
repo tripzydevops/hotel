@@ -138,8 +138,16 @@ def extract_frontend_calls(filepath: str) -> list[dict]:
             path = path.rstrip('/')
             
             # Determine HTTP method (check current and next 5 lines)
+            # Stop if we hit another function or a large gap
             method = "GET"
-            context = "\n".join(lines[i-1:min(i+5, len(lines))])
+            context_lines = []
+            for j in range(i-1, min(i+10, len(lines))):
+                l = lines[j]
+                context_lines.append(l)
+                if j > i-1 and (re.match(r'\s+(?:async\s+)?(\w+)\s*\(', l) or '}' in l):
+                    break
+            
+            context = "\n".join(context_lines)
             method_match = re.search(r'method:\s*["\'](\w+)["\']', context)
             if method_match:
                 method = method_match.group(1).upper()

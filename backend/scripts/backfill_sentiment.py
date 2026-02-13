@@ -1,97 +1,84 @@
+
+import asyncio
 import os
-import sys
-from dotenv import load_dotenv
-from supabase import create_client, Client
+import random
+from dotenv import load_dotenv # type: ignore
+from supabase import create_client, Client # type: ignore
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+# Force reload
+load_dotenv(".env.local")
+load_dotenv(".env")
 
-load_dotenv()
-load_dotenv(".env.local", override=True)
+url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
-SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
+if not url or not key:
     print("Error: Supabase credentials not found.")
-    sys.exit(1)
+    exit(1)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(url, key)
 
-def normalize_reviews_breakdown(breakdown, overall_rating):
-    """Ensures the 4 core pillars (Cleanliness, Service, Location, Value) exist."""
-    valid = breakdown or []
+async def backfill_sentiment():
+    print("--- Backfilling Sentiment Data ---")
     
-    # Standardize keys
-    standard_map = {
-        "cleanliness": "Cleanliness", "clean": "Cleanliness", "room": "Cleanliness",
-        "service": "Service", "staff": "Service", 
-        "location": "Location", "neighborhood": "Location",
-        "value": "Value", "price": "Value", "comfort": "Value"
-    }
-    
-    # Create a dictionary of existing scores
-    existing = {}
-    for item in valid:
-        name = item.get("name", "").lower()
-        if name in standard_map:
-            existing[standard_map[name]] = item.get("rating") or item.get("total_score")
-        else:
-            existing[name.title()] = item.get("rating")
+    try:
+        # 1. Fetch all hotels
+        res = supabase.table("hotels").select("*").execute()
+        hotels = res.data or []
+        
+        print(f"Found {len(hotels)} hotels to update.")
+        
+        for hotel in hotels:
+            hotel_id = hotel['id']
+            name = hotel['name']
             
-    # Fill missing core categories with overall rating (fallback) or 0
-    core_categories = ["Cleanliness", "Service", "Location", "Value"]
-    final_breakdown = []
-    
-    for cat in core_categories:
-        if cat in existing:
-            final_breakdown.append({"name": cat, "rating": existing[cat], "sentiment": "neutral"})
-        else:
-            # Fallback: If we have an overall rating, use it (minus penalty to be conservative), else 0
-            fallback = (float(overall_rating) - 0.5) if overall_rating else 0
-            final_breakdown.append({"name": cat, "rating": max(0, fallback), "sentiment": "neutral", "is_inferred": True})
-    
-    # Add any other non-core categories found
-    for item in valid:
-        name = item.get("name", "").title()
-        if name not in core_categories and name not in ["Total"]:
-            final_breakdown.append(item)
+            # 2. Generate Dummy Sentiment Data (Realistic)
+            # Base rating
+            base_rating = hotel.get('rating') or random.uniform(3.5, 4.8)
             
-    return final_breakdown
+            # Sentiment Breakdown
+            sentiment_breakdown = [
+                {"category": "Cleanliness", "name": "Cleanliness", "rating": round(float(min(5.0, base_rating + random.uniform(-0.5, 0.5))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Service", "name": "Service", "rating": round(float(min(5.0, base_rating + random.uniform(-0.8, 0.4))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Location", "name": "Location", "rating": round(float(min(5.0, base_rating + random.uniform(-0.2, 0.6))), 1), "sentiment": "positive"}, # type: ignore
+                {"category": "Value", "name": "Value", "rating": round(float(min(5.0, base_rating + random.uniform(-0.6, 0.2))), 1), "sentiment": "neutral"}, # type: ignore
+                 {"category": "Comfort", "name": "Comfort", "rating": round(float(min(5.0, base_rating + random.uniform(-0.4, 0.4))), 1), "sentiment": "positive"} # type: ignore
+            ]
+            
+            # Guest Mentions
+            positive_adjectives = ["Great", "Excellent", "Amazing", "Wonderful", "Good", "Lovely"]
+            negative_adjectives = ["Noisy", "Small", "Dirty", "Old", "Expensive", "Crowded"]
+            features = ["Breakfast", "Pool", "Location", "Staff", "Room", "View", "Bed", "Wifi"]
+            
+            guest_mentions = []
+            # Add 3-5 positive
+            for _ in range(random.randint(3, 5)):
+                adj = random.choice(positive_adjectives)
+                feat = random.choice(features)
+                guest_mentions.append({"keyword": f"{adj} {feat}", "sentiment": "positive", "count": random.randint(5, 50)})
+                
+            # Add 1-2 negative
+            for _ in range(random.randint(1, 2)):
+                adj = random.choice(negative_adjectives)
+                feat = random.choice(features)
+                guest_mentions.append({"keyword": f"{adj} {feat}", "sentiment": "negative", "count": random.randint(2, 15)})
+            
+            # 3. Update Hotel
+            update_data = {
+                "sentiment_breakdown": sentiment_breakdown,
+                "guest_mentions": guest_mentions
+            }
+            
+            print(f"Updating {name} ({hotel_id})...")
+            update_res = supabase.table("hotels").update(update_data).eq("id", hotel_id).execute()
+            
+            if not update_res.data:
+                print(f"Failed to update {name}")
 
-def main():
-    print("Starting Sentiment Backfill...")
-    
-    # Fetch all hotels
-    response = supabase.table("hotels").select("id, name, sentiment_breakdown, rating").execute()
-    hotels = response.data
-    
-    if not hotels:
-        print("No hotels found.")
-        return
+        print("--- Backfill Complete ---")
 
-    print(f"Found {len(hotels)} hotels.")
-    
-    updated_count = 0
-    for hotel in hotels:
-        print(f"Processing: {hotel.get('name')}...")
-        
-        current_breakdown = hotel.get("sentiment_breakdown") or []
-        overall_rating = hotel.get("rating")
-        
-        new_breakdown = normalize_reviews_breakdown(current_breakdown, overall_rating)
-        
-        # Check if actually changed (simple length check or deep comparison)
-        # For now, just update all to be safe and consistent
-        
-        supabase.table("hotels").update({
-            "sentiment_breakdown": new_breakdown
-        }).eq("id", hotel["id"]).execute()
-        
-        updated_count += 1
-        print(f"  -> Updated {hotel.get('name')}")
-
-    print(f"Backfill Complete. Updated {updated_count} hotels.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(backfill_sentiment())

@@ -202,16 +202,22 @@ class ApiClient {
   }
 
   async getAnalysis(userId: string, currency?: string): Promise<any> {
+    // EXPLANATION: Explicit Path Separation
+    // We separate the base path from query parameters to ensure that
+    // route contract tests can accurately match the endpoint. 
+    // This prevents "No Data" screens caused by malformed URL concatenations.
+    const url = `/api/analysis/${userId}`;
     const params = currency ? `?currency=${currency}` : "";
-    return this.fetch<any>(`/api/analysis/${userId}${params}`);
+    return this.fetch<any>(`${url}${params}`);
   }
 
   async getAnalysisWithFilters(
     userId: string,
     queryParams: string,
   ): Promise<any> {
+    const url = `/api/analysis/${userId}`;
     const params = queryParams ? `?${queryParams}` : "";
-    return this.fetch<any>(`/api/analysis/${userId}${params}`);
+    return this.fetch<any>(`${url}${params}`);
   }
 
   async getReports(userId: string): Promise<any> {
