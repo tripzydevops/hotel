@@ -24,13 +24,18 @@ async def search_hotel_directory_logic(
     q_trimmed = q.strip()
     
     def normalize_term(text: str) -> str:
-        # Basic normalization for Turkish characters and case
-        rep = {"ı": "i", "İ": "i", "ğ": "g", "Ğ": "g", "ü": "u", "Ü": "u", "ş": "s", "Ş": "s", "ö": "o", "Ö": "o", "ç": "c", "Ç": "c"}
+        if not text: return ""
+        # Improved Turkish normalization
+        text = text.lower()
+        rep = {
+            "ı": "i", "i̇": "i", "i": "i", 
+            "ğ": "g", "ü": "u", "ş": "s", "ö": "o", "ç": "c"
+        }
         for char, target in rep.items():
             text = text.replace(char, target)
-        # Normalize 'otel' to 'hotel' for matching
-        text = text.lower().replace("otel", "hotel")
-        return text
+        # Standardize hotel terminology
+        text = text.replace("otel", "hotel").replace("residences", "residence")
+        return text.strip()
 
     # 1. Local Lookup (Primary)
     q_normalized = normalize_term(q_trimmed)
@@ -51,7 +56,7 @@ async def search_hotel_directory_logic(
                 local_results.append(h)
         local_results = local_results[:20]
     else:
-        # Standard search
+        # Standard search (Multi-word support)
         result = query.or_(f"name.ilike.%{q_words[0]}%,location.ilike.%{q_words[0]}%") \
             .limit(100) \
             .execute()
@@ -59,34 +64,46 @@ async def search_hotel_directory_logic(
         filtered = []
         for h in (result.data or []):
             h_combined = normalize_term(h.get("name", "") + " " + h.get("location", ""))
+            # Must match ALL query words for high precision
             if all(w in h_combined for w in q_words):
                 filtered.append(h)
         local_results = filtered[:20]
 
     merged_results: List[Dict[str, Any]] = list(local_results)
     
-    # 2. Live Fallback: Trigger if local results are sparse or we want more diversity
-    # Threshold increased to 25 to ensure we check live data more often (e.g. 'alt' find 'Altın Otel' via SerpApi)
-    if len(local_results) < 25 and len(q_trimmed) >= 2:
+    # 2. Live Fallback: Trigger if local results are sparse
+    if len(local_results) < 15 and len(q_trimmed) >= 2:
         try:
-            # Construct a clean live query. Avoid duplicating city if already in name.
+            # Contextual Biasing: If no city provided, try to infer from user profile
+            effective_city = city
+            if not effective_city and user_id:
+                try:
+                    profile = db.table("user_profiles").select("city").eq("id", str(user_id)).execute()
+                    if profile.data: effective_city = profile.data[0].get("city")
+                except: pass
+
+            # Construct live query
             live_query = q_trimmed
-            if city and city.lower() not in q_trimmed.lower():
-                live_query = f"{q_trimmed} {city}"
+            if effective_city and effective_city.lower() not in q_trimmed.lower():
+                live_query = f"{q_trimmed} {effective_city}"
 
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
-            # Universal Fallback: If no results with city, try WITHOUT city for maximum discovery
-            if not live_results and city:
-                live_results = await serpapi_client.search_hotels(q_trimmed, limit=10)
+            # Strict Quality Filter: SerpApi sometimes returns unrelated global noise (e.g. US hotels for 'alt')
+            # We enforce that at least one significant keyword matches.
+            valid_live = []
+            for lr in live_results:
+                lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
+                # Require at least the most specific word to match
+                if any(w in lr_norm for w in q_words):
+                    valid_live.append(lr)
 
             # Badge and de-duplicate
-            # Priority: SerpApi ID > Name|Location slug
             def get_id(h):
                 return h.get("serp_api_id") or f"{h['name'].lower()}|{h.get('location', '').lower()}"
 
             local_ids = {get_id(h) for h in local_results}
-            for lr in live_results:
+            for lr in valid_live:
                 lr["source"] = "serpapi"
                 if get_id(lr) not in local_ids:
                     merged_results.append(lr)
