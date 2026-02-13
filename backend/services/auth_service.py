@@ -85,33 +85,35 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
         user_resp = db.auth.get_user(token)
-        if not user_resp or not user_resp.user:
-            raise HTTPException(status_code=401, detail="Invalid Session")
+        if not user_resp or not getattr(user_resp, 'user', None):
+            raise HTTPException(status_code=401, detail="Invalid Session or Expired Token")
             
-        user_id = user_resp.user.id
+        user = user_resp.user
+        user_id = user.id
         
         # Check Account Status
         status = "pending_approval"
         try:
             # Check 'profiles' table first (legacy consistency)
-            res = db.table("profiles").select("subscription_status").eq("id", str(user_id)).single().execute()
+            res = db.table("profiles").select("subscription_status").eq("id", str(user_id)).maybe_single().execute()
             if res.data:
                 status = res.data.get("subscription_status")
             else:
                 # Fallback to 'user_profiles'
-                res2 = db.table("user_profiles").select("subscription_status").eq("user_id", str(user_id)).single().execute()
+                res2 = db.table("user_profiles").select("subscription_status").eq("user_id", str(user_id)).maybe_single().execute()
                 if res2.data:
                     status = res2.data.get("subscription_status")
         except Exception:
-            pass
-                
+            # If DB check fails, we default to pending/safe state but DON'T crash 500
+            print(f"Auth Warning: Could not verify status for {user_id}")
+
         if status in ["suspended", "rejected"]:
             raise HTTPException(status_code=403, detail="Account Suspended/Rejected")
 
-        return user_resp.user
+        return user
         
     except HTTPException as he:
         raise he
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Authentication System Failure: {str(e)}")
+        print(f"Auth Critical: {traceback.format_exc()}")
+        raise HTTPException(status_code=401, detail="Authentication Failed")

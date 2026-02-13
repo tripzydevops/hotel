@@ -136,6 +136,12 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             else:
                 competitors.append(hotel_data)
         
+        # Fallback: If no target hotel is explicitly selected, use the first one.
+        # This prevents the "No Data" screen for users who have hotels but lost the selection state.
+        if not target_hotel and competitors:
+            # Promote the first competitor to target for display purposes
+            target_hotel = competitors.pop(0)
+
         # 2. Alerts, Searches, Scan History
         unread_count = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute().count or 0
         
