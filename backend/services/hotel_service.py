@@ -89,13 +89,16 @@ async def search_hotel_directory_logic(
 
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
-            # Strict Quality Filter: SerpApi sometimes returns unrelated global noise (e.g. US hotels for 'alt')
-            # We enforce that at least one significant keyword matches.
+            # Token-Aware Filtering: 
+            # 1. Keep any property that has a serp_api_id (Property Token)
+            # 2. For others, enforce strict keyword matching
             valid_live = []
             for lr in live_results:
+                has_token = lr.get("serp_api_id") is not None
                 lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
-                # Require at least the most specific word to match
-                if any(w in lr_norm for w in q_words):
+                
+                # Inclusion Rule: Has token OR matches at least one keyword
+                if has_token or any(w in lr_norm for w in q_words):
                     valid_live.append(lr)
 
             # Badge and de-duplicate
