@@ -67,10 +67,13 @@ async def get_market_intelligence(
         if not hotels:
             return {"summary": {}, "hotels": []}
 
-        # EXPLANATION: Unified Price History
-        # Historical price data is split across 'price_logs' (new detailed format)
-        # and 'query_logs' (legacy audit format). To prevent "N/A" on charts, 
-        # we aggregate both, using serp_api_id for cross-table matching.
+        # EXPLANATION: Unified Price History (Bridging 1,357 Legacy Records)
+        # Why: The new 'price_logs' table (Active) is structured for deep parity analysis 
+        # but is currently sparse. The old 'query_logs' table (Legacy) contains months 
+        # of audit history.
+        # How: We query both sources. 'query_logs' are normalized into the modern 
+        # format on-the-fly, ensuring the Rate Calendar and Pulse charts show 
+        # continuous data without "N/A" gaps from the migration.
         
         # 1. Fetch from price_logs
         price_logs_res = db.table("price_logs") \
