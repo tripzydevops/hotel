@@ -77,10 +77,23 @@ async def search_hotel_directory_logic(
                 filtered.append(h)
         local_results = filtered[:20]
 
+    # Check for exact match in local results to avoid unnecessary fallback
+    has_exact_match = False
+    normalized_q = normalize_term(q_trimmed)
+    for h in local_results:
+        # Check name mostly
+        if normalize_term(h.get("name", "")) == normalized_q:
+            has_exact_match = True
+            break
+
     merged_results: List[Dict[str, Any]] = list(local_results)
     
-    # 2. Live Fallback: Trigger if local results are sparse
-    if len(local_results) < 15 and len(q_trimmed) >= 2:
+    # 2. Live Fallback: Trigger if local results are sparse OR no exact match found
+    # Relaxed condition: If we haven't found exactly what they want, ask Google.
+    should_fallback = (len(local_results) < 20) or (not has_exact_match and len(q_trimmed) >= 4)
+    
+    
+    if should_fallback and len(q_trimmed) >= 2:
         try:
             # Contextual Biasing: If no city provided, try to infer from user profile
             effective_city = city
@@ -92,9 +105,15 @@ async def search_hotel_directory_logic(
 
             # Construct live query
             live_query = q_trimmed
-            if effective_city and effective_city.lower() not in q_trimmed.lower():
-                live_query = f"{q_trimmed} {effective_city}"
+            
+            # Heuristic: If query lacks a hospitality keyword, append "Hotel" to help Google Hotels engine
+            keywords = ["hotel", "otel", "resort", "pansiyon", "apart", "motel", "camp", "lodge", "konak"]
+            if not any(k in q_trimmed.lower() for k in keywords):
+                live_query = f"{q_trimmed} Hotel"
 
+            if effective_city and effective_city.lower() not in q_trimmed.lower():
+                live_query = f"{live_query} {effective_city}"
+            
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
             # Global Fallback: If no results with city, try WITHOUT city for maximum discovery
