@@ -99,7 +99,7 @@ class PriceLog(PriceLogBase):
 
 class SettingsBase(BaseModel):
     threshold_percent: float = Field(default=2.0, ge=0, le=100)
-    check_frequency_minutes: int = Field(default=144, ge=1)
+    check_frequency_minutes: int = Field(default=144, ge=0)
     notification_email: Optional[str] = None
     whatsapp_number: Optional[str] = None
     push_enabled: bool = False
