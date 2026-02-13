@@ -112,8 +112,9 @@ class SerpApiProvider(HotelDataProvider):
             }
             
             if token:
-                if len(token) > 20: params["property_token"] = token
-                else: params["hotel_class_id"] = token
+                # Optimized Token Handling: SerpApi google_hotels engine uses property_token for details.
+                # hotel_class_id was an incorrect mapping for these numeric tokens.
+                params["property_token"] = token
 
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
@@ -144,7 +145,13 @@ class SerpApiProvider(HotelDataProvider):
             return None
 
         # 1. Primary Attempt (with ID if available)
-        search_query = f"{hotel_name} {location}" if location else hotel_name
+        # Optimized Query: Prevent redundant "City City" patterns which can confuse Google.
+        search_query = hotel_name
+        if location:
+            # Only append location if not already part of the name
+            if location.lower() not in hotel_name.lower():
+                search_query = f"{hotel_name} {location}"
+        
         result = await do_fetch(search_query, serp_api_id)
         
         # 2. Fallback Attempt (without ID if ID failed or returned NOT_FOUND)
@@ -324,16 +331,36 @@ class SerpApiProvider(HotelDataProvider):
         if not best_match: return None
 
 
-        # Extract Raw Price safely using the robust cleaner
+        # Extract Raw Price safely using robust iteration across all options
         raw_price = None
+        
+        # Priority 1: Knowledge Graph rate
         if "rate_per_night" in best_match:
             r = best_match["rate_per_night"]
             raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
-        elif "price" in best_match: raw_price = best_match["price"]
-        elif best_match.get("prices"):
-            # Try to find a featured price or the first one
-            r = best_match["prices"][0].get("rate_per_night", {})
-            raw_price = r.get("extracted_lowest") if isinstance(r, dict) else r
+            
+        # Priority 2: Iterate through all listed prices/offers
+        if not raw_price or raw_price == 0:
+            price_sources = []
+            if best_match.get("prices"): price_sources.extend(best_match["prices"])
+            if best_match.get("featured_prices"): price_sources.extend(best_match["featured_prices"])
+            
+            valid_prices = []
+            for ps in price_sources:
+                curr_raw = ps.get("rate_per_night", {}).get("extracted_lowest") if isinstance(ps.get("rate_per_night"), dict) else ps.get("rate_per_night")
+                if not curr_raw:
+                    curr_raw = ps.get("price")
+                
+                p_val = self._clean_price_string(curr_raw, currency)
+                if p_val and p_val > 0:
+                    valid_prices.append(p_val)
+            
+            if valid_prices:
+                raw_price = min(valid_prices)
+
+        # Priority 3: Root price field
+        if (not raw_price or raw_price == 0) and "price" in best_match:
+            raw_price = best_match["price"]
 
         price = self._clean_price_string(raw_price, currency)
 

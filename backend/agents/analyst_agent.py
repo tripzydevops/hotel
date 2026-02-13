@@ -52,10 +52,9 @@ class AnalystAgent:
                 # But continue to update metadata if available
                 if not current_price or current_price <= 0:
                      print(f"[AnalystAgent] No new price for {hotel_id} (sold out or unavailable). Skipping price logic but check meta.")
-                     # We do NOT continue here anymore, we proceed to check for meta updates
-
-                
-                reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
+                     reasoning_log.append(f"[Start] Analyzing {hotel_id}. No Price Found - Likely Sold Out or Unavailable at source.")
+                else:
+                     reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
                 
                 # 2. Currency Normalization (if RapidAPI returns USD but TRY was expected)
                 target_currency = options.currency if options and options.currency else "TRY"
