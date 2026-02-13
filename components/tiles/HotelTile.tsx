@@ -460,7 +460,11 @@ export default function HotelTile(props: HotelTileProps) {
             <>
               <p className="text-[10px] font-bold tracking-widest text-[#F6C344] mb-2 uppercase flex items-center justify-center gap-2">
                 <span className="w-1 h-1 rounded-full bg-[#F6C344] animate-pulse" />
-                {t("dashboard.liveRate")}
+                {/* 
+                  EXPLANATION: Localization of Live Market Rate
+                  Using i18n to ensure "Live Market Rate" follows the user's selected language.
+                */}
+                {t("dashboard.liveMarketRate") || "Live Market Rate"}
               </p>
               <div className="relative inline-block mb-1">
                 {currentPrice > 0 ? (
@@ -470,7 +474,11 @@ export default function HotelTile(props: HotelTileProps) {
                     </p>
                     {vendor && (
                       <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
-                        {t("hotelDetails.foundVia")} {vendor}
+                        {/* 
+                          EXPLANATION: Found via localization
+                          Ensuring the data source attribution is localized.
+                        */}
+                        {t("hotelDetails.foundVia") || "Found via"} {vendor}
                       </span>
                     )}
                   </div>

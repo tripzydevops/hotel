@@ -273,10 +273,15 @@ export default function Dashboard() {
           <BentoGrid>
             {loading || isRefreshing ? (
               <>
-                <SkeletonTile large />
-                <SkeletonTile />
-                <SkeletonTile />
-                <SkeletonTile />
+                {/* 
+                  EXPLANATION: Scan UX Synchronization
+                  Instead of a hardcoded 4 skeletons, we match the skeleton count 
+                  to the actual number of hotels to prevent "multiplicity" flickering 
+                  and visual jitter during the scan refresh.
+                */}
+                {[...Array(data?.competitors?.length ? data.competitors.length + 1 : 3)].map((_, i) => (
+                  <SkeletonTile key={i} large={i === 0 && !!data?.target_hotel} />
+                ))}
               </>
             ) : !data?.target_hotel &&
               (!data?.competitors || data.competitors.length === 0) ? (

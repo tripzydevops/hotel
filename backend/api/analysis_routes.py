@@ -56,7 +56,31 @@ async def get_market_intelligence(
         if not hotels:
             return {"summary": {}, "hotels": []}
 
-        hotel_prices_map = {str(h["id"]): h.get("latest_price", 0) for h in hotels}
+        # EXPLANATION: Fetch Price History
+        # We must fetch historical price logs to populate the Rate Calendar and
+        # calculate trends. The previous implementation incorrectly used a single 'latest_price'.
+        price_logs_res = db.table("price_logs") \
+            .select("*") \
+            .in_("hotel_id", [str(h["id"]) for h in hotels]) \
+            .order("recorded_at", desc=True) \
+            .limit(1000) \
+            .execute()
+            
+        logs_data = price_logs_res.data or []
+        
+        # Group logs by hotel_id
+        hotel_prices_map = {}
+        for log in logs_data:
+            hid = str(log["hotel_id"])
+            if hid not in hotel_prices_map:
+                hotel_prices_map[hid] = []
+            hotel_prices_map[hid].append(log)
+            
+        # Ensure every hotel has at least an empty list if no logs found
+        for h in hotels:
+            hid = str(h["id"])
+            if hid not in hotel_prices_map:
+                hotel_prices_map[hid] = []
         
         # Room Type Slicing Logic (pgvector)
         allowed_room_names_map = {}
