@@ -1,3 +1,4 @@
+import os
 from google import genai
 from google.genai import types
 from typing import List
@@ -19,7 +20,10 @@ async def get_embedding(text: str, model: str = "text-embedding-004") -> List[fl
         return [0.0] * 768
         
     try:
-        # Use the modern GenAI Go-style client
+        # EXPLANATION: SDK Versioning
+        # We use the modern 'google-genai' library (Go-style client) rather than the older 'google-generativeai'.
+        # This requires 'google-genai>=1.0.0' in requirements.txt. Mismatches here cause
+        # "ImportError: No module named 'google.genai'" in production.
         result = client.models.embed_content(
             model=model,
             contents=text,
