@@ -77,6 +77,25 @@ async def search_hotel_directory_logic(
                 filtered.append(h)
         local_results = filtered[:20]
 
+    # STRICT FILTERING: If city is provided, we must filter out local results that don't match.
+    # This fixes the issue where "Altin" returns "Grand Altuntas (Aksaray)" even when City="Balikesir".
+    if city:
+        city_norm = normalize_term(city)
+        strict_local = []
+        for h in local_results:
+            # Check if location contains the city
+            h_loc = normalize_term(h.get("location", ""))
+            # Also check if the hotel has a property token - we generally keep these as they are high value,
+            # BUT if the user explicitly asked for a city, we should prioritize that.
+            # Let's be strict: If location is known and doesn't match, drop it.
+            if city_norm in h_loc:
+                strict_local.append(h)
+            elif not h.get("location"): 
+                # Keep if location unknown, just in case
+                strict_local.append(h)
+        
+        local_results = strict_local
+
     # Check for exact match in local results to avoid unnecessary fallback
     has_exact_match = False
     normalized_q = normalize_term(q_trimmed)
@@ -116,9 +135,21 @@ async def search_hotel_directory_logic(
             
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
-            # Global Fallback: If no results with city, try WITHOUT city for maximum discovery
-            # But only if we have room in the results
+            # ZERO-RESULT FALLBACK: If specific query ("alt Hotel Balikesir") fails, 
+            # try broad city search ("Balikesir") and filter locally.
+            # This fixes "Altin" not being found because "alt" is a stop-word/prefix Google ignores.
             if not live_results and city:
+                city_results = await serpapi_client.search_hotels(city, limit=25)
+                # Filter broad results by the user's query
+                for r in city_results:
+                    # Normalized check
+                    name_norm = normalize_term(r['name'])
+                    if normalize_term(q_trimmed) in name_norm:
+                        live_results.append(r)
+
+            # Global Fallback: If no results with city, try WITHOUT city for maximum discovery
+            # But only if we have still found nothing
+            if not live_results and city and not live_results:
                 live_results = await serpapi_client.search_hotels(q_trimmed, limit=10)
 
             # Token-Aware Filtering: 
