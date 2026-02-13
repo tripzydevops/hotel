@@ -49,6 +49,11 @@ def _extract_price(raw: Any) -> Optional[float]:
             pass
     return None
     
+# EXPLANATION: Sentiment Normalization
+# Google Reviews returns sentiment in natural-language categories that vary by locale
+# (e.g., Turkish: "Oda", "Temizlik"; English: "Room", "Cleanliness"). The frontend 
+# expects exactly 4 standard pillars: Cleanliness, Service, Location, Value.
+# Without this mapping, categories appear as "N/A" on the Sentiment Analysis page.
 def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Standardizes sentiment categories to the 4 core pillars: 
@@ -125,9 +130,11 @@ def get_price_for_room(
         if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
             return _extract_price(r.get("price")), r.get("name"), 0.9 if r.get("name") == target_room_type else 0.75
             
-    # 3. Fallback: Best Available Rate (Cheapest)
-    # If the user asks for "Standard" (default) and we can't find it, 
-    # assume they want the base rate (cheapest option).
+    # EXPLANATION: Cheapest Room Fallback
+    # Many Turkish hotels don't have a room labeled "Standard" — they use
+    # names like "Oda" or "Standart Oda". When the semantic and substring 
+    # matches both fail, we fall back to the cheapest available room price.
+    # This ensures charts always show data instead of "No Data".
     if target_room_type.lower() in ["standard", "any", "base"]:
         try:
             # Filter out obviously wrong types if possible, or just grab min price
@@ -187,6 +194,11 @@ async def perform_market_analysis(
             target_hotel_name = hotel.get("name") or "Unknown"
             target_sentiment = weighted_sentiment
 
+    # EXPLANATION: Target Hotel Auto-Select Fallback
+    # If no hotel has is_target_hotel=True (common for new users who haven't 
+    # configured their target yet), we auto-select the first hotel in their list.
+    # Without this, ALL analysis KPIs show "N/A" and the Discovery page says
+    # "No hotel configured. Add a target hotel first."
     if not target_hotel_id and hotels:
         target_hotel_id = str(hotels[0]["id"])
         target_hotel_name = hotels[0].get("name") or "Unknown"
@@ -320,7 +332,11 @@ async def perform_market_analysis(
             })
             curr += timedelta(days=1)
 
-    # 4. Stats & Quadrant
+    # EXPLANATION: ARI & Sentiment Index Calculation
+    # ARI (Average Rate Index) = (your price / market avg) × 100.
+    # Sentiment Index = (your weighted rating / market avg rating) × 100.
+    # Both default to None (not 100.0) when data is insufficient, so the
+    # frontend displays "N/A" instead of a misleading "100% LOW".
     market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
     ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else None
     avg_sent = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 0.0
@@ -331,6 +347,9 @@ async def perform_market_analysis(
     
     advisory = ""
     q_label = "Neutral"
+    # EXPLANATION: Quadrant Advisory — None-Safe
+    # When ARI or Sentiment is None (no competitor data), we show a helpful
+    # message instead of placing the hotel in a misleading quadrant position.
     if ari is None or sent_index is None:
         q_label = "Insufficient Data"
         advisory = "Not enough competitor data to calculate market position. Add more hotels to your tracking list."

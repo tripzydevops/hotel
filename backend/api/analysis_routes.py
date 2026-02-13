@@ -29,6 +29,11 @@ async def discover_competitors_v1(hotel_id: str, limit: int = 5, current_user = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# EXPLANATION: Dual Route Registration
+# The frontend (lib/api.ts) calls GET /api/analysis/{userId} but the original
+# route was POST /api/analysis/market/{user_id}. Both path and method were 
+# mismatched, causing all analysis pages to show "N/A" / empty data.
+# We register BOTH to maintain backward compatibility.
 @router.post("/analysis/market/{user_id}")
 @router.get("/analysis/{user_id}")
 async def get_market_intelligence(
