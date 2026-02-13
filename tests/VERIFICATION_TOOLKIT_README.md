@@ -1,161 +1,180 @@
-# 🔍 Verification Toolkit — README
+# Verification Toolkit
 
-> **Modular integration testing tools** that catch bugs static analysis can't.
-> Drop into any Next.js + Python backend project.
-
----
-
-## Why This Exists
-
-We lost **2+ hours** debugging analysis pages that showed "N/A" everywhere. The root cause? The frontend called `GET /api/analysis/{userId}` but the backend only had `POST /api/analysis/market/{user_id}`. Linting and TypeScript checks both passed — the bug lived **in the gap between files**.
-
-These tools close that gap.
-
----
-
-## What's Included
-
-| File | Purpose | Catches |
-|------|---------|---------|
-| [route_contract_test.py](file:///home/successofmentors/.gemini/antigravity/scratch/hotel/tests/route_contract_test.py) | Cross-checks frontend API calls against backend routes | Wrong HTTP method, missing routes, path mismatches |
-| [i18n_validator.py](file:///home/successofmentors/.gemini/antigravity/scratch/hotel/tests/i18n_validator.py) | Checks all `t()` translation keys exist in dictionaries | Raw key display, missing translations |
-| [.audit.json](file:///home/successofmentors/.gemini/antigravity/scratch/hotel/.audit.json) | Project-specific config (paths, function names) | — |
-| [full-audit.md](file:///home/successofmentors/.gemini/antigravity/scratch/hotel/.agent/workflows/full-audit.md) | 5-phase audit workflow for the AI agent | Ensures nothing gets skipped |
+A modular, sub-200ms quality gate for the Hotel Rate Sentinel.  
+Every tool runs standalone **or** together via the unified gate.
 
 ---
 
 ## Quick Start
 
-### Run on this project (auto-detect)
 ```bash
-python3 tests/route_contract_test.py
-python3 tests/i18n_validator.py
+# Run the full gate (all 4 checks)
+python3 tests/gate.py
+
+# Install as a git pre-push hook (one-time)
+python3 tests/gate.py --install-hook
 ```
 
-### Run with config file
-```bash
-python3 tests/route_contract_test.py --config .audit.json
-python3 tests/i18n_validator.py --config .audit.json
-```
-
-### Run on a different project
-```bash
-python3 tests/route_contract_test.py --frontend src/api.ts --backend server/routes/
-python3 tests/i18n_validator.py --components src/ --dicts locales/en.json locales/fr.json
-```
+After installing the hook, every `git push` runs the gate automatically.  
+Bypass when needed: `git push --no-verify`.
 
 ---
 
-## Tool 1: Route Contract Test
+## Architecture
 
-### What it does
-Reads every function in your frontend API client (e.g., `lib/api.ts`) and extracts the HTTP method + path. Then reads every route decorator in your backend (e.g., `@router.get("/path")`) and cross-references them.
-
-### What it catches
-
-| Bug Type | Example | Impact |
-|----------|---------|--------|
-| **Method mismatch** | Frontend sends `GET`, backend expects `POST` | Silent 405 error, page shows "No Data" |
-| **Path mismatch** | Frontend: `/api/analysis/{id}`, Backend: `/api/analysis/market/{id}` | 404, all KPIs show N/A |
-| **Missing route** | Frontend calls `/api/admin/plans`, no backend handler | Feature completely broken |
-
-### CLI Options
 ```
---frontend, -f    Path to frontend API file (e.g., lib/api.ts)
---backend, -b     Path to backend routes directory (e.g., backend/api/)
---config, -c      Path to JSON config file
---json            Output as JSON (for CI/CD pipelines)
---project-root    Override project root detection
+tests/
+├── gate.py                  ← Orchestrator (runs all checks via subprocess)
+├── i18n_validator.py        ← Translation key completeness
+├── route_contract_test.py   ← Frontend ↔ Backend route alignment
+├── schema_drift_test.py     ← Pydantic ↔ Database alignment
+├── api_smoke_test.py        ← Live endpoint health (CI only, not in gate)
+└── VERIFICATION_TOOLKIT_README.md
 ```
 
-### Supported Frameworks
-- **FastAPI** — `@router.get("/path")`, `@app.post("/path")`
-- **Flask** — `@app.route("/path", methods=["GET"])`
-- **Any TS/JS frontend** — detects `fetch()` and `this.fetch()` patterns
+Each script is a **standalone CLI tool** with `--help`, `--json`, and auto-detection.  
+The gate calls them as subprocesses — no imports, no coupling.
 
 ---
 
-## Tool 2: i18n Key Validator
+## The Gate (`gate.py`)
 
-### What it does
-Scans all component files for `t("dotted.key")` calls, then checks that every key exists in **all** dictionary files (both English and Turkish, or any locale).
+Runs all static checks in sequence and blocks pushes if critical checks fail.
 
-### What it catches
+| Check | Blocks Push? | What It Catches |
+|:------|:-------------|:----------------|
+| **i18n Validator** | ✅ Yes | Missing `t('key')` entries in dictionaries |
+| **Route Contract** | ✅ Yes | Frontend calling routes that don't exist |
+| **Schema Drift** | 🟡 Warns | Pydantic constraints that will reject DB data |
+| **TS Any Audit** | ❌ Advisory | Untyped `Promise<any>` in `lib/api.ts` |
 
-| Bug Type | Example | Impact |
-|----------|---------|--------|
-| **Missing key** | `t("analysis.tabs.overview")` but key not in `en.ts` | Tab shows raw string "analysis.tabs.overview" |
-| **Partial translation** | Key exists in `en.ts` but not `tr.ts` | Turkish users see English fallback or raw key |
-| **Array access** | `t("subscription.pro.features.0")` but dict uses array | Key resolves to `undefined` |
+### Selective Execution
 
-### CLI Options
-```
---components, -d  Directories to scan (e.g., components/ app/)
---dicts           Dictionary files (e.g., dictionaries/en.ts locales/fr.json)
---func-name       Translation function name (default: "t")
---config, -c      Path to JSON config file
---json            Output as JSON
+```bash
+python3 tests/gate.py --only i18n routes   # Run specific checks
+python3 tests/gate.py --skip schema        # Skip specific checks
+python3 tests/gate.py --json               # JSON output for CI pipelines
 ```
 
-### Supported Formats
-- **TypeScript exports** — `export const en = { ... }`
-- **JSON files** — `{ "key": "value" }`
-- **Component files** — `.tsx`, `.ts`, `.jsx`, `.js`, `.vue`, `.svelte`
+### Adding a New Check
+
+1. Create `tests/my_check.py` with exit code 0 = pass / 1 = fail.
+2. Add one entry to the `CHECKS` dict in `gate.py`:
+
+```python
+"my_check": {
+    "name": "My Check",
+    "description": "What it does",
+    "script": "tests/my_check.py",
+    "args": [],
+    "critical": True,  # True = blocks push, False = warning only
+},
+```
+
+No other wiring needed.
 
 ---
 
-## Config File (`.audit.json`)
+## Individual Tools
 
-Create this in your project root to avoid repeating CLI args:
+### 1. i18n Validator (`i18n_validator.py`)
+
+Scans `.tsx`/`.ts` files for `t('dotted.key')` calls and verifies every key exists in all dictionaries.
+
+```bash
+python3 tests/i18n_validator.py                          # Auto-detect
+python3 tests/i18n_validator.py --config .audit.json     # From config
+python3 tests/i18n_validator.py --json                   # Machine-readable
+```
+
+**Why it exists:** The `t()` function returns the key string on miss (truthy), so `t(key) || fallback` never triggers. Missing keys silently show raw strings.
+
+---
+
+### 2. Route Contract Test (`route_contract_test.py`)
+
+Parses `lib/api.ts` for `fetch('/api/...')` calls and `backend/api/*.py` for `@router` decorators, then cross-references method + path.
+
+```bash
+python3 tests/route_contract_test.py                      # Auto-detect
+python3 tests/route_contract_test.py --config .audit.json  # From config
+python3 tests/route_contract_test.py --json                # Machine-readable
+```
+
+**Why it exists:** The #1 cause of "No Data" bugs was method/path mismatches between frontend and backend. TypeScript and Python linters cannot catch cross-language contract violations.
+
+---
+
+### 3. Schema Drift Detector (`schema_drift_test.py`)
+
+Compares Pydantic model fields against database columns to catch validation mismatches before they cause 500 errors.
+
+```bash
+python3 tests/schema_drift_test.py                     # Offline self-audit
+python3 tests/schema_drift_test.py --live              # Compare against live DB
+python3 tests/schema_drift_test.py --update-snapshot   # Save DB schema locally
+python3 tests/schema_drift_test.py --json              # Machine-readable
+```
+
+**Modes:**
+- **Offline** (default): Runs heuristic checks on Pydantic models (strict constraints, nullable risks).
+- **Snapshot**: Compares against a saved `schema_snapshot.json` file.
+- **Live**: Fetches columns directly from Supabase (requires `.env.testing` credentials).
+
+**Why it exists:** The Settings 500 error was caused by `check_frequency_minutes: ge=1` while the DB stored `0`. This detector flags such risks automatically.
+
+---
+
+### 4. API Smoke Test (`api_smoke_test.py`)
+
+Hits live endpoints to verify they respond with expected status codes. Not part of the pre-push gate (requires network + deployed backend).
+
+```bash
+python3 tests/api_smoke_test.py --base-url https://hotel-delta-green.vercel.app
+python3 tests/api_smoke_test.py --base-url http://localhost:8000
+python3 tests/api_smoke_test.py --only dashboard settings  # Specific endpoints
+```
+
+**When to use:** After deploying to Vercel, or during CI to confirm runtime health.
+
+---
+
+## Configuration (`.audit.json`)
+
+Shared config file used by `i18n_validator` and `route_contract_test`:
 
 ```json
 {
+  "base_url": "https://hotel-delta-green.vercel.app",
   "frontend_api": "lib/api.ts",
   "backend_api_dir": "backend/api/",
-  "api_prefix": "/api",
   "i18n_components": ["components/", "app/"],
   "i18n_dicts": ["dictionaries/en.ts", "dictionaries/tr.ts"],
   "i18n_function": "t"
 }
 ```
 
-### Adapting for another project
+---
 
-Just change the paths:
+## Typical Workflows
 
-```json
-{
-  "frontend_api": "src/services/apiClient.ts",
-  "backend_api_dir": "server/routes/",
-  "i18n_components": ["src/"],
-  "i18n_dicts": ["public/locales/en/translation.json", "public/locales/fr/translation.json"],
-  "i18n_function": "useTranslation"
-}
+### Before Every Push (Automatic)
+```
+git push → pre-push hook → gate.py → 4 checks in ~150ms → pass/fail
 ```
 
----
+### After Deployment (Manual)
+```bash
+python3 tests/api_smoke_test.py --base-url https://hotel-delta-green.vercel.app
+```
 
-## Agent Workflow (`/full-audit`)
+### After Schema Changes (Manual)
+```bash
+python3 tests/schema_drift_test.py --live
+python3 tests/schema_drift_test.py --update-snapshot  # Save new baseline
+```
 
-The [full-audit.md](file:///home/successofmentors/.gemini/antigravity/scratch/hotel/.agent/workflows/full-audit.md) workflow defines a **5-phase verification** the AI agent follows:
-
-| Phase | What | Time |
-|-------|------|------|
-| 1. Static | `tsc --noEmit`, `npm run lint`, backend import | ~30s |
-| 2. Contract | Route test + i18n validator | ~10s |
-| 3. Runtime | API smoke test (needs auth token) | ~30s |
-| 4. Browser | Load pages, screenshot errors | ~2min |
-| 5. Report | Summarize findings, update task.md | ~1min |
-
-> **Rule:** Never report "all checks pass" if only Phase 1 was run.
-
----
-
-## First Run Results (This Project)
-
-When we first ran these tools, they found:
-
-- **14 route mismatches** — including missing CRUD routes for admin hotels, plans, settings
-- **29 missing i18n keys** — 8 in `en.ts`, 21 in `tr.ts`
-
-These are the exact bugs that caused the 2-hour debugging session. Had we run these tools first, total debug time: **~10 seconds**.
+### Full Audit (Periodic)
+```bash
+python3 tests/gate.py && python3 tests/api_smoke_test.py --base-url https://hotel-delta-green.vercel.app
+```
