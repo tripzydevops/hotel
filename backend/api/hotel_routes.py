@@ -157,16 +157,23 @@ async def create_hotel(
     
     if result.data:
         await log_query(db=db, user_id=user_id, hotel_name=hotel_data["name"], action_type="create")
-        # Directory Sync
+        # EXPLANATION: Data-Rich Auto-Sync
+        # Automatically populates the global directory with high-quality metadata 
+        # (coordinates, ratings, images) to benefit the entire system.
         try:
             db.table("hotel_directory").upsert({
                 "name": hotel_data["name"],
                 "location": hotel_data.get("location"),
                 "serp_api_id": hotel_data.get("serp_api_id"),
+                "latitude": hotel_data.get("latitude"),
+                "longitude": hotel_data.get("longitude"),
+                "rating": hotel_data.get("rating"),
+                "stars": hotel_data.get("stars"),
+                "image_url": hotel_data.get("image_url"),
                 "last_verified_at": datetime.now().isoformat()
-            }, on_conflict="name,location").execute()
-        except Exception:
-            pass
+            }, on_conflict="serp_api_id").execute()
+        except Exception as e:
+            print(f"Directory Auto-Sync Warning: {e}")
             
     return result.data[0]
 

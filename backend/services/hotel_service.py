@@ -179,6 +179,25 @@ async def add_hotel_to_account_logic(
                 hotel_name=data["name"], 
                 action_type="add_to_account"
             )
+            
+            # EXPLANATION: Collaborative Data Growth
+            # When a user tracks a new property, we capture its latest signature 
+            # (coordinates, images, ratings) and share it with the global directory.
+            try:
+                db.table("hotel_directory").upsert({
+                    "name": data["name"],
+                    "location": data.get("location"),
+                    "serp_api_id": data.get("serp_api_id"),
+                    "latitude": hotel_data.get("latitude"),
+                    "longitude": hotel_data.get("longitude"),
+                    "rating": hotel_data.get("rating"),
+                    "stars": hotel_data.get("stars"),
+                    "image_url": hotel_data.get("image_url"),
+                    "last_verified_at": datetime.now().isoformat()
+                }, on_conflict="serp_api_id").execute()
+            except Exception as e:
+                print(f"Directory Auto-Sync Warning: {e}")
+
             return result.data[0]
         
         return {"error": "Failed to add hotel"}
