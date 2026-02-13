@@ -42,6 +42,9 @@ async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabas
     Retrieves user-specific application settings (alert thresholds, scan frequency).
     If no settings exist, it initializes them with safe defaults.
     """
+    # EXPLANATION: Application Configuration
+    # Handles persistence of user preferences, including parity alert sensitivity 
+    # and automatic scan frequency (e.g., Every 4 hours).
     now = datetime.now(timezone.utc)
     # ... logic remains same ...
     safe_defaults = {

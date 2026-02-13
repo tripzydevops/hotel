@@ -27,6 +27,9 @@ async def search_hotel_directory(
     """Search hotel directory (local + live callback)."""
     if not q or len(q.strip()) < 2 or not db:
         return []
+    # EXPLANATION: Unified Hotel Search
+    # Combines local directory lookups with a live SerpApi fallback for 
+    # maximum discoverability during the "Add Hotel" flow.
     return await search_hotel_directory_logic(q, user_id, db, city)
     # EXPLANATION: Search Route Enhancement
     # Added 'city' parameter to endpoints to support the frontend's 
@@ -40,6 +43,8 @@ async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase
     """
     if not db:
         return []
+    # EXPLANATION: User Property List
+    # Powers the sidebar and dashboard selector for switching between properties.
     result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
     return result.data or []
 
@@ -61,6 +66,9 @@ async def add_hotel_to_account(
     Associates a hotel from the global directory with a specific user profile.
     This triggers the initialization of tracking for that hotel.
     """
+    # EXPLANATION: Hotel Onboarding
+    # Bridges the global directory and the user's personal tracking list.
+    # Essential for starting price monitoring for a new property.
     user_id = current_active_user.id
     return await add_hotel_to_account_logic(hotel, user_id, db)
 

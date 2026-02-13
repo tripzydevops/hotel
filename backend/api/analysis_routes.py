@@ -14,7 +14,12 @@ router = APIRouter(prefix="/api", tags=["analysis"])
 
 @router.get("/v1/discovery/{hotel_id}")
 async def discover_competitors_v1(hotel_id: str, limit: int = 5, current_user = Depends(get_current_active_user), db: Client = Depends(get_supabase)):
-    """Autonomous Rival Discovery."""
+    """
+    Autonomous Rival Discovery.
+    """
+    # EXPLANATION: AI-Driven Competitor Discovery
+    # Uses vector search and semantic similarity to automatically identify 
+    # potential competitors for a newly tracked hotel.
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database service unavailable")
@@ -38,6 +43,9 @@ async def get_market_intelligence(
     Generates a deep market analysis for the user's city.
     Utilizes pgvector for semantic room matching and price triangulation.
     """
+    # EXPLANATION: Market Intelligence Engine
+    # Performs complex multi-hotel analysis, including ARI (Average Rate Index) 
+    # and Sentiment Index calculations to power the dashboard analytics.
     try:
         # ... logic ...
         if not db:

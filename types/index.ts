@@ -261,14 +261,6 @@ export interface MarketAnalysis {
   quadrant_label: string;
 }
 
-export interface AdminStats {
-  total_users: number;
-  total_hotels: number;
-  total_scans: number;
-  api_calls_today: number;
-  directory_size: number;
-  service_role_active: boolean;
-}
 
 export interface Report {
   id: string;

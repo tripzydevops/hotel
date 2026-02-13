@@ -16,98 +16,102 @@ async def search_hotel_directory_logic(
     db: Client,
     city: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    # EXPLANATION: City-Based Filtering
-    # We added an optional 'city' parameter to allow users to narrow down 
-    # hotel search results to a specific region, improving accuracy.
     """
-    Searches the local hotel directory and falls back to serpapi if results are sparse.
-    
-    Why: Minimizes API costs by using local cached data first, while ensuring 
-    new hotels are discoverable via live fallback.
+    Universal Search Fix:
+    Searches the local hotel directory with smart normalization and falls back to 
+    SerpApi with a relaxed query if local results are insufficient.
     """
     q_trimmed = q.strip()
     
+    def normalize_term(text: str) -> str:
+        # Basic normalization for Turkish characters and case
+        rep = {"ı": "i", "İ": "i", "ğ": "g", "Ğ": "g", "ü": "u", "Ü": "u", "ş": "s", "Ş": "s", "ö": "o", "Ö": "o", "ç": "c", "Ç": "c"}
+        for char, target in rep.items():
+            text = text.replace(char, target)
+        # Normalize 'otel' to 'hotel' for matching
+        text = text.lower().replace("otel", "hotel")
+        return text
+
     # 1. Local Lookup (Primary)
-    # Search in both name and location for better discoverability
-    # Multi-word support: if multiple words, search for all as a combo
-    q_words = q_trimmed.split()
+    q_normalized = normalize_term(q_trimmed)
+    q_words = q_normalized.split()
     query = db.table("hotel_directory").select("name, location, serp_api_id")
     
-    # Apply city filter if provided
+    # We apply city filter locally ONLY if it's very specific. 
+    # Otherwise, we prioritize name match and filter later to avoid missing data.
     if city:
-        # EXPLANATION: Strict City Filtering
-        # Restrict the database lookup to only hotels matching the selected city.
-        # This prevents "noise" from global results when a specific city is chosen.
-        query = query.ilike("location", f"%{city}%")
-
-    if len(q_words) > 1:
-        # For multiple words, we use a slightly more complex filter or just rely on the first word + limit
-        # Improved strategy: Search for the first word and filter local
+        city_norm = normalize_term(city)
+        # We'll fetch more and filter in memory to handle slight name/location variations
+        result = query.ilike("name", f"%{q_words[0]}%").limit(100).execute()
+        
+        local_results = []
+        for h in (result.data or []):
+            h_combined = normalize_term(h.get("name", "") + " " + h.get("location", ""))
+            if all(w in h_combined for w in q_words) and city_norm in h_combined:
+                local_results.append(h)
+        local_results = local_results[:20]
+    else:
+        # Standard search
         result = query.or_(f"name.ilike.%{q_words[0]}%,location.ilike.%{q_words[0]}%") \
-            .limit(50) \
+            .limit(100) \
             .execute()
         
         filtered = []
         for h in (result.data or []):
-            name_loc = (h.get("name", "") + " " + h.get("location", "")).lower()
-            if all(w.lower() in name_loc for w in q_words):
+            h_combined = normalize_term(h.get("name", "") + " " + h.get("location", ""))
+            if all(w in h_combined for w in q_words):
                 filtered.append(h)
         local_results = filtered[:20]
-    else:
-        result = query.or_(f"name.ilike.%{q_trimmed}%,location.ilike.%{q_trimmed}%") \
-            .limit(20) \
-            .execute()
-        local_results = result.data or []
+
     merged_results: List[Dict[str, Any]] = list(local_results)
     
-    # 2. Live Fallback: Trigger if local results are sparse (<3) and query is specific (>=3 chars)
-    if len(local_results) < 3 and len(q_trimmed) >= 3:
+    # 2. Live Fallback: Trigger if local results are sparse or we want more diversity
+    # Threshold increased to 25 to ensure we check live data more often (e.g. 'alt' find 'Altın Otel' via SerpApi)
+    if len(local_results) < 25 and len(q_trimmed) >= 2:
         try:
+            # Construct a clean live query. Avoid duplicating city if already in name.
             live_query = q_trimmed
-            if city:
+            if city and city.lower() not in q_trimmed.lower():
                 live_query = f"{q_trimmed} {city}"
 
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
-            # Filter live results by city if provided to ensure strictness
-            if city:
-                # EXPLANATION: Live Results Filtering
-                # SerpApi searches globally. We filter the live results post-fetch 
-                # to ensure they match the user's selected city strictly.
-                live_results = [
-                    r for r in live_results 
-                    if city.lower() in r.get("location", "").lower()
-                ]
+            # Universal Fallback: If no results with city, try WITHOUT city for maximum discovery
+            if not live_results and city:
+                live_results = await serpapi_client.search_hotels(q_trimmed, limit=10)
 
-            lr: Dict[str, Any]
+            # Badge and de-duplicate
+            # Priority: SerpApi ID > Name|Location slug
+            def get_id(h):
+                return h.get("serp_api_id") or f"{h['name'].lower()}|{h.get('location', '').lower()}"
+
+            local_ids = {get_id(h) for h in local_results}
             for lr in live_results:
-                lr["source"] = "serpapi" # Badge for UI differentiation
-            
-            # De-duplicate against local results to prevent confusing UI
-            local_keys = {f"{h['name'].lower()}|{h.get('location', '').lower()}" for h in local_results}
-            for lr in live_results:
-                key = f"{lr['name'].lower()}|{lr.get('location', '').lower()}"
-                if key not in local_keys:
+                lr["source"] = "serpapi"
+                if get_id(lr) not in local_ids:
                     merged_results.append(lr)
         except Exception as se:
             print(f"Directory Search Fallback Error: {se}")
 
-    # 3. Analytics: Log the search event for market trend calculation
+    # 3. Sort and Sample (Prioritize exact word matches or source variety)
+    def result_score(r: Dict[str, Any]) -> float:
+        name_lower = r['name'].lower()
+        score = 0
+        # Boost if query matches the start of a word
+        for w in q_words:
+            if f" {w}" in f" {name_lower}" or f" {w}" in f" {normalize_term(r.get('location', ''))}":
+                score += 10
+        # Slight boost for source variety if we have few locals
+        if r.get("source") == "serpapi":
+            score += 1
+        return score
+
+    sorted_results = sorted(merged_results, key=result_score, reverse=True)
+
     if user_id:
-        await log_query(
-            db=db,
-            user_id=user_id,
-            hotel_name=q_trimmed,
-            location=None,
-            action_type="search",
-            status="success" if merged_results else "no_results"
-        )
+        await log_query(db=db, user_id=user_id, hotel_name=q_trimmed, action_type="search")
     
-    # Limit results to 10 using a linter-safe approach
-    final_results: List[Dict[str, Any]] = []
-    for i in range(min(10, len(merged_results))):
-        final_results.append(merged_results[i])
-    return final_results
+    return sorted_results[:10]
 
 async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     """

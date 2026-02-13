@@ -4,6 +4,7 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_admin_user
+from backend.services.hotel_service import sync_directory_manual_logic
 from backend.models.schemas import (
     AdminStats, AdminUser, AdminUserCreate, AdminUserUpdate, 
     AdminDirectoryEntry, AdminLog
@@ -41,6 +42,8 @@ async def debug_providers():
     Returns which providers (SerpApi, RapidAPI) are registered and active.
     Used for troubleshooting credential issues and primary provider selection.
     """
+    # EXPLANATION: Admin Diagnostics
+    # Provides health status of external scrapers and database connectivity.
     providers = ProviderFactory.get_active_providers()
     return {
         "active_providers": [p.get_provider_name() for p in providers],
@@ -59,6 +62,8 @@ async def get_admin_stats(db: Client = Depends(get_supabase), admin=Depends(get_
     Includes total users, active hotels, and current scan counts.
     Delegates calculation logic to admin_service.
     """
+    # EXPLANATION: Admin Dashboard Metrics
+    # Powers the top-level stats tiles in the Admin Overview.
     return await get_admin_stats_logic(db)
 
 @router.get("/api-keys/status")
@@ -67,6 +72,8 @@ async def get_api_key_status(user: Any = Depends(get_current_admin_user), db: Cl
     Checks the validity and remaining quota of configured external API keys.
     Essential for monitoring budget and operational continuity.
     """
+    # EXPLANATION: Quota Management
+    # Synchronizes frontend key status with backend-managed rotation.
     return await get_api_key_status_logic(db)
 
 @router.post("/api-keys/rotate")
@@ -97,6 +104,8 @@ async def admin_update_user(user_id: UUID, updates: AdminUserUpdate, user: Any =
     Directly updates a user profile from the admin interface.
     Used for managing subscriptions, roles, and manual status overrides.
     """
+    # EXPLANATION: User Lifecycle Management
+    # Directly propagates plan and status changes from the Admin Panel.
     return await admin_update_user_logic(user_id, updates, db)
 
 @router.get("/users", response_model=List[AdminUser])
@@ -114,6 +123,8 @@ async def get_admin_directory(limit: int = 100, city: Optional[str] = None, db: 
     This is the source of truth for "Discovery" and "Cold Start" hotel lookups.
     Supports filtering by city for targeted intelligence.
     """
+    # EXPLANATION: Universal Directory Access
+    # Allows admins to browse and manage the globally shared hotel database.
     return await get_admin_directory_logic(db, limit, city)
 
 @router.post("/users", response_model=dict)
@@ -192,4 +203,24 @@ async def update_admin_settings(settings: dict, db: Client = Depends(get_supabas
     """
     Persists global application parameter changes.
     """
+    # EXPLANATION: Global Configuration
+    # Controls system-wide flags like Maintenance Mode via the UI.
     return await update_admin_settings_logic(settings, db)
+
+@router.post("/sync")
+async def sync_directory(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Triggers a manual sync between user hotels and the global directory.
+    """
+    # EXPLANATION: Manual Directory Sync
+    # Merges unique user-added hotels into the global searchable directory.
+    return await sync_directory_manual_logic(db)
+
+@router.get("/market-intelligence")
+async def get_market_intelligence(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Fetches system-wide market insights.
+    """
+    # EXPLANATION: System-Wide Analytics
+    # Aggregates intelligence across all monitored properties for admin reporting.
+    return await get_admin_stats_logic(db)

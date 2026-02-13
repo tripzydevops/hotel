@@ -16,6 +16,9 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase), curre
     Fetches the user's primary hotel, its competitors, and recent price trends.
     Used to populate the main analytics overview.
     """
+    # EXPLANATION: Dashboard Data Aggregator
+    # Centralized endpoint that provides the current state of a user's parity dashboard,
+    # including historical trends, competitor prices, and recent search logs.
     data = await get_dashboard_logic(
         user_id=str(user_id),
         current_user_id=str(current_user.id),

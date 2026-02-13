@@ -10,8 +10,9 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 
-@router.post("/trigger", response_model=MonitorResult)
+@router.post("/monitor/{user_id}", response_model=MonitorResult)
 async def trigger_monitor(
+    user_id: UUID,
     background_tasks: BackgroundTasks,
     options: Optional[ScanOptions] = None,
     db: Client = Depends(get_supabase),
@@ -21,7 +22,9 @@ async def trigger_monitor(
     Triggers a manual price scan for all hotels in the user's account.
     Fires the asynchronous Agent-Mesh in the background.
     """
-    user_id = current_active_user.id
+    # EXPLANATION: Manual Price Scan Trigger
+    # Initiates a full-account parity check across all configured providers.
+    # Results are pushed via WebSocket or polled by the frontend.
     return await trigger_monitor_logic(
         user_id=user_id,
         background_tasks=background_tasks,
@@ -39,6 +42,9 @@ async def check_scheduled_scan(
     db: Optional[Client] = Depends(get_supabase)
 ):
     """Lazy cron workaround for Vercel free tier."""
+    # EXPLANATION: Frontend-Triggered Scheduler
+    # This endpoint allows the frontend to 'tick' the scheduler when the user
+    # visits the app, ensuring scans run even without a persistent cron.
     if not db:
         return {"triggered": False, "reason": "DB_UNAVAILABLE"}
     

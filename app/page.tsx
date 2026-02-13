@@ -222,6 +222,19 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
+            {data?.next_scan_at && !isRefreshing && (
+              <div className="hidden md:flex flex-col items-end mr-2">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                  {t("dashboard.nextScheduledScan")}
+                </span>
+                <span className="text-xs font-black text-[#F6C344] tabular-nums">
+                  {new Date(data.next_scan_at).toLocaleTimeString(locale, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            )}
             <button
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}

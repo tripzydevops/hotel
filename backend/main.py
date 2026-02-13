@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
-# # from backend.utils.db import get_supabase (imported but not used in main) (imported but not used in main)
+# from backend.api import ...
 from backend.api import (
     admin_routes,
     hotel_routes,
