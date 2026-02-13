@@ -55,16 +55,17 @@ app.add_middleware(
 # This significantly improves performance for data-heavy API endpoints
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Global Exception Handlers
+# EXPLANATION: Centralized Error Handler (backend-specialist pattern)
+# Per .agent rules: "Don't expose internal errors to client" and 
+# "Implement centralized error handling". Traces are logged server-side only.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback
-    error_header = f"CRITICAL 500: {str(exc)}"
-    print(error_header)
+    print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
     return JSONResponse(
         status_code=500,
-        content={"detail": error_header, "trace": traceback.format_exc()},
+        content={"detail": "Internal Server Error. Please try again."},
     )
 
 @app.exception_handler(RequestValidationError)

@@ -115,8 +115,6 @@ async def get_market_intelligence(
             room_type=room_type,
             start_date=start_date,
             end_date=end_date,
-            allowed_room_names_map=allowed_room_names_map,
-            end_date=end_date,
             allowed_room_names_map=allowed_room_names_map
         )
         return JSONResponse(content=jsonable_encoder(analysis_data))
