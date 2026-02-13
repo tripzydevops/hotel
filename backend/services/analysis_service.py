@@ -48,6 +48,52 @@ def _extract_price(raw: Any) -> Optional[float]:
         except Exception: 
             pass
     return None
+    
+def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Standardizes sentiment categories to the 4 core pillars: 
+    Cleanliness, Service, Location, Value. 
+    
+    Why: Google Reviews uses natural language categorization (e.g., "Oda", "Atmosphere"),
+    which leads to "N/A" on the UI if not mapped to our standard metrics.
+    """
+    if not breakdown:
+        return []
+
+    # 1. Define Mappings (Target -> Source Keywords)
+    mappings = {
+        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping"],
+        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast"],
+        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre"],
+        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet"]
+    }
+
+    # 2. Key-based lookup for existing categories
+    # existing_keys = {item.get("name", "").lower() for item in breakdown} 
+    # (Commented out: we allow overwriting/aliasing to ensure coverage)
+
+    normalized = list(breakdown) # Copy original
+    
+    # 3. Find missing pillars and try to fill them from available data
+    for pillar, keywords in mappings.items():
+        # Check if we already have this pillar (exact match)
+        has_pillar = any(b.get("name", "").lower() == pillar.lower() for b in breakdown)
+        if has_pillar:
+            continue
+            
+        # If not, look for a proxy in the raw data
+        for item in breakdown:
+            name = item.get("name", "").lower()
+            if name in keywords:
+                # Found a proxy! Create a standardized entry.
+                # We clone it so we don't destroy the original named category (which shows in "Voices")
+                proxy = item.copy()
+                proxy["name"] = pillar # Rename to standard
+                proxy["is_inferred"] = True
+                normalized.append(proxy)
+                break # Found one for this pillar, move to next
+                
+    return normalized
 
 def get_price_for_room(
     price_log: Dict[str, Any], 
@@ -79,6 +125,25 @@ def get_price_for_room(
         if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
             return _extract_price(r.get("price")), r.get("name"), 0.9 if r.get("name") == target_room_type else 0.75
             
+    # 3. Fallback: Best Available Rate (Cheapest)
+    # If the user asks for "Standard" (default) and we can't find it, 
+    # assume they want the base rate (cheapest option).
+    if target_room_type.lower() in ["standard", "any", "base"]:
+        try:
+            # Filter out obviously wrong types if possible, or just grab min price
+            valid_prices = []
+            for r in r_types:
+                p = _extract_price(r.get("price"))
+                if p is not None:
+                    valid_prices.append((p, r.get("name")))
+            
+            if valid_prices:
+                # Sort by price ascending
+                valid_prices.sort(key=lambda x: x[0])
+                return valid_prices[0][0], valid_prices[0][1], 0.5  # Lower match score to indicate fallback
+        except Exception:
+            pass
+
     return None, None, 0.0
 
 async def perform_market_analysis(
@@ -105,6 +170,7 @@ async def perform_market_analysis(
     target_hotel_id: Optional[str] = None
     target_hotel_name: str = "Unknown Hotel"
     target_sentiment: float = 0.0
+    price_rank_list: List[Dict[str, Any]] = []
 
     # 1. Map Prices and Find Target
     for hotel in hotels:
@@ -312,6 +378,6 @@ async def perform_market_analysis(
         "daily_prices": daily_prices,
         "competitors": comp_list,
         "price_history": target_history,
-        "sentiment_breakdown": _transform_serp_links(target_h.get("sentiment_breakdown")) if target_h else None,
+        "sentiment_breakdown": _normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else None,
         "available_room_types": sorted(list(available_room_types))
     }

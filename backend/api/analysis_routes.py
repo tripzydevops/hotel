@@ -116,7 +116,8 @@ async def get_market_intelligence(
             start_date=start_date,
             end_date=end_date,
             allowed_room_names_map=allowed_room_names_map,
-            db=db
+            end_date=end_date,
+            allowed_room_names_map=allowed_room_names_map
         )
         return JSONResponse(content=jsonable_encoder(analysis_data))
     except Exception as e:

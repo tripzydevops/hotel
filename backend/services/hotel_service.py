@@ -125,7 +125,10 @@ async def search_hotel_directory_logic(
             # Construct live query
             live_query = q_trimmed
             
-            # Heuristic: If query lacks a hospitality keyword, append "Hotel" to help Google Hotels engine
+            # EXPLANATION: Hospitality Context Injection
+            # Google's Knowledge Graph can be finicky with short or generic terms (e.g. "Altin").
+            # Appending "Hotel" ensures we trigger the specific "Hotel Booking" search layout
+            # instead of a generic map or web search.
             keywords = ["hotel", "otel", "resort", "pansiyon", "apart", "motel", "camp", "lodge", "konak"]
             if not any(k in q_trimmed.lower() for k in keywords):
                 live_query = f"{q_trimmed} Hotel"
@@ -162,7 +165,10 @@ async def search_hotel_directory_logic(
                 
                 # Inclusion Rule: Has token OR matches at least one keyword
                 if has_token or any(w in lr_norm for w in q_words):
-                    # FIX: Backfill location if missing using the strong signal from the city filter
+                    # EXPLANATION: Location Backfill
+                    # Detailed location data is critical for the UI. If Google returns "Unknown"
+                    # (common for smaller properties), we use the User's requested City to 
+                    # clearly place the hotel on the map.
                     if lr.get("location") == "Unknown" and city:
                          lr["location"] = city.title()
                     elif lr.get("location") == "Unknown" and effective_city:

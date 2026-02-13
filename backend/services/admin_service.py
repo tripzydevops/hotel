@@ -180,6 +180,10 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
     Reminder Note: This operation bypasses normal RLS to provide an 
     aggregated system-wide view.
     """
+    # EXPLANATION: Admin User Management
+    # Aggregates data from Auth, Profiles, and Settings to create a comprehensive
+    # user view for the Admin Dashboard. This manual join is necessary because
+    # user data is split across multiple tables (Supabase Auth vs Public Profiles).
     try:
         # Fetch profiles, settings, and subscription info
         profiles_res = db.table("user_profiles").select("*").execute()
@@ -196,7 +200,7 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
             uid = str(p["user_id"])
             if uid not in users_map:
                 users_map[uid] = {
-                    "user_id": uid,
+                    "id": uid,
                     "email": p.get("email") or "Unknown",
                     "display_name": p.get("display_name"),
                     "company_name": p.get("company_name"),
