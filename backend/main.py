@@ -32,8 +32,16 @@ from backend.api import (
     reports_routes,
     profile_routes,
     analysis_routes,
+    analysis_routes,
     alerts_routes
 )
+
+# EXPLANATION: Vercel Dependency & Import Safety
+# The 'monitor_routes' (and by extension 'main.py') imports 'AnalystAgent', which
+# relies on 'google-genai' SDK. If this package is missing in the root 'requirements.txt'
+# (which Vercel uses for builds), the entire backend will crash with a 500 error at startup.
+# We explicitly pinned 'google-genai>=1.0.0' to resolve this.
+
 
 # Initialize FastAPI
 app = FastAPI(
