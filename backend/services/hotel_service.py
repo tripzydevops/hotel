@@ -52,7 +52,15 @@ async def search_hotel_directory_logic(
         local_results = []
         for h in (result.data or []):
             h_combined = normalize_term(h.get("name", "") + " " + h.get("location", ""))
-            if all(w in h_combined for w in q_words) and city_norm in h_combined:
+            
+            # Match Rule: 
+            # 1. Base keyword match (always required for local DB search)
+            if not all(w in h_combined for w in q_words):
+                continue
+                
+            # 2. City Filter: Pass if city matches OR has a property token (Global Inclusion Rule)
+            has_token = h.get("serp_api_id") is not None
+            if city_norm in h_combined or has_token:
                 local_results.append(h)
         local_results = local_results[:20]
     else:
@@ -89,6 +97,11 @@ async def search_hotel_directory_logic(
 
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
             
+            # Global Fallback: If no results with city, try WITHOUT city for maximum discovery
+            # But only if we have room in the results
+            if not live_results and city:
+                live_results = await serpapi_client.search_hotels(q_trimmed, limit=10)
+
             # Token-Aware Filtering: 
             # 1. Keep any property that has a serp_api_id (Property Token)
             # 2. For others, enforce strict keyword matching
