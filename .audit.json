@@ -1,0 +1,8 @@
+{
+  "frontend_api": "lib/api.ts",
+  "backend_api_dir": "backend/api/",
+  "api_prefix": "/api",
+  "i18n_components": ["components/", "app/"],
+  "i18n_dicts": ["dictionaries/en.ts", "dictionaries/tr.ts"],
+  "i18n_function": "t"
+}
