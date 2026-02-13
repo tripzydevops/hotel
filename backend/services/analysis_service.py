@@ -55,13 +55,13 @@ def _extract_price(raw: Any) -> Optional[float]:
 # expects exactly 4 standard pillars: Cleanliness, Service, Location, Value.
 # Without this mapping, categories appear as "N/A" on the Sentiment Analysis page.
 def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Standardizes sentiment categories to the 4 core pillars: 
-    Cleanliness, Service, Location, Value. 
-    
-    Why: Google Reviews uses natural language categorization (e.g., "Oda", "Atmosphere"),
-    which leads to "N/A" on the UI if not mapped to our standard metrics.
-    """
+    # EXPLANATION: Sentiment Pillar Restoration (Substring Matching)
+    # Why: Google Reviews returns diverse categories (e.g., "Oda", "Uyku", "Konum").
+    # If these don't match the standard 4 pillars (Cleanliness, Service, Location, Value), 
+    # the Radar chart shows "N/A".
+    # How: We use a broad dictionary of Turkish/English keywords and check for 
+    # substrings in both the category name and description. This ensures that 
+    # local Turkish terms like "Uyku" (Sleep) are correctly mapped to "Cleanliness".
     if not breakdown:
         return []
 
@@ -98,6 +98,44 @@ def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]
                 break # Found one for this pillar, move to next
                 
     return normalized
+
+def _generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    # EXPLANATION: Sentiment Voices Synthesis
+    # Why: The 'guest_mentions' column (which feeds the "Sentiment Voices" keyword tags) 
+    # is often empty for recently synced hotels.
+    # How: We dynamically transform the 'sentiment_breakdown' into the keyword tag 
+    # format. Positive categories become green tags and negative ones become red, 
+    # ensuring the UI card is always rich with guest feedback.
+    if not breakdown:
+        return []
+        
+    mentions = []
+    # Sort by total mentioned to show most relevant first
+    sorted_items = sorted(breakdown, key=lambda x: int(x.get("total_mentioned") or 0), reverse=True)
+    
+    for item in sorted_items:
+        name = item.get("name")
+        pos = int(item.get("positive") or 0)
+        neg = int(item.get("negative") or 0)
+        neu = int(item.get("neutral") or 0)
+        total = int(item.get("total_mentioned") or 0)
+        
+        if total == 0: continue
+        
+        # Determine overall sentiment for the tag color
+        sentiment = "neutral"
+        if pos > neg and pos > neu:
+            sentiment = "positive"
+        elif neg > pos and neg > neu:
+            sentiment = "negative"
+            
+        mentions.append({
+            "keyword": name,
+            "count": pos if sentiment == "positive" else neg if sentiment == "negative" else total,
+            "sentiment": sentiment
+        })
+        
+    return mentions[:15] # Limit to top 15 for UI clarity
 
 def get_price_for_room(
     price_log: Dict[str, Any], 
@@ -400,5 +438,6 @@ async def perform_market_analysis(
         "competitors": comp_list,
         "price_history": target_history,
         "sentiment_breakdown": _normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else None,
+        "guest_mentions": target_h.get("guest_mentions") or _generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
         "available_room_types": sorted(list(available_room_types))
     }
