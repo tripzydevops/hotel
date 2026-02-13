@@ -1,0 +1,197 @@
+
+--- Full Analytics: Ramada Residences Balikesir ---
+{
+  "type": "hotel",
+  "name": "Ramada Residences by Wyndham Balikesir",
+  "description": "Laid-back hotel featuring a cafe & a terrace, plus a chic bar/restaurant & meeting space.",
+  "link": "https://www.wyndhamhotels.com/en-uk/ramada/balikesir-turkey/ramada-residences-balikesir/overview?CID=LC:wmcic5n98gs1g0r:55425&iata=00093796",
+  "property_token": "ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB",
+  "serpapi_property_details_link": "https://serpapi.com/search.json?adults=2&check_in_date=2026-02-14&check_out_date=2026-02-15&children=0&currency=TRY&engine=google_hotels&gl=us&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB&q=Ramada+Residences+Balikesir",
+  "gps_coordinates": {
+    "latitude": 39.637177199999996,
+    "longitude": 27.889597799999997
+  },
+  "check_in_time": "2:00\u202fPM",
+  "check_out_time": "12:00\u202fPM",
+  "nearby_places": [
+    {
+      "name": "Zagnos Pasha Mosque",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "7 min"
+        }
+      ]
+    },
+    {
+      "name": "Bal\u0131kesir",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "4 min"
+        }
+      ]
+    },
+    {
+      "name": "Edremit Koca Seyit",
+      "transportations": [
+        {
+          "type": "Taxi",
+          "duration": "1 hr 8 min"
+        }
+      ]
+    },
+    {
+      "name": "K\u00f6fteci Can",
+      "transportations": [
+        {
+          "type": "Walking",
+          "duration": "4 min"
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipOyshuWLrO55Ys7hUJsSyooxvQRcasOKZ_bQtjs=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipOyshuWLrO55Ys7hUJsSyooxvQRcasOKZ_bQtjs=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAweqK2oK-InmvYfAoYyYkuYKZzWFCyzCJFnn9AOJ5r0IlTbBDVgr2I8tzlIou4qfNDMGmk6StacltSvN5LOquOuL2rUgu-aYo5QsZvd9hxIVwTIPYv_I9YGyYQXYY9sN1VAPl-fC6=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgIC27uL6VA=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipPR-WGXWzfl-EVgK2i7Zrp2dbMG3cya3W9j0Tkv=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipPR-WGXWzfl-EVgK2i7Zrp2dbMG3cya3W9j0Tkv=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipNljt4ApQPlLE4FH_RBez_7xuHnBERK_sFlNh4d=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipNljt4ApQPlLE4FH_RBez_7xuHnBERK_sFlNh4d=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/p/AF1QipNRrJReZ_F_gaQ31rHtMrZk7MFVD7pyIbNIKvKV=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/AF1QipNRrJReZ_F_gaQ31rHtMrZk7MFVD7pyIbNIKvKV=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAwergZhX1GnRf3Fuoo-BIefOftAa6qdu6NuAYc0nE3DMSutngJt3iD3548kKGDzZTVge5_OkQEbIXQloco_0mrKIyVy619EhnswWWSxHYE_tpiPYDiLs_sPRDW63m62eszKAln9g=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgICTjfnBcw=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAwerPGGygxqqWqjKiztg5jESMDBIKnURC4GV8-DnmzinOoMjIIF7A03NnldDxo2sqevWiozEVLjYTtC5Jrsv3FMa11GHi4mVdNOjuM6GCzS1Tq_bPwswZr6iScm48ZFleJd6Cm8U=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgIDm0qSbMQ=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAwerpMne3qQCINSBby2TJEvkrKcnlmQ4LLL8V-s_MkPEgjsH8wjH-nyx-FIOec0iHZ7awnFfDc5XcTIjmJsTQ7bB-TWRZfEntIzUR4RtwHygJni0L00NkoDYX1w-qq5XzUejxcQHO=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgICWy8uEaw=s10000"
+    },
+    {
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/AHVAweq8w62UC1zElGtdw7ZT9j3z4x7uZjbGYnZwbjnnJzj4lSbt6lw8Y8TbtG58ODeWvIkg9o5BZLjs9ypRdDZIlAacJyrLn23xRVEBN0AzLycuLMb_BSk3bTWWaZE3ij_fPAjXfiGHUg=s287-w287-h192-n-k-no-v1",
+      "original_image": "https://lh5.googleusercontent.com/p/CIHM0ogKEICAgIDyhoekiAE=s10000"
+    }
+  ],
+  "overall_rating": 4.4,
+  "reviews": 944,
+  "ratings": [
+    {
+      "stars": 5,
+      "count": 672
+    },
+    {
+      "stars": 4,
+      "count": 128
+    },
+    {
+      "stars": 3,
+      "count": 64
+    },
+    {
+      "stars": 2,
+      "count": 34
+    },
+    {
+      "stars": 1,
+      "count": 46
+    }
+  ],
+  "location_rating": 3.4,
+  "reviews_breakdown": [
+    {
+      "name": "Dining",
+      "description": "Food and Beverage",
+      "total_mentioned": 29,
+      "positive": 16,
+      "negative": 11,
+      "neutral": 2,
+      "category_token": "DgnoGHica1yRnFiSmp5fVDl5o1t-fopCYl6KglNqWWpRYnoqwzKXzLzMvHQAKAQO5w",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=DgnoGHica1yRnFiSmp5fVDl5o1t-fopCYl6KglNqWWpRYnoqwzKXzLzMvHQAKAQO5w&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    },
+    {
+      "name": "Bar",
+      "description": "Bar or lounge",
+      "total_mentioned": 13,
+      "positive": 7,
+      "negative": 4,
+      "neutral": 2,
+      "category_token": "L4-to3ica1yRnFiSmp5fVDl5rVNikUJ-kUJOfmleeirDYiAXAMhSDEA",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=L4-to3ica1yRnFiSmp5fVDl5rVNikUJ-kUJOfmleeirDYiAXAMhSDEA&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    },
+    {
+      "name": "Nightlife",
+      "description": "Nightlife",
+      "total_mentioned": 10,
+      "positive": 7,
+      "negative": 3,
+      "neutral": 0,
+      "category_token": "jCBqW3ica1yRnFiSmp5fVDl5pV9mekZJTmZaKiOCCQDpcg2i",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=jCBqW3ica1yRnFiSmp5fVDl5pV9mekZJTmZaKiOCCQDpcg2i&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    },
+    {
+      "name": "Breakfast",
+      "description": "Breakfast",
+      "total_mentioned": 46,
+      "positive": 25,
+      "negative": 16,
+      "neutral": 5,
+      "category_token": "g2mTLnica1yRnFiSmp5fVDl5pVNRamJ2WmJxCQOCCQDn-g2T",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=g2mTLnica1yRnFiSmp5fVDl5pVNRamJ2WmJxCQOCCQDn-g2T&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    },
+    {
+      "name": "Service",
+      "description": "Service",
+      "total_mentioned": 100,
+      "positive": 74,
+      "negative": 20,
+      "neutral": 6,
+      "category_token": "DZ7RYHica1yRnFiSmp5fVDl5eXBqUVlmciojjAEAtX8MDA",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=DZ7RYHica1yRnFiSmp5fVDl5eXBqUVlmciojjAEAtX8MDA&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    },
+    {
+      "name": "Wellness",
+      "description": "Wellness",
+      "total_mentioned": 6,
+      "positive": 1,
+      "negative": 3,
+      "neutral": 2,
+      "category_token": "7tfjx3ica1yRnFiSmp5fVDl5RXhqTk5eanExA5wFAM_uDQU",
+      "serpapi_link": "https://serpapi.com/search.json?category_token=7tfjx3ica1yRnFiSmp5fVDl5RXhqTk5eanExA5wFAM_uDQU&engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+    }
+  ],
+  "amenities": [
+    "Free breakfast",
+    "Free Wi-Fi",
+    "Free parking",
+    "Air conditioning",
+    "Fitness center",
+    "Spa",
+    "Bar",
+    "Restaurant",
+    "Room service",
+    "Kitchen in some rooms",
+    "Airport shuttle",
+    "Full-service laundry",
+    "Accessible",
+    "Business center"
+  ],
+  "serpapi_google_hotels_reviews_link": "https://serpapi.com/search.json?engine=google_hotels_reviews&hl=en&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB",
+  "serpapi_google_hotels_photos_link": "https://serpapi.com/search.json?engine=google_hotels_photos&property_token=ChoIuMHPy5HCnsekARoNL2cvMTFoaHRubTY5ORAB"
+}

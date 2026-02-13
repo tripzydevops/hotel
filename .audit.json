@@ -2,7 +2,7 @@
   "frontend_api": "lib/api.ts",
   "backend_api_dir": "backend/api/",
   "api_prefix": "/api",
-  "base_url": "",
+  "base_url": "https://hotel-delta-green.vercel.app",
   "i18n_components": [
     "components/",
     "app/"

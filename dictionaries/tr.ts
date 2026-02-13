@@ -36,6 +36,8 @@ export const tr = {
     loadingError: "Panel verileri yüklenemedi.",
     footerCopyright:
       "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
+    close: "Kapat",
+    errorTitle: "Hata",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
@@ -80,6 +82,8 @@ export const tr = {
     agentMeshActive: "Agent-Mesh Aktif",
     upgradedToPlan: "{plan} planına başarıyla yükseltildi!",
     nextScanNote: "Manuel taramalar planlı sayaç süresini sıfırlar.",
+    limitReached: "Otel Limitine Ulaşıldı",
+    liveMarketRate: "Güncel Piyasa Oranı",
   },
   hotelDetails: {
     overview: "Genel Bakış",
@@ -114,6 +118,7 @@ export const tr = {
     noOffers: "Bu taramada ek teklif bulunamadı.",
     noRooms: "Bu tarih için belirli oda tipi verisi bulunmuyor.",
     stars: "{0} Yıldız",
+    current: "Mevcut",
   },
   addHotel: {
     title: "Yeni Otel Ekle",
@@ -208,6 +213,7 @@ export const tr = {
     minLabel: "Min",
     maxLabel: "Maks",
     processing: "İstihbarat İşleniyor...",
+    targetPrice: "Hedef Fiyat",
     advisory: {
       title: "Ajan İstihbarat Tavsiyesi",
       generatedBy:
@@ -363,6 +369,7 @@ export const tr = {
     companyPlaceholder: "Oteliniz veya şirketiniz",
     jobPlaceholder: "Örn: Gelir Yöneticisi",
     phonePlaceholder: "+90 5XX XXX XX XX",
+    saveSuccess: "Profil başarıyla güncellendi",
   },
   settings: {
     title: "Alarm Ayarları",
@@ -393,34 +400,34 @@ export const tr = {
     starter: {
       name: "Başlangıç",
       description: "Yeni başlayan küçük oteller için",
-      features: [
-        "5 otele kadar takip",
-        "Günlük fiyat güncellemeleri",
-        "Temel e-posta alarmları",
-        "7 günlük geçmiş verisi",
-      ],
+      features: {
+        0: "5 otele kadar takip",
+        1: "Günlük fiyat güncellemeleri",
+        2: "Temel e-posta alarmları",
+        3: "7 günlük geçmiş verisi",
+      },
     },
     pro: {
       name: "Profesyonel",
       description: "Ciddi gelir yöneticileri için",
-      features: [
-        "25 otele kadar takip",
-        "Saatlik fiyat güncellemeleri",
-        "Anlık fiyat düşüş alarmları",
-        "Sınırsız geçmiş",
-        "Excel/CSV Dışa Aktarma",
-      ],
+      features: {
+        0: "25 otele kadar takip",
+        1: "Saatlik fiyat güncellemeleri",
+        2: "Anlık fiyat düşüş alarmları",
+        3: "Sınırsız geçmiş",
+        4: "Excel/CSV Dışa Aktarma",
+      },
     },
     enterprise: {
       name: "Kurumsal",
       description: "Zincir oteller ve büyük gruplar için",
-      features: [
-        "Sınırsız otel takibi",
-        "Gerçek zamanlı API Erişimi",
-        "Özel hesap yöneticisi",
-        "Özel kurulum desteği",
-        "Logosuz (Whitelabel) raporlar",
-      ],
+      features: {
+        0: "Sınırsız otel takibi",
+        1: "Gerçek zamanlı API Erişimi",
+        2: "Özel hesap yöneticisi",
+        3: "Özel kurulum desteği",
+        4: "Logosuz (Whitelabel) raporlar",
+      },
     },
     period: {
       mo: "/ay",

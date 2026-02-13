@@ -7,7 +7,7 @@ from backend.services.auth_service import get_current_admin_user
 from backend.services.hotel_service import sync_directory_manual_logic
 from backend.models.schemas import (
     AdminStats, AdminUser, AdminUserCreate, AdminUserUpdate, 
-    AdminDirectoryEntry, AdminLog
+    AdminDirectoryEntry, AdminLog, MembershipPlan, PlanCreate, PlanUpdate
 )
 from backend.services.admin_service import (
     get_admin_stats_logic,
@@ -26,9 +26,16 @@ from backend.services.admin_service import (
     get_admin_logs_logic,
     get_admin_feed_logic,
     get_admin_hotels_logic,
+    update_admin_hotel_logic,
+    delete_admin_hotel_logic,
     get_admin_scans_logic,
+    get_admin_scan_details_logic,
     get_admin_settings_logic,
-    update_admin_settings_logic
+    update_admin_settings_logic,
+    get_admin_plans_logic,
+    create_admin_plan_logic,
+    update_admin_plan_logic,
+    delete_admin_plan_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -184,14 +191,64 @@ async def get_admin_hotels(limit: int = 100, db: Client = Depends(get_supabase),
     """
     return await get_admin_hotels_logic(db, limit)
 
-@router.get("/scans")
+@router.get("/scans", response_model=List[dict])
 async def get_admin_scans(limit: int = 50, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """
     Lists global scan history. Essential for monitoring scraper health.
     """
     return await get_admin_scans_logic(db, limit)
 
+@router.get("/scans/{scan_id}")
+async def get_admin_scan_details(scan_id: UUID, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Fetches detailed logs for a specific scan session.
+    """
+    return await get_admin_scan_details_logic(scan_id, db)
+
+@router.put("/hotels/{hotel_id}")
+async def update_admin_hotel(hotel_id: str, updates: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Updates a hotel record globally.
+    """
+    return await update_admin_hotel_logic(hotel_id, updates, db)
+
+@router.delete("/hotels/{hotel_id}")
+async def delete_admin_hotel(hotel_id: str, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Deletes a hotel and its associated data globally.
+    """
+    return await delete_admin_hotel_logic(hotel_id, db)
+
+@router.get("/plans", response_model=List[MembershipPlan])
+async def get_admin_plans(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Lists all subscription plans.
+    """
+    return await get_admin_plans_logic(db)
+
+@router.post("/plans", response_model=MembershipPlan)
+async def create_admin_plan(plan: PlanCreate, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Creates a new subscription plan.
+    """
+    return await create_admin_plan_logic(plan, db)
+
+@router.put("/plans/{plan_id}", response_model=MembershipPlan)
+async def update_admin_plan(plan_id: UUID, plan: PlanUpdate, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Updates an existing subscription plan.
+    """
+    return await update_admin_plan_logic(plan_id, plan, db)
+
+@router.delete("/plans/{plan_id}")
+async def delete_admin_plan(plan_id: UUID, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Deletes a subscription plan.
+    """
+    return await delete_admin_plan_logic(plan_id, db)
+
 @router.get("/global-settings")
+@router.get("/settings")
 async def get_admin_settings(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """
     Fetches global application parameters (maintenance mode, signup flags).
@@ -199,6 +256,7 @@ async def get_admin_settings(db: Client = Depends(get_supabase), admin=Depends(g
     return await get_admin_settings_logic(db)
 
 @router.post("/global-settings")
+@router.put("/settings")
 async def update_admin_settings(settings: dict, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """
     Persists global application parameter changes.

@@ -119,3 +119,16 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
     except Exception as e:
         print(f"Error fetching session logs: {e}")
         return []
+
+@router.delete("/logs/{log_id}")
+async def delete_log(log_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+    """
+    Deletes a specific activity log. 
+    Supports frontend's cleanup functionality.
+    """
+    try:
+        db.table("query_logs").delete().eq("id", str(log_id)).execute()
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error deleting log: {e}")
+        return {"status": "error", "detail": str(e)}

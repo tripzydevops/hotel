@@ -1,0 +1,2 @@
+export NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key

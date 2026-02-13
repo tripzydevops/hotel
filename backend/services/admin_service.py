@@ -478,6 +478,61 @@ async def get_admin_scans_logic(db: Client, limit: int = 50) -> List[Dict[str, A
         })
     return results
 
+async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, Any]:
+    """Fetch detailed logs and results for a specific scan."""
+    try:
+        session = db.table("scan_sessions").select("*").eq("id", str(scan_id)).single().execute().data
+        if not session:
+            raise HTTPException(404, "Scan session not found")
+            
+        logs = db.table("query_logs").select("*").eq("session_id", str(scan_id)).execute().data or []
+        
+        return {
+            "session": session,
+            "logs": logs
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+async def get_admin_plans_logic(db: Client) -> List[Dict[str, Any]]:
+    """List all available membership plans."""
+    try:
+        res = db.table("membership_plans").select("*").order("price_monthly").execute()
+        return res.data or []
+    except Exception as e:
+        # Fallback to defaults if table doesn't exist yet
+        return [
+            {"id": "starter", "name": "Starter", "price_monthly": 49, "hotel_limit": 5},
+            {"id": "pro", "name": "Pro", "price_monthly": 149, "hotel_limit": 25},
+            {"id": "enterprise", "name": "Enterprise", "price_monthly": 399, "hotel_limit": 999}
+        ]
+
+async def create_admin_plan_logic(plan: PlanCreate, db: Client) -> Dict[str, Any]:
+    """Create a new membership plan."""
+    try:
+        data = plan.model_dump()
+        res = db.table("membership_plans").insert(data).execute()
+        return res.data[0] if res.data else {"status": "success"}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+async def update_admin_plan_logic(id: UUID, plan: PlanUpdate, db: Client) -> Dict[str, Any]:
+    """Update an existing membership plan."""
+    try:
+        data = plan.model_dump(exclude_unset=True)
+        res = db.table("membership_plans").update(data).eq("id", str(id)).execute()
+        return res.data[0] if res.data else {"status": "success"}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
+    """Delete a membership plan."""
+    try:
+        db.table("membership_plans").delete().eq("id", str(id)).execute()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
 async def get_admin_settings_logic(db: Client) -> AdminSettings:
     """Fetch global settings."""
     res = db.table("admin_settings").select("*").limit(1).execute()

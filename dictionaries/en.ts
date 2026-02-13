@@ -36,6 +36,8 @@ export const en = {
     loadingError: "Failed to load dashboard data.",
     footerCopyright:
       "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
+    close: "Close",
+    errorTitle: "Error",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
@@ -80,6 +82,8 @@ export const en = {
     agentMeshActive: "Agent-Mesh Active",
     upgradedToPlan: "Upgraded to {plan} plan successfully!",
     nextScanNote: "Manual scans reset the scheduled countdown.",
+    limitReached: "Hotel Limit Reached",
+    liveMarketRate: "Live Market Rate",
   },
   hotelDetails: {
     overview: "Overview",
@@ -112,6 +116,7 @@ export const en = {
     noOffers: "No additional offers found in this scan.",
     noRooms: "No specific room type data available for this date.",
     stars: "{0} Stars",
+    current: "Current",
   },
   addHotel: {
     title: "Add New Hotel",
@@ -218,6 +223,7 @@ export const en = {
       reputation_focus: "Focus on reputation management.",
       aggressive_monitoring: "Monitor competitors for aggressive price cuts.",
     },
+    targetPrice: "Target Price",
   },
   reports: {
     title: "Audit & Intelligence Reports",
@@ -365,6 +371,7 @@ export const en = {
     companyPlaceholder: "Your hotel or company",
     jobPlaceholder: "e.g. Revenue Manager",
     phonePlaceholder: "+1 234 567 8900",
+    saveSuccess: "Profile updated successfully",
   },
   settings: {
     title: "Alert Settings",
@@ -424,5 +431,6 @@ export const en = {
     threatDetected: "Threat Detected",
     opportunity: "Opportunity",
     high: "High",
+    guestComplaint: "Guest Complaint",
   },
 };
