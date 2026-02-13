@@ -30,10 +30,12 @@ async def discover_competitors_v1(hotel_id: str, limit: int = 5, current_user = 
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/analysis/market/{user_id}")
+@router.get("/analysis/{user_id}")
 async def get_market_intelligence(
     user_id: UUID,
     room_type: str = "Standard",
     display_currency: str = "TRY",
+    currency: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     db: Client = Depends(get_supabase),
@@ -47,7 +49,11 @@ async def get_market_intelligence(
     # Performs complex multi-hotel analysis, including ARI (Average Rate Index) 
     # and Sentiment Index calculations to power the dashboard analytics.
     try:
-        # ... logic ...
+        # EXPLANATION: Currency Alias
+        # Frontend sends ?currency=TRY, backend uses display_currency internally.
+        if currency:
+            display_currency = currency
+            
         if not db:
             raise HTTPException(503, "Database unavailable")
         

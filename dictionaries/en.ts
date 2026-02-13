@@ -184,6 +184,12 @@ export const en = {
   },
   analysis: {
     title: "Market Intelligence",
+    tabs: {
+      overview: "Overview",
+      calendar: "Rate Calendar",
+      discovery: "Discovery Engine",
+      sentiment: "Sentiment",
+    },
     subtitle: "Real-time competitor spread and predictive price analysis.",
     marketAverage: "Market Average",
     marketSpread: "Market Spread",

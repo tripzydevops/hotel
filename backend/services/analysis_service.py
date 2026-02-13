@@ -322,16 +322,19 @@ async def perform_market_analysis(
 
     # 4. Stats & Quadrant
     market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
-    ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else 100.0
-    avg_sent = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 1.0
-    sent_index = (target_sentiment / avg_sent) * 100 if target_sentiment and avg_sent > 0 else 100.0
+    ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else None
+    avg_sent = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 0.0
+    sent_index = (target_sentiment / avg_sent) * 100 if target_sentiment and avg_sent > 0 else None
     
-    q_x = max(-50.0, min(50.0, float(ari) - 100.0))
-    q_y = max(-50.0, min(50.0, float(sent_index) - 100.0))
+    q_x = max(-50.0, min(50.0, float(ari) - 100.0)) if ari is not None else 0.0
+    q_y = max(-50.0, min(50.0, float(sent_index) - 100.0)) if sent_index is not None else 0.0
     
     advisory = ""
     q_label = "Neutral"
-    if ari >= 100 and sent_index >= 100:
+    if ari is None or sent_index is None:
+        q_label = "Insufficient Data"
+        advisory = "Not enough competitor data to calculate market position. Add more hotels to your tracking list."
+    elif ari >= 100 and sent_index >= 100:
         q_label = "Premium King"
         advisory = f"Strategic Peak: You are commanding a premium price (${int(target_price or 0)}) with superior sentiment."
     elif ari < 100 and sent_index >= 100:
@@ -368,8 +371,8 @@ async def perform_market_analysis(
         "hotel_name": target_hotel_name,
         "market_avg": round(float(market_avg), 2),
         "target_price": round(float(target_price), 2) if target_price is not None else None,
-        "ari": round(float(ari), 1),
-        "sentiment_index": round(float(sent_index), 1),
+        "ari": round(float(ari), 1) if ari is not None else None,
+        "sentiment_index": round(float(sent_index), 1) if sent_index is not None else None,
         "advisory_msg": advisory,
         "quadrant_x": round(float(q_x), 1),
         "quadrant_y": round(float(q_y), 1),

@@ -186,6 +186,12 @@ export const tr = {
   },
   analysis: {
     title: "Pazar İstihbaratı",
+    tabs: {
+      overview: "Genel Bakış",
+      calendar: "Fiyat Takvimi",
+      discovery: "Keşif Motoru",
+      sentiment: "Duygu Analizi",
+    },
     subtitle: "Gerçek zamanlı rakip dağılımı ve tahmini fiyat analizi.",
     marketAverage: "Pazar Ortalaması",
     marketSpread: "Pazar Dağılımı",
