@@ -66,16 +66,13 @@ def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]
         return []
 
     # 1. Define Mappings (Target -> Source Keywords)
+    # Expanded with common Turkish and English categories discovered in raw data
     mappings = {
-        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping"],
-        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast"],
-        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre"],
-        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet"]
+        "Cleanliness": ["temiz", "hijyen", "oda", "room", "banyo", "bathroom", "housekeeping", "yatak", "uyku", "sleep", "bakımlı", "konfor", "comfort"],
+        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "dining", "restoran", "restaurant", "bar", "personali", "alaka", "wellness", "spa", "yemek", "mutfak", "kitchen"],
+        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "merkez", "çarşı", "yakın", "merkezi", "gece hayatı", "nightlife", "entertainment", "eğlence", "deniz", "plaj", "beach"],
+        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "uygun", "kalite", "harcama", "cheap", "expensive"]
     }
-
-    # 2. Key-based lookup for existing categories
-    # existing_keys = {item.get("name", "").lower() for item in breakdown} 
-    # (Commented out: we allow overwriting/aliasing to ensure coverage)
 
     normalized = list(breakdown) # Copy original
     
@@ -89,9 +86,11 @@ def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]
         # If not, look for a proxy in the raw data
         for item in breakdown:
             name = item.get("name", "").lower()
-            if name in keywords:
+            desc = item.get("description", "").lower()
+            
+            # Substring match against name or description
+            if any(kw in name for kw in keywords) or any(kw in desc for kw in keywords):
                 # Found a proxy! Create a standardized entry.
-                # We clone it so we don't destroy the original named category (which shows in "Voices")
                 proxy = item.copy()
                 proxy["name"] = pillar # Rename to standard
                 proxy["is_inferred"] = True
