@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 from backend.services.serpapi_client import serpapi_client
 from backend.utils.helpers import convert_currency
+from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions
 
 def _transform_serp_links(breakdown: Any) -> Any:
     """
@@ -49,93 +50,10 @@ def _extract_price(raw: Any) -> Optional[float]:
             pass
     return None
     
-# EXPLANATION: Sentiment Normalization
-# Google Reviews returns sentiment in natural-language categories that vary by locale
-# (e.g., Turkish: "Oda", "Temizlik"; English: "Room", "Cleanliness"). The frontend 
-# expects exactly 4 standard pillars: Cleanliness, Service, Location, Value.
-# Without this mapping, categories appear as "N/A" on the Sentiment Analysis page.
-def _normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # EXPLANATION: Sentiment Pillar Restoration (Substring Matching)
-    # Why: Google Reviews returns diverse categories (e.g., "Oda", "Uyku", "Konum").
-    # If these don't match the standard 4 pillars (Cleanliness, Service, Location, Value), 
-    # the Radar chart shows "N/A".
-    # How: We use a broad dictionary of Turkish/English keywords and check for 
-    # substrings in both the category name and description. This ensures that 
-    # local Turkish terms like "Uyku" (Sleep) are correctly mapped to "Cleanliness".
-    if not breakdown:
-        return []
-
-    # 1. Define Mappings (Target -> Source Keywords)
-    # Expanded with common Turkish and English categories discovered in raw data
-    mappings = {
-        "Cleanliness": ["temiz", "hijyen", "oda", "room", "banyo", "bathroom", "housekeeping", "yatak", "uyku", "sleep", "bakımlı", "konfor", "comfort"],
-        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "dining", "restoran", "restaurant", "bar", "personali", "alaka", "wellness", "spa", "yemek", "mutfak", "kitchen"],
-        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "merkez", "çarşı", "yakın", "merkezi", "gece hayatı", "nightlife", "entertainment", "eğlence", "deniz", "plaj", "beach"],
-        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "uygun", "kalite", "harcama", "cheap", "expensive"]
-    }
-
-    normalized = list(breakdown) # Copy original
-    
-    # 3. Find missing pillars and try to fill them from available data
-    for pillar, keywords in mappings.items():
-        # Check if we already have this pillar (exact match)
-        has_pillar = any(b.get("name", "").lower() == pillar.lower() for b in breakdown)
-        if has_pillar:
-            continue
-            
-        # If not, look for a proxy in the raw data
-        for item in breakdown:
-            name = item.get("name", "").lower()
-            desc = item.get("description", "").lower()
-            
-            # Substring match against name or description
-            if any(kw in name for kw in keywords) or any(kw in desc for kw in keywords):
-                # Found a proxy! Create a standardized entry.
-                proxy = item.copy()
-                proxy["name"] = pillar # Rename to standard
-                proxy["is_inferred"] = True
-                normalized.append(proxy)
-                break # Found one for this pillar, move to next
-                
-    return normalized
-
-def _generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # EXPLANATION: Sentiment Voices Synthesis
-    # Why: The 'guest_mentions' column (which feeds the "Sentiment Voices" keyword tags) 
-    # is often empty for recently synced hotels.
-    # How: We dynamically transform the 'sentiment_breakdown' into the keyword tag 
-    # format. Positive categories become green tags and negative ones become red, 
-    # ensuring the UI card is always rich with guest feedback.
-    if not breakdown:
-        return []
-        
-    mentions = []
-    # Sort by total mentioned to show most relevant first
-    sorted_items = sorted(breakdown, key=lambda x: int(x.get("total_mentioned") or 0), reverse=True)
-    
-    for item in sorted_items:
-        name = item.get("name")
-        pos = int(item.get("positive") or 0)
-        neg = int(item.get("negative") or 0)
-        neu = int(item.get("neutral") or 0)
-        total = int(item.get("total_mentioned") or 0)
-        
-        if total == 0: continue
-        
-        # Determine overall sentiment for the tag color
-        sentiment = "neutral"
-        if pos > neg and pos > neu:
-            sentiment = "positive"
-        elif neg > pos and neg > neu:
-            sentiment = "negative"
-            
-        mentions.append({
-            "keyword": name,
-            "count": pos if sentiment == "positive" else neg if sentiment == "negative" else total,
-            "sentiment": sentiment
-        })
-        
-    return mentions[:15] # Limit to top 15 for UI clarity
+# EXPLANATION: Sentiment Normalization & Synthesis
+# We use shared utilities from backend.utils.sentiment_utils to ensure 
+# consistency between the Dashboard and Analysis pages.
+# This prevents "N/A" issues caused by data-source mismatches.
 
 def get_price_for_room(
     price_log: Dict[str, Any], 
@@ -437,7 +355,7 @@ async def perform_market_analysis(
         "daily_prices": daily_prices,
         "competitors": comp_list,
         "price_history": target_history,
-        "sentiment_breakdown": _normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else None,
-        "guest_mentions": target_h.get("guest_mentions") or _generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
+        "sentiment_breakdown": normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else None,
+        "guest_mentions": target_h.get("guest_mentions") or generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
         "available_room_types": sorted(list(available_room_types))
     }

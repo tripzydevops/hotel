@@ -12,6 +12,7 @@ from supabase import Client
 
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
+from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions
 
 async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_email: str, db: Client) -> Dict[str, Any]:
     """
@@ -186,8 +187,18 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                         "recorded_at": p.get("recorded_at")
                     })
 
+            # EXPLANATION: Unified Sentiment Normalization
+            # We apply the centralized normalization to ensure that 
+            # hotel cards show the 4 core pillars even if the source 
+            # uses localized Turkish terms.
+            raw_breakdown = hotel.get("sentiment_breakdown") or []
+            item_sentiment = normalize_sentiment(raw_breakdown)
+            item_mentions = hotel.get("guest_mentions") or generate_mentions(raw_breakdown)
+
             hotel_data = {
                 **hotel,
+                "sentiment_breakdown": item_sentiment,
+                "guest_mentions": item_mentions,
                 "price_info": price_info,
                 "price_history": valid_history
             }

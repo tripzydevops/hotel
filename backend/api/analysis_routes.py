@@ -176,3 +176,43 @@ async def discover_competitors_trigger(hotel_id: UUID, db: Client = Depends(get_
         return await analyst.discover_rivals(str(hotel_id), limit=5)
     except Exception as e:
         raise HTTPException(500, str(e))
+
+@router.get("/analysis/{hotel_id}/sentiment-history")
+async def get_sentiment_history(
+    hotel_id: str,
+    days: int = 30,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Fetches historical sentiment breakdown for a hotel.
+    Used for the 6-month trend chart on the Sentiment Analysis page.
+    """
+    from backend.utils.sentiment_utils import normalize_sentiment
+    
+    try:
+        # Fetch history records
+        # Note: We filter by hotel_id and limit by days
+        res = db.table("sentiment_history") \
+            .select("*") \
+            .eq("hotel_id", hotel_id) \
+            .order("created_at", desc=True) \
+            .limit(days) \
+            .execute()
+        
+        history = []
+        for record in (res.data or []):
+            # Normalizing the breakdown stored in the history record
+            raw_breakdown = record.get("sentiment_breakdown") or record.get("breakdown") or []
+            normalized = normalize_sentiment(raw_breakdown)
+            
+            history.append({
+                "date": record.get("created_at"),
+                "rating": record.get("rating"),
+                "breakdown": normalized
+            })
+            
+        return history
+    except Exception as e:
+        print(f"[AnalysisRoutes] Sentiment history fetch failed: {e}")
+        return []
