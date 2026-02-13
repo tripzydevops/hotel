@@ -1,5 +1,5 @@
-import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from typing import List
 from dotenv import load_dotenv
 
@@ -8,26 +8,33 @@ load_dotenv(".env.local", override=True)
 
 # Configure Gemini
 api_key = os.getenv("GOOGLE_API_KEY")
+client = None
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-async def get_embedding(text: str, model: str = "models/gemini-embedding-001") -> List[float]:
+async def get_embedding(text: str, model: str = "text-embedding-004") -> List[float]:
     """Generates a semantic embedding for the given text using Gemini."""
-    if not api_key:
+    if not client:
         print("[Embedding] Warning: GOOGLE_API_KEY not set. Returning dummy zeros.")
         return [0.0] * 768
         
     try:
-        result = genai.embed_content(
+        # Use the modern GenAI Go-style client
+        result = client.models.embed_content(
             model=model,
-            content=text,
-            task_type="retrieval_document",
-            title="Hotel Metadata",
-            output_dimensionality=768
+            contents=text,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT",
+                title="Hotel Metadata",
+                output_dimensionality=768
+            )
         )
-        emb = result['embedding']
-        if len(emb) != 768:
-            print(f"[Embedding] DEBUG: Generated {len(emb)} dims. Model: {model}. Keys: {result.keys()}")
+        
+        # Verify result structure
+        if not result.embeddings or not result.embeddings[0].values:
+             return [0.0] * 768
+             
+        emb = result.embeddings[0].values
         return emb
     except Exception as e:
         print(f"[Embedding] Error generating embedding: {e}")
