@@ -217,28 +217,66 @@ async def perform_market_analysis(
     # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
     if target_hotel_id:
+        # EXPLANATION: Smart Continuity (Read-Time Vertical Fill)
+        # We group logs by hotel and check-in date. For each date:
+        # 1. We take the latest scan result.
+        # 2. If it failed (price=0 or None), we look back at previous scans for that SAME check-in date.
+        # 3. If a successful scan is found within history, we use it and mark as 'Estimated'.
         date_price_map: Dict[str, Dict[str, Any]] = {}
+
         for hid, prices in hotel_prices_map.items():
+            # prices are sorted by recorded_at DESC
+            # Group by check-in date
+            checkin_groups = {}
             for p in prices:
-                try:
-                    raw_date = str(p.get("check_in_date", ""))
-                    date_str = raw_date.split('T')[0]
-                    if date_str not in date_price_map:
-                        date_price_map[date_str] = {"target": None, "competitors": []}
+                d = str(p.get("check_in_date", "")).split('T')[0]
+                if not d: continue
+                if d not in checkin_groups: checkin_groups[d] = []
+                checkin_groups[d].append(p)
+
+            for d_str, logs in checkin_groups.items():
+                if d_str not in date_price_map:
+                    date_price_map[d_str] = {"target": None, "target_is_estimated": False, "competitors": []}
+                
+                # Analyze the logs for this specific check-in date
+                latest = logs[0]
+                price_val = _extract_price(latest.get("price"))
+                is_est = latest.get("is_estimated", False)
+                
+                # If latest scan failed, look for the most recent success for this SAME date
+                if (price_val is None or price_val <= 0) and len(logs) > 1:
+                    try:
+                        # Parse latest recorded_at for comparison
+                        latest_str = latest.get("recorded_at", "").replace('Z', '+00:00')
+                        latest_time = datetime.fromisoformat(latest_str)
+                        
+                        for prev in logs[1:]:
+                            # Parse previous recorded_at
+                            prev_str = prev.get("recorded_at", "").replace('Z', '+00:00')
+                            prev_time = datetime.fromisoformat(prev_str)
+                            
+                            # User requirement: look back up to 7 days
+                            if (latest_time - prev_time).days <= 7:
+                                prev_p = _extract_price(prev.get("price"))
+                                if prev_p and prev_p > 0:
+                                    price_val = prev_p
+                                    is_est = True # Mark as estimated because we are using history
+                                    break
+                    except Exception: pass
+
+                if price_val is not None:
+                    converted_price = convert_currency(price_val, latest.get("currency") or "USD", display_currency)
+                    hotel_name = next((h["name"] for h in hotels if str(h["id"]) == hid), "Unknown")
                     
-                    price_val = float(p["price"]) if p.get("price") is not None else None
-                    if price_val is not None:
-                        converted_price = convert_currency(price_val, p.get("currency") or "USD", display_currency)
-                        hotel_name = next((h["name"] for h in hotels if str(h["id"]) == hid), "Unknown")
-                        if hid == target_hotel_id:
-                            date_price_map[date_str]["target"] = converted_price
-                        else:
-                            date_price_map[date_str]["competitors"].append({
-                                "name": hotel_name, 
-                                "price": converted_price,
-                                "is_estimated": False
-                            })
-                except Exception: continue
+                    if hid == target_hotel_id:
+                        date_price_map[d_str]["target"] = converted_price
+                        date_price_map[d_str]["target_is_estimated"] = is_est
+                    else:
+                        date_price_map[d_str]["competitors"].append({
+                            "name": hotel_name, 
+                            "price": converted_price,
+                            "is_estimated": is_est
+                        })
         
         range_start = datetime.now()
         if start_date:
@@ -300,6 +338,7 @@ async def perform_market_analysis(
             daily_prices.append({
                 "date": d_str,
                 "price": round(float(target_val), 2) if target_val is not None else None,
+                "is_estimated_target": data.get("target_is_estimated", False) if data else False,
                 "comp_avg": round(float(comp_avg), 2),
                 "vs_comp": round(float(vs_comp), 1),
                 "competitors": unique_competitors

@@ -241,6 +241,22 @@ async def run_scheduler_check_logic():
         due_users = result.data or []
         print(f"[{datetime.now()}] CRON: Found {len(due_users)} users due for scan.")
         
+        if not due_users:
+            return
+
+        # 1.1 Pool all hotels from all due users
+        all_user_ids = [u['id'] for u in due_users]
+        hotels_res = supabase.table("hotels").select("*").in_("user_id", all_user_ids).execute()
+        all_hotels = hotels_res.data or []
+        
+        # Group hotels by user for processing
+        user_hotels_map = {}
+        for h in all_hotels:
+            uid = h['user_id']
+            if uid not in user_hotels_map:
+                user_hotels_map[uid] = []
+            user_hotels_map[uid].append(h)
+
         for user in due_users:
             try:
                 user_id = user['id']
@@ -249,33 +265,24 @@ async def run_scheduler_check_logic():
                 # 2. Update next_scan_at immediately (Locking mechanism)
                 freq = user.get("scan_frequency_minutes") or 1440 
                 next_run = datetime.now(timezone.utc) + timedelta(minutes=freq)
-                
                 supabase.table("profiles").update({"next_scan_at": next_run.isoformat()}).eq("id", user_id).execute()
                 
-                # 3. Trigger Scraper Agent
-                # Directly using ScraperAgent if already imported at top
-                scraper = ScraperAgent(supabase)
-                # Note: run_full_scan might need to be implemented or use run_scan with defaults
-                # For now, we reuse the existing background orchestrator if possible
-                # Or just call scraper.run_scan directly if that's what main.py did
+                # 3. Trigger Background Orchestrator
+                hotels = user_hotels_map.get(user_id, [])
+                if hotels:
+                    # [Global Pulse] These background tasks will run in parallel.
+                    # Because ScraperAgent has a 60m cache check, multiple users 
+                    # tracking the same hotel will now automatically share the same 
+                    # scan result if they are triggered in the same cron window.
+                    await run_monitor_background(
+                        user_id=UUID(user_id),
+                        hotels=hotels,
+                        options=None,
+                        db=supabase,
+                        session_id=None
+                    )
                 
-                # If the ScraperAgent has run_full_scan, use it. Otherwise, we might need a wrapper.
-                if hasattr(scraper, 'run_full_scan'):
-                    await scraper.run_full_scan()
-                else:
-                    # Fallback to fetching hotels and triggering background task
-                    hotels_res = supabase.table("hotels").select("*").eq("user_id", user_id).execute()
-                    hotels = hotels_res.data or []
-                    if hotels:
-                        await run_monitor_background(
-                            user_id=UUID(user_id),
-                            hotels=hotels,
-                            options=None,
-                            db=supabase,
-                            session_id=None
-                        )
-                
-                print(f" - Scan completed for user {user_id}")
+                print(f" - Batch trigger completed for user {user_id}")
                 
             except Exception as u_e:
                 print(f" - Error processing user {user.get('id')}: {u_e}")

@@ -172,9 +172,16 @@ export default function RateIntelligenceGrid({
                     className={`p-4 border-r border-[var(--soft-gold)]/10 text-center relative ${isMyPriceLowest ? "bg-[var(--optimal-green)]/10" : ""}`}
                   >
                     {row.price > 0 ? (
-                      <div className="flex flex-col items-center">
+                      <div className={`flex flex-col items-center ${row.is_estimated_target ? "opacity-60 grayscale-[0.5]" : ""}`}>
+                        {row.is_estimated_target && (
+                            <div className="absolute top-1 right-1 opacity-100 z-10">
+                            <span title="Price projected from history. Hotel may be sold out." className="cursor-help text-[8px] font-black uppercase text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1 rounded border border-[var(--soft-gold)]/20">
+                                Est
+                            </span>
+                            </div>
+                        )}
                         <span
-                          className={`text-sm font-black ${isMyPriceLowest ? "text-[var(--optimal-green)]" : "text-[var(--soft-gold)]"}`}
+                          className={`text-sm font-black ${isMyPriceLowest ? "text-[var(--optimal-green)]" : "text-[var(--soft-gold)]"} ${row.is_estimated_target ? "decoration-dotted underline decoration-white/30" : ""}`}
                         >
                           {symbol}
                           {row.price.toLocaleString()}

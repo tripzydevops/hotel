@@ -27,8 +27,9 @@ async def backfill_continuity():
     hotels = hotels_res.data or []
     print(f"Found {len(hotels)} hotels.")
 
-    start_date = datetime.now().date()
-    end_date = start_date + timedelta(days=30)
+    # Modified to look back 4 days (to match calendar view) instead of just Today
+    start_date = datetime.now().date() - timedelta(days=4)
+    end_date = datetime.now().date() + timedelta(days=30)
     
     total_filled = 0
 

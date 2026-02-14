@@ -82,6 +82,7 @@ class PriceLogBase(BaseModel):
     offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     search_rank: Optional[int] = None
+    serp_api_id: Optional[str] = Field(default=None, description="Global ID for deduplication across users")
 
 
 class PriceLogCreate(PriceLogBase):
@@ -218,6 +219,7 @@ class PriceWithTrend(BaseModel):
     room_types: List[Dict[str, Any]] = []
     offers: List[Dict[str, Any]] = []
     search_rank: Optional[int] = None
+    serp_api_id: Optional[str] = None
 
 
 
@@ -249,6 +251,8 @@ class QueryLog(BaseModel):
     session_id: Optional[UUID] = None
     check_in_date: Optional[date] = None
     adults: Optional[int] = 2
+    serp_api_id: Optional[str] = None
+    serp_api_id: Optional[str] = None
     
     class Config:
         from_attributes = True

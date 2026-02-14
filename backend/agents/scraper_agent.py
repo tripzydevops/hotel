@@ -16,6 +16,48 @@ class ScraperAgent:
     def __init__(self, db: Client):
         self.db = db
 
+    async def _check_global_cache(self, serp_api_id: str, check_in_date: date) -> Optional[Dict[str, Any]]:
+        """
+        [Global Pulse] Checks if ANY user has scanned this hotel for this date
+        in the last 60 minutes.
+        """
+        if not serp_api_id:
+            return None
+            
+        try:
+            # Look for a fresh pulse (recorded in last 180 mins / 3 hours)
+            cutoff = (datetime.now() - timedelta(minutes=180)).isoformat()
+            
+            res = self.db.table("price_logs") \
+                .select("*") \
+                .eq("serp_api_id", serp_api_id) \
+                .eq("check_in_date", str(check_in_date)) \
+                .gte("recorded_at", cutoff) \
+                .order("recorded_at", desc=True) \
+                .limit(1) \
+                .execute()
+            
+            if res.data:
+                cache = res.data[0]
+                print(f"[GlobalPulse] Cache HIT for {serp_api_id} on {check_in_date}")
+                # Reconstruct the price_data object to mimic SerpApi response
+                return {
+                    "price": cache["price"],
+                    "currency": cache["currency"],
+                    "vendor": cache["vendor"],
+                    "source": "global_cache",
+                    "offers": cache.get("parity_offers") or cache.get("offers") or [],
+                    "room_types": cache.get("room_types") or [],
+                    "search_rank": cache.get("search_rank"),
+                    "property_token": serp_api_id,
+                    "status": "success",
+                    "is_cached": True
+                }
+        except Exception as e:
+            print(f"[GlobalPulse] Cache lookup error: {e}")
+            
+        return None
+
     async def log_reasoning(self, session_id: UUID, step: str, message: str, level: str = "info", metadata: Optional[Dict] = None):
         """Append a structured log to the session's reasoning trace."""
         if not session_id:
@@ -113,21 +155,25 @@ class ScraperAgent:
                         check_out = today + timedelta(days=2)  # Day after tomorrow
                         await self.log_reasoning(session_id, "Date Generation", f"Auto-generated dates for {hotel_name}: {check_in} to {check_out}", "info", {"check_in": str(check_in), "check_out": str(check_out)})
                     
-                    # Fetch price with SerpApi (Original High-Fidelity Source)
-                    price_data = None
-                    try:
-                        primary_provider = ProviderFactory.get_provider()
-                        await self.log_reasoning(session_id, "API Call", f"Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...", "info", {"provider": primary_provider.get_provider_name()})
+                        # 1. Check Global Pulse Cache first
+                        price_data = await self._check_global_cache(serp_api_id, check_in)
                         
-                        price_data = await primary_provider.fetch_price(
-                            hotel_name=hotel_name,
-                            location=location,
-                            check_in=check_in,
-                            check_out=check_out,
-                            adults=adults,
-                            currency=options.currency if options and options.currency else "TRY",
-                            serp_api_id=serp_api_id
-                        )
+                        if price_data:
+                            await self.log_reasoning(session_id, "Cache HIT", f"Using shared global pulse for {hotel_name} (Scanned by another user recently)", "info")
+                        else:
+                            # 2. Fetch fresh price with SerpApi
+                            primary_provider = ProviderFactory.get_provider()
+                            await self.log_reasoning(session_id, "API Call", f"Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...", "info", {"provider": primary_provider.get_provider_name()})
+                            
+                            price_data = await primary_provider.fetch_price(
+                                hotel_name=hotel_name,
+                                location=location,
+                                check_in=check_in,
+                                check_out=check_out,
+                                adults=adults,
+                                currency=options.currency if options and options.currency else "TRY",
+                                serp_api_id=serp_api_id
+                            )
                     except Exception as e:
                         await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {e}", "error", {"error_message": str(e)})
                     

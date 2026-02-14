@@ -80,7 +80,7 @@ async def get_market_intelligence(
             .select("*") \
             .in_("hotel_id", [str(h["id"]) for h in hotels]) \
             .order("recorded_at", desc=True) \
-            .limit(1000) \
+            .limit(5000) \
             .execute()
         logs_data = price_logs_res.data or []
         
@@ -92,7 +92,7 @@ async def get_market_intelligence(
             .in_("action_type", ["monitor", "search"]) \
             .not_.is_("price", "null") \
             .order("created_at", desc=True) \
-            .limit(1000) \
+            .limit(5000) \
             .execute()
         
         # Normalize query_logs to match price_logs schema for the aggregator
