@@ -181,15 +181,41 @@ class ScraperAgent:
                         if price_data.get("rating"):
                             update_payload["rating"] = price_data["rating"]
 
-                        # [NEW] Sentiment & Reviews Persistence
+                        # [NEW] Sentiment & Reviews Persistence with History Preservation
+                        # We must fetch the existing record first to merge, otherwise we lose history on partial scans.
+                        existing_data = self.db.table("hotels").select("sentiment_breakdown, reviews, guest_mentions").eq("id", str(hotel_id)).single().execute()
+                        existing_breakdown = existing_data.data.get("sentiment_breakdown") or []
+                        existing_reviews = existing_data.data.get("reviews") or []
+                        
                         if "reviews_breakdown" in price_data:
-                            update_payload["sentiment_breakdown"] = price_data["reviews_breakdown"]
+                            new_breakdown = price_data["reviews_breakdown"]
+                            # Merge logic: Create dict by name for O(1) access
+                            merged_map = {item.get("name"): item for item in existing_breakdown}
+                            
+                            for item in new_breakdown:
+                                name = item.get("name")
+                                if name:
+                                    merged_map[name] = item # Overwrite with latest if exists, else add
+                            
+                            update_payload["sentiment_breakdown"] = list(merged_map.values())
                             
                         # Handle review snippets (reviews_list from provider)
+                        new_reviews = []
                         if "reviews_list" in price_data and price_data["reviews_list"]:
-                            update_payload["reviews"] = price_data["reviews_list"][:5]
+                            new_reviews = price_data["reviews_list"]
                         elif "reviews" in price_data and isinstance(price_data["reviews"], list):
-                            update_payload["reviews"] = price_data["reviews"][:5]
+                            new_reviews = price_data["reviews"]
+
+                        if new_reviews:
+                            # Append only unique reviews based on text signature
+                            existing_texts = {r.get("text")[:50] for r in existing_reviews if r.get("text")}
+                            
+                            for r in new_reviews:
+                                if r.get("text") and r.get("text")[:50] not in existing_texts:
+                                    existing_reviews.insert(0, r) # Add new ones at top
+                                    
+                            # Keep buffer of last 20 reviews max to avoid bloat
+                            update_payload["reviews"] = existing_reviews[:20]
 
                         if price_data.get("latitude"):
                             update_payload["latitude"] = price_data["latitude"]
