@@ -224,6 +224,12 @@ export default function RateIntelligenceGrid({
                     const isCheaper = price > 0 && price < row.price;
                     const isMoreExpensive = price > 0 && price > row.price;
 
+                    // EXPLANATION: Verification Failed Status
+                    // If we have a record (compPriceData exists) but price is 0,
+                    // it means the scan ran but found no price (and no history to fill from).
+                    // We interpret this as "Verification Failed" per user request.
+                    const isVerificationFailed = compPriceData && price === 0;
+
                     return (
                       <td
                         key={comp.id}
@@ -255,6 +261,14 @@ export default function RateIntelligenceGrid({
                                 {diffPercent.toFixed(0)}%
                               </span>
                             )}
+                          </div>
+                        ) : isVerificationFailed ? (
+                          <div className="flex flex-col items-center justify-center opacity-70">
+                             <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price verification failed (No data available)">
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest whitespace-nowrap">
+                                  Failed
+                                </span>
+                             </div>
                           </div>
                         ) : (
                           <span className="text-xl text-white/10">-</span>

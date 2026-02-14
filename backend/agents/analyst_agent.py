@@ -95,23 +95,61 @@ class AnalystAgent:
                     currency = "TRY"
                     reasoning_log.append(f"[Normalization] Converted {old_price} USD -> {current_price} TRY")
 
-                check_in = res.get("check_in") or datetime.now().date()
+                check_in = res.get("check_in")
+                if not check_in:
+                    check_in = datetime.now().date()
                 check_in_str = check_in.isoformat() if hasattr(check_in, "isoformat") else str(check_in)
                 
+                # EXPLANATION: Smart Continuity (Vertical Fill Persistence)
+                # User Requirement: "if the scan fails or has no price then look back at the last successful price... up to 7 days back"
+                # We enforce this at the database level so the data is permanently fixed, not just guessed at read time.
+                is_estimated = False
+                
+                if (not current_price or current_price <= 0):
+                    reasoning_log.append(f"[Continuity] Price missing for {hotel_id} on {check_in_str}. Checking history...")
+                    try:
+                        # Look for the most recent price for THIS specific check-in date
+                        # Window: 7 days back from now
+                        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+                        
+                        history_res = self.db.table("price_logs") \
+                            .select("price, currency, recorded_at") \
+                            .eq("hotel_id", hotel_id) \
+                            .eq("check_in_date", check_in_str) \
+                            .gt("recorded_at", cutoff) \
+                            .order("recorded_at", desc=True) \
+                            .limit(1) \
+                            .execute()
+                        
+                        if history_res.data:
+                            last_valid = history_res.data[0]
+                            current_price = last_valid["price"]
+                            currency = last_valid["currency"]
+                            is_estimated = True # Mark as estimated
+                            reasoning_log.append(f"[Continuity] Found historical price: {current_price} {currency} from {last_valid['recorded_at']}")
+                        else:
+                            current_price = 0.0 # Explicitly set to 0 to indicate failure
+                            reasoning_log.append(f"[Continuity] No history found within 7 days. recording as Verification Failed.")
+                    except Exception as e:
+                        print(f"[AnalystAgent] Continuity lookup failed: {e}")
+
                 # Prepare Price Log
-                if current_price and current_price > 0:
-                    price_logs_to_insert.append({
-                        "hotel_id": hotel_id,
-                        "price": current_price,
-                        "currency": currency,
-                        "check_in_date": check_in_str,
-                        "source": price_data.get("source", "serpapi"),
-                        "vendor": price_data.get("vendor", "Unknown"),
-                        "search_rank": price_data.get("search_rank"),
-                        "parity_offers": price_data.get("offers", []),
-                        "room_types": price_data.get("room_types", [])
-                    })
-                    analysis_summary["prices_updated"] += 1
+                # We now allow price=0 to be inserted if it was a valid attempt but failed (to trigger "Verification Failed" in UI)
+                # But we filter out accidental 0s where we didn't even try. 
+                # Here, we definitely tried because we're in the scraper_results loop.
+                price_logs_to_insert.append({
+                    "hotel_id": hotel_id,
+                    "price": current_price if current_price else 0.0,
+                    "currency": currency,
+                    "check_in_date": check_in_str,
+                    "source": price_data.get("source", "serpapi"),
+                    "vendor": price_data.get("vendor", "Unknown"),
+                    "search_rank": price_data.get("search_rank"),
+                    "parity_offers": price_data.get("offers", []),
+                    "room_types": price_data.get("room_types", []),
+                    "is_estimated": is_estimated
+                })
+                analysis_summary["prices_updated"] += 1
                 
                 # Prepare Metadata Update
                 vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")

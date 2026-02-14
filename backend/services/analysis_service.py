@@ -276,31 +276,21 @@ async def perform_market_analysis(
             elif last_known_target is not None and curr.date() <= datetime.now().date():
                 target_val = last_known_target
             
-            # Competitor Logic (New Forward Fill)
+            # 2. Competitor Logic
+            # We use ONLY the data found for THIS specific check-in date from the recent scan history.
+            # We do NOT carry forward prices from previous calendar days (Horizontal Fill), as that is inaccurate for hotel pricing.
             daily_comps = (data.get("competitors") if data else []) or []
             
-            # 1. Update states with real data
-            seen_today = set()
+            # Deduplicate: Keep only the first occurrence (latest scan) for each competitor
+            seen_competitors = set()
             for c in daily_comps:
                 name = c["name"]
-                competitor_states[name] = {
-                    "price": c["price"],
-                    "last_seen": curr.date()
-                }
-                seen_today.add(name)
-                unique_competitors.append(c)
-                
-            # 2. Fill missing from history (up to 7 days - extended for weekly continuity)
-            # Only fill if we are past the start of our dataset (implied by having state)
-            for name, state in competitor_states.items():
-                if name not in seen_today:
-                    days_diff = (curr.date() - state["last_seen"]).days
-                    if 0 < days_diff <= 7:
-                        unique_competitors.append({
-                            "name": name,
-                            "price": state["price"],
-                            "is_estimated": True
-                        })
+                if name not in seen_competitors:
+                    unique_competitors.append(c)
+                    seen_competitors.add(name)
+            
+            # Note: We removed the "Fill missing from history" block here to comply with user request:
+            # "dont assume it before it has happened" -> No horizontal filling across dates.
             
             if unique_competitors:
                 comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
