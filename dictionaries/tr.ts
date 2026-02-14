@@ -272,6 +272,7 @@ export const tr = {
     service: "Hizmet",
     location: "Konum",
     guestComplaint: "Misafir Şikayeti",
+    noVulnerabilities: "Kritik bir zayıflık tespit edilmedi.",
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",

@@ -432,5 +432,6 @@ export const en = {
     opportunity: "Opportunity",
     high: "High",
     guestComplaint: "Guest Complaint",
+    noVulnerabilities: "No critical vulnerabilities detected.",
   },
 };

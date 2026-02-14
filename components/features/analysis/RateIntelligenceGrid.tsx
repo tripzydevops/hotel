@@ -37,6 +37,16 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   TRY: "₺",
 };
 
+/**
+ * RateIntelligenceGrid Component
+ * 
+ * Displays a 14-day price comparison table between the target hotel and its competitors.
+ * Features:
+ * - Sticky columns for Dates
+ * - Best Price highlighting (Green)
+ * - Trend indicators (vs Market Avg)
+ * - Price difference percentage calculation
+ */
 export default function RateIntelligenceGrid({
   dailyPrices,
   competitors,

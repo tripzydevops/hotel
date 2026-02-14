@@ -436,10 +436,16 @@ export default function SentimentPage() {
       ],
     };
 
+    // Find the item in the breakdown that matches the target category or one of its aliases
     const item = hotel.sentiment_breakdown.find((s: any) => {
-      const name = (s.name || s.category || "").toLowerCase();
+      // Normalize name: lowercase and trim
+      const name = (s.name || s.category || "").toLowerCase().trim();
+      
+      // Direct match
       if (name === target) return true;
-      return aliases[target]?.includes(name);
+      
+      // Alias match
+      return aliases[target]?.some(alias => name.includes(alias));
     });
 
     if (!item) return 0;
@@ -705,7 +711,7 @@ export default function SentimentPage() {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {targetHotel.guest_mentions
-                    .slice(0, 10)
+                    ?.slice(0, 10)
                     .map((mention: any, idx: number) => {
                       const rawText =
                         mention.keyword || mention.text || "N/A";

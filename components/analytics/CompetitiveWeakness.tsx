@@ -10,6 +10,11 @@ interface CompetitiveWeaknessProps {
   t: (key: string) => string;
 }
 
+/**
+ * Component to display competitive vulnerabilities.
+ * Analyzes competitors' sentiment data to find weak points (rating < 3.8 or negative mentions).
+ * Now displays a "Secure" state if no vulnerabilities are found, ensuring the user knows the competitor was analyzed.
+ */
 export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
   competitors,
   t,
@@ -75,7 +80,10 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {competitors.map((comp, idx) => {
           const weaknesses = getWeaknesses(comp);
-          if (weaknesses.length === 0) return null;
+          // Removed: if (weaknesses.length === 0) return null; 
+          // Logic update: Show "Secure" card if no weaknesses found.
+          
+          const isSecure = weaknesses.length === 0;
 
           return (
             <motion.div
@@ -109,7 +117,16 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
               </div>
 
               <div className="space-y-2.5 flex-1">
-                {weaknesses.map((w, wIdx) => (
+                {isSecure ? (
+                   /* Secure State: No vulnerabilities found */
+                  <div className="h-full flex flex-col items-center justify-center opacity-50 py-4">
+                    <ShieldAlert className="w-8 h-8 text-green-500/50 mb-2 grayscale" />
+                    <p className="text-[10px] text-center text-gray-500 font-medium">
+                      {t("sentiment.noVulnerabilities") || "No critical vulnerabilities detected."}
+                    </p>
+                  </div>
+                ) : (
+                  weaknesses.map((w, wIdx) => (
                   <div
                     key={wIdx}
                     className="p-2 rounded-lg bg-black/20 border border-white/5 group-hover:border-red-500/10 transition-colors"
@@ -136,7 +153,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                       </div>
                     )}
                   </div>
-                ))}
+                )))}
               </div>
             </motion.div>
           );

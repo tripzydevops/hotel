@@ -21,6 +21,17 @@ interface CalendarControlsProps {
   onExcludedChange: (ids: string[]) => void;
 }
 
+/**
+ * CalendarControls Component
+ * 
+ * A horizontal toolbar for the Rate Calendar page.
+ * Contains:
+ * 1. Room Type Selector (Dropdown with standardized categories)
+ * 2. Date Navigation (Previous/Next week, current range display)
+ * 3. Competitor Filter (Multi-select dropdown with "Select All"/"Clear" actions)
+ * 
+ * Replaces the old vertical AnalysisSidebar to save screen space.
+ */
 export default function CalendarControls({
   roomType,
   onRoomTypeChange,
