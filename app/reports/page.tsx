@@ -473,7 +473,7 @@ export default function ReportsPage() {
                     max: analysis.market_max,
                     myPrice: analysis.target_price || null,
                   }}
-                  currency={analysis.display_currency}
+                  currency={analysis.display_currency || currency || "USD"}
                 />
               </div>
             </div>
@@ -494,7 +494,7 @@ export default function ReportsPage() {
                   <p className="text-2xl font-black text-white">
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
-                      currency: analysis.display_currency,
+                      currency: analysis.display_currency || currency || "USD",
                       minimumFractionDigits: 0,
                     }).format(analysis.target_price || 0)}
                   </p>
@@ -506,7 +506,7 @@ export default function ReportsPage() {
               <div className="flex-1 min-h-[250px]">
                 <PriceTrendChart
                   history={analysis.price_history}
-                  currency={analysis.display_currency}
+                  currency={analysis.display_currency || currency || "USD"}
                 />
               </div>
             </div>

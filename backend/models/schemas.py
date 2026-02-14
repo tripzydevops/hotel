@@ -225,6 +225,7 @@ class PriceWithTrend(BaseModel):
 class PricePoint(BaseModel):
     price: float
     recorded_at: Optional[datetime] = None
+    is_estimated: bool = False
 
 
 class HotelWithPrice(Hotel):

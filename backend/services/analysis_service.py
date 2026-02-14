@@ -214,7 +214,7 @@ async def perform_market_analysis(
     for i, item in enumerate(price_rank_list):
         item["rank"] = i + 1
 
-    # 3. Build Daily Prices for Calendar
+    # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
     if target_hotel_id:
         date_price_map: Dict[str, Dict[str, Any]] = {}
@@ -233,7 +233,11 @@ async def perform_market_analysis(
                         if hid == target_hotel_id:
                             date_price_map[date_str]["target"] = converted_price
                         else:
-                            date_price_map[date_str]["competitors"].append({"name": hotel_name, "price": converted_price})
+                            date_price_map[date_str]["competitors"].append({
+                                "name": hotel_name, 
+                                "price": converted_price,
+                                "is_estimated": False
+                            })
                 except Exception: continue
         
         range_start = datetime.now()
@@ -252,6 +256,10 @@ async def perform_market_analysis(
         
         curr = range_start
         last_known_target = None
+        
+        # State tracking for competitors: {name: {price: float, last_seen: date}}
+        competitor_states = {}
+        
         while curr.date() <= range_end.date():
             d_str = curr.strftime("%Y-%m-%d")
             data = date_price_map.get(d_str)
@@ -261,22 +269,43 @@ async def perform_market_analysis(
             unique_competitors = []
             target_val = None
             
+            # Target Logic (Existing forward fill)
             if data and data["target"] is not None:
                 last_known_target = float(data["target"])
                 target_val = last_known_target
             elif last_known_target is not None and curr.date() <= datetime.now().date():
                 target_val = last_known_target
             
-            if data:
-                seen = set()
-                for c in data.get("competitors") or []:
-                    if c["name"] not in seen:
-                        seen.add(c["name"])
-                        unique_competitors.append(c)
-                if unique_competitors:
-                    comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
-                    if target_val:
-                        vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
+            # Competitor Logic (New Forward Fill)
+            daily_comps = (data.get("competitors") if data else []) or []
+            
+            # 1. Update states with real data
+            seen_today = set()
+            for c in daily_comps:
+                name = c["name"]
+                competitor_states[name] = {
+                    "price": c["price"],
+                    "last_seen": curr.date()
+                }
+                seen_today.add(name)
+                unique_competitors.append(c)
+                
+            # 2. Fill missing from history (up to 7 days - extended for weekly continuity)
+            # Only fill if we are past the start of our dataset (implied by having state)
+            for name, state in competitor_states.items():
+                if name not in seen_today:
+                    days_diff = (curr.date() - state["last_seen"]).days
+                    if 0 < days_diff <= 7:
+                        unique_competitors.append({
+                            "name": name,
+                            "price": state["price"],
+                            "is_estimated": True
+                        })
+            
+            if unique_competitors:
+                comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
+                if target_val:
+                    vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
 
             daily_prices.append({
                 "date": d_str,

@@ -20,7 +20,7 @@ interface DailyPrice {
   price: number;
   comp_avg: number;
   vs_comp: number;
-  competitors: { name: string; price: number }[];
+  competitors: { name: string; price: number; is_estimated?: boolean }[];
 }
 
 interface RateIntelligenceGridProps {
@@ -208,12 +208,12 @@ export default function RateIntelligenceGrid({
                     )}
                   </td>
 
-                  {/* Competitor Cells */}
                   {effectiveCompetitors.map((comp) => {
                     const compPriceData = row.competitors.find(
                       (c) => c.name === comp.name,
                     );
                     const price = compPriceData?.price || 0;
+                    const isEstimated = compPriceData?.is_estimated;
 
                     // Comparison Logic
                     let diffPercent = 0;
@@ -227,13 +227,20 @@ export default function RateIntelligenceGrid({
                     return (
                       <td
                         key={comp.id}
-                        className="p-4 text-center border-b border-white/5"
+                        className="p-4 text-center border-b border-white/5 relative group/cell"
                       >
                         {price > 0 ? (
-                          <div className="flex flex-col items-center">
+                          <div className={`flex flex-col items-center ${isEstimated ? "opacity-60 grayscale-[0.5]" : ""}`}>
+                            {isEstimated && (
+                              <div className="absolute top-1 right-1 opacity-100 z-10">
+                                <span title="Price projected from history. Hotel may be sold out." className="cursor-help text-[8px] font-black uppercase text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1 rounded border border-[var(--soft-gold)]/20">
+                                  Est / Sellout?
+                                </span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
                               <span
-                                className={`text-sm font-bold ${isCheaper ? "text-[var(--optimal-green)]" : isMoreExpensive ? "text-white" : "text-white/60"}`}
+                                className={`text-sm font-bold ${isCheaper ? "text-[var(--optimal-green)]" : isMoreExpensive ? "text-white" : "text-white/60"} ${isEstimated ? "decoration-dotted underline decoration-white/30" : ""}`}
                               >
                                 {symbol}
                                 {price.toLocaleString()}
