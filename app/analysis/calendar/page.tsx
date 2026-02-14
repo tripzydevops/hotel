@@ -26,7 +26,11 @@ export default function CalendarPage() {
   >([]);
 
   // View State (Pagination)
-  const [viewDate, setViewDate] = useState<Date>(new Date());
+  const [viewDate, setViewDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 4);
+    return d;
+  });
 
   useEffect(() => {
     const getSession = async () => {
