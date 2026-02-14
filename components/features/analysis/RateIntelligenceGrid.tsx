@@ -21,6 +21,7 @@ interface DailyPrice {
   price: number;
   comp_avg: number;
   vs_comp: number;
+  is_estimated_target?: boolean;
   competitors: { name: string; price: number; is_estimated?: boolean }[];
 }
 
