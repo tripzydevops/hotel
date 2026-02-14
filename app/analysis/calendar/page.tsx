@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Calendar, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
-import AnalysisSidebar from "@/components/features/analysis/AnalysisSidebar";
+import CalendarControls from "@/components/features/analysis/CalendarControls";
 
 export default function CalendarPage() {
   const { t } = useI18n();
@@ -161,6 +161,14 @@ export default function CalendarPage() {
   };
 
   const visiblePrices = getVisiblePrices();
+
+  // Collect unique competitors from ALL visible data points to ensure dropdown is populated
+  const allVisibleCompetitors = Array.from(
+    new Set(
+      visiblePrices.flatMap((p: any) => p.competitors.map((c: any) => c.name))
+    )
+  ).map((name) => ({ id: name, name }));
+
   const visibleRangeLabel =
     visiblePrices.length > 0
       ? `${new Date(visiblePrices[0].date).toLocaleDateString()} - ${new Date(visiblePrices[visiblePrices.length - 1].date).toLocaleDateString()}`
@@ -169,7 +177,7 @@ export default function CalendarPage() {
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link
             href="/analysis"
@@ -184,55 +192,23 @@ export default function CalendarPage() {
             </p>
           </div>
         </div>
-
-        {/* Date Controls (Styled Slider) */}
-        <div className="flex items-center p-1 rounded-xl bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 shadow-lg shadow-black/20">
-          <button
-            onClick={() => handleNav(-7)}
-            className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <div className="px-6 py-1.5 flex flex-col items-center min-w-[180px] border-x border-white/5 mx-1">
-            <span className="text-[10px] font-black uppercase text-[var(--soft-gold)] tracking-widest mb-0.5">
-              Viewing Range
-            </span>
-            <span className="text-sm font-bold text-white whitespace-nowrap">
-              {visibleRangeLabel}
-            </span>
-          </div>
-
-          <button
-            onClick={() => handleNav(7)}
-            className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <AnalysisSidebar
-          allHotels={data?.all_hotels || allHotels}
-          excludedHotelIds={excludedHotelIds}
-          onExcludedChange={setExcludedHotelIds}
-          roomType={roomType}
-          onRoomTypeChange={setRoomType}
-          availableRoomTypes={data?.available_room_types || []}
-          onSetTarget={handleSetTarget}
-          effectiveCompetitors={
-            visiblePrices.length > 0
-              ? visiblePrices[0].competitors.map((c: any) => ({
-                  id: c.name,
-                  name: c.name,
-                }))
-              : []
-          }
-        />
+      {/* Top Toolbar Controls */}
+      <CalendarControls 
+        roomType={roomType}
+        onRoomTypeChange={setRoomType}
+        availableRoomTypes={data?.available_room_types || []}
+        viewDate={viewDate}
+        onNavigate={handleNav}
+        visibleRangeLabel={visibleRangeLabel}
+        competitors={allVisibleCompetitors}
+        excludedHotelIds={excludedHotelIds}
+        onExcludedChange={setExcludedHotelIds}
+      />
 
-        {/* Main Grid */}
+      <div className="flex gap-6">
+        {/* Main Grid - Full Width Now */}
         <div className="flex-1 overflow-hidden">
           {loading ? (
             <div className="glass-card p-12 flex items-center justify-center">
