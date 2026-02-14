@@ -222,6 +222,14 @@ export default function CalendarPage() {
           onRoomTypeChange={setRoomType}
           availableRoomTypes={data?.available_room_types || []}
           onSetTarget={handleSetTarget}
+          effectiveCompetitors={
+            visiblePrices.length > 0
+              ? visiblePrices[0].competitors.map((c: any) => ({
+                  id: c.name,
+                  name: c.name,
+                }))
+              : []
+          }
         />
 
         {/* Main Grid */}

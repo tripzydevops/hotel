@@ -25,6 +25,29 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 
+// Translation map for sentiment keywords
+const KEYWORD_TRANSLATIONS: Record<string, string> = {
+  hizmet: "Service",
+  temizlik: "Cleanliness",
+  kahvaltı: "Breakfast",
+  konum: "Location",
+  oda: "Room",
+  fiyat: "Price",
+  personel: "Staff",
+  yemek: "Food",
+  havuz: "Pool",
+  internet: "Wi-Fi",
+  banyo: "Bathroom",
+  gürültü: "Noise",
+   manzara: "View",
+  resepsiyon: "Reception",
+  yatak: "Bed",
+  klima: "AC",
+  ulaşım: "Transport",
+  otopark: "Parking",
+  otel: "Hotel",
+};
+
 // Dynamically import heavy analytics components to improve initial page performance
 // and ensure library initialization only occurs on the client side.
 const SentimentRadar = dynamic(() => import("@/components/analytics/SentimentRadar").then(m => m.SentimentRadar), { ssr: false });
@@ -397,7 +420,20 @@ export default function SentimentPage() {
       cleanliness: ["temizlik", "clean", "room", "cleanliness"],
       service: ["hizmet", "staff", "personel", "service"],
       location: ["konum", "neighborhood", "mevki", "location"],
-      value: ["değer", "fiyat", "price", "comfort", "kalite", "value"],
+      value: [
+        "değer",
+        "fiyat",
+        "price",
+        "comfort",
+        "kalite",
+        "value",
+        "fiyat/performans",
+        "cost",
+        "money",
+        "ucuz",
+        "pahalı",
+        "ekonomik",
+      ],
     };
 
     const item = hotel.sentiment_breakdown.find((s: any) => {
@@ -669,16 +705,27 @@ export default function SentimentPage() {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {targetHotel.guest_mentions
-                    ?.slice(0, 10)
-                    .map((mention: any, idx: number) => (
-                      <KeywordTag
-                        key={idx}
-                        text={mention.keyword || mention.text || "N/A"}
-                        count={mention.count}
-                        sentiment={mention.sentiment}
-                        size="sm"
-                      />
-                    )) || (
+                    .slice(0, 10)
+                    .map((mention: any, idx: number) => {
+                      const rawText =
+                        mention.keyword || mention.text || "N/A";
+                      const translatedText =
+                        KEYWORD_TRANSLATIONS[rawText.toLowerCase()] ||
+                        rawText;
+
+                      return (
+                        <KeywordTag
+                          key={idx}
+                          text={
+                            translatedText.charAt(0).toUpperCase() +
+                            translatedText.slice(1)
+                          }
+                          count={mention.count}
+                          sentiment={mention.sentiment}
+                          size="sm"
+                        />
+                      );
+                    }) || (
                     <p className="text-gray-500 italic text-xs">
                       {t("sentiment.noMentions")}
                     </p>
@@ -1021,18 +1068,6 @@ export default function SentimentPage() {
             </div>
           </motion.div>
 
-          {/* DEBUG DUMP */}
-          <div className="mt-8 p-6 bg-black/50 border border-red-500/30 rounded-xl overflow-auto max-h-[300px]">
-            <h4 className="text-red-400 font-bold mb-2">
-              Technical Debug Data
-            </h4>
-            <pre className="text-[10px] text-green-400 font-mono whitespace-pre-wrap">
-              UserId: {userId}
-              TargetHotel: {targetHotel?.name} ({targetHotel?.id}) Sentiment
-              Breakdown:
-              {JSON.stringify(targetHotel?.sentiment_breakdown, null, 2)}
-            </pre>
-          </div>
         </>
       )}
     </div>

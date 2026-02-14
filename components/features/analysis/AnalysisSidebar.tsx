@@ -1,5 +1,6 @@
 import React from "react";
 import { BedDouble, Building2, Check, Star } from "lucide-react";
+import { getStandardizedRoomCategory } from "@/utils/roomNormalization";
 
 interface Hotel {
   id: string;
@@ -15,6 +16,7 @@ interface AnalysisSidebarProps {
   onRoomTypeChange: (type: string) => void;
   availableRoomTypes: string[];
   onSetTarget: (id: string) => void;
+  effectiveCompetitors?: { id: string; name: string }[];
 }
 
 export default function AnalysisSidebar({
@@ -25,6 +27,7 @@ export default function AnalysisSidebar({
   onRoomTypeChange,
   availableRoomTypes,
   onSetTarget,
+  effectiveCompetitors,
 }: AnalysisSidebarProps) {
   const toggleHotel = (hotelId: string) => {
     if (excludedHotelIds.includes(hotelId)) {
@@ -34,11 +37,32 @@ export default function AnalysisSidebar({
     }
   };
 
-  const competitors = allHotels.filter((h) => !h.is_target);
+  const competitors =
+    allHotels.length > 1
+      ? allHotels.filter((h) => !h.is_target)
+      : effectiveCompetitors
+        ? effectiveCompetitors.map((c) => ({
+            id: c.id,
+            name: c.name,
+            is_target: false,
+          }))
+        : [];
   const targetHotel = allHotels.find((h) => h.is_target);
 
+  // Group room types by standardized category
+  const uniqueRoomCategories = Array.from(
+    new Set(availableRoomTypes.map((rt) => getStandardizedRoomCategory(rt)))
+  ).sort();
+
+  // Helper to find the first actual room type for a selected category
+  const getFirstRoomForCategory = (category: string) => {
+    return availableRoomTypes.find(
+      (rt) => getStandardizedRoomCategory(rt) === category
+    );
+  };
+
   return (
-    <div className="w-64 flex-shrink-0 flex flex-col gap-6">
+    <div className="w-48 flex-shrink-0 flex flex-col gap-6">
       {/* Room Type Filter */}
       <div className="glass-panel p-4 rounded-xl border border-white/5 bg-[var(--deep-ocean)]/50 backdrop-blur-md">
         <div className="flex items-center gap-2 mb-4 text-[var(--soft-gold)]">
@@ -51,8 +75,12 @@ export default function AnalysisSidebar({
         {/* Room Type Filter (Dropdown) */}
         <div className="flex flex-col gap-2 relative">
           <select
-            value={roomType}
-            onChange={(e) => onRoomTypeChange(e.target.value)}
+            value={getStandardizedRoomCategory(roomType)}
+            onChange={(e) => {
+              const category = e.target.value;
+              const actualRoom = getFirstRoomForCategory(category);
+              if (actualRoom) onRoomTypeChange(actualRoom);
+            }}
             className="w-full appearance-none bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer"
           >
             {/* Disabled placeholder if no selection yet */}
@@ -66,13 +94,14 @@ export default function AnalysisSidebar({
               </option>
             )}
 
-            {availableRoomTypes.map((rt) => (
+            {/* Group and Deduplicate Room Types */}
+            {uniqueRoomCategories.map((category) => (
               <option
-                key={rt}
-                value={rt}
+                key={category}
+                value={category}
                 className="bg-[var(--deep-ocean)] text-white"
               >
-                {rt}
+                {category}
               </option>
             ))}
           </select>
