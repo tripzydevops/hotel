@@ -8,7 +8,8 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+// Deployment Poke: Global Pulse Phase 1 Integrated - 2026-02-14
+import React, { useMemo, useState } from 'react';
 
 interface Competitor {
   id: string;
