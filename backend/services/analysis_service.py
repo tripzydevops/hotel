@@ -486,3 +486,120 @@ async def perform_market_analysis(
         "available_room_types": sorted(list(available_room_types)),
         "all_hotels": [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels]
     }
+
+async def get_market_intelligence_data(
+    db: Client,
+    user_id: str,
+    room_type: str = "Standard",
+    display_currency: str = "TRY",
+    currency: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Orchestrates the data gathering for market intelligence.
+    Fetches hotels, merges price logs (active + legacy), resolves room type matches,
+    and calls perform_market_analysis.
+    """
+    # Currency Alias
+    if currency:
+        display_currency = currency
+        
+    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    hotels = hotels_result.data or []
+    if not hotels:
+        return {"summary": {}, "hotels": []}
+
+    # Unified Price History (Bridging 1,357 Legacy Records)
+    # 1. Fetch from price_logs
+    price_logs_res = db.table("price_logs") \
+        .select("*") \
+        .in_("hotel_id", [str(h["id"]) for h in hotels]) \
+        .order("recorded_at", desc=True) \
+        .limit(5000) \
+        .execute()
+    logs_data = price_logs_res.data or []
+    
+    # 2. Fetch from query_logs (Fallback for historical depth)
+    hotel_names = [h["name"] for h in hotels]
+    query_logs_res = db.table("query_logs") \
+        .select("hotel_name, action_type, price, currency, created_at, vendor") \
+        .in_("hotel_name", hotel_names) \
+        .in_("action_type", ["monitor", "search"]) \
+        .not_.is_("price", "null") \
+        .order("created_at", desc=True) \
+        .limit(5000) \
+        .execute()
+    
+    # Normalize query_logs to match price_logs schema for the aggregator
+    for q_log in (query_logs_res.data or []):
+        hid = next((str(h["id"]) for h in hotels if h["name"] == q_log["hotel_name"]), None)
+        if hid:
+            logs_data.append({
+                "hotel_id": hid,
+                "price": q_log["price"],
+                "currency": q_log["currency"] or "TRY",
+                "recorded_at": q_log["created_at"],
+                "vendor": q_log["vendor"] or "SerpApi",
+                "check_in_date": q_log["created_at"].split('T')[0], # Fallback date
+                "source": "legacy_query_log"
+            })
+    
+    # Group logs by hotel_id
+    hotel_prices_map = {}
+    for log in logs_data:
+        hid = str(log["hotel_id"])
+        if hid not in hotel_prices_map:
+            hotel_prices_map[hid] = []
+        hotel_prices_map[hid].append(log)
+        
+    # Ensure every hotel has at least an empty list if no logs found
+    for h in hotels:
+        hid = str(h["id"])
+        if hid not in hotel_prices_map:
+            hotel_prices_map[hid] = []
+    
+    # Room Type Slicing Logic (pgvector)
+    allowed_room_names_map = {}
+    try:
+        catalog_res = db.table("room_type_catalog").select("embedding") \
+            .ilike("normalized_name", f"%{room_type}%").limit(1).execute()
+        
+        # Fallback for Standard/Standart mismatch in catalog
+        if not catalog_res.data and room_type.lower() == "standard":
+            catalog_res = db.table("room_type_catalog").select("embedding") \
+                .ilike("normalized_name", "%standart%").limit(1).execute()
+        elif not catalog_res.data and room_type.lower() == "standart":
+            catalog_res = db.table("room_type_catalog").select("embedding") \
+                .ilike("normalized_name", "%standard%").limit(1).execute()
+
+        if catalog_res.data:
+            embedding = catalog_res.data[0]["embedding"]
+            matches_res = db.rpc("match_room_types", {
+                "query_embedding": embedding,
+                "match_threshold": 0.82,
+                "match_count": 100 
+            }).execute()
+            for match in (matches_res.data or []):
+                hid = str(match["hotel_id"])
+                if hid not in allowed_room_names_map:
+                    allowed_room_names_map[hid] = set()
+                allowed_room_names_map[hid].add(match["original_name"])
+            for h in hotels:
+                hid = str(h["id"])
+                if hid not in allowed_room_names_map:
+                    allowed_room_names_map[hid] = set()
+                allowed_room_names_map[hid].add(room_type)
+    except Exception:
+        pass
+
+    return await perform_market_analysis(
+        user_id=str(user_id),
+        hotels=hotels,
+        hotel_prices_map=hotel_prices_map,
+        display_currency=display_currency,
+        room_type=room_type,
+        start_date=start_date,
+        end_date=end_date,
+        allowed_room_names_map=allowed_room_names_map
+    )
