@@ -185,9 +185,9 @@ export default function AnalysisPage() {
   }
 
   const spreadPercentage =
-    data?.target_price !== null && 
+    data?.target_price != null && 
     data?.market_max > data?.market_min &&
-    data?.market_min !== null
+    data?.market_min != null
       ? ((data?.target_price - data?.market_min) /
           (data?.market_max - data?.market_min)) *
         100
@@ -456,13 +456,13 @@ export default function AnalysisPage() {
                 </span>
                 <span className="text-white/40">
                   {CURRENCY_SYMBOLS[currency]}
-                  {data?.market_min !== null && data?.market_max !== null 
-                    ? ((data.market_min + data.market_max) / 2).toFixed(0)
+                  {data?.market_min != null && data?.market_max != null 
+                    ? ((data.market_min + data.market_max) / 2)?.toFixed(0)
                     : "N/A"}
                 </span>
                 <span className="text-[var(--alert-red)]">
                   {CURRENCY_SYMBOLS[currency]}
-                  {data?.market_max !== null ? data.market_max.toFixed(0) : "N/A"}
+                  {data?.market_max != null ? data.market_max?.toFixed(0) : "N/A"}
                 </span>
               </div>
 
@@ -589,15 +589,9 @@ export default function AnalysisPage() {
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   {t("analysis.priceGapToMin")}
                 </span>
-                <span
-                  className={`text-xl font-black ${
-                    data?.target_price === data?.market_min
-                      ? "text-[var(--optimal-green)]"
-                      : "text-white"
-                  }`}
-                >
-                  {data?.target_price && data?.market_min
-                    ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min).toFixed(0)}`
+                <span className="text-xl font-black text-white">
+                  {data?.target_price != null && data?.market_min != null
+                    ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min)?.toFixed(0)}`
                     : "N/A"}
                 </span>
               </div>
@@ -605,17 +599,9 @@ export default function AnalysisPage() {
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   Gap to Median
                 </span>
-                <span
-                  className={`text-xl font-black ${
-                    data?.target_price < data?.market_avg
-                      ? "text-[var(--optimal-green)]"
-                      : data?.target_price > data?.market_avg
-                        ? "text-[var(--alert-red)]"
-                        : "text-white"
-                  }`}
-                >
-                  {data?.target_price && data?.market_avg
-                    ? `${data.target_price < data.market_avg ? "-" : "+"}${CURRENCY_SYMBOLS[currency] || "$"}${Math.abs(data.target_price - data.market_avg).toFixed(0)}`
+                <span className="text-xl font-black text-white">
+                  {data?.target_price != null && data?.market_avg != null
+                    ? `${data.target_price < data.market_avg ? "-" : "+"}${CURRENCY_SYMBOLS[currency] || "$"}${Math.abs(data.target_price - data.market_avg)?.toFixed(0)}`
                     : "N/A"}
                 </span>
               </div>
@@ -624,8 +610,8 @@ export default function AnalysisPage() {
                   {t("analysis.inventorySpread")}
                 </span>
                 <span className="text-xl font-black text-white">
-                  {data?.market_max !== null && data?.market_min !== null
-                    ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min).toFixed(0)}`
+                  {data?.market_max != null && data?.market_min != null
+                    ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min)?.toFixed(0)}`
                     : "N/A"}
                 </span>
               </div>
@@ -781,7 +767,7 @@ function KPICard({
                         className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-white/70"}`}
                       >
                         {symbol}
-                        {item.price.toFixed(0)}
+                        {item.price != null ? item.price.toFixed(0) : "N/A"}
                       </span>
                     </div>
                   ))}
@@ -819,7 +805,7 @@ function KPICard({
                           ((hoverData.targetPrice - hoverData.marketAvg) /
                             hoverData.marketAvg) *
                           100
-                        ).toFixed(1)}
+                        )?.toFixed(1)}
                         %
                       </span>
                     </div>
