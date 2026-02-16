@@ -107,7 +107,11 @@ def get_price_for_room(
     # EXPLANATION: Cheapest Room Fallback
     # If no variants match, but we are looking for a base room type, 
     # we take the cheapest available room.
-    if target_room_type.lower() in ["standard", "standart", "any", "base", ""]:
+    # CRITICAL FIX: We ONLY do this if the user is looking for "any" or "standard" room.
+    # If they explicitly asked for "Suite", we should NOT return a Standard room.
+    is_standard_request = target_room_type.lower() in ["standard", "standart", "any", "base", ""]
+    
+    if is_standard_request:
         try:
             valid_prices = []
             for r in r_types:
@@ -125,7 +129,8 @@ def get_price_for_room(
     # Why: The modern 'price_logs' table uses structured 'room_types' (JSONB).
     # The legacy 'query_logs' table stores a single top-level 'price'.
     # If room_types is missing/empty, we try to use the top-level price.
-    if not r_types or len(r_types) == 0:
+    # CRITICAL FIX: Only if looking for standard rooms.
+    if (not r_types or len(r_types) == 0) and is_standard_request:
         top_price = _extract_price(price_log.get("price"))
         if top_price is not None:
             # We treat this as a 'Standard' match with lower confidence
