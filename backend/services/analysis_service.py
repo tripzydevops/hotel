@@ -80,32 +80,57 @@ def get_price_for_room(
                  # High confidence if in allowed map
                  return _extract_price(r.get("price")), r.get("name"), 0.82 + (0.1 * int(r.get("name") == target_room_type))
     
-    # 2. Fallback: String Match (Substring)
+    # 2. Fallback: String Match (Substring) with Turkish/English variant support
+    # We check for common "standard" room variants in both languages.
+    target_variants = [target_room_type.lower()]
+    if target_room_type.lower() in ["standard", "standart"]:
+         target_variants.extend(["standard", "standart", "klasik", "classic", "ekonomik", "economy", "promo"])
+    
     for r in r_types:
-        if isinstance(r, dict) and (target_room_type.lower() in (r.get("name") or "").lower()):
-            return _extract_price(r.get("price")), r.get("name"), 0.9 if r.get("name") == target_room_type else 0.75
+        if not isinstance(r, dict): continue
+        r_name = (r.get("name") or "").lower()
+        c_name = (r.get("canonical_name") or "").lower()
+        c_code = (r.get("canonical_code") or "").upper()
+        
+        # Priority 1: Canonical Code Match (Highest confidence)
+        if target_room_type.lower() in ["standard", "standart"] and c_code == "STD":
+             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.95
+
+        # Priority 2: Canonical Name Match
+        if any(v in c_name for v in target_variants):
+             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
+
+        # Priority 3: Name Substring Match
+        if any(v in r_name for v in target_variants):
+            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
     # EXPLANATION: Cheapest Room Fallback
-    # Many Turkish hotels don't have a room labeled "Standard" — they use
-    # names like "Oda" or "Standart Oda". When the semantic and substring 
-    # matches both fail, we fall back to the cheapest available room price.
-    # This ensures charts always show data instead of "No Data".
-    if target_room_type.lower() in ["standard", "any", "base"]:
+    # If no variants match, but we are looking for a base room type, 
+    # we take the cheapest available room.
+    if target_room_type.lower() in ["standard", "standart", "any", "base", ""]:
         try:
-            # Filter out obviously wrong types if possible, or just grab min price
             valid_prices = []
             for r in r_types:
                 p = _extract_price(r.get("price"))
                 if p is not None:
-                    valid_prices.append((p, r.get("name")))
+                    valid_prices.append((p, r.get("name") or "Standard (Min)"))
             
             if valid_prices:
-                # Sort by price ascending
                 valid_prices.sort(key=lambda x: x[0])
-                return valid_prices[0][0], valid_prices[0][1], 0.5  # Lower match score to indicate fallback
+                return valid_prices[0][0], valid_prices[0][1], 0.5
         except Exception:
             pass
 
+    # EXPLANATION: Legacy Log Fallback
+    # Why: The modern 'price_logs' table uses structured 'room_types' (JSONB).
+    # The legacy 'query_logs' table stores a single top-level 'price'.
+    # If room_types is missing/empty, we try to use the top-level price.
+    if not r_types or len(r_types) == 0:
+        top_price = _extract_price(price_log.get("price"))
+        if top_price is not None:
+            # We treat this as a 'Standard' match with lower confidence
+            return top_price, "Standard (Legacy)", 0.6
+            
     return None, None, 0.0
 
 async def perform_market_analysis(

@@ -55,6 +55,12 @@ const QUADRANT_INFO: Record<
     insight: "Neutral market position",
     action: "Define differentiation strategy",
   },
+  "Insufficient Data": {
+    color: "text-white/40",
+    icon: <AlertTriangle className="w-4 h-4" />,
+    insight: "Analysis pending more competitive data",
+    action: "Add more competitors to tracking list",
+  },
 };
 
 export default function AdvisorQuadrant({

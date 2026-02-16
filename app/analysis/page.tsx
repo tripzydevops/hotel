@@ -185,7 +185,9 @@ export default function AnalysisPage() {
   }
 
   const spreadPercentage =
-    data?.market_max > data?.market_min
+    data?.target_price !== null && 
+    data?.market_max > data?.market_min &&
+    data?.market_min !== null
       ? ((data?.target_price - data?.market_min) /
           (data?.market_max - data?.market_min)) *
         100
@@ -454,11 +456,13 @@ export default function AnalysisPage() {
                 </span>
                 <span className="text-white/40">
                   {CURRENCY_SYMBOLS[currency]}
-                  {((data?.market_min + data?.market_max) / 2)?.toFixed(0)}
+                  {data?.market_min !== null && data?.market_max !== null 
+                    ? ((data.market_min + data.market_max) / 2).toFixed(0)
+                    : "N/A"}
                 </span>
                 <span className="text-[var(--alert-red)]">
                   {CURRENCY_SYMBOLS[currency]}
-                  {data?.market_max?.toFixed(0)}
+                  {data?.market_max !== null ? data.market_max.toFixed(0) : "N/A"}
                 </span>
               </div>
 
@@ -620,7 +624,7 @@ export default function AnalysisPage() {
                   {t("analysis.inventorySpread")}
                 </span>
                 <span className="text-xl font-black text-white">
-                  {data?.market_max && data?.market_min
+                  {data?.market_max !== null && data?.market_min !== null
                     ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min).toFixed(0)}`
                     : "N/A"}
                 </span>

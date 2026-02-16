@@ -128,6 +128,15 @@ async def get_market_intelligence(
         try:
             catalog_res = db.table("room_type_catalog").select("embedding") \
                 .ilike("normalized_name", f"%{room_type}%").limit(1).execute()
+            
+            # Fallback for Standard/Standart mismatch in catalog
+            if not catalog_res.data and room_type.lower() == "standard":
+                catalog_res = db.table("room_type_catalog").select("embedding") \
+                    .ilike("normalized_name", "%standart%").limit(1).execute()
+            elif not catalog_res.data and room_type.lower() == "standart":
+                catalog_res = db.table("room_type_catalog").select("embedding") \
+                    .ilike("normalized_name", "%standard%").limit(1).execute()
+
             if catalog_res.data:
                 embedding = catalog_res.data[0]["embedding"]
                 matches_res = db.rpc("match_room_types", {
