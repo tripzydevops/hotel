@@ -247,7 +247,7 @@ async def perform_market_analysis(
                 
                 # Analyze the logs for this specific check-in date
                 latest = logs[0]
-                price_val = _extract_price(latest.get("price"))
+                price_val, _, _ = get_price_for_room(latest, room_type, allowed_room_names_map)
                 is_est = latest.get("is_estimated", False)
                 
                 # 1. Look back for SAME check-in date (Same-Date Continuity)
@@ -261,7 +261,7 @@ async def perform_market_analysis(
                             prev_time = datetime.fromisoformat(prev_str)
                             
                             if (latest_time - prev_time).days <= 7:
-                                prev_p = _extract_price(prev.get("price"))
+                                prev_p, _, _ = get_price_for_room(prev, room_type, allowed_room_names_map)
                                 if prev_p and prev_p > 0:
                                     price_val = prev_p
                                     is_est = True 
@@ -274,7 +274,7 @@ async def perform_market_analysis(
                     # hotel_prices_map[hid] contains all logs sorted by recorded_at DESC
                     all_hotel_logs = hotel_prices_map.get(hid, [])
                     for fallback_log in all_hotel_logs:
-                        fb_p = _extract_price(fallback_log.get("price"))
+                        fb_p, _, _ = get_price_for_room(fallback_log, room_type, allowed_room_names_map)
                         if fb_p and fb_p > 0:
                             price_val = fb_p
                             is_est = True
