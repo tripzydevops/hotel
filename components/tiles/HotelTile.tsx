@@ -221,7 +221,12 @@ export default function HotelTile(props: HotelTileProps) {
                 </span>
               )}
 
-              {/* Estimated Tag */}
+              {/* 
+                EXPLANATION: Estimated / Sold Out Tag
+                This badge is triggered when the backend flags a price as 'is_estimated'.
+                This happens under 'Smart Continuity' rules (sold out dates) or 
+                when a suspicious price drop was rejected by the Safeguard agent.
+              */}
               {props.isEstimated && (
                 <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 flex items-center gap-1 animate-pulse">
                   <AlertTriangle className="w-3 h-3" />

@@ -86,11 +86,14 @@ class AnalystAgent:
                 if not current_price or current_price <= 0:
                      reasoning_log.append(f"[Start] Analyzing {hotel_id}. No Price Found.")
                 else:
-                     # [SAFEGUARD] Check for unrealistic price drops (e.g. 4000 -> 1000)
+                     # EXPLANATION: Price Sanity Safeguard
+                     # This block prevents data anomalies like "1000 Points" being mistaken for "1000 TL".
+                     # If the price drops too sharply compared to history, we treat it as invalid 
+                     # to trigger the 'Smart Continuity' fallback instead.
                      is_valid_drop, avg_price = self._validate_price_drop(hotel_id, current_price, currency)
                      if not is_valid_drop:
                          reasoning_log.append(f"[Safeguard] Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback.")
-                         current_price = 0.0 # Force continuity fallback
+                         current_price = 0.0 # Force continuity fallback to use historical baseline
                      else:
                          reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
                 
@@ -660,11 +663,17 @@ Top Reviews: {reviews_text}
 
     def _validate_price_drop(self, hotel_id: str, current_price: float, currency: str) -> tuple[bool, float]:
         """
-        Checks if the current price is significantly lower (>50% drop) than the recent average.
-        Returns (is_valid, average_price).
+        EXPLANATION: Sudden Drop Detection Logic
+        This method protects the system from price glitches by comparing the new rate 
+        against the last 10 successful scans for this specific hotel.
+        
+        Logic: 
+        1. Fetch up to 10 recent non-zero prices from 'price_logs'.
+        2. Calculate the mean (average).
+        3. If the NEW price is < 50% of the average, it's flagged as suspicious (False).
         """
         try:
-            # Fetch last 10 valid prices
+            # Fetch last 10 valid prices for historical baseline
             res = self.db.table("price_logs") \
                 .select("price") \
                 .eq("hotel_id", hotel_id) \
@@ -675,16 +684,16 @@ Top Reviews: {reviews_text}
                 .execute()
             
             if not res.data:
-                return True, 0.0 # No history, trust the new price
+                return True, 0.0 # No history, trust the new price as first reference
             
             prices = [r['price'] for r in res.data]
             avg_price = sum(prices) / len(prices)
             
-            # Threshold: If current price is < 50% of average (e.g. 1000 < 4000 * 0.5)
+            # Threshold Check: Rejects prices falling below half of the historical average
             if current_price < (avg_price * 0.5):
                 return False, avg_price
                 
             return True, avg_price
         except Exception as e:
             print(f"[Safeguard] Error validating price: {e}")
-            return True, 0.0 # Fail open if DB error
+            return True, 0.0 # Fail open if DB error to avoid blocking valid scans

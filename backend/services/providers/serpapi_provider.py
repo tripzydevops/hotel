@@ -180,7 +180,9 @@ class SerpApiProvider(HotelDataProvider):
             
         s_price = str(price).strip().replace('\xa0', ' ')
         
-        # [NEW] Filter out "Points" based prices (e.g. "10,000 Points")
+        # EXPLANATION: Points Filtering Safeguard
+        # Rejects rates containing keywords like "points" or "pts".
+        # This prevents loyalty reward balances from being misparsed as currency (e.g., 10k points -> $10,000).
         if any(keyword in s_price.lower() for keyword in ["point", "pts", "puan"]):
             return None
 
