@@ -179,6 +179,11 @@ class SerpApiProvider(HotelDataProvider):
         if isinstance(price, (int, float)): return float(price)
             
         s_price = str(price).strip().replace('\xa0', ' ')
+        
+        # [NEW] Filter out "Points" based prices (e.g. "10,000 Points")
+        if any(keyword in s_price.lower() for keyword in ["point", "pts", "puan"]):
+            return None
+
         clean_str = re.sub(r'[^\d.,]', '', s_price)
         if not clean_str: return None
         
