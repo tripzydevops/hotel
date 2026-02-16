@@ -210,14 +210,13 @@ class AnalystAgent:
                     if val is not None:
                         meta_update[key] = val
                 
-                # 4. Coupled Metadata & Embedding Update
                 # EXPLANATION: Data Reliability Sync
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
                 # sentiment data changes. This ensures the frontend doesn't trust
                 # old AI embeddings if they haven't been regenerated yet.
-                # sentiment_changed = "sentiment_breakdown" in meta_update
-                # if sentiment_changed:
-                #    meta_update["embedding_status"] = "stale"
+                sentiment_changed = "sentiment_breakdown" in meta_update
+                if sentiment_changed:
+                    meta_update["embedding_status"] = "stale"
                 
                 # Update Hotel Metadata
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()

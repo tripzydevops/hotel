@@ -7,6 +7,7 @@ import {
   Minus,
   TrendingDown,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 // Deployment Poke: Global Pulse Phase 1 Integrated - 2026-02-14
 import React, { useMemo, useState } from 'react';
@@ -176,10 +177,16 @@ export default function RateIntelligenceGrid({
                     {row.price > 0 ? (
                       <div className={`flex flex-col items-center ${row.is_estimated_target ? "opacity-60 grayscale-[0.5]" : ""}`}>
                         {row.is_estimated_target && (
-                            <div className="absolute top-1 right-1 opacity-100 z-10">
-                            <span title="Price projected from history. Hotel may be sold out." className="cursor-help text-[8px] font-black uppercase text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1 rounded border border-[var(--soft-gold)]/20">
-                                Est
-                            </span>
+                            <div className="absolute top-1.5 right-1.5 opacity-100 z-10">
+                              <div 
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-400/20 bg-amber-400/10 text-amber-400 animate-pulse cursor-help"
+                                title={t("common.estimated") || "ESTIMATED / SOLD OUT"}
+                              >
+                                <AlertTriangle className="w-2 h-2" />
+                                <span className="text-[7px] font-black uppercase tracking-tighter whitespace-nowrap">
+                                  {t("common.estimated") || "ESTIMATED"}
+                                </span>
+                              </div>
                             </div>
                         )}
                         <span
@@ -247,10 +254,16 @@ export default function RateIntelligenceGrid({
                         {price > 0 ? (
                           <div className={`flex flex-col items-center ${isEstimated ? "opacity-60 grayscale-[0.5]" : ""}`}>
                             {isEstimated && (
-                              <div className="absolute top-1 right-1 opacity-100 z-10">
-                                <span title="Price projected from history. Hotel may be sold out." className="cursor-help text-[8px] font-black uppercase text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-1 rounded border border-[var(--soft-gold)]/20">
-                                  Est / Sellout?
-                                </span>
+                              <div className="absolute top-1.5 right-1.5 opacity-100 z-10">
+                                <div 
+                                  className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-400/20 bg-amber-400/10 text-amber-400 animate-pulse cursor-help"
+                                  title={t("common.estimated") || "ESTIMATED / SOLD OUT"}
+                                >
+                                  <AlertTriangle className="w-2 h-2" />
+                                  <span className="text-[7px] font-black uppercase tracking-tighter whitespace-nowrap">
+                                    {t("common.estimated") || "ESTIMATED"}
+                                  </span>
+                                </div>
                               </div>
                             )}
                             <div className="flex items-center gap-1">

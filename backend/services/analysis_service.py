@@ -238,31 +238,47 @@ async def perform_market_analysis(
                 if d_str not in date_price_map:
                     date_price_map[d_str] = {"target": None, "target_is_estimated": False, "competitors": []}
                 
+                # EXPLANATION: Rate Calendar Continuity (Vertical Fill)
+                # We prioritize fresh data for the specific check-in date.
+                # If the latest scan failed (e.g., Sold Out), we look back 7 days for 
+                # a previous successful scan for the SAME check-in date.
+                # If that ALSO fails, we fall back to ANY recent valid price for this hotel.
+                # This ensures the Grid stays populated while clearly marking the data as 'Estimated'.
+                
                 # Analyze the logs for this specific check-in date
                 latest = logs[0]
                 price_val = _extract_price(latest.get("price"))
                 is_est = latest.get("is_estimated", False)
                 
-                # If latest scan failed, look for the most recent success for this SAME date
+                # 1. Look back for SAME check-in date (Same-Date Continuity)
                 if (price_val is None or price_val <= 0) and len(logs) > 1:
                     try:
-                        # Parse latest recorded_at for comparison
                         latest_str = latest.get("recorded_at", "").replace('Z', '+00:00')
                         latest_time = datetime.fromisoformat(latest_str)
                         
                         for prev in logs[1:]:
-                            # Parse previous recorded_at
                             prev_str = prev.get("recorded_at", "").replace('Z', '+00:00')
                             prev_time = datetime.fromisoformat(prev_str)
                             
-                            # User requirement: look back up to 7 days
                             if (latest_time - prev_time).days <= 7:
                                 prev_p = _extract_price(prev.get("price"))
                                 if prev_p and prev_p > 0:
                                     price_val = prev_p
-                                    is_est = True # Mark as estimated because we are using history
+                                    is_est = True 
                                     break
                     except Exception: pass
+
+                # 2. Global Fallback for this Hotel (Any-Date Continuity)
+                if price_val is None or price_val <= 0:
+                    # Look through ALL prices for this hotel (outside this check-in group)
+                    # hotel_prices_map[hid] contains all logs sorted by recorded_at DESC
+                    all_hotel_logs = hotel_prices_map.get(hid, [])
+                    for fallback_log in all_hotel_logs:
+                        fb_p = _extract_price(fallback_log.get("price"))
+                        if fb_p and fb_p > 0:
+                            price_val = fb_p
+                            is_est = True
+                            break
 
                 if price_val is not None:
                     converted_price = convert_currency(price_val, latest.get("currency") or "USD", display_currency)
