@@ -108,13 +108,18 @@ def get_price_for_room(
         if any(v in r_name for v in target_variants):
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
-    # EXPLANATION: Cheapest Room Fallback
-    # If no variants match, but we are looking for a base room type, 
-    # we take the cheapest available room.
-    # CRITICAL FIX: We ONLY do this if the user is looking for "any" or "standard" room.
-    # If they explicitly asked for "Suite", we should NOT return a Standard room.
-    # We also allow "all room types" to fall back to standard/cheapest.
-    is_standard_request = target_room_type.lower() in ["standard", "standart", "any", "base", "", "all room types", "all"]
+    # EXPLANATION: Standard Request Detection
+    # We broaden the check to include common Turkish variants like 'Oda' (Room),
+    # 'Standart', 'Klasik', etc. This ensures legacy data (which lacks JSON room types)
+    # correctly falls back to the top-level price when viewing base room categories.
+    std_variants = ["standard", "standart", "any", "base", "all room types", "all", "promo", "ekonomik", "economy", "klasik", "classic"]
+    target_lower = target_room_type.lower()
+    
+    is_standard_request = (
+        not target_lower or 
+        any(v in target_lower for v in std_variants) or
+        target_lower == "oda" # Generic 'Room' in Turkish
+    )
     
     if is_standard_request:
         try:
