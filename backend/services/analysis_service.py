@@ -2,6 +2,10 @@
 Analysis Service
 Handles complex market analysis, room type matching, and sentiment data processing.
 """
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 import math
 import re
@@ -239,7 +243,7 @@ async def perform_market_analysis(
                                     "recorded_at": p.get("recorded_at")
                                 })
             except Exception as e:
-                print(f"Analysis error for hotel {hid}: {e}")
+                logger.error(f"Analysis error for hotel {hid}: {e}")
 
     price_rank_list.sort(key=lambda x: x["price"])
     for i, item in enumerate(price_rank_list):
@@ -498,8 +502,12 @@ async def get_market_intelligence_data(
 ) -> Dict[str, Any]:
     """
     Orchestrates the data gathering for market intelligence.
-    Fetches hotels, merges price logs (active + legacy), resolves room type matches,
-    and calls perform_market_analysis.
+    
+    EXPLANATION: Single-Source Data Path (Cleaned Up)
+    Previously this function fetched from both 'price_logs' (active) AND 'query_logs'
+    (legacy) tables, then merged them. This doubled query cost and added complexity.
+    Now uses ONLY 'price_logs' with a 90-day time window instead of a hardcoded
+    limit(5000), providing predictable scaling as data grows.
     """
     # Currency Alias
     if currency:
@@ -510,40 +518,20 @@ async def get_market_intelligence_data(
     if not hotels:
         return {"summary": {}, "hotels": []}
 
-    # Unified Price History (Bridging 1,357 Legacy Records)
-    # 1. Fetch from price_logs
+    # EXPLANATION: Time-Windowed Price Fetching (replaces limit(5000))
+    # A 90-day rolling window is more predictable than a fixed row count.
+    # As data grows, limit(5000) would either miss data or cause memory spikes.
+    # The time window scales linearly with calendar time, not data volume.
+    from datetime import datetime, timedelta
+    cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
+    
     price_logs_res = db.table("price_logs") \
         .select("*") \
         .in_("hotel_id", [str(h["id"]) for h in hotels]) \
+        .gte("recorded_at", cutoff_date) \
         .order("recorded_at", desc=True) \
-        .limit(5000) \
         .execute()
     logs_data = price_logs_res.data or []
-    
-    # 2. Fetch from query_logs (Fallback for historical depth)
-    hotel_names = [h["name"] for h in hotels]
-    query_logs_res = db.table("query_logs") \
-        .select("hotel_name, action_type, price, currency, created_at, vendor") \
-        .in_("hotel_name", hotel_names) \
-        .in_("action_type", ["monitor", "search"]) \
-        .not_.is_("price", "null") \
-        .order("created_at", desc=True) \
-        .limit(5000) \
-        .execute()
-    
-    # Normalize query_logs to match price_logs schema for the aggregator
-    for q_log in (query_logs_res.data or []):
-        hid = next((str(h["id"]) for h in hotels if h["name"] == q_log["hotel_name"]), None)
-        if hid:
-            logs_data.append({
-                "hotel_id": hid,
-                "price": q_log["price"],
-                "currency": q_log["currency"] or "TRY",
-                "recorded_at": q_log["created_at"],
-                "vendor": q_log["vendor"] or "SerpApi",
-                "check_in_date": q_log["created_at"].split('T')[0], # Fallback date
-                "source": "legacy_query_log"
-            })
     
     # Group logs by hotel_id
     hotel_prices_map = {}

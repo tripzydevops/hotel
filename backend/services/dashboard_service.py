@@ -2,6 +2,10 @@
 Dashboard Service.
 Aggregates hotel data, pricing history, alerts, and scan status for the user cockpit.
 """
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
@@ -84,7 +88,9 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         hotel_names = [h["name"] for h in hotels]
         hotel_prices_map = {}
         try:
-            # Fetch latest from price_logs (Rich format)
+            # EXPLANATION: Single-Source Price Fetch (Legacy Cleanup)
+            # Previously also fetched from 'query_logs' (legacy audit table) for
+            # historical depth. Now uses only 'price_logs' as the canonical source.
             all_prices_res = db.table("price_logs") \
                 .select("*") \
                 .in_("hotel_id", hotel_ids) \
@@ -98,40 +104,8 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                     hotel_prices_map[hid] = []
                 if len(hotel_prices_map[hid]) < 10:
                     hotel_prices_map[hid].append(p)
-            
-            # EXPLANATION: Data Continuity Fallback (Legacy ↔ New Bridge)
-            # Why: In early 2026, we migrated from a simple audit log ('query_logs') 
-            # to a structured pricing table ('price_logs'). New hotels might only have 
-            # 1 or 2 entries in 'price_logs', causing Trend charts to show "N/A".
-            # How: We query 'query_logs' (where 1,357 historical records were found) 
-            # and map them back to the hotel using name-matching. This bridges years
-            # of legacy data into the modern trend analysis engine.
-            q_logs_res = db.table("query_logs") \
-                .select("hotel_name, price, currency, created_at, vendor") \
-                .in_("hotel_name", hotel_names) \
-                .in_("action_type", ["monitor", "search"]) \
-                .not_.is_("price", "null") \
-                .order("created_at", desc=True) \
-                .limit(200) \
-                .execute()
-            
-            for qp in (q_logs_res.data or []):
-                hid = next((str(h["id"]) for h in hotels if h["name"] == qp["hotel_name"]), None)
-                if hid and (hid not in hotel_prices_map or len(hotel_prices_map[hid]) < 10):
-                    if hid not in hotel_prices_map: hotel_prices_map[hid] = []
-                    # Append unique records by timestamp approx
-                    timestamps = [str(l.get("recorded_at")) for l in hotel_prices_map[hid]]
-                    if str(qp["created_at"]) not in timestamps:
-                        hotel_prices_map[hid].append({
-                            "hotel_id": hid,
-                            "price": qp["price"],
-                            "currency": qp["currency"] or "TRY",
-                            "recorded_at": qp["created_at"],
-                            "vendor": qp["vendor"] or "SerpApi",
-                            "source": "legacy_query_log"
-                        })
         except Exception as e:
-            print(f"Dashboard: Batch price fetch failed: {e}")
+            logger.error(f"Batch price fetch failed: {e}")
 
         target_hotel = None
         competitors = []
@@ -173,7 +147,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                         "search_rank": current_price_log.get("search_rank")
                     }
                 except Exception as e:
-                    print(f"Dashboard: Error building price_info for {hotel.get('name')}: {e}")
+                    logger.warning(f"Error building price_info for {hotel.get('name')}: {e}")
 
             valid_history = []
             for p in prices:
@@ -261,7 +235,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         }
 
     except Exception as e:
-        print(f"CRITICAL DASHBOARD ERROR: {e}")
+        logger.critical(f"DASHBOARD ERROR: {e}")
         raise HTTPException(status_code=500, detail=f"Dashboard Processing Failure: {str(e)}")
 
 
@@ -318,5 +292,5 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
         _RECENT_WINS_CACHE = {"data": wins, "timestamp": time.time()}
         return wins
     except Exception as e:
-        print(f"Dashboard Service: get_recent_wins failure: {e}")
+        logger.error(f"get_recent_wins failure: {e}")
         return []

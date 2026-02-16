@@ -2,6 +2,10 @@
 Monitor Service.
 Orchestrates the asynchronous background AI Agent-Mesh for price monitoring.
 """
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 import os
 import traceback
@@ -80,7 +84,7 @@ async def trigger_monitor_logic(
                  return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0, errors=[f"MONTHLY_LIMIT_REACHED ({monthly_total_limit})"])
             
     except Exception as e:
-        print(f"Monitor: Limit check exception: {e}")
+        logger.error(f"Limit check exception: {e}")
 
     # 2. DEFAULT DATES NORMALIZATION
     check_in = options.check_in if options and options.check_in else None
@@ -118,7 +122,7 @@ async def trigger_monitor_logic(
         if session_result.data:
             session_id = session_result.data[0]["id"]
     except Exception as e:
-        print(f"Monitor: Session creation failed: {e}")
+        logger.error(f"Session creation failed: {e}")
 
     # Normalized Options for Background task
     normalized_options = ScanOptions(
@@ -171,11 +175,11 @@ async def run_monitor_background(
         except Exception: pass
 
         # 3. Phase 1: Scraper Agent
-        print(f"[MissionControl] Starting ScraperAgent for {len(hotels)} hotels...")
+        logger.info(f"Starting ScraperAgent for {len(hotels)} hotels...")
         scraper_results = await scraper.run_scan(user_id, hotels, options, session_id)
 
         # 4. Phase 2: Analyst Agent
-        print("[MissionControl] Starting AnalystAgent...")
+        logger.info("Starting AnalystAgent...")
         analysis = await analyst.analyze_results(user_id, scraper_results, threshold, options=options, session_id=session_id)
 
         # 4.5 Room Type Cataloging
@@ -183,7 +187,7 @@ async def run_monitor_background(
             from backend.services.room_type_service import update_room_type_catalog
             await update_room_type_catalog(db, scraper_results, hotels)
         except Exception as e:
-            print(f"[MissionControl] Room Catalog failure: {e}")
+            logger.warning(f"Room Catalog failure: {e}")
 
         # 5. Phase 3: Notifier Agent
         if analysis.get("alerts"):
@@ -194,7 +198,7 @@ async def run_monitor_background(
                     hotel_name_map = {h["id"]: h["name"] for h in hotels}
                     await notifier.dispatch_alerts(analysis["alerts"], settings, hotel_name_map)
             except Exception as e:
-                print(f"[MissionControl] Notifier failure: {e}")
+                logger.warning(f"Notifier failure: {e}")
 
         # 6. Finalize Session
         final_status = "completed"
@@ -208,7 +212,7 @@ async def run_monitor_background(
             }).eq("id", str(session_id)).execute()
 
     except Exception as e:
-        print(f"[MissionControl] CRITICAL SYSTEM FAILURE: {e}")
+        logger.critical(f"SYSTEM FAILURE: {e}")
         traceback.print_exc()
         if session_id:
             try:
@@ -223,12 +227,12 @@ async def run_scheduler_check_logic():
     Internal logic to check all users for due scans and trigger them.
     Ported from main.py for modularity.
     """
-    print(f"[{datetime.now()}] CRON: Starting scheduler check...")
+    logger.info(f"CRON: Starting scheduler check...")
     from backend.utils.db import get_supabase
     try:
         supabase = get_supabase()
         if not supabase:
-            print("CRON Error: Database unavailable")
+            logger.error("CRON: Database unavailable")
             return
 
         # 1. Get all active users with schedules due
@@ -239,7 +243,7 @@ async def run_scheduler_check_logic():
             .execute()
         
         due_users = result.data or []
-        print(f"[{datetime.now()}] CRON: Found {len(due_users)} users due for scan.")
+        logger.info(f"CRON: Found {len(due_users)} users due for scan.")
         
         if not due_users:
             return
@@ -260,7 +264,7 @@ async def run_scheduler_check_logic():
         for user in due_users:
             try:
                 user_id = user['id']
-                print(f" - Processing user {user_id}...")
+                logger.info(f"Processing user {user_id}...")
 
                 # 2. Update next_scan_at immediately (Locking mechanism)
                 freq = user.get("scan_frequency_minutes") or 1440 
@@ -282,11 +286,11 @@ async def run_scheduler_check_logic():
                         session_id=None
                     )
                 
-                print(f" - Batch trigger completed for user {user_id}")
+                logger.info(f"Batch trigger completed for user {user_id}")
                 
             except Exception as u_e:
-                print(f" - Error processing user {user.get('id')}: {u_e}")
+                logger.error(f"Error processing user {user.get('id')}: {u_e}")
                 
     except Exception as e:
-        print(f"CRON ERROR: {e}")
+        logger.critical(f"CRON ERROR: {e}")
         traceback.print_exc()

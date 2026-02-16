@@ -7,6 +7,10 @@ Features:
 - Rate limiting awareness
 - Connection pooling
 """
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 import os
 import httpx
@@ -106,15 +110,15 @@ class ApiKeyManager:
                     exhaust_time = self._exhausted_keys[next_key]
                     if datetime.now() - exhaust_time > self._exhaustion_cooldown:
                         del self._exhausted_keys[next_key]
-                        print(f"[SerpApi] Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)")
+                        logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)")
                         return True
                 else:
-                    print(f"[SerpApi] Rotated to key {self._current_index + 1}/{len(self._keys)}")
+                    logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)}")
                     return True
                 
                 attempts += 1
             
-            print("[SerpApi] WARNING: All API keys are exhausted!")
+            logger.warning("All API keys are exhausted!")
             return False
     
     def reset_all(self):
@@ -122,7 +126,7 @@ class ApiKeyManager:
         with self._lock:
             self._exhausted_keys.clear()
             self._current_index = 0
-            print("[SerpApi] All keys reset to active status")
+            logger.info("All keys reset to active status")
     
     def reload_keys(self, new_keys: List[str]):
         """Reload API keys."""
@@ -130,7 +134,7 @@ class ApiKeyManager:
             self._keys = new_keys or []
             self._current_index = 0
             self._exhausted_keys.clear()
-            print(f"[SerpApi] Reloaded keys. Total: {len(self._keys)}")
+            logger.info(f"Reloaded keys. Total: {len(self._keys)}")
     
     def get_detailed_status(self) -> Dict[str, Any]:
         """Get detailed status including per-key usage."""
@@ -186,10 +190,10 @@ class SerpApiClient:
     def __init__(self, api_keys: Optional[List[str]] = None):
         keys = api_keys or load_api_keys()
         if not keys:
-            print("[SerpApi] WARNING: No API keys found in environment.")
+            logger.warning("No API keys found in environment.")
         
         self._key_manager = ApiKeyManager(keys)
-        print(f"[SerpApi] Initialized with {self._key_manager.total_keys} API key(s)")
+        logger.info(f"Initialized with {self._key_manager.total_keys} API key(s)")
 
     def reload(self):
         """Force reload keys from environment."""
@@ -362,7 +366,7 @@ class SerpApiClient:
                     page_count += 1
                     
             except Exception as e:
-                print(f"[SerpApi] Search Error: {e}")
+                logger.error(f"Search Error: {e}")
                 break
                 
         return all_results[:limit]
@@ -386,12 +390,12 @@ class SerpApiClient:
                         params["api_key"] = self.api_key
                         response = await client.get(SERPAPI_BASE_URL, params=params)
                     else: 
-                        print("[SerpApi] CRITICAL: All API keys exhausted (429)")
+                        logger.critical("All API keys exhausted (429)")
                         return {"error": "quota_exhausted", "status": "error"}
                 response.raise_for_status()
                 return self._parse_hotel_result(response.json(), hotel_name, currency, serp_api_id)
         except Exception as e:
-            print(f"[SerpApi] Error fetching {hotel_name}: {e}")
+            logger.error(f"Error fetching {hotel_name}: {e}")
             return None
 
     def _parse_hotel_result(self, data: Dict[str, Any], target_hotel: str, default_currency: str = "USD", 

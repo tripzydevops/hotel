@@ -100,6 +100,7 @@ async def get_sentiment_history(
     Used for the 6-month trend chart on the Sentiment Analysis page.
     """
     from backend.utils.sentiment_utils import normalize_sentiment
+    from backend.utils.logger import get_logger
     
     try:
         # Fetch history records
@@ -125,5 +126,5 @@ async def get_sentiment_history(
             
         return {"history": history}
     except Exception as e:
-        print(f"[AnalysisRoutes] Sentiment history fetch failed: {e}")
+        get_logger(__name__).error(f"Sentiment history fetch failed: {e}")
         return []

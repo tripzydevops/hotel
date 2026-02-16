@@ -2,6 +2,10 @@
 Authentication and Authorization Service.
 Handles role-based access control (RBAC) and user session verification.
 """
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 import traceback
 from fastapi import Request, HTTPException, Depends
@@ -47,16 +51,16 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
             if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
                 return user_obj
         except Exception as db_e:
-            print(f"Admin RBAC Error for {email}: {db_e}")
+            logger.error(f"Admin RBAC Error for {email}: {db_e}")
             pass
             
-        print(f"Access Denied: User {email} attempted admin access without sufficient role.")
+        logger.warning(f"Access Denied: User {email} attempted admin access without sufficient role.")
         raise HTTPException(status_code=403, detail="Admin Access Required")
         
     except HTTPException as he:
         raise he
     except Exception as e:
-        print(f"Admin Auth CRITICAL: {e}")
+        logger.critical(f"Admin Auth CRITICAL: {e}")
         raise HTTPException(status_code=401, detail=f"Auth Critical Failure: {str(e)}")
 
 async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
@@ -102,7 +106,7 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
                     status = res2.data.get("subscription_status")
         except Exception:
             # If DB check fails, we default to pending/safe state but DON'T crash 500
-            print(f"Auth Warning: Could not verify status for {user_id}")
+            logger.warning(f"Could not verify status for {user_id}")
 
         if status in ["suspended", "rejected"]:
             raise HTTPException(status_code=403, detail="Account Suspended/Rejected")
@@ -112,5 +116,5 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
     except HTTPException as he:
         raise he
     except Exception as e:
-        print(f"Auth Critical: {traceback.format_exc()}")
+        logger.critical(f"Auth Critical: {traceback.format_exc()}")
         raise HTTPException(status_code=401, detail="Authentication Failed")
