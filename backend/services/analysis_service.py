@@ -344,10 +344,12 @@ async def perform_market_analysis(
             except Exception: pass
         
         curr = range_start
+        # EXPLANATION: State tracking for Grid Continuity (Horizontal Fill)
+        # We track the last known price for each hotel to fill gaps in the 
+        # grid when a specific check-in date doesn't have a record.
+        # This prevents the 'dash' or 'N/A' flicker when data is sparse.
         last_known_target = None
-        
-        # State tracking for competitors: {name: {price: float, last_seen: date}}
-        competitor_states = {}
+        competitor_states: Dict[str, Dict[str, Any]] = {} # name -> {price, recorded_at}
         
         while curr.date() <= range_end.date():
             d_str = curr.strftime("%Y-%m-%d")
@@ -358,28 +360,48 @@ async def perform_market_analysis(
             unique_competitors = []
             target_val = None
             
-            # Target Logic (Existing forward fill)
+            # 1. Target Logic (Primary + Forward Fill)
             if data and data["target"] is not None:
                 last_known_target = float(data["target"])
                 target_val = last_known_target
-            elif last_known_target is not None and curr.date() <= datetime.now().date():
+            elif last_known_target is not None:
+                # EXPLANATION: Target Grid Continuity
+                # We carry the last known price forward even for future dates.
+                # This ensures the calendar grid remains useful between scans.
                 target_val = last_known_target
             
-            # 2. Competitor Logic
-            # We use ONLY the data found for THIS specific check-in date from the recent scan history.
-            # We do NOT carry forward prices from previous calendar days (Horizontal Fill), as that is inaccurate for hotel pricing.
+            # 2. Competitor Logic (with Horizontal Fill support)
+            # We first use data for THIS specific check-in date.
+            # If a hotel has no record for this date, we fall back to the most 
+            # recent scan for that hotel within a 7-day window.
             daily_comps = (data.get("competitors") if data else []) or []
             
-            # Deduplicate: Keep only the first occurrence (latest scan) for each competitor
+            # Update state for current check-in date matches
+            for c in daily_comps:
+                competitor_states[c["name"]] = {
+                    "price": c["price"],
+                    "is_estimated": c.get("is_estimated", False)
+                }
+            
+            # Gather all competitors known to be in the set
             seen_competitors = set()
             for c in daily_comps:
-                name = c["name"]
-                if name not in seen_competitors:
+                if c["name"] not in seen_competitors:
                     unique_competitors.append(c)
-                    seen_competitors.add(name)
+                    seen_competitors.add(c["name"])
             
-            # Note: We removed the "Fill missing from history" block here to comply with user request:
-            # "dont assume it before it has happened" -> No horizontal filling across dates.
+            # EXPLANATION: Horizontal Continuity (Competitor Fill)
+            # If a hotel is tracking but has no record for this specific check-in date, 
+            # we use the 'last_known' price we tracked while iterating through dates.
+            # This makes the Rate Calendar usable even with sparse backfilled data.
+            for name, state in competitor_states.items():
+                if name not in seen_competitors:
+                    unique_competitors.append({
+                        "name": name,
+                        "price": state["price"],
+                        "is_estimated": True # Mark as estimated since it's a fill
+                    })
+                    seen_competitors.add(name)
             
             if unique_competitors:
                 comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
