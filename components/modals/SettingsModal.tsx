@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   X,
   Settings as SettingsIcon,
@@ -29,7 +29,7 @@ export default function SettingsModal({
     settings?.threshold_percent || 2.0,
   );
   const [frequency, setFrequency] = useState(
-    settings?.check_frequency_minutes ?? 0, // Default Manual Only if not set
+    settings?.check_frequency_minutes ?? 0,
   );
   const [email, setEmail] = useState(settings?.notification_email || "");
   const [enabled, setEnabled] = useState(
@@ -39,6 +39,17 @@ export default function SettingsModal({
   const [pushEnabled, setPushEnabled] = useState(
     settings?.push_enabled ?? false,
   );
+
+  // Sync state with props when settings load
+  React.useEffect(() => {
+    if (settings) {
+      setThreshold(settings.threshold_percent || 2.0);
+      setFrequency(settings.check_frequency_minutes ?? 0);
+      setEmail(settings.notification_email || "");
+      setEnabled(settings.notifications_enabled ?? true);
+      setPushEnabled(settings.push_enabled ?? false);
+    }
+  }, [settings]);
 
   const urlBase64ToUint8Array = (base64String: string) => {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);

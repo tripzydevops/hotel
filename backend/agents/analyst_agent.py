@@ -127,10 +127,27 @@ class AnalystAgent:
                             current_price = last_valid["price"]
                             currency = last_valid["currency"]
                             is_estimated = True # Mark as estimated
-                            reasoning_log.append(f"[Continuity] Found historical price: {current_price} {currency} from {last_valid['recorded_at']}")
+                            reasoning_log.append(f"[Continuity] Found historical price for SAME date: {current_price} {currency} from {last_valid['recorded_at']}")
                         else:
-                            current_price = 0.0 # Explicitly set to 0 to indicate failure
-                            reasoning_log.append(f"[Continuity] No history found within 7 days. recording as Verification Failed.")
+                            # [FALLBACK LEVEL 2] Look for ANY recent price for this hotel (ignoring check-in date)
+                            # This covers the "Check-In Date Rolling" scenario
+                            history_any_res = self.db.table("price_logs") \
+                                .select("price, currency, recorded_at, check_in_date") \
+                                .eq("hotel_id", hotel_id) \
+                                .gt("recorded_at", cutoff) \
+                                .order("recorded_at", desc=True) \
+                                .limit(1) \
+                                .execute()
+
+                            if history_any_res.data:
+                                last_any = history_any_res.data[0]
+                                current_price = last_any["price"]
+                                currency = last_any["currency"]
+                                is_estimated = True
+                                reasoning_log.append(f"[Continuity] Found recent price for different date ({last_any.get('check_in_date')}): {current_price} {currency}")
+                            else:
+                                current_price = 0.0 # Explicitly set to 0 to indicate failure
+                                reasoning_log.append(f"[Continuity] No history found within 7 days. recording as Verification Failed.")
                     except Exception as e:
                         print(f"[AnalystAgent] Continuity lookup failed: {e}")
 
