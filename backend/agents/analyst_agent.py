@@ -171,7 +171,7 @@ class AnalystAgent:
                     "search_rank": price_data.get("search_rank"),
                     "parity_offers": price_data.get("offers", []),
                     "room_types": price_data.get("room_types", []),
-                    #"is_estimated": is_estimated, # Column missing in some environments
+                    "is_estimated": is_estimated,
                     "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id")
                 })
                 analysis_summary["prices_updated"] += 1

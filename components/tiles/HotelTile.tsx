@@ -9,6 +9,7 @@ import {
   Edit2,
   Hotel as HotelIcon,
   Tag,
+  AlertTriangle,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
@@ -52,6 +53,7 @@ export interface HotelTileProps {
   headerBadges?: ReactNode;
   footerStats?: boolean;
   priority?: boolean;
+  isEstimated?: boolean;
 }
 
 export default function HotelTile(props: HotelTileProps) {
@@ -216,6 +218,14 @@ export default function HotelTile(props: HotelTileProps) {
               {rating && (
                 <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded-full flex items-center gap-1 border border-white/5">
                   ★ {rating.toFixed(1)}
+                </span>
+              )}
+
+              {/* Estimated Tag */}
+              {props.isEstimated && (
+                <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 flex items-center gap-1 animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  {t("common.estimated") || "ESTIMATED"}
                 </span>
               )}
 

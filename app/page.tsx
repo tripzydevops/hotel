@@ -335,6 +335,7 @@ export default function Dashboard() {
                       amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
                       offers={data.target_hotel.price_info?.offers}
+                      isEstimated={data.target_hotel.price_info?.is_estimated}
                     />
                   </motion.div>
                 )}
@@ -387,6 +388,7 @@ export default function Dashboard() {
                             priceHistory={competitor.price_history}
                             checkIn={competitor.price_info?.check_in}
                             adults={competitor.price_info?.adults}
+                            isEstimated={competitor.price_info?.is_estimated}
                             onEdit={(id) => handleEditHotel(id, data)}
                             onViewDetails={(hotel) =>
                               handleOpenDetails(hotel, data)

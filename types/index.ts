@@ -57,6 +57,7 @@ export interface PriceInfo {
   adults?: number;
   offers?: { vendor?: string; price?: number }[];
   room_types?: { name?: string; price?: number; currency?: string }[];
+  is_estimated?: boolean;
 }
 
 export interface PricePoint {
