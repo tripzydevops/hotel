@@ -46,7 +46,7 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
   internet: "Internet",
   wifi: "Wi-Fi",
   otopark: "Parking",
-  güyenlik: "Security",
+  güvenlik: "Security",
   // Expanded translations for Ramada & others
   dining: "Dining",
   restoran: "Restaurant",
@@ -70,6 +70,8 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
   ucuz: "Affordable",
   pahalı: "Expensive",
   ekonomik: "Economy",
+  para: "Money",
+  maliyet: "Cost",
 };
 
 // Dynamically import heavy analytics components to improve initial page performance
@@ -839,6 +841,7 @@ export default function SentimentPage() {
                         ? s.neutral
                         : Math.round(((5 - rating) / 5) * total * 0.8),
                     serpapi_link: s.serpapi_link,
+                    description: s.description || s.summary,
                   };
                 }) || []
               }

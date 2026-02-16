@@ -87,13 +87,23 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
               </div>
 
               {/* Minimalist Progress Bar */}
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-3">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${posPercent}%` }}
                   className="h-full bg-white/20 group-hover:bg-[var(--soft-gold)]/30 transition-colors"
                 />
               </div>
+
+              {/* Review Snippet / Comment */}
+              {item.description && (
+                <div className="flex items-start gap-2 py-2 px-3 bg-white/[0.02] border border-white/5 rounded-lg group-hover:bg-white/[0.04] transition-colors">
+                  <MessageSquare className="w-3 h-3 text-[var(--soft-gold)] opacity-40 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
+                    {item.description}
+                  </p>
+                </div>
+              )}
             </motion.div>
           );
         })}

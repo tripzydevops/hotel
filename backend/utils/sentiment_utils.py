@@ -24,7 +24,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed"],
         "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek"],
         "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife"],
-        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı"]
+        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality"]
     }
 
     found_pillars = set()

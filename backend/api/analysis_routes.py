@@ -212,7 +212,7 @@ async def get_sentiment_history(
                 "breakdown": normalized
             })
             
-        return history
+        return {"history": history}
     except Exception as e:
         print(f"[AnalysisRoutes] Sentiment history fetch failed: {e}")
         return []

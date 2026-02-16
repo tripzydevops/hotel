@@ -41,21 +41,22 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
 
     const negMentions =
       hotel.guest_mentions?.filter((m) => m.sentiment === "negative") || [];
-    negMentions.slice(0, 2).forEach((m) => {
-      const existing = weaknesses.find((w) =>
-        w.category.toLowerCase().includes(m.keyword?.toLowerCase() || ""),
-      );
-      if (existing) {
-        existing.keyword = m.keyword;
-        existing.count = m.count;
-      } else {
-        weaknesses.push({
-          category: "Service Issue",
-          rating: 0,
-          keyword: m.keyword || m.text,
-          count: m.count,
-        });
-      }
+    negMentions.slice(0, 3).forEach((m) => {
+      const keyword = (m.keyword || m.text || "").toLowerCase();
+      
+      // Determine category based on keyword
+      let category = "Problem Area";
+      if (["temizlik", "banyo", "oda", "hijyen", "uyku", "yatak"].some(k => keyword.includes(k))) category = "Cleanliness Issue";
+      else if (["hizmet", "personel", "ilgi", "reception", "kahvaltı", "servis"].some(k => keyword.includes(k))) category = "Service Issue";
+      else if (["konum", "market", "yer", "ulaşım"].some(k => keyword.includes(k))) category = "Location Issue";
+      else if (["fiyat", "pahalı", "değer", "kalite", "maliyet"].some(k => keyword.includes(k))) category = "Value Issue";
+
+      weaknesses.push({
+        category: category,
+        rating: 0,
+        keyword: m.keyword || m.text,
+        count: m.count,
+      });
     });
 
     return weaknesses
