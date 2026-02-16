@@ -21,9 +21,9 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     # Keyword Mapping (Expanded Turkish set)
     # Using substring matching for flexibility
     mappings = {
-        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed"],
-        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek"],
-        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife"],
+        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed", "mülk", "property", "tesis", "facility", "konfor", "comfort", "klima", "air conditioning"],
+        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek", "restoran", "restaurant", "food", "yiyecek", "içecek", "bar", "atmosfer", "atmosphere", "kablosuz", "wifi", "internet", "sağlıklı yaşam", "spa", "wellness", "pool", "havuz"],
+        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife", "otopark", "parking", "transport"],
         "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality"]
     }
 
@@ -47,17 +47,18 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
                 mapped = True
                 break
     
-    # Format for UI
+    # Format for UI - Always return all 4 pillars
     result = []
-    for name, stats in pillars.items():
-        if name in found_pillars:
-            result.append({
-                "name": name,
-                "positive": stats["positive"],
-                "negative": stats["negative"],
-                "neutral": stats["neutral"],
-                "total_mentioned": stats["total"]
-            })
+    # Force order: Cleanliness, Service, Location, Value
+    for name in ["Cleanliness", "Service", "Location", "Value"]:
+        stats = pillars[name]
+        result.append({
+            "name": name,
+            "positive": stats["positive"],
+            "negative": stats["negative"],
+            "neutral": stats["neutral"],
+            "total_mentioned": stats["total"]
+        })
     
     return result
 
