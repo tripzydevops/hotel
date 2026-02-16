@@ -36,7 +36,7 @@ async def verify_fix():
     )
     
     # Verification assertions
-    expected_fields = ["market_min", "market_max", "market_average", "min_hotel", "max_hotel", "market_rank"]
+    expected_fields = ["market_min", "market_max", "market_average", "min_hotel", "max_hotel", "market_rank", "competitive_rank", "total_hotels"]
     missing = [f for f in expected_fields if f not in result]
     
     if missing:
@@ -46,6 +46,14 @@ async def verify_fix():
     # Check Values
     # Prices: 100, 80, 120
     # Min: 80, Max: 120, Avg: 100
+    
+    if result["total_hotels"] != 3:
+        print(f"FAILED: total_hotels is {result['total_hotels']}, expected 3")
+        sys.exit(1)
+
+    if result["competitive_rank"] != 2:
+        print(f"FAILED: competitive_rank is {result['competitive_rank']}, expected 2")
+        sys.exit(1)
     
     if result["market_min"] != 80:
         print(f"FAILED: market_min is {result['market_min']}, expected 80")

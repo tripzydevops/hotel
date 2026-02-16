@@ -462,6 +462,8 @@ async def perform_market_analysis(
         "min_hotel": min_hotel,
         "max_hotel": max_hotel,
         "market_rank": market_rank,
+        "competitive_rank": market_rank, # Frontend Alias
+        "total_hotels": len(price_rank_list),
         "target_price": round(float(target_price), 2) if target_price is not None else None,
         "ari": round(float(ari), 1) if ari is not None else None,
         "sentiment_index": round(float(sent_index), 1) if sent_index is not None else None,
