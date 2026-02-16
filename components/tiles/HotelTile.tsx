@@ -225,7 +225,7 @@ export default function HotelTile(props: HotelTileProps) {
               {props.isEstimated && (
                 <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 flex items-center gap-1 animate-pulse">
                   <AlertTriangle className="w-3 h-3" />
-                  {t("common.estimated") || "ESTIMATED"}
+                  {t("common.estimated") || "ESTIMATED / SOLD OUT"}
                 </span>
               )}
 

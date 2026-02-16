@@ -38,6 +38,7 @@ export const en = {
       "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
     close: "Close",
     errorTitle: "Error",
+    estimated: "ESTIMATED / SOLD OUT",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",

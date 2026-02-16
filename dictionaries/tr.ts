@@ -38,6 +38,7 @@ export const tr = {
       "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
     close: "Kapat",
     errorTitle: "Hata",
+    estimated: "TAHMİNİ / YER YOK",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
