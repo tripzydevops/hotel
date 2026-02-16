@@ -17,8 +17,22 @@ def run_migration():
     try:
         supabase: Client = create_client(url, key)
         
-        # Read SQL from stdin (piped content)
-        sql_content = sys.stdin.read()
+        # Determine source of SQL
+        if len(sys.argv) > 1:
+            # Read from file argument
+            file_path = sys.argv[1]
+            if not os.path.exists(file_path):
+                print(f"Error: File not found: {file_path}")
+                sys.exit(1)
+            with open(file_path, 'r') as f:
+                sql_content = f.read()
+            print(f"Reading SQL from file: {file_path}")
+        else:
+            # Read SQL from stdin (piped content)
+            if sys.stdin.isatty():
+                print("Usage: python3 run_migration.py <file.sql> OR cat file.sql | python3 run_migration.py")
+                return
+            sql_content = sys.stdin.read()
         
         if not sql_content.strip():
             print("No SQL content provided.")

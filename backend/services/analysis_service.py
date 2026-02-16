@@ -439,10 +439,29 @@ async def perform_market_analysis(
 
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
     
+    # EXPLANATION: Calculate Market Min/Max/Avg
+    # We calculate these statistics on the fly from the current price list 
+    # to ensure the dashboard reflects the real-time slice of data.
+    market_min = min(current_prices) if current_prices else None
+    market_max = max(current_prices) if current_prices else None
+    
+    # Find Min/Max Hotels
+    min_hotel = next((p for p in price_rank_list if p["price"] == market_min), None) if market_min is not None else None
+    max_hotel = next((p for p in price_rank_list if p["price"] == market_max), None) if market_max is not None else None
+
+    # Calculate Market Rank
+    market_rank = next((p["rank"] for p in price_rank_list if p["id"] == target_hotel_id), None)
+
     return {
         "hotel_id": target_hotel_id,
         "hotel_name": target_hotel_name,
         "market_avg": round(float(market_avg), 2),
+        "market_average": round(float(market_avg), 2), # Frontend Alias
+        "market_min": round(float(market_min), 2) if market_min is not None else None,
+        "market_max": round(float(market_max), 2) if market_max is not None else None,
+        "min_hotel": min_hotel,
+        "max_hotel": max_hotel,
+        "market_rank": market_rank,
         "target_price": round(float(target_price), 2) if target_price is not None else None,
         "ari": round(float(ari), 1) if ari is not None else None,
         "sentiment_index": round(float(sent_index), 1) if sent_index is not None else None,
