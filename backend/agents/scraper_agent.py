@@ -6,7 +6,9 @@ from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
 from backend.services.provider_factory import ProviderFactory
+from backend.services.provider_factory import ProviderFactory
 from backend.utils.helpers import log_query
+from backend.utils.room_normalizer import RoomTypeNormalizer
 
 class ScraperAgent:
     """
@@ -147,14 +149,16 @@ class ScraperAgent:
 
                     adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
                 
-                    # Fallback: Auto-generate dates if not provided (for scheduled scans)
+                    # Fallback: Auto-generate dates if not provided
                     if not check_in or not check_out:
                         from datetime import timedelta
                         today = date.today()
-                        check_in = today + timedelta(days=1)  # Tomorrow
-                        check_out = today + timedelta(days=2)  # Day after tomorrow
+                        check_in = today + timedelta(days=1)
+                        check_out = today + timedelta(days=2)
                         await self.log_reasoning(session_id, "Date Generation", f"Auto-generated dates for {hotel_name}: {check_in} to {check_out}", "info", {"check_in": str(check_in), "check_out": str(check_out)})
                     
+                    price_data = None
+                    try:
                         # 1. Check Global Pulse Cache first
                         price_data = await self._check_global_cache(serp_api_id, check_in)
                         
@@ -176,6 +180,23 @@ class ScraperAgent:
                             )
                     except Exception as e:
                         await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {e}", "error", {"error_message": str(e)})
+                    
+                    # [NEW] Normalize Room Types if present
+                    if price_data and price_data.get("room_types"):
+                        normalized_rooms = []
+                        for room in price_data["room_types"]:
+                            # Expected format from provider: {"name": "...", "price": ..., "currency": ...}
+                            raw_name = room.get("name") or "Unknown"
+                            norm_res = RoomTypeNormalizer.normalize(raw_name)
+                            
+                            # Enriched room object
+                            room["canonical_code"] = norm_res["canonical_code"]
+                            room["canonical_name"] = norm_res["canonical_name"]
+                            normalized_rooms.append(room)
+                        
+                        price_data["room_types"] = normalized_rooms
+                        # Also normalize offers/parity_offers if they have room names? 
+                        # Providers usually put specific room names in 'room_types' array.
                     
                     status = "success" if price_data else "not_found"
                     if price_data and price_data.get("status") == "error":

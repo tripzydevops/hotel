@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
@@ -7,6 +7,7 @@ from backend.models.schemas import ScanOptions
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
+from backend.agents.notifier_agent import NotifierAgent
 
 class AnalystAgent:
     """
@@ -147,10 +148,23 @@ class AnalystAgent:
                     "search_rank": price_data.get("search_rank"),
                     "parity_offers": price_data.get("offers", []),
                     "room_types": price_data.get("room_types", []),
-                    "is_estimated": is_estimated,
+                    #"is_estimated": is_estimated, # Column missing in some environments
                     "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id")
                 })
                 analysis_summary["prices_updated"] += 1
+
+                # [Global Pulse] Phase 2: Pulse alerts to other users
+                if current_price and current_price > 0: # and not is_estimated:
+                    serp_api_id = price_data.get("property_token") or price_data.get("serp_api_id")
+                    if serp_api_id:
+                        asyncio.create_task(self._pulse_global_alerts(
+                            initiator_user_id=user_id,
+                            serp_api_id=serp_api_id,
+                            hotel_id=hotel_id,
+                            hotel_name=res.get("hotel_name", "Hotel"),
+                            current_price=current_price,
+                            currency=currency
+                        ))
                 
                 # Prepare Metadata Update
                 vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
@@ -161,7 +175,7 @@ class AnalystAgent:
                 }
                 if current_price and current_price > 0:
                     meta_update["current_price"] = current_price
-                    meta_update["currency"] = currency
+                    # meta_update["currency"] = currency # Column check
                 
                 # Extract rich fields
                 for field in ["rating", "property_token", "image_url", "reviews_breakdown", "latitude", "longitude"]:
@@ -175,9 +189,9 @@ class AnalystAgent:
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
                 # sentiment data changes. This ensures the frontend doesn't trust
                 # old AI embeddings if they haven't been regenerated yet.
-                sentiment_changed = "sentiment_breakdown" in meta_update
-                if sentiment_changed:
-                    meta_update["embedding_status"] = "stale"
+                # sentiment_changed = "sentiment_breakdown" in meta_update
+                # if sentiment_changed:
+                #    meta_update["embedding_status"] = "stale"
                 
                 # Update Hotel Metadata
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
@@ -227,7 +241,7 @@ class AnalystAgent:
                             alert_data = {
                                 "user_id": str(user_id),
                                 "hotel_id": hotel_id,
-                                "currency": currency,
+                                # "currency": currency, # Column missing in some environments
                                 **alert
                             }
                             analysis_summary["alerts"].append(alert_data)
@@ -299,6 +313,105 @@ class AnalystAgent:
     def _get_hotels(self, user_id: UUID):
         res = self.db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         return res.data or []
+
+    async def _pulse_global_alerts(
+        self,
+        initiator_user_id: UUID,
+        serp_api_id: str,
+        hotel_id: str,
+        hotel_name: str,
+        current_price: float,
+        currency: str
+    ):
+        """
+        Broadcasting Logic (Phase 2):
+        Finds all other users tracking this hotel and alerts them if the price dropped significantly.
+        """
+        print(f"[GlobalPulse] Pulsing alert for {serp_api_id} at {current_price} {currency}...")
+        try:
+            # 1. Find all users tracking this hotel (excluding the initiator)
+            # We join hotels with settings to get thresholds in one go
+            rivals_res = self.db.table("hotels") \
+                .select("user_id, id, name") \
+                .eq("serp_api_id", serp_api_id) \
+                .neq("user_id", str(initiator_user_id)) \
+                .execute()
+            
+            if not rivals_res.data:
+                return
+
+            other_trackers = rivals_res.data
+            user_ids = [r["user_id"] for r in other_trackers]
+            
+            # 2. Fetch settings and last price for these users
+            settings_res = self.db.table("settings").select("*").in_("user_id", user_ids).execute()
+            settings_map = {s["user_id"]: s for s in settings_res.data}
+
+            # Fetch last price for each found hotel
+            ghost_hotel_ids = [r["id"] for r in other_trackers]
+            # Get the most recent log for each of these hotels
+            hist_res = self.db.table("price_logs") \
+                .select("hotel_id, price, currency") \
+                .in_("hotel_id", ghost_hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(len(ghost_hotel_ids) * 2) \
+                .execute()
+            
+            last_price_map = {}
+            for entry in hist_res.data:
+                hid = entry["hotel_id"]
+                if hid not in last_price_map:
+                    last_price_map[hid] = entry
+
+            # 3. Process each user
+            notifier = NotifierAgent()
+            for tracker in other_trackers:
+                uid = tracker["user_id"]
+                hid = tracker["id"]
+                h_name = tracker["name"] or hotel_name
+                
+                user_settings = settings_map.get(uid)
+                if not user_settings or not user_settings.get("notifications_enabled"):
+                    continue
+                
+                last_log = last_price_map.get(hid)
+                if not last_log:
+                    continue # No history to compare
+                
+                prev_price = last_log["price"]
+                prev_currency = last_log["currency"]
+                
+                # Normalize currency if needed
+                normalized_prev = prev_price
+                if prev_currency != currency:
+                    normalized_prev = convert_currency(prev_price, prev_currency, currency)
+                
+                # Check threshold
+                threshold = user_settings.get("threshold_percent", 2.0)
+                alert = price_comparator.check_threshold_breach(current_price, normalized_prev, threshold)
+                
+                if alert:
+                    print(f"[GlobalPulse] Hit breached for user {uid} on hotel {hid}!")
+                    # Create Alert in DB
+                    alert_record = {
+                        "user_id": uid,
+                        "hotel_id": hid,
+                        # "currency": currency, # Column missing
+                        "alert_type": alert["alert_type"],
+                        "message": f"[Global Pulse] {alert['message']}",
+                        "old_price": normalized_prev,
+                        "new_price": current_price
+                    }
+                    self.db.table("alerts").insert(alert_record).execute()
+                    
+                    # Dispatch Notification
+                    try:
+                        await notifier.dispatch_alerts([alert_record], user_settings, {hid: h_name})
+                    except Exception as n_e:
+                        print(f"[GlobalPulse] Notification dispatch failed for {uid}: {n_e}")
+
+        except Exception as e:
+            print(f"[GlobalPulse] Pulse failure for {serp_api_id}: {e}")
 
     async def discover_rivals(self, target_identifier: str, limit: int = 5) -> List[Dict[str, Any]]:
         """

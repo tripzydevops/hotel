@@ -26,3 +26,13 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase), curre
         db=db
     )
     return JSONResponse(content=jsonable_encoder(data))
+
+@router.get("/global-pulse")
+async def get_global_pulse(db: Client = Depends(get_supabase)):
+    """
+    Fetches recent price drops discovered by the Global Pulse network.
+    Anonymized and available to all users to show 'Community Intelligence'.
+    """
+    from backend.services.dashboard_service import get_recent_wins
+    wins = await get_recent_wins(db)
+    return JSONResponse(content=jsonable_encoder(wins))

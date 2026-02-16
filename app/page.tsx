@@ -32,6 +32,7 @@ import ModalLoading from "@/components/ui/ModalLoading";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 import { useModalContext } from "@/components/ui/ModalContext";
+import { GlobalPulseFeed } from "@/components/tiles/GlobalPulseFeed";
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -402,6 +403,15 @@ export default function Dashboard() {
             )}
           </BentoGrid>
         </ErrorBoundary>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="mt-8"
+        >
+          <GlobalPulseFeed />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

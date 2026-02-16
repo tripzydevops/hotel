@@ -263,3 +263,60 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
     except Exception as e:
         print(f"CRITICAL DASHBOARD ERROR: {e}")
         raise HTTPException(status_code=500, detail=f"Dashboard Processing Failure: {str(e)}")
+
+
+import time
+
+_RECENT_WINS_CACHE = {"data": [], "timestamp": 0}
+_CACHE_TTL = 300  # 5 minutes
+
+async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    Fetches anonymized recent price drops discovered by the Global Pulse network.
+    Cached for 5 minutes to reduce DB load.
+    """
+    global _RECENT_WINS_CACHE
+    if time.time() - _RECENT_WINS_CACHE["timestamp"] < _CACHE_TTL:
+        return _RECENT_WINS_CACHE["data"]
+
+    try:
+        # Fetch recent alerts with "[Global Pulse]" in the message
+        # We also need the hotel names from the hotel directory or the hotels table
+        # anonymized: we don't show user_ids
+        res = db.table("alerts") \
+            .select("hotel_id, message, old_price, new_price, created_at") \
+            .ilike("message", "%Global Pulse%") \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+        
+        raw_alerts = res.data or []
+        if not raw_alerts:
+            return []
+
+        # Fetch hotel names for these alerts
+        hotel_ids = list(set([a["hotel_id"] for a in raw_alerts]))
+        hotels_res = db.table("hotels").select("id, name").in_("id", hotel_ids).execute()
+        hotel_name_map = {h["id"]: h["name"] for h in hotels_res.data}
+
+        wins = []
+        for a in raw_alerts:
+            name = hotel_name_map.get(a["hotel_id"], "A shared hotel")
+            
+            # Extract percentage from message if possible, or calculate
+            pct_change = 0
+            if a["old_price"] and a["old_price"] > 0:
+                pct_change = round(((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1)
+
+            wins.append({
+                "hotel_name": name,
+                "reduction": f"{pct_change}%",
+                "message": a["message"].replace("[Global Pulse] ", ""),
+                "timestamp": a["created_at"]
+            })
+        
+        _RECENT_WINS_CACHE = {"data": wins, "timestamp": time.time()}
+        return wins
+    except Exception as e:
+        print(f"Dashboard Service: get_recent_wins failure: {e}")
+        return []
