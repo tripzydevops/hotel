@@ -109,7 +109,8 @@ def get_price_for_room(
     # we take the cheapest available room.
     # CRITICAL FIX: We ONLY do this if the user is looking for "any" or "standard" room.
     # If they explicitly asked for "Suite", we should NOT return a Standard room.
-    is_standard_request = target_room_type.lower() in ["standard", "standart", "any", "base", ""]
+    # We also allow "all room types" to fall back to standard/cheapest.
+    is_standard_request = target_room_type.lower() in ["standard", "standart", "any", "base", "", "all room types", "all"]
     
     if is_standard_request:
         try:
@@ -482,5 +483,6 @@ async def perform_market_analysis(
         "price_history": target_history,
         "sentiment_breakdown": normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else None,
         "guest_mentions": target_h.get("guest_mentions") or generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
-        "available_room_types": sorted(list(available_room_types))
+        "available_room_types": sorted(list(available_room_types)),
+        "all_hotels": [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels]
     }
