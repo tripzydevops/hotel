@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request
 from typing import List, Optional
 from uuid import UUID
 from supabase import Client
@@ -38,10 +38,15 @@ async def trigger_monitor(
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     force: bool = Query(False),
     db: Optional[Client] = Depends(get_supabase)
 ):
     """Lazy cron workaround for Vercel free tier."""
+    # Handle preflight OPTIONS explicitly (CORS)
+    if request.method == "OPTIONS":
+        return {"status": "ok"}
+
     # EXPLANATION: Frontend-Triggered Scheduler
     # This endpoint allows the frontend to 'tick' the scheduler when the user
     # visits the app, ensuring scans run even without a persistent cron.

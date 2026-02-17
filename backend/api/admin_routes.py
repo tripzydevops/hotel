@@ -11,6 +11,7 @@ from backend.models.schemas import (
 )
 from backend.services.admin_service import (
     get_admin_stats_logic,
+    get_admin_providers_logic,
     get_api_key_status_logic,
     force_rotate_api_key_logic,
     reset_api_keys_logic,
@@ -66,7 +67,7 @@ async def debug_providers():
             "RAPIDAPI": bool(os.getenv("RAPIDAPI_KEY")),
         }
         }
-    }
+
 
 @router.get("/providers")
 async def get_admin_providers(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):

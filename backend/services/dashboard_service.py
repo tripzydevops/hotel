@@ -32,8 +32,15 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         "scan_history": [],
         "recent_sessions": [],
         "unread_alerts_count": 0,
-        "last_updated": datetime.now(timezone.utc).isoformat()
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "error": None
     }
+
+    # Safety: Handle missing DB connection (e.g. env var misconfiguration)
+    if not db:
+        logger.error("Dashboard: Database connection unavailable (db is None)")
+        fallback_data["error"] = "Database Unavailable"
+        return fallback_data
 
     # 1. Security Check: Ownership or Admin
     is_authorized = str(current_user_id) == str(user_id)
@@ -260,7 +267,9 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
 
     except Exception as e:
         logger.critical(f"DASHBOARD ERROR: {e}")
-        raise HTTPException(status_code=500, detail=f"Dashboard Processing Failure: {str(e)}")
+        # Return fallback data instead of crashing 500. This empowers the user to fix config.
+        fallback_data["error"] = str(e)
+        return fallback_data
 
 
 import time
