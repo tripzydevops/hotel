@@ -264,12 +264,15 @@ class QueryLog(BaseModel):
 class ScanSession(BaseModel):
     id: UUID
     user_id: UUID
+    session_type: Optional[str] = "manual"
     status: str  # "queued", "processing", "completed", "failed", "partial_success"
-    hotels_scanned: int = 0
-    hotels_found: int = 0
-    started_at: datetime
+    hotels_count: int = 0
+    created_at: datetime
     completed_at: Optional[datetime] = None
-    source: str = "manual"
+    check_in_date: Optional[date] = None
+    check_out_date: Optional[date] = None
+    adults: Optional[int] = 2
+    currency: Optional[str] = "TRY"
     reasoning_trace: Optional[List[Dict[str, Any]]] = None
 
     class Config:

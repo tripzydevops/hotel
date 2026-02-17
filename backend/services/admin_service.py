@@ -64,7 +64,7 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         # identify if an external provider (like SerpApi) is experiencing global issues.
         last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
         recent_sessions_health = db.table("scan_sessions") \
-            .select("status, started_at, completed_at") \
+            .select("status, created_at, completed_at") \
             .gte("created_at", last_24h) \
             .order("created_at", desc=True) \
             .limit(100) \
@@ -82,9 +82,9 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
             # Calculate Latency for successful scans
             durations = []
             for s in recent_sessions_health.data:
-                if s["status"] in ["completed", "partial"] and s.get("started_at") and s.get("completed_at"):
+                if s["status"] in ["completed", "partial"] and s.get("created_at") and s.get("completed_at"):
                     try:
-                        start = datetime.fromisoformat(s["started_at"].replace('Z', '+00:00'))
+                        start = datetime.fromisoformat(s["created_at"].replace('Z', '+00:00'))
                         end = datetime.fromisoformat(s["completed_at"].replace('Z', '+00:00'))
                         durations.append((end - start).total_seconds() * 1000)
                     except Exception: pass
