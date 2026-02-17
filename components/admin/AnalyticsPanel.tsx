@@ -201,7 +201,9 @@ export default function AnalyticsPanel() {
                   Avg search rank for {selectedCity} hotels.
                 </p>
               </div>
-              <VisibilityChart data={data.visibility} />
+              <div className="min-h-[300px]">
+                <VisibilityChart data={data.visibility} />
+              </div>
             </section>
 
             {/* Network Module */}

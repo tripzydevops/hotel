@@ -39,7 +39,8 @@ export default function VisibilityChart({
   }, [data]);
 
   return (
-    <div className="h-[300px] w-full bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
+  return (
+    <div className="relative h-[300px] min-h-[300px] w-full bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm overflow-hidden">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-medium text-white/80">
           Search Visibility (Rank)
