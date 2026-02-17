@@ -52,10 +52,14 @@ export default function AnalyticsPanel() {
             safeSummary.price_range = [0, 0];
           }
 
-          // Transform for visualizations
-          // KAİZEN: Use real visibility and network data from API
+          // KAİZEN: Robust data binding and logging
+          console.log(`[MarketIntelligence] Payload for ${selectedCity}:`, marketData);
           const visibilityData = marketData.visibility || [];
           
+          if (visibilityData.length === 0) {
+            console.warn(`[MarketIntelligence] Visibility data is empty for ${selectedCity}`);
+          }
+
           // Network (Cluster) - Backend now provides optimized nodes/links
           const networkData = marketData.network || { 
             nodes: safeHotels.slice(0, 8).map((h: any) => ({

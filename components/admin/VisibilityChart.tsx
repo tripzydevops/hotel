@@ -32,10 +32,9 @@ export default function VisibilityChart({
   const chartData = useMemo(() => {
     return data.map((d) => ({
       ...d,
-      // If rank is null (not found in top X), set to null or a "low" value for visualization
-      // Recharts handles nulls by breaking the line, which is correct.
-      rank: d.rank,
-      formattedDate: format(new Date(d.date), "MMM d"),
+      // KAİZEN: Defensive date parsing and rank normalization
+      rank: typeof d.rank === 'number' ? d.rank : null,
+      formattedDate: d.date ? format(new Date(d.date), "MMM d") : "N/A",
     }));
   }, [data]);
 
