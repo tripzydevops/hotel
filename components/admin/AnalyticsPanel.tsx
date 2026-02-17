@@ -37,6 +37,21 @@ export default function AnalyticsPanel() {
         const marketData = await api.getMarketIntelligence(selectedCity);
 
         if (marketData) {
+          // EXPLANATION: Null-Safety Guards
+          // The backend should return { hotels: [...], summary: {...} }
+          // but we add defensive defaults to prevent crashes if any field is missing.
+          const safeHotels = marketData.hotels || [];
+          const safeSummary = marketData.summary || {
+            hotel_count: 0,
+            avg_price: 0,
+            price_range: [0, 0],
+            scan_coverage_pct: 0,
+          };
+          // Ensure price_range is always a 2-element array
+          if (!Array.isArray(safeSummary.price_range) || safeSummary.price_range.length < 2) {
+            safeSummary.price_range = [0, 0];
+          }
+
           // Transform for visualizations
           // 1. Visibility - Real data not yet available in this aggregate endpoint
           // Leaving empty to show "No Data" state rather than mock
@@ -44,22 +59,22 @@ export default function AnalyticsPanel() {
 
           // 2. Network (Cluster) - Use real hotel data
           // Value will be 0 if no price data available (which is correct for directory)
-          const nodes = marketData.hotels.slice(0, 8).map((h: any) => ({
+          const nodes = safeHotels.slice(0, 8).map((h: any) => ({
             id: h.id,
             label: h.name,
-            type: h.id === marketData.hotels[0].id ? "target" : "competitor",
+            type: h.id === safeHotels[0]?.id ? "target" : "competitor",
             value: h.latest_price || 0,
           }));
 
           const links = nodes.slice(1).map((n: any) => ({
-            source: nodes[0].id,
+            source: nodes[0]?.id,
             target: n.id,
             strength: 1,
           }));
 
           setData({
-            summary: marketData.summary,
-            hotels: marketData.hotels,
+            summary: safeSummary,
+            hotels: safeHotels,
             visibility: visibilityData,
             network: { nodes, links },
           });

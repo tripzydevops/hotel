@@ -37,7 +37,8 @@ from backend.services.admin_service import (
     update_admin_plan_logic,
     delete_admin_plan_logic,
     sync_hotel_directory_logic,
-    cleanup_test_data_logic
+    cleanup_test_data_logic,
+    get_admin_market_intelligence_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -285,10 +286,14 @@ async def cleanup_test_data(db: Client = Depends(get_supabase), admin=Depends(ge
     return await cleanup_test_data_logic(db)
 
 @router.get("/market-intelligence")
-async def get_market_intelligence(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+async def get_market_intelligence(city: Optional[str] = None, db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
     """
-    Fetches system-wide market insights.
+    Fetches city-level market intelligence for the admin Intelligence tab.
+    
+    EXPLANATION: Corrected Route Handler
+    Previously this called get_admin_stats_logic(db) which returns AdminStats 
+    (total_users, total_hotels, etc.), but the frontend AnalyticsPanel expects 
+    { hotels: [...], summary: { hotel_count, avg_price, price_range, scan_coverage_pct } }.
+    Now correctly calls get_admin_market_intelligence_logic with city filter.
     """
-    # EXPLANATION: System-Wide Analytics
-    # Aggregates intelligence across all monitored properties for admin reporting.
-    return await get_admin_stats_logic(db)
+    return await get_admin_market_intelligence_logic(db, city)

@@ -666,6 +666,111 @@ async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:
         print(f"Admin: Cleanup Error: {e}")
         return {"status": "error", "message": str(e)}
 
+async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Aggregate market intelligence for admin panel Intelligence tab.
+    
+    EXPLANATION: Admin Market Intelligence
+    Fetches hotels from the global directory (filtered by city), then looks up
+    the latest price for each hotel from price_logs. Returns the { hotels, summary }
+    shape expected by the AnalyticsPanel frontend component.
+    This was previously (incorrectly) calling get_admin_stats_logic which returned
+    AdminStats data, causing a 'Cannot read properties of undefined (reading slice)' crash.
+    """
+    try:
+        # 1. Fetch hotels from directory, filtered by city if specified
+        query = db.table("hotel_directory").select("*").order("created_at", desc=True).limit(200)
+        if city:
+            query = query.ilike("location", f"%{city}%")
+        dir_result = query.execute()
+        directory_hotels = dir_result.data or []
+
+        # 2. Fetch latest prices from tracked hotels in the same city
+        #    We join via hotels table (which has serp_api_id) to price_logs
+        hotels_query = db.table("hotels").select("id, name, location, serp_api_id")
+        if city:
+            hotels_query = hotels_query.ilike("location", f"%{city}%")
+        tracked_result = hotels_query.limit(200).execute()
+        tracked_hotels = tracked_result.data or []
+
+        # Build a map of tracked hotel latest prices
+        price_map = {}  # hotel_id -> latest_price
+        if tracked_hotels:
+            hotel_ids = [str(h["id"]) for h in tracked_hotels]
+            # Get latest price per hotel (most recent price_log entry)
+            for hid in hotel_ids:
+                try:
+                    price_res = db.table("price_logs") \
+                        .select("price") \
+                        .eq("hotel_id", hid) \
+                        .order("recorded_at", desc=True) \
+                        .limit(1) \
+                        .execute()
+                    if price_res.data:
+                        price_map[hid] = price_res.data[0].get("price", 0)
+                except Exception:
+                    pass
+
+        # 3. Build unified hotel list from directory entries
+        #    If a directory hotel has a matching tracked hotel (by serp_api_id or name),
+        #    attach the latest price
+        hotels_out = []
+        tracked_by_serp = {h.get("serp_api_id"): h for h in tracked_hotels if h.get("serp_api_id")}
+        tracked_by_name = {h["name"].lower(): h for h in tracked_hotels}
+
+        for dh in directory_hotels:
+            latest_price = 0
+            # Try to find matching tracked hotel
+            serp_id = dh.get("serp_api_id")
+            matched = tracked_by_serp.get(serp_id) if serp_id else None
+            if not matched:
+                matched = tracked_by_name.get(dh["name"].lower())
+            if matched:
+                latest_price = price_map.get(str(matched["id"]), 0)
+            
+            hotels_out.append({
+                "id": dh["id"],
+                "name": dh["name"],
+                "location": dh.get("location", "Unknown"),
+                "latest_price": latest_price,
+                "latitude": dh.get("latitude"),
+                "longitude": dh.get("longitude"),
+                "rating": dh.get("rating"),
+                "serp_api_id": dh.get("serp_api_id"),
+            })
+
+        # 4. Compute summary statistics
+        prices = [h["latest_price"] for h in hotels_out if h["latest_price"] and h["latest_price"] > 0]
+        avg_price = round(sum(prices) / len(prices), 2) if prices else 0
+        price_range = [min(prices), max(prices)] if prices else [0, 0]
+        with_price_count = len(prices)
+        total_count = len(hotels_out)
+        scan_coverage = round((with_price_count / total_count) * 100, 1) if total_count > 0 else 0
+
+        return {
+            "hotels": hotels_out,
+            "summary": {
+                "hotel_count": total_count,
+                "avg_price": avg_price,
+                "price_range": price_range,
+                "scan_coverage_pct": scan_coverage,
+            }
+        }
+    except Exception as e:
+        print(f"Admin Market Intelligence Error: {e}")
+        traceback.print_exc()
+        # Return safe empty structure instead of crashing
+        return {
+            "hotels": [],
+            "summary": {
+                "hotel_count": 0,
+                "avg_price": 0,
+                "price_range": [0, 0],
+                "scan_coverage_pct": 0,
+            }
+        }
+
+
 async def update_admin_settings_logic(updates: AdminSettingsUpdate, db: Client) -> AdminSettings:
     """Update global settings."""
     current = await get_admin_settings_logic(db)
