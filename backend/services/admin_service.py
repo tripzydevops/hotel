@@ -808,8 +808,8 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
             lng = dh.get("longitude")
             
             if (lat is None or lng is None) and matched_meta:
-                 lat = matched_meta.get("lat") if lat is None else lat
-                 lng = matched_meta.get("lng") if lng is None else lng
+                 lat = matched_meta.get("latitude") if lat is None else lat
+                 lng = matched_meta.get("longitude") if lng is None else lng
             
             # Final Fallback to District Center if still None (District-Aware Kaizen)
             if (lat is None or lng is None) and city and city.lower() == "balikesir":
