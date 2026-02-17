@@ -39,7 +39,8 @@ from backend.services.admin_service import (
     sync_hotel_directory_logic,
     cleanup_test_data_logic,
     get_admin_market_intelligence_logic,
-    get_scheduler_queue_logic
+    get_scheduler_queue_logic,
+    get_admin_providers_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -64,7 +65,19 @@ async def debug_providers():
             "SERPAPI": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
             "RAPIDAPI": bool(os.getenv("RAPIDAPI_KEY")),
         }
+        }
     }
+
+@router.get("/providers")
+async def get_admin_providers(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Returns the list of network providers and their status for the API Keys panel.
+    
+    EXPLANATION: Missing Endpoint Fix
+    The ApiKeysPanel calls /api/admin/providers to list active scrapers. 
+    This route was missing, causing a 404 and breaking the entire panel.
+    """
+    return await get_admin_providers_logic()
 
 @router.get("/stats", response_model=AdminStats)
 async def get_admin_stats(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):

@@ -142,6 +142,44 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         print(f"API Key Status Error: {e}")
         return {"error": str(e), "total_keys": 0, "active_keys": 0}
 
+
+async def get_admin_providers_logic() -> List[Dict[str, Any]]:
+    """
+    Fetch status of registered network providers.
+    
+    EXPLANATION: Admin Providers
+    Returns a list of configured providers (e.g. SerpApi, RapidAPI) with their
+    status and priority. Used by ApiKeysPanel to show 'Network Providers'.
+    """
+    try:
+        from backend.services.provider_factory import ProviderFactory
+        
+        # This is a simplified static list for now, as dynamic provider registration 
+        # is managed via code/env. In a future version, this could query a DB table.
+        providers = []
+        
+        # Check SerpApi
+        serp_key = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
+        providers.append({
+            "name": "SerpApi (Google Hotels)",
+            "enabled": bool(serp_key),
+            "priority": 1
+        })
+        
+        # Check RapidAPI (placeholder)
+        rapid_key = os.getenv("RAPIDAPI_KEY")
+        providers.append({
+            "name": "RapidAPI (Booking.com)",
+            "enabled": bool(rapid_key),
+            "priority": 2
+        })
+        
+        return providers
+    except Exception as e:
+        print(f"Admin Providers Error: {e}")
+        return []
+        return {"error": str(e), "total_keys": 0, "active_keys": 0}
+
 async def force_rotate_api_key_logic() -> Dict[str, Any]:
     """Force rotate to next API key."""
     try:
