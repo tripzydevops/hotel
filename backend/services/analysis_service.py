@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 from backend.services.serpapi_client import serpapi_client
 from backend.utils.helpers import convert_currency
-from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown
+from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
 
 def _transform_serp_links(breakdown: Any) -> Any:
     """
@@ -510,17 +510,10 @@ async def perform_market_analysis(
     # If Value score is 0 but we have competitive data, we can synthesize based on ARI
     value_pillar = next((p for p in sent_bd if p["name"] == "Value"), None)
     if value_pillar and value_pillar.get("total_mentioned", 0) == 0:
-        if price_rank_list and target_price and market_avg > 0:
+        if target_price and market_avg > 0:
             ari_val = (target_price / market_avg) * 100
-            # Convert ARI to a 5-star score. ari=100 -> ~4.0, ari=80 -> ~4.8
-            syn_score = max(1.0, min(5.0, 4.0 + (100 - ari_val) / 25))
-            value_pillar.update({
-                "positive": 10,  # Bias for UI
-                "neutral": 0,
-                "negative": 0,
-                "total_mentioned": 10,
-                "rating": syn_score
-            })
+            syn_val = synthesize_value_score(ari_val)
+            value_pillar.update(syn_val)
 
     return {
         "hotel_id": target_hotel_id,

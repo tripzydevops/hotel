@@ -1,4 +1,43 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+TR_MAP = {
+    "hizmet": "Service",
+    "temizlik": "Cleanliness",
+    "konum": "Location",
+    "oda": "Room",
+    "kahvaltı": "Breakfast",
+    "fiyat": "Price",
+    "değer": "Value",
+    "personel": "Staff",
+    "mülk": "Property",
+    "uyku": "Sleep",
+    "banyo": "Bathroom",
+    "konfor": "Comfort",
+    "yemek": "Food",
+    "havuz": "Pool",
+    "restoran": "Restaurant",
+    "atmosfer": "Atmosphere",
+    "kablosuz": "Wi-Fi",
+    "klima": "A/C",
+    "aile": "Family",
+    "çiftler": "Couples",
+    "iş": "Business",
+    "fitness": "Fitness",
+    "sağlıklı yaşam": "Wellness",
+    "gece hayatı": "Nightlife",
+    "otopark": "Parking",
+    "bar": "Bar",
+    "erişilebilirlik": "Accessibility",
+    "mutfak": "Kitchen",
+    "sessizlik": "Quietness",
+    "yatak": "Bed",
+    "resepsiyon": "Reception",
+    "manzara": "View",
+    "ulaşım": "Transport",
+    "internet": "Internet",
+    "güvenlik": "Security",
+    "dining": "Dining",
+}
 
 def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -70,44 +109,12 @@ def translate_breakdown(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     if not breakdown or not isinstance(breakdown, list):
         return []
 
-    # Map of Turkish keys to English labels
-    tr_map = {
-        "hizmet": "Service",
-        "temizlik": "Cleanliness",
-        "konum": "Location",
-        "oda": "Room",
-        "kahvaltı": "Breakfast",
-        "fiyat": "Price",
-        "değer": "Value",
-        "personel": "Staff",
-        "mülk": "Property",
-        "uyku": "Sleep",
-        "banyo": "Bathroom",
-        "konfor": "Comfort",
-        "yemek": "Food",
-        "havuz": "Pool",
-        "restoran": "Restaurant",
-        "atmosfer": "Atmosphere",
-        "kablosuz": "Wi-Fi",
-        "klima": "A/C",
-        "aile": "Family",
-        "çiftler": "Couples",
-        "iş": "Business",
-        "fitness": "Fitness",
-        "sağlıklı yaşam": "Wellness",
-        "gece hayatı": "Nightlife",
-        "otopark": "Parking",
-        "bar": "Bar",
-        "erişilebilirlik": "Accessibility",
-        "mutfak": "Kitchen"
-    }
-
     translated = []
     for item in breakdown:
         name = item.get("name", "")
         # Try exact or substring
         label = name
-        for tr_key, en_val in tr_map.items():
+        for tr_key, en_val in TR_MAP.items():
             if tr_key == name.lower() or tr_key in name.lower():
                 label = en_val
                 break
@@ -147,10 +154,51 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         elif neg > pos and neg > neu:
             sentiment = "negative"
             
+        # KAİZEN: Localized Keywords for 'Voices'
+        display_keyword = name
+        for tr_key, en_val in TR_MAP.items():
+            if tr_key == name.lower() or tr_key in name.lower():
+                display_keyword = en_val
+                break
+
         mentions.append({
-            "keyword": name,
+            "keyword": display_keyword,
+            "raw_keyword": name, # Keep original for analytics if needed
             "count": pos if sentiment == "positive" else neg if sentiment == "negative" else total,
             "sentiment": sentiment
         })
         
     return mentions[:15] # Top 15 for UI density
+
+def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
+    """
+    Generates a synthetic 'Value' sentiment breakdown based on Average Rate Index.
+    
+    ARI 100 = Market average price (Score 4.0)
+    ARI 80 = 20% cheaper than market (Score 4.8)
+    ARI 120 = 20% more expensive (Score 3.2)
+    """
+    if ari is None or ari <= 0:
+        return {
+            "name": "Value",
+            "positive": 0,
+            "neutral": 0,
+            "negative": 0,
+            "total_mentioned": 0,
+            "rating": 0
+        }
+        
+    # Formula: 4.0 + (100 - ARI) / 25
+    # e.g. ARI 80 -> 4.0 + 20/25 = 4.8
+    # e.g. ARI 120 -> 4.0 - 20/25 = 3.2
+    score = max(1.0, min(5.0, 4.0 + (100 - ari) / 25))
+    
+    return {
+        "name": "Value",
+        "positive": 10, # Weighted for visibility
+        "neutral": 0,
+        "negative": 0,
+        "total_mentioned": 10,
+        "rating": round(score, 1),
+        "synthetic": True
+    }

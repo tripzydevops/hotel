@@ -171,6 +171,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             # We apply the centralized normalization to ensure that 
             # hotel cards show the 4 core pillars even if the source 
             # uses localized Turkish terms.
+            # KAİZEN: Standardized Sentiment & Deep Dive
             raw_breakdown = hotel.get("sentiment_breakdown") or []
             item_sentiment = normalize_sentiment(raw_breakdown)
             item_raw_breakdown = translate_breakdown(raw_breakdown)
@@ -184,15 +185,8 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                 curr_price = price_info["current_price"] if price_info else None
                 if curr_price and market_avg_global > 0:
                     ari_val = (curr_price / market_avg_global) * 100
-                    # Convert ARI to a 5-star score. 100->4.0, 80->4.8
-                    syn_score = max(1.0, min(5.0, 4.0 + (100 - ari_val) / 25))
-                    value_pillar.update({
-                        "positive": 10,
-                        "neutral": 0,
-                        "negative": 0,
-                        "total_mentioned": 10,
-                        "rating": syn_score
-                    })
+                    syn_val = synthesize_value_score(ari_val)
+                    value_pillar.update(syn_val)
 
             hotel_data = {
                 **hotel,

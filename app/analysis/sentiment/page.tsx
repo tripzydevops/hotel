@@ -55,6 +55,14 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
   "sağlıklı yaşam": "Wellness",
   çiftler: "Couples",
   iş: "Business",
+  mülk: "Property",
+  uyku: "Sleep",
+  atmosfer: "Atmosphere",
+  kablosuz: "Wi-Fi",
+  klima: "A/C",
+  fitness: "Fitness",
+  erişilebilirlik: "Accessibility",
+  mutfak: "Kitchen",
 };
 
 // Dynamically import heavy analytics components to improve initial page performance
