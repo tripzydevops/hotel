@@ -62,3 +62,4 @@ uvicorn main:app --reload
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.\_
+Version: Tue Feb 17 13:28:54 UTC 2026
