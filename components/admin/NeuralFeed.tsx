@@ -66,7 +66,7 @@ const NeuralFeed = () => {
   return (
     <div
       ref={feedRef}
-      className="command-card flex flex-col h-[600px] relative group"
+      className="command-card flex flex-col h-[600px] relative group w-full overflow-hidden"
     >
       {/* Immersive Scanning Line Overlay */}
       <div className="absolute inset-x-0 h-[2px] bg-[var(--soft-gold)]/10 animate-[scan_4s_linear_infinite] pointer-events-none z-20" />
@@ -135,7 +135,7 @@ const NeuralFeed = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group flex gap-6 hover:bg-white/[0.03] -mx-4 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5"
+                className="group flex gap-6 hover:bg-white/[0.03] px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5"
               >
                 <div className="text-[var(--text-muted)] w-24 shrink-0 flex flex-col pt-1">
                   <span className="font-black text-[9px] opacity-40 group-hover:opacity-100 transition-opacity whitespace-nowrap">

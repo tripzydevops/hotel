@@ -134,14 +134,17 @@ export default function AdminPage() {
           {/* EXPLANATION: Grid Layout Fix for Terminal/Stat card overlap.
               Using min-w-0 prevents child overflow in grid cells on smaller screens. 
               Removed md:grid-rows-2 to allow natural height flow for StatCards. */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Main Command Feed - Large Bento Cell */}
-            <div className="lg:col-span-3 min-w-0">
+            {/* EXPLANATION: Upgraded to 12-column grid for surgical precision.
+                NeuralFeed takes 9/12 (75%) space, leaving 3/12 for stats.
+                min-w-0 + overflow-hidden on cellular level prevents bleed. */}
+            <div className="lg:col-span-9 min-w-0 overflow-hidden">
               <NeuralFeed />
             </div>
 
             {/* Vertical Stat Column */}
-            <div className="lg:col-span-1 flex flex-col gap-6 h-full">
+            <div className="lg:col-span-3 flex flex-col gap-6 h-full min-w-0">
               <StatCard
                 label="Intelligence nodes"
                 value={stats?.total_users || 0}
