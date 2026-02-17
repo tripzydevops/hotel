@@ -799,18 +799,28 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                     latest_price = price_map.get(hid, 0)
                     break
             
-            # Fallback to matched hotel metadata
+            # Fallback Logic:
+            # 1. Directory Coords
+            # 2. Tracked Coords (if matched)
+            # 3. City Center Fallback (with small random jitter for visual distribution)
+            import random
             lat = dh.get("latitude")
             lng = dh.get("longitude")
+            
             if (lat is None or lng is None) and matched_meta:
                 lat = matched_meta.get("lat") if lat is None else lat
                 lng = matched_meta.get("lng") if lng is None else lng
+            
+            if (lat is None or lng is None) and city and city.lower() == "balikesir":
+                 # 39.54, 28.02 is Balikesir center. Add small jitter
+                 lat = 39.54 + (random.random() - 0.5) * 0.1
+                 lng = 28.02 + (random.random() - 0.5) * 0.1
 
             hotels_out.append({
-                "id": dh["id"],
+                "id": str(dh["id"]),
                 "name": dh["name"],
                 "location": dh.get("location", "Unknown"),
-                "latest_price": latest_price,
+                "latest_price": float(latest_price),
                 "latitude": lat,
                 "longitude": lng,
                 "rating": dh.get("rating"),
@@ -871,7 +881,8 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                 
                 for entry in raw_vis:
                     # KAİZEN: Explicit None check for search_rank
-                    if entry.get("search_rank") is None or not entry.get("recorded_at"):
+                    val_rank = entry.get("search_rank")
+                    if val_rank is None or not entry.get("recorded_at"):
                         continue
                     
                     # Normalize date to YYYY-MM-DD for Recharts binding
@@ -879,7 +890,7 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                     if dt_str not in daily_aggregates:
                         daily_aggregates[dt_str] = {"sum_rank": 0, "count": 0, "sum_price": 0}
                     
-                    daily_aggregates[dt_str]["sum_rank"] += entry["search_rank"]
+                    daily_aggregates[dt_str]["sum_rank"] += float(val_rank)
                     daily_aggregates[dt_str]["sum_price"] += entry.get("price", 0)
                     daily_aggregates[dt_str]["count"] += 1
                 
@@ -917,11 +928,27 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                               key=lambda x: x["latest_price"], reverse=True)[:15]
         nodes = []
         links = []
+        
+        # EXPLANATION: YOU Node Identification
+        # To populate the center of the CompsetGraph, we need a 'target' type.
+        # We look for a hotel that matches this user's primary track or the first in set.
+        target_id = None
+        for h in tracked_hotels:
+            if h.get("is_target_hotel"):
+                target_id = str(h["id"])
+                break
+
+        has_target = False
         for h in priced_subset:
+            hid = str(h["id"])
+            is_main = (hid == target_id) or (not target_id and not has_target)
+            if is_main: has_target = True
+            
             nodes.append({
-                "id": h["id"],
-                "name": h["name"],
-                "val": h["latest_price"]
+                "id": hid,
+                "label": h["name"],
+                "value": float(h["latest_price"]),
+                "type": "target" if is_main else "competitor"
             })
         
         # Build links between adjacent priced hotels
