@@ -733,23 +733,39 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
         tracked_result = hotels_query.limit(200).execute()
         tracked_hotels = tracked_result.data or []
 
-        # Build a map of tracked hotel latest prices
-        price_map = {}  # hotel_id -> latest_price
+        # Build map of latest prices and coordinates from tracked hotels
+        # We pre-aggregate from tracked table to use as a primary fallback
+        tracked_meta = {} # hotel_id -> {price, lat, lng, serp_id, name}
+        for h in tracked_hotels:
+            hid = str(h["id"])
+            tracked_meta[hid] = {
+                "price": h.get("current_price", 0) or 0,
+                "lat": h.get("latitude"),
+                "lng": h.get("longitude"),
+                "serp_id": h.get("serp_api_id"),
+                "name": h.get("name", "").lower()
+            }
+
+        # EXPLANATION: Deep Price Recovery
+        # We try to get the ABSOLUTE latest price from logs, but if missing,
+        # we trust the 'current_price' column in the hotels table (Phase 1).
+        price_map = {hid: meta["price"] for hid, meta in tracked_meta.items()}
+        
         if tracked_hotels:
-            hotel_ids = [str(h["id"]) for h in tracked_hotels]
-            # Get latest price per hotel (most recent price_log entry)
-            for hid in hotel_ids:
-                try:
-                    price_res = db.table("price_logs") \
-                        .select("price") \
-                        .eq("hotel_id", hid) \
-                        .order("recorded_at", desc=True) \
-                        .limit(1) \
-                        .execute()
-                    if price_res.data:
-                        price_map[hid] = price_res.data[0].get("price", 0)
-                except Exception:
-                    pass
+            # Batch fetch latest price for all target hotels to reduce DB roundtrips
+            recent_logs = db.table("price_logs") \
+                .select("hotel_id, price") \
+                .in_("hotel_id", [str(h["id"]) for h in tracked_hotels]) \
+                .order("recorded_at", desc=True) \
+                .limit(len(tracked_hotels) * 10) \
+                .execute()
+            
+            for log in (recent_logs.data or []):
+                hid = str(log["hotel_id"])
+                # Only update if we haven't found a 'more recent' one in this batch
+                # (since they are ordered by date DESC)
+                if hid not in price_map or price_map[hid] == 0:
+                    price_map[hid] = log.get("price", 0)
 
         # 3. Build unified hotel list from directory entries
         #    If a directory hotel has a matching tracked hotel (by serp_api_id or name),
@@ -760,22 +776,35 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
 
         for dh in directory_hotels:
             latest_price = 0
-            # Try to find matching tracked hotel
-            serp_id = dh.get("serp_api_id")
-            matched = tracked_by_serp.get(serp_id) if serp_id else None
-            if not matched:
-                matched = tracked_by_name.get(dh["name"].lower())
-            if matched:
-                latest_price = price_map.get(str(matched["id"]), 0)
+            matched_meta = None
             
-            # KAİZEN: Geographic Data Persistence
-            # If directory lacks coordinates, fallback to tracked hotel metadata
+            # Match Logic: SerpID First, then Exact Name, then Fuzzy Name
+            serp_id = dh.get("serp_api_id")
+            dh_name = dh.get("name", "").lower()
+            
+            # Find best match from tracked_meta
+            for hid, m in tracked_meta.items():
+                if serp_id and m["serp_id"] == serp_id:
+                    matched_meta = m
+                    latest_price = price_map.get(hid, 0)
+                    break
+                if dh_name == m["name"]:
+                    matched_meta = m
+                    latest_price = price_map.get(hid, 0)
+                    break
+                # KAİZEN: Cross-Reference Partial Match
+                # Handles "Hotel X" vs "Hotel X Balikesir"
+                if dh_name in m["name"] or m["name"] in dh_name:
+                    matched_meta = m
+                    latest_price = price_map.get(hid, 0)
+                    break
+            
+            # Fallback to matched hotel metadata
             lat = dh.get("latitude")
             lng = dh.get("longitude")
-            # KAİZEN: Use explicit None checks to avoid filtering out 0.0 coordinates
-            if (lat is None or lng is None) and matched:
-                lat = matched.get("latitude") if lat is None else lat
-                lng = matched.get("longitude") if lng is None else lng
+            if (lat is None or lng is None) and matched_meta:
+                lat = matched_meta.get("lat") if lat is None else lat
+                lng = matched_meta.get("lng") if lng is None else lng
 
             hotels_out.append({
                 "id": dh["id"],
