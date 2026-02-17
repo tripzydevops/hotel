@@ -39,7 +39,6 @@ export default function VisibilityChart({
   }, [data]);
 
   return (
-  return (
     <div className="relative h-[300px] min-h-[300px] w-full bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm overflow-hidden">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-medium text-white/80">
@@ -48,7 +47,8 @@ export default function VisibilityChart({
         <div className="text-xs text-white/50">Lower # is better</div>
       </div>
 
-      <ResponsiveContainer width="100%" height="100%">
+      <div className="h-[220px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
           margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
