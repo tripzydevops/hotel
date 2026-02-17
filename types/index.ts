@@ -182,8 +182,28 @@ export interface MarketIntelligenceResponse {
     avg_price: number;
     price_range: [number, number];
     scan_coverage_pct: number;
+    currency?: string;
+    currency_symbol?: string;
   };
   hotels: Hotel[];
+  visibility?: Array<{
+    date: string;
+    rank: number;
+    price: number;
+  }>;
+  network?: {
+    nodes: Array<{
+      id: string;
+      label: string;
+      value: number;
+      type: "target" | "competitor";
+    }>;
+    links: Array<{
+      source: string;
+      target: string;
+      label?: string;
+    }>;
+  };
 }
 
 export interface AdminUser {
