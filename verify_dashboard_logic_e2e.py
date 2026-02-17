@@ -25,8 +25,12 @@ async def test_dashboard_logic_crash():
         data = await get_dashboard_logic(user_id, current_user_id, current_user_email, db)
         print("✅ Dashboard logic executed without crash")
         if data.get("target_hotel"):
-            print("✅ Target hotel data found")
+            print(f"✅ Target hotel data found: {data['target_hotel'].get('name')}")
             sent = data["target_hotel"].get("sentiment_breakdown", [])
+            print(f"--- Sentiment Pillars ({len(sent)}) ---")
+            for p in sent:
+                print(f"  {p['name']}: {p.get('rating')} (Score found: {p.get('rating') is not None})")
+            
             val = next((p for p in sent if p["name"] == "Value"), None)
             if val:
                 print(f"✅ Value sentiment: {val.get('rating')} (Synthetic: {val.get('synthetic', False)})")

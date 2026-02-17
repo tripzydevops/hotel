@@ -38,35 +38,29 @@ export default function SentimentBattlefield({
   // Categories to compare
   const pillars = ["Cleanliness", "Service", "Location", "Value"];
 
-  // Helper to extract rating for a pillar from a hotel with alias support
+  // Helper to extract rating for a pillar from a hotel
   const getPillarRating = (hotel: Hotel, pillarName: string): number => {
     const breakdown = hotel.sentiment_breakdown || [];
     
-    // Robust mapping for aliases (English + Turkish)
-    const aliases: Record<string, string[]> = {
-      Cleanliness: ["temizlik", "clean", "room", "cleanliness", "banyo", "hijyen"],
-      Service: ["hizmet", "staff", "personel", "service", "resepsiyon", "ilgi"],
-      Location: ["konum", "neighborhood", "mevki", "location", "ulaşım", "yer"],
-      Value: ["değer", "fiyat", "price", "value", "fiyat-performans", "ekonomik"]
-    };
+    // The backend now provides standardized pillar names: 
+    // "Cleanliness", "Service", "Location", "Value"
+    // We look for them directly to avoid matching raw items from other sources.
+    const pillarData = breakdown.find(p => p.name === pillarName);
 
-    const searchTerms = aliases[pillarName] || [pillarName.toLowerCase()];
-    
-    // Find the first breakdown item that matches any of the aliases
-    const pillarData = breakdown.find(p => {
-      const name = (p.category || p.name || "").toLowerCase();
-      return searchTerms.some(term => name.includes(term) || term.includes(name));
-    });
-
-    return pillarData ? Number(pillarData.rating) : 0;
+    // Ensure we return a number and handle NaN/undefined
+    const rating = pillarData ? Number(pillarData.rating) : 0;
+    return isNaN(rating) ? 0 : rating;
   };
 
   // Transform data for Recharts
   const data = pillars.map(pillar => {
-    // KAİZEN: Fix translation key for Value and others 
-    // If t() returns the key itself, use the pillar name as fallback
-    const translatedName = t(`sentiment.${pillar.toLowerCase()}`);
-    const displayCategory = !translatedName || translatedName.includes('sentiment.') 
+    // KAİZEN: Robust i18n mapping
+    // If t() doesn't have the key, it often returns the key itself or path.
+    const key = `sentiment.${pillar.toLowerCase()}`;
+    const translatedName = t(key);
+    
+    // Explicitly check for translation failure
+    const displayCategory = (!translatedName || translatedName === key || translatedName.includes('sentiment.')) 
       ? pillar 
       : translatedName;
 

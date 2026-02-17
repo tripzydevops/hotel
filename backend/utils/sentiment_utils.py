@@ -91,12 +91,24 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     # Force order: Cleanliness, Service, Location, Value
     for name in ["Cleanliness", "Service", "Location", "Value"]:
         stats = pillars[name]
+        pos = stats["positive"]
+        neg = stats["negative"]
+        neu = stats["neutral"]
+        total = stats["total"]
+        
+        # Calculate rating 1.0 - 5.0
+        if total > 0:
+            rating = (pos * 5 + neu * 3 + neg * 1) / total
+        else:
+            rating = 0.0
+            
         result.append({
             "name": name,
-            "positive": stats["positive"],
-            "negative": stats["negative"],
-            "neutral": stats["neutral"],
-            "total_mentioned": stats["total"]
+            "rating": round(rating, 1),
+            "positive": pos,
+            "negative": neg,
+            "neutral": neu,
+            "total_mentioned": total
         })
     
     return result
