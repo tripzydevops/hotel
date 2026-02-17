@@ -11,3 +11,5 @@ from backend.main import app as _app  # noqa: E402, F401
 
 # Vercel requires the app variable to be exposed
 app = _app
+
+# Version: 2026-02-17 13:13
