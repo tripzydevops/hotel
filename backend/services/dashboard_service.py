@@ -16,7 +16,7 @@ from supabase import Client
 
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
-from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown
+from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
 
 async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_email: str, db: Client) -> Dict[str, Any]:
     """
