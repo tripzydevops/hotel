@@ -779,13 +779,14 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                 "serp_api_id": dh.get("serp_api_id"),
             })
 
-        # 4. Fetch Historical Visibility Data (Last 30 days)
-        # We aggregate average rank over time for the city
+        # EXPLANATION: Historical Visibility Data Aggregation (Last 30 days)
+        # Requirement: "Regional Visibility" chart needs actual data vs "No Data".
+        # We aggregate 1-based ranks from SerpApi results stored in price_logs.
         visibility_data = []
         try:
             thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
             
-            # Subquery style: Get all price logs for these hotels
+            # KAİZEN: Use batch query to avoid N+1 lookups for city-wide visibility
             vis_query = db.table("price_logs") \
                 .select("recorded_at, search_rank, price") \
                 .in_("hotel_id", hotel_ids) \
@@ -795,13 +796,13 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
             
             raw_vis = vis_query.data or []
             
-            # Group by date to get daily average rank
+            # Group by date to get daily average rank for the selected region
             daily_aggregates = {}
             for entry in raw_vis:
                 if not entry.get("search_rank") or not entry.get("recorded_at"):
                     continue
                 
-                # Normalize date to YYYY-MM-DD
+                # Normalize date to YYYY-MM-DD for Recharts binding
                 dt_str = entry["recorded_at"].split("T")[0]
                 if dt_str not in daily_aggregates:
                     daily_aggregates[dt_str] = {"sum_rank": 0, "count": 0, "sum_price": 0}
@@ -810,7 +811,6 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                 daily_aggregates[dt_str]["sum_price"] += entry.get("price", 0)
                 daily_aggregates[dt_str]["count"] += 1
             
-            # Format for Recharts
             for date_key in sorted(daily_aggregates.keys()):
                 agg = daily_aggregates[date_key]
                 visibility_data.append({
@@ -821,8 +821,8 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
         except Exception as e:
             print(f"Visibility Aggregation Error: {e}")
 
-        # 5. Detect Currency
-        # Find first non-zero price log to determine currency
+        # KAİZEN: Dynamic Currency Detection
+        # Instead of hardcoding '$', we detect the currency used in the most recent scans.
         detected_currency = "TRY"
         try:
             curr_res = db.table("price_logs") \

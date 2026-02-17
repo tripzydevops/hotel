@@ -162,6 +162,8 @@ export default function AnalyticsPanel() {
                 {data.summary.hotel_count}
               </div>
             </div>
+            {/* EXPLANATION: Bind dynamic currency from summary. 
+                Replaces hardcoded '$' with 'currency_symbol' (e.g. '₺'). */}
             <div className="p-4 glass-card bg-slate-900/50">
               <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
                 Avg Price

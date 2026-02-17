@@ -131,6 +131,9 @@ export default function AdminPage() {
           {/* Neural Health Matrix - Full Width */}
           <SystemHealthPanel stats={stats} />
 
+          {/* EXPLANATION: Grid Layout Fix for Terminal/Stat card overlap.
+              Using min-w-0 prevents child overflow in grid cells on smaller screens. 
+              Removed md:grid-rows-2 to allow natural height flow for StatCards. */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
             {/* Main Command Feed - Large Bento Cell */}
             <div className="lg:col-span-3 min-w-0">
