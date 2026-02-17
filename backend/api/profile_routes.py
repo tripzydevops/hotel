@@ -110,17 +110,39 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
     existing = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
     update_data = settings.model_dump(exclude_unset=True)
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    if not existing.data:
-        result = db.table("settings").insert({"user_id": str(user_id), **update_data}).execute()
+    if existing.data:
+        # KAİZEN: Handle schema mismatch for optional fields
+        if "push_subscription" in update_data and update_data["push_subscription"] is None:
+            del update_data["push_subscription"]
+            
+        try:
+            result = db.table("settings").update(update_data).eq("user_id", str(user_id)).execute()
+        except Exception as e:
+            # If update fails (e.g. column missing), try fallback without push_subscription
+            if "push_subscription" in update_data:
+                del update_data["push_subscription"]
+                result = db.table("settings").update(update_data).eq("user_id", str(user_id)).execute()
+            else:
+                raise e
     else:
-        result = db.table("settings").update(update_data).eq("user_id", str(user_id)).execute()
-    
+        # Insert new
+        if "push_subscription" in update_data and update_data["push_subscription"] is None:
+             del update_data["push_subscription"]
+        try:
+             result = db.table("settings").insert({"user_id": str(user_id), **update_data}).execute()
+        except Exception as e:
+             if "push_subscription" in update_data:
+                 del update_data["push_subscription"]
+                 result = db.table("settings").insert({"user_id": str(user_id), **update_data}).execute()
+             else:
+                 raise e
+
     # KAİZEN: Synchronize next_scan_at if frequency changed
     if "check_frequency_minutes" in update_data:
-        freq = update_data["check_frequency_minutes"]
-        now_dt = datetime.now(timezone.utc).replace(microsecond=0)
-        next_run = (now_dt + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
         try:
+            freq = update_data["check_frequency_minutes"]
+            now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+            next_run = (now_dt + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
             db.table("profiles").update({"next_scan_at": next_run}).eq("id", str(user_id)).execute()
             print(f"[Settings] Synced next_scan_at for {user_id} to {next_run}")
         except Exception as e:
@@ -129,3 +151,4 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to update settings")
     return result.data[0]
+
