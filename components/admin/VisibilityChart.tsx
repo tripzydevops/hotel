@@ -70,7 +70,7 @@ export default function VisibilityChart({
             tickLine={false}
             axisLine={false}
             reversed={true} // Rank 1 is top
-            domain={[1, "auto"]} // Start at 1
+            domain={[1, (dataMax: number) => Math.max(dataMax + 5, 20)]} // Ensure predictable range
             allowDecimals={false}
           />
           <Tooltip
