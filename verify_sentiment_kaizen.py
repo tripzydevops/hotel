@@ -46,6 +46,21 @@ def verify_sentiment_kaizen():
     assert syn_score >= 4.5, f"Expected high Value score for low ARI, got {syn_score}"
     print("   ✅ Value synthesis logic confirmed")
 
+    # 4. Test Dashboard Consistency
+    # We'll simulate the dashboard calc logic
+    raw_br = [
+        {"name": "Hizmet", "positive": 10, "total_mentioned": 10}
+    ]
+    norm_br = normalize_sentiment(raw_br)
+    raw_translated = translate_breakdown(raw_br)
+    
+    print("\n[4] Dashboard Payload Simulation:")
+    print(f" - Normalized count: {len(norm_br)}")
+    print(f" - Raw variety count: {len(raw_translated)}")
+    assert len(norm_br) == 4, "Dashboard normalization must return 4 pillars"
+    assert len(raw_translated) == 1, "Dashboard raw variety must contain all items"
+    print("   ✅ Dashboard payload consistency confirmed")
+
     print("\n--- ALL TESTS PASSED ---")
 
 if __name__ == "__main__":
