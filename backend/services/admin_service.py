@@ -811,11 +811,24 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                  lat = matched_meta.get("lat") if lat is None else lat
                  lng = matched_meta.get("lng") if lng is None else lng
             
-            # Final Fallback to City Center if still None
+            # Final Fallback to District Center if still None (District-Aware Kaizen)
             if (lat is None or lng is None) and city and city.lower() == "balikesir":
-                 # 39.54, 28.02 is Balikesir center. Add small jitter
-                 lat = 39.54 + (random.random() - 0.5) * 0.1
-                 lng = 28.02 + (random.random() - 0.5) * 0.1
+                 loc_str = (dh.get("location") or "").lower()
+                 name_str = dh["name"].lower()
+                 
+                 # Ayvalik / Cunda (West Coast)
+                 if "ayvalik" in loc_str or "cunda" in loc_str or "küçükköy" in loc_str:
+                     lat_base, lng_base = 39.3197, 26.6908
+                 # Edremit / Akcay / Altinoluk (North Coast)
+                 elif "edremit" in loc_str or "akcay" in loc_str or "altinoluk" in loc_str or "akçay" in loc_str:
+                     lat_base, lng_base = 39.5852, 26.9248
+                 # Default Balikesir Center (Inland)
+                 else:
+                     lat_base, lng_base = 39.6482, 27.8826
+                 
+                 # Add small jitter for visual distribution (0.03 ~ 3.3km)
+                 lat = lat_base + (random.random() - 0.5) * 0.03
+                 lng = lng_base + (random.random() - 0.5) * 0.03
 
             hotels_out.append({
                 "id": str(dh["id"]),
