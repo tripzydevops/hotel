@@ -38,7 +38,8 @@ from backend.services.admin_service import (
     delete_admin_plan_logic,
     sync_hotel_directory_logic,
     cleanup_test_data_logic,
-    get_admin_market_intelligence_logic
+    get_admin_market_intelligence_logic,
+    get_scheduler_queue_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -297,3 +298,15 @@ async def get_market_intelligence(city: Optional[str] = None, db: Client = Depen
     Now correctly calls get_admin_market_intelligence_logic with city filter.
     """
     return await get_admin_market_intelligence_logic(db, city)
+
+@router.get("/scheduler/queue")
+async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)):
+    """
+    Returns the list of users with scheduled scans for the admin Upcoming Queue tab.
+    
+    EXPLANATION: Missing Endpoint Implementation
+    The ScansPanel frontend component calls /api/admin/scheduler/queue but this 
+    route was never created. Without it, the queue silently failed and always 
+    showed 'No scheduled scans found'.
+    """
+    return await get_scheduler_queue_logic(db)
