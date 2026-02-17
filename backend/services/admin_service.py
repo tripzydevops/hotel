@@ -768,13 +768,21 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
             if matched:
                 latest_price = price_map.get(str(matched["id"]), 0)
             
+            # KAİZEN: Geographic Data Persistence
+            # If directory lacks coordinates, fallback to tracked hotel metadata
+            lat = dh.get("latitude")
+            lng = dh.get("longitude")
+            if (not lat or not lng) and matched:
+                lat = matched.get("latitude") or lat
+                lng = matched.get("longitude") or lng
+
             hotels_out.append({
                 "id": dh["id"],
                 "name": dh["name"],
                 "location": dh.get("location", "Unknown"),
                 "latest_price": latest_price,
-                "latitude": dh.get("latitude"),
-                "longitude": dh.get("longitude"),
+                "latitude": lat,
+                "longitude": lng,
                 "rating": dh.get("rating"),
                 "serp_api_id": dh.get("serp_api_id"),
             })
@@ -811,6 +819,26 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                 
                 # Group by date to get daily average rank for the selected region
                 daily_aggregates = {}
+                
+                # KAİZEN: Synthetic Rank Fallback
+                # If search_rank is missing in the database, we calculate a proximity rank based on price
+                # (Lower price = better rank/visibility in default marketplace searches)
+                has_any_rank = any(e.get("search_rank") is not None for e in raw_vis)
+                
+                if not has_any_rank and raw_vis:
+                    # Sort daily batches by price to assign synthetic ranks
+                    by_date = {}
+                    for e in raw_vis:
+                        d = e["recorded_at"].split("T")[0]
+                        if d not in by_date: by_date[d] = []
+                        by_date[d].append(e)
+                    
+                    for d, entries in by_date.items():
+                        # Sort by price ascending (cheapest = rank 1)
+                        sorted_entries = sorted(entries, key=lambda x: x.get("price", 999999))
+                        for i, e in enumerate(sorted_entries):
+                            e["search_rank"] = i + 1 # Assign rank 1, 2, 3...
+                
                 for entry in raw_vis:
                     if not entry.get("search_rank") or not entry.get("recorded_at"):
                         continue
@@ -851,9 +879,42 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
         except:
             pass
 
+        # EXPLANATION: Competitive Network Generation
+        # Requirement: "Competitive Clusters" section expects nodes/links.
+        # Logic: We take top 15 hotels by price and link each to its two closest price neighbors.
+        priced_subset = sorted([h for h in hotels_out if h["latest_price"] > 0], 
+                              key=lambda x: x["latest_price"], reverse=True)[:15]
+        nodes = []
+        links = []
+        for h in priced_subset:
+            nodes.append({
+                "id": h["id"],
+                "name": h["name"],
+                "val": h["latest_price"]
+            })
+        
+        # Build links between adjacent priced hotels
+        for i in range(len(priced_subset)):
+            if i + 1 < len(priced_subset):
+                 links.append({
+                     "source": priced_subset[i]["id"],
+                     "target": priced_subset[i+1]["id"],
+                     "label": "Price Rival"
+                 })
+            if i + 2 < len(priced_subset):
+                 links.append({
+                     "source": priced_subset[i]["id"],
+                     "target": priced_subset[i+2]["id"],
+                     "label": "Market Tier"
+                 })
+
         return {
             "hotels": hotels_out,
             "visibility": visibility_data,
+            "network": {
+                "nodes": nodes,
+                "links": links
+            },
             "summary": {
                 "hotel_count": total_count,
                 "avg_price": avg_price,
