@@ -21,10 +21,10 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     # Keyword Mapping (Expanded Turkish set)
     # Using substring matching for flexibility
     mappings = {
-        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed", "mülk", "property", "tesis", "facility", "konfor", "comfort", "klima", "air conditioning"],
-        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek", "restoran", "restaurant", "food", "yiyecek", "içecek", "bar", "atmosfer", "atmosphere", "kablosuz", "wifi", "internet", "sağlıklı yaşam", "spa", "wellness", "pool", "havuz"],
-        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife", "otopark", "parking", "transport"],
-        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality"]
+        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed", "mülk", "property", "tesis", "facility", "konfor", "comfort", "klima", "air conditioning", "internet", "wifi", "kablosuz"],
+        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek", "restoran", "restaurant", "food", "yiyecek", "içecek", "bar", "atmosfer", "atmosphere", "sağlıklı yaşam", "spa", "wellness", "pool", "havuz", "fitness", "sauna"],
+        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife", "otopark", "parking", "transport", "trafik", "traffic"],
+        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality", "fırsat", "teklif", "deal", "offer"]
     }
 
     found_pillars = set()
@@ -61,6 +61,62 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         })
     
     return result
+
+def translate_breakdown(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Translates raw Turkish SerpApi categories to English for UI consistency,
+    but keeps the internal variety (unlike normalize_sentiment).
+    """
+    if not breakdown or not isinstance(breakdown, list):
+        return []
+
+    # Map of Turkish keys to English labels
+    tr_map = {
+        "hizmet": "Service",
+        "temizlik": "Cleanliness",
+        "konum": "Location",
+        "oda": "Room",
+        "kahvaltı": "Breakfast",
+        "fiyat": "Price",
+        "değer": "Value",
+        "personel": "Staff",
+        "mülk": "Property",
+        "uyku": "Sleep",
+        "banyo": "Bathroom",
+        "konfor": "Comfort",
+        "yemek": "Food",
+        "havuz": "Pool",
+        "restoran": "Restaurant",
+        "atmosfer": "Atmosphere",
+        "kablosuz": "Wi-Fi",
+        "klima": "A/C",
+        "aile": "Family",
+        "çiftler": "Couples",
+        "iş": "Business",
+        "fitness": "Fitness",
+        "sağlıklı yaşam": "Wellness",
+        "gece hayatı": "Nightlife",
+        "otopark": "Parking",
+        "bar": "Bar",
+        "erişilebilirlik": "Accessibility",
+        "mutfak": "Kitchen"
+    }
+
+    translated = []
+    for item in breakdown:
+        name = item.get("name", "")
+        # Try exact or substring
+        label = name
+        for tr_key, en_val in tr_map.items():
+            if tr_key == name.lower() or tr_key in name.lower():
+                label = en_val
+                break
+        
+        translated.append({
+            **item,
+            "display_name": label
+        })
+    return translated
 
 def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """

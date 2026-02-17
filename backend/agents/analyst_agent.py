@@ -204,8 +204,8 @@ class AnalystAgent:
                     # meta_update["currency"] = currency # Column check
                 
                 # Extract rich fields
-                for field in ["rating", "property_token", "image_url", "reviews_breakdown", "latitude", "longitude"]:
-                    key = "serp_api_id" if field == "property_token" else "sentiment_breakdown" if field == "reviews_breakdown" else field
+                for field in ["rating", "property_token", "image_url", "reviews_breakdown", "latitude", "longitude", "reviews_list"]:
+                    key = "serp_api_id" if field == "property_token" else "sentiment_breakdown" if field == "reviews_breakdown" else "reviews" if field == "reviews_list" else field
                     val = price_data.get(field)
                     if val is not None:
                         meta_update[key] = val

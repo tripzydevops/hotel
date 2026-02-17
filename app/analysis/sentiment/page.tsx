@@ -53,25 +53,8 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
   bar: "Bar",
   "gece hayatı": "Nightlife",
   "sağlıklı yaşam": "Wellness",
+  çiftler: "Couples",
   iş: "Business",
-  mülk: "Property",
-  kablosuz: "Wi-Fi",
-  klima: "A/C",
-  atmosfer: "Atmosphere",
-  aile: "Family",
-  uyku: "Sleep",
-  
-  // Value aliases for completeness
-  değer: "Value",
-  kalite: "Quality",
-  "fiyat/performans": "Value",
-  cost: "Cost",
-  money: "Value",
-  ucuz: "Affordable",
-  pahalı: "Expensive",
-  ekonomik: "Economy",
-  para: "Money",
-  maliyet: "Cost",
 };
 
 // Dynamically import heavy analytics components to improve initial page performance
@@ -818,13 +801,21 @@ export default function SentimentPage() {
           >
             <SentimentBreakdown
               items={
-                targetHotel.sentiment_breakdown?.map((s: any) => {
+                ((targetHotel as any).sentiment_raw_breakdown || targetHotel.sentiment_breakdown || [])
+                .sort((a: any, b: any) => Number(b.total_mentioned || 0) - Number(a.total_mentioned || 0))
+                .map((s: any) => {
                   let total = Number(s.total || s.total_mentioned);
-                  if (Number.isNaN(total) || total <= 0) total = 100;
+                  if (Number.isNaN(total) || total <= 0) total = 0;
+                  
+                  // Use translated name if available
+                  const rawName = s.display_name || s.name || s.category || "General";
+                  const translatedName = KEYWORD_TRANSLATIONS[rawName.toLowerCase()] || rawName;
+
                   let rating = Number(s.rating);
                   if (Number.isNaN(rating)) rating = 0;
+                  
                   return {
-                    name: s.name || s.category || "General",
+                    name: translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
                     total_mentioned: total,
                     positive:
                       typeof s.positive === "number" &&
@@ -843,7 +834,9 @@ export default function SentimentPage() {
                     serpapi_link: s.serpapi_link,
                     description: s.description || s.summary,
                   };
-                }) || []
+                })
+                .filter((item: any) => item.total_mentioned > 0)
+                .slice(0, 24) // Show up to 24 for high variety
               }
             />
           </motion.div>

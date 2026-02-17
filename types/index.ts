@@ -35,6 +35,19 @@ export interface Hotel {
     neutral?: number;
     category?: string;
   }>;
+  sentiment_raw_breakdown?: Array<{
+    name: string;
+    display_name?: string;
+    rating: number;
+    total?: number;
+    positive?: number;
+    negative?: number;
+    neutral?: number;
+    category?: string;
+    description?: string;
+    summary?: string;
+    serpapi_link?: string;
+  }>;
   guest_mentions?: Array<{
     text: string;
     keyword?: string;
