@@ -317,6 +317,9 @@ class AdminStats(BaseModel):
     api_calls_today: int
     directory_size: int
     scraper_health: float = 100.0  # Percentage of successful scans in last 24h
+    avg_latency_ms: float = 0.0    # Average scan duration in ms
+    error_rate_24h: float = 0.0    # Detailed error rate
+    active_nodes: int = 1          # Count of active scraper nodes
     service_role_active: bool = False
 
 class AdminUserCreate(BaseModel):
@@ -351,6 +354,7 @@ class AdminUser(BaseModel):
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
     scan_frequency_minutes: Optional[int] = 0
+    max_hotels: int = 5            # Derived from plan
     next_scan_at: Optional[datetime] = None
 
 class AdminDirectoryEntry(BaseModel):

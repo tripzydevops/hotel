@@ -167,8 +167,12 @@ export interface AdminStats {
   total_users: number;
   total_hotels: number;
   total_scans: number;
-  directory_count: number;
+  directory_size: number;
   api_calls_today: number;
+  scraper_health: number;
+  avg_latency_ms: number;
+  error_rate_24h: number;
+  active_nodes: number;
   service_role_active: boolean;
 }
 
@@ -193,6 +197,7 @@ export interface AdminUser {
   timezone?: string;
   hotel_count: number;
   scan_count: number;
+  max_hotels: number;
   plan_type?: "trial" | "starter" | "pro" | "enterprise";
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
   current_period_end?: string;

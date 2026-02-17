@@ -21,7 +21,7 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { AdminStats } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Modular Components
 import StatCard from "@/components/admin/StatCard";
@@ -31,6 +31,7 @@ import UserManagementPanel from "@/components/admin/UserManagementPanel";
 import DirectoryPanel from "@/components/admin/DirectoryPanel";
 import LogsPanel from "@/components/admin/LogsPanel";
 import ScansPanel from "@/components/admin/ScansPanel";
+import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
 
 import NeuralFeed from "@/components/admin/NeuralFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
@@ -126,32 +127,37 @@ export default function AdminPage() {
 
       {/* Overview Tab Content - High-Fidelity Bento Orchestration */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-rows-2 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          {/* Main Command Feed - Large Bento Cell */}
-          <div className="lg:col-span-3 lg:row-span-2 order-2 lg:order-1">
-            <NeuralFeed />
-          </div>
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          {/* Neural Health Matrix - Full Width */}
+          <SystemHealthPanel stats={stats} />
 
-          {/* Vertical Stat Column */}
-          <div className="lg:col-span-1 flex flex-col gap-6 order-1 lg:order-2">
-            <StatCard
-              label="Intelligence nodes"
-              value={stats?.total_users || 0}
-              icon={Users}
-              trend="up"
-            />
-            <StatCard
-              label="Monitored Entities"
-              value={stats?.total_hotels || 0}
-              icon={Building2}
-              trend="neutral"
-            />
-            <StatCard
-              label="Network Cycles"
-              value={stats?.total_scans || 0}
-              icon={Activity}
-              trend="up"
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-rows-2 gap-6">
+            {/* Main Command Feed - Large Bento Cell */}
+            <div className="lg:col-span-3 lg:row-span-2 order-2 lg:order-1">
+              <NeuralFeed />
+            </div>
+
+            {/* Vertical Stat Column */}
+            <div className="lg:col-span-1 flex flex-col gap-6 order-1 lg:order-2">
+              <StatCard
+                label="Intelligence nodes"
+                value={stats?.total_users || 0}
+                icon={Users}
+                trend="up"
+              />
+              <StatCard
+                label="Monitored Entities"
+                value={stats?.total_hotels || 0}
+                icon={Building2}
+                trend="neutral"
+              />
+              <StatCard
+                label="Network Cycles"
+                value={stats?.total_scans || 0}
+                icon={Activity}
+                trend="up"
+              />
+            </div>
           </div>
 
           {/* Quick Action Tiles - Lower Bento Band (Simplified for impact) */}
@@ -217,7 +223,7 @@ export default function AdminPage() {
       )}
 
       {/* Tab Content Panels */}
-      <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="mt-12">
         <Suspense
           fallback={
             <div className="p-20 text-center">
@@ -225,14 +231,24 @@ export default function AdminPage() {
             </div>
           }
         >
-          {activeTab === "users" && <UserManagementPanel />}
-          {activeTab === "directory" && <DirectoryPanel />}
-          {activeTab === "scans" && <ScansPanel />}
-          {activeTab === "analytics" && <AnalyticsPanel />}
-          {activeTab === "reports" && <ReportGeneratorPanel />}
-          {activeTab === "plans" && <MembershipPlansPanel />}
-          {activeTab === "keys" && <ApiKeysPanel />}
-          {activeTab === "logs" && <LogsPanel />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {activeTab === "users" && <UserManagementPanel />}
+              {activeTab === "directory" && <DirectoryPanel />}
+              {activeTab === "scans" && <ScansPanel />}
+              {activeTab === "analytics" && <AnalyticsPanel />}
+              {activeTab === "reports" && <ReportGeneratorPanel />}
+              {activeTab === "plans" && <MembershipPlansPanel />}
+              {activeTab === "keys" && <ApiKeysPanel />}
+              {activeTab === "logs" && <LogsPanel />}
+            </motion.div>
+          </AnimatePresence>
         </Suspense>
       </div>
     </div>

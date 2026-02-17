@@ -243,7 +243,7 @@ const UserManagementPanel = () => {
                 <tr>
                   <th className="p-5">Operator Profile</th>
                   <th className="p-5">Tier / Integrity</th>
-                  <th className="p-5 text-center">Entity Allocation</th>
+                  <th className="p-5">Entity Resource Allocation</th>
                   <th className="p-5 text-center">Sync Matrix</th>
                   <th className="p-5">Temporal Index</th>
                   <th className="p-5 text-right">Matrix Ops</th>
@@ -297,14 +297,29 @@ const UserManagementPanel = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="p-5 text-center">
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg font-black text-white tabular-nums group-hover:scale-110 transition-transform group-hover:text-[var(--soft-gold)]">
-                          {u.hotel_count}
-                        </span>
-                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-40">
-                          Objects
-                        </span>
+                    <td className="p-5">
+                      <div className="flex flex-col gap-2 min-w-[150px]">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="text-[11px] font-black text-white tabular-nums">
+                            {u.hotel_count} <span className="opacity-40 font-bold ml-0.5">/ {u.max_hotels || 5}</span>
+                          </span>
+                          <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
+                            {Math.round((u.hotel_count / (u.max_hotels || 5)) * 100)}% Load
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, (u.hotel_count / (u.max_hotels || 5)) * 100)}%` }}
+                            className={`h-full rounded-full ${
+                              (u.hotel_count / (u.max_hotels || 5)) > 0.9 
+                                ? 'bg-red-500' 
+                                : (u.hotel_count / (u.max_hotels || 5)) > 0.7 
+                                ? 'bg-orange-500' 
+                                : 'bg-[var(--soft-gold)]'
+                            } shadow-[0_0_8px_currentColor] opacity-80`}
+                          />
+                        </div>
                       </div>
                     </td>
                     <td className="p-5 text-center">

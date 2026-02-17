@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { AdminStats } from "@/types";
 
 interface FeedItem {
   id: string;
@@ -23,6 +24,7 @@ interface FeedItem {
 }
 
 const NeuralFeed = () => {
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [logs, setLogs] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -32,8 +34,12 @@ const NeuralFeed = () => {
   const fetchLogs = React.useCallback(async () => {
     if (!isVisible) return;
     try {
-      const data = await api.getAdminFeed();
-      setLogs(data);
+      const [logData, statData] = await Promise.all([
+        api.getAdminFeed(),
+        api.getAdminStats()
+      ]);
+      setLogs(logData);
+      setStats(statData);
       setLastUpdate(new Date());
     } catch (err) {
       console.error("Neural Feed Error", err);
@@ -190,13 +196,15 @@ const NeuralFeed = () => {
       <div className="px-8 py-4 bg-black/40 border-t border-white/5 flex justify-between items-center text-[9px] font-mono text-[var(--text-muted)]">
         <div className="flex gap-10">
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] shadow-[0_0_10px_rgba(212,175,55,0.4)]" />
-            <span className="uppercase tracking-[0.2em]">LATENCY: 18ms</span>
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_currentColor] ${
+              (stats?.avg_latency_ms || 0) < 2000 ? "text-[var(--soft-gold)]" : "text-orange-500"
+            } bg-current`} />
+            <span className="uppercase tracking-[0.2em]">LATENCY: {stats?.avg_latency_ms || 0}ms</span>
           </div>
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
             <span className="uppercase tracking-[0.2em]">
-              GATE_UPTIME: 99.98%
+              GATE_UPTIME: {stats?.scraper_health || 100}%
             </span>
           </div>
         </div>

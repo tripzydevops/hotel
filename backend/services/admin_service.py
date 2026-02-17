@@ -63,12 +63,34 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         # scans over the last 24 hours. This allows administrators to quickly 
         # identify if an external provider (like SerpApi) is experiencing global issues.
         last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-        recent_sessions_health = db.table("scan_sessions").select("status").gte("created_at", last_24h).execute()
+        recent_sessions_health = db.table("scan_sessions") \
+            .select("status, started_at, completed_at") \
+            .gte("created_at", last_24h) \
+            .order("created_at", desc=True) \
+            .limit(100) \
+            .execute()
         health = 100.0
+        avg_latency = 0.0
+        error_rate = 0.0
+        
         if recent_sessions_health.data:
             total_recent = len(recent_sessions_health.data)
             successes = sum(1 for s in recent_sessions_health.data if s["status"] in ["completed", "partial"])
             health = (successes / total_recent) * 100
+            error_rate = ((total_recent - successes) / total_recent) * 100
+            
+            # Calculate Latency for successful scans
+            durations = []
+            for s in recent_sessions_health.data:
+                if s["status"] in ["completed", "partial"] and s.get("started_at") and s.get("completed_at"):
+                    try:
+                        start = datetime.fromisoformat(s["started_at"].replace('Z', '+00:00'))
+                        end = datetime.fromisoformat(s["completed_at"].replace('Z', '+00:00'))
+                        durations.append((end - start).total_seconds() * 1000)
+                    except Exception: pass
+            
+            if durations:
+                avg_latency = sum(durations) / len(durations)
 
         return AdminStats(
             total_users=users_count,
@@ -77,6 +99,9 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
             api_calls_today=api_calls,
             directory_size=directory_count,
             scraper_health=round(health, 1),
+            avg_latency_ms=round(avg_latency, 1),
+            error_rate_24h=round(error_rate, 1),
+            active_nodes=int(os.getenv("NODE_COUNT", 1)),
             service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ
         )
     except Exception as e:
@@ -236,6 +261,13 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
                 s_count = db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).execute().count or 0
                 udata["hotel_count"] = h_count
                 udata["scan_count"] = s_count
+                
+                # EXPLANATION: Plan-Based Quota Logic
+                # Map plan types to their hardcoded (or DB-stored) hotel limits 
+                # to allow the frontend to display accurate "Capacity Gauges".
+                plan = udata.get("plan_type", "trial").lower()
+                limit_map = {"starter": 5, "pro": 25, "enterprise": 999}
+                udata["max_hotels"] = limit_map.get(plan, 5)
                 
                 final_users.append(AdminUser(**udata))
             except Exception:
