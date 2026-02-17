@@ -772,9 +772,10 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
             # If directory lacks coordinates, fallback to tracked hotel metadata
             lat = dh.get("latitude")
             lng = dh.get("longitude")
-            if (not lat or not lng) and matched:
-                lat = matched.get("latitude") or lat
-                lng = matched.get("longitude") or lng
+            # KAİZEN: Use explicit None checks to avoid filtering out 0.0 coordinates
+            if (lat is None or lng is None) and matched:
+                lat = matched.get("latitude") if lat is None else lat
+                lng = matched.get("longitude") if lng is None else lng
 
             hotels_out.append({
                 "id": dh["id"],
@@ -840,7 +841,8 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                             e["search_rank"] = i + 1 # Assign rank 1, 2, 3...
                 
                 for entry in raw_vis:
-                    if not entry.get("search_rank") or not entry.get("recorded_at"):
+                    # KAİZEN: Explicit None check for search_rank
+                    if entry.get("search_rank") is None or not entry.get("recorded_at"):
                         continue
                     
                     # Normalize date to YYYY-MM-DD for Recharts binding

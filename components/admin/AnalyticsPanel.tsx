@@ -218,6 +218,7 @@ export default function AnalyticsPanel() {
               <CompsetGraph
                 nodes={data.network.nodes}
                 links={data.network.links}
+                currencySymbol={data.summary.currency_symbol}
               />
             </section>
           </div>

@@ -21,9 +21,14 @@ interface Link {
 interface CompsetGraphProps {
   nodes: Node[];
   links: Link[];
+  currencySymbol?: string;
 }
 
-export default function CompsetGraph({ nodes, links }: CompsetGraphProps) {
+export default function CompsetGraph({
+  nodes,
+  links,
+  currencySymbol = "$",
+}: CompsetGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
@@ -141,7 +146,7 @@ export default function CompsetGraph({ nodes, links }: CompsetGraphProps) {
               {node.label}
             </div>
             <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
-              ${node.value}
+              {currencySymbol}{node.value}
             </div>
           </div>
         );
