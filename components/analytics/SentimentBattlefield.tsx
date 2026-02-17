@@ -38,18 +38,40 @@ export default function SentimentBattlefield({
   // Categories to compare
   const pillars = ["Cleanliness", "Service", "Location", "Value"];
 
-  // Helper to extract rating for a pillar from a hotel
+  // Helper to extract rating for a pillar from a hotel with alias support
   const getPillarRating = (hotel: Hotel, pillarName: string): number => {
     const breakdown = hotel.sentiment_breakdown || [];
-    const pillarData = breakdown.find(p => p.name === pillarName);
+    
+    // Robust mapping for aliases (English + Turkish)
+    const aliases: Record<string, string[]> = {
+      Cleanliness: ["temizlik", "clean", "room", "cleanliness", "banyo", "hijyen"],
+      Service: ["hizmet", "staff", "personel", "service", "resepsiyon", "ilgi"],
+      Location: ["konum", "neighborhood", "mevki", "location", "ulaşım", "yer"],
+      Value: ["değer", "fiyat", "price", "value", "fiyat-performans", "ekonomik"]
+    };
+
+    const searchTerms = aliases[pillarName] || [pillarName.toLowerCase()];
+    
+    // Find the first breakdown item that matches any of the aliases
+    const pillarData = breakdown.find(p => {
+      const name = (p.category || p.name || "").toLowerCase();
+      return searchTerms.some(term => name.includes(term) || term.includes(name));
+    });
+
     return pillarData ? Number(pillarData.rating) : 0;
   };
 
   // Transform data for Recharts
-  // Format: { category: "Cleanliness", [hotelName]: rating, ... }
   const data = pillars.map(pillar => {
+    // KAİZEN: Fix translation key for Value and others 
+    // If t() returns the key itself, use the pillar name as fallback
+    const translatedName = t(`sentiment.${pillar.toLowerCase()}`);
+    const displayCategory = !translatedName || translatedName.includes('sentiment.') 
+      ? pillar 
+      : translatedName;
+
     const entry: any = { 
-      category: t(`sentiment.${pillar.toLowerCase()}`) || pillar 
+      category: displayCategory 
     };
     
     // Add target hotel
@@ -75,6 +97,10 @@ export default function SentimentBattlefield({
 
   const allHotels = [targetHotel, ...competitors];
 
+  // Dynamically calculate bar size based on number of hotels
+  const barSize = allHotels.length > 5 ? 15 : allHotels.length > 3 ? 20 : 30;
+  const targetBarSize = barSize + 5;
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
@@ -85,7 +111,7 @@ export default function SentimentBattlefield({
         <BarChart
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          barGap={8}
+          barGap={2}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -130,7 +156,8 @@ export default function SentimentBattlefield({
               dataKey={hotel.name}
               fill={colors[index % colors.length]}
               radius={[4, 4, 0, 0]}
-              barSize={index === 0 ? 30 : 25} // Target hotel slightly wider for prominence
+              barSize={index === 0 ? targetBarSize : barSize}
+              animationBegin={index * 100}
             />
           ))}
         </BarChart>
