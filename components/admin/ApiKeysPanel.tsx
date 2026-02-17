@@ -307,6 +307,37 @@ const ApiKeysPanel = () => {
           </table>
         </div>
       </div>
+
+      {/* Diagnostics (Debug Info) */}
+      {keyStatus?.env_debug && (
+        <div className="glass-card p-6 border border-white/5">
+          <h3 className="text-xs font-black uppercase tracking-widest text-white mb-4">
+            Environment Diagnostics
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(keyStatus.env_debug).map(([key, status]) => (
+              <div
+                key={key}
+                className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between"
+              >
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                    {key}
+                  </span>
+                  <span
+                    className={`text-xs font-bold ${status === "Set" ? "text-green-400" : "text-red-400"}`}
+                  >
+                    {status.toUpperCase()}
+                  </span>
+                </div>
+                <div
+                  className={`w-2 h-2 rounded-full ${status === "Set" ? "bg-green-500" : "bg-red-500"}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
