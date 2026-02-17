@@ -53,17 +53,16 @@ def main():
     hotel_names = list(name_to_hotel.keys())
     print(f"Found {len(hotels)} hotels. Fetching legacy query_logs...")
     
-    # 2. Fetch all price-bearing query_logs
+    # 2. Fetch all price-bearing query_logs (More broad fetch, match in Python)
     query_logs_res = db.table("query_logs") \
-        .select("hotel_name, price, currency, created_at, vendor, action_type") \
-        .in_("hotel_name", hotel_names) \
-        .in_("action_type", ["monitor", "search"]) \
+        .select("hotel_name, price, currency, created_at, vendor, action_type, check_in_date") \
+        .in_("action_type", ["monitor", "search", "parity_check"]) \
         .not_.is_("price", "null") \
         .order("created_at", desc=True) \
         .execute()
     
     legacy_records = query_logs_res.data or []
-    print(f"Found {len(legacy_records)} legacy price records.")
+    print(f"Found {len(legacy_records)} total potential legacy price records.")
     
     if not legacy_records:
         print("No legacy records to migrate. Done.")
@@ -84,37 +83,54 @@ def main():
     # 4. Convert and insert
     to_insert = []
     skipped = 0
+    matched_count = 0
     
     for ql in legacy_records:
-        hotel = name_to_hotel.get(ql["hotel_name"])
-        if not hotel:
+        q_name = (ql.get("hotel_name") or "").lower().strip()
+        if not q_name: continue
+        
+        # EXPLANATION: Flexible Name Matching
+        # We check if the legacy name contains the hotel name or vice-versa.
+        # This handles 'Altın Otel' vs 'Altın Otel & Spa'
+        target_hotel = None
+        for h_name, hotel_obj in name_to_hotel.items():
+            h_name_lower = h_name.lower().strip()
+            if h_name_lower in q_name or q_name in h_name_lower:
+                target_hotel = hotel_obj
+                break
+        
+        if not target_hotel:
             continue
         
-        hid = str(hotel["id"])
+        matched_count += 1
+        hid = str(target_hotel["id"])
         ts = str(ql["created_at"])
         
         # EXPLANATION: Duplicate Prevention
-        # Skip if we already have a price_log at this exact timestamp
         if ts in existing_timestamps.get(hid, set()):
             skipped += 1
             continue
         
-        # EXPLANATION: Schema Translation
-        # query_logs has a flat structure; price_logs has structured fields.
-        # We map the legacy fields to the modern schema.
+        # FIX: Prioritize check_in_date from legacy record if available.
+        c_in = ql.get("check_in_date")
+        if not c_in:
+            c_in = ql["created_at"].split("T")[0]
+        else:
+            c_in = str(c_in).split("T")[0]
+
         record = {
             "hotel_id": hid,
             "price": ql["price"],
             "currency": ql.get("currency") or "TRY",
             "recorded_at": ql["created_at"],
             "vendor": ql.get("vendor") or "SerpApi",
-            "check_in_date": ql["created_at"].split("T")[0],  # Best approximation
-            "source": "legacy_backfill",  # Tag for traceability
+            "check_in_date": c_in,
+            "source": "legacy_backfill",
         }
         to_insert.append(record)
         existing_timestamps.setdefault(hid, set()).add(ts)
     
-    print(f"Records to insert: {len(to_insert)} (skipped {skipped} duplicates)")
+    print(f"Matched {matched_count} records to known hotels. Records to insert: {len(to_insert)} (skipped {skipped} duplicates)")
     
     if not to_insert:
         print("Nothing to insert. All records already exist.")

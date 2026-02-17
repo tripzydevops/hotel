@@ -236,14 +236,29 @@ async def run_scheduler_check_logic():
             return
 
         # 1. Get all active users with schedules due
-        # Assuming 'profiles' has 'next_scan_at' and 'scan_frequency_minutes'
+        # KAİZEN: Use a broader query and filter in Python if needed, 
+        # and support both 'profiles' and 'user_profiles' if necessary.
+        # But for now, let's stick to 'profiles' but add deep logging.
+        now_iso = datetime.now(timezone.utc).isoformat()
+        logger.info(f"CRON: Checking for scans due before {now_iso}")
+        
         result = supabase.table("profiles").select("id, next_scan_at, scan_frequency_minutes, subscription_status") \
-            .lte("next_scan_at", datetime.now(timezone.utc).isoformat()) \
-            .eq("subscription_status", "active") \
+            .lte("next_scan_at", now_iso) \
             .execute()
         
-        due_users = result.data or []
-        logger.info(f"CRON: Found {len(due_users)} users due for scan.")
+        all_due = result.data or []
+        logger.info(f"CRON: Found {len(all_due)} total profiles with next_scan_at <= now")
+        
+        # Filter by status in Python to allow better logging of SKIPPED users
+        due_users = []
+        for u in all_due:
+            status = u.get("subscription_status")
+            if status == "active":
+                due_users.append(u)
+            else:
+                logger.info(f"CRON: Skipping user {u['id']} because status is '{status}' (expected 'active')")
+        
+        logger.info(f"CRON: Proceeding with {len(due_users)} active users.")
         
         if not due_users:
             return

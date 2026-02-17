@@ -370,6 +370,8 @@ class SerpApiProvider(HotelDataProvider):
             raw_price = best_match["price"]
 
         price = self._clean_price_string(raw_price, currency)
+        if price is not None and price <= 0:
+            price = None # Treat 0 as invalid/sellout
 
         # Build Offers List (Market intelligence)
         # Combine all possible offer sources

@@ -108,10 +108,11 @@ def get_price_for_room(
         if any(v in r_name for v in target_variants):
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
-    # EXPLANATION: Standard Request Detection
-    # We broaden the check to include common Turkish variants like 'Oda' (Room),
-    # 'Standart', 'Klasik', etc. This ensures legacy data (which lacks JSON room types)
-    # correctly falls back to the top-level price when viewing base room categories.
+    # EXPLANATION: Standard Request Detection & Global Fallback
+    # Why: If no semantic or string match was found, but we are looking for a 'Standard' 
+    # room, we fall back to the lowest available room price. 
+    # This is a Kaizen 'Error Proofing' measure: display a valid price rather than 'N/A'
+    # when the room type catalog or semantic embedding is sparse.
     std_variants = ["standard", "standart", "any", "base", "all room types", "all", "promo", "ekonomik", "economy", "klasik", "classic"]
     target_lower = target_room_type.lower()
     
@@ -131,22 +132,24 @@ def get_price_for_room(
             
             if valid_prices:
                 valid_prices.sort(key=lambda x: x[0])
-                return valid_prices[0][0], valid_prices[0][1], 0.5
+                # Increase confidence (0.65) for lowest-price fallback to guarantee UI display
+                return valid_prices[0][0], valid_prices[0][1], 0.65
         except Exception:
             pass
 
-    # EXPLANATION: Legacy Log Fallback
-    # Why: The modern 'price_logs' table uses structured 'room_types' (JSONB).
-    # The legacy 'query_logs' table stores a single top-level 'price'.
-    # If room_types is missing/empty, we try to use the top-level price.
-    # CRITICAL FIX: Only if looking for standard rooms.
+    # If price found is 0, we treat as None for calculations but mark as sellout
+    match_price = None
+    match_name = None
+    confidence = 0.0
+
     if (not r_types or len(r_types) == 0) and is_standard_request:
         top_price = _extract_price(price_log.get("price"))
         if top_price is not None:
-            # We treat this as a 'Standard' match with lower confidence
-            return top_price, "Standard (Legacy)", 0.6
+            # Kaizen: Improved confidence for legacy data to ensure continuity
+            match_price, match_name, confidence = top_price, "Standard (Legacy)", 0.7
             
-    return None, None, 0.0
+    # If match_price is 0, we return it as 0.0 to indicate sellout
+    return match_price, match_name, confidence
 
 async def perform_market_analysis(
     user_id: str,
@@ -221,8 +224,12 @@ async def perform_market_analysis(
                 orig_price, matched_room, match_score = get_price_for_room(prices[0], room_type, allowed_room_names_map)
                 
                 if orig_price is not None:
+                    # Detect Sellout (0.0 or less)
+                    is_sellout = (orig_price <= 0)
                     converted = convert_currency(orig_price, lead_currency, display_currency)
-                    current_prices.append(converted)
+                    
+                    if not is_sellout:
+                        current_prices.append(converted)
                     
                     price_rank_list.append({
                         "id": hid,
@@ -230,6 +237,7 @@ async def perform_market_analysis(
                         "price": converted,
                         "rating": hotel.get("rating"),
                         "is_target": is_target,
+                        "is_sellout": is_sellout, # CRITICAL: Inform frontend of sellout
                         "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
                         "room_types": prices[0].get("room_types") or [],
                         "matched_room_name": matched_room,
@@ -356,7 +364,9 @@ async def perform_market_analysis(
         last_known_target = None
         competitor_states: Dict[str, Dict[str, Any]] = {} # name -> {price, recorded_at}
         
+        today_date = datetime.now().date()
         while curr.date() <= range_end.date():
+            current_date = curr.date()
             d_str = curr.strftime("%Y-%m-%d")
             data = date_price_map.get(d_str)
             
@@ -365,20 +375,19 @@ async def perform_market_analysis(
             unique_competitors = []
             target_val = None
             
-            # 1. Target Logic (Primary + Forward Fill)
+            # 1. Target Logic (Primary + Conditional Forward Fill)
+            # EXPLANATION: Restricted Forward Fill (Kaizen)
+            # Why: The user wants to avoid misleading 'estimated' prices for future dates.
+            # We only forward-fill missing grid days if the date is in the past OR
+            # if we have actual scan data for that specific future date.
             if data and data["target"] is not None:
                 last_known_target = float(data["target"])
                 target_val = last_known_target
-            elif last_known_target is not None:
-                # EXPLANATION: Target Grid Continuity
-                # We carry the last known price forward even for future dates.
-                # This ensures the calendar grid remains useful between scans.
+            elif last_known_target is not None and current_date <= today_date:
+                # Only carry forward for past/today to fill gaps in historical data
                 target_val = last_known_target
             
-            # 2. Competitor Logic (with Horizontal Fill support)
-            # We first use data for THIS specific check-in date.
-            # If a hotel has no record for this date, we fall back to the most 
-            # recent scan for that hotel within a 7-day window.
+            # 2. Competitor Logic (Conditional Full Fill)
             daily_comps = (data.get("competitors") if data else []) or []
             
             # Update state for current check-in date matches
@@ -388,35 +397,39 @@ async def perform_market_analysis(
                     "is_estimated": c.get("is_estimated", False)
                 }
             
-            # Gather all competitors known to be in the set
             seen_competitors = set()
             for c in daily_comps:
                 if c["name"] not in seen_competitors:
                     unique_competitors.append(c)
                     seen_competitors.add(c["name"])
             
-            # EXPLANATION: Horizontal Continuity (Competitor Fill)
-            # If a hotel is tracking but has no record for this specific check-in date, 
-            # we use the 'last_known' price we tracked while iterating through dates.
-            # This makes the Rate Calendar usable even with sparse backfilled data.
+            # Horizontal Continuity (Competitor Fill) - Restricted to past/today
             for name, state in competitor_states.items():
                 if name not in seen_competitors:
-                    unique_competitors.append({
-                        "name": name,
-                        "price": state["price"],
-                        "is_estimated": True # Mark as estimated since it's a fill
-                    })
-                    seen_competitors.add(name)
+                    # Only carry competitor prices forward if in the past
+                    if current_date <= today_date:
+                        unique_competitors.append({
+                            "name": name,
+                            "price": state["price"],
+                            "is_estimated": True 
+                        })
+                        seen_competitors.add(name)
             
             if unique_competitors:
                 comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
                 if target_val:
                     vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
 
+            # KAİZEN: Sellout Detection for Calendar
+            # If the final target_val is 0, we mark the DAY as sellout.
+            # (Note: target_val might be None if restricted due to future date)
+            is_day_sellout = (target_val is not None and target_val <= 0)
+
             daily_prices.append({
                 "date": d_str,
                 "price": round(float(target_val), 2) if target_val is not None else None,
                 "is_estimated_target": data.get("target_is_estimated", False) if data else False,
+                "is_sellout": is_day_sellout, # Tag for frontend "Possible Sellout"
                 "comp_avg": round(float(comp_avg), 2),
                 "vs_comp": round(float(vs_comp), 1),
                 "competitors": unique_competitors
