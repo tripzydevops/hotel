@@ -808,9 +808,10 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
             lng = dh.get("longitude")
             
             if (lat is None or lng is None) and matched_meta:
-                lat = matched_meta.get("lat") if lat is None else lat
-                lng = matched_meta.get("lng") if lng is None else lng
+                 lat = matched_meta.get("lat") if lat is None else lat
+                 lng = matched_meta.get("lng") if lng is None else lng
             
+            # Final Fallback to City Center if still None
             if (lat is None or lng is None) and city and city.lower() == "balikesir":
                  # 39.54, 28.02 is Balikesir center. Add small jitter
                  lat = 39.54 + (random.random() - 0.5) * 0.1
