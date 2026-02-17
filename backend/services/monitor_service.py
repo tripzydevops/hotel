@@ -236,36 +236,30 @@ async def run_scheduler_check_logic():
             return
 
         # 1. Get all active users with schedules due
-        # KAİZEN: Use a broader query and filter in Python if needed, 
-        # and support both 'profiles' and 'user_profiles' if necessary.
-        # But for now, let's stick to 'profiles' but add deep logging.
-        now_iso = datetime.now(timezone.utc).isoformat()
+        # KAİZEN: Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
+        now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+        now_iso = now_dt.isoformat().replace("+00:00", "Z")
         logger.info(f"CRON: Checking for scans due before {now_iso}")
         
+        # 1.1 Fetch all active profiles
         result = supabase.table("profiles").select("id, next_scan_at, scan_frequency_minutes, subscription_status") \
             .lte("next_scan_at", now_iso) \
+            .eq("subscription_status", "active") \
             .execute()
         
-        all_due = result.data or []
-        logger.info(f"CRON: Found {len(all_due)} total profiles with next_scan_at <= now")
+        active_due = result.data or []
+        logger.info(f"CRON: Found {len(active_due)} active profiles due for scan.")
         
-        # Filter by status in Python to allow better logging of SKIPPED users
-        due_users = []
-        for u in all_due:
-            status = u.get("subscription_status")
-            if status == "active":
-                due_users.append(u)
-            else:
-                logger.info(f"CRON: Skipping user {u['id']} because status is '{status}' (expected 'active')")
-        
-        logger.info(f"CRON: Proceeding with {len(due_users)} active users.")
-        
-        if not due_users:
+        if not active_due:
             return
 
-        # 1.1 Pool all hotels from all due users
-        all_user_ids = [u['id'] for u in due_users]
-        hotels_res = supabase.table("hotels").select("*").in_("user_id", all_user_ids).execute()
+        # 1.2 Fetch actual user settings for frequency override
+        due_ids = [u['id'] for u in active_due]
+        settings_res = supabase.table("settings").select("user_id, check_frequency_minutes").in_("user_id", due_ids).execute()
+        settings_map = {s['user_id']: s['check_frequency_minutes'] for s in settings_res.data or []}
+
+        # 1.3 Pool all hotels
+        hotels_res = supabase.table("hotels").select("*").in_("user_id", due_ids).execute()
         all_hotels = hotels_res.data or []
         
         # Group hotels by user for processing
@@ -276,15 +270,19 @@ async def run_scheduler_check_logic():
                 user_hotels_map[uid] = []
             user_hotels_map[uid].append(h)
 
-        for user in due_users:
+        for user in active_due:
             try:
                 user_id = user['id']
                 logger.info(f"Processing user {user_id}...")
 
                 # 2. Update next_scan_at immediately (Locking mechanism)
-                freq = user.get("scan_frequency_minutes") or 1440 
-                next_run = datetime.now(timezone.utc) + timedelta(minutes=freq)
-                supabase.table("profiles").update({"next_scan_at": next_run.isoformat()}).eq("id", user_id).execute()
+                # KAİZEN: Prioritize 'settings.check_frequency_minutes' over 'profiles.scan_frequency_minutes'
+                freq = settings_map.get(user_id) or user.get("scan_frequency_minutes") or 1440 
+                next_run_dt = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(minutes=freq)
+                next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
+                
+                supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq("id", user_id).execute()
+                logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
                 
                 # 3. Trigger Background Orchestrator
                 hotels = user_hotels_map.get(user_id, [])

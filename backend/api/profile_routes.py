@@ -102,6 +102,18 @@ async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[
         result = db.table("settings").insert({"user_id": str(user_id), **update_data}).execute()
     else:
         result = db.table("settings").update(update_data).eq("user_id", str(user_id)).execute()
+    
+    # KAİZEN: Synchronize next_scan_at if frequency changed
+    if "check_frequency_minutes" in update_data:
+        freq = update_data["check_frequency_minutes"]
+        now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+        next_run = (now_dt + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
+        try:
+            db.table("profiles").update({"next_scan_at": next_run}).eq("id", str(user_id)).execute()
+            print(f"[Settings] Synced next_scan_at for {user_id} to {next_run}")
+        except Exception as e:
+            print(f"[Settings] Profile sync failed: {e}")
+
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to update settings")
     return result.data[0]
