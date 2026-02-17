@@ -779,45 +779,58 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
                 "serp_api_id": dh.get("serp_api_id"),
             })
 
+        # EXPLANATION: Master Summary Statistics
+        # Requirement: Populate the top 4 stat cards in AnalyticsPanel.
+        prices = [h["latest_price"] for h in hotels_out if h["latest_price"] and h["latest_price"] > 0]
+        avg_price = round(sum(prices) / len(prices), 2) if prices else 0
+        price_range = [min(prices), max(prices)] if prices else [0, 0]
+        with_price_count = len(prices)
+        total_count = len(hotels_out)
+        scan_coverage = round((with_price_count / total_count) * 100, 1) if total_count > 0 else 0
+
         # EXPLANATION: Historical Visibility Data Aggregation (Last 30 days)
         # Requirement: "Regional Visibility" chart needs actual data vs "No Data".
         # We aggregate 1-based ranks from SerpApi results stored in price_logs.
         visibility_data = []
         try:
-            thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
+            # Fix: Ensure hotel_ids is derived from local tracked_hotels scope
+            hotel_ids_for_vis = [str(h["id"]) for h in tracked_hotels]
             
-            # KAİZEN: Use batch query to avoid N+1 lookups for city-wide visibility
-            vis_query = db.table("price_logs") \
-                .select("recorded_at, search_rank, price") \
-                .in_("hotel_id", hotel_ids) \
-                .gte("recorded_at", thirty_days_ago) \
-                .order("recorded_at", desc=False) \
-                .execute()
-            
-            raw_vis = vis_query.data or []
-            
-            # Group by date to get daily average rank for the selected region
-            daily_aggregates = {}
-            for entry in raw_vis:
-                if not entry.get("search_rank") or not entry.get("recorded_at"):
-                    continue
+            if hotel_ids_for_vis:
+                thirty_days_ago = (datetime.now() - timedelta(days=30)).isoformat()
                 
-                # Normalize date to YYYY-MM-DD for Recharts binding
-                dt_str = entry["recorded_at"].split("T")[0]
-                if dt_str not in daily_aggregates:
-                    daily_aggregates[dt_str] = {"sum_rank": 0, "count": 0, "sum_price": 0}
+                # KAİZEN: Use batch query to avoid N+1 lookups for city-wide visibility
+                vis_query = db.table("price_logs") \
+                    .select("recorded_at, search_rank, price") \
+                    .in_("hotel_id", hotel_ids_for_vis) \
+                    .gte("recorded_at", thirty_days_ago) \
+                    .order("recorded_at", desc=False) \
+                    .execute()
                 
-                daily_aggregates[dt_str]["sum_rank"] += entry["search_rank"]
-                daily_aggregates[dt_str]["sum_price"] += entry.get("price", 0)
-                daily_aggregates[dt_str]["count"] += 1
-            
-            for date_key in sorted(daily_aggregates.keys()):
-                agg = daily_aggregates[date_key]
-                visibility_data.append({
-                    "date": date_key,
-                    "rank": round(agg["sum_rank"] / agg["count"], 1),
-                    "price": round(agg["sum_price"] / agg["count"], 2)
-                })
+                raw_vis = vis_query.data or []
+                
+                # Group by date to get daily average rank for the selected region
+                daily_aggregates = {}
+                for entry in raw_vis:
+                    if not entry.get("search_rank") or not entry.get("recorded_at"):
+                        continue
+                    
+                    # Normalize date to YYYY-MM-DD for Recharts binding
+                    dt_str = entry["recorded_at"].split("T")[0]
+                    if dt_str not in daily_aggregates:
+                        daily_aggregates[dt_str] = {"sum_rank": 0, "count": 0, "sum_price": 0}
+                    
+                    daily_aggregates[dt_str]["sum_rank"] += entry["search_rank"]
+                    daily_aggregates[dt_str]["sum_price"] += entry.get("price", 0)
+                    daily_aggregates[dt_str]["count"] += 1
+                
+                for date_key in sorted(daily_aggregates.keys()):
+                    agg = daily_aggregates[date_key]
+                    visibility_data.append({
+                        "date": date_key,
+                        "rank": round(agg["sum_rank"] / agg["count"], 1),
+                        "price": round(agg["sum_price"] / agg["count"], 2)
+                    })
         except Exception as e:
             print(f"Visibility Aggregation Error: {e}")
 
@@ -825,14 +838,16 @@ async def get_admin_market_intelligence_logic(db: Client, city: Optional[str] = 
         # Instead of hardcoding '$', we detect the currency used in the most recent scans.
         detected_currency = "TRY"
         try:
-            curr_res = db.table("price_logs") \
-                .select("currency") \
-                .in_("hotel_id", hotel_ids) \
-                .not_.is_("currency", "null") \
-                .limit(1) \
-                .execute()
-            if curr_res.data:
-                detected_currency = curr_res.data[0].get("currency", "TRY")
+            hotel_ids_for_curr = [str(h["id"]) for h in tracked_hotels]
+            if hotel_ids_for_curr:
+                curr_res = db.table("price_logs") \
+                    .select("currency") \
+                    .in_("hotel_id", hotel_ids_for_curr) \
+                    .not_.is_("currency", "null") \
+                    .limit(1) \
+                    .execute()
+                if curr_res.data:
+                    detected_currency = curr_res.data[0].get("currency", "TRY")
         except:
             pass
 
