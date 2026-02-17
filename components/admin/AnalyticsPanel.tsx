@@ -167,7 +167,7 @@ export default function AnalyticsPanel() {
                 Avg Price
               </div>
               <div className="text-2xl font-bold text-emerald-400">
-                ${data.summary.avg_price}
+                {data.summary.currency_symbol}{data.summary.avg_price}
               </div>
             </div>
             <div className="p-4 glass-card bg-slate-900/50">
@@ -175,7 +175,7 @@ export default function AnalyticsPanel() {
                 Price Range
               </div>
               <div className="text-2xl font-bold text-white">
-                ${data.summary.price_range[0]} - ${data.summary.price_range[1]}
+                {data.summary.currency_symbol}{data.summary.price_range[0]} - {data.summary.currency_symbol}{data.summary.price_range[1]}
               </div>
             </div>
             <div className="p-4 glass-card bg-slate-900/50">

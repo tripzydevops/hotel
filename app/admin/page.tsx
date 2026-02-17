@@ -131,14 +131,14 @@ export default function AdminPage() {
           {/* Neural Health Matrix - Full Width */}
           <SystemHealthPanel stats={stats} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-rows-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
             {/* Main Command Feed - Large Bento Cell */}
-            <div className="lg:col-span-3 lg:row-span-2 order-2 lg:order-1">
+            <div className="lg:col-span-3 min-w-0">
               <NeuralFeed />
             </div>
 
             {/* Vertical Stat Column */}
-            <div className="lg:col-span-1 flex flex-col gap-6 order-1 lg:order-2">
+            <div className="lg:col-span-1 flex flex-col gap-6 h-full">
               <StatCard
                 label="Intelligence nodes"
                 value={stats?.total_users || 0}
