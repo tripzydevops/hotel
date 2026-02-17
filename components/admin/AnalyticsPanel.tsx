@@ -53,30 +53,25 @@ export default function AnalyticsPanel() {
           }
 
           // Transform for visualizations
-          // 1. Visibility - Real data not yet available in this aggregate endpoint
-          // Leaving empty to show "No Data" state rather than mock
-          const visibilityData: any[] = [];
-
-          // 2. Network (Cluster) - Use real hotel data
-          // Value will be 0 if no price data available (which is correct for directory)
-          const nodes = safeHotels.slice(0, 8).map((h: any) => ({
-            id: h.id,
-            label: h.name,
-            type: h.id === safeHotels[0]?.id ? "target" : "competitor",
-            value: h.latest_price || 0,
-          }));
-
-          const links = nodes.slice(1).map((n: any) => ({
-            source: nodes[0]?.id,
-            target: n.id,
-            strength: 1,
-          }));
+          // KAİZEN: Use real visibility and network data from API
+          const visibilityData = marketData.visibility || [];
+          
+          // Network (Cluster) - Backend now provides optimized nodes/links
+          const networkData = marketData.network || { 
+            nodes: safeHotels.slice(0, 8).map((h: any) => ({
+              id: h.id,
+              label: h.name,
+              type: "competitor",
+              value: h.latest_price || 0,
+            })),
+            links: [] 
+          };
 
           setData({
             summary: safeSummary,
             hotels: safeHotels,
             visibility: visibilityData,
-            network: { nodes, links },
+            network: networkData,
           });
         }
       } catch (err: any) {
