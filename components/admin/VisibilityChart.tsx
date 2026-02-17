@@ -97,6 +97,7 @@ export default function VisibilityChart({
           />
         </LineChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
