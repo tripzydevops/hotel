@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
+import SentimentBattlefield from "@/components/analytics/SentimentBattlefield";
 
 // Translation map for sentiment keywords
 const KEYWORD_TRANSLATIONS: Record<string, string> = {
@@ -355,6 +356,7 @@ export default function SentimentPage() {
   );
   const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [view, setView] = useState<"battlefield" | "history">("battlefield");
 
   // Build hotel list from real data
   const targetHotel = data?.target_hotel;
@@ -861,13 +863,31 @@ export default function SentimentPage() {
                 <LineChart className="w-5 h-5 text-purple-400" />
                 Competitive Position
               </h3>
+              <div className="flex bg-[#0a1628] rounded-lg p-1 border border-white/5">
+                {(["battlefield", "history"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1.5 rounded-md text-xs transition-all ${
+                      view === v
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {v === "battlefield" ? "Battlefield" : "History"}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-2">
                 {(["daily", "weekly", "monthly"] as const).map((tf) => (
                   <button
                     key={tf}
+                    disabled={view === "battlefield"}
                     onClick={() => setTimeframe(tf)}
                     className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                      timeframe === tf
+                      view === "battlefield"
+                        ? "opacity-30 cursor-not-allowed"
+                        : timeframe === tf
                         ? "bg-blue-600 text-white border-blue-600 font-bold"
                         : "bg-[#0a1628] text-white border-gray-600 hover:border-gray-500"
                     }`}
@@ -879,175 +899,184 @@ export default function SentimentPage() {
             </div>
 
             {/* Trend Chart or Ranking Bars */}
-            <div className="h-[400px] w-full relative mb-12">
-              <div className="absolute inset-0 flex items-end justify-between px-2 pb-8 border-b border-white/10">
-                {/* Chart Background Grid */}
-                {[5.0, 4.0, 3.0, 2.0, 1.0].map((rating) => (
-                  <div
-                    key={rating}
-                    className="absolute w-full border-t border-white/5 flex items-center"
-                    style={{ bottom: `${(rating / 5) * 100}%` }}
-                  >
-                    <span className="text-[10px] text-gray-500 -ml-10 font-bold">
-                      {rating.toFixed(1)}
-                    </span>
+            {view === "battlefield" ? (
+              <div className="mb-12">
+                <SentimentBattlefield 
+                  targetHotel={targetHotel as any} 
+                  competitors={visibleCompetitors as any} 
+                />
+              </div>
+            ) : (
+              <>
+                <div className="h-[400px] w-full relative mb-12">
+                  <div className="absolute inset-0 flex items-end justify-between px-2 pb-8 border-b border-white/10">
+                    {/* Chart Background Grid */}
+                    {[5.0, 4.0, 3.0, 2.0, 1.0].map((rating) => (
+                      <div
+                        key={rating}
+                        className="absolute w-full border-t border-white/5 flex items-center"
+                        style={{ bottom: `${(rating / 5) * 100}%` }}
+                      >
+                        <span className="text-[10px] text-gray-500 -ml-10 font-bold">
+                          {rating.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Multi-Line Trend Visualization with Area Fill */}
+                    <svg
+                      className="absolute inset-0 w-full h-full overflow-visible"
+                      preserveAspectRatio="none"
+                      viewBox="0 0 1000 100"
+                    >
+                      <defs>
+                        <linearGradient id="blue-area" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                        </linearGradient>
+                        <linearGradient id="gold-area" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.1" />
+                          <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Render Area Fills First */}
+                      {selectedHotelIds.map((id, hotelIdx) => {
+                        const hotel = allHotels.find((h) => h.id === id);
+                        const rawHistory = sentimentHistory[id] || [];
+                        if (rawHistory.length < 2) return null;
+
+                        // 1. Sort Chronologically
+                        const history = [...rawHistory].sort(
+                          (a, b) =>
+                            new Date(a.recorded_at).getTime() -
+                            new Date(b.recorded_at).getTime(),
+                        );
+
+                        const gradient = hotel?.isTarget
+                          ? "url(#blue-area)"
+                          : hotelIdx === 0
+                            ? "url(#gold-area)"
+                            : "none";
+                        if (gradient === "none") return null;
+
+                        const startTime = new Date(
+                          history[0].recorded_at,
+                        ).getTime();
+                        const endTime = new Date(
+                          history[history.length - 1].recorded_at,
+                        ).getTime();
+                        const totalTime = endTime - startTime || 1;
+
+                        const points = history.map((h) => {
+                          const time = new Date(h.recorded_at).getTime();
+                          const x = ((time - startTime) / totalTime) * 1000;
+                          const y = (1 - (Number(h.rating) || 0) / 5) * 100;
+                          return `${x},${y}`;
+                        });
+
+                        return (
+                          <polygon
+                            key={`area-${id}`}
+                            points={`0,100 ${points.join(" ")} 1000,100`}
+                            fill={gradient}
+                            className="transition-all duration-700"
+                          />
+                        );
+                      })}
+
+                      {/* Render Lines */}
+                      {selectedHotelIds.map((id, hotelIdx) => {
+                        const hotel = allHotels.find((h) => h.id === id);
+                        const rawHistory = sentimentHistory[id] || [];
+                        if (rawHistory.length < 2) return null;
+
+                        const history = [...rawHistory].sort(
+                          (a, b) =>
+                            new Date(a.recorded_at).getTime() -
+                            new Date(b.recorded_at).getTime(),
+                        );
+
+                        const color = hotel?.isTarget
+                          ? "#3b82f6"
+                          : hotelIdx === 0
+                            ? "#D4AF37"
+                            : "#6b7280";
+                        const isDashed = !hotel?.isTarget && hotelIdx !== 0;
+
+                        const startTime = new Date(
+                          history[0].recorded_at,
+                        ).getTime();
+                        const endTime = new Date(
+                          history[history.length - 1].recorded_at,
+                        ).getTime();
+                        const totalTime = endTime - startTime || 1;
+
+                        return (
+                          <polyline
+                            key={`line-${id}`}
+                            points={history
+                              .map((h) => {
+                                const time = new Date(h.recorded_at).getTime();
+                                const x = ((time - startTime) / totalTime) * 1000;
+                                const y = (1 - (Number(h.rating) || 0) / 5) * 100;
+                                return `${x},${y}`;
+                              })
+                              .join(" ")}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={hotel?.isTarget ? "4" : "2"}
+                            strokeDasharray={isDashed ? "5,5" : "0"}
+                            strokeLinecap="round"
+                            vectorEffect="non-scaling-stroke"
+                            className="transition-all duration-700"
+                          />
+                        );
+                      })}
+                    </svg>
                   </div>
-                ))}
 
-                {/* Multi-Line Trend Visualization with Area Fill */}
-                <svg
-                  className="absolute inset-0 w-full h-full overflow-visible"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 1000 100"
-                >
-                  <defs>
-                    <linearGradient id="blue-area" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                    </linearGradient>
-                    <linearGradient id="gold-area" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.1" />
-                      <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
+                  {/* Dynamic X-Axis Labels */}
+                  <div className="flex justify-between mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1">
+                    {(() => {
+                      const id = selectedHotelIds[0];
+                      const history = sentimentHistory[id] || [];
+                      if (history.length < 2) {
+                        return timeframe === "daily" ? (
+                          <span>Mon</span>
+                        ) : (
+                          <span>Jun</span>
+                        );
+                      }
 
-                  {/* Render Area Fills First */}
-                  {selectedHotelIds.map((id, hotelIdx) => {
-                    const hotel = allHotels.find((h) => h.id === id);
-                    const rawHistory = sentimentHistory[id] || [];
-                    if (rawHistory.length < 2) return null;
+                      const sorted = [...history].sort(
+                        (a, b) =>
+                          new Date(a.recorded_at).getTime() -
+                          new Date(b.recorded_at).getTime(),
+                      );
 
-                    // 1. Sort Chronologically
-                    const history = [...rawHistory].sort(
-                      (a, b) =>
-                        new Date(a.recorded_at).getTime() -
-                        new Date(b.recorded_at).getTime(),
-                    );
+                      const start = new Date(sorted[0].recorded_at);
+                      const end = new Date(sorted[sorted.length - 1].recorded_at);
 
-                    const gradient = hotel?.isTarget
-                      ? "url(#blue-area)"
-                      : hotelIdx === 0
-                        ? "url(#gold-area)"
-                        : "none";
-                    if (gradient === "none") return null;
-
-                    const startTime = new Date(
-                      history[0].recorded_at,
-                    ).getTime();
-                    const endTime = new Date(
-                      history[history.length - 1].recorded_at,
-                    ).getTime();
-                    const totalTime = endTime - startTime || 1;
-
-                    const points = history.map((h) => {
-                      const time = new Date(h.recorded_at).getTime();
-                      const x = ((time - startTime) / totalTime) * 1000;
-                      const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                      return `${x},${y}`;
-                    });
-
-                    return (
-                      <polygon
-                        key={`area-${id}`}
-                        points={`0,100 ${points.join(" ")} 1000,100`}
-                        fill={gradient}
-                        className="transition-all duration-700"
-                      />
-                    );
-                  })}
-
-                  {/* Render Lines */}
-                  {selectedHotelIds.map((id, hotelIdx) => {
-                    const hotel = allHotels.find((h) => h.id === id);
-                    const rawHistory = sentimentHistory[id] || [];
-                    if (rawHistory.length < 2) return null;
-
-                    const history = [...rawHistory].sort(
-                      (a, b) =>
-                        new Date(a.recorded_at).getTime() -
-                        new Date(b.recorded_at).getTime(),
-                    );
-
-                    const color = hotel?.isTarget
-                      ? "#3b82f6"
-                      : hotelIdx === 0
-                        ? "#D4AF37"
-                        : "#6b7280";
-                    const isDashed = !hotel?.isTarget && hotelIdx !== 0;
-
-                    const startTime = new Date(
-                      history[0].recorded_at,
-                    ).getTime();
-                    const endTime = new Date(
-                      history[history.length - 1].recorded_at,
-                    ).getTime();
-                    const totalTime = endTime - startTime || 1;
-
-                    return (
-                      <polyline
-                        key={`line-${id}`}
-                        points={history
-                          .map((h) => {
-                            const time = new Date(h.recorded_at).getTime();
-                            const x = ((time - startTime) / totalTime) * 1000;
-                            const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                            return `${x},${y}`;
-                          })
-                          .join(" ")}
-                        fill="none"
-                        stroke={color}
-                        strokeWidth={hotel?.isTarget ? "4" : "2"}
-                        strokeDasharray={isDashed ? "5,5" : "0"}
-                        strokeLinecap="round"
-                        vectorEffect="non-scaling-stroke"
-                        className="transition-all duration-700"
-                      />
-                    );
-                  })}
-
-                  {/* Tooltip Indicator / Event Hub (Design Matching) */}
-                </svg>
-              </div>
-
-              {/* Dynamic X-Axis Labels */}
-              <div className="flex justify-between mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1">
-                {(() => {
-                  const id = selectedHotelIds[0];
-                  const history = sentimentHistory[id] || [];
-                  if (history.length < 2) {
-                    return timeframe === "daily" ? (
-                      <span>Mon</span>
-                    ) : (
-                      <span>Jun</span>
-                    );
-                  }
-
-                  const sorted = [...history].sort(
-                    (a, b) =>
-                      new Date(a.recorded_at).getTime() -
-                      new Date(b.recorded_at).getTime(),
-                  );
-
-                  const start = new Date(sorted[0].recorded_at);
-                  const end = new Date(sorted[sorted.length - 1].recorded_at);
-
-                  // Return 4 points across the period
-                  return [0, 0.33, 0.66, 1].map((pct, idx) => {
-                    const date = new Date(
-                      start.getTime() + (end.getTime() - start.getTime()) * pct,
-                    );
-                    return (
-                      <span key={idx}>
-                        {date.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
+                      // Return 4 points across the period
+                      return [0, 0.33, 0.66, 1].map((pct, idx) => {
+                        const date = new Date(
+                          start.getTime() + (end.getTime() - start.getTime()) * pct,
+                        );
+                        return (
+                          <span key={idx}>
+                            {date.toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Visual Ranking Display (Kept as secondary summary) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
