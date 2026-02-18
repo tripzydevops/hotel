@@ -288,6 +288,32 @@ class AnalystAgent:
             print(f"[AnalystAgent] Batch insert error: {e}")
             reasoning_log.append(f"[CRITICAL] Batch insert failed: {str(e)}")
 
+        # EXPLANATION: User's Own Alert Notification Dispatch (Bug Fix - Feb 2026)
+        # Previously, the NotifierAgent was only called inside _pulse_global_alerts(),
+        # which only fires for OTHER users tracking the same hotel. The user who
+        # initiated the scan NEVER received push notifications for their own alerts.
+        # This block fixes that by dispatching notifications for this user's alerts.
+        if alerts_to_insert:
+            try:
+                # Fetch user's notification settings (email, push, whatsapp config)
+                settings_res = self.db.table("settings").select("*").eq("user_id", str(user_id)).execute()
+                user_settings = settings_res.data[0] if settings_res.data else {}
+                
+                if user_settings.get("notifications_enabled"):
+                    # Build a hotel_id -> name map for alert messages
+                    hotel_name_map = {}
+                    for res in scraper_results:
+                        hid = res.get("hotel_id")
+                        if hid:
+                            hotel_name_map[hid] = res.get("hotel_name", "Unknown Hotel")
+                    
+                    notifier = NotifierAgent()
+                    await notifier.dispatch_alerts(alerts_to_insert, user_settings, hotel_name_map)
+                    reasoning_log.append(f"[Notification] Dispatched {len(alerts_to_insert)} alert(s) to user.")
+            except Exception as n_e:
+                print(f"[AnalystAgent] Own-user notification dispatch failed: {n_e}")
+                reasoning_log.append(f"[Notification] Dispatch failed: {str(n_e)}")
+
 
         # 4. Final Updates and Embedding Synchronization
         # EXPLANATION: Operational Resilience & Timeout Protection

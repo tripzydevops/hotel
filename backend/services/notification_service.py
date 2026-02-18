@@ -62,12 +62,13 @@ class NotificationService:
                 alert_message
             )
 
-        # 3. Push
+        # 3. Push (Desktop Notifications via Web Push API)
         if settings.get("push_enabled") and settings.get("push_subscription"):
             results["push"] = await self.send_push(
                 settings.get("user_id"), 
                 alert_message,
-                subscription=settings.get("push_subscription")
+                subscription=settings.get("push_subscription"),
+                hotel_name=hotel_name
             )
             
         return results
@@ -78,15 +79,22 @@ class NotificationService:
         print(f"[Notification] WOULD send WhatsApp to {number}: {message}")
         return True
 
-    async def send_push(self, user_id: str, message: str, subscription: dict = None) -> bool:
+    async def send_push(self, user_id: str, message: str, subscription: dict = None, hotel_name: str = "") -> bool:
         """
         Send Web Push notification.
+        
+        EXPLANATION: Data Format Fix (Feb 2026)
+        The service worker (sw.js) expects a JSON payload with {title, body} fields.
+        Previously this method sent a plain text string, which caused 
+        event.data.json() to throw a silent parse error in the browser,
+        killing the notification before it could display.
         """
         if not subscription:
             print(f"[Notification] No subscription found for user {user_id}")
             return False
 
         try:
+            import json
             from pywebpush import webpush, WebPushException
             
             # Get VAPID private key from env
@@ -99,9 +107,17 @@ class NotificationService:
                 "sub": os.getenv("VAPID_SUBJECT", "mailto:admin@rate-sentinel.com")
             }
 
+            # EXPLANATION: JSON Payload for sw.js Compatibility
+            # sw.js calls event.data.json() and reads .title and .body
+            # We must send a JSON string, not plain text.
+            payload = json.dumps({
+                "title": f"Price Alert: {hotel_name}" if hotel_name else "Rate Sentinel Alert",
+                "body": message
+            })
+
             webpush(
                 subscription_info=subscription,
-                data=message,
+                data=payload,
                 vapid_private_key=private_key,
                 vapid_claims=claims
             )
