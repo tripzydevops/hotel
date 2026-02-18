@@ -12,11 +12,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - login (login page)
-     * - auth (auth endpoints)
-     * - api (api routes - optionally protect these later)
-     * Feel free to modify this pattern to include more paths.
+     * - Public assets (svg, png, jpg, etc)
      */
-    "/((?!_next/static|_next/image|favicon.ico|login|auth|api).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
