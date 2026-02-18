@@ -375,27 +375,37 @@ export default function LandingHome() {
                     <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                     <div className="w-3 h-3 rounded-full bg-green-500/60" />
                     <span className="ml-auto text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                      Rate Intelligence Grid
+                      {t("analysis.tabs.calendar")} Grid
                     </span>
                   </div>
                   <div className="grid grid-cols-5 gap-2 text-[10px] md:text-xs">
-                    <div className="text-[var(--text-muted)] font-bold py-2">Tarih</div>
-                    <div className="text-[var(--soft-gold)] font-bold py-2 text-center">SİZİN OTELİNİZ</div>
-                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">Rakip A</div>
-                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">Rakip B</div>
-                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">Rakip C</div>
+                    <div className="text-[var(--text-muted)] font-bold py-2">{t("landing.table.date")}</div>
+                    <div className="text-[var(--soft-gold)] font-bold py-2 text-center">{t("landing.table.yourHotel")}</div>
+                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">{t("landing.table.compA")}</div>
+                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">{t("landing.table.compB")}</div>
+                    <div className="text-[var(--text-muted)] font-bold py-2 text-center">{t("landing.table.compC")}</div>
 
                     {[
-                      { date: "18 Şub", you: "₺4.230", a: "₺4.816", b: "₺4.008", c: "₺5.262" },
-                      { date: "19 Şub", you: "₺4.100", a: "₺4.750", b: "₺4.120", c: "₺5.100" },
-                      { date: "20 Şub", you: "₺4.350", a: "₺4.900", b: "₺3.980", c: "₺5.400" },
+                      { date: new Date(2026, 1, 18), you: 4230, a: 4816, b: 4008, c: 5262 },
+                      { date: new Date(2026, 1, 19), you: 4100, a: 4750, b: 4120, c: 5100 },
+                      { date: new Date(2026, 1, 20), you: 4350, a: 4900, b: 3980, c: 5400 },
                     ].map((row, i) => (
                       <div key={i} className="contents">
-                        <div className="text-[var(--text-secondary)] py-2 border-t border-white/5">{row.date}</div>
-                        <div className="text-[var(--soft-gold)] font-bold py-2 text-center border-t border-white/5">{row.you}</div>
-                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">{row.a}</div>
-                        <div className="text-green-400 py-2 text-center border-t border-white/5">{row.b}</div>
-                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">{row.c}</div>
+                        <div className="text-[var(--text-secondary)] py-2 border-t border-white/5 uppercase">
+                          {row.date.toLocaleDateString(locale === "tr" ? "tr-TR" : "en-US", { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div className="text-[var(--soft-gold)] font-bold py-2 text-center border-t border-white/5">
+                          {locale === "tr" ? `₺${row.you.toLocaleString()}` : `$${(row.you / 30).toFixed(0)}`}
+                        </div>
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">
+                          {locale === "tr" ? `₺${row.a.toLocaleString()}` : `$${(row.a / 30).toFixed(0)}`}
+                        </div>
+                        <div className="text-green-400 py-2 text-center border-t border-white/5">
+                          {locale === "tr" ? `₺${row.b.toLocaleString()}` : `$${(row.b / 30).toFixed(0)}`}
+                        </div>
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">
+                          {locale === "tr" ? `₺${row.c.toLocaleString()}` : `$${(row.c / 30).toFixed(0)}`}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -523,7 +533,7 @@ export default function LandingHome() {
                 >
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] text-xs font-bold px-4 py-1 rounded-full">
-                      En Popüler
+                      {t("subscription.mostPopular")}
                     </div>
                   )}
                   <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{plan.name}</h3>

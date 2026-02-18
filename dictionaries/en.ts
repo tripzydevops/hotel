@@ -449,7 +449,7 @@ export const en = {
       yourHotel: "YOUR HOTEL",
       compA: "Comp A",
       compB: "Comp B",
-      compC: "Comp B",
+      compC: "Comp C",
     },
     common: {
       login: "Login",
