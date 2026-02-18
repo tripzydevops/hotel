@@ -185,6 +185,27 @@ function IconFileText() {
     </svg>
   );
 }
+function IconShare2() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
 
 /* ===== MAIN HOMEPAGE COMPONENT ===== */
 export default function LandingHome() {
@@ -336,7 +357,7 @@ export default function LandingHome() {
             </div>
           </RevealSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: <IconChart />,
@@ -349,6 +370,18 @@ export default function LandingHome() {
                 title: "Keşif Motoru",
                 description:
                   "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması.",
+              },
+              {
+                icon: <IconShare2 />,
+                title: "Parite Monitörü",
+                description:
+                  "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun.",
+              },
+              {
+                icon: <IconUsers />,
+                title: "Duyarlılık Analizi",
+                description:
+                  "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın.",
               },
               {
                 icon: <IconBell />,
@@ -369,7 +402,7 @@ export default function LandingHome() {
                     {feature.icon}
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                  <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
