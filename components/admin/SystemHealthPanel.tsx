@@ -66,10 +66,18 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
     </motion.div>
   );
 
+  const error = (stats?.error_rate_24h || 0) > 10;
+
   return (
     <div className="space-y-6">
       {/* Global Status Banner (Only if significant errors) - Moved to TOP and OUTSIDE grid to prevent overlap */}
-      {(stats?.error_rate_24h || 0) > 10 && (
+      {/* 
+        EXPLANATION: Error Banner Positioning
+        The error banner is intentionally placed outside the main 4-column grid 
+        to ensure it occupies its own row and does not cause overlapping issues 
+        with the metric cards below. 
+      */}
+      {error && (
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

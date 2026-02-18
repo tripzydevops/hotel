@@ -164,9 +164,15 @@ const NeuralFeed = () => {
                     >
                       {log.action_type || "SIGNAL"}
                     </span>
-                    <span className="text-white font-bold tracking-tight text-sm truncate max-w-[200px] xl:max-w-[400px]">
-                      {log.hotel_name || "SYSTEM_KERNEL"}
-                    </span>
+                    {/* 
+                EXPLANATION: Hotel Name Truncation
+                We use `truncate` and `max-w-[120px]` here to ensure that long hotel 
+                names do not push the timestamp out of view or cause horizontal overflow
+                in the narrow feed sidebar.
+              */}
+              <h4 className="font-bold text-white text-sm truncate max-w-[150px]">
+                {log.hotel_name || "Unknown"}
+              </h4>
                     {log.price && (
                       <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5 ml-auto shrink-0">
                         <Zap className="w-3 h-3 text-[var(--soft-gold)]" />

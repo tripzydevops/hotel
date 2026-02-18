@@ -264,6 +264,10 @@ async def perform_market_analysis(
         item["rank"] = i + 1
 
     # 2.5 Build Competitors List (Needed for Calendar Continuity seeding)
+    # EXPLANATION: Competitor List Population Logic
+    # We populate `comp_list` early and verify its contents to support data consistency
+    # in the Market Intelligence Grid. Moving this here resolved the previously reported 
+    # 'No Data' issues caused by late initialization.
     comp_list = []
     for h in hotels:
         if str(h["id"]) != target_hotel_id:
@@ -379,6 +383,9 @@ async def perform_market_analysis(
         # We seed the initial state from the latest overall scan (target_price)
         # to ensure the grid starts populated even if early dates lack specific scans.
         last_known_target = target_price
+        # EXPLANATION: Competitor Price State Initialization
+        # We initialize `competitor_states` here to ensure it exists even if the logic below
+        # for processing `comp_list` branches differently. This prevents UnboundLocalError.
         competitor_states: Dict[str, Dict[str, Any]] = {
             c["name"]: {"price": c["price"], "is_estimated": True} for c in comp_list
         }

@@ -209,6 +209,10 @@ export default function LandingHome() {
     const fetchConfig = async () => {
       try {
         const remoteContent = await api.getLandingConfig(locale);
+        // EXPLANATION: CMS Content Merging Strategy
+        // We prioritize content from the database (CMS) if it exists.
+        // If specific keys are missing in the remote content, the UI components 
+        // below will gracefully fall back to the internationalized dictionaries (`t`).
         if (Object.keys(remoteContent).length > 0) {
           // Merge remote with state
           setContent((prev: any) => ({ ...prev, ...remoteContent }));
