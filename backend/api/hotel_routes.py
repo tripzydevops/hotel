@@ -106,12 +106,16 @@ async def create_hotel(
     # Check Admin Status
     is_admin = False
     email = getattr(current_user, 'email', None)
-    if email and (email in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com"] or email.endswith("@hotel.plus")):
-        is_admin = True
-    else:
+    if email:
+        email_lower = email.lower()
+        if (email_lower in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "askinsezen@gmail.com", "yusuf@tripzy.travel", "elif@tripzy.travel"] 
+            or email_lower.endswith("@hotel.plus")):
+            is_admin = True
+            
+    if not is_admin:
         try:
             profile_res = db.table("user_profiles").select("role").eq("user_id", str(user_id)).execute()
-            if profile_res.data and profile_res.data[0].get("role") in ["admin", "market_admin", "market admin"]:
+            if profile_res.data and profile_res.data[0].get("role") and profile_res.data[0].get("role").lower() in ["admin", "market_admin", "market admin"]:
                 is_admin = True
         except Exception:
             pass

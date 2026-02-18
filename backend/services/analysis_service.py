@@ -87,7 +87,8 @@ def get_price_for_room(
     # 2. Fallback: String Match (Substring) with Turkish/English variant support
     # We check for common "standard" room variants in both languages.
     target_variants = [target_room_type.lower()]
-    if target_room_type.lower() in ["standard", "standart"]:
+    # Improved check: detect 'standard' even if it's 'Standard Room'
+    if any(s in target_room_type.lower() for s in ["standard", "standart"]):
          target_variants.extend(["standard", "standart", "klasik", "classic", "ekonomik", "economy", "promo"])
     
     for r in r_types:
@@ -358,11 +359,12 @@ async def perform_market_analysis(
         
         curr = range_start
         # EXPLANATION: State tracking for Grid Continuity (Horizontal Fill)
-        # We track the last known price for each hotel to fill gaps in the 
-        # grid when a specific check-in date doesn't have a record.
-        # This prevents the 'dash' or 'N/A' flicker when data is sparse.
-        last_known_target = None
-        competitor_states: Dict[str, Dict[str, Any]] = {} # name -> {price, recorded_at}
+        # We seed the initial state from the latest overall scan (target_price)
+        # to ensure the grid starts populated even if early dates lack specific scans.
+        last_known_target = target_price
+        competitor_states: Dict[str, Dict[str, Any]] = {
+            c["name"]: {"price": c["price"], "is_estimated": True} for c in comp_list
+        }
         
         today_date = datetime.now().date()
         while curr.date() <= range_end.date():
@@ -608,12 +610,13 @@ async def get_market_intelligence_data(
             .ilike("normalized_name", f"%{room_type}%").limit(1).execute()
         
         # Fallback for Standard/Standart mismatch in catalog
-        if not catalog_res.data and room_type.lower() == "standard":
+        # Improved: check if it CONTAINS standard/standart
+        is_std = any(s in room_type.lower() for s in ["standard", "standart"])
+        if not catalog_res.data and is_std:
+            # Try searching for the other variant specifically
+            alt = "standart" if "standard" in room_type.lower() else "standard"
             catalog_res = db.table("room_type_catalog").select("embedding") \
-                .ilike("normalized_name", "%standart%").limit(1).execute()
-        elif not catalog_res.data and room_type.lower() == "standart":
-            catalog_res = db.table("room_type_catalog").select("embedding") \
-                .ilike("normalized_name", "%standard%").limit(1).execute()
+                .ilike("normalized_name", f"%{alt}%").limit(1).execute()
 
         if catalog_res.data:
             embedding = catalog_res.data[0]["embedding"]

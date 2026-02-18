@@ -25,18 +25,21 @@ export function useAdminGuard() {
         // For MVP, checking specific email or metadata
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("role") // content?
+          .select("role")
           .eq("user_id", session.user.id)
           .single();
 
         // Hardcoded admin email for safety if role missing
+        const userEmail = session.user.email?.toLowerCase() || "";
         const isAdminEmail =
-          session.user.email === "admin@hotel.plus" ||
-          session.user.email?.endsWith("@tripzy.travel") ||
-          session.user.email === "asknsezen@gmail.com";
+          userEmail === "admin@hotel.plus" ||
+          userEmail.endsWith("@tripzy.travel") ||
+          userEmail.endsWith("@hotel.plus") ||
+          userEmail === "asknsezen@gmail.com" ||
+          userEmail === "askinsezen@gmail.com";
 
         // This is Client-Side UI Guard only. Backend must enforce real security.
-        const role = profile?.role;
+        const role = profile?.role?.toLowerCase();
         const isRoleAdmin =
           role === "admin" ||
           role === "market_admin" ||
@@ -45,7 +48,7 @@ export function useAdminGuard() {
         if (
           isRoleAdmin ||
           isAdminEmail ||
-          session.user.email === "elif@tripzy.travel"
+          userEmail === "elif@tripzy.travel"
         ) {
           setAuthorized(true);
         } else {

@@ -62,12 +62,15 @@ async def get_enriched_profile_logic(user_id: UUID, base_data: Optional[Dict[str
             except Exception:
                 pass
             
-            is_admin_email = admin_email_found and (
-                admin_email_found in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "yusuf@tripzy.travel"] 
-                or admin_email_found.endswith("@hotel.plus")
-            )
+            is_admin_email = False
+            if admin_email_found:
+                email_lower = admin_email_found.lower()
+                is_admin_email = (
+                    email_lower in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "askinsezen@gmail.com", "yusuf@tripzy.travel", "elif@tripzy.travel"] 
+                    or email_lower.endswith("@hotel.plus")
+                )
             
-            is_admin_role = base_data and base_data.get("role") in ["admin", "market_admin", "market admin"]
+            is_admin_role = base_data and base_data.get("role") and base_data.get("role").lower() in ["admin", "market_admin", "market admin"]
                 
             if is_admin_email or is_admin_role or is_specific_admin:
                 plan = "enterprise"
