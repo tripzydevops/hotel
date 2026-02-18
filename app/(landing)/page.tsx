@@ -197,79 +197,12 @@ function IconUsers() {
 }
 
 /* ===== MAIN HOMEPAGE COMPONENT ===== */
-/* ===== DEFAULT CONTENT FALLBACKS ===== */
-const DEFAULT_CONTENT = {
-  hero: {
-    top_label: "Yapay Zeka Destekli Otel Fiyat İstihbaratı",
-    title_main: "Rakiplerinizin Fiyatlarını",
-    title_highlight: "Gerçek Zamanlı",
-    title_suffix: "Takip Edin",
-    description: "Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.",
-    cta_primary: "Erişim Talebi Oluşturun",
-    cta_secondary: "Üyelik Planlarını İnceleyin"
-  },
-  stats: [
-    { value: 50, suffix: "+", label: "Aktif Otel" },
-    { value: 24, suffix: "/7", label: "Tarama" },
-    { value: 98, suffix: "%", label: "Doğruluk Oranı" },
-    { value: 500, suffix: "K+", label: "İzlenen Fiyat" }
-  ],
-  features: {
-    title: "Gelir Liderleri İçin Tasarlanmış Teknoloji",
-    subtitle: "Platform Yetenekleri",
-    items: [
-      { icon: "chart", title: "Fiyat İstihbaratı", description: "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin." },
-      { icon: "radar", title: "Keşif Motoru", description: "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması." },
-      { icon: "share", title: "Parite Monitörü", description: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun." },
-      { icon: "users", title: "Duyarlılık Analizi", description: "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın." },
-      { icon: "bell", title: "Anlık Uyarılar", description: "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın." },
-      { icon: "file", title: "Akıllı Raporlar", description: "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın." }
-    ]
-  },
-  testimonials: {
-    title: "Otelciler Ne Diyor?",
-    subtitle: "Başarı Hikayeleri",
-    items: [
-      { quote: "Hotel Plus ile gelirlerimizi %15 artırdık. Rakip analizleri sayesinde doğru fiyatı yanlış zamanda vermekten kurtulduk.", author: "Ahmet Y.", role: "Genel Müdür, Resort Hotel", initials: "AY" },
-      { quote: "Kurulumu sadece 5 dakika sürdü. Karmaşık excel tablolarından kurtulup tüm pazar verisini tek ekranda görmek harika.", author: "Zeynep K.", role: "Gelirler Müdürü", initials: "ZK" },
-      { quote: "Yatırım getirisini ilk aydan aldık. Rakiplerin fiyat hamlelerini anında görüp aksiyon alabiliyoruz.", author: "Mehmet S.", role: "Otel Sahibi", initials: "MS" }
-    ]
-  },
-  pricing: {
-    title: "Otelinize Uygun Plan Seçin",
-    subtitle: "Fiyatlandırma",
-    plans: [
-      { name: "Başlangıç", price: "₺2.490", period: "/ay", description: "Tek otel için temel izleme", features: ["1 otel takibi", "5 rakip izleme", "Günlük fiyat taraması", "E-posta uyarıları", "Temel raporlar"], popular: false, cta: "Başlayın" },
-      { name: "Profesyonel", price: "₺4.990", period: "/ay", description: "Büyüyen oteller için gelişmiş analiz", features: ["3 otel takibi", "15 rakip izleme", "Saatlik fiyat taraması", "Push + E-posta uyarıları", "AI destekli raporlar", "Pazar analizi", "Keşif motoru"], popular: true, cta: "En Popüler" },
-      { name: "Kurumsal", price: "Özel", period: "", description: "Otel zincirleri için tam çözüm", features: ["Sınırsız otel", "Sınırsız rakip", "Gerçek zamanlı tarama", "Tüm bildirim kanalları", "Global Pulse ağı", "API erişimi", "Özel entegrasyonlar", "Öncelikli destek"], popular: false, cta: "İletişime Geçin" }
-    ]
-  },
-  faq: {
-    title: "Sıkça Sorulan Sorular",
-    subtitle: "Aklınızdaki soruları yanıtlıyoruz.",
-    items: [
-      { q: "Kurulum ne kadar sürer? Teknik bilgi gerekir mi?", a: "Hayır, hiç teknik bilgi gerekmez. Otelinizi sisteme eklemek sadece 5 dakika sürer. Siz otel adınızı girin, gerisini yapay zekamız halleder." },
-      { q: "Hangi sitelerden fiyat çekiyorsunuz?", a: "Booking.com, Expedia, Hotels.com, Google Hotels ve kendi web siteleri dahil olmak üzere tüm majör OTA kanallarını ve meta arama motorlarını tarıyoruz." },
-      { q: "Üyelik taahhüdü var mı?", a: "Hayır, Hotel Plus'ta uzun süreli kontrat veya taahhüt yoktur. İstediğiniz zaman iptal edebilir, sadece kullandığınız kadar ödersiniz." },
-      { q: "Kendi otelimi de takip edebilir miyim?", a: "Kesinlikle. Kendi fiyatlarınızın rakiplerle karşılaştırmalı durumunu tek ekranda görür, parite sorunlarını anında tespit edersiniz." }
-    ]
-  },
-  footer_cta: {
-    title: "Fiyatlandırma Stratejinizi Bugün Güçlendirin",
-    title_highlight: "Bugün",
-    description: "Ücretsiz demo ile Hotel Plus'ı deneyimleyin. Kredi kartı gerekmez, kurulum süresi 5 dakikadır.",
-    cta_primary: "Erişim Talebi Oluşturun",
-    cta_secondary: "Zaten Hesabınız Var mı? Giriş Yapın"
-  }
-};
-
-/* ===== MAIN HOMEPAGE COMPONENT ===== */
 export default function LandingHome() {
   const { locale, t } = useI18n();
   const { theme } = useTheme();
 
-  // CMS Content State
-  const [content, setContent] = useState<any>(DEFAULT_CONTENT);
+  // CMS Content State - Refactored to use dictionary fallbacks
+  const [content, setContent] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -277,10 +210,10 @@ export default function LandingHome() {
       try {
         const remoteContent = await api.getLandingConfig(locale);
         if (Object.keys(remoteContent).length > 0) {
-          // Merge remote with default to handle missing keys gracefully
-          setContent((prev: any) => ({ ...DEFAULT_CONTENT, ...remoteContent }));
+          // Merge remote with state
+          setContent((prev: any) => ({ ...prev, ...remoteContent }));
         } else {
-          setContent(DEFAULT_CONTENT);
+          setContent({});
         }
       } catch (err) {
         console.error("CMS Fetch Failed, using local fallback:", err);
@@ -295,13 +228,13 @@ export default function LandingHome() {
   const toggleTheme = () => {}; // No-op, managed globally
   const toggleLocale = () => {}; // No-op, managed globally
 
-  const hero = content.hero;
-  const stats = content.stats;
-  const features = content.features;
-  const testimonials = content.testimonials;
-  const pricing = content.pricing;
-  const faq = content.faq;
-  const footerCta = content.footer_cta;
+  const hero = content.hero || {};
+  const stats = content.stats || [];
+  const features = content.features || { items: [] };
+  const testimonials = content.testimonials || { items: [] };
+  const pricing = content.pricing || { plans: [] };
+  const faq = content.faq || { items: [] };
+  const footerCta = content.footer_cta || {};
 
   return (
     <div className="relative overflow-hidden">
@@ -328,23 +261,23 @@ export default function LandingHome() {
         <div className="max-w-5xl mx-auto text-center">
           <RevealSection>
             <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-6">
-              {hero.top_label}
+              {hero.top_label || t("landing.hero.topLabel")}
             </p>
           </RevealSection>
 
           <RevealSection delay={100}>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tight mb-6">
-              {hero.title_main}{" "}
+              {hero.title_main || t("landing.hero.titleMain")}{" "}
               <span className="text-[var(--soft-gold)] gold-glow-text">
-                {hero.title_highlight}
+                {hero.title_highlight || t("landing.hero.titleHighlight")}
               </span>{" "}
-              {hero.title_suffix}
+              {hero.title_suffix || t("landing.hero.titleSuffix")}
             </h1>
           </RevealSection>
 
           <RevealSection delay={200}>
             <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed">
-              {hero.description}
+              {hero.description || t("landing.hero.description")}
             </p>
           </RevealSection>
 
@@ -354,13 +287,13 @@ export default function LandingHome() {
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                {hero.cta_primary}
+                {hero.cta_primary || t("landing.hero.ctaPrimary")}
               </Link>
               <Link
                 href="/pricing"
                 className="btn-ghost text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                {hero.cta_secondary}
+                {hero.cta_secondary || t("landing.hero.ctaSecondary")}
               </Link>
             </div>
           </RevealSection>
@@ -419,14 +352,41 @@ export default function LandingHome() {
       {/* ===== STATS BAR ===== */}
       <section className="relative z-10 py-16 border-y border-white/5 bg-[#030a15]/50">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {stats.map((stat: any, i: number) => (
+          {stats.length > 0 ? stats.map((stat: any, i: number) => (
             <RevealSection key={i} delay={i * 100}>
               <div>
                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                 <p className="text-sm text-[var(--text-secondary)] mt-2">{stat.label}</p>
               </div>
             </RevealSection>
-          ))}
+          )) : (
+            <>
+              <RevealSection delay={0}>
+                <div>
+                  <AnimatedCounter target={50} suffix="+" />
+                  <p className="text-sm text-[var(--text-secondary)] mt-2">{t("landing.stats.activeHotels")}</p>
+                </div>
+              </RevealSection>
+              <RevealSection delay={100}>
+                <div>
+                  <AnimatedCounter target={24} suffix="/7" />
+                  <p className="text-sm text-[var(--text-secondary)] mt-2">{t("landing.stats.scans")}</p>
+                </div>
+              </RevealSection>
+              <RevealSection delay={200}>
+                <div>
+                  <AnimatedCounter target={98} suffix="%" />
+                  <p className="text-sm text-[var(--text-secondary)] mt-2">{t("landing.stats.accuracy")}</p>
+                </div>
+              </RevealSection>
+              <RevealSection delay={300}>
+                <div>
+                  <AnimatedCounter target={500} suffix="K+" />
+                  <p className="text-sm text-[var(--text-secondary)] mt-2">{t("landing.stats.monitored")}</p>
+                </div>
+              </RevealSection>
+            </>
+          )}
         </div>
       </section>
 
@@ -436,16 +396,23 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                {features.subtitle}
+                {features.subtitle || t("landing.features.subtitle")}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
-                {features.title}
+                {features.title || t("landing.features.title")}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.items.map((feature: any, i: number) => (
+            {(features.items?.length > 0 ? features.items : [
+              { icon: "chart", title: t("landing.features.items.priceIntel.title"), description: t("landing.features.items.priceIntel.desc") },
+              { icon: "radar", title: t("landing.features.items.discovery.title"), description: t("landing.features.items.discovery.desc") },
+              { icon: "share", title: t("landing.features.items.parity.title"), description: t("landing.features.items.parity.desc") },
+              { icon: "users", title: t("landing.features.items.sentiment.title"), description: t("landing.features.items.sentiment.desc") },
+              { icon: "bell", title: t("landing.features.items.alerts.title"), description: t("landing.features.items.alerts.desc") },
+              { icon: "file", title: t("landing.features.items.reports.title"), description: t("landing.features.items.reports.desc") }
+            ]).map((feature: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full group cursor-pointer">
                   <div className="w-14 h-14 rounded-2xl bg-[var(--soft-gold)]/10 flex items-center justify-center text-[var(--soft-gold)] mb-5 group-hover:bg-[var(--soft-gold)]/20 transition-colors duration-300">
@@ -473,16 +440,20 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                {testimonials.subtitle}
+                {testimonials.subtitle || t("landing.testimonials.subtitle")}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
-                {testimonials.title}
+                {testimonials.title || t("landing.testimonials.title")}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.items.map((item: any, i: number) => (
+            {(testimonials.items?.length > 0 ? testimonials.items : [
+              { quote: t("landing.testimonials.items.0.quote"), author: "Ahmet Y.", role: "Genel Müdür, Resort Hotel", initials: "AY" },
+              { quote: t("landing.testimonials.items.1.quote"), author: "Zeynep K.", role: "Gelirler Müdürü", initials: "ZK" },
+              { quote: t("landing.testimonials.items.2.quote"), author: "Mehmet S.", role: "Otel Sahibi", initials: "MS" }
+            ]).map((item: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full">
                   <div className="flex items-center gap-1 mb-6 text-[var(--soft-gold)]">
@@ -513,16 +484,20 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                {pricing.subtitle}
+                {pricing.subtitle || t("landing.pricing.subtitle")}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
-                {pricing.title}
+                {pricing.title || t("landing.pricing.title")}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {pricing.plans.map((plan: any, i: number) => (
+            {(pricing.plans?.length > 0 ? pricing.plans : [
+              { name: t("subscription.starter.name"), price: t("subscription.price.starter"), period: t("subscription.period.mo"), description: t("subscription.starter.description"), features: Object.values(t("subscription.starter.features")), popular: false, cta: t("common.getStarted") },
+              { name: t("subscription.pro.name"), price: t("subscription.price.pro"), period: t("subscription.period.mo"), description: t("subscription.pro.description"), features: Object.values(t("subscription.pro.features")), popular: true, cta: t("subscription.mostPopular") },
+              { name: t("subscription.enterprise.name"), price: t("subscription.price.enterprise"), period: t("subscription.period.custom"), description: t("subscription.enterprise.description"), features: Object.values(t("subscription.enterprise.features")), popular: false, cta: t("subscription.contactSales") }
+            ]).map((plan: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div
                   className={`command-card p-8 h-full flex flex-col relative ${
@@ -575,13 +550,13 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-4">
-                {faq.title}
+                {faq.title || t("landing.faq.title")}
               </h2>
-              <p className="text-[var(--text-secondary)]">{faq.subtitle}</p>
+              <p className="text-[var(--text-secondary)]">{faq.subtitle || t("landing.faq.subtitle")}</p>
             </div>
             
             <div className="divide-y divide-white/5 border-y border-white/5">
-              {faq.items.map((item: any, i: number) => (
+              {(faq.items?.length > 0 ? faq.items : Object.values(t("landing.faq.items") as any)).map((item: any, i: number) => (
                 <FAQItem key={i} question={item.q} answer={item.a} />
               ))}
             </div>
@@ -594,23 +569,23 @@ export default function LandingHome() {
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
             <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-6">
-              {footerCta.title}
+              {footerCta.title || t("landing.footerCta.title")}
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-10 leading-relaxed">
-              {footerCta.description}
+              {footerCta.description || t("landing.footerCta.description")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                {footerCta.cta_primary}
+                {footerCta.cta_primary || t("landing.footerCta.ctaPrimary")}
               </Link>
               <Link
                 href="/login"
                 className="btn-ghost text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                {footerCta.cta_secondary}
+                {footerCta.cta_secondary || t("landing.footerCta.ctaSecondary")}
               </Link>
             </div>
           </RevealSection>
