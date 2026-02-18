@@ -51,6 +51,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Connectivity: If user is logged in and visits the root, send them to the dashboard
+  if (user && request.nextUrl.pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
   // Admin Route Protection
   if (request.nextUrl.pathname.startsWith("/admin")) {
     const adminEmail = "tripzydevops@gmail.com";
