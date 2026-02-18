@@ -231,9 +231,8 @@ export default function LandingHome() {
 
           <RevealSection delay={200}>
             <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed">
-              Hotel Plus, otelinizin fiyatlandırma stratejisini yapay zeka ile güçlendirir.
-              7/24 rakip taraması, anlık fiyat uyarıları ve akıllı raporlarla
-              her zaman doğru fiyatı belirlemenizi sağlar.
+              Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve 
+              gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.
             </p>
           </RevealSection>
 
@@ -243,13 +242,13 @@ export default function LandingHome() {
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Ücretsiz Demo Talep Edin
+                Erişim Talebi Oluşturun
               </Link>
               <Link
                 href="/pricing"
                 className="btn-ghost text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Fiyatlandırmayı İnceleyin
+                Üyelik Planlarını İnceleyin
               </Link>
             </div>
           </RevealSection>
@@ -328,11 +327,11 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                Özellikler
+                Platform Yetenekleri
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-white">
-                İhtiyacınız Olan Her Şey,{" "}
-                <span className="text-[var(--soft-gold)]">Tek Platformda</span>
+                Gelir Liderleri İçin <br className="hidden md:block" />
+                <span className="text-[var(--soft-gold)]">Tasarlanmış Teknoloji</span>
               </h2>
             </div>
           </RevealSection>
@@ -611,7 +610,7 @@ export default function LandingHome() {
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Ücretsiz Demo Talep Edin
+                Erişim Talebi Oluşturun
               </Link>
               <Link
                 href="/login"
