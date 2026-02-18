@@ -462,7 +462,8 @@ export const tr = {
       signup: "Kayıt Ol",
     },
     footer: {
-      tagline: "Yapay zeka destekli otel fiyat izleme ve rekabet analizi platformu.",
+      tagline:
+        "Yapay zeka destekli otel fiyat izleme ve rekabet analizi platformu.",
       pages: "Sayfalar",
       product: "Ürün",
       contact: "İletişim",
@@ -473,36 +474,73 @@ export const tr = {
       titleMain: "Rakiplerinizin Fiyatlarını",
       titleHighlight: "Gerçek Zamanlı",
       titleSuffix: "Takip Edin",
-      description: "Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.",
+      description:
+        "Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.",
       ctaPrimary: "Erişim Talebi Oluşturun",
-      ctaSecondary: "Üyelik Planlarını İnceleyin"
+      ctaSecondary: "Üyelik Planlarını İnceleyin",
     },
     stats: {
       activeHotels: "Aktif Otel",
       scans: "Tarama",
       accuracy: "Doğruluk Oranı",
-      monitored: "İzlenen Fiyat"
+      monitored: "İzlenen Fiyat",
     },
     features: {
       title: "Gelir Liderleri İçin Tasarlanmış Teknoloji",
       subtitle: "Platform Yetenekleri",
       items: {
-        priceIntel: { title: "Fiyat İstihbaratı", desc: "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin." },
-        discovery: { title: "Keşif Motoru", desc: "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması." },
-        parity: { title: "Parite Monitörü", desc: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun." },
-        sentiment: { title: "Duyarlılık Analizi", desc: "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın." },
-        alerts: { title: "Anlık Uyarılar", desc: "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın." },
-        reports: { title: "Akıllı Raporlar", desc: "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın." }
-      }
+        priceIntel: {
+          title: "Fiyat İstihbaratı",
+          desc: "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin.",
+        },
+        discovery: {
+          title: "Keşif Motoru",
+          desc: "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması.",
+        },
+        parity: {
+          title: "Parite Monitörü",
+          desc: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun.",
+        },
+        sentiment: {
+          title: "Duyarlılık Analizi",
+          desc: "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın.",
+        },
+        alerts: {
+          title: "Anlık Uyarılar",
+          desc: "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın.",
+        },
+        reports: {
+          title: "Akıllı Raporlar",
+          desc: "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın.",
+        },
+      },
     },
     testimonials: {
       title: "Otelciler Ne Diyor?",
       subtitle: "Başarı Hikayeleri",
-      items: [
-        { quote: "Hotel Plus ile gelirlerimizi %15 artırdık. Rakip analizleri sayesinde doğru fiyatı yanlış zamanda vermekten kurtulduk.", author: "Ahmet Y.", role: "Genel Müdür, Resort Hotel", initials: "AY" },
-        { quote: "Kurulumu sadece 5 dakika sürdü. Karmaşık excel tablolarından kurtulup tüm pazar verisini tek ekranda görmek harika.", author: "Zeynep K.", role: "Gelirler Müdürü", initials: "ZK" },
-        { quote: "Yatırım getirisini ilk aydan aldık. Rakiplerin fiyat hamlelerini anında görüp aksiyon alabiliyoruz.", author: "Mehmet S.", role: "Otel Sahibi", initials: "MS" }
-      ]
+      items: {
+        0: {
+          quote:
+            "Hotel Plus ile gelirlerimizi %15 artırdık. Rakip analizleri sayesinde doğru fiyatı yanlış zamanda vermekten kurtulduk.",
+          author: "Ahmet Y.",
+          role: "Genel Müdür, Resort Hotel",
+          initials: "AY",
+        },
+        1: {
+          quote:
+            "Kurulumu sadece 5 dakika sürdü. Karmaşık excel tablolarından kurtulup tüm pazar verisini tek ekranda görmek harika.",
+          author: "Zeynep K.",
+          role: "Gelirler Müdürü",
+          initials: "ZK",
+        },
+        2: {
+          quote:
+            "Yatırım getirisini ilk aydan aldık. Rakiplerin fiyat hamlelerini anında görüp aksiyon alabiliyoruz.",
+          author: "Mehmet S.",
+          role: "Otel Sahibi",
+          initials: "MS",
+        },
+      },
     },
     pricing: {
       title: "Otelinize Uygun Plan Seçin",
@@ -511,19 +549,32 @@ export const tr = {
     faq: {
       title: "Sıkça Sorulan Sorular",
       subtitle: "Aklınızdaki soruları yanıtlıyoruz.",
-      items: [
-        { q: "Kurulum ne kadar sürer? Teknik bilgi gerekir mi?", a: "Hayır, hiç teknik bilgi gerekmez. Otelinizi sisteme eklemek sadece 5 dakika sürer. Siz otel adınızı girin, gerisini yapay zekamız halleder." },
-        { q: "Hangi sitelerden fiyat çekiyorsunuz?", a: "Booking.com, Expedia, Hotels.com, Google Hotels ve kendi web siteleri dahil olmak üzere tüm majör OTA kanallarını ve meta arama motorlarını tarıyoruz." },
-        { q: "Üyelik taahhüdü var mı?", a: "Hayır, Hotel Plus'ta uzun süreli kontrat veya taahhüt yoktur. İstediğiniz zaman iptal edebilir, sadece kullandığınız kadar ödersiniz." },
-        { q: "Kendi otelimi de takip edebilir miyim?", a: "Kesinlikle. Kendi fiyatlarınızın rakiplerle karşılaştırmalı durumunu tek ekranda görür, parite sorunlarını anında tespit edersiniz." }
-      ]
+      items: {
+        0: {
+          q: "Kurulum ne kadar sürer? Teknik bilgi gerekir mi?",
+          a: "Hayır, hiç teknik bilgi gerekmez. Otelinizi sisteme eklemek sadece 5 dakika sürer. Siz otel adınızı girin, gerisini yapay zekamız halleder.",
+        },
+        1: {
+          q: "Hangi sitelerden fiyat çekiyorsunuz?",
+          a: "Booking.com, Expedia, Hotels.com, Google Hotels ve kendi web siteleri dahil olmak üzere tüm majör OTA kanallarını ve meta arama motorlarını tarıyoruz.",
+        },
+        2: {
+          q: "Üyelik taahhüdü var mı?",
+          a: "Hayır, Hotel Plus'ta uzun süreli kontrat veya taahhüt yoktur. İstediğiniz zaman iptal edebilir, sadece kullandığınız kadar ödersiniz.",
+        },
+        3: {
+          q: "Kendi otelimi de takip edebilir miyim?",
+          a: "Kesinlikle. Kendi fiyatlarınızın rakiplerle karşılaştırmalı durumunu tek ekranda görür, parite sorunlarını anında tespit edersiniz.",
+        },
+      },
     },
     footerCta: {
       title: "Fiyatlandırma Stratejinizi Bugün Güçlendirin",
       titleHighlight: "Bugün",
-      description: "Ücretsiz demo ile Hotel Plus'ı deneyimleyin. Kredi kartı gerekmez, kurulum süresi 5 dakikadır.",
+      description:
+        "Ücretsiz demo ile Hotel Plus'ı deneyimleyin. Kredi kartı gerekmez, kurulum süresi 5 dakikadır.",
       ctaPrimary: "Erişim Talebi Oluşturun",
-      ctaSecondary: "Zaten Hesabınız Var mı? Giriş Yapın"
-    }
-  }
+      ctaSecondary: "Zaten Hesabınız Var mı? Giriş Yapın",
+    },
+  },
 };

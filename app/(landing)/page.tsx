@@ -450,9 +450,9 @@ export default function LandingHome() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(testimonials.items?.length > 0 ? testimonials.items : [
-              { quote: t("landing.testimonials.items.0.quote"), author: "Ahmet Y.", role: "Genel Müdür, Resort Hotel", initials: "AY" },
-              { quote: t("landing.testimonials.items.1.quote"), author: "Zeynep K.", role: "Gelirler Müdürü", initials: "ZK" },
-              { quote: t("landing.testimonials.items.2.quote"), author: "Mehmet S.", role: "Otel Sahibi", initials: "MS" }
+              { quote: t("landing.testimonials.items.0.quote"), author: "Ahmet Y.", role: t("landing.testimonials.items.0.role"), initials: "AY" },
+              { quote: t("landing.testimonials.items.1.quote"), author: "Zeynep K.", role: t("landing.testimonials.items.1.role"), initials: "ZK" },
+              { quote: t("landing.testimonials.items.2.quote"), author: "Mehmet S.", role: t("landing.testimonials.items.2.role"), initials: "MS" }
             ]).map((item: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full">
@@ -494,9 +494,9 @@ export default function LandingHome() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {(pricing.plans?.length > 0 ? pricing.plans : [
-              { name: t("subscription.starter.name"), price: t("subscription.price.starter"), period: t("subscription.period.mo"), description: t("subscription.starter.description"), features: Object.values(t("subscription.starter.features")), popular: false, cta: t("common.getStarted") },
-              { name: t("subscription.pro.name"), price: t("subscription.price.pro"), period: t("subscription.period.mo"), description: t("subscription.pro.description"), features: Object.values(t("subscription.pro.features")), popular: true, cta: t("subscription.mostPopular") },
-              { name: t("subscription.enterprise.name"), price: t("subscription.price.enterprise"), period: t("subscription.period.custom"), description: t("subscription.enterprise.description"), features: Object.values(t("subscription.enterprise.features")), popular: false, cta: t("subscription.contactSales") }
+              { name: t("subscription.starter.name"), price: t("subscription.price.starter"), period: t("subscription.period.mo"), description: t("subscription.starter.description"), features: [t("subscription.starter.features.0"), t("subscription.starter.features.1"), t("subscription.starter.features.2"), t("subscription.starter.features.3")], popular: false, cta: t("common.getStarted") },
+              { name: t("subscription.pro.name"), price: t("subscription.price.pro"), period: t("subscription.period.mo"), description: t("subscription.pro.description"), features: [t("subscription.pro.features.0"), t("subscription.pro.features.1"), t("subscription.pro.features.2"), t("subscription.pro.features.3"), t("subscription.pro.features.4")], popular: true, cta: t("subscription.mostPopular") },
+              { name: t("subscription.enterprise.name"), price: t("subscription.price.enterprise"), period: t("subscription.period.custom"), description: t("subscription.enterprise.description"), features: [t("subscription.enterprise.features.0"), t("subscription.enterprise.features.1"), t("subscription.enterprise.features.2"), t("subscription.enterprise.features.3"), t("subscription.enterprise.features.4")], popular: false, cta: t("subscription.contactSales") }
             ]).map((plan: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div
@@ -556,7 +556,12 @@ export default function LandingHome() {
             </div>
             
             <div className="divide-y divide-white/5 border-y border-white/5">
-              {(faq.items?.length > 0 ? faq.items : Object.values(t("landing.faq.items") as any)).map((item: any, i: number) => (
+              {(faq.items?.length > 0 ? faq.items : [
+                { q: t("landing.faq.items.0.q"), a: t("landing.faq.items.0.a") },
+                { q: t("landing.faq.items.1.q"), a: t("landing.faq.items.1.a") },
+                { q: t("landing.faq.items.2.q"), a: t("landing.faq.items.2.a") },
+                { q: t("landing.faq.items.3.q"), a: t("landing.faq.items.3.a") }
+              ]).map((item: any, i: number) => (
                 <FAQItem key={i} question={item.q} answer={item.a} />
               ))}
             </div>

@@ -210,6 +210,8 @@ export const en = {
     targetPriceTrendDesc: "30-day historical movements",
     historyRepo: "Detailed History Repo",
     maxLabel: "Max",
+    minLabel: "Min",
+    youLabel: "YOU",
     processing: "Processing Intelligence...",
     advisory: {
       title: "Agent Intelligence Advisory",
@@ -456,7 +458,8 @@ export const en = {
       signup: "Sign Up",
     },
     footer: {
-      tagline: "AI-powered hotel price monitoring and competitive analysis platform.",
+      tagline:
+        "AI-powered hotel price monitoring and competitive analysis platform.",
       pages: "Pages",
       product: "Product",
       contact: "Contact",
@@ -467,36 +470,73 @@ export const en = {
       titleMain: "Track Your Competitors",
       titleHighlight: "Real-Time",
       titleSuffix: "Pricing",
-      description: "Don't leave your hotel's profitability to chance. Transform market data into a competitive advantage and strengthen your revenue management strategy with precise information.",
+      description:
+        "Don't leave your hotel's profitability to chance. Transform market data into a competitive advantage and strengthen your revenue management strategy with precise information.",
       ctaPrimary: "Request Access",
-      ctaSecondary: "View Membership Plans"
+      ctaSecondary: "View Membership Plans",
     },
     stats: {
       activeHotels: "Active Hotels",
       scans: "Scanning",
       accuracy: "Accuracy Rate",
-      monitored: "Monitored Prices"
+      monitored: "Monitored Prices",
     },
     features: {
       title: "Technology Designed for Revenue Leaders",
       subtitle: "Platform Capabilities",
       items: {
-        priceIntel: { title: "Price Intelligence", desc: "Scan competitor hotel prices daily, analyze historical trends, and react instantly to price changes." },
-        discovery: { title: "Discovery Engine", desc: "Discover all competitor hotels in your area on a map. Real-time geo-located price comparison." },
-        parity: { title: "Parite Monitor", desc: "Instantly detect price inconsistencies across OTA channels. Protect your brand value and direct sales channels." },
-        sentiment: { title: "Sentiment Analysis", desc: "Discover your competitors' weak points with AI-powered guest review analysis, pushing your service quality ahead of the market." },
-        alerts: { title: "Instant Alerts", desc: "Receive desktop notifications and email alerts for price changes. Never miss an opportunity." },
-        reports: { title: "Smart Reports", desc: "Base your management decisions on data with AI-powered market analysis reports and PDF outputs." }
-      }
+        priceIntel: {
+          title: "Price Intelligence",
+          desc: "Scan competitor hotel prices daily, analyze historical trends, and react instantly to price changes.",
+        },
+        discovery: {
+          title: "Discovery Engine",
+          desc: "Discover all competitor hotels in your area on a map. Real-time geo-located price comparison.",
+        },
+        parity: {
+          title: "Parite Monitor",
+          desc: "Instantly detect price inconsistencies across OTA channels. Protect your brand value and direct sales channels.",
+        },
+        sentiment: {
+          title: "Sentiment Analysis",
+          desc: "Discover your competitors' weak points with AI-powered guest review analysis, pushing your service quality ahead of the market.",
+        },
+        alerts: {
+          title: "Instant Alerts",
+          desc: "Receive desktop notifications and email alerts for price changes. Never miss an opportunity.",
+        },
+        reports: {
+          title: "Smart Reports",
+          desc: "Base your management decisions on data with AI-powered market analysis reports and PDF outputs.",
+        },
+      },
     },
     testimonials: {
       title: "What Hoteliers Say?",
       subtitle: "Success Stories",
-      items: [
-        { quote: "We increased our revenue by 15% with Hotel Plus. Competitor analysis helped us avoid offering the right price at the wrong time.", author: "Ahmet Y.", role: "General Manager, Resort Hotel", initials: "AY" },
-        { quote: "Setup took only 5 minutes. It's great to get rid of complex excel sheets and see all market data on a single screen.", author: "Zeynep K.", role: "Revenue Manager", initials: "ZK" },
-        { quote: "We got ROI in the first month. We can instantly see competitors' price moves and take action.", author: "Mehmet S.", role: "Hotel Owner", initials: "MS" }
-      ]
+      items: {
+        0: {
+          quote:
+            "We increased our revenue by 15% with Hotel Plus. Competitor analysis helped us avoid offering the right price at the wrong time.",
+          author: "Ahmet Y.",
+          role: "General Manager, Resort Hotel",
+          initials: "AY",
+        },
+        1: {
+          quote:
+            "Setup took only 5 minutes. It's great to get rid of complex excel sheets and see all market data on a single screen.",
+          author: "Zeynep K.",
+          role: "Revenue Manager",
+          initials: "ZK",
+        },
+        2: {
+          quote:
+            "We got ROI in the first month. We can instantly see competitors' price moves and take action.",
+          author: "Mehmet S.",
+          role: "Hotel Owner",
+          initials: "MS",
+        },
+      },
     },
     pricing: {
       title: "Choose the Plan That Fits Your Hotel",
@@ -505,19 +545,32 @@ export const en = {
     faq: {
       title: "Frequently Asked Questions",
       subtitle: "We answer your questions.",
-      items: [
-        { q: "How long does setup take? Do I need technical knowledge?", a: "No, no technical knowledge is required. It takes only 5 minutes to add your hotel to the system. You enter your hotel name, our AI does the rest." },
-        { q: "Which sites do you fetch prices from?", a: "We scan all major OTA channels and meta-search engines, including Booking.com, Expedia, Hotels.com, Google Hotels, and their own websites." },
-        { q: "Is there a commitment?", a: "No, there are no long-term contracts or commitments at Hotel Plus. You can cancel at any time, only pay for what you use." },
-        { q: "Can I track my own hotel as well?", a: "Absolutely. You can see your own prices compared to competitors on a single screen and instantly detect parity issues." }
-      ]
+      items: {
+        0: {
+          q: "How long does setup take? Do I need technical knowledge?",
+          a: "No, no technical knowledge is required. It takes only 5 minutes to add your hotel to the system. You enter your hotel name, our AI does the rest.",
+        },
+        1: {
+          q: "Which sites do you fetch prices from?",
+          a: "We scan all major OTA channels and meta-search engines, including Booking.com, Expedia, Hotels.com, Google Hotels, and their own websites.",
+        },
+        2: {
+          q: "Is there a commitment?",
+          a: "No, there are no long-term contracts or commitments at Hotel Plus. You can cancel at any time, only pay for what you use.",
+        },
+        3: {
+          q: "Can I track my own hotel as well?",
+          a: "Absolutely. You can see your own prices compared to competitors on a single screen and instantly detect parity issues.",
+        },
+      },
     },
     footerCta: {
       title: "Strengthen Your Pricing Strategy Today",
       titleHighlight: "Today",
-      description: "Experience Hotel Plus with a free demo. No credit card required, 5-minute setup.",
+      description:
+        "Experience Hotel Plus with a free demo. No credit card required, 5-minute setup.",
       ctaPrimary: "Request Access",
-      ctaSecondary: "Already have an account? Log In"
-    }
-  }
+      ctaSecondary: "Already have an account? Log In",
+    },
+  },
 };
