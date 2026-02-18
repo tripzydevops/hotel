@@ -54,14 +54,20 @@ export default function AlertsModal({
     }
   };
 
-  const handleMarkAllRead = async () => {
+  const handleClearAll = async () => {
+    // KAİZEN: Optimistic UI
+    // We clear the local state immediately for instant feedback, 
+    // then sync with the database in the background.
+    const originalAlerts = [...alerts];
+    setAlerts([]);
+    
     try {
-      const unread = alerts.filter((a) => !a.is_read);
-      await Promise.all(unread.map((a) => api.markAlertRead(a.id)));
-      setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
+      await api.clearAlerts(userId);
       onUpdate();
     } catch (error) {
-      console.error("Failed to mark all as read:", error);
+      console.error("Failed to clear alerts:", error);
+      // Fallback if API fails
+      setAlerts(originalAlerts);
     }
   };
 
@@ -85,9 +91,9 @@ export default function AlertsModal({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {alerts.some((a) => !a.is_read) && (
+            {alerts.length > 0 && (
               <button
-                onClick={handleMarkAllRead}
+                onClick={handleClearAll}
                 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest hover:brightness-125 transition-all mr-2"
               >
                 {t("alerts.clearAll")}

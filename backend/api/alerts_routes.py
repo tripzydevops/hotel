@@ -33,3 +33,22 @@ async def list_alerts(user_id: UUID, unread_only: bool = False, db: Client = Dep
 async def mark_alert_read(alert_id: UUID, db: Client = Depends(get_supabase)):
     db.table("alerts").update({"is_read": True}).eq("id", str(alert_id)).execute()
     return {"status": "marked_read"}
+
+@router.delete("/user/{user_id}")
+async def clear_all_alerts(user_id: UUID, db: Client = Depends(get_supabase)):
+    """
+    KAİZEN: Operational Hygiene
+    Bulk removes all alerts for a specific user. This is preferred over 
+    soft-deletes (is_read) for performance and storage efficiency.
+    """
+    try:
+        db.table("alerts").delete().eq("user_id", str(user_id)).execute()
+        return {"status": "cleared", "user_id": user_id}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.delete("/{alert_id}")
+async def delete_alert(alert_id: UUID, db: Client = Depends(get_supabase)):
+    """Removes a single alert by ID."""
+    db.table("alerts").delete().eq("id", str(alert_id)).execute()
+    return {"status": "deleted", "alert_id": alert_id}

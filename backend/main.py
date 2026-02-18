@@ -32,8 +32,8 @@ from backend.api import (
     reports_routes,
     profile_routes,
     analysis_routes,
-    analysis_routes,
-    alerts_routes
+    alerts_routes,
+    landing_routes
 )
 
 # EXPLANATION: Vercel Dependency & Import Safety
@@ -108,6 +108,7 @@ app.include_router(reports_routes.router)
 app.include_router(profile_routes.router)
 app.include_router(analysis_routes.router)
 app.include_router(alerts_routes.router)
+app.include_router(landing_routes.router)
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
 @app.get("/api/cron")

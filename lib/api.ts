@@ -125,6 +125,18 @@ class ApiClient {
     });
   }
 
+  async clearAlerts(userId: string): Promise<void> {
+    return this.fetch<void>(`/api/alerts/user/${userId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async deleteAlert(alertId: string): Promise<void> {
+    return this.fetch<void>(`/api/alerts/${alertId}`, {
+      method: "DELETE",
+    });
+  }
+
   async addHotel(
     userId: string,
     name: string,
@@ -477,6 +489,23 @@ class ApiClient {
     return this.fetch<any>(
       `/api/analysis/${hotelId}/sentiment-history?days=${days}`,
     );
+  }
+
+  // ===== Landing Page CMS (Kaizen) =====
+
+  async getLandingConfig(locale: string = "tr"): Promise<Record<string, any>> {
+    return this.fetch<Record<string, any>>(`/api/landing/config?locale=${locale}`);
+  }
+
+  async getAdminLandingConfig(locale: string = "tr"): Promise<any[]> {
+    return this.fetch<any[]>(`/api/admin/landing/config?locale=${locale}`);
+  }
+
+  async updateLandingConfig(configs: any[], locale: string = "tr"): Promise<void> {
+    return this.fetch<void>("/api/admin/landing/config", {
+      method: "PUT",
+      body: JSON.stringify({ locale, configs }),
+    });
   }
 }
 

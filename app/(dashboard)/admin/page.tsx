@@ -32,6 +32,7 @@ import DirectoryPanel from "@/components/admin/DirectoryPanel";
 import LogsPanel from "@/components/admin/LogsPanel";
 import ScansPanel from "@/components/admin/ScansPanel";
 import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
+import LandingPageEditor from "@/components/admin/LandingPageEditor";
 
 import NeuralFeed from "@/components/admin/NeuralFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
@@ -122,6 +123,7 @@ export default function AdminPage() {
         <div className="w-px h-6 bg-white/5 mx-1" />
         <TabButton id="plans" label="Plans" icon={Crown} />
         <TabButton id="keys" label="API Keys" icon={Key} />
+        <TabButton id="landing" label="Landing Page" icon={LayoutDashboard} />
         <TabButton id="logs" label="System Logs" icon={Database} />
       </div>
 
@@ -252,6 +254,7 @@ export default function AdminPage() {
               {activeTab === "reports" && <ReportGeneratorPanel />}
               {activeTab === "plans" && <MembershipPlansPanel />}
               {activeTab === "keys" && <ApiKeysPanel />}
+              {activeTab === "landing" && <LandingPageEditor />}
               {activeTab === "logs" && <LogsPanel />}
             </motion.div>
           </AnimatePresence>

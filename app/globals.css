@@ -29,6 +29,35 @@
   --font-inter: "Inter", sans-serif;
 }
 
+/* ===== LIGHT THEME OVERRIDES ===== */
+.light-theme {
+  --deep-ocean: #f8fafc;
+  --deep-ocean-lighter: #ffffff;
+  --deep-ocean-card: #ffffff;
+  --deep-ocean-accent: #f1f5f9;
+  
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+}
+
+.light-theme .command-card {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+.light-theme h1,
+.light-theme h2,
+.light-theme h3,
+.light-theme h4,
+.light-theme h5,
+.light-theme h6 {
+  color: #0f172a;
+}
+
 /* ===== NOISE OVERLAY ===== */
 .bg-grain {
   position: fixed;

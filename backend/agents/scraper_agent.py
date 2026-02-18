@@ -163,6 +163,10 @@ class ScraperAgent:
                         price_data = await self._check_global_cache(serp_api_id, check_in)
                         
                         if price_data:
+                            # KAİZEN: ID Sanitization
+                            # Sanitize cached data to ensure it doesn't leak IDs from other users
+                            price_data.pop("hotel_id", None)
+                            price_data.pop("id", None)
                             await self.log_reasoning(session_id, "Cache HIT", f"Using shared global pulse for {hotel_name} (Scanned by another user recently)", "info")
                         else:
                             # 2. Fetch fresh price with SerpApi

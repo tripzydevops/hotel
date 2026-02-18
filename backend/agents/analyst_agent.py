@@ -161,9 +161,8 @@ class AnalystAgent:
                         print(f"[AnalystAgent] Continuity lookup failed: {e}")
 
                 # Prepare Price Log
-                # We now allow price=0 to be inserted if it was a valid attempt but failed (to trigger "Verification Failed" in UI)
-                # But we filter out accidental 0s where we didn't even try. 
-                # Here, we definitely tried because we're in the scraper_results loop.
+                # KAİZEN: Use explicit hotel_id variable to prevent accidental shadowing 
+                # from nested price_data objects (Global Pulse protection)
                 price_logs_to_insert.append({
                     "hotel_id": hotel_id,
                     "price": current_price if current_price else 0.0,

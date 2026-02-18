@@ -22,6 +22,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api";
+import { Globe, Sun, Moon } from "lucide-react";
 
 /* ===== SCROLL ANIMATION HOOK ===== */
 /* EXPLANATION: Uses IntersectionObserver to trigger fade-in-up animations
@@ -208,12 +210,126 @@ function IconUsers() {
 }
 
 /* ===== MAIN HOMEPAGE COMPONENT ===== */
+/* ===== DEFAULT CONTENT FALLBACKS ===== */
+const DEFAULT_CONTENT = {
+  hero: {
+    top_label: "Yapay Zeka Destekli Otel Fiyat İstihbaratı",
+    title_main: "Rakiplerinizin Fiyatlarını",
+    title_highlight: "Gerçek Zamanlı",
+    title_suffix: "Takip Edin",
+    description: "Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.",
+    cta_primary: "Erişim Talebi Oluşturun",
+    cta_secondary: "Üyelik Planlarını İnceleyin"
+  },
+  stats: [
+    { value: 50, suffix: "+", label: "Aktif Otel" },
+    { value: 24, suffix: "/7", label: "Tarama" },
+    { value: 98, suffix: "%", label: "Doğruluk Oranı" },
+    { value: 500, suffix: "K+", label: "İzlenen Fiyat" }
+  ],
+  features: {
+    title: "Gelir Liderleri İçin Tasarlanmış Teknoloji",
+    subtitle: "Platform Yetenekleri",
+    items: [
+      { icon: "chart", title: "Fiyat İstihbaratı", description: "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin." },
+      { icon: "radar", title: "Keşif Motoru", description: "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması." },
+      { icon: "share", title: "Parite Monitörü", description: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun." },
+      { icon: "users", title: "Duyarlılık Analizi", description: "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın." },
+      { icon: "bell", title: "Anlık Uyarılar", description: "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın." },
+      { icon: "file", title: "Akıllı Raporlar", description: "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın." }
+    ]
+  },
+  testimonials: {
+    title: "Otelciler Ne Diyor?",
+    subtitle: "Başarı Hikayeleri",
+    items: [
+      { quote: "Hotel Plus ile gelirlerimizi %15 artırdık. Rakip analizleri sayesinde doğru fiyatı yanlış zamanda vermekten kurtulduk.", author: "Ahmet Y.", role: "Genel Müdür, Resort Hotel", initials: "AY" },
+      { quote: "Kurulumu sadece 5 dakika sürdü. Karmaşık excel tablolarından kurtulup tüm pazar verisini tek ekranda görmek harika.", author: "Zeynep K.", role: "Gelirler Müdürü", initials: "ZK" },
+      { quote: "Yatırım getirisini ilk aydan aldık. Rakiplerin fiyat hamlelerini anında görüp aksiyon alabiliyoruz.", author: "Mehmet S.", role: "Otel Sahibi", initials: "MS" }
+    ]
+  },
+  pricing: {
+    title: "Otelinize Uygun Plan Seçin",
+    subtitle: "Fiyatlandırma",
+    plans: [
+      { name: "Başlangıç", price: "₺2.490", period: "/ay", description: "Tek otel için temel izleme", features: ["1 otel takibi", "5 rakip izleme", "Günlük fiyat taraması", "E-posta uyarıları", "Temel raporlar"], popular: false, cta: "Başlayın" },
+      { name: "Profesyonel", price: "₺4.990", period: "/ay", description: "Büyüyen oteller için gelişmiş analiz", features: ["3 otel takibi", "15 rakip izleme", "Saatlik fiyat taraması", "Push + E-posta uyarıları", "AI destekli raporlar", "Pazar analizi", "Keşif motoru"], popular: true, cta: "En Popüler" },
+      { name: "Kurumsal", price: "Özel", period: "", description: "Otel zincirleri için tam çözüm", features: ["Sınırsız otel", "Sınırsız rakip", "Gerçek zamanlı tarama", "Tüm bildirim kanalları", "Global Pulse ağı", "API erişimi", "Özel entegrasyonlar", "Öncelikli destek"], popular: false, cta: "İletişime Geçin" }
+    ]
+  },
+  faq: {
+    title: "Sıkça Sorulan Sorular",
+    subtitle: "Aklınızdaki soruları yanıtlıyoruz.",
+    items: [
+      { q: "Kurulum ne kadar sürer? Teknik bilgi gerekir mi?", a: "Hayır, hiç teknik bilgi gerekmez. Otelinizi sisteme eklemek sadece 5 dakika sürer. Siz otel adınızı girin, gerisini yapay zekamız halleder." },
+      { q: "Hangi sitelerden fiyat çekiyorsunuz?", a: "Booking.com, Expedia, Hotels.com, Google Hotels ve kendi web siteleri dahil olmak üzere tüm majör OTA kanallarını ve meta arama motorlarını tarıyoruz." },
+      { q: "Üyelik taahhüdü var mı?", a: "Hayır, Hotel Plus'ta uzun süreli kontrat veya taahhüt yoktur. İstediğiniz zaman iptal edebilir, sadece kullandığınız kadar ödersiniz." },
+      { q: "Kendi otelimi de takip edebilir miyim?", a: "Kesinlikle. Kendi fiyatlarınızın rakiplerle karşılaştırmalı durumunu tek ekranda görür, parite sorunlarını anında tespit edersiniz." }
+    ]
+  },
+  footer_cta: {
+    title: "Fiyatlandırma Stratejinizi Bugün Güçlendirin",
+    title_highlight: "Bugün",
+    description: "Ücretsiz demo ile Hotel Plus'ı deneyimleyin. Kredi kartı gerekmez, kurulum süresi 5 dakikadır.",
+    cta_primary: "Erişim Talebi Oluşturun",
+    cta_secondary: "Zaten Hesabınız Var mı? Giriş Yapın"
+  }
+};
+
+/* ===== MAIN HOMEPAGE COMPONENT ===== */
 export default function LandingHome() {
+  const [content, setContent] = useState<any>(DEFAULT_CONTENT);
+  const [locale, setLocale] = useState("tr");
+  const [theme, setTheme] = useState("dark");
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const remoteContent = await api.getLandingConfig(locale);
+        if (Object.keys(remoteContent).length > 0) {
+          // Merge remote with default to handle missing keys gracefully
+          setContent((prev: any) => ({ ...DEFAULT_CONTENT, ...remoteContent }));
+        } else {
+          setContent(DEFAULT_CONTENT);
+        }
+      } catch (err) {
+        console.error("CMS Fetch Failed, using local fallback:", err);
+      }
+    };
+    fetchConfig();
+  }, [locale]);
+
+  const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
+  const toggleLocale = () => setLocale(prev => prev === "tr" ? "en" : "tr");
+
+  const hero = content.hero;
+  const stats = content.stats;
+  const features = content.features;
+  const testimonials = content.testimonials;
+  const pricing = content.pricing;
+  const faq = content.faq;
+  const footerCta = content.footer_cta;
+
   return (
-    <div className="relative overflow-hidden">
+    <div className={`relative overflow-hidden transition-colors duration-500 ${theme === "light" ? "light-theme" : ""}`}>
+      {/* ===== CONTROLS (THEME & LANG) ===== */}
+      <div className="fixed top-6 right-6 z-[100] flex gap-3">
+        <button 
+          onClick={toggleLocale}
+          className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
+          title={locale === "tr" ? "Switch to English" : "Türkçe'ye Geç"}
+        >
+          <span className="text-[10px] font-black uppercase">{locale === "tr" ? "EN" : "TR"}</span>
+        </button>
+        <button 
+          onClick={toggleTheme}
+          className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
+        >
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </div>
+
       {/* ===== BACKGROUND EFFECTS ===== */}
-      {/* EXPLANATION: Animated mesh gradient background that slowly shifts.
-          Creates a premium, "living" feel without distracting from content. */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[var(--deep-ocean)]" />
         <div
@@ -230,30 +346,27 @@ export default function LandingHome() {
       </div>
 
       {/* ===== HERO SECTION ===== */}
-      {/* EXPLANATION: Value proposition in ≤5 seconds (per copywriting skill).
-          Headline is outcome-focused, CTA is action-oriented. */}
       <section className="relative z-10 pt-32 pb-20 md:pt-44 md:pb-32 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <RevealSection>
             <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-6">
-              Yapay Zeka Destekli Otel Fiyat İstihbaratı
+              {hero.top_label}
             </p>
           </RevealSection>
 
           <RevealSection delay={100}>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-6">
-              Rakiplerinizin Fiyatlarını{" "}
+              {hero.title_main}{" "}
               <span className="text-[var(--soft-gold)] gold-glow-text">
-                Gerçek Zamanlı
+                {hero.title_highlight}
               </span>{" "}
-              Takip Edin
+              {hero.title_suffix}
             </h1>
           </RevealSection>
 
           <RevealSection delay={200}>
             <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed">
-              Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve 
-              gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.
+              {hero.description}
             </p>
           </RevealSection>
 
@@ -263,25 +376,22 @@ export default function LandingHome() {
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Erişim Talebi Oluşturun
+                {hero.cta_primary}
               </Link>
               <Link
                 href="/pricing"
                 className="btn-ghost text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Üyelik Planlarını İnceleyin
+                {hero.cta_secondary}
               </Link>
             </div>
           </RevealSection>
 
-          {/* EXPLANATION: Floating product preview card showing a stylized
-              representation of the Rate Intelligence Grid. */}
           <RevealSection delay={500}>
             <div className="mt-16 md:mt-24 relative max-w-4xl mx-auto">
               <div className="absolute -inset-4 bg-gradient-to-t from-[var(--soft-gold)]/10 to-transparent rounded-3xl blur-2xl" />
               <div className="relative command-card p-1">
                 <div className="bg-[#0a1628] rounded-[18px] p-6 md:p-8">
-                  {/* Mini Dashboard Preview */}
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-3 h-3 rounded-full bg-red-500/60" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
@@ -290,7 +400,6 @@ export default function LandingHome() {
                       Rate Intelligence Grid
                     </span>
                   </div>
-                  {/* Stylized Grid Preview */}
                   <div className="grid grid-cols-5 gap-2 text-[10px] md:text-xs">
                     <div className="text-[var(--text-muted)] font-bold py-2">Tarih</div>
                     <div className="text-[var(--soft-gold)] font-bold py-2 text-center">SİZİN OTELİNİZ</div>
@@ -320,16 +429,9 @@ export default function LandingHome() {
       </section>
 
       {/* ===== STATS BAR ===== */}
-      {/* EXPLANATION: Social proof section with animated counters.
-          Numbers build trust faster than text (per CRO skill). */}
       <section className="relative z-10 py-16 border-y border-white/5 bg-[#030a15]/50">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: 50, suffix: "+", label: "Aktif Otel" },
-            { value: 24, suffix: "/7", label: "Tarama" },
-            { value: 98, suffix: "%", label: "Doğruluk Oranı" },
-            { value: 500, suffix: "K+", label: "İzlenen Fiyat" },
-          ].map((stat, i) => (
+          {stats.map((stat: any, i: number) => (
             <RevealSection key={i} delay={i * 100}>
               <div>
                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
@@ -341,65 +443,30 @@ export default function LandingHome() {
       </section>
 
       {/* ===== FEATURES SECTION ===== */}
-      {/* EXPLANATION: 4 glassmorphism cards highlighting core features.
-          Uses Feature → Benefit → Outcome framework (per copywriting skill). */}
       <section className="relative z-10 py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                Platform Yetenekleri
+                {features.subtitle}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-white">
-                Gelir Liderleri İçin <br className="hidden md:block" />
-                <span className="text-[var(--soft-gold)]">Tasarlanmış Teknoloji</span>
+                {features.title}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <IconChart />,
-                title: "Fiyat İstihbaratı",
-                description:
-                  "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin.",
-              },
-              {
-                icon: <IconRadar />,
-                title: "Keşif Motoru",
-                description:
-                  "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması.",
-              },
-              {
-                icon: <IconShare2 />,
-                title: "Parite Monitörü",
-                description:
-                  "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun.",
-              },
-              {
-                icon: <IconUsers />,
-                title: "Duyarlılık Analizi",
-                description:
-                  "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın.",
-              },
-              {
-                icon: <IconBell />,
-                title: "Anlık Uyarılar",
-                description:
-                  "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın.",
-              },
-              {
-                icon: <IconFileText />,
-                title: "Akıllı Raporlar",
-                description:
-                  "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın.",
-              },
-            ].map((feature, i) => (
+            {features.items.map((feature: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full group cursor-pointer">
                   <div className="w-14 h-14 rounded-2xl bg-[var(--soft-gold)]/10 flex items-center justify-center text-[var(--soft-gold)] mb-5 group-hover:bg-[var(--soft-gold)]/20 transition-colors duration-300">
-                    {feature.icon}
+                    {feature.icon === "chart" && <IconChart />}
+                    {feature.icon === "radar" && <IconRadar />}
+                    {feature.icon === "share" && <IconShare2 />}
+                    {feature.icon === "users" && <IconUsers />}
+                    {feature.icon === "bell" && <IconBell />}
+                    {feature.icon === "file" && <IconFileText />}
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
                   <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
@@ -418,35 +485,16 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                Başarı Hikayeleri
+                {testimonials.subtitle}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-white">
-                Otelciler <span className="text-[var(--soft-gold)]">Ne Diyor?</span>
+                {testimonials.title}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "Hotel Plus ile gelirlerimizi %15 artırdık. Rakip analizleri sayesinde doğru fiyatı yanlış zamanda vermekten kurtulduk.",
-                author: "Ahmet Y.",
-                role: "Genel Müdür, Resort Hotel",
-                initials: "AY"
-              },
-              {
-                quote: "Kurulumu sadece 5 dakika sürdü. Karmaşık excel tablolarından kurtulup tüm pazar verisini tek ekranda görmek harika.",
-                author: "Zeynep K.",
-                role: "Gelirler Müdürü",
-                initials: "ZK"
-              },
-              {
-                quote: "Yatırım getirisini ilk aydan aldık. Rakiplerin fiyat hamlelerini anında görüp aksiyon alabiliyoruz.",
-                author: "Mehmet S.",
-                role: "Otel Sahibi",
-                initials: "MS"
-              }
-            ].map((item, i) => (
+            {testimonials.items.map((item: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full">
                   <div className="flex items-center gap-1 mb-6 text-[var(--soft-gold)]">
@@ -472,75 +520,21 @@ export default function LandingHome() {
       </section>
 
       {/* ===== PRICING SECTION ===== */}
-      {/* EXPLANATION: 3-tier pricing with "En Popüler" badge on middle tier.
-          Designed for clarity + risk reduction (per page-cro skill). */}
       <section className="relative z-10 py-24 px-6 bg-[#030a15]/30">
         <div className="max-w-6xl mx-auto">
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                Fiyatlandırma
+                {pricing.subtitle}
               </p>
               <h2 className="text-3xl md:text-4xl font-black text-white">
-                Otelinize Uygun{" "}
-                <span className="text-[var(--soft-gold)]">Plan Seçin</span>
+                {pricing.title}
               </h2>
             </div>
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                name: "Başlangıç",
-                price: "₺2.490",
-                period: "/ay",
-                description: "Tek otel için temel izleme",
-                features: [
-                  "1 otel takibi",
-                  "5 rakip izleme",
-                  "Günlük fiyat taraması",
-                  "E-posta uyarıları",
-                  "Temel raporlar",
-                ],
-                popular: false,
-                cta: "Başlayın",
-              },
-              {
-                name: "Profesyonel",
-                price: "₺4.990",
-                period: "/ay",
-                description: "Büyüyen oteller için gelişmiş analiz",
-                features: [
-                  "3 otel takibi",
-                  "15 rakip izleme",
-                  "Saatlik fiyat taraması",
-                  "Push + E-posta uyarıları",
-                  "AI destekli raporlar",
-                  "Pazar analizi",
-                  "Keşif motoru",
-                ],
-                popular: true,
-                cta: "En Popüler",
-              },
-              {
-                name: "Kurumsal",
-                price: "Özel",
-                period: "",
-                description: "Otel zincirleri için tam çözüm",
-                features: [
-                  "Sınırsız otel",
-                  "Sınırsız rakip",
-                  "Gerçek zamanlı tarama",
-                  "Tüm bildirim kanalları",
-                  "Global Pulse ağı",
-                  "API erişimi",
-                  "Özel entegrasyonlar",
-                  "Öncelikli destek",
-                ],
-                popular: false,
-                cta: "İletişime Geçin",
-              },
-            ].map((plan, i) => (
+            {pricing.plans.map((plan: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div
                   className={`command-card p-8 h-full flex flex-col relative ${
@@ -561,7 +555,7 @@ export default function LandingHome() {
                     <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
                   </div>
                   <ul className="space-y-2.5 mb-8 flex-1">
-                    {plan.features.map((f, j) => (
+                    {plan.features.map((f: string, j: number) => (
                       <li key={j} className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)]">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--soft-gold)" strokeWidth="2">
                           <polyline points="20 6 9 17 4 12" />
@@ -571,7 +565,7 @@ export default function LandingHome() {
                     ))}
                   </ul>
                   <Link
-                    href={plan.name === "Kurumsal" ? "/contact" : "/contact"}
+                    href="/contact"
                     className={`text-center py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
                       plan.popular
                         ? "btn-gold"
@@ -593,31 +587,14 @@ export default function LandingHome() {
           <RevealSection>
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-                Sıkça Sorulan <span className="text-[var(--soft-gold)]">Sorular</span>
+                {faq.title}
               </h2>
-              <p className="text-[var(--text-secondary)]">Aklınızdaki soruları yanıtlıyoruz.</p>
+              <p className="text-[var(--text-secondary)]">{faq.subtitle}</p>
             </div>
             
             <div className="divide-y divide-white/5 border-y border-white/5">
-              {[
-                {
-                  q: "Kurulum ne kadar sürer? Teknik bilgi gerekir mi?",
-                  a: "Hayır, hiç teknik bilgi gerekmez. Otelinizi sisteme eklemek sadece 5 dakika sürer. Siz otel adınızı girin, gerisini yapay zekamız halleder."
-                },
-                {
-                  q: "Hangi sitelerden fiyat çekiyorsunuz?",
-                  a: "Booking.com, Expedia, Hotels.com, Google Hotels ve kendi web siteleri dahil olmak üzere tüm majör OTA kanallarını ve meta arama motorlarını tarıyoruz."
-                },
-                {
-                  q: "Üyelik taahhüdü var mı?",
-                  a: "Hayır, Hotel Plus'ta uzun süreli kontrat veya taahhüt yoktur. İstediğiniz zaman iptal edebilir, sadece kullandığınız kadar ödersiniz."
-                },
-                {
-                  q: "Kendi otelimi de takip edebilir miyim?",
-                  a: "Kesinlikle. Kendi fiyatlarınızın rakiplerle karşılaştırmalı durumunu tek ekranda görür, parite sorunlarını anında tespit edersiniz."
-                }
-              ].map((faq, i) => (
-                <FAQItem key={i} question={faq.q} answer={faq.a} />
+              {faq.items.map((item: any, i: number) => (
+                <FAQItem key={i} question={item.q} answer={item.a} />
               ))}
             </div>
           </RevealSection>
@@ -625,31 +602,27 @@ export default function LandingHome() {
       </section>
 
       {/* ===== FINAL CTA SECTION ===== */}
-      {/* EXPLANATION: Last conversion point before footer.
-          Recap value prop + low-commitment CTA (per copywriting skill). */}
       <section className="relative z-10 py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
             <h2 className="text-3xl md:text-4xl font-black text-white mb-6">
-              Fiyatlandırma Stratejinizi{" "}
-              <span className="text-[var(--soft-gold)]">Bugün</span> Güçlendirin
+              {footerCta.title}
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-10 leading-relaxed">
-              Ücretsiz demo ile Hotel Plus&apos;ı deneyimleyin.
-              Kredi kartı gerekmez, kurulum süresi 5 dakikadır.
+              {footerCta.description}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/contact"
                 className="btn-gold text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Erişim Talebi Oluşturun
+                {footerCta.cta_primary}
               </Link>
               <Link
                 href="/login"
                 className="btn-ghost text-base py-4 px-8 w-full sm:w-auto cursor-pointer"
               >
-                Zaten Hesabınız Var mı? Giriş Yapın
+                {footerCta.cta_secondary}
               </Link>
             </div>
           </RevealSection>
