@@ -153,7 +153,7 @@ const NeuralFeed = () => {
                 <div className="flex-1 space-y-1.5">
                   <div className="flex items-center flex-wrap gap-3">
                     <span
-                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest
+                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0
                       ${
                         log.status === "success"
                           ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
@@ -164,13 +164,13 @@ const NeuralFeed = () => {
                     >
                       {log.action_type || "SIGNAL"}
                     </span>
-                    <span className="text-white font-bold tracking-tight text-sm">
+                    <span className="text-white font-bold tracking-tight text-sm truncate max-w-[200px] xl:max-w-[400px]">
                       {log.hotel_name || "SYSTEM_KERNEL"}
                     </span>
                     {log.price && (
-                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5 ml-auto">
+                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5 ml-auto shrink-0">
                         <Zap className="w-3 h-3 text-[var(--soft-gold)]" />
-                        <span className="text-[var(--soft-gold)] font-black tabular-nums">
+                        <span className="text-[var(--soft-gold)] font-black tabular-nums whitespace-nowrap">
                           {log.price?.toLocaleString()} {log.currency}
                         </span>
                       </div>

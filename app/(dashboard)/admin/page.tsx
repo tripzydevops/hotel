@@ -131,22 +131,33 @@ export default function AdminPage() {
       {activeTab === "overview" && (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           {/* Neural Health Matrix - Full Width */}
-          <SystemHealthPanel stats={stats} />
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-[var(--soft-gold)]" />
+              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">System Vital Matrices</h2>
+            </div>
+            <SystemHealthPanel stats={stats} />
+          </section>
 
           {/* EXPLANATION: Grid Layout Fix for Terminal/Stat card overlap.
               Using min-w-0 prevents child overflow in grid cells on smaller screens. 
-              Removed md:grid-rows-2 to allow natural height flow for StatCards. */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              Refined columns to lg:col-span-9 and lg:col-span-3 with cleaner sectioning. */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Command Feed - Large Bento Cell */}
-            {/* EXPLANATION: Upgraded to 12-column grid for surgical precision.
-                NeuralFeed takes 9/12 (75%) space, leaving 3/12 for stats.
-                min-w-0 + overflow-hidden on cellular level prevents bleed. */}
-            <div className="lg:col-span-9 min-w-0 overflow-hidden">
+            <div className="lg:col-span-9 min-w-0 space-y-6">
+              <div className="flex items-center gap-3">
+                <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Neural Signal Intelligence</h2>
+              </div>
               <NeuralFeed />
             </div>
 
             {/* Vertical Stat Column */}
-            <div className="lg:col-span-3 flex flex-col gap-6 h-full min-w-0">
+            <div className="lg:col-span-3 flex flex-col gap-8 h-full min-w-0">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-[var(--soft-gold)]" />
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Core Metrics</h2>
+              </div>
               <StatCard
                 label="Intelligence nodes"
                 value={stats?.total_users || 0}
