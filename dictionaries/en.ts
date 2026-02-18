@@ -435,4 +435,31 @@ export const en = {
     guestComplaint: "Guest Complaint",
     noVulnerabilities: "No critical vulnerabilities detected.",
   },
+  landing: {
+    nav: {
+      home: "Home",
+      about: "About",
+      pricing: "Pricing",
+      contact: "Contact",
+      demo: "Request Demo",
+    },
+    table: {
+      date: "Date",
+      yourHotel: "YOUR HOTEL",
+      compA: "Comp A",
+      compB: "Comp B",
+      compC: "Comp B",
+    },
+    common: {
+      login: "Login",
+      signup: "Sign Up",
+    },
+    footer: {
+      tagline: "AI-powered hotel price monitoring and competitive analysis platform.",
+      pages: "Pages",
+      product: "Product",
+      contact: "Contact",
+      rights: "© 2026 Hotel Plus. All rights reserved.",
+    }
+  }
 };

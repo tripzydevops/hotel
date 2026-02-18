@@ -5,37 +5,50 @@
  * contact info, and branding. Uses the same Deep Ocean + Gold
  * design tokens as the rest of the site.
  */
+"use client";
+
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
 
 export default function LandingFooter() {
+  const { t } = useI18n();
+
+  const pages = [
+    { href: "/", label: t("landing.nav.home") },
+    { href: "/about", label: t("landing.nav.about") },
+    { href: "/pricing", label: t("landing.nav.pricing") },
+    { href: "/contact", label: t("landing.nav.contact") },
+  ];
+
+  const productLinks = [
+    { href: "/login", label: t("landing.common.login") },
+    { href: "/pricing", label: t("landing.nav.pricing") },
+    { href: "/contact", label: t("landing.nav.demo") },
+  ];
+
   return (
-    <footer className="relative z-10 border-t border-white/5 bg-[#030a15]">
+    <footer className="relative z-10 border-t border-white/5 bg-[var(--deep-ocean)] transition-all duration-500">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand Column */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-black text-white tracking-tight">
+              <span className="text-xl font-black text-[var(--text-primary)] tracking-tight">
                 Hotel <span className="text-[var(--soft-gold)]">Plus</span>
               </span>
             </div>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Yapay zeka destekli otel fiyat izleme ve rekabet analizi platformu.
+              {t("landing.footer.tagline")}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              Sayfalar
+            <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4">
+              {t("landing.footer.pages")}
             </h4>
             <ul className="space-y-2.5">
-              {[
-                { href: "/", label: "Ana Sayfa" },
-                { href: "/about", label: "Hakkımızda" },
-                { href: "/pricing", label: "Fiyatlandırma" },
-                { href: "/contact", label: "İletişim" },
-              ].map((link) => (
+              {pages.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -50,15 +63,11 @@ export default function LandingFooter() {
 
           {/* Product Links */}
           <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              Ürün
+            <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4">
+              {t("landing.footer.product")}
             </h4>
             <ul className="space-y-2.5">
-              {[
-                { href: "/login", label: "Oturum Aç" },
-                { href: "/pricing", label: "Fiyatlandırma" },
-                { href: "/contact", label: "Demo Talebi" },
-              ].map((link) => (
+              {productLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -73,12 +82,12 @@ export default function LandingFooter() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              İletişim
+            <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4">
+              {t("landing.footer.contact")}
             </h4>
             <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">
               <li>info@hotelplus.com.tr</li>
-              <li>Balıkesir, Türkiye</li>
+              <li>{t("landing.nav.home") === "Home" ? "Turkey" : "Türkiye"}</li>
             </ul>
           </div>
         </div>
@@ -86,7 +95,7 @@ export default function LandingFooter() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--text-muted)]">
-            © 2026 Hotel Plus. Tüm hakları saklıdır.
+            {t("landing.footer.rights")}
           </p>
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">
             Powered by Rate Sentinel AI

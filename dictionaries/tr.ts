@@ -441,4 +441,31 @@ export const tr = {
       enterprise: "Özel",
     },
   },
+  landing: {
+    nav: {
+      home: "Ana Sayfa",
+      about: "Hakkımızda",
+      pricing: "Fiyatlandırma",
+      contact: "İletişim",
+      demo: "Demo Talebi",
+    },
+    table: {
+      date: "Tarih",
+      yourHotel: "SİZİN OTELİNİZ",
+      compA: "Rakip A",
+      compB: "Rakip B",
+      compC: "Rakip C",
+    },
+    common: {
+      login: "Oturum Aç",
+      signup: "Kayıt Ol",
+    },
+    footer: {
+      tagline: "Yapay zeka destekli otel fiyat izleme ve rekabet analizi platformu.",
+      pages: "Sayfalar",
+      product: "Ürün",
+      contact: "İletişim",
+      rights: "© 2026 Hotel Plus. Tüm hakları saklıdır.",
+    }
+  }
 };

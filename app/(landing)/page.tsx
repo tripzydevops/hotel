@@ -1,29 +1,16 @@
-/**
- * EXPLANATION: Landing Homepage
- * 
- * The main marketing page for Hotel Plus. This is the "front door" that
- * sells the product to potential hotel owners/operators.
- * 
- * Structure follows the copywriting skill's page framework:
- * 1. Hero — Value prop in ≤5 seconds + primary CTA
- * 2. Stats Bar — Social proof with animated counters
- * 3. Problem/Solution — Pain points → Hotel Plus solutions
- * 4. Features — 4 glassmorphism cards with Lucide-style icons
- * 5. Product Showcase — Real dashboard screenshot preview
- * 6. Pricing — 3-tier cards (Başlangıç / Profesyonel / Kurumsal)
- * 7. Final CTA — Demo request with recap
- * 
- * Animations: "Sade ve Şık" (Simple & Elegant)
- * - Scroll-triggered fade-in-up via IntersectionObserver
- * - 150-300ms micro-interactions per ui-ux-pro-max guidelines
- * - prefers-reduced-motion respected
- */
 "use client";
 
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
 import { Globe, Sun, Moon } from "lucide-react";
+import { api } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
+
+/**
+ * Landing Homepage - Hotel Plus
+ * Selling point for hotel owners/operators.
+ */
 
 /* ===== SCROLL ANIMATION HOOK ===== */
 /* EXPLANATION: Uses IntersectionObserver to trigger fade-in-up animations
@@ -82,7 +69,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   }, [isVisible, target]);
 
   return (
-    <span ref={ref} className="text-3xl md:text-4xl font-black text-white">
+    <span ref={ref} className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
       {count}
       {suffix}
     </span>
@@ -128,7 +115,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full py-6 flex items-center justify-between text-left group cursor-pointer"
       >
-        <span className="text-lg font-medium text-white group-hover:text-[var(--soft-gold)] transition-colors">
+        <span className="text-lg font-medium text-[var(--text-primary)] group-hover:text-[var(--soft-gold)] transition-colors">
           {question}
         </span>
         <span className={`transform transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
@@ -278,9 +265,12 @@ const DEFAULT_CONTENT = {
 
 /* ===== MAIN HOMEPAGE COMPONENT ===== */
 export default function LandingHome() {
+  const { locale, t } = useI18n();
+  const { theme } = useTheme();
+
+  // CMS Content State
   const [content, setContent] = useState<any>(DEFAULT_CONTENT);
-  const [locale, setLocale] = useState("tr");
-  const [theme, setTheme] = useState("dark");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -295,12 +285,15 @@ export default function LandingHome() {
       } catch (err) {
         console.error("CMS Fetch Failed, using local fallback:", err);
       }
+      finally {
+        setLoading(false);
+      }
     };
     fetchConfig();
   }, [locale]);
 
-  const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
-  const toggleLocale = () => setLocale(prev => prev === "tr" ? "en" : "tr");
+  const toggleTheme = () => {}; // No-op, managed globally
+  const toggleLocale = () => {}; // No-op, managed globally
 
   const hero = content.hero;
   const stats = content.stats;
@@ -311,23 +304,8 @@ export default function LandingHome() {
   const footerCta = content.footer_cta;
 
   return (
-    <div className={`relative overflow-hidden transition-colors duration-500 ${theme === "light" ? "light-theme" : ""}`}>
-      {/* ===== CONTROLS (THEME & LANG) ===== */}
-      <div className="fixed top-6 right-6 z-[100] flex gap-3">
-        <button 
-          onClick={toggleLocale}
-          className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
-          title={locale === "tr" ? "Switch to English" : "Türkçe'ye Geç"}
-        >
-          <span className="text-[10px] font-black uppercase">{locale === "tr" ? "EN" : "TR"}</span>
-        </button>
-        <button 
-          onClick={toggleTheme}
-          className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-      </div>
+    <div className="relative overflow-hidden">
+      {/* ===== CONTROLS (THEME & LANG) REMOVED - NOW IN NAVBAR ===== */}
 
       {/* ===== BACKGROUND EFFECTS ===== */}
       <div className="fixed inset-0 z-0">
@@ -355,7 +333,7 @@ export default function LandingHome() {
           </RevealSection>
 
           <RevealSection delay={100}>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tight mb-6">
               {hero.title_main}{" "}
               <span className="text-[var(--soft-gold)] gold-glow-text">
                 {hero.title_highlight}
@@ -415,9 +393,9 @@ export default function LandingHome() {
                       <div key={i} className="contents">
                         <div className="text-[var(--text-secondary)] py-2 border-t border-white/5">{row.date}</div>
                         <div className="text-[var(--soft-gold)] font-bold py-2 text-center border-t border-white/5">{row.you}</div>
-                        <div className="text-white py-2 text-center border-t border-white/5">{row.a}</div>
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">{row.a}</div>
                         <div className="text-green-400 py-2 text-center border-t border-white/5">{row.b}</div>
-                        <div className="text-white py-2 text-center border-t border-white/5">{row.c}</div>
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">{row.c}</div>
                       </div>
                     ))}
                   </div>
@@ -450,7 +428,7 @@ export default function LandingHome() {
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
                 {features.subtitle}
               </p>
-              <h2 className="text-3xl md:text-4xl font-black text-white">
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
                 {features.title}
               </h2>
             </div>
@@ -468,7 +446,7 @@ export default function LandingHome() {
                     {feature.icon === "bell" && <IconBell />}
                     {feature.icon === "file" && <IconFileText />}
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-3">{feature.title}</h3>
                   <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
                     {feature.description}
                   </p>
@@ -487,7 +465,7 @@ export default function LandingHome() {
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
                 {testimonials.subtitle}
               </p>
-              <h2 className="text-3xl md:text-4xl font-black text-white">
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
                 {testimonials.title}
               </h2>
             </div>
@@ -508,7 +486,7 @@ export default function LandingHome() {
                       {item.initials}
                     </div>
                     <div>
-                      <div className="text-white font-bold text-sm">{item.author}</div>
+                      <div className="text-[var(--text-primary)] font-bold text-sm">{item.author}</div>
                       <div className="text-[var(--text-muted)] text-xs">{item.role}</div>
                     </div>
                   </div>
@@ -527,7 +505,7 @@ export default function LandingHome() {
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
                 {pricing.subtitle}
               </p>
-              <h2 className="text-3xl md:text-4xl font-black text-white">
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
                 {pricing.title}
               </h2>
             </div>
@@ -548,10 +526,10 @@ export default function LandingHome() {
                       En Popüler
                     </div>
                   )}
-                  <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{plan.name}</h3>
                   <p className="text-sm text-[var(--text-muted)] mb-4">{plan.description}</p>
                   <div className="mb-6">
-                    <span className="text-3xl font-black text-white">{plan.price}</span>
+                    <span className="text-3xl font-black text-[var(--text-primary)]">{plan.price}</span>
                     <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
                   </div>
                   <ul className="space-y-2.5 mb-8 flex-1">
@@ -586,7 +564,7 @@ export default function LandingHome() {
         <div className="max-w-3xl mx-auto">
           <RevealSection>
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-4">
                 {faq.title}
               </h2>
               <p className="text-[var(--text-secondary)]">{faq.subtitle}</p>
@@ -605,7 +583,7 @@ export default function LandingHome() {
       <section className="relative z-10 py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-6">
+            <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-6">
               {footerCta.title}
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-10 leading-relaxed">

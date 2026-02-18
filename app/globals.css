@@ -103,7 +103,7 @@ h5,
 h6 {
   font-family: var(--font-montserrat), sans-serif;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: -0.025em;
 }
 
@@ -170,7 +170,7 @@ h6 {
   line-height: 2.5rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .btn-gold {
@@ -206,7 +206,7 @@ h6 {
 
 .btn-ghost:hover {
   background: var(--glass-bg);
-  color: #ffffff;
+  color: var(--text-primary);
   border-color: var(--soft-gold);
 }
 

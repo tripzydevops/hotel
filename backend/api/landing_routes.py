@@ -1,3 +1,9 @@
+"""
+EXPLANATION: Landing Page API Routes
+    
+Handles public and admin endpoints for the Landing Page CMS.
+Supports multi-language content fetching and upserting via the 'locale' dimension.
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 from supabase import Client

@@ -1,3 +1,10 @@
+/**
+ * EXPLANATION: Internationalization (i18n) Engine
+ * 
+ * Manages the application's locale ("en" vs "tr") and provides the `t`
+ * function for dictionary-based translations. Supports nested keys
+ * and parameter interpolation. Persists locale in localStorage.
+ */
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";

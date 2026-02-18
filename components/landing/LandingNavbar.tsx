@@ -13,6 +13,9 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
+import { Sun, Moon } from "lucide-react";
 
 export default function LandingNavbar() {
   /* Track scroll position to toggle solid background */
@@ -26,18 +29,21 @@ export default function LandingNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { locale, setLocale, t } = useI18n();
+  const { theme, toggleTheme } = useTheme();
+
   const navLinks = [
-    { href: "/", label: "Ana Sayfa" },
-    { href: "/about", label: "Hakkımızda" },
-    { href: "/pricing", label: "Fiyatlandırma" },
-    { href: "/contact", label: "İletişim" },
+    { href: "/", label: t("landing.nav.home") },
+    { href: "/about", label: t("landing.nav.about") },
+    { href: "/pricing", label: t("landing.nav.pricing") },
+    { href: "/contact", label: t("landing.nav.contact") },
   ];
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-[#050e1b]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl"
+          ? "bg-[var(--deep-ocean)]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl"
           : "bg-transparent"
       }`}
     >
@@ -64,7 +70,7 @@ export default function LandingNavbar() {
               </div>
             </div>
             <div>
-              <span className="text-xl font-black text-white tracking-tight">
+              <span className="text-xl font-black text-[var(--text-primary)] tracking-tight">
                 Hotel <span className="text-[var(--soft-gold)]">Plus</span>
               </span>
               <p className="text-[8px] text-[#F6C344]/60 uppercase tracking-[0.3em] font-bold -mt-0.5">
@@ -79,7 +85,7 @@ export default function LandingNavbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-[var(--text-secondary)] hover:text-white transition-colors duration-200 relative group cursor-pointer"
+                className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200 relative group cursor-pointer"
               >
                 {link.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[var(--soft-gold)] group-hover:w-full transition-all duration-300" />
@@ -87,20 +93,49 @@ export default function LandingNavbar() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/contact"
-              className="btn-ghost text-sm py-2.5 px-5 cursor-pointer"
-            >
-              Demo Talebi
-            </Link>
-            <Link
-              href="/login"
-              className="btn-gold text-sm py-2.5 px-6 cursor-pointer"
-            >
-              Oturum Aç
-            </Link>
+          {/* Switchers & CTA Buttons */}
+          <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="glass rounded-full p-1 border border-white/10 flex gap-1">
+                <button 
+                  onClick={() => setLocale("tr")}
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${
+                    locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  TR
+                </button>
+                <button 
+                  onClick={() => setLocale("en")}
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${
+                    locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+              <button 
+                onClick={toggleTheme}
+                className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
+              >
+                {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/contact"
+                className="btn-ghost text-xs py-2 px-4 cursor-pointer"
+              >
+                {t("landing.nav.demo")}
+              </Link>
+              <Link
+                href="/login"
+                className="btn-gold text-xs py-2 px-5 cursor-pointer"
+              >
+                {t("landing.common.login")}
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -133,11 +168,37 @@ export default function LandingNavbar() {
               </Link>
             ))}
             <div className="pt-3 border-t border-white/5 space-y-2">
+              <div className="flex justify-between items-center px-2 py-2">
+                 <div className="flex glass rounded-full p-1 border border-white/10 gap-1">
+                  <button 
+                    onClick={() => setLocale("tr")}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${
+                      locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    TR
+                  </button>
+                  <button 
+                    onClick={() => setLocale("en")}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${
+                      locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+                <button 
+                  onClick={toggleTheme}
+                  className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)]"
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+              </div>
               <Link href="/contact" className="block btn-ghost text-sm text-center py-2.5 cursor-pointer">
-                Demo Talebi
+                {t("landing.nav.demo")}
               </Link>
               <Link href="/login" className="block btn-gold text-sm text-center py-2.5 cursor-pointer">
-                Oturum Aç
+                {t("landing.common.login")}
               </Link>
             </div>
           </div>
