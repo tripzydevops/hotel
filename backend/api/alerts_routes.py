@@ -45,7 +45,8 @@ async def clear_all_alerts(user_id: UUID, db: Client = Depends(get_supabase)):
         db.table("alerts").delete().eq("user_id", str(user_id)).execute()
         return {"status": "cleared", "user_id": user_id}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{alert_id}")
 async def delete_alert(alert_id: UUID, db: Client = Depends(get_supabase)):

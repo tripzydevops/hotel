@@ -68,6 +68,7 @@ class AnalystAgent:
         price_logs_to_insert = []
         sentiment_history_to_insert = []
         alerts_to_insert = []
+        pulse_queue = [] # Collectors for Global Pulse batching
         
         # 2. Main Analysis Loop
         for res in scraper_results:
@@ -178,18 +179,17 @@ class AnalystAgent:
                 })
                 analysis_summary["prices_updated"] += 1
 
-                # [Global Pulse] Phase 2: Pulse alerts to other users
+                # [Global Pulse] Phase 2: Collect pulse data for batching
                 if current_price and current_price > 0: # and not is_estimated:
                     serp_api_id = price_data.get("property_token") or price_data.get("serp_api_id")
                     if serp_api_id:
-                        asyncio.create_task(self._pulse_global_alerts(
-                            initiator_user_id=user_id,
-                            serp_api_id=serp_api_id,
-                            hotel_id=hotel_id,
-                            hotel_name=res.get("hotel_name", "Hotel"),
-                            current_price=current_price,
-                            currency=currency
-                        ))
+                        pulse_queue.append({
+                            "serp_api_id": serp_api_id,
+                            "hotel_id": hotel_id,
+                            "hotel_name": res.get("hotel_name", "Hotel"),
+                            "current_price": current_price,
+                            "currency": currency
+                        })
                 
                 # Prepare Metadata Update
                 vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
@@ -287,31 +287,11 @@ class AnalystAgent:
             print(f"[AnalystAgent] Batch insert error: {e}")
             reasoning_log.append(f"[CRITICAL] Batch insert failed: {str(e)}")
 
-        # EXPLANATION: User's Own Alert Notification Dispatch (Bug Fix - Feb 2026)
-        # Previously, the NotifierAgent was only called inside _pulse_global_alerts(),
-        # which only fires for OTHER users tracking the same hotel. The user who
-        # initiated the scan NEVER received push notifications for their own alerts.
-        # This block fixes that by dispatching notifications for this user's alerts.
-        if alerts_to_insert:
-            try:
-                # Fetch user's notification settings (email, push, whatsapp config)
-                settings_res = self.db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-                user_settings = settings_res.data[0] if settings_res.data else {}
-                
-                if user_settings.get("notifications_enabled"):
-                    # Build a hotel_id -> name map for alert messages
-                    hotel_name_map = {}
-                    for res in scraper_results:
-                        hid = res.get("hotel_id")
-                        if hid:
-                            hotel_name_map[hid] = res.get("hotel_name", "Unknown Hotel")
-                    
-                    notifier = NotifierAgent()
-                    await notifier.dispatch_alerts(alerts_to_insert, user_settings, hotel_name_map)
-                    reasoning_log.append(f"[Notification] Dispatched {len(alerts_to_insert)} alert(s) to user.")
-            except Exception as n_e:
-                print(f"[AnalystAgent] Own-user notification dispatch failed: {n_e}")
-                reasoning_log.append(f"[Notification] Dispatch failed: {str(n_e)}")
+        # EXPLANATION: Notification Dispatch (Phase 3)
+        # We no longer dispatch notifications directly from AnalystAgent to avoid redundancy.
+        # The MonitorService (caller) or the Scheduler handles dispatching 'analysis_summary["alerts"]' 
+        # using the NotifierAgent after this method returns.
+        pass
 
 
         # 4. Final Updates and Embedding Synchronization
@@ -358,110 +338,132 @@ class AnalystAgent:
                 self.db.table("scan_sessions").update({"reasoning_trace": reasoning_log}).eq("id", str(session_id)).execute()
             except Exception: pass
         
+        # 6. Final Global Pulse Dispatch
+        # Aggregates notifications for all rivals across the entire scan.
+        if pulse_queue:
+            asyncio.create_task(self._pulse_batch_global_alerts(user_id, pulse_queue))
+
         return analysis_summary
 
     def _get_hotels(self, user_id: UUID):
         res = self.db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
         return res.data or []
 
-    async def _pulse_global_alerts(
+    async def _pulse_batch_global_alerts(
         self,
         initiator_user_id: UUID,
-        serp_api_id: str,
-        hotel_id: str,
-        hotel_name: str,
-        current_price: float,
-        currency: str
+        pulse_data: List[Dict[str, Any]]
     ):
         """
-        Broadcasting Logic (Phase 2):
-        Finds all other users tracking this hotel and alerts them if the price dropped significantly.
+        Global Pulse Strategy (2026 Batching Optimization):
+        Analyzes all hotel price changes in a scan session, groups them by 'Rival User',
+        and sends ONE consolidated notification per user.
         """
-        print(f"[GlobalPulse] Pulsing alert for {serp_api_id} at {current_price} {currency}...")
+        if not pulse_data:
+            return
+
+        print(f"[GlobalPulse] Batching pulse for {len(pulse_data)} results...")
         try:
-            # 1. Find all users tracking this hotel (excluding the initiator)
-            # We join hotels with settings to get thresholds in one go
+            serp_ids = [p["serp_api_id"] for p in pulse_data]
+            
+            # 1. Find all rivals for all hotel IDs (excluding initiator)
             rivals_res = self.db.table("hotels") \
-                .select("user_id, id, name") \
-                .eq("serp_api_id", serp_api_id) \
+                .select("user_id, id, name, serp_api_id") \
+                .in_("serp_api_id", serp_ids) \
                 .neq("user_id", str(initiator_user_id)) \
                 .execute()
             
             if not rivals_res.data:
                 return
 
-            other_trackers = rivals_res.data
-            user_ids = [r["user_id"] for r in other_trackers]
+            # Group pulse results by serp_api_id for easy lookup
+            pulse_map = {p["serp_api_id"]: p for p in pulse_data}
             
-            # 2. Fetch settings and last price for these users
-            settings_res = self.db.table("settings").select("*").in_("user_id", user_ids).execute()
-            settings_map = {s["user_id"]: s for s in settings_res.data}
+            # 2. Group rival users
+            rival_users_map = {} # user_id -> [list of rival hotel entries]
+            for rival in rivals_res.data:
+                uid = rival["user_id"]
+                if uid not in rival_users_map:
+                    rival_users_map[uid] = []
+                rival_users_map[uid].append(rival)
+            
+            # 3. Fetch settings for all rivals at once
+            all_rival_uids = list(rival_users_map.keys())
+            settings_res = self.db.table("settings").select("*").in_("user_id", all_rival_uids).execute()
+            settings_lookup = {s["user_id"]: s for s in settings_res.data}
 
-            # Fetch last price for each found hotel
-            ghost_hotel_ids = [r["id"] for r in other_trackers]
-            # Get the most recent log for each of these hotels
+            # 4. Fetch historical baselines for all rival hotels at once
+            rival_hotel_ids = [r["id"] for r in rivals_res.data]
             hist_res = self.db.table("price_logs") \
                 .select("hotel_id, price, currency") \
-                .in_("hotel_id", ghost_hotel_ids) \
+                .in_("hotel_id", rival_hotel_ids) \
                 .order("recorded_at", desc=True) \
-                .limit(len(ghost_hotel_ids) * 2) \
+                .limit(len(rival_hotel_ids) * 2) \
                 .execute()
             
-            last_price_map = {}
+            history_lookup = {}
             for entry in hist_res.data:
                 hid = entry["hotel_id"]
-                if hid not in last_price_map:
-                    last_price_map[hid] = entry
+                if hid not in history_lookup:
+                    history_lookup[hid] = entry
 
-            # 3. Process each user
+            # 5. Process each rival user
             notifier = NotifierAgent()
-            for tracker in other_trackers:
-                uid = tracker["user_id"]
-                hid = tracker["id"]
-                h_name = tracker["name"] or hotel_name
-                
-                user_settings = settings_map.get(uid)
+            for uid, user_rivals in rival_users_map.items():
+                user_settings = settings_lookup.get(uid)
                 if not user_settings or not user_settings.get("notifications_enabled"):
                     continue
+
+                user_alerts = []
+                hotel_name_map = {}
                 
-                last_log = last_price_map.get(hid)
-                if not last_log:
-                    continue # No history to compare
-                
-                prev_price = last_log["price"]
-                prev_currency = last_log["currency"]
-                
-                # Normalize currency if needed
-                normalized_prev = prev_price
-                if prev_currency != currency:
-                    normalized_prev = convert_currency(prev_price, prev_currency, currency)
-                
-                # Check threshold
-                threshold = user_settings.get("threshold_percent", 2.0)
-                alert = price_comparator.check_threshold_breach(current_price, normalized_prev, threshold)
-                
-                if alert:
-                    print(f"[GlobalPulse] Hit breached for user {uid} on hotel {hid}!")
-                    # Create Alert in DB
-                    alert_record = {
-                        "user_id": uid,
-                        "hotel_id": hid,
-                        # "currency": currency, # Column missing
-                        "alert_type": alert["alert_type"],
-                        "message": f"[Global Pulse] {alert['message']}",
-                        "old_price": normalized_prev,
-                        "new_price": current_price
-                    }
-                    self.db.table("alerts").insert(alert_record).execute()
+                for rival in user_rivals:
+                    hid = rival["id"]
+                    serp_id = rival["serp_api_id"]
+                    pulse = pulse_map.get(serp_id)
+                    if not pulse: continue
                     
-                    # Dispatch Notification
+                    last_log = history_lookup.get(hid)
+                    if not last_log: continue
+                    
+                    # Normalize prices
+                    curr_price = pulse["current_price"]
+                    currency = pulse["currency"]
+                    prev_price = last_log["price"]
+                    prev_curr = last_log["currency"]
+                    
+                    if currency != prev_curr:
+                        prev_price = convert_currency(prev_price, prev_curr, currency)
+                    
+                    threshold = user_settings.get("threshold_percent", 2.0)
+                    breach = price_comparator.check_threshold_breach(curr_price, prev_price, threshold)
+                    
+                    if breach:
+                        hotel_name = rival["name"] or pulse["hotel_name"]
+                        hotel_name_map[hid] = hotel_name
+                        user_alerts.append({
+                            "user_id": uid,
+                            "hotel_id": hid,
+                            "alert_type": breach["alert_type"],
+                            "message": f"[Global Pulse] {breach['message']}",
+                            "old_price": prev_price,
+                            "new_price": curr_price
+                        })
+
+                if user_alerts:
+                    # Batch Insert Alerts
+                    self.db.table("alerts").insert(user_alerts).execute()
+                    
+                    # Batch Dispatch Notifications
                     try:
-                        await notifier.dispatch_alerts([alert_record], user_settings, {hid: h_name})
+                        await notifier.dispatch_alerts(user_alerts, user_settings, hotel_name_map)
                     except Exception as n_e:
-                        print(f"[GlobalPulse] Notification dispatch failed for {uid}: {n_e}")
+                        print(f"[GlobalPulse] Batch dispatch failed for {uid}: {n_e}")
 
         except Exception as e:
-            print(f"[GlobalPulse] Pulse failure for {serp_api_id}: {e}")
+            print(f"[GlobalPulse] Pulse failure: {e}")
+            import traceback
+            traceback.print_exc()
 
     async def discover_rivals(self, target_identifier: str, limit: int = 5) -> List[Dict[str, Any]]:
         """

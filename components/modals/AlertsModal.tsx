@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Alert } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import EmptyState from "@/components/ui/EmptyState";
+import { useToast } from "@/components/ui/ToastContext";
 
 interface AlertsModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function AlertsModal({
   onUpdate,
 }: AlertsModalProps) {
   const { t } = useI18n();
+  const { toast } = useToast();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -59,13 +61,18 @@ export default function AlertsModal({
     // We clear the local state immediately for instant feedback, 
     // then sync with the database in the background.
     const originalAlerts = [...alerts];
+    if (originalAlerts.length === 0) return;
+
     setAlerts([]);
     
     try {
+      console.log(`[AlertsModal] Clearing all alerts for user ${userId}`);
       await api.clearAlerts(userId);
+      toast.info(t("common.saveSuccess") || "Alarmlar temizlendi");
       onUpdate();
     } catch (error) {
       console.error("Failed to clear alerts:", error);
+      toast.error(t("common.errorTitle") || "Hata: Alarmlar silinemedi");
       // Fallback if API fails
       setAlerts(originalAlerts);
     }

@@ -73,6 +73,97 @@ class NotificationService:
             
         return results
 
+    async def send_summary_notifications(
+        self,
+        settings: dict,
+        alerts: list,
+        hotel_name_map: dict
+    ) -> dict:
+        """
+        Consolidates multiple alerts into a single summary notification per channel.
+        This prevents 'notification spam' during large scans.
+        """
+        results = {"email": False, "whatsapp": False, "push": False}
+        
+        if not settings.get("notifications_enabled") or not alerts:
+            return results
+
+        # Build summary message
+        count = len(alerts)
+        summary_lines = []
+        for alert in alerts[:5]: # Show first 5 in detail
+            hname = hotel_name_map.get(alert["hotel_id"], "Unknown Hotel")
+            summary_lines.append(f"• {hname}: {alert['message']}")
+        
+        if count > 5:
+            summary_lines.append(f"... and {count - 5} more alerts.")
+            
+        full_summary = "\n".join(summary_lines)
+        push_title = f"Rate Sentinel: {count} Price Alerts Found"
+        
+        # 1. Email Summary
+        if settings.get("notification_email"):
+            results["email"] = await self.send_summary_email(
+                settings["notification_email"],
+                alerts,
+                hotel_name_map
+            )
+
+        # 2. Push Summary
+        if settings.get("push_enabled") and settings.get("push_subscription"):
+            results["push"] = await self.send_push(
+                settings.get("user_id"), 
+                full_summary,
+                subscription=settings.get("push_subscription"),
+                hotel_name=push_title # Use title as hotel_name for send_push logic
+            )
+            
+        return results
+
+    async def send_summary_email(self, to_email: str, alerts: list, hotel_name_map: dict) -> bool:
+        """Sends a batched email report for multiple alerts."""
+        if not self.enabled:
+            return False
+            
+        try:
+            msg = MIMEMultipart()
+            msg["From"] = self.sender_email
+            msg["To"] = to_email
+            msg["Subject"] = f"Price Alert Summary: {len(alerts)} updates found"
+
+            rows = ""
+            for a in alerts:
+                hname = hotel_name_map.get(a["hotel_id"], "Hotel")
+                rows += f"<tr><td>{hname}</td><td>{a['old_price']}</td><td>{a['new_price']}</td><td>{a['message']}</td></tr>"
+
+            body = f"""
+            <html>
+              <body>
+                <h2>Price Alert Summary</h2>
+                <p>Multiple price changes were detected during your last scan:</p>
+                <table border="1" cellpadding="5" style="border-collapse: collapse;">
+                  <thead>
+                    <tr style="background-color: #f2f2f2;">
+                      <th>Hotel</th><th>Old Price</th><th>New Price</th><th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>{rows}</tbody>
+                </table>
+                <p><a href="http://localhost:3000">Open Dashboard</a></p>
+              </body>
+            </html>
+            """
+            msg.attach(MIMEText(body, "html"))
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(msg)
+            return True
+        except Exception as e:
+            print(f"[Notification] Summary Email failed: {e}")
+            return False
+
     async def send_whatsapp(self, number: str, message: str) -> bool:
         """Placeholder for WhatsApp integration (e.g. Twilio)"""
         # TODO: Implement Twilio/Meta API

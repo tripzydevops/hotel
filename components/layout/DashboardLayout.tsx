@@ -143,7 +143,9 @@ export default function DashboardLayout({
                 className="w-10 h-10 rounded-xl border border-white/5 flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all relative"
               >
                 <Bell className="w-5 h-5 text-slate-300" />
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#050B18]" />
+                {(data?.unread_alerts_count || 0) > 0 && (
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#050B18]" />
+                )}
               </button>
 
               <div className="h-8 w-[1px] bg-white/5 mx-1" />

@@ -11,8 +11,25 @@ class NotifierAgent:
         pass
 
     async def dispatch_alerts(self, alerts: list, settings: Dict[str, Any], hotel_name_map: Dict[str, str]):
-        """Sends alerts through configured channels."""
-        for alert in alerts:
+        """Sends alerts through configured channels, batching if multiple alerts exist."""
+        if not alerts:
+            return
+
+        if len(alerts) > 1:
+            # EXPLANATION: Notification Batching (Kaizen Pillar 4)
+            # User reported 6-7 notifications during scans which crashed the experience.
+            # We now aggregate multiple alerts into a single summary notification.
+            try:
+                await notification_service.send_summary_notifications(
+                    settings=settings,
+                    alerts=alerts,
+                    hotel_name_map=hotel_name_map
+                )
+            except Exception as e:
+                print(f"[NotifierAgent] Failed to dispatch summary: {e}")
+        else:
+            # Single alert behavior (legacy support)
+            alert = alerts[0]
             hotel_id = alert["hotel_id"]
             hotel_name = hotel_name_map.get(hotel_id, "Unknown Hotel")
             

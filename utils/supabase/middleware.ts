@@ -60,8 +60,15 @@ export async function updateSession(request: NextRequest) {
 
   // Admin Route Protection
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    const adminEmail = "tripzydevops@gmail.com";
-    if (user?.email !== adminEmail) {
+    const userEmail = user?.email?.toLowerCase() || "";
+    // KAİZEN: Standardized Admin Whitelist (Feb 2026)
+    // Matches useAdminGuard.ts and backend profile_service.py bypasses
+    const isWhitelistedAdmin = 
+      ["tripzydevops@gmail.com", "asknsezen@gmail.com", "askinsezen@gmail.com", "selcuk@rate-sentinel.com", "yusuf@tripzy.travel", "elif@tripzy.travel", "admin@hotel.plus"].includes(userEmail) ||
+      userEmail.endsWith("@hotel.plus") ||
+      userEmail.endsWith("@tripzy.travel");
+
+    if (!isWhitelistedAdmin) {
       // Redirect unauthorized users to dashboard
       const url = request.nextUrl.clone();
       url.pathname = "/";
