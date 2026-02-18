@@ -39,6 +39,7 @@ export const en = {
     close: "Close",
     errorTitle: "Error",
     estimated: "ESTIMATED / SOLD OUT",
+    saveSuccess: "Saved successfully",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",

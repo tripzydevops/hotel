@@ -39,6 +39,7 @@ export const tr = {
     close: "Kapat",
     errorTitle: "Hata",
     estimated: "TAHMİNİ / YER YOK",
+    saveSuccess: "Başarıyla kaydedildi",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
