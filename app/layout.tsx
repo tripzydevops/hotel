@@ -22,8 +22,14 @@ export const metadata: Metadata = {
   description: "B2B Hotel Competitive Rate Monitor",
 };
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
-
+/**
+ * EXPLANATION: Root Layout (Minimal Shell)
+ * 
+ * This root layout provides only the base HTML shell with fonts and providers.
+ * It does NOT include DashboardLayout — that's now in (dashboard)/layout.tsx.
+ * This allows the (landing) route group to use its own marketing layout
+ * while the (dashboard) route group uses the sidebar/header layout.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,7 +42,7 @@ export default function RootLayout({
           <QueryProvider>
             <ToastProvider>
               <ModalProvider>
-                <DashboardLayout>{children}</DashboardLayout>
+                {children}
               </ModalProvider>
             </ToastProvider>
           </QueryProvider>
