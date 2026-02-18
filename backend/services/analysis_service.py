@@ -263,6 +263,23 @@ async def perform_market_analysis(
     for i, item in enumerate(price_rank_list):
         item["rank"] = i + 1
 
+    # 2.5 Build Competitors List (Needed for Calendar Continuity seeding)
+    comp_list = []
+    for h in hotels:
+        if str(h["id"]) != target_hotel_id:
+            p = hotel_prices_map.get(str(h["id"]), [])
+            if p:
+                try:
+                    price_val = float(p[0]["price"])
+                    comp_list.append({
+                        "id": str(h["id"]),
+                        "name": h.get("name"),
+                        "price": convert_currency(price_val, p[0].get("currency") or "USD", display_currency),
+                        "rating": h.get("rating"),
+                        "offers": p[0].get("parity_offers") or p[0].get("offers") or []
+                    })
+                except: continue
+
     # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
     if target_hotel_id:
@@ -472,22 +489,6 @@ async def perform_market_analysis(
         q_label = "Budget / Economy"
         advisory = f"Volume Strategy: Your rate is {int(100 - ari)}% below market average."
 
-    # 5. Competitors List
-    comp_list = []
-    for h in hotels:
-        if str(h["id"]) != target_hotel_id:
-            p = hotel_prices_map.get(str(h["id"]), [])
-            if p:
-                try:
-                    price_val = float(p[0]["price"])
-                    comp_list.append({
-                        "id": str(h["id"]),
-                        "name": h.get("name"),
-                        "price": convert_currency(price_val, p[0].get("currency") or "USD", display_currency),
-                        "rating": h.get("rating"),
-                        "offers": p[0].get("parity_offers") or p[0].get("offers") or []
-                    })
-                except: continue
 
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
     
