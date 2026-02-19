@@ -66,9 +66,6 @@ class ScraperAgent:
             return
             
         try:
-            # We fetch current trace first (supabase array append is tricky in one go without stored proc)
-            # OR we can just use a simple append if we treat it as jsonb
-            
             entry = {
                 "step": step,
                 "level": level,
@@ -77,22 +74,17 @@ class ScraperAgent:
                 "metadata": metadata or {}
             }
             
-            # Use SQL function or simple update (simple update for now, potential race condition but low risk here)
-            # Better: Append to local list and bulk update, but for "live" feel we might want frequent updates.
-            # Let's do simple update for now.
-            
-            # Fetch existing
-            res = self.db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).single().execute()
-            current_trace = res.data.get("reasoning_trace") or []
-            if isinstance(current_trace, str): # Handle legacy string case if any
-                current_trace = []
+            # ATOMIC KAİZEN: Re-fetch inside the log call to minimize race window
+            # In high-concurrency we'd use a queue, but for 5-10 hotels this is acceptable.
+            res = self.db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+            if res.data:
+                current_trace = res.data[0].get("reasoning_trace") or []
+                current_trace.append(entry)
                 
-            current_trace.append(entry)
-            
-            self.db.table("scan_sessions").update({
-                "reasoning_trace": current_trace,
-                "updated_at": datetime.now().isoformat()
-            }).eq("id", str(session_id)).execute()
+                self.db.table("scan_sessions").update({
+                    "reasoning_trace": current_trace,
+                    "updated_at": datetime.now().isoformat()
+                }).eq("id", str(session_id)).execute()
             
         except Exception as e:
             print(f"[ScraperAgent] Logging failed: {e}")

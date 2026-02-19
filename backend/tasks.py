@@ -60,7 +60,7 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
         logger.info("[Worker] Starting AnalystAgent...")
         analysis = await analyst.analyze_results(
             user_id=UUID(user_id), 
-            results=scraper_results, 
+            scraper_results=scraper_results, 
             threshold=threshold, 
             options=options, 
             session_id=UUID(session_id) if session_id else None
@@ -112,9 +112,13 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
         if session_id:
             try:
                 db = get_supabase()
+                # Use a fresh fetch to avoid overwriting agent logs
+                res = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+                trace = res.data[0]["reasoning_trace"] if res.data else []
                 db.table("scan_sessions").update({
                     "status": "failed", 
-                    "error": str(e)
+                    "error": str(e),
+                    "reasoning_trace": trace + [f"CRITICAL_FAILURE: {str(e)}"]
                 }).eq("id", str(session_id)).execute()
             except: pass
         raise e
