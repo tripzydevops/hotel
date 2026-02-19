@@ -102,6 +102,17 @@ async def health_check():
 @app.get("/api/debug/routes")
 async def debug_routes():
     """List all registered routes for debugging 404 errors."""
+    redis_status = "unknown"
+    redis_error = None
+    try:
+        from backend.celery_app import celery_app
+        with celery_app.connection_for_write() as conn:
+            conn.ensure_connection(max_retries=1)
+            redis_status = "connected"
+    except Exception as e:
+        redis_status = "failed"
+        redis_error = str(e)
+
     routes = []
     for route in app.routes:
         if hasattr(route, "path"):
@@ -112,8 +123,35 @@ async def debug_routes():
             })
     return {
         "count": len(routes),
-        "routes": routes
+        "routes": routes,
+        "redis_status": redis_status,
+        "redis_error": redis_error,
+        "celery_broker": os.getenv("REDIS_URL", "NOT_SET")[:20] + "..." if os.getenv("REDIS_URL") else "MISSING"
     }
+
+@app.get("/api/debug/redis")
+async def debug_redis():
+    """Explicit Redis probe for Vercel debugging."""
+    import os
+    from celery import Celery
+    import ssl
+    
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        return {"status": "error", "message": "REDIS_URL env var is MISSING"}
+    
+    try:
+        # Test 1: Simple Connection
+        app = Celery('test', broker=redis_url)
+        app.conf.update(
+            broker_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
+            redis_backend_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE}
+        )
+        with app.connection_for_write() as conn:
+            conn.ensure_connection(max_retries=1)
+            return {"status": "ok", "message": "Connected to Redis successfully", "transport": str(conn.transport)}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "type": type(e).__name__}
 
 
 # Include Modular Routers
