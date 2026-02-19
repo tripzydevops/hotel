@@ -5,9 +5,9 @@ from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
 from backend.services.price_comparator import price_comparator
-from backend.utils.helpers import convert_currency
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 from backend.agents.notifier_agent import NotifierAgent
+from backend.utils.helpers import convert_currency, log_query
 
 class AnalystAgent:
     """
@@ -155,6 +155,22 @@ class AnalystAgent:
                             price_data["room_types"] = last_valid.get("room_types") or []
                             is_estimated = True # Mark as estimated
                             reasoning_log.append(f"[Continuity] Found historical price for SAME date: {current_price} {currency} from {last_valid['recorded_at']}")
+                            
+                            # KAİZEN: UI Persistence
+                            # Log this fallback to query_logs so the ScanSessionModal shows accurate vendor/price counts.
+                            if session_id:
+                                await log_query(
+                                    db=self.db,
+                                    user_id=user_id,
+                                    hotel_name=res.get("hotel_name", "Hotel"),
+                                    location=res.get("location"),
+                                    action_type="monitor_fallback",
+                                    status="success",
+                                    price=current_price,
+                                    currency=currency,
+                                    vendor=price_data.get("vendor"),
+                                    session_id=session_id
+                                )
                         else:
                             # [FALLBACK LEVEL 2] Look for ANY recent price for this hotel (ignoring check-in date)
                             # This covers the "Check-In Date Rolling" scenario
@@ -176,6 +192,21 @@ class AnalystAgent:
                                 price_data["room_types"] = last_any.get("room_types") or []
                                 is_estimated = True
                                 reasoning_log.append(f"[Continuity] Found recent price for different date ({last_any.get('check_in_date')}): {current_price} {currency}")
+
+                                # KAİZEN: UI Persistence
+                                if session_id:
+                                    await log_query(
+                                        db=self.db,
+                                        user_id=user_id,
+                                        hotel_name=res.get("hotel_name", "Hotel"),
+                                        location=res.get("location"),
+                                        action_type="monitor_fallback_any",
+                                        status="success",
+                                        price=current_price,
+                                        currency=currency,
+                                        vendor=price_data.get("vendor"),
+                                        session_id=session_id
+                                    )
                             else:
                                 current_price = 0.0 # Explicitly set to 0 to indicate failure
                                 reasoning_log.append(f"[Continuity] No history found within 7 days. recording as Verification Failed.")
