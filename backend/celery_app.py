@@ -17,7 +17,8 @@ if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
 celery_app = Celery(
     "hotel_app",
     broker=REDIS_URL,
-    backend=REDIS_URL
+    backend=REDIS_URL,
+    include=["backend.tasks"]
 )
 
 import ssl
