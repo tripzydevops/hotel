@@ -117,7 +117,6 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
                 trace = res.data[0]["reasoning_trace"] if res.data else []
                 db.table("scan_sessions").update({
                     "status": "failed", 
-                    "error": str(e),
                     "reasoning_trace": trace + [f"CRITICAL_FAILURE: {str(e)}"]
                 }).eq("id", str(session_id)).execute()
             except: pass
