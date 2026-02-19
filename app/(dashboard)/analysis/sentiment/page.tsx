@@ -733,7 +733,7 @@ export default function SentimentPage() {
                     ];
                     const radarData = categories.map((cat) => {
                       const getScore = (hotel: any) =>
-                        getCategoryScore(hotel, cat);
+                        getCategoryScore(hotel, cat, sentimentHistory[hotel.id] || []);
                       const marketAvgCat =
                         allHotels.length > 0
                           ? allHotels.reduce((sum, h) => sum + getScore(h), 0) /
@@ -757,9 +757,9 @@ export default function SentimentPage() {
                       <CategoryBar
                         key={cat}
                         category={cat}
-                        myScore={getCategoryScore(targetHotel, cat)}
+                        myScore={getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id] || [])}
                         leaderName={leader?.name}
-                        leaderScore={getCategoryScore(leader, cat)}
+                        leaderScore={getCategoryScore(leader, cat, sentimentHistory[leader?.id] || [])}
                         marketAvg={marketAvgRating}
                       />
                     ),
