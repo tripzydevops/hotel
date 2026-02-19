@@ -126,7 +126,7 @@ class ScraperAgent:
                     serp_api_id = hotel.get("serp_api_id")
                     
                     # [Reasoning] Processing Hotel
-                    # await self.log_reasoning(session_id, "Scraping", f"Processing {hotel_name}", "info")
+                    await self.log_reasoning(session_id, "Scraping", f"Processing {hotel_name}...", "info")
                     
                     # Determine search parameters
                     check_in_raw = options.check_in if options and options.check_in else hotel.get("fixed_check_in")

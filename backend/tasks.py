@@ -1,5 +1,6 @@
 import asyncio
 from uuid import UUID
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from backend.celery_app import celery_app
 from backend.utils.db import get_supabase
@@ -17,8 +18,20 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
     Celery task wrapper for the asynchronous ScraperAgent.
     Since Celery is synchronous by default, we use asyncio.run to execute the async agents.
     """
-    logger.info(f"[Worker] Received scan task for user {user_id} with {len(hotels)} hotels.")
+    logger.info(f"[Worker] Received scan task for user {user_id} with {len(hotels)} hotels. Session: {session_id}")
     
+    # PROACTIVE: Immediate Feedback
+    if session_id:
+        try:
+            db = get_supabase()
+            current_trace = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute().data[0]["reasoning_trace"]
+            db.table("scan_sessions").update({
+                "status": "running",
+                "reasoning_trace": current_trace + [f"Worker {self.request.id[:8]} started processing..."]
+            }).eq("id", str(session_id)).execute()
+        except Exception as e:
+            logger.warning(f"Failed to log worker receipt: {e}")
+
     async def _async_wrapper():
         db = get_supabase()
         scraper = ScraperAgent(db)
@@ -55,6 +68,7 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
         
         # 3. Notifier
         if analysis.get("alerts"):
+            logger.info(f"[Worker] Dispatching {len(analysis['alerts'])} alerts...")
             settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
             settings = settings_res.data[0] if settings_res.data else None
             if settings:
@@ -67,27 +81,40 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
             final_status = "partial"
             
         if session_id:
-            db.table("scan_sessions").update({
-                "status": final_status,
-                "completed_at": datetime.now().isoformat() # We need datetime imported
-            }).eq("id", str(session_id)).execute()
+            logger.info(f"[Worker] Finalizing session {session_id} with status: {final_status}")
+            try:
+                # Use a fresh fetch to ensure we don't overwrite concurrent agent logs
+                # In a real app we'd use JSONB append, here we do best effort
+                latest_res = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+                trace = latest_res.data[0]["reasoning_trace"] if latest_res.data else []
+                
+                db.table("scan_sessions").update({
+                    "status": final_status,
+                    "completed_at": datetime.now().isoformat(),
+                    "reasoning_trace": trace + [f"Finalized with status: {final_status}"]
+                }).eq("id", str(session_id)).execute()
+                logger.info(f"[Worker] Session update successful.")
+            except Exception as e:
+                logger.error(f"[Worker] Failed to update session status: {e}")
             
         return analysis
 
-    from datetime import datetime
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(_async_wrapper())
         loop.close()
+        logger.info("[Worker] Task completed successfully.")
         return result
     except Exception as e:
         logger.error(f"[Worker] Task failed: {e}")
         # Mark session as failed
         if session_id:
-            db = get_supabase()
-            db.table("scan_sessions").update({
-                "status": "failed", 
-                "error": str(e)
-            }).eq("id", str(session_id)).execute()
+            try:
+                db = get_supabase()
+                db.table("scan_sessions").update({
+                    "status": "failed", 
+                    "error": str(e)
+                }).eq("id", str(session_id)).execute()
+            except: pass
         raise e

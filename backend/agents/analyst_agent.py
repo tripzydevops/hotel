@@ -17,6 +17,16 @@ class AnalystAgent:
     def __init__(self, db: Client):
         self.db = db
 
+    async def _log_reasoning(self, session_id: Optional[UUID], message: str):
+        if not session_id: return
+        try:
+            # Atomic-ish append (Fetch-Modify-Update)
+            res = self.db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+            trace = res.data[0]["reasoning_trace"] if res.data else []
+            trace.append(message)
+            self.db.table("scan_sessions").update({"reasoning_trace": trace}).eq("id", str(session_id)).execute()
+        except: pass
+
     async def analyze_results(
         self,
         user_id: UUID,
@@ -93,10 +103,12 @@ class AnalystAgent:
                      # to trigger the 'Smart Continuity' fallback instead.
                      is_valid_drop, avg_price = self._validate_price_drop(hotel_id, current_price, currency)
                      if not is_valid_drop:
+                         await self._log_reasoning(session_id, f"[Safeguard] Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback.")
                          reasoning_log.append(f"[Safeguard] Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback.")
                          current_price = 0.0 # Force continuity fallback to use historical baseline
                      else:
-                         reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
+                          await self._log_reasoning(session_id, f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
+                          reasoning_log.append(f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}")
                 
                 # Currency Normalization
                 target_currency = options.currency if options and options.currency else "TRY"
@@ -261,7 +273,7 @@ class AnalystAgent:
 
                         alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
                         if alert:
-                            reasoning_log.append(f"[Alert] BREACH! {current_price} vs {previous_price}")
+                            await self._log_reasoning(session_id, f"[Alert] BREACH! {current_price} vs {previous_price}")
                             alert_data = {
                                 "user_id": str(user_id),
                                 "hotel_id": hotel_id,

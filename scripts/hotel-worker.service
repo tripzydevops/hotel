@@ -3,12 +3,13 @@ Description=Hotel Rate Sentinel Worker
 After=network.target
 
 [Service]
-User=root
-Group=root
-WorkingDirectory=/opt/hotel
-ExecStart=/opt/hotel/venv/bin/celery -A backend.celery_app worker --loglevel=info
+User=successofmentors
+Group=successofmentors
+WorkingDirectory=/home/successofmentors/.gemini/antigravity/scratch/hotel
+ExecStart=/home/successofmentors/.gemini/antigravity/scratch/hotel/venv/bin/celery -A backend.celery_app worker --loglevel=info -Q celery --pool=solo -n worker_turbo@%h
 Restart=always
-EnvironmentFile=/opt/hotel/.env
+Environment=PYTHONPATH=/home/successofmentors/.gemini/antigravity/scratch/hotel
+EnvironmentFile=/home/successofmentors/.gemini/antigravity/scratch/hotel/.env
 
 [Install]
 WantedBy=multi-user.target
