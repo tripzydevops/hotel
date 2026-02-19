@@ -64,7 +64,7 @@ export function useDashboard(
       toast.error(error instanceof Error ? error.message : "Failed to start scan");
     },
   });
-  });
+
 
   const addHotelMutation = useMutation({
     mutationFn: (variables: {
