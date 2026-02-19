@@ -86,21 +86,39 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
           
           const isSecure = weaknesses.length === 0;
 
+          // Determine Opportunity Level
+          let opportunityLevel = "Low";
+          let opportunityColor = "text-gray-400";
+          
+          if (weaknesses.length >= 2) {
+             opportunityLevel = "High";
+             opportunityColor = "text-green-400";
+          } else if (weaknesses.length === 1) {
+             opportunityLevel = "Medium";
+             opportunityColor = "text-yellow-400";
+          }
+
           return (
             <motion.div
               key={comp.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className="bg-[#15294A] rounded-xl p-4 border border-red-500/10 hover:border-red-500/30 transition-all group relative overflow-hidden flex flex-col h-full"
+              className={`bg-[#15294A] rounded-xl p-4 border transition-all group relative overflow-hidden flex flex-col h-full ${isSecure ? 'border-green-500/10 hover:border-green-500/30' : 'border-red-500/10 hover:border-red-500/30'}`}
             >
-              <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500/10 text-red-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-red-500/10">
-                {t("sentiment.threatDetected")}
-              </div>
+              {!isSecure ? (
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500/10 text-red-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-red-500/10">
+                    {t("sentiment.threatDetected") || "THREAT DETECTED"}
+                  </div>
+              ) : (
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-green-500/10 text-green-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-green-500/10">
+                    {t("sentiment.secure") || "SECURE"}
+                  </div>
+              )}
 
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 flex-shrink-0">
-                  <AlertCircle className="w-3.5 h-3.5" />
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isSecure ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                  {isSecure ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-[11px] font-bold text-white truncate pr-6">
@@ -110,8 +128,8 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                     <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">
                       {t("sentiment.opportunity")}:
                     </span>
-                    <span className="text-[8px] text-green-400 font-bold">
-                      {t("sentiment.high")}
+                    <span className={`text-[8px] font-bold ${opportunityColor}`}>
+                      {t(`sentiment.opportunity.${opportunityLevel.toLowerCase()}`) || opportunityLevel}
                     </span>
                   </div>
                 </div>
