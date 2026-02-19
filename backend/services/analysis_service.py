@@ -127,6 +127,7 @@ def get_price_for_room(
         try:
             valid_prices = []
             for r in r_types:
+                if not isinstance(r, dict): continue
                 p = _extract_price(r.get("price"))
                 if p is not None:
                     valid_prices.append((p, r.get("name") or "Standard (Min)"))
