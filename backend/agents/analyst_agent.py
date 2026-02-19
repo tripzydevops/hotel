@@ -136,7 +136,7 @@ class AnalystAgent:
                         cutoff = (datetime.now() - timedelta(days=7)).isoformat()
                         
                         history_res = self.db.table("price_logs") \
-                            .select("price, currency, recorded_at") \
+                            .select("price, currency, recorded_at, vendor, parity_offers, room_types") \
                             .eq("hotel_id", hotel_id) \
                             .eq("check_in_date", check_in_str) \
                             .gt("recorded_at", cutoff) \
@@ -148,13 +148,18 @@ class AnalystAgent:
                             last_valid = history_res.data[0]
                             current_price = last_valid["price"]
                             currency = last_valid["currency"]
+                            # KAİZEN: Continuity Metadata Persistence
+                            # Copy critical metadata from historical logs to maintain dashboard accuracy.
+                            price_data["vendor"] = last_valid.get("vendor") or price_data.get("vendor")
+                            price_data["offers"] = last_valid.get("parity_offers") or []
+                            price_data["room_types"] = last_valid.get("room_types") or []
                             is_estimated = True # Mark as estimated
                             reasoning_log.append(f"[Continuity] Found historical price for SAME date: {current_price} {currency} from {last_valid['recorded_at']}")
                         else:
                             # [FALLBACK LEVEL 2] Look for ANY recent price for this hotel (ignoring check-in date)
                             # This covers the "Check-In Date Rolling" scenario
                             history_any_res = self.db.table("price_logs") \
-                                .select("price, currency, recorded_at, check_in_date") \
+                                .select("price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types") \
                                 .eq("hotel_id", hotel_id) \
                                 .gt("recorded_at", cutoff) \
                                 .order("recorded_at", desc=True) \
@@ -165,6 +170,10 @@ class AnalystAgent:
                                 last_any = history_any_res.data[0]
                                 current_price = last_any["price"]
                                 currency = last_any["currency"]
+                                # KAİZEN: Continuity Metadata Persistence
+                                price_data["vendor"] = last_any.get("vendor") or price_data.get("vendor")
+                                price_data["offers"] = last_any.get("parity_offers") or []
+                                price_data["room_types"] = last_any.get("room_types") or []
                                 is_estimated = True
                                 reasoning_log.append(f"[Continuity] Found recent price for different date ({last_any.get('check_in_date')}): {current_price} {currency}")
                             else:

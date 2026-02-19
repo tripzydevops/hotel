@@ -1,66 +1,87 @@
-# Hotel Rate Sentinel 🚀 (Build: 2026-02-17 13:12)
-
-### Autonomous Agent-Based Recommendation Engine
+# Hotel Rate Sentinel 🚀 (Enterprise Core)
 
 **Hotel Rate Sentinel** is a next-generation travel intelligence platform designed to solve the "Cold Start" problem using Autonomous Agents and LLM-based reasoning.
 
-## 🏗️ Technical Architecture
+## 🏗️ Technical Architecture (Hybrid Deployment)
 
-We adhere to a strict **3-Layer Architecture**:
+We utilize a **Hybrid Deployment Strategy** to balance performance and capability:
 
-1. **LAYER 1: User Interface & Signal Collection**
-   - Next.js Web Dashboard & React Native Mobile App.
-   - Real-time user signal collection module.
-   - Dynamic i18n support (EN/TR) and Currency Normalization.
+1.  **Frontend & API (Vercel)**:
+    -   Next.js 14 (App Router)
+    -   FastAPI Backend (Serverless Function)
+    -   Handles UI, User Management, and Light Data Requests.
 
-2. **LAYER 2: Autonomous Reasoning Engine (The "Brain")**
-   - FastAPI-powered backend with Autonomous Agent orchestration.
-   - **Strategic Intelligence Layer**: Calculates **ARI (Average Rate Index)** and **GRI (Global Review Index)** to perform market benchmarking.
-   - **Autonomous Quadrant Advisor**: Real-time analysis of Price vs. Value to provide actionable revenue management insights.
+2.  **Background Worker (VM / VPS)**:
+    -   **Celery** + **Python 3.11**
+    -   Handles Heavy Scraping (SerpApi), Data Analysis, and Long-Running Tasks.
+    -   Managed via `systemd` for persistence.
 
-3. **LAYER 3: Data & Algorithms (The Infrastructure)**
-   - **Supabase** for relational and vector storage.
-   - `pgvector` for semantic hotel search and hybrid recommendations.
-   - Real-time market data extraction via **SerpApi**.
+3.  **Data & Infrastructure**:
+    -   **Supabase**: Relational (PostgreSQL) and Vector Storage (`pgvector`).
+    -   **Upstash Redis**: Cloud-hosted Redis queue bridging Vercel and the Worker VM.
 
 ## 📊 Core Features
 
-- **ARI (Price Index)**: Real-time price benchmarking against market averages.
-- **GRI (Sentiment Index)**: Scientific sentiment analysis based on rating and social proof volume.
-- **Discovery Engine 👻**: Autonomous "Ghost Competitor" identification using semantic vector search.
-- **Quadrant Visualization**: Dynamic 2x2 grid for strategic positioning.
-- **Enterprise Reports**: Professional PDF/CSV exports with multi-currency support.
+-   **Market Analysis**: Real-time price benchmarking against market averages.
+-   **Rate Intelligence Grid**: 14-day lookahead comparison with "Strict Matching" for Suites.
+-   **Discovery Engine 👻**: Autonomous "Ghost Competitor" identification using semantic vector search.
+-   **Quadrant Visualization**: Dynamic 2x2 grid for strategic positioning.
+-   **Hybrid Room Config**: Dynamic room type mapping via Database (`room_tokens`, `room_aliases`) with static fallbacks.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.11+
-- Supabase Account
-- SerpApi Key
+-   Node.js 18+
+-   Python 3.11+
+-   Supabase Account
+-   SerpApi Key
+-   **Upstash Redis Database** (Required for background jobs)
 
 ### Installation
 
-1. Clone the repository
-2. Install frontend dependencies: `npm install`
-3. Install backend dependencies: `pip install -r requirements.txt`
-4. Set up `.env` from `.env.example`
+1.  Clone the repository
+2.  Install frontend dependencies: `npm install`
+3.  Install backend dependencies:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+4.  Set up `.env` (See `.env.example`).
+    -   **Crucial:** Must include `REDIS_URL` (rediss://...) for Worker connection.
 
-### Running Locally
+### Running Locally (Development)
 
 ```bash
-# Frontend
+# Terminal 1: Frontend
 npm run dev
 
-# Backend
-cd backend
-uvicorn main:app --reload
+# Terminal 2: Backend (API)
+source venv/bin/activate
+uvicorn backend.main:app --reload
+
+# Terminal 3: Celery Worker
+source venv/bin/activate
+celery -A backend.celery_app worker --loglevel=info
+```
+
+### 🔧 Production Maintenance
+
+**Restarting the Worker:**
+The worker is managed by `systemd`.
+```bash
+sudo systemctl restart hotel-worker
+sudo systemctl status hotel-worker
+```
+
+**Viewing Logs:**
+```bash
+journalctl -u hotel-worker -f
 ```
 
 ---
 
 _Hotel Rate Sentinel R&D - 2026_
-❤️ for the future of Autonomous Travel Intelligence.\_
-Version: Tue Feb 17 13:28:54 UTC 2026
-Deploy Trigger Tue Feb 17 13:33:59 UTC 2026
+❤️ for the future of Autonomous Travel Intelligence.
+**Last Updated:** 2026-02-19 (Infrastructure Hardening & Hybrid Deploy)

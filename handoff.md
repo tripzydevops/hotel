@@ -35,7 +35,11 @@ The system has completed a major "Architecture Hardening" phase. We have migrate
 
 ## 📝 Next Steps
 1. **SQL Migration:** Completed on 2026-02-19.
-2. **Room Type Matching:** Logic is now "Hybrid" (Code Defaults + DB Overrides) and "Strict" (No Standard fallback for Suites).
+2. **Infrastructure:** Hybrid Architecture is live.
+    - **Frontend/API:** Vercel (Production)
+    - **Queue:** Upstash Redis (Cloud)
+    - **Worker:** VM (Systemd Service: `hotel-worker`) - **RUNNING & PERSISTENT**
+3. **Room Type Matching:** Logic is now "Hybrid" (Code Defaults + DB Overrides) and "Strict" (No Standard fallback for Suites).
 
 ## 📂 Key Modified Files
 - `backend/services/analysis_service.py` (Core Logic & Hardening)

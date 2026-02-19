@@ -50,7 +50,6 @@ export default function AnalysisPage() {
     setIsSettingsOpen,
     setIsBillingOpen,
   } = useModalContext();
-  const hotelCount = 0;
 
   const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
