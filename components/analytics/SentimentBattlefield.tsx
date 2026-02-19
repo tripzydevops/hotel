@@ -65,7 +65,11 @@ export default function SentimentBattlefield({
         // KAİZEN: 1st Fallback - Check History for "Last Known Good"
         const history = sentimentHistory[hotel.id];
         if (history && history.length > 0) {
-            const sortedHistory = [...history].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+            const sortedHistory = [...history].sort((a, b) => {
+                const dateA = new Date(a.date || a.recorded_at).getTime();
+                const dateB = new Date(b.date || b.recorded_at).getTime();
+                return dateB - dateA;
+            });
             for (const record of sortedHistory) {
                 const histBreakdown = record.sentiment_breakdown || record.breakdown || [];
                 const histItem = histBreakdown.find((s: any) => {
