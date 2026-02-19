@@ -275,6 +275,9 @@ export const tr = {
     location: "Konum",
     guestComplaint: "Misafir Şikayeti",
     noVulnerabilities: "Kritik bir zayıflık tespit edilmedi.",
+    low: "Düşük",
+    medium: "Orta",
+    secure: "Güvenli",
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",

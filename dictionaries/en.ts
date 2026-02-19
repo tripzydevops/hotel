@@ -437,6 +437,9 @@ export const en = {
     high: "High",
     guestComplaint: "Guest Complaint",
     noVulnerabilities: "No critical vulnerabilities detected.",
+    low: "Low",
+    medium: "Medium",
+    secure: "Secure",
   },
   landing: {
     nav: {

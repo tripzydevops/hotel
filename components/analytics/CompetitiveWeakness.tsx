@@ -129,7 +129,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                       {t("sentiment.opportunity")}:
                     </span>
                     <span className={`text-[8px] font-bold ${opportunityColor}`}>
-                      {t(`sentiment.opportunity.${opportunityLevel.toLowerCase()}`) || opportunityLevel}
+                      {t(`sentiment.${opportunityLevel.toLowerCase()}`) || opportunityLevel}
                     </span>
                   </div>
                 </div>
