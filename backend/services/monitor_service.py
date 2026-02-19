@@ -134,7 +134,7 @@ async def trigger_monitor_logic(
 
     # 4. Background Execution (Celery)
     # Hybrid Architecture: Vercel (API) -> Redis -> VM (Celery Worker)
-    from backend.tasks import run_scan_task
+    from backend.celery_app import celery_app
     
     # We serialize complex objects to basic types for JSON transport
     task_args = {
@@ -144,9 +144,14 @@ async def trigger_monitor_logic(
         "session_id": str(session_id) if session_id else None
     }
     
-    # Dispatch to Redis
+    # EXPLANATION: Name-based Task Dispatch
+    # We use send_task() instead of .delay() to avoid importing the task function
+    # on Vercel. This prevents dependency bloat and circular import issues
+    # in the serverless environment.
     try:
-        run_scan_task.delay(**task_args)
+        broker_pre = (celery_app.conf.broker_url or "")[:15]
+        logger.info(f"Dispatching to Redis ({broker_pre}...)")
+        celery_app.send_task("backend.tasks.run_scan_task", kwargs=task_args)
         logger.info(f"Dispatched Celery task for session {session_id}")
     except Exception as e:
         logger.critical(f"Redis Dispatch Failed: {e}")
