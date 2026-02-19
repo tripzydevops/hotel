@@ -247,7 +247,7 @@ export default function ScanSessionModal({
                       Scan in Progress...
                     </h4>
                     <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                      Processing {logs.length} of {session.hotels_count} hotels
+                      {session.status === "running" ? "Agents harvesting data..." : "Queued in Mesh..."}
                     </p>
                   </div>
                   <span className="text-sm font-black text-[var(--soft-gold)]">
@@ -285,8 +285,8 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      session.status !== "pending"
-                        ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green"
+                      session.status !== "pending" || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Scraper"))
+                        ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
                   >
@@ -306,10 +306,8 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      session.status === "completed" ||
-                      session.status === "partial" ||
-                      session.status === "failed"
-                        ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)]"
+                      ["completed", "partial", "failed"].includes(session.status) || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Analyst"))
+                        ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)] shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
                   >
@@ -329,8 +327,8 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      session.status === "completed"
-                        ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
+                      session.status === "completed" || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Notifier"))
+                        ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
                   >
@@ -347,6 +345,61 @@ export default function ScanSessionModal({
                 </div>
               </div>
             </div>
+            {/* Agent Reasoning Timeline */}
+            {session.reasoning_trace && session.reasoning_trace.length > 0 && (
+              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+                <h4 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                  Agent Reasoning Timeline
+                </h4>
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                  {session.reasoning_trace.map((trace: any, i: number) => {
+                    // Handle Legacy String Traces
+                    if (typeof trace === "string") {
+                      return (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                          <span className="text-xs">📝</span>
+                          <span className="text-[10px] text-white/80 font-mono leading-relaxed">
+                            {trace}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    // Handle New Structured ReasoningLog
+                    const { step, level, message, timestamp } = trace;
+                    let colorClass = "text-white/80";
+                    let iconEmoji = "📝";
+                    let bgClass = "bg-white/5";
+                    let borderClass = "border-white/10";
+
+                    switch (level) {
+                      case "info":
+                        if (step === "Scraping") { iconEmoji = "🌐"; colorClass = "text-blue-200"; bgClass="bg-blue-500/10"; borderClass="border-blue-500/20"; }
+                        break;
+                      case "success": iconEmoji = "✅"; colorClass = "text-optimal-green"; break;
+                      case "error": iconEmoji = "❌"; colorClass = "text-alert-red"; break;
+                    }
+
+                    return (
+                      <div key={i} className={`flex flex-col gap-1 p-3 rounded-xl border ${bgClass} ${borderClass}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-[8px] font-black uppercase tracking-wider text-white/40">
+                            {iconEmoji} {step}
+                          </span>
+                          <span className="text-[8px] font-mono text-white/20">
+                            {timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : ""}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-mono leading-relaxed ${colorClass}`}>
+                          {message}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {logs.length === 0 ? (
               <EmptyState

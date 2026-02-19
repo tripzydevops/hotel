@@ -69,11 +69,14 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
         # 3. Notifier
         if analysis.get("alerts"):
             logger.info(f"[Worker] Dispatching {len(analysis['alerts'])} alerts...")
-            settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-            settings = settings_res.data[0] if settings_res.data else None
             if settings:
                 hotel_name_map = {h["id"]: h["name"] for h in hotels}
-                await notifier.dispatch_alerts(analysis["alerts"], settings, hotel_name_map)
+                await notifier.dispatch_alerts(
+                    alerts=analysis.get("alerts", []), 
+                    settings=settings, 
+                    hotel_name_map=hotel_name_map,
+                    session_id=session_id
+                )
         
         # 4. Finalize
         final_status = "completed"

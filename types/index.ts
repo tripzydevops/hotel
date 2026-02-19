@@ -134,6 +134,7 @@ export interface ScanSession {
   check_out_date?: string;
   adults?: number;
   currency?: string;
+  reasoning_trace?: any[];
   // Enriched with logs
   logs?: QueryLog[];
 }
