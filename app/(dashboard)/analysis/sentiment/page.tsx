@@ -1011,8 +1011,8 @@ export default function SentimentPage() {
                         // 1. Sort Chronologically
                         const history = [...rawHistory].sort(
                           (a, b) =>
-                            new Date(a.recorded_at).getTime() -
-                            new Date(b.recorded_at).getTime(),
+                            new Date(a.date || a.recorded_at).getTime() -
+                            new Date(b.date || b.recorded_at).getTime(),
                         );
 
                         const gradient = hotel?.isTarget
@@ -1023,15 +1023,15 @@ export default function SentimentPage() {
                         if (gradient === "none") return null;
 
                         const startTime = new Date(
-                          history[0].recorded_at,
+                          history[0].date || history[0].recorded_at,
                         ).getTime();
                         const endTime = new Date(
-                          history[history.length - 1].recorded_at,
+                          history[history.length - 1].date || history[history.length - 1].recorded_at,
                         ).getTime();
                         const totalTime = endTime - startTime || 1;
 
                         const points = history.map((h) => {
-                          const time = new Date(h.recorded_at).getTime();
+                          const time = new Date(h.date || h.recorded_at).getTime();
                           const x = ((time - startTime) / totalTime) * 1000;
                           const y = (1 - (Number(h.rating) || 0) / 5) * 100;
                           return `${x},${y}`;
@@ -1055,8 +1055,8 @@ export default function SentimentPage() {
 
                         const history = [...rawHistory].sort(
                           (a, b) =>
-                            new Date(a.recorded_at).getTime() -
-                            new Date(b.recorded_at).getTime(),
+                            new Date(a.date || a.recorded_at).getTime() -
+                            new Date(b.date || b.recorded_at).getTime(),
                         );
 
                         const color = hotel?.isTarget
@@ -1067,10 +1067,10 @@ export default function SentimentPage() {
                         const isDashed = !hotel?.isTarget && hotelIdx !== 0;
 
                         const startTime = new Date(
-                          history[0].recorded_at,
+                          history[0].date || history[0].recorded_at,
                         ).getTime();
                         const endTime = new Date(
-                          history[history.length - 1].recorded_at,
+                          history[history.length - 1].date || history[history.length - 1].recorded_at,
                         ).getTime();
                         const totalTime = endTime - startTime || 1;
 
@@ -1079,7 +1079,7 @@ export default function SentimentPage() {
                             key={`line-${id}`}
                             points={history
                               .map((h) => {
-                                const time = new Date(h.recorded_at).getTime();
+                                const time = new Date(h.date || h.recorded_at).getTime();
                                 const x = ((time - startTime) / totalTime) * 1000;
                                 const y = (1 - (Number(h.rating) || 0) / 5) * 100;
                                 return `${x},${y}`;
@@ -1113,12 +1113,12 @@ export default function SentimentPage() {
 
                       const sorted = [...history].sort(
                         (a, b) =>
-                          new Date(a.recorded_at).getTime() -
-                          new Date(b.recorded_at).getTime(),
+                          new Date(a.date || a.recorded_at).getTime() -
+                          new Date(b.date || b.recorded_at).getTime(),
                       );
 
-                      const start = new Date(sorted[0].recorded_at);
-                      const end = new Date(sorted[sorted.length - 1].recorded_at);
+                      const start = new Date(sorted[0].date || sorted[0].recorded_at);
+                      const end = new Date(sorted[sorted.length - 1].date || sorted[sorted.length - 1].recorded_at);
 
                       // Return 4 points across the period
                       return [0, 0.33, 0.66, 1].map((pct, idx) => {
