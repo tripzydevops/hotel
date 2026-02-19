@@ -1,4 +1,4 @@
-
+from datetime import datetime, timedelta
 # -----------------------------------------------------------------------------
 # SCHEDULER & CRON ENDPOINTS
 # -----------------------------------------------------------------------------
@@ -40,7 +40,9 @@ async def run_scheduler_check():
         # Actually, let's look at the 'ScanSession' table for 'scheduled' type?
         # A better approach for MVP: Check 'user_profiles' for 'next_scan_at'
         
-        users = supabase.table("user_profiles").select("id, next_scan_at, settings").lte("next_scan_at", datetime.now().isoformat()).execute()
+        # Lookahead 15 minutes to catch tasks that drifted slightly past the cron time
+        lookahead_time = (datetime.now() + timedelta(minutes=15)).isoformat()
+        users = supabase.table("user_profiles").select("id, next_scan_at, settings").lte("next_scan_at", lookahead_time).execute()
         
         due_users = users.data or []
         print(f"[{datetime.now()}] CRON: Found {len(due_users)} users due for scan.")

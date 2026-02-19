@@ -431,7 +431,7 @@ export default function SentimentPage() {
   };
 
   // Helper to match categories (English + Turkish)
-  const getCategoryScore = (hotel: any, category: string) => {
+  const getCategoryScore = (hotel: any, category: string, history: any[] = []) => {
     if (!hotel?.sentiment_breakdown) return 0;
 
     const target = category.toLowerCase();
@@ -467,7 +467,46 @@ export default function SentimentPage() {
       return aliases[target]?.some(alias => name.includes(alias));
     });
 
-    if (!item) return 0;
+    if (!item) {
+       // KAİZEN: 1st Fallback - Check History for "Last Known Good"
+       // If current scan missed it (e.g. Feb 19), maybe Feb 18 caught it.
+       if (history && history.length > 0) {
+          // Sort descending by date just in case
+          const sortedHistory = [...history].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+          
+          for (const record of sortedHistory) {
+              const histBreakdown = record.sentiment_breakdown || [];
+              const histItem = histBreakdown.find((s: any) => {
+                  const name = (s.name || s.category || "").toLowerCase().trim();
+                  if (name === target) return true;
+                  return aliases[target]?.some(alias => name.includes(alias));
+              });
+          }
+       }
+
+       // KAİZEN: 2nd Fallback - text mining from guest_mentions if category missing
+       if (hotel.guest_mentions?.length > 0) {
+          const relevantMentions = hotel.guest_mentions.filter((m: any) => {
+             const text = (m.keyword || m.text || "").toLowerCase();
+             return aliases[target]?.some(alias => text.includes(alias));
+          });
+ 
+          if (relevantMentions.length > 0) {
+             let weightedSum = 0;
+             let totalCount = 0;
+             
+             relevantMentions.forEach((m: any) => {
+                const count = Number(m.count) || 1;
+                totalCount += count;
+                const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
+                weightedSum += score * count;
+             });
+ 
+             if (totalCount > 0) return weightedSum / totalCount;
+          }
+       }
+       return 0;
+    }
 
     // Use existing rating if available
     if (item.rating !== undefined && item.rating !== null) {
@@ -904,6 +943,7 @@ export default function SentimentPage() {
                 <SentimentBattlefield 
                   targetHotel={targetHotel as any} 
                   competitors={visibleCompetitors as any} 
+                  sentimentHistory={sentimentHistory}
                 />
               </div>
             ) : (

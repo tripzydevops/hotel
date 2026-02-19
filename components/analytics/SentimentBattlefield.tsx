@@ -19,6 +19,7 @@ import { Hotel } from "@/types";
 interface SentimentBattlefieldProps {
   readonly targetHotel: Hotel;
   readonly competitors: Hotel[];
+  readonly sentimentHistory?: Record<string, any[]>;
 }
 
 /**
@@ -31,7 +32,8 @@ interface SentimentBattlefieldProps {
  */
 export default function SentimentBattlefield({ 
   targetHotel, 
-  competitors 
+  competitors,
+  sentimentHistory = {}
 }: SentimentBattlefieldProps) {
   const { t } = useI18n();
 
@@ -42,14 +44,94 @@ export default function SentimentBattlefield({
   const getPillarRating = (hotel: Hotel, pillarName: string): number => {
     const breakdown = hotel.sentiment_breakdown || [];
     
-    // The backend now provides standardized pillar names: 
-    // "Cleanliness", "Service", "Location", "Value"
-    // We look for them directly to avoid matching raw items from other sources.
-    const pillarData = breakdown.find(p => p.name === pillarName);
+    // Normalize pillar name
+    const target = pillarName.toLowerCase();
+    
+    const aliases: Record<string, string[]> = {
+      cleanliness: ["temizlik", "clean", "room", "cleanliness", "odalar", "oda"],
+      service: ["hizmet", "staff", "personel", "service"],
+      location: ["konum", "neighborhood", "mevki", "location"],
+      value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "cost", "money"],
+    };
 
-    // Ensure we return a number and handle NaN/undefined
-    const rating = pillarData ? Number(pillarData.rating) : 0;
-    return isNaN(rating) ? 0 : rating;
+    // Find the item in the breakdown that matches the target category or one of its aliases
+    const pillarData = breakdown.find(p => {
+      const name = (p.name || p.category || "").toLowerCase().trim();
+      if (name === target) return true;
+      return aliases[target]?.some(alias => name.includes(alias));
+    });
+
+    if (!pillarData) {
+        // KAİZEN: 1st Fallback - Check History for "Last Known Good"
+        const history = sentimentHistory[hotel.id];
+        if (history && history.length > 0) {
+            const sortedHistory = [...history].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+            for (const record of sortedHistory) {
+                const histBreakdown = record.sentiment_breakdown || [];
+                const histItem = histBreakdown.find((s: any) => {
+                    const name = (s.name || s.category || "").toLowerCase().trim();
+                    if (name === target) return true;
+                    return aliases[target]?.some(alias => name.includes(alias));
+                });
+                
+                if (histItem) {
+                    if (histItem.rating) return Number(histItem.rating);
+                    
+                    const pos = Number(histItem.positive) || 0;
+                    const neu = Number(histItem.neutral) || 0;
+                    const neg = Number(histItem.negative) || 0;
+                    const total = pos + neu + neg;
+                    
+                    if (total > 0) return (pos * 5 + neu * 3 + neg * 1) / total;
+                }
+            }
+        }
+        return 0;
+    }
+
+    // Use existing rating if available
+    let rating = Number(pillarData.rating);
+    if (!isNaN(rating) && rating > 0) return rating;
+
+    // KAİZEN: Fallback to guest_mentions if breakdown missing
+    if (hotel.guest_mentions && hotel.guest_mentions.length > 0) {
+        const target = pillarName.toLowerCase();
+        const aliases: Record<string, string[]> = {
+            cleanliness: ["temizlik", "clean", "room", "cleanliness", "odalar", "oda"],
+            service: ["hizmet", "staff", "personel", "service"],
+            location: ["konum", "neighborhood", "mevki", "location"],
+            value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "cost", "money"],
+        };
+
+        const relevantMentions = hotel.guest_mentions?.filter((m: any) => {
+            const text = (m.keyword || m.text || "").toLowerCase();
+            return aliases[target]?.some(alias => text.includes(alias));
+        });
+
+        if (relevantMentions && relevantMentions.length > 0) {
+            let weightedSum = 0;
+            let totalCount = 0;
+            relevantMentions.forEach((m: any) => {
+                const count = Number(m.count) || 1;
+                totalCount += count;
+                const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
+                weightedSum += score * count;
+            });
+            if (totalCount > 0) return weightedSum / totalCount;
+        }
+    }
+    
+    // Fallback: Calculate from sentiment counts
+    const pos = Number(pillarData.positive) || 0;
+    const neu = Number(pillarData.neutral) || 0;
+    const neg = Number(pillarData.negative) || 0;
+    const total = pos + neu + neg;
+
+    if (total > 0) {
+      return (pos * 5 + neu * 3 + neg * 1) / total;
+    }
+    
+    return 0;
   };
 
   // Transform data for Recharts
