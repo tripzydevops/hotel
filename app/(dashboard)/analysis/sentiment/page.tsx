@@ -475,7 +475,7 @@ export default function SentimentPage() {
           const sortedHistory = [...history].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
           
           for (const record of sortedHistory) {
-              const histBreakdown = record.sentiment_breakdown || [];
+              const histBreakdown = record.sentiment_breakdown || record.breakdown || [];
               const histItem = histBreakdown.find((s: any) => {
                   const name = (s.name || s.category || "").toLowerCase().trim();
                   if (name === target) return true;
