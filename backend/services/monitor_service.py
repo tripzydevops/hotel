@@ -150,13 +150,7 @@ async def trigger_monitor_logic(
         logger.info(f"Dispatched Celery task for session {session_id}")
     except Exception as e:
         logger.critical(f"Redis Dispatch Failed: {e}")
-        return MonitorResult(
-            hotels_checked=len(hotels),
-            prices_updated=0,
-            alerts_generated=0,
-            session_id=UUID(session_id) if session_id else None,
-            errors=[f"BACKGROUND_WORKER_ERROR: {str(e)}"]
-        )
+        raise HTTPException(status_code=500, detail=f"Redis Dispatch Failed: {str(e)}")
 
     return MonitorResult(
         hotels_checked=len(hotels),
