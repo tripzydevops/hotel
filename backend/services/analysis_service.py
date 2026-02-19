@@ -81,8 +81,23 @@ def get_price_for_room(
     if allowed_names:
         for r in r_types:
             if isinstance(r, dict) and r.get("name") in allowed_names:
-                 # High confidence if in allowed map
-                 return _extract_price(r.get("price")), r.get("name"), 0.82 + (0.1 * int(r.get("name") == target_room_type))
+                 # KAIZEN: "Strict Keyword Guard"
+                 # Even if DB/Vector Search maps "Standard Room" to "Suite", we REJECT it 
+                 # if the names mismatch significantly.
+                 r_name = r.get("name", "")
+                 t_lower = target_room_type.lower()
+                 r_lower = r_name.lower()
+                 
+                 # 1. Suite Guard: If asking for Suite, offer MUST have "suite" in name
+                 if "suite" in t_lower and "suite" not in r_lower:
+                     continue
+                     
+                 # 2. Villa/Res Guard
+                 if "villa" in t_lower and "villa" not in r_lower:
+                     continue
+
+                 # High confidence if in allowed map (and passed guards)
+                 return _extract_price(r.get("price")), r_name, 0.82 + (0.1 * int(r_name == target_room_type))
     
     # 2. Fallback: String Match (Substring) with Turkish/English variant support
     # We check for common "standard" room variants in both languages.
