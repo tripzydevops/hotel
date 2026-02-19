@@ -57,7 +57,13 @@ export function useDashboard(
       // This gives the backend enough time to finish the scan.
       setIsPolling(true);
       setTimeout(() => setIsPolling(false), 20000);
+      toast.success(t("dashboard.scanStarted") || "Scan started successfully");
     },
+    onError: (error) => {
+      console.error("Scan failed:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to start scan");
+    },
+  });
   });
 
   const addHotelMutation = useMutation({
