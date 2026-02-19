@@ -1,0 +1,14 @@
+[Unit]
+Description=Hotel Rate Sentinel Worker
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/hotel
+ExecStart=/opt/hotel/venv/bin/celery -A backend.celery_app worker --loglevel=info
+Restart=always
+EnvironmentFile=/opt/hotel/.env
+
+[Install]
+WantedBy=multi-user.target

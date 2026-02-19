@@ -64,6 +64,48 @@ class RoomTypeNormalizer:
         "NS": "Non-Smoking"
     }
 
+
+    # Dynamic Configuration via Database (Hybrid Fallback)
+    from backend.services.config_service import ConfigService
+
+    @classmethod
+    def _get_config(cls):
+        """
+        Returns the effective configuration.
+        Strategy: Start with STATIC hardcoded maps (safe fallback), 
+        then OVERRIDE with any values found in the Database.
+        """
+        # 1. Start with Static Defaults
+        effective_tokens = cls.TOKEN_MAP.copy()
+        effective_names = cls.CANONICAL_NAMES.copy()
+        effective_order = cls.CATEGORY_ORDER.copy()
+
+        # 2. Overlay Database Config (if available)
+        try:
+            db_config = ConfigService.get_mappings()
+            
+            # Merge Aliases
+            if db_config.get("token_map"):
+                effective_tokens.update(db_config["token_map"])
+                
+            # Merge Names
+            if db_config.get("canonical_names"):
+                effective_names.update(db_config["canonical_names"])
+                
+            # Merge Order
+            if db_config.get("category_order"):
+                effective_order.update(db_config["category_order"])
+                
+        except Exception:
+            # If DB fails (e.g. migration not run yet), we just use static defaults
+            pass
+
+        return {
+            "token_map": effective_tokens,
+            "canonical_names": effective_names,
+            "category_order": effective_order
+        }
+
     @classmethod
     def normalize(cls, raw_string: str) -> Dict[str, str]:
         """
@@ -77,6 +119,12 @@ class RoomTypeNormalizer:
                 "tokens": []
             }
 
+        # Load Configuration (Hybrid)
+        config = cls._get_config()
+        token_map = config["token_map"]
+        canonical_names = config["canonical_names"]
+        category_order = config["category_order"]
+
         # 1. Clean and Tokenize
         clean_text = raw_string.lower()
         # Remove punctuation, parentheses, brackets, etc.
@@ -88,12 +136,12 @@ class RoomTypeNormalizer:
         
         # 2. Map words to tokens
         for word in words:
-            if word in cls.TOKEN_MAP:
-                found_tokens.add(cls.TOKEN_MAP[word])
+            if word in token_map:
+                found_tokens.add(token_map[word])
 
         sorted_tokens = sorted(
             list(found_tokens),
-            key=lambda t: cls.CATEGORY_ORDER.get(t, 99)
+            key=lambda t: category_order.get(t, 99)
         )
         
         if not sorted_tokens:
@@ -108,7 +156,7 @@ class RoomTypeNormalizer:
         
         name_parts = []
         for t in sorted_tokens:
-            name_parts.append(cls.CANONICAL_NAMES.get(t, t))
+            name_parts.append(canonical_names.get(t, t))
             
         canonical_name = " ".join(name_parts)
 

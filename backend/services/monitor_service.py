@@ -132,15 +132,21 @@ async def trigger_monitor_logic(
         currency=currency
     )
 
-    # 4. Background Execution
-    background_tasks.add_task(
-        run_monitor_background,
-        user_id=user_id,
-        hotels=hotels,
-        options=normalized_options,
-        db=db,
-        session_id=session_id
-    )
+    # 4. Background Execution (Celery)
+    # Hybrid Architecture: Vercel (API) -> Redis -> VM (Celery Worker)
+    from backend.tasks import run_scan_task
+    
+    # We serialize complex objects to basic types for JSON transport
+    task_args = {
+        "user_id": str(user_id),
+        "hotels": hotels, # Already dicts
+        "options_dict": normalized_options.model_dump() if normalized_options else None,
+        "session_id": str(session_id) if session_id else None
+    }
+    
+    # Dispatch to Redis
+    run_scan_task.delay(**task_args)
+    logger.info(f"Dispatched Celery task for session {session_id}")
 
     return MonitorResult(
         hotels_checked=len(hotels),

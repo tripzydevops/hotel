@@ -112,8 +112,8 @@ def get_price_for_room(
     # EXPLANATION: Standard Request Detection & Global Fallback
     # Why: If no semantic or string match was found, but we are looking for a 'Standard' 
     # room, we fall back to the lowest available room price. 
-    # This is a Kaizen 'Error Proofing' measure: display a valid price rather than 'N/A'
-    # when the room type catalog or semantic embedding is sparse.
+    # KAIZEN (2026-02-19): We disable this fallback for specific room types (e.g., Suite)
+    # to prevent misleading comparisons. If you ask for Suite, you get Suite or N/A.
     std_variants = ["standard", "standart", "any", "base", "all room types", "all", "promo", "ekonomik", "economy", "klasik", "classic"]
     target_lower = target_room_type.lower()
     
@@ -137,6 +137,8 @@ def get_price_for_room(
                 return valid_prices[0][0], valid_prices[0][1], 0.65
         except Exception:
             pass
+    # Else: Strict Mode. We return None if no match found for specific/premium room types.
+
 
     # If price found is 0, we treat as None for calculations but mark as sellout
     match_price = None

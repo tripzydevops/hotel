@@ -22,15 +22,20 @@ The system has completed a major "Architecture Hardening" phase. We have migrate
 - **Grid Continuity:** Extended forward-filling for target hotels to ensure the Rate Grid remains populated into the future.
 
 ### 3. Code Documentation
-- **Transparent Logic:** All critical backend files (`analysis_service.py`, `dashboard_service.py`, etc.) now feature `# EXPLANATION:` comments describing the "Why" behind complex logic (e.g. sentiment normalization, pgvector room matching).
+- **Transparent Logic:** All critical backend files now feature `# EXPLANATION:` comments.
+    
+### 4. Background Jobs (Hybrid Architecture)
+- **Celery & Redis:** Implemented a worker queue to handle long-running scrapes.
+- **Hybrid Deployment:** Vercel handles the API, while a separate VM runs the heavy `ScraperAgent` tasks via Redis.
+- **Service File:** Created `scripts/hotel-worker.service` for production deployment.
 
 ## ⚠️ Known Issues / Watchlist
 - **Market Sentiment:** Some older hotels may show "N/A" in the Advisor Quadrant if their sentiment breakdown hasn't been refreshed post-refactor. A manual "Refresh" on the hotel will fix this.
 - **SerpApi Quota:** Now that we are fetching a 30-day window for the calendar, SerpApi usage should be monitored for high-volume users.
 
 ## 📝 Next Steps
-1. **Config Management:** Move room type aliases (currently hardcoded strings) into a dedicated database table for easier hot-updates.
-2. **Background Jobs:** Move the `ScraperAgent` trigger into a Celery/Redis queue to decouple it from the user request cycle.
+1. **SQL Migration:** Completed on 2026-02-19.
+2. **Room Type Matching:** Logic is now "Hybrid" (Code Defaults + DB Overrides) and "Strict" (No Standard fallback for Suites).
 
 ## 📂 Key Modified Files
 - `backend/services/analysis_service.py` (Core Logic & Hardening)
