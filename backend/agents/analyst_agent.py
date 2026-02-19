@@ -8,6 +8,7 @@ from backend.services.price_comparator import price_comparator
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.helpers import convert_currency, log_query
+from backend.utils.sentiment_utils import generate_mentions, normalize_sentiment
 
 class AnalystAgent:
     """
@@ -261,6 +262,14 @@ class AnalystAgent:
                     if val is not None:
                         meta_update[key] = val
                 
+                # [NEW] Generate Sentiment Voices (guest_mentions)
+                # This restores the "Sentiment Voices" and "Competitive Vulnerabilities" sections in UI.
+                if "sentiment_breakdown" in meta_update:
+                    raw_breakdown = meta_update["sentiment_breakdown"]
+                    if isinstance(raw_breakdown, list):
+                        meta_update["guest_mentions"] = generate_mentions(raw_breakdown)
+                        reasoning_log.append(f"[Sentiment] Generated {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
+                
                 # EXPLANATION: Data Reliability Sync
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
                 # sentiment data changes. This ensures the frontend doesn't trust
@@ -294,7 +303,8 @@ class AnalystAgent:
                         "hotel_id": hotel_id,
                         "rating": price_data.get("rating"),
                         "review_count": price_data.get("reviews", 0),
-                        "sentiment_breakdown": price_data.get("reviews_breakdown", [])
+                        "sentiment_breakdown": price_data.get("reviews_breakdown", []),
+                        "recorded_at": datetime.now().isoformat() # [FIX] Ensure recorded_at is explicitly set for graph filtering
                     })
                     reasoning_log.append(f"[Sentiment] Prepared history for rating {price_data.get('rating')}")
 
