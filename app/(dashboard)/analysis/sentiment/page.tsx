@@ -1006,7 +1006,7 @@ export default function SentimentPage() {
                       {selectedHotelIds.map((id, hotelIdx) => {
                         const hotel = allHotels.find((h) => h.id === id);
                         const rawHistory = sentimentHistory[id] || [];
-                        if (rawHistory.length < 2) return null;
+                        if (rawHistory.length === 0) return null; // Only return null if truly empty
 
                         // 1. Sort Chronologically
                         const history = [...rawHistory].sort(
@@ -1020,7 +1020,9 @@ export default function SentimentPage() {
                           : hotelIdx === 0
                             ? "url(#gold-area)"
                             : "none";
-                        if (gradient === "none") return null;
+                        
+                        // Area fill requires 2+ points
+                        if (history.length < 2 || gradient === "none") return null;
 
                         const startTime = new Date(
                           history[0].date || history[0].recorded_at,
@@ -1047,11 +1049,11 @@ export default function SentimentPage() {
                         );
                       })}
 
-                      {/* Render Lines */}
+                      {/* Render Lines & Dots */}
                       {selectedHotelIds.map((id, hotelIdx) => {
                         const hotel = allHotels.find((h) => h.id === id);
                         const rawHistory = sentimentHistory[id] || [];
-                        if (rawHistory.length < 2) return null;
+                        if (rawHistory.length === 0) return null;
 
                         const history = [...rawHistory].sort(
                           (a, b) =>
@@ -1075,24 +1077,48 @@ export default function SentimentPage() {
                         const totalTime = endTime - startTime || 1;
 
                         return (
-                          <polyline
-                            key={`line-${id}`}
-                            points={history
-                              .map((h) => {
+                          <g key={`group-${id}`}>
+                             {/* Line (needs 2+ points) */}
+                             {history.length >= 2 && (
+                                <polyline
+                                  points={history
+                                    .map((h) => {
+                                      const time = new Date(h.date || h.recorded_at).getTime();
+                                      const x = ((time - startTime) / totalTime) * 1000;
+                                      const y = (1 - (Number(h.rating) || 0) / 5) * 100;
+                                      return `${x},${y}`;
+                                    })
+                                    .join(" ")}
+                                  fill="none"
+                                  stroke={color}
+                                  strokeWidth={hotel?.isTarget ? "4" : "2"}
+                                  strokeDasharray={isDashed ? "5,5" : "0"}
+                                  strokeLinecap="round"
+                                  vectorEffect="non-scaling-stroke"
+                                  className="transition-all duration-700"
+                                />
+                             )}
+                             {/* Dots (visible even for 1 point) */}
+                             {history.map((h, idx) => {
                                 const time = new Date(h.date || h.recorded_at).getTime();
-                                const x = ((time - startTime) / totalTime) * 1000;
+                                // If totalTime is 0 (single point), place at center (500) or end?
+                                // Let's place single point at center
+                                const x = totalTime === 1 
+                                    ? 500 
+                                    : ((time - startTime) / totalTime) * 1000;
                                 const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                                return `${x},${y}`;
-                              })
-                              .join(" ")}
-                            fill="none"
-                            stroke={color}
-                            strokeWidth={hotel?.isTarget ? "4" : "2"}
-                            strokeDasharray={isDashed ? "5,5" : "0"}
-                            strokeLinecap="round"
-                            vectorEffect="non-scaling-stroke"
-                            className="transition-all duration-700"
-                          />
+                                return (
+                                  <circle 
+                                    key={idx} 
+                                    cx={x} 
+                                    cy={y} 
+                                    r={hotel?.isTarget ? 4 : 3} 
+                                    fill={color} 
+                                    className="transition-all duration-700"
+                                  />
+                                );
+                             })}
+                          </g>
                         );
                       })}
                     </svg>
