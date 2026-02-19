@@ -99,6 +99,23 @@ async def health_check():
         "version": "1.1.0-modular"
     }
 
+@app.get("/api/debug/routes")
+async def debug_routes():
+    """List all registered routes for debugging 404 errors."""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "path"):
+            routes.append({
+                "path": route.path,
+                "name": route.name,
+                "methods": list(route.methods) if hasattr(route, "methods") else None
+            })
+    return {
+        "count": len(routes),
+        "routes": routes
+    }
+
+
 # Include Modular Routers
 app.include_router(admin_routes.router)
 app.include_router(hotel_routes.router)
