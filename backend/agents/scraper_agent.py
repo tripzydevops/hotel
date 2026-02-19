@@ -6,7 +6,7 @@ from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
 from backend.services.provider_factory import ProviderFactory
-from backend.services.provider_factory import ProviderFactory
+
 from backend.utils.helpers import log_query
 from backend.utils.room_normalizer import RoomTypeNormalizer
 
