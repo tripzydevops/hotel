@@ -134,6 +134,9 @@ def get_price_for_room(
     # Improved check: detect 'standard' even if it's 'Standard Room'
     if any(s in target_room_type.lower() for s in ["standard", "standart"]):
          target_variants.extend(["standard", "standart", "klasik", "classic", "ekonomik", "economy", "promo"])
+    # Kaizen: Add Suite synonyms (Turkish)
+    if "suite" in target_room_type.lower():
+         target_variants.append("süit")
     
     for r in r_types:
         if not isinstance(r, dict): continue
