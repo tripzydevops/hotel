@@ -481,6 +481,23 @@ export default function SentimentPage() {
                   if (name === target) return true;
                   return aliases[target]?.some(alias => name.includes(alias));
               });
+
+              if (histItem) {
+                  // If explicit rating exists, use it
+                  if (histItem.rating) {
+                      return Number(histItem.rating);
+                  }
+                  
+                  // If not, calculate from counts (positive, neutral, negative)
+                  const pos = Number(histItem.positive) || 0;
+                  const neu = Number(histItem.neutral) || 0;
+                  const neg = Number(histItem.negative) || 0;
+                  const total = pos + neu + neg;
+                  
+                  if (total > 0) {
+                      return (pos * 5 + neu * 3 + neg * 1) / total;
+                  }
+              }
           }
        }
 
