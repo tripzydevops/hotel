@@ -44,14 +44,43 @@ def _transform_serp_links(breakdown: Any) -> Any:
 
 def _extract_price(raw: Any) -> Optional[float]:
     """Helper to cleanly extract a numeric price from various raw formats (str, int, float)."""
-    if raw is not None:
-        try:
-            if isinstance(raw, str):
-                clean = re.sub(r'[^\d.]', '', raw)
-                return float(clean)
+    if raw is None: return None
+    try:
+        if isinstance(raw, (float, int)):
             return float(raw)
-        except Exception: 
-            pass
+            
+        s = str(raw).strip()
+        # Remove currency symbols and whitespace
+        s_clean = re.sub(r'[^\d.,]', '', s)
+        
+        # Case 1: Both . and , exist (e.g. "3.825,00" or "3,825.00")
+        if '.' in s_clean and ',' in s_clean:
+            if s_clean.rfind(',') > s_clean.rfind('.'):
+                # Turkish/European: Dot is thousand, Comma is decimal
+                s_clean = s_clean.replace('.', '').replace(',', '.')
+            else:
+                # US/UK: Comma is thousand, Dot is decimal
+                s_clean = s_clean.replace(',', '')
+                
+        # Case 2: Only Dot exists (e.g. "3.825" or "150.50")
+        elif '.' in s_clean:
+            # If it looks like a thousand separator (3 decimal places exactly)
+            # AND the value if treated as float is suspiciously small (< 500)
+            # We treat dot as thousand separator.
+            parts = s_clean.split('.')
+            if len(parts) == 2 and len(parts[1]) == 3:
+                val = float(s_clean)
+                if val < 500: # Threshold: 500 is extremely low for a hotel price
+                     s_clean = s_clean.replace('.', '')
+        
+        # Case 3: Only Comma exists (e.g. "125,50")
+        elif ',' in s_clean:
+            # Assume comma is decimal (common in TR)
+            s_clean = s_clean.replace(',', '.')
+            
+        return float(s_clean)
+    except Exception: 
+        pass
     return None
     
 # EXPLANATION: Sentiment Normalization & Synthesis
