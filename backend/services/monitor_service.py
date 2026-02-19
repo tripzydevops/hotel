@@ -145,16 +145,41 @@ async def trigger_monitor_logic(
     }
     
     # EXPLANATION: Name-based Task Dispatch
-    # We use send_task() instead of .delay() to avoid importing the task function
-    # on Vercel. This prevents dependency bloat and circular import issues
-    # in the serverless environment.
     try:
         broker_pre = (celery_app.conf.broker_url or "")[:15]
-        logger.info(f"Dispatching to Redis ({broker_pre}...)")
+        trace_msg = f"Dispatching to Redis ({broker_pre}...) via send_task"
+        logger.info(trace_msg)
+        
+        # Log trace to DB for Vercel visibility
+        if session_id:
+            try:
+                db.table("scan_sessions").update({
+                    "reasoning_trace": [trace_msg]
+                }).eq("id", str(session_id)).execute()
+            except: pass
+
         celery_app.send_task("backend.tasks.run_scan_task", kwargs=task_args)
+        
+        # Log success trace
+        if session_id:
+            try:
+                current_trace = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute().data[0]["reasoning_trace"]
+                db.table("scan_sessions").update({
+                    "reasoning_trace": current_trace + ["Dispatched successfully to Redis"]
+                }).eq("id", str(session_id)).execute()
+            except: pass
+
         logger.info(f"Dispatched Celery task for session {session_id}")
     except Exception as e:
         logger.critical(f"Redis Dispatch Failed: {e}")
+        # Log failure trace
+        if session_id:
+            try:
+                current_trace = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute().data[0]["reasoning_trace"]
+                db.table("scan_sessions").update({
+                    "reasoning_trace": current_trace + [f"DISPATCH_FAILED: {str(e)}"]
+                }).eq("id", str(session_id)).execute()
+            except: pass
         raise HTTPException(status_code=500, detail=f"Redis Dispatch Failed: {str(e)}")
 
     return MonitorResult(
