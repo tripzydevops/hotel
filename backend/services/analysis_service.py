@@ -117,8 +117,8 @@ def get_price_for_room(
                  t_lower = target_room_type.lower()
                  r_lower = r_name.lower()
                  
-                 # 1. Suite Guard: If asking for Suite, offer MUST have "suite" in name
-                 if "suite" in t_lower and "suite" not in r_lower:
+                 # 1. Suite Guard: If asking for Suite, offer MUST have "suite" or "süit" in name
+                 if "suite" in t_lower and not any(k in r_lower for k in ["suite", "süit"]):
                      continue
                      
                  # 2. Villa/Res Guard
