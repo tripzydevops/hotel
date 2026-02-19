@@ -119,7 +119,7 @@ async def get_sentiment_history(
             normalized = normalize_sentiment(raw_breakdown)
             
             history.append({
-                "date": record.get("created_at"),
+                "date": record.get("recorded_at") or record.get("created_at"), # [FIX] Use recorded_at as primary date
                 "rating": record.get("rating"),
                 "breakdown": normalized
             })

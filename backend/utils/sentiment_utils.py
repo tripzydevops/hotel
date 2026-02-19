@@ -37,6 +37,20 @@ TR_MAP = {
     "internet": "Internet",
     "güvenlik": "Security",
     "dining": "Dining",
+    "mutfak": "Kitchen",
+    "otopark": "Parking",
+    "çiftler": "Couples",
+    "iş": "Business",
+    "aile": "Family",
+    "yalnız": "Solo",
+    "arkadaşlar": "Friends",
+    "modern": "Modern",
+    "lüks": "Luxury",
+    "ekonomik": "Budget",
+    "odalar": "Rooms",
+    "tesisler": "Facilities",
+    "bahçe": "Garden",
+    "teras": "Terrace",
 }
 
 def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -60,10 +74,10 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     # Keyword Mapping (Expanded Turkish set)
     # Using substring matching for flexibility
     mappings = {
-        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed", "mülk", "property", "tesis", "facility", "konfor", "comfort", "klima", "air conditioning", "internet", "wifi", "kablosuz"],
-        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek", "restoran", "restaurant", "food", "yiyecek", "içecek", "bar", "atmosfer", "atmosphere", "sağlıklı yaşam", "spa", "wellness", "pool", "havuz", "fitness", "sauna"],
-        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife", "otopark", "parking", "transport", "trafik", "traffic"],
-        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality", "fırsat", "teklif", "deal", "offer"]
+        "Cleanliness": ["temizlik", "cleanliness", "oda", "room", "banyo", "bathroom", "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak", "bed", "mülk", "property", "tesis", "facility", "konfor", "comfort", "klima", "air conditioning", "internet", "wifi", "kablosuz", "odalar", "tesisler"],
+        "Service": ["hizmet", "service", "personel", "staff", "ilgi", "reception", "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming", "dining", "yemek", "restoran", "restaurant", "food", "yiyecek", "içecek", "bar", "atmosfer", "atmosphere", "sağlıklı yaşam", "spa", "wellness", "pool", "havuz", "fitness", "sauna", "mutfak", "kitchen", "servis"],
+        "Location": ["konum", "location", "yer", "place", "manzara", "view", "ulaşım", "access", "çevre", "neighborhood", "merkez", "gece hayatı", "nightlife", "otopark", "parking", "transport", "trafik", "traffic", "bahçe", "garden", "teras", "terrace"],
+        "Value": ["fiyat", "price", "değer", "value", "fiyat-performans", "cost", "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money", "affordable", "ucuz", "pahalı", "kalite", "quality", "fırsat", "teklif", "deal", "offer", "bütçe", "budget"]
     }
 
     found_pillars = set()
@@ -88,6 +102,18 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     
     # Format for UI - Always return all 4 pillars
     result = []
+    
+    # Calculate a baseline fallback if some pillars are missing (use average of found ones, or 4.0 as default)
+    total_found_rating = 0
+    num_found = 0
+    for name in ["Cleanliness", "Service", "Location", "Value"]:
+        stats = pillars[name]
+        if stats["total"] > 0:
+            total_found_rating += (stats["positive"] * 5 + stats["neutral"] * 3 + stats["negative"] * 1) / stats["total"]
+            num_found += 1
+    
+    baseline = round(total_found_rating / num_found, 1) if num_found > 0 else 4.0
+    
     # Force order: Cleanliness, Service, Location, Value
     for name in ["Cleanliness", "Service", "Location", "Value"]:
         stats = pillars[name]
@@ -100,7 +126,9 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         if total > 0:
             rating = (pos * 5 + neu * 3 + neg * 1) / total
         else:
-            rating = 0.0
+            # Fallback Logic:
+            # If a pillar is missing from the scan, use baseline minus a slight penalty
+            rating = max(3.5, baseline - 0.2)
             
         result.append({
             "name": name,
@@ -108,7 +136,8 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
             "positive": pos,
             "negative": neg,
             "neutral": neu,
-            "total_mentioned": total
+            "total_mentioned": total,
+            "is_estimated": total == 0
         })
     
     return result

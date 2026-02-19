@@ -245,11 +245,15 @@ class AnalystAgent:
                         })
                 
                 # Prepare Metadata Update
+                # Fetch existing record to ensure we have the latest breakdown for mention generation
+                existing_hotel = self.db.table("hotels").select("sentiment_breakdown, image_url, image_url, rating, reviews").eq("id", hotel_id).single().execute()
+                current_breakdown = existing_hotel.data.get("sentiment_breakdown") or []
+                
                 vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
                 meta_update = {
                     "last_scan": datetime.now().isoformat(),
                     "vendor_source": vendor,
-                    "embedding_status": "current" # Default to current unless pending
+                    "embedding_status": "current" 
                 }
                 if current_price and current_price > 0:
                     meta_update["current_price"] = current_price
@@ -263,12 +267,11 @@ class AnalystAgent:
                         meta_update[key] = val
                 
                 # [NEW] Generate Sentiment Voices (guest_mentions)
-                # This restores the "Sentiment Voices" and "Competitive Vulnerabilities" sections in UI.
-                if "sentiment_breakdown" in meta_update:
-                    raw_breakdown = meta_update["sentiment_breakdown"]
-                    if isinstance(raw_breakdown, list):
-                        meta_update["guest_mentions"] = generate_mentions(raw_breakdown)
-                        reasoning_log.append(f"[Sentiment] Generated {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
+                # Ensure we use the latest breakdown (either from current scan or existing in DB)
+                calc_breakdown = meta_update.get("sentiment_breakdown") or current_breakdown
+                if calc_breakdown:
+                    meta_update["guest_mentions"] = generate_mentions(calc_breakdown)
+                    reasoning_log.append(f"[Sentiment] Refreshed {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
                 
                 # EXPLANATION: Data Reliability Sync
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
