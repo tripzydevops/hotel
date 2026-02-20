@@ -70,6 +70,7 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
 // and ensure library initialization only occurs on the client side.
 const SentimentRadar = dynamic(() => import("@/components/analytics/SentimentRadar").then(m => m.SentimentRadar), { ssr: false });
 const CompetitiveWeakness = dynamic(() => import("@/components/analytics/CompetitiveWeakness").then(m => m.CompetitiveWeakness), { ssr: false });
+const AdvisorQuadrant = dynamic(() => import("@/components/analytics/AdvisorQuadrant"), { ssr: false });
 
 // Radial Progress Component
 const RadialProgress = ({
@@ -315,35 +316,47 @@ const KeywordTag = ({
   count,
   sentiment,
   size = "sm",
+  description,
 }: {
   text: string;
   count?: number;
   sentiment: "positive" | "negative" | "neutral";
   size?: "sm" | "md" | "lg";
+  description?: string;
 }) => {
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs",
+    sm: "px-2 py-1 text-[10px]",
     md: "px-3 py-1 text-sm",
     lg: "px-4 py-2 text-base font-bold",
   };
   const colorClasses = {
-    positive: "bg-green-900/40 text-green-300 border-green-700/50",
-    negative: "bg-red-900/40 text-red-300 border-red-700/50",
-    neutral: "bg-gray-700/40 text-gray-300 border-gray-600/50",
+    positive: "bg-green-900/40 text-green-300 border-green-700/50 hover:bg-green-800/60",
+    negative: "bg-red-900/40 text-red-300 border-red-700/50 hover:bg-red-800/60",
+    neutral: "bg-gray-700/40 text-gray-300 border-gray-600/50 hover:bg-gray-600/60",
   };
 
   return (
-    <span
-      className={`${sizeClasses[size]} ${colorClasses[sentiment]} rounded-lg border`}
-    >
-      {text}{" "}
-      {count &&
-        (sentiment === "positive"
-          ? `+${count}`
-          : sentiment === "negative"
-            ? `-${count}`
-            : "")}
-    </span>
+    <div className="group relative inline-block">
+      <span
+        className={`${sizeClasses[size]} ${colorClasses[sentiment]} rounded-lg border transition-all cursor-help flex items-center gap-1.5`}
+      >
+        {text}
+        <span className="opacity-60 font-mono">
+          {count &&
+            (sentiment === "positive"
+              ? `+${count}`
+              : sentiment === "negative"
+                ? `-${count}`
+                : count)}
+        </span>
+      </span>
+      {description && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-[9px] text-white font-medium italic leading-tight opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+          "{description}"
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90" />
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -428,7 +441,41 @@ export default function SentimentPage() {
     if (idx === 1) return `2${t("sentiment.rankSuffix.nd")}`;
     if (idx === 2) return `3${t("sentiment.rankSuffix.rd")}`;
     return `${idx + 1}${t("sentiment.rankSuffix.th")}`;
-  };
+  // 3. Strategic Map Logic (Advisor Quadrant)
+  const strategicMap = useMemo(() => {
+    if (!targetHotel) return null;
+    
+    // Safety check for pricing data
+    const myPrice = targetHotel.price_info?.current_price || 0;
+    const myRating = targetHotel.rating || 0;
+    
+    // Group all valid competitors for market average
+    const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
+    const avgMarketPrice = validCompetitors.length > 0
+        ? validCompetitors.reduce((sum: number, c: any) => sum + (c.price_info?.current_price || 0), 0) / validCompetitors.length
+        : myPrice;
+        
+    const avgMarketRating = allHotels.length > 0
+        ? allHotels.reduce((sum: number, h: any) => sum + (h.rating || 0), 0) / allHotels.length
+        : myRating;
+    
+    // Calculate Indices (Target 100 as par)
+    const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
+    const sentimentIndex = avgMarketRating > 0 ? (myRating / avgMarketRating) * 100 : 100;
+    
+    // Normalized Coordinates for -50 to 50 grid
+    const x = Math.min(Math.max(sentimentIndex - 100, -50), 50);
+    const y = Math.min(Math.max(ari - 100, -50), 50);
+    
+    // Determine Strategic Cluster
+    let label = "Standard";
+    if (x > 2 && y > 2) label = "Premium King";
+    else if (x > 2 && y < -2) label = "Value Leader";
+    else if (x < -2 && y < -2) label = "Budget / Economy";
+    else if (x < -2 && y > 2) label = "Danger Zone";
+    
+    return { x, y, label, ari, sentiment: sentimentIndex, targetRating: myRating, marketRating: avgMarketRating };
+  }, [targetHotel, competitors, allHotels]);
 
   // Helper to match categories (English + Turkish)
   const getCategoryScore = (hotel: any, category: string, history: any[] = []) => {
@@ -727,7 +774,8 @@ export default function SentimentPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+                {/* Radar Chart */}
                 <div className="h-[300px] w-full">
                   {(() => {
                     const categories = [
@@ -756,7 +804,18 @@ export default function SentimentPage() {
                   })()}
                 </div>
 
-                <div className="space-y-6">
+                {/* Strategic Advisor Quadrant (Price vs Sentiment) */}
+                <div className="lg:block">
+                  {strategicMap && (
+                    <AdvisorQuadrant {...strategicMap} />
+                  )}
+                </div>
+
+                {/* Score Tickers */}
+                <div className="space-y-4">
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 px-1">
+                    Core Metrics
+                  </div>
                   {["Cleanliness", "Service", "Location", "Value"].map(
                     (cat) => (
                       <CategoryBar
@@ -809,6 +868,7 @@ export default function SentimentPage() {
                           count={mention.count}
                           sentiment={mention.sentiment}
                           size="sm"
+                          description={mention.description || mention.text}
                         />
                       );
                     }) || (

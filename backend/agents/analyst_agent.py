@@ -370,40 +370,8 @@ class AnalystAgent:
         pass
 
 
-        # 4. Final Updates and Embedding Synchronization
-        # EXPLANATION: Operational Resilience & Timeout Protection
-        # We wrap embedding generation in a 10s timeout. If the AI provider is slow,
-        # we don't block the entire analysis. Instead, we mark the specific hotel as
-        # 'failed' and move on, reporting it in the 'partial_failures' list.
-        analysis_summary["partial_failures"] = []
-        
-        for res in scraper_results:
-            hotel_id = res.get("hotel_id")
-            if not hotel_id or res.get("status") != "success":
-                continue
-            
-            price_data = res.get("price_data", {})
-            sentiment_changed = "reviews_breakdown" in price_data
-            
-            if sentiment_changed:
-                try:
-                    # Wrapped with timeout to prevent hung external calls
-                    success = await asyncio.wait_for(
-                        self._update_sentiment_embedding(hotel_id, price_data),
-                        timeout=10.0
-                    )
-                    if success:
-                        self.db.table("hotels").update({"embedding_status": "current"}).eq("id", hotel_id).execute()
-                    else:
-                        analysis_summary["partial_failures"].append({"hotel_id": hotel_id, "error": "Embedding generation failed"})
-                        self.db.table("hotels").update({"embedding_status": "failed"}).eq("id", hotel_id).execute()
-                except asyncio.TimeoutError:
-                    print(f"[AnalystAgent] Timeout during embedding for {hotel_id}")
-                    analysis_summary["partial_failures"].append({"hotel_id": hotel_id, "error": "Embedding timeout"})
-                    self.db.table("hotels").update({"embedding_status": "failed"}).eq("id", hotel_id).execute()
-                except Exception as e:
-                    print(f"[AnalystAgent] Unexpected error during embedding for {hotel_id}: {e}")
-                    analysis_summary["partial_failures"].append({"hotel_id": hotel_id, "error": str(e)})
+        # [REMOVED] Redundant embedding loop. 
+        # Embeddings are now handled within the main loop for atomic consistency.
 
         # Final Cleanup
         analysis_summary["reasoning"] = reasoning_log
@@ -722,7 +690,16 @@ class AnalystAgent:
             reviews = hotel.get("reviews") or []
             
             stats_text = ""
-            if isinstance(breakdown, dict):
+            if isinstance(breakdown, list):
+                parts = []
+                for item in breakdown[:10]: # Top 10 categories
+                    name = item.get("name") or item.get("display_name")
+                    pos = item.get("positive", 0)
+                    neg = item.get("negative", 0)
+                    if name:
+                        parts.append(f"{name}: +{pos}/-{neg}")
+                stats_text = ", ".join(parts)
+            elif isinstance(breakdown, dict):
                 parts = []
                 for k, v in breakdown.items():
                     if isinstance(v, (int, float)):

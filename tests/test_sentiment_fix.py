@@ -1,50 +1,84 @@
-import sys
-import os
+from backend.utils.sentiment_utils import merge_sentiment_breakdowns, normalize_sentiment
 
-# Add backend to path
-sys.path.append(os.getcwd())
-
-from backend.services.analysis_service import _normalize_sentiment, _generate_mentions
-
-# Mock data from Ramada Residences
-ramada_breakdown = [
-  {
-    "name": "Dining",
-    "description": "Food and Beverage",
-    "positive": 16,
-    "total_mentioned": 29
-  },
-  {
-    "name": "Bar",
-    "description": "Bar or lounge",
-    "positive": 7,
-    "total_mentioned": 13
-  },
-  {
-    "name": "Hizmet",
-    "description": "Service",
-    "positive": 74,
-    "negative": 20,
-    "neutral": 6,
-    "total_mentioned": 100
-  }
-]
-
-def test_normalization():
-    print("--- TESTING RAMADA ---")
-    norm_ramada = _normalize_sentiment(ramada_breakdown)
-    pillars = [n["name"] for n in norm_ramada if n.get("is_inferred")]
-    print(f"Original categories: {[n['name'] for n in ramada_breakdown]}")
-    print(f"Inferred pillars: {pillars}")
+def test_merge_preserves_description():
+    existing = [
+        {
+            "name": "Service",
+            "positive": 5,
+            "negative": 1,
+            "neutral": 0,
+            "total_mentioned": 6,
+            "rating": 4.5,
+            "description": "Old service description"
+        }
+    ]
     
-    print("\n--- TESTING MENTIONS (VOICES) ---")
-    mentions = _generate_mentions(ramada_breakdown)
-    print(f"Synthesized Mentions: {mentions[:3]}")
+    new = [
+        {
+            "name": "Service",
+            "positive": 2,
+            "negative": 0,
+            "neutral": 1,
+            "total_mentioned": 3,
+            "rating": 4.8,
+            "description": "New service description",
+            "summary": "Great service summary"
+        },
+        {
+            "name": "Cleanliness",
+            "positive": 10,
+            "negative": 0,
+            "neutral": 0,
+            "total_mentioned": 10,
+            "rating": 5.0,
+            "description": "Sparkling clean"
+        }
+    ]
     
-    # Check for Hizmet mapping
-    hizmet = next((m for m in mentions if m["keyword"] == "Hizmet"), None)
-    if hizmet:
-        print(f"SUCCESS: Found Hizmet Voice: {hizmet}")
+    merged = merge_sentiment_breakdowns(existing, new)
+    
+    # Check Service
+    service = next(item for item in merged if item["name"] == "Service")
+    assert service["total_mentioned"] == 9
+    assert service["description"] == "New service description"
+    assert service["summary"] == "Great service summary"
+    
+    # Check Cleanliness
+    clean = next(item for item in merged if item["name"] == "Cleanliness")
+    assert clean["description"] == "Sparkling clean"
+    
+    print("Merge test passed!")
+
+def test_normalize_preserves_description():
+    raw = [
+        {
+            "name": "Hizmet",
+            "positive": 10,
+            "negative": 0,
+            "neutral": 0,
+            "total_mentioned": 10,
+            "description": "Hizmet harika"
+        },
+        {
+            "name": "Temizlik",
+            "positive": 5,
+            "negative": 0,
+            "neutral": 0,
+            "total_mentioned": 5,
+            "description": "Oda temizdi"
+        }
+    ]
+    
+    normalized = normalize_sentiment(raw)
+    
+    service = next(item for item in normalized if item["name"] == "Service")
+    assert service["description"] == "Hizmet harika"
+    
+    clean = next(item for item in normalized if item["name"] == "Cleanliness")
+    assert clean["description"] == "Oda temizdi"
+    
+    print("Normalization test passed!")
 
 if __name__ == "__main__":
-    test_normalization()
+    test_merge_preserves_description()
+    test_normalize_preserves_description()

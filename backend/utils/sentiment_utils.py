@@ -96,6 +96,14 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
                 pillars[pillar]["negative"] += neg
                 pillars[pillar]["neutral"] += neu
                 pillars[pillar]["total"] += total
+                
+                # KAİZEN: Picking the best description for the pillar
+                # We prioritize the description from the category with the most mentions
+                current_description = item.get("description") or item.get("summary")
+                if current_description and (not pillars[pillar].get("description") or total > pillars[pillar].get("_max_total", 0)):
+                    pillars[pillar]["description"] = current_description
+                    pillars[pillar]["_max_total"] = total
+                
                 found_pillars.add(pillar)
                 mapped = True
                 break
@@ -137,6 +145,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
             "negative": neg,
             "neutral": neu,
             "total_mentioned": total,
+            "description": stats.get("description"), # KAİZEN: Preserve description
             "is_estimated": total == 0
         })
     
@@ -296,6 +305,14 @@ def merge_sentiment_breakdowns(existing: List[Dict[str, Any]], new: List[Dict[st
             entry["negative"] += int(item.get("negative") or 0)
             entry["neutral"] += int(item.get("neutral") or 0)
             entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
+            
+            # KAİZEN: Smart Content Merge
+            # We prefer descriptions from new scans but keep old ones if new is missing
+            if item.get("description"):
+                entry["description"] = item["description"]
+            if item.get("summary"):
+                entry["summary"] = item["summary"]
+                
             # Weighted rating update (if total > 0)
             new_rating = float(item.get("rating") or 0)
             if entry["total_mentioned"] > 0 and new_rating > 0:
@@ -309,7 +326,9 @@ def merge_sentiment_breakdowns(existing: List[Dict[str, Any]], new: List[Dict[st
                 "negative": int(item.get("negative") or 0),
                 "neutral": int(item.get("neutral") or 0),
                 "total_mentioned": int(item.get("total_mentioned") or 0),
-                "rating": float(item.get("rating") or 0)
+                "rating": float(item.get("rating") or 0),
+                "description": item.get("description"),
+                "summary": item.get("summary")
             }
 
     # 3. Clean up and sort
