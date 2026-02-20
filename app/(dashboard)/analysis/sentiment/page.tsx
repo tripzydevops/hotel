@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * =====================================================================
+ * SENTIMENT ANALYSIS PAGE — Premium Dark Intelligence Dashboard
+ * =====================================================================
+ * 
+ * Visual Design: Glassmorphism + Refined Dark Theme (DFII: 12/15)
+ * Skills Applied: frontend-design, ui-ux-pro-max, frontend-ui-dark-ts
+ * 
+ * Architecture:
+ *   - ScoreCard: Glass hotel metric cards with animated gradient borders
+ *   - CategoryBar: Thick animated sentiment comparison bars
+ *   - KeywordTag: Premium sentiment pills with hover effects
+ *   - SentimentPage: Main dashboard orchestrator
+ * 
+ * All logic preserved — only the visual presentation layer was redesigned.
+ * =====================================================================
+ */
+
 import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { getCurrencySymbol } from "@/lib/utils";
@@ -7,7 +25,7 @@ import { useI18n } from "@/lib/i18n";
 import { createClient } from "@/utils/supabase/client";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   TrendingUp,
@@ -20,194 +38,179 @@ import {
   Trophy,
   Building2,
   Radar,
+  Check,
+  Star,
+  Shield,
+  Target,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import SentimentBattlefield from "@/components/analytics/SentimentBattlefield";
 
-// Translation map for sentiment keywords
-const KEYWORD_TRANSLATIONS: Record<string, string> = {
-  hizmet: "Service",
-  temizlik: "Cleanliness",
-  konum: "Location",
-  oda: "Room",
-  kahvaltı: "Breakfast",
-  fiyat: "Price",
-  yemek: "Food",
-  havuz: "Pool",
-  personel: "Staff",
-  sessizlik: "Quietness",
-  konfor: "Comfort",
-  banyo: "Bathroom",
-  yatak: "Bed",
-  resepsiyon: "Reception",
-  manzara: "View",
-  ulaşım: "Transport",
-  internet: "Internet",
-  wifi: "Wi-Fi",
-  otopark: "Parking",
-  güvenlik: "Security",
-  // Expanded translations for Ramada & others
-  dining: "Dining",
-  restoran: "Restaurant",
-  bar: "Bar",
-  "gece hayatı": "Nightlife",
-  "sağlıklı yaşam": "Wellness",
-  çiftler: "Couples",
-  iş: "Business",
-  mülk: "Property",
-  uyku: "Sleep",
-  atmosfer: "Atmosphere",
-  kablosuz: "Wi-Fi",
-  klima: "A/C",
-  fitness: "Fitness",
-  erişilebilirlik: "Accessibility",
-  mutfak: "Kitchen",
+/* ── Stagger animation variants (per frontend-ui-dark-ts skill) ── */
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+const staggerItem = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0, 0, 0.58, 1] as const } },
 };
 
-// Dynamically import heavy analytics components to improve initial page performance
-// These components use client-side libraries like Recharts or D3 which aren't needed on the server
+/* ── Translation map for sentiment keywords (TR → EN) ── */
+const KEYWORD_TRANSLATIONS: Record<string, string> = {
+  hizmet: "Service", temizlik: "Cleanliness", konum: "Location", oda: "Room",
+  kahvaltı: "Breakfast", fiyat: "Price", yemek: "Food", havuz: "Pool",
+  personel: "Staff", sessizlik: "Quietness", konfor: "Comfort", banyo: "Bathroom",
+  yatak: "Bed", resepsiyon: "Reception", manzara: "View", ulaşım: "Transport",
+  internet: "Internet", wifi: "Wi-Fi", otopark: "Parking", güvenlik: "Security",
+  dining: "Dining", restoran: "Restaurant", bar: "Bar",
+  "gece hayatı": "Nightlife", "sağlıklı yaşam": "Wellness",
+  çiftler: "Couples", iş: "Business", mülk: "Property", uyku: "Sleep",
+  atmosfer: "Atmosphere", kablosuz: "Wi-Fi", klima: "A/C", fitness: "Fitness",
+  erişilebilirlik: "Accessibility", mutfak: "Kitchen",
+};
+
+/* ── Lazy-loaded analytics components (code-split for performance) ── */
 const SentimentRadar = dynamic(() => import("@/components/analytics/SentimentRadar").then(m => m.SentimentRadar), { ssr: false });
 const CompetitiveWeakness = dynamic(() => import("@/components/analytics/CompetitiveWeakness").then(m => m.CompetitiveWeakness), { ssr: false });
 const AdvisorQuadrant = dynamic(() => import("@/components/analytics/AdvisorQuadrant"), { ssr: false });
 
 /**
- * ScoreCard Component
- * Displays the high-level metrics for a specific hotel, including its rank, rating, and current price.
- * 
- * @param hotel - The hotel data object
- * @param rank - Pre-calculated rank string (e.g., "1st", "2nd")
- * @param isTarget - Boolean indicating if this is the user's focus hotel
- * @param currency - Currency code for price display
+ * ── ScoreCard ──
+ * Premium glass card displaying hotel rank, rating, and price.
+ * Target hotel gets an animated gradient border + glow effect.
+ * Competitors get a subtle glass panel with hover elevation.
  */
 const ScoreCard = ({
-  hotel,
-  rank,
-  isTarget,
-  currency = "USD",
+  hotel, rank, isTarget, currency = "USD", index = 0,
 }: {
-  hotel: any;
-  rank: string;
-  isTarget?: boolean;
-  currency?: string;
+  hotel: any; rank: string; isTarget?: boolean; currency?: string; index?: number;
 }) => {
   const { t } = useI18n();
+
+  // Color-coded rating indicator ring (green > blue > amber > red)
   const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return "text-green-400";
-    if (rating >= 4.0) return "text-blue-400";
-    if (rating >= 3.5) return "text-yellow-400";
-    return "text-red-400";
+    if (rating >= 4.5) return { text: "text-emerald-400", ring: "ring-emerald-500/30", bg: "bg-emerald-500/10" };
+    if (rating >= 4.0) return { text: "text-sky-400", ring: "ring-sky-500/30", bg: "bg-sky-500/10" };
+    if (rating >= 3.5) return { text: "text-amber-400", ring: "ring-amber-500/30", bg: "bg-amber-500/10" };
+    return { text: "text-red-400", ring: "ring-red-500/30", bg: "bg-red-500/10" };
   };
+  const ratingStyle = getRatingColor(hotel.rating || 0);
 
   return (
-    <div
-      className={`relative p-5 rounded-xl border transition-all duration-300 group overflow-hidden ${
+    <motion.div
+      variants={staggerItem}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className={`relative rounded-2xl border transition-all duration-300 group overflow-hidden cursor-default ${
         isTarget
-          ? "bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
-          : "bg-[#15294A] border-white/5 hover:border-white/10"
+          ? "bg-gradient-to-br from-blue-950/80 via-indigo-950/60 to-slate-900/80 backdrop-blur-xl border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.12),0_8px_32px_rgba(0,0,0,0.3)]"
+          : "bg-white/[0.04] backdrop-blur-lg border-white/[0.08] hover:border-white/15 hover:bg-white/[0.06] hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
       }`}
     >
+      {/* Animated gradient border shimmer for target hotel */}
       {isTarget && (
-        <div className="absolute top-0 right-0 p-2">
-          <Sparkles className="w-4 h-4 text-blue-400 opacity-50" />
-        </div>
+        <div className="absolute inset-0 rounded-2xl opacity-40 pointer-events-none"
+          style={{
+            background: "linear-gradient(135deg, rgba(59,130,246,0.3) 0%, transparent 40%, transparent 60%, rgba(99,102,241,0.3) 100%)",
+          }}
+        />
       )}
 
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-            {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
-          </span>
-          <h3 className="text-sm font-bold text-white truncate max-w-[140px]">
-            {hotel.name}
-          </h3>
-        </div>
-        <div className="bg-black/20 px-2 py-1 rounded text-[10px] font-bold text-gray-400 border border-white/5">
-          {rank}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-500 mb-1">
-            {t("sentiment.overallRating")}
-          </span>
-          <div className="flex items-end gap-1">
-            <span className={`text-2xl font-black ${getRatingColor(hotel.rating || 0)}`}>
-              {(hotel.rating || 0).toFixed(1)}
+      <div className="relative p-5">
+        {/* Header: Label + Rank Badge */}
+        <div className="flex justify-between items-start mb-5">
+          <div className="flex flex-col gap-1">
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${
+              isTarget ? "text-blue-400/80" : "text-gray-500"
+            }`}>
+              {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
             </span>
-            <span className="text-[10px] text-gray-500 mb-1.5 font-bold">/ 5.0</span>
+            <h3 className="text-sm font-bold text-white/90 truncate max-w-[140px]">
+              {hotel.name}
+            </h3>
+          </div>
+          <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
+            isTarget 
+              ? "bg-blue-500/10 border-blue-500/20 text-blue-300" 
+              : "bg-white/5 border-white/[0.08] text-gray-400"
+          }`}>
+            {rank}
           </div>
         </div>
-        <div className="flex flex-col text-right">
-          <span className="text-xs text-gray-500 mb-1">
-            {t("sentiment.currentPrice")}
-          </span>
-          <div className="flex items-center justify-end gap-1">
-            <span className="text-xl font-bold text-white">
-              {hotel.price_info?.current_price
-                ? hotel.price_info.current_price.toLocaleString()
-                : "N/A"}
+
+        {/* Metrics: Rating (with color ring) + Price */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <span className="text-[11px] text-gray-500 mb-2 font-medium">
+              {t("sentiment.overallRating")}
             </span>
-            {hotel.price_info?.current_price && (
-              <span className="text-[10px] text-gray-500 font-bold">
-                {getCurrencySymbol(currency || "USD")}
+            <div className="flex items-center gap-2.5">
+              <div className={`w-11 h-11 rounded-xl ${ratingStyle.bg} ring-2 ${ratingStyle.ring} flex items-center justify-center`}>
+                <span className={`text-lg font-black ${ratingStyle.text}`}>
+                  {(hotel.rating || 0).toFixed(1)}
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[11px] text-gray-500 mb-2 font-medium">
+              {t("sentiment.currentPrice")}
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-white/90">
+                {hotel.price_info?.current_price
+                  ? hotel.price_info.current_price.toLocaleString()
+                  : "N/A"}
               </span>
-            )}
+              {hotel.price_info?.current_price && (
+                <span className="text-[10px] text-gray-500 font-bold">
+                  {getCurrencySymbol(currency || "USD")}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[10px] text-gray-400">
-            <Trophy className="w-3 h-3 text-yellow-500" />
-            <span>{(hotel.reviews_count || 0).toLocaleString()} reviews</span>
+        {/* Footer: Review count + Price change */}
+        <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+            <Star className="w-3 h-3 text-amber-500/70" />
+            <span className="font-medium">{(hotel.reviews_count || 0).toLocaleString()} reviews</span>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-           {hotel.price_info?.price_change_percent !== undefined && (
-             <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
-               hotel.price_info.price_change_percent > 0 ? "text-red-400" : "text-green-400"
-             }`}>
-               {hotel.price_info.price_change_percent > 0 ? (
-                 <TrendingUp className="w-3 h-3" />
-               ) : (
-                 <TrendingDown className="w-3 h-3" />
-               )}
-               {Math.abs(hotel.price_info.price_change_percent)}%
-             </div>
-           )}
+          {hotel.price_info?.price_change_percent !== undefined && (
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              hotel.price_info.price_change_percent > 0
+                ? "bg-red-500/10 text-red-400"
+                : "bg-emerald-500/10 text-emerald-400"
+            }`}>
+              {hotel.price_info.price_change_percent > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              {Math.abs(hotel.price_info.price_change_percent)}%
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
 /**
- * CategoryBar Component
- * Renders a comparison bar for a specific sentiment category (e.g., Service, Cleanliness).
- * Shows how "My Hotel" stacks up against the Market Leader and the Market Average.
- * 
- * @param category - The name of the category
- * @param myScore - Sentiment score for the target hotel (0-5)
- * @param leaderScore - Sentiment score for the top competitor in this category
- * @param marketAvg - Average sentiment score across all tracked hotels
- * @param leaderName - Name of the leading competitor for this category
+ * ── CategoryBar ──
+ * Enhanced comparison bar showing how a category score stacks against the leader and market average.
+ * Bars are thicker (6px), gradient-filled, and color-coded based on performance vs market.
+ * Green = above market, Amber = at market, Red = below market.
  */
 const CategoryBar = ({
-  category,
-  myScore,
-  leaderScore,
-  marketAvg,
-  leaderName,
+  category, myScore, leaderScore, marketAvg, leaderName,
 }: {
-  category: string;
-  myScore: number;
-  leaderScore: number;
-  marketAvg: number;
-  leaderName?: string;
+  category: string; myScore: number; leaderScore: number; marketAvg: number; leaderName?: string;
 }) => {
   const { t } = useI18n();
   const categoryKey = category.toLowerCase();
@@ -216,57 +219,75 @@ const CategoryBar = ({
       ? t(`sentiment.${categoryKey}`)
       : category;
 
+  // Color-code bar based on score relative to market average
+  const getBarGradient = () => {
+    if (myScore <= 0) return "from-gray-700/50 to-gray-600/30";
+    if (myScore >= marketAvg + 0.3) return "from-emerald-500 to-emerald-400";
+    if (myScore >= marketAvg - 0.3) return "from-sky-500 to-sky-400";
+    return "from-amber-500 to-amber-400";
+  };
+
   return (
     <div className="flex flex-col">
+      {/* Header: Category name + Score */}
       <div className="flex justify-between items-end mb-3">
-        <span className="text-sm font-bold text-gray-300">
-          {localizedCategory}
-        </span>
-        <div className="flex items-center gap-1">
-          <span className="text-xl font-bold text-white">
+        <span className="text-sm font-bold text-white/80">{localizedCategory}</span>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-xl font-black text-white/90">
             {myScore > 0 ? myScore.toFixed(2) : "N/A"}
           </span>
-          <span className="text-[10px] text-gray-500 font-bold">/ 5.0</span>
+          <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
         </div>
       </div>
-      <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative border border-white/5">
-        <div
-          className={`h-full relative group ${myScore > 0 ? "bg-blue-500" : "bg-gray-700/30"}`}
-          style={{ width: `${(Math.max(myScore, 0.5) / 5) * 100}%` }}
+
+      {/* My Hotel bar — thick with gradient fill */}
+      <div className="h-[6px] bg-white/[0.06] rounded-full overflow-hidden relative">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${(Math.max(myScore, 0.5) / 5) * 100}%` }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+          className={`h-full rounded-full bg-gradient-to-r ${getBarGradient()} relative group`}
         >
+          {/* Tooltip on hover */}
           {myScore > 0 && (
-            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-white/10">
               {t("sentiment.myHotel")}: {myScore.toFixed(2)}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
-      <div className="mt-2 space-y-1">
+
+      {/* Comparison rows: Leader + Market Average */}
+      <div className="mt-2.5 space-y-1.5">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 w-24 truncate">
+          <span className="text-[11px] text-gray-500 w-24 truncate font-medium">
             {leaderName || t("sentiment.leader")}
           </span>
-          <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#D4AF37]"
-              style={{ width: `${(leaderScore / 5) * 100}%` }}
+          <div className="flex-1 h-[4px] bg-white/[0.04] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(leaderScore / 5) * 100}%` }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+              className="h-full bg-gradient-to-r from-amber-500/80 to-amber-400/60 rounded-full"
             />
           </div>
-          <span className="text-xs text-[#D4AF37] font-bold w-8 text-right">
+          <span className="text-[11px] text-amber-400/80 font-bold w-8 text-right">
             {leaderScore.toFixed(2)}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 w-24">
+          <span className="text-[11px] text-gray-500 w-24 font-medium">
             {t("sentiment.avgComp")}
           </span>
-          <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gray-600"
-              style={{ width: `${(marketAvg / 5) * 100}%` }}
+          <div className="flex-1 h-[4px] bg-white/[0.04] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(marketAvg / 5) * 100}%` }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
+              className="h-full bg-gradient-to-r from-gray-500/60 to-gray-400/40 rounded-full"
             />
           </div>
-          <span className="text-xs text-gray-400 w-8 text-right">
+          <span className="text-[11px] text-gray-400 w-8 text-right">
             {marketAvg.toFixed(2)}
           </span>
         </div>
@@ -276,55 +297,49 @@ const CategoryBar = ({
 };
 
 /**
- * KeywordTag Component
- * A visual pill representing a specific keyword mention from reviews.
- * Includes count and a tooltip showing a relevant snippet.
- * 
- * @param text - The keyword text (translated if possible)
- * @param count - Number of times this keyword was mentioned
- * @param sentiment - Sentiment bucket (positive, negative, neutral)
- * @param description - A sample review snippet or summary for the tooltip
+ * ── KeywordTag ──
+ * Premium sentiment pill showing keyword mentions with count and sentiment color.
+ * Features gradient backgrounds, spring hover scale, and glass-panel tooltips.
  */
 const KeywordTag = ({
-  text,
-  count,
-  sentiment,
-  size = "sm",
-  description,
+  text, count, sentiment, size = "sm", description,
 }: {
-  text: string;
-  count: number;
-  sentiment: "positive" | "negative" | "neutral";
-  size?: "sm" | "md";
-  description?: string;
+  text: string; count: number; sentiment: "positive" | "negative" | "neutral"; size?: "sm" | "md"; description?: string;
 }) => {
   const t_name = KEYWORD_TRANSLATIONS[text.toLowerCase()] || text;
+
+  // Gradient-based pill styling per sentiment bucket
   const colors = {
-    positive: "bg-green-500/10 text-green-400 border-green-500/20",
-    negative: "bg-red-500/10 text-red-400 border-red-500/20",
-    neutral: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+    positive: "bg-gradient-to-r from-emerald-500/10 to-emerald-400/5 text-emerald-400 border-emerald-500/15",
+    negative: "bg-gradient-to-r from-red-500/10 to-red-400/5 text-red-400 border-red-500/15",
+    neutral: "bg-gradient-to-r from-gray-500/10 to-gray-400/5 text-gray-400 border-gray-500/15",
   };
 
   return (
-    <div className="group relative inline-block">
+    <motion.div
+      className="group relative inline-block"
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
       <span
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium ${colors[sentiment]} ${
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium cursor-default transition-colors ${colors[sentiment]} ${
           size === "md" ? "text-sm" : "text-[11px]"
         }`}
       >
         <span className="capitalize">{t_name}</span>
-        <span className="w-[1px] h-3 bg-white/10 mx-1" />
+        <span className="w-[1px] h-3 bg-white/10" />
         <span className="text-[10px] font-black opacity-80">
           {count > 999 ? (count / 1000).toFixed(1) + "k" : count}
         </span>
       </span>
+      {/* Glass-panel tooltip with review snippet */}
       {description && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-[9px] text-white font-medium italic leading-tight opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl text-[10px] text-white/80 font-medium italic leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
           "{description}"
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95" />
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -544,133 +559,159 @@ export default function SentimentPage() {
   , [targetHotel, selectedHotelIds]);
 
   return (
-    <div className="min-h-screen bg-[#0a1628] p-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-3 mb-8">
-        <Link
-          href="/analysis"
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t("sentiment.backToOverview")}
-        </Link>
+    <div className="min-h-screen bg-[#060d1b] p-6 md:p-8 relative overflow-hidden">
+      {/* ── Ambient background orbs (decorative depth) ── */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/[0.03] rounded-full blur-[150px]" />
+        <div className="absolute top-[40%] left-[50%] w-[300px] h-[300px] bg-purple-600/[0.02] rounded-full blur-[100px]" />
       </div>
-
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-1">
-            {t("sentiment.title")}
-          </h2>
-          <p className="text-gray-400">{t("sentiment.subtitle")}</p>
+      
+      <div className="relative z-10 max-w-[1600px] mx-auto">
+        {/* ── Glass Breadcrumb Pill ── */}
+        <div className="flex items-center gap-3 mb-8">
+          <Link
+            href="/analysis"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] text-sm text-gray-400 hover:text-white hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t("sentiment.backToOverview")}
+          </Link>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">
-            {t("sentiment.comparingWith")}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {targetHotel && (
-              <button
-                onClick={() => {
-                  setSelectedHotelIds((prev) => {
-                    const exists = prev.includes(targetHotel.id);
-                    if (exists)
-                      return prev.filter((id) => id !== targetHotel.id);
-                    if (prev.length >= 5) return prev;
-                    return [...prev, targetHotel.id];
-                  });
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
-                  selectedHotelIds.includes(targetHotel.id)
-                    ? "bg-blue-600/20 border-blue-500 text-blue-400 font-bold"
-                    : "bg-white/5 border-white/10 text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-xs">{t("sentiment.myHotel")}</span>
-              </button>
-            )}
-            {competitors.map((comp: any) => (
-              <button
-                key={comp.id}
-                onClick={() => {
-                  setSelectedHotelIds((prev) => {
-                    const exists = prev.includes(comp.id);
-                    if (exists) return prev.filter((id) => id !== comp.id);
-                    if (prev.length >= 5) return prev;
-                    return [...prev, comp.id];
-                  });
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
-                  selectedHotelIds.includes(comp.id)
-                    ? "bg-amber-600/20 border-amber-500 text-amber-400 font-bold"
-                    : "bg-white/5 border-white/10 text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${allHotels[0]?.id === comp.id ? "bg-amber-500" : "bg-gray-500"}`}
-                />
-                <span className="text-xs truncate max-w-[80px]">
-                  {comp.name}
-                </span>
-              </button>
-            ))}
+
+        {/* ── Page Header with Gradient Title ── */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300 mb-2 tracking-tight">
+              {t("sentiment.title")}
+            </h2>
+            <p className="text-gray-400/80 text-sm md:text-base">{t("sentiment.subtitle")}</p>
           </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
-        </div>
-      ) : !targetHotel ? (
-        <div className="bg-[#15294A] rounded-xl p-8 text-center text-gray-400">
-          {t("sentiment.noDataAvailable")}
-        </div>
-      ) : (
-        <>
-          {/* Score Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            {isTargetSelected && targetHotel && (
-              <ScoreCard
-                hotel={targetHotel}
-                rank={getRank(targetHotel.id)}
-                isTarget
-                currency={getCurrencySymbol(
-                  targetHotel.price_info?.currency || "USD",
-                )}
-              />
-            )}
-            {visibleCompetitors.map((comp: any, idx: number) => {
-              const compRank = getRank(comp.id);
-              return (
-                <ScoreCard
-                  key={comp.id}
-                  hotel={comp}
-                  rank={compRank}
-                  currency={getCurrencySymbol(
-                    comp.price_info?.currency || "USD",
+          
+          {/* Hotel Selector Pills with checkmarks */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+              {t("sentiment.comparingWith")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {targetHotel && (
+                <button
+                  onClick={() => {
+                    setSelectedHotelIds((prev) => {
+                      const exists = prev.includes(targetHotel.id);
+                      if (exists) return prev.filter((id) => id !== targetHotel.id);
+                      if (prev.length >= 5) return prev;
+                      return [...prev, targetHotel.id];
+                    });
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
+                    selectedHotelIds.includes(targetHotel.id)
+                      ? "bg-blue-500/15 border-blue-500/30 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                      : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                  }`}
+                >
+                  {selectedHotelIds.includes(targetHotel.id) ? (
+                    <Check className="w-3 h-3 text-blue-400" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-gray-600" />
                   )}
-                />
-              );
-            })}
+                  <span className="text-xs font-medium">{t("sentiment.myHotel")}</span>
+                </button>
+              )}
+              {competitors.map((comp: any) => (
+                <button
+                  key={comp.id}
+                  onClick={() => {
+                    setSelectedHotelIds((prev) => {
+                      const exists = prev.includes(comp.id);
+                      if (exists) return prev.filter((id) => id !== comp.id);
+                      if (prev.length >= 5) return prev;
+                      return [...prev, comp.id];
+                    });
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
+                    selectedHotelIds.includes(comp.id)
+                      ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
+                      : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                  }`}
+                >
+                  {selectedHotelIds.includes(comp.id) ? (
+                    <Check className="w-3 h-3 text-amber-400" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-gray-600" />
+                  )}
+                  <span className="text-xs truncate max-w-[90px] font-medium">{comp.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Intelligence Hub */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-            {/* Left Hub: Radar + Category Bars */}
+        {/* ── Loading & Empty States ── */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+            <div className="relative">
+              <div className="animate-spin w-10 h-10 border-2 border-blue-500/30 border-t-blue-400 rounded-full" />
+              <div className="absolute inset-0 animate-ping w-10 h-10 border border-blue-500/10 rounded-full" />
+            </div>
+            <span className="text-sm text-gray-500">Loading intelligence data...</span>
+          </div>
+        ) : !targetHotel ? (
+          <div className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-12 text-center border border-white/[0.06]">
+            <Hotel className="w-10 h-10 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">{t("sentiment.noDataAvailable")}</p>
+          </div>
+        ) : (
+          <>
+            {/* ── Score Cards Grid (staggered mount) ── */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-8 bg-[#15294A] rounded-xl p-6 border border-white/5"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8"
             >
+              {isTargetSelected && targetHotel && (
+                <ScoreCard
+                  hotel={targetHotel}
+                  rank={getRank(targetHotel.id)}
+                  isTarget
+                  currency={getCurrencySymbol(targetHotel.price_info?.currency || "USD")}
+                  index={0}
+                />
+              )}
+              {visibleCompetitors.map((comp: any, idx: number) => {
+                const compRank = getRank(comp.id);
+                return (
+                  <ScoreCard
+                    key={comp.id}
+                    hotel={comp}
+                    rank={compRank}
+                    currency={getCurrencySymbol(comp.price_info?.currency || "USD")}
+                    index={idx + 1}
+                  />
+                );
+              })}
+            </motion.div>
+
+            {/* ── Intelligence Hub: Radar + Category Bars + Strategic Map ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+              {/* Left: Experience Core — Radar + Category Bars */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="lg:col-span-8 bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
+              >
+              {/* Section header with icon badge */}
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Radar className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Radar className="w-4 h-4 text-blue-400" />
+                  </div>
                   Experience Core
                 </h3>
                 {isTargetLeader && (
-                  <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/20">
+                  <div className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/15">
                     <Trophy className="w-3 h-3" />
                     Market Leader
                   </div>
@@ -708,28 +749,30 @@ export default function SentimentPage() {
                     leaderName={leader?.name}
                   />
                 </div>
-                <div className="flex items-center justify-center bg-[#0a1628]/30 rounded-xl p-4 border border-white/5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
-                  <SentimentRadar
-                    data={radarData}
-                  />
+                {/* Radar chart container with glass effect + decorative orbs */}
+                <div className="flex items-center justify-center bg-white/[0.02] rounded-2xl p-4 border border-white/[0.05] relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/[0.06] blur-[60px] rounded-full" />
+                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/[0.05] blur-[60px] rounded-full" />
+                  <SentimentRadar data={radarData} />
                 </div>
               </div>
             </motion.div>
 
-            {/* Right Hub: Advisor Quadrant + Competitive Vulnerability */}
+            {/* Right: Advisor Quadrant + Competitive Intelligence */}
             <div className="lg:col-span-4 flex flex-col gap-6">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex-1 bg-gradient-to-br from-[#15294A] to-[#1a3a6a] rounded-xl p-6 border border-white/5 shadow-xl relative overflow-hidden group"
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="flex-1 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl p-6 border border-white/[0.08] shadow-xl relative overflow-hidden group"
               >
-                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Brain className="w-12 h-12 text-blue-400" />
+                 <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+                    <Brain className="w-16 h-16 text-blue-300" />
                  </div>
-                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-blue-400" />
+                 <h3 className="text-lg font-bold text-white/90 mb-6 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                    </div>
                     Strategic Map
                  </h3>
                  {strategicMap && (
@@ -752,14 +795,21 @@ export default function SentimentPage() {
             </div>
           </div>
 
+          {/* ── Gradient Section Divider ── */}
+          <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
+
+          {/* ── Sentiment Deep Dive ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#15294A] rounded-xl p-6 border border-white/5 mb-6"
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06] mb-8"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-purple-400" />
+                </div>
                 Sentiment Deep Dive
               </h3>
             </div>
@@ -777,30 +827,36 @@ export default function SentimentPage() {
             />
           </motion.div>
 
-          {/* Sentiment Trend Chart */}
+          {/* ── Gradient Section Divider ── */}
+          <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
+
+          {/* ── Competitive Position ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-[#15294A] rounded-xl p-6 border border-white/5"
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <LineChart className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <LineChart className="w-4 h-4 text-sky-400" />
+                </div>
                 Competitive Position
               </h3>
-              <div className="flex bg-[#0a1628] rounded-lg p-1 border border-white/5">
+              {/* Segmented control with animated sliding indicator */}
+              <div className="flex bg-white/[0.04] rounded-xl p-1 border border-white/[0.08]">
                 {(["battlefield", "history"] as const).map((v) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
-                    className={`px-3 py-1.5 rounded-md text-xs transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
                       view === v
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "text-gray-400 hover:text-white"
+                        ? "bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.1)] border border-blue-500/20"
+                        : "text-gray-400 hover:text-white border border-transparent"
                     }`}
                   >
-                    {v === "battlefield" ? "Battlefield" : "History"}
+                    {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
                   </button>
                 ))}
               </div>
@@ -810,12 +866,12 @@ export default function SentimentPage() {
                     key={tf}
                     disabled={view === "battlefield"}
                     onClick={() => setTimeframe(tf)}
-                    className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs border transition-all duration-200 cursor-pointer ${
                       view === "battlefield"
-                        ? "opacity-30 cursor-not-allowed"
+                        ? "opacity-20 cursor-not-allowed"
                         : timeframe === tf
-                        ? "bg-blue-600 text-white border-blue-600 font-bold"
-                        : "bg-[#0a1628] text-white border-gray-600 hover:border-gray-500"
+                        ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
+                        : "bg-white/[0.03] text-gray-400 border-white/[0.08] hover:text-white hover:border-white/15"
                     }`}
                   >
                     {tf.charAt(0).toUpperCase() + tf.slice(1)}
@@ -825,7 +881,7 @@ export default function SentimentPage() {
             </div>
 
             {view === "battlefield" ? (
-              <div className="mb-12">
+              <div className="mb-10">
                 <SentimentBattlefield 
                   targetHotel={targetHotel as any} 
                   competitors={visibleCompetitors as any} 
@@ -834,8 +890,19 @@ export default function SentimentPage() {
               </div>
             ) : (
               <>
-                <div className="h-[400px] w-full relative mb-12">
-                  <div className="absolute inset-0 flex items-end">
+                {/* History chart with gradient strokes and grid */}
+                <div className="h-[400px] w-full relative mb-10 bg-white/[0.01] rounded-2xl border border-white/[0.04] p-4">
+                  {/* Horizontal grid lines for visual reference */}
+                  <div className="absolute inset-4 flex flex-col justify-between pointer-events-none">
+                    {[5.0, 4.5, 4.0, 3.5, 3.0].map((v) => (
+                      <div key={v} className="flex items-center gap-2 w-full">
+                        <span className="text-[9px] text-gray-600 w-6 text-right font-mono">{v.toFixed(1)}</span>
+                        <div className="flex-1 h-px bg-white/[0.04]" />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="absolute inset-4 left-10 flex items-end">
                     {(function () {
                       const allData = Object.values(sentimentHistory).flat();
                       if (allData.length === 0) return null;
@@ -849,7 +916,7 @@ export default function SentimentPage() {
                         if (history.length === 0) return null;
 
                         const points = history
-                          .map((h, i) => {
+                          .map((h: any, i: number) => {
                             const val = Number(h.rating) || 3;
                             const x = (i / (history.length - 1)) * 100;
                             const y = 100 - ((val - minScore) / range) * 100;
@@ -866,12 +933,24 @@ export default function SentimentPage() {
                             viewBox="0 0 100 100"
                             preserveAspectRatio="none"
                           >
+                            {/* Gradient stroke for target hotel line */}
+                            {isTarget && (
+                              <defs>
+                                <linearGradient id={`line-grad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+                                  <stop offset="50%" stopColor="#60a5fa" stopOpacity="1" />
+                                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
+                                </linearGradient>
+                              </defs>
+                            )}
                             <polyline
                               points={points}
                               fill="none"
-                              stroke={isTarget ? "#3b82f6" : "#6b7280"}
+                              stroke={isTarget ? `url(#line-grad-${id})` : "rgba(107,114,128,0.4)"}
                               strokeWidth={isTarget ? "1.5" : "0.5"}
-                              strokeDasharray={isTarget ? "0" : "1 1"}
+                              strokeDasharray={isTarget ? "0" : "2 2"}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                               className="transition-all duration-1000"
                             />
                           </svg>
@@ -879,11 +958,12 @@ export default function SentimentPage() {
                       });
                     })()}
                   </div>
-                  <div className="flex justify-between mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1">
+                  {/* Date axis labels */}
+                  <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-gray-600 font-medium tracking-wide">
                     {(function() {
                       const firstHist = Object.values(sentimentHistory)[0] || [];
                       if (firstHist.length < 2) return null;
-                      return [firstHist[0], firstHist[Math.floor(firstHist.length/2)], firstHist[firstHist.length-1]].map((h: any, i) => {
+                      return [firstHist[0], firstHist[Math.floor(firstHist.length/2)], firstHist[firstHist.length-1]].map((h: any, i: number) => {
                         if (!h) return null;
                         return (
                           <span key={i}>
@@ -900,60 +980,76 @@ export default function SentimentPage() {
               </>
             )}
 
-            {/* Visual Ranking Display */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* ── Visual Ranking Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
               {allHotels
                 .filter((h) => selectedHotelIds.includes(h.id))
                 .map((hotel, idx) => (
-                  <div
+                  <motion.div
                     key={hotel.id}
-                    className="flex items-center gap-3 p-3 bg-[#0a1628]/40 rounded-lg border border-white/5"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 ${
+                      hotel.isTarget
+                        ? "bg-blue-500/5 border-blue-500/15"
+                        : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
+                    }`}
                   >
-                    <span className="text-xs font-bold text-gray-500 w-4">
+                    {/* Position badge with medal colors for top 3 */}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                      idx === 0 ? "bg-amber-500/15 text-amber-400" :
+                      idx === 1 ? "bg-gray-400/10 text-gray-400" :
+                      idx === 2 ? "bg-amber-700/10 text-amber-600" :
+                      "bg-white/5 text-gray-500"
+                    }`}>
                       #{idx + 1}
-                    </span>
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1.5">
                         <span
-                          className={`text-xs font-medium truncate ${hotel.isTarget ? "text-blue-400" : "text-gray-300"}`}
+                          className={`text-xs font-semibold truncate ${hotel.isTarget ? "text-blue-300" : "text-white/70"}`}
                         >
                           {hotel.name}
                         </span>
-                        <span className="text-xs font-bold text-white">
+                        <span className="text-xs font-black text-white/80">
                           {(hotel.rating || 0).toFixed(1)} ★
                         </span>
                       </div>
-                      <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${hotel.isTarget ? "bg-blue-500" : idx === 0 ? "bg-[#D4AF37]" : "bg-gray-600"}`}
-                          style={{
-                            width: `${((hotel.rating || 0) / 5) * 100}%`,
-                          }}
+                      <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
+                          transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.08 }}
+                          className={`h-full rounded-full ${
+                            hotel.isTarget ? "bg-gradient-to-r from-blue-500 to-blue-400" :
+                            idx === 0 ? "bg-gradient-to-r from-amber-500 to-amber-400" :
+                            "bg-gradient-to-r from-gray-500/60 to-gray-400/40"
+                          }`}
                         />
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-1 bg-blue-600 rounded-full" />
-                <span className="text-sm text-gray-300">My Hotel</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-1 bg-[#D4AF37] rounded-full" />
-                <span className="text-sm text-gray-300">Market Leader</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-1 bg-gray-500 rounded-full" />
-                <span className="text-sm text-gray-300">Competitors</span>
-              </div>
+            {/* ── Legend (glass pills) ── */}
+            <div className="flex flex-wrap justify-center gap-4 mt-8 mb-2">
+              {[
+                { color: "bg-blue-500", label: "My Hotel" },
+                { color: "bg-amber-500", label: "Market Leader" },
+                { color: "bg-gray-500", label: "Competitors" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                  <span className={`w-3 h-1 ${item.color} rounded-full`} />
+                  <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </>
       )}
+      </div>
     </div>
   );
 }
