@@ -193,7 +193,9 @@ export default function ScanSessionModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={exportToCSV}
-                  disabled={logs.length === 0 && !(activeSession.reasoning_trace?.length > 0)}
+                  // EXPLANATION: Prevent "possibly undefined" TypeScript error when reasoning_trace is optional
+                  // Using null-coalescing (?? 0) ensures we compare a number to a number.
+                  disabled={logs.length === 0 && !((activeSession.reasoning_trace?.length ?? 0) > 0)}
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
                   <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
