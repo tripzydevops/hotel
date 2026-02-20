@@ -252,13 +252,22 @@ class ScraperAgent:
                         
                         if "reviews_breakdown" in price_data:
                             new_breakdown = price_data["reviews_breakdown"]
-                            # Merge logic: Create dict by name for O(1) access
+                            # ATOMIC KAIZEN: Cumulative Merge (Smart Memory)
+                            # Instead of overwriting, we sum the counts for existing categories
                             merged_map = {item.get("name"): item for item in existing_breakdown}
                             
                             for item in new_breakdown:
                                 name = item.get("name")
                                 if name:
-                                    merged_map[name] = item # Overwrite with latest if exists, else add
+                                    if name in merged_map:
+                                        # Merge counts
+                                        existing = merged_map[name]
+                                        existing["positive"] = int(existing.get("positive") or 0) + int(item.get("positive") or 0)
+                                        existing["negative"] = int(existing.get("negative") or 0) + int(item.get("negative") or 0)
+                                        existing["neutral"] = int(existing.get("neutral") or 0) + int(item.get("neutral") or 0)
+                                        existing["total_mentioned"] = int(existing.get("total_mentioned") or 0) + int(item.get("total_mentioned") or 0)
+                                    else:
+                                        merged_map[name] = item # New category
                             
                             update_payload["sentiment_breakdown"] = list(merged_map.values())
                             

@@ -267,11 +267,12 @@ class AnalystAgent:
                         meta_update[key] = val
                 
                 # [NEW] Generate Sentiment Voices (guest_mentions)
-                # Ensure we use the latest breakdown (either from current scan or existing in DB)
+                # KAİZEN: Use cumulatively merged breakdown for voice generation
+                # We prioritize the one in meta_update (which should be the merged one)
                 calc_breakdown = meta_update.get("sentiment_breakdown") or current_breakdown
                 if calc_breakdown:
                     meta_update["guest_mentions"] = generate_mentions(calc_breakdown)
-                    reasoning_log.append(f"[Sentiment] Refreshed {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
+                    reasoning_log.append(f"[Sentiment] Cumulative refresh: {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
                 
                 # EXPLANATION: Data Reliability Sync
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
