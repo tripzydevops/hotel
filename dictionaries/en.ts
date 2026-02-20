@@ -440,6 +440,10 @@ export const en = {
     low: "Low",
     medium: "Medium",
     secure: "Secure",
+    competitor: "Competitor",
+    overallRating: "Overall Rating",
+    currentPrice: "Current Price",
+    value: "Value",
   },
   landing: {
     nav: {

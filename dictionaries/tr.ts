@@ -278,6 +278,10 @@ export const tr = {
     low: "Düşük",
     medium: "Orta",
     secure: "Güvenli",
+    competitor: "Rakip",
+    overallRating: "Genel Puan",
+    currentPrice: "Güncel Fiyat",
+    value: "Değer",
   },
   reports: {
     title: "Denetim ve İstihbarat Raporları",
