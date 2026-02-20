@@ -234,7 +234,9 @@ class SerpApiClient:
         if response.status_code == 429: return True
         try:
             error = response.json().get("error", "").lower()
-            if any(x in error for x in ["quota", "limit", "exceeded"]): return True
+            # Catch multiple variations of quota exhaustion
+            quota_phrases = ["quota", "limit", "exceeded", "run out", "searches"]
+            if any(x in error for x in quota_phrases): return True
         except: pass
         return False
 
@@ -329,11 +331,16 @@ class SerpApiClient:
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(SERPAPI_BASE_URL, params=params)
-                    if self._is_quota_error(response):
+                    
+                    # Robust Rotation Loop: Continue trying other keys until success or exhaustion
+                    while self._is_quota_error(response):
+                        logger.warning(f"Key {self._key_manager.current_key_index} exhausted. Attempting rotation...")
                         if self._key_manager.rotate_key():
                             params["api_key"] = self.api_key
                             response = await client.get(SERPAPI_BASE_URL, params=params)
-                        else: break
+                        else:
+                            logger.critical("All SerpApi keys exhausted for search_hotels")
+                            break
                     
                     response.raise_for_status()
                     data = response.json()
@@ -385,13 +392,17 @@ class SerpApiClient:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
-                if self._is_quota_error(response):
+                
+                # Robust Rotation Loop: Continue trying other keys until success or exhaustion
+                while self._is_quota_error(response):
+                    logger.warning(f"Key {self._key_manager.current_key_index} exhausted for property fetch. Rotating...")
                     if self._key_manager.rotate_key():
                         params["api_key"] = self.api_key
                         response = await client.get(SERPAPI_BASE_URL, params=params)
                     else: 
-                        logger.critical("All API keys exhausted (429)")
+                        logger.critical("All SerpApi keys exhausted for fetch_hotel_price")
                         return {"error": "quota_exhausted", "status": "error"}
+                
                 response.raise_for_status()
                 return self._parse_hotel_result(response.json(), hotel_name, currency, serp_api_id)
         except Exception as e:

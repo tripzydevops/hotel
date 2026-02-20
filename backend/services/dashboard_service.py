@@ -175,9 +175,25 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             raw_breakdown = h.get("sentiment_breakdown") or []
             item_sentiment = normalize_sentiment(raw_breakdown)
             
+            # [FIX] Resilient Metadata Merging
+            # Ensure static metadata (rating, reviews, stars) falls back to master directory 
+            # if the user's specific hotel record is incomplete.
+            review_count = h.get("review_count") or dir_data.get("review_count")
+            rating = h.get("rating") or dir_data.get("rating")
+            stars = h.get("stars") or dir_data.get("stars")
+            image_url = h.get("image_url") or dir_data.get("image_url")
+            latitude = h.get("latitude") or dir_data.get("latitude")
+            longitude = h.get("longitude") or dir_data.get("longitude")
+
             enriched_hotels.append({
                 **dir_data,
                 **h,
+                "review_count": review_count,
+                "rating": rating,
+                "stars": stars,
+                "image_url": image_url,
+                "latitude": latitude,
+                "longitude": longitude,
                 "sentiment_breakdown": item_sentiment,
                 "sentiment_raw_breakdown": translate_breakdown(raw_breakdown),
                 "guest_mentions": h.get("guest_mentions") or generate_mentions(raw_breakdown),
