@@ -35,12 +35,32 @@ class ApiClient {
 
   private async getToken(): Promise<string | null> {
     try {
+      // EXPLANATION: Auth Session Retrieval
+      // We use the browser client to fetch the session. This relies on 
+      // Supabase's internal persistence (cookies/localStorage).
       const { createClient } = await import("@/utils/supabase/client");
       const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
-      return data.session?.access_token || null;
+      
+      // Get session directly - this is fastest on client side
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.warn("[ApiClient] Auth session error:", error);
+        return null;
+      }
+      
+      const token = session?.access_token || null;
+      if (!token) {
+        // Optional: Check if we have a user but no session yet (rare)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log("[ApiClient] User found but no active session found for token.");
+        }
+      }
+      
+      return token;
     } catch (e) {
-      console.error("[ApiClient] Error getting token:", e);
+      console.error("[ApiClient] Unexpected error getting token:", e);
       return null;
     }
   }
