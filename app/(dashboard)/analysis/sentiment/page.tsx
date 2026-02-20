@@ -179,7 +179,7 @@ const ScoreCard = ({
         <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
             <Star className="w-3 h-3 text-amber-500/70" />
-            <span className="font-medium">{(hotel.reviews_count || 0).toLocaleString()} reviews</span>
+            <span className="font-medium">{(hotel.review_count || 0).toLocaleString()} reviews</span>
           </div>
           {hotel.price_info?.price_change_percent !== undefined && (
             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -219,12 +219,10 @@ const CategoryBar = ({
       ? t(`sentiment.${categoryKey}`)
       : category;
 
-  // Color-code bar based on score relative to market average
+  // Fixed color for My Hotel (Blue gradient)
   const getBarGradient = () => {
     if (myScore <= 0) return "from-gray-700/50 to-gray-600/30";
-    if (myScore >= marketAvg + 0.3) return "from-emerald-500 to-emerald-400";
-    if (myScore >= marketAvg - 0.3) return "from-sky-500 to-sky-400";
-    return "from-amber-500 to-amber-400";
+    return "from-blue-500 to-blue-400";
   };
 
   return (
@@ -693,107 +691,107 @@ export default function SentimentPage() {
               })}
             </motion.div>
 
-            {/* ── Intelligence Hub: Radar + Category Bars + Strategic Map ── */}
+            {/* ── Intelligence Hub: Strategic Map (Left) + Experience Core (Right) ── */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-              {/* Left: Experience Core — Radar + Category Bars */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="lg:col-span-8 bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
-              >
-              {/* Section header with icon badge */}
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Radar className="w-4 h-4 text-blue-400" />
-                  </div>
-                  Experience Core
-                </h3>
-                {isTargetLeader && (
-                  <div className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/15">
-                    <Trophy className="w-3 h-3" />
-                    Market Leader
-                  </div>
-                )}
+              {/* Left Column: Strategic Map + Competitive Intelligence */}
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="flex-1 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl p-6 border border-white/[0.08] shadow-xl relative overflow-hidden group min-h-[440px]"
+                >
+                   <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+                      <Brain className="w-16 h-16 text-blue-300" />
+                   </div>
+                   <h3 className="text-lg font-bold text-white/90 mb-6 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      Strategic Map
+                   </h3>
+                   {strategicMap && (
+                     <AdvisorQuadrant
+                       x={strategicMap.x}
+                       y={strategicMap.y}
+                       label={strategicMap.label}
+                       ari={strategicMap.ari}
+                       sentiment={strategicMap.sentiment}
+                       targetRating={strategicMap.targetRating}
+                       marketRating={strategicMap.marketRating}
+                     />
+                   )}
+                </motion.div>
+                
+                <CompetitiveWeakness
+                  competitors={visibleCompetitors}
+                  t={t}
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-8">
-                  <CategoryBar
-                    category="Cleanliness"
-                    myScore={getCategoryScore(targetHotel, "cleanliness", sentimentHistory[targetHotel.id])}
-                    leaderScore={getCategoryScore(leader, "cleanliness", sentimentHistory[leader?.id])}
-                    marketAvg={marketAvgRating}
-                    leaderName={leader?.name}
-                  />
-                  <CategoryBar
-                    category="Service"
-                    myScore={getCategoryScore(targetHotel, "service", sentimentHistory[targetHotel.id])}
-                    leaderScore={getCategoryScore(leader, "service", sentimentHistory[leader?.id])}
-                    marketAvg={marketAvgRating}
-                    leaderName={leader?.name}
-                  />
-                  <CategoryBar
-                    category="Location"
-                    myScore={getCategoryScore(targetHotel, "location", sentimentHistory[targetHotel.id])}
-                    leaderScore={getCategoryScore(leader, "location", sentimentHistory[leader?.id])}
-                    marketAvg={marketAvgRating}
-                    leaderName={leader?.name}
-                  />
-                  <CategoryBar
-                    category="Value"
-                    myScore={getCategoryScore(targetHotel, "value", sentimentHistory[targetHotel.id])}
-                    leaderScore={getCategoryScore(leader, "value", sentimentHistory[leader?.id])}
-                    marketAvg={marketAvgRating}
-                    leaderName={leader?.name}
-                  />
-                </div>
-                {/* Radar chart container with glass effect + decorative orbs */}
-                <div className="flex items-center justify-center bg-white/[0.02] rounded-2xl p-4 border border-white/[0.05] relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/[0.06] blur-[60px] rounded-full" />
-                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/[0.05] blur-[60px] rounded-full" />
-                  <SentimentRadar data={radarData} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right: Advisor Quadrant + Competitive Intelligence */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
+              {/* Right Column: Experience Core — Radar + Category Bars */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex-1 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl p-6 border border-white/[0.08] shadow-xl relative overflow-hidden group"
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="lg:col-span-7 bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
               >
-                 <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
-                    <Brain className="w-16 h-16 text-blue-300" />
-                 </div>
-                 <h3 className="text-lg font-bold text-white/90 mb-6 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-purple-400" />
+                {/* Section header with icon badge */}
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Radar className="w-4 h-4 text-blue-400" />
                     </div>
-                    Strategic Map
-                 </h3>
-                 {strategicMap && (
-                   <AdvisorQuadrant
-                     x={strategicMap.x}
-                     y={strategicMap.y}
-                     label={strategicMap.label}
-                     ari={strategicMap.ari}
-                     sentiment={strategicMap.sentiment}
-                     targetRating={strategicMap.targetRating}
-                     marketRating={strategicMap.marketRating}
-                   />
-                 )}
+                    Experience Core
+                  </h3>
+                  {isTargetLeader && (
+                    <div className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/15">
+                      <Trophy className="w-3 h-3" />
+                      Market Leader
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                    <CategoryBar
+                      category="Cleanliness"
+                      myScore={getCategoryScore(targetHotel, "cleanliness", sentimentHistory[targetHotel.id])}
+                      leaderScore={getCategoryScore(leader, "cleanliness", sentimentHistory[leader?.id])}
+                      marketAvg={marketAvgRating}
+                      leaderName={leader?.name}
+                    />
+                    <CategoryBar
+                      category="Service"
+                      myScore={getCategoryScore(targetHotel, "service", sentimentHistory[targetHotel.id])}
+                      leaderScore={getCategoryScore(leader, "service", sentimentHistory[leader?.id])}
+                      marketAvg={marketAvgRating}
+                      leaderName={leader?.name}
+                    />
+                    <CategoryBar
+                      category="Location"
+                      myScore={getCategoryScore(targetHotel, "location", sentimentHistory[targetHotel.id])}
+                      leaderScore={getCategoryScore(leader, "location", sentimentHistory[leader?.id])}
+                      marketAvg={marketAvgRating}
+                      leaderName={leader?.name}
+                    />
+                    <CategoryBar
+                      category="Value"
+                      myScore={getCategoryScore(targetHotel, "value", sentimentHistory[targetHotel.id])}
+                      leaderScore={getCategoryScore(leader, "value", sentimentHistory[leader?.id])}
+                      marketAvg={marketAvgRating}
+                      leaderName={leader?.name}
+                    />
+                  </div>
+                  {/* Radar chart container with glass effect + decorative orbs */}
+                  <div className="flex items-center justify-center bg-white/[0.02] rounded-2xl p-8 border border-white/[0.05] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/[0.06] blur-[60px] rounded-full" />
+                    <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/[0.05] blur-[60px] rounded-full" />
+                    <SentimentRadar data={radarData} />
+                  </div>
+                </div>
               </motion.div>
-              
-              <CompetitiveWeakness
-                competitors={visibleCompetitors}
-                t={t}
-              />
             </div>
-          </div>
 
           {/* ── Gradient Section Divider ── */}
           <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
@@ -815,8 +813,8 @@ export default function SentimentPage() {
             </div>
             <SentimentBreakdown
               items={
-                (targetHotel.sentiment_raw_breakdown ||
-                targetHotel.sentiment_breakdown || [])
+                (targetHotel?.sentiment_raw_breakdown ||
+                targetHotel?.sentiment_breakdown || [])
                 .map((s: any) => ({
                    ...s,
                    description: s.description || s.summary
@@ -924,7 +922,7 @@ export default function SentimentPage() {
                           })
                           .join(" ");
 
-                        const isTarget = id === targetHotel.id;
+                        const isTarget = id === targetHotel?.id;
 
                         return (
                           <svg
@@ -1008,7 +1006,7 @@ export default function SentimentPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
                         <span
-                          className={`text-xs font-semibold truncate ${hotel.isTarget ? "text-blue-300" : "text-white/70"}`}
+                          className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-white/70"}`}
                         >
                           {hotel.name}
                         </span>
