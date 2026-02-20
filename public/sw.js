@@ -30,7 +30,29 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
     console.log('Notification click received.');
     event.notification.close();
+
+    const urlToOpen = new URL(self.location.origin).href;
+
     event.waitUntil(
-        clients.openWindow(self.location.origin)
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        }).then((windowClients) => {
+            // Check if there is already a window/tab open with the target URL
+            let matchingClient = null;
+            for (let i = 0; i < windowClients.length; i++) {
+                const client = windowClients[i];
+                if (client.url === urlToOpen) {
+                    matchingClient = client;
+                    break;
+                }
+            }
+
+            if (matchingClient) {
+                return matchingClient.focus();
+            } else {
+                return clients.openWindow(urlToOpen);
+            }
+        })
     );
 });

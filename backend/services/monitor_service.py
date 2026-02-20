@@ -344,14 +344,19 @@ async def run_scheduler_check_logic():
                         logger.warning(f"Session creation failed for scheduled scan: {se}")
                     
                     # Dispatch to Celery worker via Redis
-                    from backend.celery_app import celery_app
-                    celery_app.send_task("backend.tasks.run_scan_task", kwargs={
-                        "user_id": user_id,
-                        "hotels": hotels,
-                        "options_dict": None,
-                        "session_id": str(session_id) if session_id else None
-                    })
-                    logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
+                    try:
+                        from backend.celery_app import celery_app
+                        celery_app.send_task("backend.tasks.run_scan_task", kwargs={
+                            "user_id": user_id,
+                            "hotels": hotels,
+                            "options_dict": None,
+                            "session_id": str(session_id) if session_id else None
+                        })
+                        logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
+                    except ImportError:
+                        logger.error(f"CRITICAL: Celery not found in current environment. Cannot dispatch scan for user {user_id}")
+                    except Exception as task_e:
+                        logger.error(f"Failed to dispatch task for {user_id}: {task_e}")
                 
             except Exception as u_e:
                 logger.error(f"Error processing user {user.get('id')}: {u_e}")
