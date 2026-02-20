@@ -1,3 +1,11 @@
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
 self.addEventListener('push', function (event) {
     if (event.data) {
         const data = event.data.json();
@@ -31,7 +39,8 @@ self.addEventListener('notificationclick', function (event) {
     console.log('Notification click received.');
     event.notification.close();
 
-    const urlToOpen = new URL(self.location.origin).href;
+    // The base URL of the app
+    const origin = self.location.origin;
 
     event.waitUntil(
         clients.matchAll({
@@ -42,7 +51,8 @@ self.addEventListener('notificationclick', function (event) {
             let matchingClient = null;
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
-                if (client.url === urlToOpen) {
+                // Match if the client is on the same origin (covers /dashboard, /, etc.)
+                if (new URL(client.url).origin === origin) {
                     matchingClient = client;
                     break;
                 }
@@ -51,7 +61,7 @@ self.addEventListener('notificationclick', function (event) {
             if (matchingClient) {
                 return matchingClient.focus();
             } else {
-                return clients.openWindow(urlToOpen);
+                return clients.openWindow(origin + '/dashboard');
             }
         })
     );
