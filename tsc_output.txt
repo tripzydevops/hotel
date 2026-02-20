@@ -1,0 +1,13 @@
+.next/dev/types/validator.ts(42,39): error TS2307: Cannot find module '../../../app/admin/inspector/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(51,39): error TS2307: Cannot find module '../../../app/admin/list/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(60,39): error TS2307: Cannot find module '../../../app/admin/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(69,39): error TS2307: Cannot find module '../../../app/admin/settings/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(78,39): error TS2307: Cannot find module '../../../app/analysis/calendar/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(87,39): error TS2307: Cannot find module '../../../app/analysis/discovery/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(96,39): error TS2307: Cannot find module '../../../app/analysis/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(105,39): error TS2307: Cannot find module '../../../app/analysis/parity/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(114,39): error TS2307: Cannot find module '../../../app/analysis/sentiment/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(132,39): error TS2307: Cannot find module '../../../app/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(141,39): error TS2307: Cannot find module '../../../app/parity-monitor/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(150,39): error TS2307: Cannot find module '../../../app/reports/page.js' or its corresponding type declarations.
+.next/dev/types/validator.ts(165,39): error TS2307: Cannot find module '../../../app/admin/layout.js' or its corresponding type declarations.

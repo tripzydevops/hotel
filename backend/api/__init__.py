@@ -6,5 +6,7 @@ from . import (  # noqa: F401
     reports_routes,
     profile_routes,
     analysis_routes,
-    alerts_routes
+    alerts_routes,
+    landing_routes,
+    pulse_routes
 )
