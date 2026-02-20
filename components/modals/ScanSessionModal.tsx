@@ -33,6 +33,16 @@ export default function ScanSessionModal({
   const { t } = useI18n();
   const [logs, setLogs] = useState<QueryLog[]>([]);
   const [loading, setLoading] = useState(false);
+  // EXPLANATION: Live Session Polling
+  // The initial `session` prop is a snapshot from when the modal was opened.
+  // We poll the backend for updated session data (reasoning_trace, status)
+  // so that the Agent Mesh icons and Reasoning Timeline update live.
+  const [liveSession, setLiveSession] = useState<ScanSession | null>(session);
+
+  // Sync liveSession when session prop changes (e.g., different scan selected)
+  useEffect(() => {
+    setLiveSession(session);
+  }, [session]);
 
   const fetchSessionLogs = useCallback(async () => {
     if (!session) return;
@@ -44,24 +54,48 @@ export default function ScanSessionModal({
     }
   }, [session]);
 
+  // EXPLANATION: Poll for session data (reasoning_trace + status) every 3s
+  // This powers the Agent Mesh step indicators and Reasoning Timeline.
+  const fetchSession = useCallback(async () => {
+    if (!session) return;
+    try {
+      const updated = await api.getSession(session.id);
+      if (updated && !updated.error) {
+        setLiveSession(updated as ScanSession);
+      }
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+    }
+  }, [session]);
+
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | undefined;
+    let logsIntervalId: NodeJS.Timeout | undefined;
+    let sessionIntervalId: NodeJS.Timeout | undefined;
 
     if (isOpen && session) {
       fetchSessionLogs();
+      fetchSession();
 
       // Poll for updates if scan is not finished
-      if (session.status === "running" || session.status === "pending") {
-        intervalId = setInterval(fetchSessionLogs, 3000);
+      const isActive = liveSession?.status === "running" || liveSession?.status === "pending";
+      if (isActive) {
+        logsIntervalId = setInterval(fetchSessionLogs, 3000);
+        sessionIntervalId = setInterval(fetchSession, 3000);
+      } else {
+        // Do one final fetch even for completed scans to get the latest reasoning_trace
+        fetchSession();
       }
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (logsIntervalId) clearInterval(logsIntervalId);
+      if (sessionIntervalId) clearInterval(sessionIntervalId);
     };
-  }, [isOpen, session, fetchSessionLogs]);
+  }, [isOpen, session, liveSession?.status, fetchSessionLogs, fetchSession]);
 
-  if (!isOpen || !session) return null;
+  // Use liveSession for rendering — it has the most up-to-date data
+  const activeSession = liveSession || session;
+  if (!isOpen || !activeSession) return null;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
@@ -102,7 +136,7 @@ export default function ScanSessionModal({
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `scan_session_${session.id.slice(0, 8)}.csv`);
+    link.setAttribute("download", `scan_session_${activeSession.id.slice(0, 8)}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -124,30 +158,30 @@ export default function ScanSessionModal({
                   {t("scanSession.title")}
                   <span
                     className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
-                      session.status === "completed"
+                      activeSession.status === "completed"
                         ? "bg-optimal-green/20 text-optimal-green"
                         : "bg-amber-500/20 text-amber-500"
                     }`}
                   >
-                    {session.status}
+                    {activeSession.status}
                   </span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-muted)] font-medium">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>Scan: {formatDate(session.created_at)}</span>
+                    <span>Scan: {formatDate(activeSession.created_at)}</span>
                   </div>
-                  {session.check_in_date && (
+                  {activeSession.check_in_date && (
                     <>
                       <span className="w-1 h-1 rounded-full bg-white/10" />
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
-                        <span>Booked: {session.check_in_date}</span>
+                        <span>Booked: {activeSession.check_in_date}</span>
                       </div>
                       <span className="w-1 h-1 rounded-full bg-white/10" />
                       <div className="flex items-center gap-1.5">
                         <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--soft-gold)]" />
-                        <span>{session.adults || 2} People</span>
+                        <span>{activeSession.adults || 2} People</span>
                       </div>
                     </>
                   )}
@@ -159,7 +193,7 @@ export default function ScanSessionModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={exportToCSV}
-                  disabled={logs.length === 0}
+                  disabled={logs.length === 0 && !(activeSession.reasoning_trace?.length > 0)}
                   className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
                   <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -201,10 +235,10 @@ export default function ScanSessionModal({
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xl sm:text-2xl font-black text-optimal-green">
-                  {session.hotels_count > 0
+                  {activeSession.hotels_count > 0
                     ? (
                         (logs.filter((l) => l.status === "success").length /
-                          session.hotels_count) *
+                          activeSession.hotels_count) *
                         100
                       ).toFixed(0)
                     : "0"}
@@ -228,7 +262,7 @@ export default function ScanSessionModal({
               </p>
               <div className="flex items-end gap-1">
                 <span className="text-xs sm:text-sm font-mono text-[var(--text-muted)] mb-1">
-                  {session.id.slice(0, 8)}...
+                  {activeSession.id.slice(0, 8)}...
                 </span>
               </div>
             </div>
@@ -239,7 +273,7 @@ export default function ScanSessionModal({
         <div className="flex-1 overflow-y-auto p-8 bg-[var(--deep-ocean)]/30 backdrop-blur-sm">
           <div className="space-y-8">
             {/* Live Progress Bar */}
-            {(session.status === "running" || session.status === "pending") && (
+            {(activeSession.status === "running" || activeSession.status === "pending") && (
               <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
                 <div className="flex justify-between items-end mb-3">
                   <div>
@@ -247,12 +281,12 @@ export default function ScanSessionModal({
                       Scan in Progress...
                     </h4>
                     <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                      {session.status === "running" ? "Agents harvesting data..." : "Queued in Mesh..."}
+                      {activeSession.status === "running" ? "Agents harvesting data..." : "Queued in Mesh..."}
                     </p>
                   </div>
                   <span className="text-sm font-black text-[var(--soft-gold)]">
                     {Math.round(
-                      (logs.length / (session.hotels_count || 1)) * 100,
+                      (logs.length / (activeSession.hotels_count || 1)) * 100,
                     )}
                     %
                   </span>
@@ -261,7 +295,7 @@ export default function ScanSessionModal({
                   <div
                     className="h-full bg-gradient-to-r from-[var(--soft-gold)] to-amber-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_var(--soft-gold)]/30"
                     style={{
-                      width: `${(logs.length / (session.hotels_count || 1)) * 100}%`,
+                      width: `${(logs.length / (activeSession.hotels_count || 1)) * 100}%`,
                     }}
                   />
                 </div>
@@ -285,7 +319,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      session.status !== "pending" || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Scraper"))
+                      activeSession.status !== "pending" || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Scraper"))
                         ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -306,7 +340,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      ["completed", "partial", "failed"].includes(session.status) || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Analyst"))
+                      ["completed", "partial", "failed"].includes(activeSession.status) || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Analyst"))
                         ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)] shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -327,7 +361,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      session.status === "completed" || (session.reasoning_trace || []).some(t => JSON.stringify(t).includes("Notifier"))
+                      activeSession.status === "completed" || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Notifier"))
                         ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -346,14 +380,14 @@ export default function ScanSessionModal({
               </div>
             </div>
             {/* Agent Reasoning Timeline */}
-            {session.reasoning_trace && session.reasoning_trace.length > 0 && (
+            {activeSession.reasoning_trace && activeSession.reasoning_trace.length > 0 && (
               <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
                 <h4 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                   Agent Reasoning Timeline
                 </h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                  {session.reasoning_trace.map((trace: any, i: number) => {
+                  {activeSession.reasoning_trace.map((trace: any, i: number) => {
                     // Handle Legacy String Traces
                     if (typeof trace === "string") {
                       return (

@@ -54,3 +54,7 @@ env/
 .vercel
 .env*.local
 backend/libs
+*.log
+debug_*.py
+reproduce_*.py
+test_*.py

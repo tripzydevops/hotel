@@ -209,6 +209,13 @@ class ApiClient {
     });
   }
 
+  // EXPLANATION: Fetches a single scan session by ID.
+  // Used by ScanSessionModal to poll for live reasoning_trace and status updates
+  // so the Agent Mesh visualization and Reasoning Timeline update in real-time.
+  async getSession(sessionId: string): Promise<any> {
+    return this.fetch<any>(`/api/sessions/${sessionId}`);
+  }
+
   async getSessionLogs(sessionId: string): Promise<QueryLog[]> {
     return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
   }

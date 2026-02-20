@@ -115,6 +115,22 @@ async def check_scheduled_scan(
         print(f"LazyScheduler error: {e}")
         return {"triggered": False, "reason": str(e)}
 
+# EXPLANATION: GET a single scan session by ID.
+# The ScanSessionModal polls this to get live reasoning_trace and status 
+# updates. Without this, the Agent Mesh steps and Reasoning Timeline 
+# stay stale after the modal opens.
+@router.get("/sessions/{session_id}")
+async def get_session(session_id: UUID, db: Client = Depends(get_supabase)):
+    """Fetch a single scan session by ID for live status/reasoning updates."""
+    try:
+        result = db.table("scan_sessions").select("*").eq("id", str(session_id)).execute()
+        if result.data:
+            return result.data[0]
+        return {"error": "Session not found"}
+    except Exception as e:
+        print(f"Error fetching session: {e}")
+        return {"error": str(e)}
+
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
 async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase)):
     """Fetch all query logs linked to a specific scan session."""

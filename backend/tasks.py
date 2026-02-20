@@ -67,8 +67,15 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
         )
         
         # 3. Notifier
+        # EXPLANATION: Previously referenced undefined 'settings' variable, causing
+        # silent crash. Now we properly fetch settings before dispatching alerts.
         if analysis.get("alerts"):
             logger.info(f"[Worker] Dispatching {len(analysis['alerts'])} alerts...")
+            try:
+                settings_res = db.table("settings").select("*").eq("user_id", user_id).execute()
+                settings = settings_res.data[0] if settings_res.data else None
+            except Exception:
+                settings = None
             if settings:
                 hotel_name_map = {h["id"]: h["name"] for h in hotels}
                 await notifier.dispatch_alerts(

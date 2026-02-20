@@ -324,22 +324,34 @@ async def run_scheduler_check_logic():
                 supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq("id", user_id).execute()
                 logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
                 
-                # 3. Trigger Background Orchestrator
+                # 3. Dispatch to Celery Worker (instead of running directly)
+                # EXPLANATION: Previously called run_monitor_background() directly, 
+                # which timed out on Vercel's 10s limit. Now we dispatch to the 
+                # Celery worker on the VM — same pipeline as manual scans.
                 hotels = user_hotels_map.get(user_id, [])
                 if hotels:
-                    # [Global Pulse] These background tasks will run in parallel.
-                    # Because ScraperAgent has a 60m cache check, multiple users 
-                    # tracking the same hotel will now automatically share the same 
-                    # scan result if they are triggered in the same cron window.
-                    await run_monitor_background(
-                        user_id=UUID(user_id),
-                        hotels=hotels,
-                        options=None,
-                        db=supabase,
-                        session_id=None
-                    )
-                
-                logger.info(f"Batch trigger completed for user {user_id}")
+                    # Create a scan session for tracking (scheduled scans had none before)
+                    session_id = None
+                    try:
+                        session_result = supabase.table("scan_sessions").insert({
+                            "user_id": user_id,
+                            "session_type": "scheduled",
+                            "hotels_count": len(hotels),
+                            "status": "pending",
+                        }).execute()
+                        session_id = session_result.data[0]["id"] if session_result.data else None
+                    except Exception as se:
+                        logger.warning(f"Session creation failed for scheduled scan: {se}")
+                    
+                    # Dispatch to Celery worker via Redis
+                    from backend.celery_app import celery_app
+                    celery_app.send_task("backend.tasks.run_scan_task", kwargs={
+                        "user_id": user_id,
+                        "hotels": hotels,
+                        "options_dict": None,
+                        "session_id": str(session_id) if session_id else None
+                    })
+                    logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
                 
             except Exception as u_e:
                 logger.error(f"Error processing user {user.get('id')}: {u_e}")
