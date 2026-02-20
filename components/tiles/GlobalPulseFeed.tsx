@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, TrendingDown, Clock, Zap } from 'lucide-react';
+import { Globe, TrendingDown, Clock, Zap, Users, Building2, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface pulseWin {
@@ -12,8 +12,20 @@ interface pulseWin {
   timestamp: string;
 }
 
+// EXPLANATION: [Global Pulse Phase 2] — Live Network Stats
+// This interface mirrors the response from /api/global-pulse/stats.
+// We display these dynamically instead of hardcoded values to build
+// user trust and demonstrate the network's real value.
+interface PulseStats {
+  active_users_count: number;
+  hotels_monitored: number;
+  cache_hit_rate_24h: number;
+  estimated_savings_credits: number;
+}
+
 export const GlobalPulseFeed: React.FC = () => {
   const [wins, setWins] = useState<pulseWin[]>([]);
+  const [stats, setStats] = useState<PulseStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchPulse = async () => {
@@ -30,10 +42,30 @@ export const GlobalPulseFeed: React.FC = () => {
     }
   };
 
+  // EXPLANATION: Fetch live network stats from the new Phase 2 endpoint.
+  // Stats are cached server-side for 5 minutes, so polling every 2 mins
+  // on the client gives a good balance of freshness vs network usage.
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/global-pulse/stats');
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pulse stats:', error);
+    }
+  };
+
   useEffect(() => {
     fetchPulse();
-    const interval = setInterval(fetchPulse, 60000); // Poll every minute
-    return () => clearInterval(interval);
+    fetchStats();
+    const pulseInterval = setInterval(fetchPulse, 60000);
+    const statsInterval = setInterval(fetchStats, 120000);
+    return () => {
+      clearInterval(pulseInterval);
+      clearInterval(statsInterval);
+    };
   }, []);
 
   if (loading && wins.length === 0) {
@@ -107,10 +139,39 @@ export const GlobalPulseFeed: React.FC = () => {
         </AnimatePresence>
       </div>
       
-      <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-center">
-        <p className="text-[10px] text-slate-500 font-medium text-center leading-relaxed">
-          Sharing anonymized intelligence with <span className="text-indigo-400 font-bold">484</span> active users
-        </p>
+      {/* EXPLANATION: [Global Pulse Phase 2] — Live Network Stats Footer
+           Replaces the hardcoded "484 active users" with real metrics.
+           Shows active users, monitored hotels, and cache efficiency. */}
+      <div className="mt-6 pt-4 border-t border-white/5">
+        {stats ? (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1 text-indigo-400">
+                <Users className="w-3 h-3" />
+                <span className="text-sm font-bold">{stats.active_users_count}</span>
+              </div>
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Users</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1 text-cyan-400">
+                <Building2 className="w-3 h-3" />
+                <span className="text-sm font-bold">{stats.hotels_monitored}</span>
+              </div>
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Hotels</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1 text-emerald-400">
+                <Shield className="w-3 h-3" />
+                <span className="text-sm font-bold">{stats.cache_hit_rate_24h}%</span>
+              </div>
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Cache Hit</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-[10px] text-slate-500 font-medium text-center leading-relaxed">
+            Loading network stats...
+          </p>
+        )}
       </div>
     </div>
   );

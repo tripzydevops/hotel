@@ -2,10 +2,9 @@ name: Trigger Scheduler
 
 on:
   schedule:
-    # Run every hour
-    - cron: "0 * * * *"
+    # Run every 15 minutes for better responsiveness
+    - cron: "*/15 * * * *"
   workflow_dispatch:
-    # Allow manual trigger from GitHub UI
 
 jobs:
   trigger-scheduler:
@@ -28,9 +27,8 @@ jobs:
       - name: Run Scheduler Script
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          # Service Role Key required for background tasks/updates
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Optional: Google API Key if the scheduler triggers analysis immediately (though it usually just queues)
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           python -m backend.scripts.run_scheduler

@@ -6,7 +6,7 @@
 export type TrendDirection = "up" | "down" | "stable";
 
 // Alert types for notifications
-export type AlertType = "threshold_breach" | "competitor_undercut" | string;
+export type AlertType = "threshold_breach" | "competitor_undercut" | "pulse_alert" | string;
 
 export interface Hotel {
   id: string;
@@ -148,6 +148,9 @@ export interface DashboardData {
   unread_alerts_count: number;
   next_scan_at?: string;
   last_updated: string;
+  // BUNDLED DATA (Kaizen Fast-Load)
+  profile?: any;
+  user_settings?: UserSettings;
 }
 
 export interface ScanOptions {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { ScanOptions } from "@/types";
@@ -42,6 +42,21 @@ export function useDashboard(
     // This ensures the UI updates automatically when the background scan completes.
     refetchInterval: isPolling ? 3000 : false,
   });
+
+  // EXPLANATION: Fast-Load Cache Seeding
+  // When the bundled dashboard data arrives, we manually seed the React Query
+  // cache for Profile and Settings. This prevents the individual hooks from
+  // triggering redundant API calls, significantly speeding up the initial load.
+  useEffect(() => {
+    if (dashboardQuery.data) {
+      if (dashboardQuery.data.profile) {
+        queryClient.setQueryData(["profile", userId], dashboardQuery.data.profile);
+      }
+      if (dashboardQuery.data.user_settings) {
+        queryClient.setQueryData(["settings", userId], dashboardQuery.data.user_settings);
+      }
+    }
+  }, [dashboardQuery.data, queryClient, userId]);
 
   // --- Mutations ---
   const scanMutation = useMutation({

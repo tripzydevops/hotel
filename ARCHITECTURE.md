@@ -63,6 +63,14 @@ Specialized LLM-powered agents:
 - **AnalystAgent:** Vector-based reasoning and parity detection.
 - **NotifierAgent:** Intelligent alerting based on user preferences.
 
+## ⚙️ Background Operations
+
+The system maintains persistent health and data freshness through a decoupled background layer:
+
+- **Persistent Scheduler**: A multi-layered cron system (VM-level + GitHub Actions) ensures scans run on time independent of user activity.
+- **Agent-Mesh Orchestration**: The `monitor_service.py` coordinates the flow from raw scraping to AI-driven sentiment analysis.
+- **Smart Memory Persistence**: Cumulative data merging ensures zero loss of historical context during background cycles.
+
 ## ⚡ Speed & AI Optimization
 
 - **Router Isolation:** Files are kept under 500 lines to ensure the AI can process them in a single pass.

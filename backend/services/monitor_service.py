@@ -8,8 +8,10 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
 import os
+import sys
+import logging
 import traceback
-from datetime import datetime, date, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from fastapi import BackgroundTasks, HTTPException
@@ -19,6 +21,23 @@ from backend.models.schemas import ScanOptions, MonitorResult
 from backend.agents.scraper_agent import ScraperAgent
 from backend.agents.analyst_agent import AnalystAgent
 from backend.agents.notifier_agent import NotifierAgent
+
+# EXPLANATION: Dedicated Scheduler Logging
+# We use a separate logger and file handler for the scheduler to make 
+# background execution easily auditable without cluttering main logs.
+def get_scheduler_logger():
+    s_logger = logging.getLogger("scheduler")
+    if not s_logger.handlers:
+        from logging.handlers import RotatingFileHandler
+        # Ensure log survives across different working directories
+        log_path = "/home/successofmentors/.gemini/antigravity/scratch/hotel/scheduler.log"
+        handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3)
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+        handler.setFormatter(formatter)
+        s_logger.addHandler(handler)
+        s_logger.setLevel(logging.INFO)
+        s_logger.propagate = False
+    return s_logger
 
 async def trigger_monitor_logic(
     user_id: UUID,
@@ -264,10 +283,22 @@ async def run_monitor_background(
 
 async def run_scheduler_check_logic():
     """
-    Internal logic to check all users for due scans and trigger them.
-    Ported from main.py for modularity.
+    [CRITICAL BACKGROUND LOGIC]
+    Core engine for the persistent background scheduler.
+    
+    FEATURE OVERVIEW:
+    - Resolves 'Lazy Cron' by running independently of frontend traffic.
+    - Uses a multi-layered trigger (VM Cron + GitHub Actions).
+    - Ensures scans are dispatched to Celery workers for asynchronous processing.
+    
+    FLOW:
+    1. Identifies active users whose 'next_scan_at' timestamp is in the past.
+    2. Calculates the 'next_run' interval based on user settings (default: 24h).
+    3. Updates 'next_scan_at' immediately to act as a soft-lock (preventing duplicate dispatches).
+    4. Dispatches the scan task to the Redis/Celery queue for VM-side execution.
     """
-    logger.info(f"CRON: Starting scheduler check...")
+    s_logger = get_scheduler_logger()
+    s_logger.info("CRON: Starting scheduler check...")
     from backend.utils.db import get_supabase
     try:
         supabase = get_supabase()
@@ -279,7 +310,7 @@ async def run_scheduler_check_logic():
         # KAİZEN: Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
         now_dt = datetime.now(timezone.utc).replace(microsecond=0)
         now_iso = now_dt.isoformat().replace("+00:00", "Z")
-        logger.info(f"CRON: Checking for scans due before {now_iso}")
+        s_logger.info(f"CRON: Checking for scans due before {now_iso}")
         
         # 1.1 Fetch all active profiles
         result = supabase.table("profiles").select("id, next_scan_at, scan_frequency_minutes, subscription_status") \
@@ -288,7 +319,7 @@ async def run_scheduler_check_logic():
             .execute()
         
         active_due = result.data or []
-        logger.info(f"CRON: Found {len(active_due)} active profiles due for scan.")
+        s_logger.info(f"CRON: Found {len(active_due)} active profiles due for scan.")
         
         if not active_due:
             return
@@ -313,7 +344,7 @@ async def run_scheduler_check_logic():
         for user in active_due:
             try:
                 user_id = user['id']
-                logger.info(f"Processing user {user_id}...")
+                s_logger.info(f"Processing user {user_id}...")
 
                 # 2. Update next_scan_at immediately (Locking mechanism)
                 # KAİZEN: Prioritize 'settings.check_frequency_minutes' over 'profiles.scan_frequency_minutes'
@@ -322,15 +353,12 @@ async def run_scheduler_check_logic():
                 next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
                 
                 supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq("id", user_id).execute()
-                logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
+                s_logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
                 
                 # 3. Dispatch to Celery Worker (instead of running directly)
-                # EXPLANATION: Previously called run_monitor_background() directly, 
-                # which timed out on Vercel's 10s limit. Now we dispatch to the 
-                # Celery worker on the VM — same pipeline as manual scans.
                 hotels = user_hotels_map.get(user_id, [])
                 if hotels:
-                    # Create a scan session for tracking (scheduled scans had none before)
+                    # Create a scan session for tracking
                     session_id = None
                     try:
                         session_result = supabase.table("scan_sessions").insert({
@@ -341,7 +369,7 @@ async def run_scheduler_check_logic():
                         }).execute()
                         session_id = session_result.data[0]["id"] if session_result.data else None
                     except Exception as se:
-                        logger.warning(f"Session creation failed for scheduled scan: {se}")
+                        s_logger.warning(f"Session creation failed for scheduled scan: {se}")
                     
                     # Dispatch to Celery worker via Redis
                     try:
@@ -352,15 +380,24 @@ async def run_scheduler_check_logic():
                             "options_dict": None,
                             "session_id": str(session_id) if session_id else None
                         })
-                        logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
+                        s_logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
                     except ImportError:
-                        logger.error(f"CRITICAL: Celery not found in current environment. Cannot dispatch scan for user {user_id}")
+                        s_logger.error(f"CRITICAL: Celery not found in current environment. Cannot dispatch scan for user {user_id}")
                     except Exception as task_e:
-                        logger.error(f"Failed to dispatch task for {user_id}: {task_e}")
+                        s_logger.error(f"Failed to dispatch task for {user_id}: {task_e}")
                 
             except Exception as u_e:
-                logger.error(f"Error processing user {user.get('id')}: {u_e}")
+                s_logger.error(f"Error processing user {user.get('id')}: {u_e}")
                 
     except Exception as e:
-        logger.critical(f"CRON ERROR: {e}")
-        traceback.print_exc()
+        s_logger.critical(f"CRON ERROR: {e}")
+        s_logger.error(traceback.format_exc())
+
+if __name__ == "__main__":
+    # EXPLANATION: CLI Test Mode
+    # Allows manual testing of the scheduler logic from the terminal.
+    # Usage: export PYTHONPATH=$PYTHONPATH:. && python3 backend/services/monitor_service.py
+    import asyncio
+    print("Starting manual scheduler check...")
+    asyncio.run(run_scheduler_check_logic())
+    print("Check complete. See scheduler.log for details.")

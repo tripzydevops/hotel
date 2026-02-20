@@ -8,7 +8,7 @@ from backend.services.price_comparator import price_comparator
 from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.helpers import convert_currency, log_query
-from backend.utils.sentiment_utils import generate_mentions, normalize_sentiment
+from backend.utils.sentiment_utils import generate_mentions, normalize_sentiment, merge_sentiment_breakdowns
 
 class AnalystAgent:
     """
@@ -259,20 +259,30 @@ class AnalystAgent:
                     meta_update["current_price"] = current_price
                     # meta_update["currency"] = currency # Column check
                 
-                # Extract rich fields
-                for field in ["rating", "property_token", "image_url", "reviews_breakdown", "latitude", "longitude", "reviews_list"]:
-                    key = "serp_api_id" if field == "property_token" else "sentiment_breakdown" if field == "reviews_breakdown" else "reviews" if field == "reviews_list" else field
+                # [Smart Memory - Sentiment Merging Logic]
+                # EXPLANATION: We maintain historical context by merging existing
+                # categories from the database with new ones from the current scan result.
+                # This prevents old (but still relevant) issues from disappearing 
+                # if the latest guest reviews don't mention them.
+                if "reviews_breakdown" in price_data:
+                    new_breakdown = price_data["reviews_breakdown"]
+                    merged_breakdown = merge_sentiment_breakdowns(current_breakdown, new_breakdown)
+                    meta_update["sentiment_breakdown"] = merged_breakdown
+                    reasoning_log.append(f"[Sentiment] Merging {len(new_breakdown)} new categories into {len(merged_breakdown)} total.")
+                
+                # Extract other rich fields (excluding reviews_breakdown which is merged above)
+                for field in ["rating", "property_token", "image_url", "latitude", "longitude", "reviews_list"]:
+                    key = "serp_api_id" if field == "property_token" else "reviews" if field == "reviews_list" else field
                     val = price_data.get(field)
                     if val is not None:
                         meta_update[key] = val
                 
                 # [NEW] Generate Sentiment Voices (guest_mentions)
                 # KAİZEN: Use cumulatively merged breakdown for voice generation
-                # We prioritize the one in meta_update (which should be the merged one)
                 calc_breakdown = meta_update.get("sentiment_breakdown") or current_breakdown
                 if calc_breakdown:
                     meta_update["guest_mentions"] = generate_mentions(calc_breakdown)
-                    reasoning_log.append(f"[Sentiment] Cumulative refresh: {len(meta_update['guest_mentions'])} mentions for {hotel_id}")
+                    reasoning_log.append(f"[Sentiment] Voices refreshed: {len(meta_update['guest_mentions'])} mentions")
                 
                 # EXPLANATION: Data Reliability Sync
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
@@ -507,13 +517,18 @@ class AnalystAgent:
                     if breach:
                         hotel_name = rival["name"] or pulse["hotel_name"]
                         hotel_name_map[hid] = hotel_name
+                        # EXPLANATION: [Global Pulse Phase 2] — Feature A
+                        # We tag cross-user alerts with "pulse_alert" type so users
+                        # can distinguish network-discovered drops from their own scans.
+                        # The currency field is included for proper notification formatting.
                         user_alerts.append({
                             "user_id": uid,
                             "hotel_id": hid,
-                            "alert_type": breach["alert_type"],
+                            "alert_type": "pulse_alert",
                             "message": f"[Global Pulse] {breach['message']}",
                             "old_price": prev_price,
-                            "new_price": curr_price
+                            "new_price": curr_price,
+                            "currency": currency
                         })
 
                 if user_alerts:
@@ -683,10 +698,10 @@ class AnalystAgent:
         parts1 = [p.strip().lower() for p in loc1.split(",")]
         parts2 = [p.strip().lower() for p in loc2.split(",")]
         
-        # Check if countries match (last part)
         if len(parts1) >= 2 and len(parts2) >= 2:
             return parts1[-1] == parts2[-1]
         return False
+
 
     async def _update_sentiment_embedding(self, hotel_id: str, meta_update: Dict[str, Any]) -> bool:
         """Generates and saves the sentiment embedding. Returns True on success."""

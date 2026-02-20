@@ -243,3 +243,78 @@ def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
         "rating": round(score, 1),
         "synthetic": True
     }
+
+def merge_sentiment_breakdowns(existing: List[Dict[str, Any]], new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Cumulative Merge Strategy (Smart Memory).
+    Ensures that historical sentiment data is preserved and updated with new scan results.
+    
+    Normalization: Uses TR_MAP to reconcile Turkish/English keys into unique categories.
+    """
+    primary_map: Dict[str, Dict[str, Any]] = {}
+    
+    # 1. Populate map with existing data, normalized
+    for item in existing:
+        raw_name = item.get("name") or ""
+        # Normalize to English label if possible
+        normalized_name = raw_name
+        for tr, en in TR_MAP.items():
+            if tr == raw_name.lower() or tr in raw_name.lower():
+                normalized_name = en
+                break
+        
+        if normalized_name not in primary_map:
+            # We clone to avoid mutating the original input list
+            primary_map[normalized_name] = {
+                "name": normalized_name,
+                "positive": int(item.get("positive") or 0),
+                "negative": int(item.get("negative") or 0),
+                "neutral": int(item.get("neutral") or 0),
+                "total_mentioned": int(item.get("total_mentioned") or 0),
+                "rating": float(item.get("rating") or 0)
+            }
+        else:
+            # Reconcile duplicates already in 'existing' due to previous bad merges
+            entry = primary_map[normalized_name]
+            entry["positive"] += int(item.get("positive") or 0)
+            entry["negative"] += int(item.get("negative") or 0)
+            entry["neutral"] += int(item.get("neutral") or 0)
+            entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
+
+    # 2. Reconcile with new data
+    for item in new:
+        raw_name = item.get("name") or ""
+        normalized_name = raw_name
+        for tr, en in TR_MAP.items():
+            if tr == raw_name.lower() or tr in raw_name.lower():
+                normalized_name = en
+                break
+                
+        if normalized_name in primary_map:
+            entry = primary_map[normalized_name]
+            entry["positive"] += int(item.get("positive") or 0)
+            entry["negative"] += int(item.get("negative") or 0)
+            entry["neutral"] += int(item.get("neutral") or 0)
+            entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
+            # Weighted rating update (if total > 0)
+            new_rating = float(item.get("rating") or 0)
+            if entry["total_mentioned"] > 0 and new_rating > 0:
+                # Basic weighted average: (old_total*old_avg + new_total*new_avg) / total_total
+                # However, for simplicity and since rating usually correlates with counts:
+                entry["rating"] = (entry["positive"] * 5 + entry["neutral"] * 3 + entry["negative"] * 1) / entry["total_mentioned"]
+        else:
+            primary_map[normalized_name] = {
+                "name": normalized_name,
+                "positive": int(item.get("positive") or 0),
+                "negative": int(item.get("negative") or 0),
+                "neutral": int(item.get("neutral") or 0),
+                "total_mentioned": int(item.get("total_mentioned") or 0),
+                "rating": float(item.get("rating") or 0)
+            }
+
+    # 3. Clean up and sort
+    merged_list = list(primary_map.values())
+    for item in merged_list:
+        item["rating"] = round(item["rating"], 1)
+        
+    return sorted(merged_list, key=lambda x: x["total_mentioned"], reverse=True)

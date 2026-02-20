@@ -18,10 +18,54 @@ class ScraperAgent:
     def __init__(self, db: Client):
         self.db = db
 
-    async def _check_global_cache(self, serp_api_id: str, check_in_date: date) -> Optional[Dict[str, Any]]:
+    # EXPLANATION: [Global Pulse Phase 2] — Feature C: Room Type Normalization Map
+    # Turkish hotel systems often use localized room names. This map allows
+    # the cache to match "Standart Oda" → "Standard" so User B tracking
+    # "Standard Room" can reuse User A's cached result that has "Standart Oda".
+    ROOM_TYPE_NORMALIZE_MAP = {
+        "standart": "standard",
+        "standart oda": "standard",
+        "standart oda (çift kişilik)": "standard double",
+        "standart tek": "standard single",
+        "standart çift": "standard double",
+        "superior": "superior",
+        "süit": "suite",
+        "suit": "suite",
+        "aile odası": "family room",
+        "aile": "family room",
+        "delüks": "deluxe",
+        "ekonomi": "economy",
+        "tek kişilik": "single",
+        "çift kişilik": "double",
+        "üç kişilik": "triple",
+        "kral dairesi": "king suite",
+        "penthouse": "penthouse",
+    }
+
+    def _normalize_room_type(self, name: str) -> str:
+        """
+        [Global Pulse Phase 2] — Room Type Normalizer
+        Converts Turkish or variant room names to a canonical English form.
+        Used by _check_global_cache to match room types across users.
+        """
+        if not name:
+            return ""
+        lowered = name.strip().lower()
+        # Check direct match first
+        if lowered in self.ROOM_TYPE_NORMALIZE_MAP:
+            return self.ROOM_TYPE_NORMALIZE_MAP[lowered]
+        # Check partial match (e.g., "Standart Tek Kişilik Oda" contains "standart tek")
+        for turkish, english in self.ROOM_TYPE_NORMALIZE_MAP.items():
+            if turkish in lowered:
+                return english
+        return lowered  # Return original lowered if no match
+
+    async def _check_global_cache(self, serp_api_id: str, check_in_date: date, requested_room_type: str = None) -> Optional[Dict[str, Any]]:
         """
         [Global Pulse] Checks if ANY user has scanned this hotel for this date
-        in the last 60 minutes.
+        in the last 3 hours. If a cached result exists and the user requested
+        a specific room type, we attempt to extract that room's price from
+        the cached room_types array instead of returning just the base price.
         """
         if not serp_api_id:
             return None
@@ -42,18 +86,41 @@ class ScraperAgent:
             if res.data:
                 cache = res.data[0]
                 print(f"[GlobalPulse] Cache HIT for {serp_api_id} on {check_in_date}")
+
+                # EXPLANATION: [Global Pulse Phase 2] — Feature C: Room-Type-Aware Matching
+                # If the user requested a specific room type (e.g., "Deluxe"),
+                # we search the cached room_types array for a matching entry.
+                # This avoids a fresh API call when the data already exists.
+                final_price = cache["price"]
+                final_currency = cache["currency"]
+                matched_room = None
+
+                cached_rooms = cache.get("room_types") or []
+                if requested_room_type and cached_rooms:
+                    normalized_request = self._normalize_room_type(requested_room_type)
+                    for room in cached_rooms:
+                        room_name = room.get("name", "")
+                        normalized_cached = self._normalize_room_type(room_name)
+                        if normalized_request == normalized_cached or normalized_request in normalized_cached:
+                            matched_room = room
+                            final_price = room.get("price", final_price)
+                            final_currency = room.get("currency", final_currency)
+                            print(f"[GlobalPulse] Room match: '{requested_room_type}' → '{room_name}' @ {final_price}")
+                            break
+
                 # Reconstruct the price_data object to mimic SerpApi response
                 return {
-                    "price": cache["price"],
-                    "currency": cache["currency"],
+                    "price": final_price,
+                    "currency": final_currency,
                     "vendor": cache["vendor"],
                     "source": "global_cache",
                     "offers": cache.get("parity_offers") or cache.get("offers") or [],
-                    "room_types": cache.get("room_types") or [],
+                    "room_types": cached_rooms,
                     "search_rank": cache.get("search_rank"),
                     "property_token": serp_api_id,
                     "status": "success",
-                    "is_cached": True
+                    "is_cached": True,
+                    "matched_room_type": matched_room.get("name") if matched_room else None
                 }
         except Exception as e:
             print(f"[GlobalPulse] Cache lookup error: {e}")
@@ -223,83 +290,6 @@ class ScraperAgent:
                     "check_in": check_in,
                     "adults": adults
                 }
-
-                # [NEW] Persist Rich Data to Hotel Record
-                if price_data:
-                    try:
-                        update_payload = {}
-                        if price_data.get("images"):
-                            update_payload["images"] = price_data["images"]
-                            if not hotel.get("image_url") and price_data["images"]:
-                                update_payload["image_url"] = price_data["images"][0].get("thumbnail") or price_data["images"][0].get("original")
-                        elif price_data.get("photos"):
-                            imgs = [{"original": url, "thumbnail": url} for url in price_data["photos"][:5]]
-                            update_payload["images"] = imgs
-                            if not hotel.get("image_url") and imgs:
-                                update_payload["image_url"] = imgs[0]["thumbnail"]
-                        
-                        if price_data.get("amenities"):
-                            update_payload["amenities"] = price_data["amenities"]
-                            
-                        if price_data.get("rating"):
-                            update_payload["rating"] = price_data["rating"]
-
-                        # [NEW] Sentiment & Reviews Persistence with History Preservation
-                        # We must fetch the existing record first to merge, otherwise we lose history on partial scans.
-                        existing_data = self.db.table("hotels").select("sentiment_breakdown, reviews, guest_mentions").eq("id", str(hotel_id)).single().execute()
-                        existing_breakdown = existing_data.data.get("sentiment_breakdown") or []
-                        existing_reviews = existing_data.data.get("reviews") or []
-                        
-                        if "reviews_breakdown" in price_data:
-                            new_breakdown = price_data["reviews_breakdown"]
-                            # ATOMIC KAIZEN: Cumulative Merge (Smart Memory)
-                            # Instead of overwriting, we sum the counts for existing categories
-                            merged_map = {item.get("name"): item for item in existing_breakdown}
-                            
-                            for item in new_breakdown:
-                                name = item.get("name")
-                                if name:
-                                    if name in merged_map:
-                                        # Merge counts
-                                        existing = merged_map[name]
-                                        existing["positive"] = int(existing.get("positive") or 0) + int(item.get("positive") or 0)
-                                        existing["negative"] = int(existing.get("negative") or 0) + int(item.get("negative") or 0)
-                                        existing["neutral"] = int(existing.get("neutral") or 0) + int(item.get("neutral") or 0)
-                                        existing["total_mentioned"] = int(existing.get("total_mentioned") or 0) + int(item.get("total_mentioned") or 0)
-                                    else:
-                                        merged_map[name] = item # New category
-                            
-                            update_payload["sentiment_breakdown"] = list(merged_map.values())
-                            
-                        # Handle review snippets (reviews_list from provider)
-                        new_reviews = []
-                        if "reviews_list" in price_data and price_data["reviews_list"]:
-                            new_reviews = price_data["reviews_list"]
-                        elif "reviews" in price_data and isinstance(price_data["reviews"], list):
-                            new_reviews = price_data["reviews"]
-
-                        if new_reviews:
-                            # Append only unique reviews based on text signature
-                            existing_texts = {r.get("text")[:50] for r in existing_reviews if r.get("text")}
-                            
-                            for r in new_reviews:
-                                if r.get("text") and r.get("text")[:50] not in existing_texts:
-                                    existing_reviews.insert(0, r) # Add new ones at top
-                                    
-                            # Keep buffer of last 20 reviews max to avoid bloat
-                            update_payload["reviews"] = existing_reviews[:20]
-
-                        if price_data.get("latitude"):
-                            update_payload["latitude"] = price_data["latitude"]
-                        if price_data.get("longitude"):
-                            update_payload["longitude"] = price_data["longitude"]
-
-                        if update_payload:
-                            self.db.table("hotels").update(update_payload).eq("id", str(hotel_id)).execute()
-                            # print(f"[Scraper] Updated metadata for {hotel_name}")
-
-                    except Exception as e:
-                        print(f"[Scraper] Metadata Update Error: {e}")
 
                 results.append(result)
                 return result
