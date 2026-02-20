@@ -67,182 +67,147 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
 };
 
 // Dynamically import heavy analytics components to improve initial page performance
-// and ensure library initialization only occurs on the client side.
+// These components use client-side libraries like Recharts or D3 which aren't needed on the server
 const SentimentRadar = dynamic(() => import("@/components/analytics/SentimentRadar").then(m => m.SentimentRadar), { ssr: false });
 const CompetitiveWeakness = dynamic(() => import("@/components/analytics/CompetitiveWeakness").then(m => m.CompetitiveWeakness), { ssr: false });
 const AdvisorQuadrant = dynamic(() => import("@/components/analytics/AdvisorQuadrant"), { ssr: false });
 
-// Radial Progress Component
-const RadialProgress = ({
-  percentage,
-  score,
-  color,
+/**
+ * ScoreCard Component
+ * Displays the high-level metrics for a specific hotel, including its rank, rating, and current price.
+ * 
+ * @param hotel - The hotel data object
+ * @param rank - Pre-calculated rank string (e.g., "1st", "2nd")
+ * @param isTarget - Boolean indicating if this is the user's focus hotel
+ * @param currency - Currency code for price display
+ */
+const ScoreCard = ({
+  hotel,
+  rank,
+  isTarget,
+  currency = "USD",
 }: {
-  percentage: number;
-  score: number;
-  color: string;
+  hotel: any;
+  rank: string;
+  isTarget?: boolean;
+  currency?: string;
 }) => {
   const { t } = useI18n();
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return "text-green-400";
+    if (rating >= 4.0) return "text-blue-400";
+    if (rating >= 3.5) return "text-yellow-400";
+    return "text-red-400";
+  };
+
   return (
     <div
-      className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center"
-      style={{
-        background: `conic-gradient(${color} ${percentage * 3.6}deg, #0a1628 0deg)`,
-      }}
+      className={`relative p-5 rounded-xl border transition-all duration-300 group overflow-hidden ${
+        isTarget
+          ? "bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+          : "bg-[#15294A] border-white/5 hover:border-white/10"
+      }`}
     >
-      <div className="absolute w-[100px] h-[100px] bg-[#15294A] rounded-full" />
-      <div className="relative z-10 flex flex-col items-center">
-        <span className="text-3xl font-bold text-white">{score}</span>
-        <span className="text-xs text-gray-400">
-          {t("hotelDetails.intelSummary")}
-        </span>
+      {isTarget && (
+        <div className="absolute top-0 right-0 p-2">
+          <Sparkles className="w-4 h-4 text-blue-400 opacity-50" />
+        </div>
+      )}
+
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
+          </span>
+          <h3 className="text-sm font-bold text-white truncate max-w-[140px]">
+            {hotel.name}
+          </h3>
+        </div>
+        <div className="bg-black/20 px-2 py-1 rounded text-[10px] font-bold text-gray-400 border border-white/5">
+          {rank}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-500 mb-1">
+            {t("sentiment.overallRating")}
+          </span>
+          <div className="flex items-end gap-1">
+            <span className={`text-2xl font-black ${getRatingColor(hotel.rating || 0)}`}>
+              {(hotel.rating || 0).toFixed(1)}
+            </span>
+            <span className="text-[10px] text-gray-500 mb-1.5 font-bold">/ 5.0</span>
+          </div>
+        </div>
+        <div className="flex flex-col text-right">
+          <span className="text-xs text-gray-500 mb-1">
+            {t("sentiment.currentPrice")}
+          </span>
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-xl font-bold text-white">
+              {hotel.price_info?.current_price
+                ? hotel.price_info.current_price.toLocaleString()
+                : "N/A"}
+            </span>
+            {hotel.price_info?.current_price && (
+              <span className="text-[10px] text-gray-500 font-bold">
+                {getCurrencySymbol(currency || "USD")}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[10px] text-gray-400">
+            <Trophy className="w-3 h-3 text-yellow-500" />
+            <span>{(hotel.reviews_count || 0).toLocaleString()} reviews</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+           {hotel.price_info?.price_change_percent !== undefined && (
+             <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
+               hotel.price_info.price_change_percent > 0 ? "text-red-400" : "text-green-400"
+             }`}>
+               {hotel.price_info.price_change_percent > 0 ? (
+                 <TrendingUp className="w-3 h-3" />
+               ) : (
+                 <TrendingDown className="w-3 h-3" />
+               )}
+               {Math.abs(hotel.price_info.price_change_percent)}%
+             </div>
+           )}
+        </div>
       </div>
     </div>
   );
 };
 
-// Score Card Component
-const ScoreCard = ({
-  type,
-  name,
-  score,
-  trend,
-  trendValue,
-  rank,
-  reviews,
-  price,
-  currency,
-  icon: Icon,
-}: {
-  type: "my-hotel" | "leader" | "competitor";
-  name: string;
-  score: number;
-  trend: "up" | "down" | "neutral";
-  trendValue: string;
-  rank: string;
-  reviews?: number;
-  price?: number;
-  currency?: string;
-  icon: any;
-}) => {
-  const borderColor =
-    type === "my-hotel"
-      ? "border-blue-500/30 hover:border-blue-500/60"
-      : type === "leader"
-        ? "border-[#D4AF37]/30 hover:border-[#D4AF37]/60"
-        : "border-white/5 hover:border-white/10";
-
-  const labelColor =
-    type === "my-hotel"
-      ? "text-blue-500"
-      : type === "leader"
-        ? "text-[#D4AF37]"
-        : "text-gray-500";
-
-  const progressColor =
-    type === "my-hotel" ? "#1152d4" : type === "leader" ? "#D4AF37" : "#64748b";
-
-  const { t } = useI18n();
-
-  const percentage = (score / 5) * 100;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`bg-[#15294A] rounded-xl p-6 border ${borderColor} relative overflow-hidden group transition-colors`}
-    >
-      <div className="absolute -top-4 -right-4 transition-opacity opacity-20 pointer-events-none group-hover:opacity-30">
-        <Icon
-          className="w-24 h-24 rotate-12"
-          style={{ color: progressColor }}
-        />
-      </div>
-
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div>
-          <p
-            className={`${labelColor} font-bold text-xs uppercase tracking-widest mb-1`}
-          >
-            {type === "my-hotel"
-              ? t("common.myHotel")
-              : type === "leader"
-                ? t("sentiment.leader")
-                : t("common.competitor")}
-          </p>
-          <h3 className="text-xl font-bold text-white truncate max-w-[180px]">
-            {name}
-          </h3>
-        </div>
-        {trend !== "neutral" && (
-          <div
-            className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 ${
-              trend === "up"
-                ? "bg-green-500/20 text-green-400"
-                : "bg-red-500/20 text-red-400"
-            }`}
-          >
-            {trend === "up" ? (
-              <TrendingUp className="w-3.5 h-3.5" />
-            ) : (
-              <TrendingDown className="w-3.5 h-3.5" />
-            )}
-            {trendValue}
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-6 relative z-10">
-        <RadialProgress
-          percentage={percentage}
-          score={score}
-          color={progressColor}
-        />
-        <div className="flex flex-col gap-2">
-          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            {t("analysis.competitiveRank")}:{" "}
-            <span
-              className={`text-sm ${type === "leader" ? "text-[#D4AF37]" : "text-white"}`}
-            >
-              {rank}
-            </span>
-          </div>
-          {price !== undefined && (
-            <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-              {t("hotelDetails.price")}:{" "}
-              <span className="text-white text-sm">
-                {getCurrencySymbol(currency || "USD")}
-                {price.toLocaleString()}
-              </span>
-            </div>
-          )}
-          {reviews !== undefined && reviews > 0 && (
-            <div className="text-sm text-gray-400">
-              Reviews:{" "}
-              <span className="text-white font-bold">
-                {reviews?.toLocaleString()}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Category Bar Component
+/**
+ * CategoryBar Component
+ * Renders a comparison bar for a specific sentiment category (e.g., Service, Cleanliness).
+ * Shows how "My Hotel" stacks up against the Market Leader and the Market Average.
+ * 
+ * @param category - The name of the category
+ * @param myScore - Sentiment score for the target hotel (0-5)
+ * @param leaderScore - Sentiment score for the top competitor in this category
+ * @param marketAvg - Average sentiment score across all tracked hotels
+ * @param leaderName - Name of the leading competitor for this category
+ */
 const CategoryBar = ({
   category,
   myScore,
-  leaderName,
   leaderScore,
   marketAvg,
+  leaderName,
 }: {
   category: string;
   myScore: number;
-  leaderName?: string;
   leaderScore: number;
   marketAvg: number;
+  leaderName?: string;
 }) => {
   const { t } = useI18n();
   const categoryKey = category.toLowerCase();
@@ -310,7 +275,16 @@ const CategoryBar = ({
   );
 };
 
-// Keyword Tag Component
+/**
+ * KeywordTag Component
+ * A visual pill representing a specific keyword mention from reviews.
+ * Includes count and a tooltip showing a relevant snippet.
+ * 
+ * @param text - The keyword text (translated if possible)
+ * @param count - Number of times this keyword was mentioned
+ * @param sentiment - Sentiment bucket (positive, negative, neutral)
+ * @param description - A sample review snippet or summary for the tooltip
+ */
 const KeywordTag = ({
   text,
   count,
@@ -319,35 +293,29 @@ const KeywordTag = ({
   description,
 }: {
   text: string;
-  count?: number;
+  count: number;
   sentiment: "positive" | "negative" | "neutral";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md";
   description?: string;
 }) => {
-  const sizeClasses = {
-    sm: "px-2 py-1 text-[10px]",
-    md: "px-3 py-1 text-sm",
-    lg: "px-4 py-2 text-base font-bold",
-  };
-  const colorClasses = {
-    positive: "bg-green-900/40 text-green-300 border-green-700/50 hover:bg-green-800/60",
-    negative: "bg-red-900/40 text-red-300 border-red-700/50 hover:bg-red-800/60",
-    neutral: "bg-gray-700/40 text-gray-300 border-gray-600/50 hover:bg-gray-600/60",
+  const t_name = KEYWORD_TRANSLATIONS[text.toLowerCase()] || text;
+  const colors = {
+    positive: "bg-green-500/10 text-green-400 border-green-500/20",
+    negative: "bg-red-500/10 text-red-400 border-red-500/20",
+    neutral: "bg-gray-500/10 text-gray-400 border-gray-500/20",
   };
 
   return (
     <div className="group relative inline-block">
       <span
-        className={`${sizeClasses[size]} ${colorClasses[sentiment]} rounded-lg border transition-all cursor-help flex items-center gap-1.5`}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium ${colors[sentiment]} ${
+          size === "md" ? "text-sm" : "text-[11px]"
+        }`}
       >
-        {text}
-        <span className="opacity-60 font-mono">
-          {count &&
-            (sentiment === "positive"
-              ? `+${count}`
-              : sentiment === "negative"
-                ? `-${count}`
-                : count)}
+        <span className="capitalize">{t_name}</span>
+        <span className="w-[1px] h-3 bg-white/10 mx-1" />
+        <span className="text-[10px] font-black opacity-80">
+          {count > 999 ? (count / 1000).toFixed(1) + "k" : count}
         </span>
       </span>
       {description && (
@@ -360,6 +328,16 @@ const KeywordTag = ({
   );
 };
 
+/**
+ * SentimentPage Component (Main Dashboard)
+ * The primary view for cross-hotel sentiment analysis.
+ * 
+ * Features:
+ * - Dynamic hotel comparison selection (up to 5)
+ * - Intelligence Hub (Radar Chart + Strategic Map)
+ * - Topic-based sentiment breakdowns
+ * - Competitive Battlefield vs. Historical Trend analysis
+ */
 export default function SentimentPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
@@ -371,161 +349,101 @@ export default function SentimentPage() {
   const [initialized, setInitialized] = useState(false);
   const [view, setView] = useState<"battlefield" | "history">("battlefield");
 
-  // Build hotel list from real data
-  const targetHotel = data?.target_hotel;
+  // 1. Core Data Extraction (Memoized)
+  const targetHotel = useMemo(() => data?.target_hotel, [data?.target_hotel]);
   const competitors = useMemo(() => data?.competitors || [], [data?.competitors]);
 
-  // Initialize selected hotels once data is loaded
-  if (targetHotel && !initialized) {
-    const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
-    setSelectedHotelIds(initialIds.slice(0, 5));
-    setInitialized(true);
-  }
-
-  // Sort all hotels by rating to determine ranks
-  const allHotels = [
+  // 2. Global Hotel List & Leader Logic
+  const allHotels = useMemo(() => [
     ...(targetHotel ? [{ ...targetHotel, isTarget: true }] : []),
     ...competitors.map((c: any) => ({ ...c, isTarget: false })),
-  ].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  ].sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0)), [targetHotel, competitors]);
 
-  // Filtered lists based on selection
-  const visibleCompetitors = competitors.filter((c: any) =>
-    selectedHotelIds.includes(c.id),
-  );
-  const isTargetSelected =
-    targetHotel && selectedHotelIds.includes(targetHotel.id);
+  const leader = useMemo(() => allHotels[0], [allHotels]);
+  const isTargetLeader = useMemo(() => leader?.isTarget, [leader]);
 
-  // Fetch sentiment history for selected hotels
-  const [sentimentHistory, setSentimentHistory] = useState<
-    Record<string, any[]>
-  >({});
+  const marketAvgRating = useMemo(() =>
+    allHotels.length > 0
+      ? allHotels.reduce((sum, h) => sum + (Number(h.rating) || 0), 0) / allHotels.length
+      : 0
+  , [allHotels]);
+
+  // 3. Selection Initialization
+  useEffect(() => {
+    if (targetHotel && !initialized) {
+      const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
+      setSelectedHotelIds(initialIds.slice(0, 5));
+      setInitialized(true);
+    }
+  }, [targetHotel, competitors, initialized]);
+
+  // 4. Sentiment History State & Fetching Effect
+  const [sentimentHistory, setSentimentHistory] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     const fetchHistory = async () => {
+      if (selectedHotelIds.length === 0) return;
+      
       const historyMap: Record<string, any[]> = {};
       const days = timeframe === "daily" ? 7 : timeframe === "weekly" ? 30 : 90;
 
       for (const id of selectedHotelIds) {
         try {
           const res = await api.getSentimentHistory(id, days);
-          if (res.history) {
+          if (res?.history) {
             historyMap[id] = res.history;
           }
         } catch (err) {
-          console.error(`Error fetching history for ${id}:`, err);
+          console.error(`[Sentiment] Error fetching history for ${id}:`, err);
         }
       }
       setSentimentHistory(historyMap);
     };
 
-    if (selectedHotelIds.length > 0) {
-      fetchHistory();
-    }
+    fetchHistory();
   }, [selectedHotelIds, timeframe]);
 
-  // Find the leader (highest rated)
-  const leader = allHotels[0];
-  const isTargetLeader = leader?.isTarget;
-
-  // Calculate market average
-  const marketAvgRating =
-    allHotels.length > 0
-      ? allHotels.reduce((sum, h) => sum + (h.rating || 0), 0) /
-        allHotels.length
-      : 0;
-
-  // Get rank for a hotel
+  // 5. Utility Functions & Mappings
   const getRank = (hotelId: string) => {
     const idx = allHotels.findIndex((h) => h.id === hotelId);
     if (idx === 0) return `1${t("sentiment.rankSuffix.st")}`;
     if (idx === 1) return `2${t("sentiment.rankSuffix.nd")}`;
     if (idx === 2) return `3${t("sentiment.rankSuffix.rd")}`;
     return `${idx + 1}${t("sentiment.rankSuffix.th")}`;
-  // 3. Strategic Map Logic (Advisor Quadrant)
-  const strategicMap = useMemo(() => {
-    if (!targetHotel) return null;
-    
-    // Safety check for pricing data
-    const myPrice = targetHotel.price_info?.current_price || 0;
-    const myRating = targetHotel.rating || 0;
-    
-    // Group all valid competitors for market average
-    const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
-    const avgMarketPrice = validCompetitors.length > 0
-        ? validCompetitors.reduce((sum: number, c: any) => sum + (c.price_info?.current_price || 0), 0) / validCompetitors.length
-        : myPrice;
-        
-    const avgMarketRating = allHotels.length > 0
-        ? allHotels.reduce((sum: number, h: any) => sum + (h.rating || 0), 0) / allHotels.length
-        : myRating;
-    
-    // Calculate Indices (Target 100 as par)
-    const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
-    const sentimentIndex = avgMarketRating > 0 ? (myRating / avgMarketRating) * 100 : 100;
-    
-    // Normalized Coordinates for -50 to 50 grid
-    const x = Math.min(Math.max(sentimentIndex - 100, -50), 50);
-    const y = Math.min(Math.max(ari - 100, -50), 50);
-    
-    // Determine Strategic Cluster
-    let label = "Standard";
-    if (x > 2 && y > 2) label = "Premium King";
-    else if (x > 2 && y < -2) label = "Value Leader";
-    else if (x < -2 && y < -2) label = "Budget / Economy";
-    else if (x < -2 && y > 2) label = "Danger Zone";
-    
-    return { x, y, label, ari, sentiment: sentimentIndex, targetRating: myRating, marketRating: avgMarketRating };
-  }, [targetHotel, competitors, allHotels]);
+  };
 
-  // Helper to match categories (English + Turkish)
+  /**
+   * getCategoryScore - Multi-layered Fallback Logic
+   * Attempts to find a score for a specific category using:
+   * 1. Current breakdown (live data)
+   * 2. Historical records (trend data)
+   * 3. Guest mentions (weighted keyword average)
+   */
   const getCategoryScore = (hotel: any, category: string, history: any[] = []) => {
     if (!hotel?.sentiment_breakdown) return 0;
-
     const target = category.toLowerCase();
     const aliases: Record<string, string[]> = {
-      cleanliness: ["temizlik", "clean", "room", "cleanliness"],
+      cleanliness: ["temizlik", "clean", "room", "cleanliness", "oda", "odalar"],
       service: ["hizmet", "staff", "personel", "service"],
       location: ["konum", "neighborhood", "mevki", "location"],
-      value: [
-        "değer",
-        "fiyat",
-        "price",
-        "comfort",
-        "kalite",
-        "value",
-        "fiyat/performans",
-        "cost",
-        "money",
-        "ucuz",
-        "pahalı",
-        "ekonomik",
-      ],
+      value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "fiyat/performans", "cost", "money", "ucuz", "pahalı", "ekonomik"],
     };
-
-    // Find the item in the breakdown that matches the target category or one of its aliases
+    
+    // Attempt Level 1: Current Breakdown
     const item = hotel.sentiment_breakdown.find((s: any) => {
-      // Normalize name: lowercase and trim
       const name = (s.name || s.category || "").toLowerCase().trim();
-      
-      // Direct match
       if (name === target) return true;
-      
-      // Alias match
       return aliases[target]?.some(alias => name.includes(alias));
     });
 
     if (!item) {
-       // KAİZEN: 1st Fallback - Check History for "Last Known Good"
-       // If current scan missed it (e.g. Feb 19), maybe Feb 18 caught it.
+       // Attempt Level 2: History Search
        if (history && history.length > 0) {
-          // Sort descending by date just in case
-          // Sort descending by date (API returns 'date', DB returns 'recorded_at')
           const sortedHistory = [...history].sort((a, b) => {
-             const dateA = new Date(a.date || a.recorded_at).getTime();
-             const dateB = new Date(b.date || b.recorded_at).getTime();
+             const dateA = new Date(a.date || a.recorded_at || 0).getTime();
+             const dateB = new Date(b.date || b.recorded_at || 0).getTime();
              return dateB - dateA;
           });
-          
           for (const record of sortedHistory) {
               const histBreakdown = record.sentiment_breakdown || record.breakdown || [];
               const histItem = histBreakdown.find((s: any) => {
@@ -533,68 +451,97 @@ export default function SentimentPage() {
                   if (name === target) return true;
                   return aliases[target]?.some(alias => name.includes(alias));
               });
-
               if (histItem) {
-                  // If explicit rating exists, use it
-                  if (histItem.rating) {
-                      return Number(histItem.rating);
-                  }
-                  
-                  // If not, calculate from counts (positive, neutral, negative)
+                  if (histItem.rating) return Number(histItem.rating);
                   const pos = Number(histItem.positive) || 0;
                   const neu = Number(histItem.neutral) || 0;
                   const neg = Number(histItem.negative) || 0;
                   const total = pos + neu + neg;
-                  
-                  if (total > 0) {
-                      return (pos * 5 + neu * 3 + neg * 1) / total;
-                  }
+                  if (total > 0) return (pos * 5 + neu * 3 + neg * 1) / total;
               }
           }
        }
-
-       // KAİZEN: 2nd Fallback - text mining from guest_mentions if category missing
+       
+       // Attempt Level 3: Guest Mentions Scaling
        if (hotel.guest_mentions?.length > 0) {
           const relevantMentions = hotel.guest_mentions.filter((m: any) => {
              const text = (m.keyword || m.text || "").toLowerCase();
              return aliases[target]?.some(alias => text.includes(alias));
           });
- 
           if (relevantMentions.length > 0) {
-             let weightedSum = 0;
-             let totalCount = 0;
-             
-             relevantMentions.forEach((m: any) => {
-                const count = Number(m.count) || 1;
-                totalCount += count;
-                const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
-                weightedSum += score * count;
-             });
- 
-             if (totalCount > 0) return weightedSum / totalCount;
+              let weightedSum = 0;
+              let totalCount = 0;
+              relevantMentions.forEach((m: any) => {
+                 const count = Number(m.count) || 1;
+                 totalCount += count;
+                 const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
+                 weightedSum += score * count;
+              });
+              if (totalCount > 0) return weightedSum / totalCount;
           }
        }
        return 0;
     }
-
-    // Use existing rating if available
-    if (item.rating !== undefined && item.rating !== null) {
-      return Number(item.rating);
-    }
-
-    // Fallback: Calculate rating from sentiment counts if missing
+    
+    if (item.rating !== undefined && item.rating !== null) return Number(item.rating);
     const pos = Number(item.positive) || 0;
     const neu = Number(item.neutral) || 0;
     const neg = Number(item.negative) || 0;
     const total = pos + neu + neg;
-
-    // Formula: (5*pos + 3*neu + 1*neg) / total
-    if (total > 0) {
-      return (pos * 5 + neu * 3 + neg * 1) / total;
-    }
-
-    return 0;
+    return total > 0 ? (pos * 5 + neu * 3 + neg * 1) / total : 0;
   };
+
+  /**
+   * Strategic Map Logic (Advisor Quadrant)
+   * Calculates coordinates for the Price vs. Sentiment matrix.
+   */
+  const strategicMap = useMemo(() => {
+    if (!targetHotel) return null;
+    const myPrice = Number(targetHotel.price_info?.current_price) || 0;
+    const myRating = Number(targetHotel.rating) || 0;
+    const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
+    
+    const avgMarketPrice = validCompetitors.length > 0
+        ? validCompetitors.reduce((sum: number, c: any) => sum + (Number(c.price_info?.current_price) || 0), 0) / validCompetitors.length
+        : myPrice;
+        
+    const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
+    const sentimentIndex = marketAvgRating > 0 ? (myRating / marketAvgRating) * 100 : 100;
+    
+    const x = Math.min(Math.max(sentimentIndex - 100, -50), 50);
+    const y = Math.min(Math.max(ari - 100, -50), 50);
+    
+    let label = "Standard";
+    if (x > 2 && y > 2) label = "Premium King";
+    else if (x > 2 && y < -2) label = "Value Leader";
+    else if (x < -2 && y < -2) label = "Budget / Economy";
+    else if (x < -2 && y > 2) label = "Danger Zone";
+    
+    return { x, y, label, ari, sentiment: sentimentIndex, targetRating: myRating, marketRating: marketAvgRating };
+  }, [targetHotel, competitors, marketAvgRating]);
+
+
+  // 6. Visualization Data (Radar)
+  const radarData = useMemo(() => {
+    if (!targetHotel) return [];
+    return ["Cleanliness", "Service", "Location", "Value"].map((cat) => ({
+      subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}` 
+        ? t(`sentiment.${cat.toLowerCase()}`) 
+        : cat,
+      A: getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id]),
+      B: leader ? getCategoryScore(leader, cat, sentimentHistory[leader.id]) : 0,
+      C: marketAvgRating || 3, // Fallback to neutral 3 if avg unavailable
+    }));
+  }, [targetHotel, leader, sentimentHistory, marketAvgRating, t]);
+
+  // 7. Computed Visibility Toggles
+  const visibleCompetitors = useMemo(() => 
+    competitors.filter((c: any) => selectedHotelIds.includes(c.id))
+  , [competitors, selectedHotelIds]);
+
+  const isTargetSelected = useMemo(() => 
+    !!(targetHotel && selectedHotelIds.includes(targetHotel.id))
+  , [targetHotel, selectedHotelIds]);
 
   return (
     <div className="min-h-screen bg-[#0a1628] p-8">
@@ -682,292 +629,150 @@ export default function SentimentPage() {
         </div>
       ) : (
         <>
-          {/* Score Cards Grid - Up to 5 hotels selectable */}
+          {/* Score Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            {/* Target Hotel Card */}
             {isTargetSelected && targetHotel && (
               <ScoreCard
-                type={isTargetLeader ? "leader" : "my-hotel"}
-                name={targetHotel.name || "My Hotel"}
-                score={Number((targetHotel.rating || 0).toFixed(2))}
-                trend={
-                  targetHotel.price_info?.trend === "up"
-                    ? "up"
-                    : targetHotel.price_info?.trend === "down"
-                      ? "down"
-                      : "neutral"
-                }
-                trendValue={
-                  targetHotel.price_info?.change_percent
-                    ? `${Math.abs(targetHotel.price_info.change_percent).toFixed(1)}%`
-                    : ""
-                }
+                hotel={targetHotel}
                 rank={getRank(targetHotel.id)}
-                price={targetHotel.price_info?.current_price}
+                isTarget
                 currency={getCurrencySymbol(
                   targetHotel.price_info?.currency || "USD",
                 )}
-                icon={isTargetLeader ? Trophy : Hotel}
               />
             )}
-
-            {/* Competitor Cards */}
             {visibleCompetitors.map((comp: any, idx: number) => {
-              const isCompLeader =
-                !isTargetLeader && allHotels[0]?.id === comp.id;
+              const compRank = getRank(comp.id);
               return (
                 <ScoreCard
                   key={comp.id}
-                  type={isCompLeader ? "leader" : "competitor"}
-                  name={comp.name || `Competitor ${idx + 1}`}
-                  score={Number((comp.rating || 0).toFixed(2))}
-                  trend={
-                    comp.price_info?.trend === "up"
-                      ? "up"
-                      : comp.price_info?.trend === "down"
-                        ? "down"
-                        : "neutral"
-                  }
-                  trendValue={
-                    comp.price_info?.change_percent
-                      ? `${Math.abs(comp.price_info.change_percent).toFixed(1)}%`
-                      : ""
-                  }
-                  rank={getRank(comp.id)}
-                  price={comp.price_info?.current_price}
+                  hotel={comp}
+                  rank={compRank}
                   currency={getCurrencySymbol(
                     comp.price_info?.currency || "USD",
                   )}
-                  icon={isCompLeader ? Trophy : Building2}
                 />
               );
             })}
           </div>
 
-          {/* Intelligence Hub: Radar, Breakdown, AI Insight, Keywords */}
+          {/* Intelligence Hub */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-            {/* Left Hub: Radar + Category Bars (2/3) */}
+            {/* Left Hub: Radar + Category Bars */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-8 bg-[#15294A] rounded-xl p-6 border border-white/5"
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-500" />
-                  {t("sentiment.performancePulse")}
+                  <Radar className="w-5 h-5 text-blue-400" />
+                  Experience Core
                 </h3>
-                <div className="hidden sm:flex items-center gap-4 text-[10px] font-bold">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-blue-500" />
-                    <span className="text-gray-400">My Hotel</span>
+                {isTargetLeader && (
+                  <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/20">
+                    <Trophy className="w-3 h-3" />
+                    Market Leader
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-[#D4AF37]" />
-                    <span className="text-gray-400">Leader</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-gray-600" />
-                    <span className="text-gray-400">Market Avg</span>
-                  </div>
-                </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-                {/* Radar Chart */}
-                <div className="h-[300px] w-full">
-                  {(() => {
-                    const categories = [
-                      "Cleanliness",
-                      "Service",
-                      "Location",
-                      "Value",
-                    ];
-                    const radarData = categories.map((cat) => {
-                      const getScore = (hotel: any) =>
-                        getCategoryScore(hotel, cat, sentimentHistory[hotel.id] || []);
-                      const marketAvgCat =
-                        allHotels.length > 0
-                          ? allHotels.reduce((sum, h) => sum + getScore(h), 0) /
-                            allHotels.length
-                          : 0;
-                      return {
-                        subject: cat,
-                        A: getScore(targetHotel),
-                        B: getScore(leader),
-                        C: Number(marketAvgCat.toFixed(1)),
-                        fullMark: 5,
-                      };
-                    });
-                    return <SentimentRadar data={radarData} />;
-                  })()}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-8">
+                  <CategoryBar
+                    category="Cleanliness"
+                    myScore={getCategoryScore(targetHotel, "cleanliness", sentimentHistory[targetHotel.id])}
+                    leaderScore={getCategoryScore(leader, "cleanliness", sentimentHistory[leader?.id])}
+                    marketAvg={marketAvgRating}
+                    leaderName={leader?.name}
+                  />
+                  <CategoryBar
+                    category="Service"
+                    myScore={getCategoryScore(targetHotel, "service", sentimentHistory[targetHotel.id])}
+                    leaderScore={getCategoryScore(leader, "service", sentimentHistory[leader?.id])}
+                    marketAvg={marketAvgRating}
+                    leaderName={leader?.name}
+                  />
+                  <CategoryBar
+                    category="Location"
+                    myScore={getCategoryScore(targetHotel, "location", sentimentHistory[targetHotel.id])}
+                    leaderScore={getCategoryScore(leader, "location", sentimentHistory[leader?.id])}
+                    marketAvg={marketAvgRating}
+                    leaderName={leader?.name}
+                  />
+                  <CategoryBar
+                    category="Value"
+                    myScore={getCategoryScore(targetHotel, "value", sentimentHistory[targetHotel.id])}
+                    leaderScore={getCategoryScore(leader, "value", sentimentHistory[leader?.id])}
+                    marketAvg={marketAvgRating}
+                    leaderName={leader?.name}
+                  />
                 </div>
-
-                {/* Strategic Advisor Quadrant (Price vs Sentiment) */}
-                <div className="lg:block">
-                  {strategicMap && (
-                    <AdvisorQuadrant {...strategicMap} />
-                  )}
-                </div>
-
-                {/* Score Tickers */}
-                <div className="space-y-4">
-                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 px-1">
-                    Core Metrics
-                  </div>
-                  {["Cleanliness", "Service", "Location", "Value"].map(
-                    (cat) => (
-                      <CategoryBar
-                        key={cat}
-                        category={cat}
-                        myScore={getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id] || [])}
-                        leaderName={leader?.name}
-                        leaderScore={getCategoryScore(leader, cat, sentimentHistory[leader?.id] || [])}
-                        marketAvg={marketAvgRating}
-                      />
-                    ),
-                  )}
+                <div className="flex items-center justify-center bg-[#0a1628]/30 rounded-xl p-4 border border-white/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
+                  <SentimentRadar
+                    data={radarData}
+                  />
                 </div>
               </div>
             </motion.div>
 
-            {/* Right Hub: AI Insight + Keywords (1/3) */}
+            {/* Right Hub: Advisor Quadrant + Competitive Vulnerability */}
             <div className="lg:col-span-4 flex flex-col gap-6">
-              {/* Keywords Hub */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-[#15294A] rounded-xl p-6 border border-white/5 flex-1"
+                className="flex-1 bg-gradient-to-br from-[#15294A] to-[#1a3a6a] rounded-xl p-6 border border-white/5 shadow-xl relative overflow-hidden group"
               >
-                <div className="flex items-center gap-2 mb-6">
-                  <Brain className="w-5 h-5 text-green-400" />
-                  <h3 className="text-lg font-bold text-white">
-                    {t("sentiment.sentimentVoices")}
-                  </h3>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {targetHotel.guest_mentions
-                    ?.slice(0, 10)
-                    .map((mention: any, idx: number) => {
-                      const rawText =
-                        mention.keyword || mention.text || "N/A";
-                      const translatedText =
-                        KEYWORD_TRANSLATIONS[rawText.toLowerCase()] ||
-                        rawText;
-
-                      return (
-                        <KeywordTag
-                          key={idx}
-                          text={
-                            translatedText.charAt(0).toUpperCase() +
-                            translatedText.slice(1)
-                          }
-                          count={mention.count}
-                          sentiment={mention.sentiment}
-                          size="sm"
-                          description={mention.description || mention.text}
-                        />
-                      );
-                    }) || (
-                    <p className="text-gray-500 italic text-xs">
-                      {t("sentiment.noMentions")}
-                    </p>
-                  )}
-                </div>
-
-                {/* AI Insight Nested */}
-                {targetHotel.guest_mentions &&
-                  targetHotel.guest_mentions.length > 0 && (
-                    <div className="p-4 bg-blue-900/10 border border-blue-800/20 rounded-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-blue-400" />
-                        <h4 className="text-xs font-bold text-blue-300">
-                          {t("sentiment.agentIntelligence")}
-                        </h4>
-                      </div>
-                      <p className="text-[11px] text-blue-200/80 leading-relaxed mb-4">
-                        {t("sentiment.topDriver")}:{" "}
-                        <span className="text-green-400 font-bold">
-                          {targetHotel.guest_mentions.find(
-                            (m) => m.sentiment === "positive",
-                          )?.keyword || "Service"}
-                        </span>
-                        .
-                      </p>
-                      <div className="pt-3 border-t border-blue-400/10">
-                        <p className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest mb-1.5">
-                          {t("sentiment.reasoningLogic")}
-                        </p>
-                        {t("sentiment.extracted")}{" "}
-                        {targetHotel.guest_mentions.find(
-                          (m) => m.sentiment === "positive",
-                        )?.count || t("sentiment.multiple")}{" "}
-                        {t("sentiment.positiveSignals")}.
-                      </div>
-                    </div>
-                  )}
+                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Brain className="w-12 h-12 text-blue-400" />
+                 </div>
+                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-blue-400" />
+                    Strategic Map
+                 </h3>
+                 {strategicMap && (
+                   <AdvisorQuadrant
+                     x={strategicMap.x}
+                     y={strategicMap.y}
+                     label={strategicMap.label}
+                     ari={strategicMap.ari}
+                     sentiment={strategicMap.sentiment}
+                     targetRating={strategicMap.targetRating}
+                     marketRating={strategicMap.marketRating}
+                   />
+                 )}
               </motion.div>
+              
+              <CompetitiveWeakness
+                competitors={visibleCompetitors}
+                t={t}
+              />
             </div>
           </div>
 
-          {/* Row 2: Competitive Vulnerability analysis (Full Width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-8"
+            className="bg-[#15294A] rounded-xl p-6 border border-white/5 mb-6"
           >
-            <CompetitiveWeakness competitors={visibleCompetitors} t={t} />
-          </motion.div>
-
-          {/* Row 3: Sentiment Deep Dive Breakdown (Full Width) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mb-8"
-          >
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                Sentiment Deep Dive
+              </h3>
+            </div>
             <SentimentBreakdown
               items={
-                ((targetHotel as any).sentiment_raw_breakdown || targetHotel.sentiment_breakdown || [])
-                .sort((a: any, b: any) => Number(b.total_mentioned || 0) - Number(a.total_mentioned || 0))
-                .map((s: any) => {
-                  let total = Number(s.total || s.total_mentioned);
-                  if (Number.isNaN(total) || total <= 0) total = 0;
-                  
-                  // Use translated name if available
-                  const rawName = s.display_name || s.name || s.category || "General";
-                  const translatedName = KEYWORD_TRANSLATIONS[rawName.toLowerCase()] || rawName;
-
-                  let rating = Number(s.rating);
-                  if (Number.isNaN(rating)) rating = 0;
-                  
-                  return {
-                    name: translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
-                    total_mentioned: total,
-                    positive:
-                      typeof s.positive === "number" &&
-                      !Number.isNaN(s.positive)
-                        ? s.positive
-                        : Math.round((rating / 5) * total),
-                    negative:
-                      typeof s.negative === "number" &&
-                      !Number.isNaN(s.negative)
-                        ? s.negative
-                        : Math.round(((5 - rating) / 5) * total * 0.2),
-                    neutral:
-                      typeof s.neutral === "number" && !Number.isNaN(s.neutral)
-                        ? s.neutral
-                        : Math.round(((5 - rating) / 5) * total * 0.8),
-                    serpapi_link: s.serpapi_link,
-                    description: s.description || s.summary,
-                  };
-                })
+                (targetHotel.sentiment_raw_breakdown ||
+                targetHotel.sentiment_breakdown || [])
+                .map((s: any) => ({
+                   ...s,
+                   description: s.description || s.summary
+                }))
                 .filter((item: any) => item.total_mentioned > 0)
-                .slice(0, 24) // Show up to 24 for high variety
+                .slice(0, 24)
               }
             />
           </motion.div>
@@ -1019,7 +824,6 @@ export default function SentimentPage() {
               </div>
             </div>
 
-            {/* Trend Chart or Ranking Bars */}
             {view === "battlefield" ? (
               <div className="mb-12">
                 <SentimentBattlefield 
@@ -1031,189 +835,59 @@ export default function SentimentPage() {
             ) : (
               <>
                 <div className="h-[400px] w-full relative mb-12">
-                  <div className="absolute inset-0 flex items-end justify-between px-2 pb-8 border-b border-white/10">
-                    {/* Chart Background Grid */}
-                    {[5.0, 4.0, 3.0, 2.0, 1.0].map((rating) => (
-                      <div
-                        key={rating}
-                        className="absolute w-full border-t border-white/5 flex items-center"
-                        style={{ bottom: `${(rating / 5) * 100}%` }}
-                      >
-                        <span className="text-[10px] text-gray-500 -ml-10 font-bold">
-                          {rating.toFixed(1)}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="absolute inset-0 flex items-end">
+                    {(function () {
+                      const allData = Object.values(sentimentHistory).flat();
+                      if (allData.length === 0) return null;
+                      
+                      const maxScore = 5;
+                      const minScore = 3;
+                      const range = maxScore - minScore;
 
-                    {/* Multi-Line Trend Visualization with Area Fill */}
-                    <svg
-                      className="absolute inset-0 w-full h-full overflow-visible"
-                      preserveAspectRatio="none"
-                      viewBox="0 0 1000 100"
-                    >
-                      <defs>
-                        <linearGradient id="blue-area" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                        </linearGradient>
-                        <linearGradient id="gold-area" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.1" />
-                          <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
+                      return selectedHotelIds.map((id) => {
+                        const history = sentimentHistory[id] || [];
+                        if (history.length === 0) return null;
 
-                      {/* Render Area Fills First */}
-                      {selectedHotelIds.map((id, hotelIdx) => {
-                        const hotel = allHotels.find((h) => h.id === id);
-                        const rawHistory = sentimentHistory[id] || [];
-                        if (rawHistory.length === 0) return null; // Only return null if truly empty
+                        const points = history
+                          .map((h, i) => {
+                            const val = Number(h.rating) || 3;
+                            const x = (i / (history.length - 1)) * 100;
+                            const y = 100 - ((val - minScore) / range) * 100;
+                            return `${x},${y}`;
+                          })
+                          .join(" ");
 
-                        // 1. Sort Chronologically
-                        const history = [...rawHistory].sort(
-                          (a, b) =>
-                            new Date(a.date || a.recorded_at).getTime() -
-                            new Date(b.date || b.recorded_at).getTime(),
-                        );
-
-                        const gradient = hotel?.isTarget
-                          ? "url(#blue-area)"
-                          : hotelIdx === 0
-                            ? "url(#gold-area)"
-                            : "none";
-                        
-                        // Area fill requires 2+ points
-                        if (history.length < 2 || gradient === "none") return null;
-
-                        const startTime = new Date(
-                          history[0].date || history[0].recorded_at,
-                        ).getTime();
-                        const endTime = new Date(
-                          history[history.length - 1].date || history[history.length - 1].recorded_at,
-                        ).getTime();
-                        const totalTime = endTime - startTime || 1;
-
-                        const points = history.map((h) => {
-                          const time = new Date(h.date || h.recorded_at).getTime();
-                          const x = ((time - startTime) / totalTime) * 1000;
-                          const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                          return `${x},${y}`;
-                        });
+                        const isTarget = id === targetHotel.id;
 
                         return (
-                          <polygon
-                            key={`area-${id}`}
-                            points={`0,100 ${points.join(" ")} 1000,100`}
-                            fill={gradient}
-                            className="transition-all duration-700"
-                          />
+                          <svg
+                            key={id}
+                            className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                          >
+                            <polyline
+                              points={points}
+                              fill="none"
+                              stroke={isTarget ? "#3b82f6" : "#6b7280"}
+                              strokeWidth={isTarget ? "1.5" : "0.5"}
+                              strokeDasharray={isTarget ? "0" : "1 1"}
+                              className="transition-all duration-1000"
+                            />
+                          </svg>
                         );
-                      })}
-
-                      {/* Render Lines & Dots */}
-                      {selectedHotelIds.map((id, hotelIdx) => {
-                        const hotel = allHotels.find((h) => h.id === id);
-                        const rawHistory = sentimentHistory[id] || [];
-                        if (rawHistory.length === 0) return null;
-
-                        const history = [...rawHistory].sort(
-                          (a, b) =>
-                            new Date(a.date || a.recorded_at).getTime() -
-                            new Date(b.date || b.recorded_at).getTime(),
-                        );
-
-                        const color = hotel?.isTarget
-                          ? "#3b82f6"
-                          : hotelIdx === 0
-                            ? "#D4AF37"
-                            : "#6b7280";
-                        const isDashed = !hotel?.isTarget && hotelIdx !== 0;
-
-                        const startTime = new Date(
-                          history[0].date || history[0].recorded_at,
-                        ).getTime();
-                        const endTime = new Date(
-                          history[history.length - 1].date || history[history.length - 1].recorded_at,
-                        ).getTime();
-                        const totalTime = endTime - startTime || 1;
-
-                        return (
-                          <g key={`group-${id}`}>
-                             {/* Line (needs 2+ points) */}
-                             {history.length >= 2 && (
-                                <polyline
-                                  points={history
-                                    .map((h) => {
-                                      const time = new Date(h.date || h.recorded_at).getTime();
-                                      const x = ((time - startTime) / totalTime) * 1000;
-                                      const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                                      return `${x},${y}`;
-                                    })
-                                    .join(" ")}
-                                  fill="none"
-                                  stroke={color}
-                                  strokeWidth={hotel?.isTarget ? "4" : "2"}
-                                  strokeDasharray={isDashed ? "5,5" : "0"}
-                                  strokeLinecap="round"
-                                  vectorEffect="non-scaling-stroke"
-                                  className="transition-all duration-700"
-                                />
-                             )}
-                             {/* Dots (visible even for 1 point) */}
-                             {history.map((h, idx) => {
-                                const time = new Date(h.date || h.recorded_at).getTime();
-                                // If totalTime is 0 (single point), place at center (500) or end?
-                                // Let's place single point at center
-                                const x = totalTime === 1 
-                                    ? 500 
-                                    : ((time - startTime) / totalTime) * 1000;
-                                const y = (1 - (Number(h.rating) || 0) / 5) * 100;
-                                return (
-                                  <circle 
-                                    key={idx} 
-                                    cx={x} 
-                                    cy={y} 
-                                    r={hotel?.isTarget ? 4 : 3} 
-                                    fill={color} 
-                                    className="transition-all duration-700"
-                                  />
-                                );
-                             })}
-                          </g>
-                        );
-                      })}
-                    </svg>
+                      });
+                    })()}
                   </div>
-
-                  {/* Dynamic X-Axis Labels */}
                   <div className="flex justify-between mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1">
-                    {(() => {
-                      const id = selectedHotelIds[0];
-                      const history = sentimentHistory[id] || [];
-                      if (history.length < 2) {
-                        return timeframe === "daily" ? (
-                          <span>Mon</span>
-                        ) : (
-                          <span>Jun</span>
-                        );
-                      }
-
-                      const sorted = [...history].sort(
-                        (a, b) =>
-                          new Date(a.date || a.recorded_at).getTime() -
-                          new Date(b.date || b.recorded_at).getTime(),
-                      );
-
-                      const start = new Date(sorted[0].date || sorted[0].recorded_at);
-                      const end = new Date(sorted[sorted.length - 1].date || sorted[sorted.length - 1].recorded_at);
-
-                      // Return 4 points across the period
-                      return [0, 0.33, 0.66, 1].map((pct, idx) => {
-                        const date = new Date(
-                          start.getTime() + (end.getTime() - start.getTime()) * pct,
-                        );
+                    {(function() {
+                      const firstHist = Object.values(sentimentHistory)[0] || [];
+                      if (firstHist.length < 2) return null;
+                      return [firstHist[0], firstHist[Math.floor(firstHist.length/2)], firstHist[firstHist.length-1]].map((h: any, i) => {
+                        if (!h) return null;
                         return (
-                          <span key={idx}>
-                            {date.toLocaleDateString("en-US", {
+                          <span key={i}>
+                            {new Date(h.date || h.recorded_at).toLocaleDateString(undefined, {
                               month: "short",
                               day: "numeric",
                             })}
@@ -1226,7 +900,7 @@ export default function SentimentPage() {
               </>
             )}
 
-            {/* Visual Ranking Display (Kept as secondary summary) */}
+            {/* Visual Ranking Display */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allHotels
                 .filter((h) => selectedHotelIds.includes(h.id))
@@ -1276,11 +950,10 @@ export default function SentimentPage() {
                 <span className="w-4 h-1 bg-gray-500 rounded-full" />
                 <span className="text-sm text-gray-300">Competitors</span>
               </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </div>
-    );
-}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </div>
+  );
 }
