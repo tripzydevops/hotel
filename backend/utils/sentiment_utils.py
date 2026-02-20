@@ -1,5 +1,12 @@
 from typing import List, Dict, Any, Optional
 
+"""
+Sentiment Transformation & Intelligence Utilities
+
+These utilities handle the complex mapping between unstructured SerpApi review data
+and the structured, multi-dimensional analytics expected by the frontend.
+"""
+
 TR_MAP = {
     "hizmet": "Service",
     "temizlik": "Cleanliness",
@@ -256,9 +263,15 @@ def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
 def merge_sentiment_breakdowns(existing: List[Dict[str, Any]], new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Cumulative Merge Strategy (Smart Memory).
-    Ensures that historical sentiment data is preserved and updated with new scan results.
     
-    Normalization: Uses TR_MAP to reconcile Turkish/English keys into unique categories.
+    Traditional scrapers overwrite old data. This function ensures that historical 
+    sentiment context is preserved.
+    
+    Logic:
+    1. Categories are reconciled using TR_MAP (e.g., 'Uyku' and 'Sleep' become one).
+    2. Numerical metrics (positive/negative/neutral) are summed cumulatively.
+    3. Sentiment ratings are recalculated using a weighted average.
+    4. Descriptions/Summaries are updated but preserved if new data is missing.
     """
     primary_map: Dict[str, Dict[str, Any]] = {}
     
