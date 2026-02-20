@@ -234,7 +234,8 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
             unique_hotels[key] = {
                 "name": h["name"],
                 "location": h.get("location"),
-                "serp_api_id": h.get("serp_api_id")
+                "serp_api_id": h.get("serp_api_id"),
+                "review_count": h.get("review_count")
             }
 
     count = 0
@@ -295,6 +296,7 @@ async def add_hotel_to_account_logic(
                     "rating": hotel_data.get("rating"),
                     "stars": hotel_data.get("stars"),
                     "image_url": hotel_data.get("image_url"),
+                    "review_count": hotel_data.get("review_count"),
                     "last_verified_at": datetime.now().isoformat()
                 }, on_conflict="serp_api_id").execute()
             except Exception as e:

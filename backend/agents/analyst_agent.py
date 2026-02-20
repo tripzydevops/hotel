@@ -37,8 +37,18 @@ class AnalystAgent:
         session_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """
-        Analyzes scraped data, logs prices, and detects alerts using batch operations.
-        (Optimized 2026: Reduced DB I/O by 80%)
+        The Core Analysis Pipeline.
+        
+        This method transforms raw scraper output into actionable market intelligence.
+        
+        Key Stages:
+        1. Price Validation & Normalization: Filters glitches and converts currencies.
+        2. Smart Continuity (Persistence): Fills gaps using historical rates (up to 7 days).
+        3. Sentiment Memory (Kaizen): Merges existing category scores with new findings
+           to prevent data loss and maintain long-term sentiment profiles.
+        4. Global Pulse: Groups price changes across the network to notify other users
+           who track the same hotels, reducing redundant scans.
+        5. Embedding Synchrony: Regenerates vector profiles for 'stale' sentiment data.
         """
         print(f"[DEBUG] AnalystAgent.analyze_results started for User {user_id}")
         analysis_summary: Dict[str, Any] = {
@@ -271,7 +281,7 @@ class AnalystAgent:
                     reasoning_log.append(f"[Sentiment] Merging {len(new_breakdown)} new categories into {len(merged_breakdown)} total.")
                 
                 # Extract other rich fields (excluding reviews_breakdown which is merged above)
-                for field in ["rating", "property_token", "image_url", "latitude", "longitude", "reviews_list"]:
+                for field in ["rating", "property_token", "image_url", "latitude", "longitude", "reviews_list", "review_count", "stars"]:
                     key = "serp_api_id" if field == "property_token" else "reviews" if field == "reviews_list" else field
                     val = price_data.get(field)
                     if val is not None:
@@ -316,7 +326,7 @@ class AnalystAgent:
                     sentiment_history_to_insert.append({
                         "hotel_id": hotel_id,
                         "rating": price_data.get("rating"),
-                        "review_count": price_data.get("reviews", 0),
+                        "review_count": price_data.get("review_count", 0),
                         "sentiment_breakdown": price_data.get("reviews_breakdown", []),
                         "recorded_at": datetime.now().isoformat() # [FIX] Ensure recorded_at is explicitly set for graph filtering
                     })

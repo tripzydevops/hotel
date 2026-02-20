@@ -180,6 +180,7 @@ async def create_hotel(
                 "rating": hotel_data.get("rating"),
                 "stars": hotel_data.get("stars"),
                 "image_url": hotel_data.get("image_url"),
+                "review_count": hotel_data.get("review_count"),
                 "last_verified_at": datetime.now().isoformat()
             }, on_conflict="serp_api_id").execute()
         except Exception as e:

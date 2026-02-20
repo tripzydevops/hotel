@@ -692,46 +692,43 @@ export default function SentimentPage() {
             </motion.div>
 
             {/* ── Intelligence Hub: Strategic Map (Left) + Experience Core (Right) ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-              {/* Left Column: Strategic Map + Competitive Intelligence */}
-              <div className="lg:col-span-5 flex flex-col gap-6">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  className="flex-1 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl p-6 border border-white/[0.08] shadow-xl relative overflow-hidden group min-h-[440px]"
-                >
-                   <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
-                      <Brain className="w-16 h-16 text-blue-300" />
-                   </div>
-                   <h3 className="text-lg font-bold text-white/90 mb-6 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-indigo-400" />
-                      </div>
-                      Strategic Map
-                   </h3>
-                   {strategicMap && (
-                     <AdvisorQuadrant
-                       x={strategicMap.x}
-                       y={strategicMap.y}
-                       label={strategicMap.label}
-                       ari={strategicMap.ari}
-                       sentiment={strategicMap.sentiment}
-                       targetRating={strategicMap.targetRating}
-                       marketRating={strategicMap.marketRating}
-                     />
-                   )}
-                </motion.div>
-                
-                <CompetitiveWeakness
-                  competitors={visibleCompetitors}
-                  t={t}
-                />
-              </div>
+            {/* ── Strategic Map (Full Width) ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-white/[0.08] shadow-xl relative overflow-hidden group min-h-[440px]"
+            >
+               <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+                  <Brain className="w-16 h-16 text-blue-300" />
+               </div>
+               <div className="p-6 pb-0">
+                 <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    Strategic Map
+                 </h3>
+               </div>
+               {strategicMap && (
+                 <AdvisorQuadrant
+                   x={strategicMap.x}
+                   y={strategicMap.y}
+                   label={strategicMap.label}
+                   ari={strategicMap.ari}
+                   sentiment={strategicMap.sentiment}
+                   targetRating={strategicMap.targetRating}
+                   marketRating={strategicMap.marketRating}
+                   compact
+                 />
+               )}
+            </motion.div>
 
-              {/* Right Column: Experience Core — Radar + Category Bars */}
+            {/* ── Intelligence Hub: Experience Core (Left) + Competitive Insights (Right) ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+              {/* Left Column: Experience Core — Radar + Category Bars */}
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="lg:col-span-7 bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
@@ -791,6 +788,14 @@ export default function SentimentPage() {
                   </div>
                 </div>
               </motion.div>
+
+              {/* Right Column: Competitive Weakness */}
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                <CompetitiveWeakness
+                  competitors={visibleCompetitors}
+                  t={t}
+                />
+              </div>
             </div>
 
           {/* ── Gradient Section Divider ── */}

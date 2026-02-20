@@ -19,6 +19,7 @@ interface AdvisorQuadrantProps {
   sentiment?: number;
   targetRating?: number;
   marketRating?: number;
+  compact?: boolean;
 }
 
 const QUADRANT_INFO: Record<
@@ -71,6 +72,7 @@ export default function AdvisorQuadrant({
   sentiment,
   targetRating,
   marketRating,
+  compact = false,
 }: AdvisorQuadrantProps) {
   // Convert -50/50 range to percentage, clamped to stay within bounds
   // Add padding (15% on each side) so indicator stays fully visible
@@ -85,19 +87,21 @@ export default function AdvisorQuadrant({
   const quadrantData = QUADRANT_INFO[label] || QUADRANT_INFO["Standard"];
 
   return (
-    <div className="glass-card overflow-hidden">
+    <div className={`overflow-hidden ${!compact ? "glass-card" : ""}`}>
       <div className="flex flex-col lg:flex-row">
         {/* Quadrant Visualization - Left Side */}
-        <div className="relative flex-1 h-[240px] lg:h-[280px] p-4">
+        <div className={`relative flex-1 ${compact ? "h-[320px] lg:h-[380px]" : "h-[240px] lg:h-[280px]"} p-4`}>
           {/* Header */}
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">
-              Advisor Quadrant
-            </h3>
-            <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-white/10 uppercase">
-              Strategic Map
-            </span>
-          </div>
+          {!compact && (
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">
+                Advisor Quadrant
+              </h3>
+              <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-white/10 uppercase">
+                Strategic Map
+              </span>
+            </div>
+          )}
 
           {/* Background Grid & Labels */}
           <div className="absolute inset-4 top-10 flex flex-col pointer-events-none opacity-25">
@@ -174,7 +178,7 @@ export default function AdvisorQuadrant({
         </div>
 
         {/* Insights Panel - Right Side */}
-        <div className="lg:w-[320px] p-5 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col justify-between">
+        <div className={`${compact ? "lg:w-[380px]" : "lg:w-[320px]"} p-6 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col justify-between`}>
           <div>
             {/* Current Position */}
             <div className="mb-6">
