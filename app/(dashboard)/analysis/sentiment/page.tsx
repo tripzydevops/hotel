@@ -1276,11 +1276,11 @@ export default function SentimentPage() {
                 <span className="w-4 h-1 bg-gray-500 rounded-full" />
                 <span className="text-sm text-gray-300">Competitors</span>
               </div>
-            </div>
-          </motion.div>
-
-        </>
-      )}
-    </div>
-  );
+              </div>
+            </motion.div>
+          </>
+        )}
+      </div>
+    );
+}
 }
