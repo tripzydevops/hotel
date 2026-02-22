@@ -360,13 +360,30 @@ async def run_scheduler_check_logic():
                 s_logger.info(f"Processing user {user_id}...")
 
                 # 2. Update next_scan_at immediately (Locking mechanism)
-                # KAİZEN: Prioritize 'settings.check_frequency_minutes' over 'profiles.scan_frequency_minutes'
-                freq = settings_map.get(user_id) or user.get("scan_frequency_minutes") or 1440 
-                next_run_dt = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(minutes=freq)
+                # KAİZEN: Precise Scheduling (Anti-Drift)
+                # We calculate the NEXT scan relative to the INTENDED schedule time 
+                # instead of now() to prevent the "creeping drift" problem where 
+                # delays accumulate day over day.
+                freq = settings_map.get(user_id) or user.get("scan_frequency_minutes") or 1440
+                intended_at_str = user.get("next_scan_at")
+                
+                if intended_at_str:
+                    try:
+                        intended_at = datetime.fromisoformat(intended_at_str.replace("Z", "+00:00"))
+                        next_run_dt = intended_at + timedelta(minutes=freq)
+                        # Guard: If we are catastrophically behind (e.g. system was down for days), 
+                        # don't schedule 1000 scans in the past. Re-anchor to now.
+                        if next_run_dt < now_dt:
+                            next_run_dt = now_dt + timedelta(minutes=freq)
+                    except Exception:
+                        next_run_dt = now_dt + timedelta(minutes=freq)
+                else:
+                    next_run_dt = now_dt + timedelta(minutes=freq)
+                
                 next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
                 
                 supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq("id", user_id).execute()
-                s_logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
+                s_logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (intended was {intended_at_str})")
                 
                 # 3. Execute scan DIRECTLY (self-sufficient — no external worker needed)
                 # EXPLANATION: Previous architecture dispatched to Celery/Redis, requiring

@@ -2,8 +2,8 @@ name: Trigger Scheduler
 
 on:
   schedule:
-    # Run every 15 minutes for better responsiveness
-    - cron: "*/15 * * * *"
+    # Run every 5 minutes for better responsiveness
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
