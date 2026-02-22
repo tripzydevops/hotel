@@ -274,6 +274,12 @@ async def perform_market_analysis(
                 lead_currency = prices[0].get("currency") or "USD"
                 orig_price, matched_room, match_score = get_price_for_room(prices[0], room_type, allowed_room_names_map)
                 
+                # DIAGNOSTIC: Log per-hotel matching result
+                hotel_label = hotel.get("name", "?")[:25]
+                rt_count = len(prices[0].get("room_types") or [])
+                top_price = prices[0].get("price")
+                logger.info(f"[DIAG] Hotel '{hotel_label}': {len(prices)} logs, top_price={top_price}, room_types={rt_count}, matched={matched_room}, orig_price={orig_price}, score={match_score:.2f}")
+                
                 if orig_price is not None:
                     # Detect Sellout (0.0 or less)
                     is_sellout = (orig_price <= 0)
@@ -629,7 +635,12 @@ async def get_market_intelligence_data(
         
     hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
     hotels = hotels_result.data or []
+    
+    # DIAGNOSTIC: Log hotel count for this user
+    logger.info(f"[DIAG] User {user_id}: Found {len(hotels)} hotels")
+    
     if not hotels:
+        logger.warning(f"[DIAG] User {user_id}: No hotels found, returning empty")
         return {"summary": {}, "hotels": []}
 
     # EXPLANATION: Time-Windowed Price Fetching (replaces limit(5000))
@@ -639,13 +650,28 @@ async def get_market_intelligence_data(
     from datetime import datetime, timedelta
     cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
     
+    hotel_ids_list = [str(h["id"]) for h in hotels]
+    logger.info(f"[DIAG] Querying price_logs for {len(hotel_ids_list)} hotel_ids since {cutoff_date[:10]}")
+    
     price_logs_res = db.table("price_logs") \
         .select("*") \
-        .in_("hotel_id", [str(h["id"]) for h in hotels]) \
+        .in_("hotel_id", hotel_ids_list) \
         .gte("recorded_at", cutoff_date) \
         .order("recorded_at", desc=True) \
         .execute()
     logs_data = price_logs_res.data or []
+    
+    # DIAGNOSTIC: Log price_logs count and sample data
+    logger.info(f"[DIAG] User {user_id}: Found {len(logs_data)} price_logs in 90-day window")
+    if logs_data:
+        sample = logs_data[0]
+        logger.info(f"[DIAG] Latest log: hotel_id={str(sample.get('hotel_id','?'))[:8]}, price={sample.get('price')}, currency={sample.get('currency')}, room_types_count={len(sample.get('room_types') or [])}, recorded_at={str(sample.get('recorded_at','?'))[:19]}")
+    else:
+        # DIAGNOSTIC: If no logs, also try without date filter to see if ANY exist
+        any_logs = db.table("price_logs").select("id, recorded_at", count="exact").in_("hotel_id", hotel_ids_list).limit(1).execute()
+        logger.warning(f"[DIAG] No price_logs in 90-day window. Total price_logs for these hotels (all time): {any_logs.count}")
+        if any_logs.data:
+            logger.warning(f"[DIAG] Oldest available log recorded_at: {any_logs.data[0].get('recorded_at', '?')}")
     
     # Group logs by hotel_id
     hotel_prices_map = {}

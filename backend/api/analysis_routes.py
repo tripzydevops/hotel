@@ -128,3 +128,90 @@ async def get_sentiment_history(
     except Exception as e:
         get_logger(__name__).error(f"Sentiment history fetch failed: {e}")
         return []
+
+@router.get("/analysis/debug/{user_id}")
+async def debug_analysis_data(
+    user_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Diagnostic endpoint for Reports page debugging.
+    
+    EXPLANATION: Data Pipeline Inspector
+    Returns a concise summary of what the analysis endpoint would see,
+    without running the full analysis. Helps identify where data drops off.
+    """
+    from datetime import datetime, timedelta
+    
+    try:
+        if not db:
+            raise HTTPException(503, "Database unavailable")
+        
+        diag = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
+        
+        # 1. Hotels for this user
+        hotels_res = db.table("hotels").select("id, name, is_target_hotel, location, serp_api_id").eq("user_id", str(user_id)).execute()
+        hotels = hotels_res.data or []
+        diag["hotel_count"] = len(hotels)
+        diag["hotels"] = [{"id": str(h["id"])[:8], "name": h.get("name","?")[:30], "is_target": h.get("is_target_hotel"), "has_serp_id": bool(h.get("serp_api_id"))} for h in hotels]
+        
+        if not hotels:
+            diag["issue"] = "NO_HOTELS - User has no hotels configured"
+            return JSONResponse(content=jsonable_encoder(diag))
+        
+        hotel_ids = [str(h["id"]) for h in hotels]
+        
+        # 2. Price logs count (all time)
+        all_time = db.table("price_logs").select("id", count="exact").in_("hotel_id", hotel_ids).execute()
+        diag["price_logs_all_time"] = all_time.count
+        
+        # 3. Price logs count (90 day window - what analysis actually uses)
+        cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        windowed = db.table("price_logs").select("id", count="exact").in_("hotel_id", hotel_ids).gte("recorded_at", cutoff).execute()
+        diag["price_logs_90_days"] = windowed.count
+        
+        # 4. Recent price logs (last 5)
+        recent = db.table("price_logs").select("hotel_id, price, currency, recorded_at, source, is_estimated").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(5).execute()
+        diag["recent_logs"] = []
+        for r in (recent.data or []):
+            rt = r.get("room_types") or []
+            diag["recent_logs"].append({
+                "hotel_id": str(r.get("hotel_id","?"))[:8],
+                "price": r.get("price"),
+                "currency": r.get("currency"),
+                "recorded_at": str(r.get("recorded_at","?"))[:19],
+                "source": r.get("source"),
+                "is_estimated": r.get("is_estimated"),
+                "room_types_in_log": len(rt) if isinstance(rt, list) else "N/A"
+            })
+        
+        # 5. Scan sessions (last 3)
+        try:
+            sessions = db.table("scan_sessions").select("id, status, created_at, completed_at, reasoning_trace").eq("user_id", str(user_id)).order("created_at", desc=True).limit(3).execute()
+            diag["recent_scans"] = []
+            for s in (sessions.data or []):
+                trace = s.get("reasoning_trace") or []
+                diag["recent_scans"].append({
+                    "status": s.get("status"),
+                    "created_at": str(s.get("created_at","?"))[:19],
+                    "completed_at": str(s.get("completed_at","?"))[:19] if s.get("completed_at") else None,
+                    "trace_summary": trace[-3:] if isinstance(trace, list) else str(trace)[:200]
+                })
+        except Exception:
+            diag["recent_scans"] = "Error fetching scan sessions"
+        
+        # 6. Determine likely issue
+        if diag["price_logs_all_time"] == 0:
+            diag["likely_issue"] = "NO_PRICE_LOGS - No scans have ever successfully stored price data for these hotels"
+        elif diag["price_logs_90_days"] == 0:
+            diag["likely_issue"] = "STALE_DATA - Price logs exist but none within the 90-day analysis window"
+        elif all(r.get("price", 0) <= 0 for r in (recent.data or [])):
+            diag["likely_issue"] = "ALL_SELLOUT - All recent price logs have price=0 (key exhaustion / no prices found)"
+        else:
+            diag["likely_issue"] = "DATA_EXISTS - Price data looks present. Issue may be in room matching or currency conversion"
+        
+        return JSONResponse(content=jsonable_encoder(diag))
+    except Exception as e:
+        raise HTTPException(500, f"Debug endpoint error: {str(e)}")
+
