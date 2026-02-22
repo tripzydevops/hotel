@@ -11,7 +11,7 @@ import os
 import sys
 import logging
 import traceback
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from fastapi import BackgroundTasks, HTTPException
@@ -29,9 +29,20 @@ def get_scheduler_logger():
     s_logger = logging.getLogger("scheduler")
     if not s_logger.handlers:
         from logging.handlers import RotatingFileHandler
-        # Ensure log survives across different working directories
-        log_path = "/home/successofmentors/.gemini/antigravity/scratch/hotel/scheduler.log"
-        handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3)
+        # EXPLANATION: Environment-Aware Log Path
+        # The VM uses a fixed path; GitHub Actions and local dev use a relative path.
+        # This prevents crashes when the scheduler runs outside the VM.
+        vm_path = "/home/successofmentors/.gemini/antigravity/scratch/hotel/scheduler.log"
+        local_path = os.path.join(os.path.dirname(__file__), "..", "..", "scheduler.log")
+        
+        log_path = vm_path if os.path.isdir(os.path.dirname(vm_path)) else os.path.abspath(local_path)
+        
+        try:
+            handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3)
+        except (OSError, PermissionError):
+            # Final fallback: stream to stdout (visible in GitHub Actions logs)
+            handler = logging.StreamHandler()
+        
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
         handler.setFormatter(formatter)
         s_logger.addHandler(handler)
@@ -355,7 +366,10 @@ async def run_scheduler_check_logic():
                 supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq("id", user_id).execute()
                 s_logger.info(f"User {user_id}: Updated next_scan_at to {next_run_iso} (freq={freq}m)")
                 
-                # 3. Dispatch to Celery Worker (instead of running directly)
+                # 3. Execute scan DIRECTLY (self-sufficient — no external worker needed)
+                # EXPLANATION: Previous architecture dispatched to Celery/Redis, requiring
+                # a separate VM worker to be alive. If the worker was down, scans silently
+                # failed. Now we run the scan in-process so GitHub Actions is self-sufficient.
                 hotels = user_hotels_map.get(user_id, [])
                 if hotels:
                     # Create a scan session for tracking
@@ -371,20 +385,33 @@ async def run_scheduler_check_logic():
                     except Exception as se:
                         s_logger.warning(f"Session creation failed for scheduled scan: {se}")
                     
-                    # Dispatch to Celery worker via Redis
+                    # KAİZEN: Direct Execution (eliminates Celery worker dependency)
+                    # Run the full scan pipeline in-process instead of dispatching to Redis.
+                    # This ensures scans complete even without an external VM worker.
                     try:
-                        from backend.celery_app import celery_app
-                        celery_app.send_task("backend.tasks.run_scan_task", kwargs={
-                            "user_id": user_id,
-                            "hotels": hotels,
-                            "options_dict": None,
-                            "session_id": str(session_id) if session_id else None
-                        })
-                        s_logger.info(f"Dispatched scheduled scan to Celery for user {user_id} (session={session_id})")
-                    except ImportError:
-                        s_logger.error(f"CRITICAL: Celery not found in current environment. Cannot dispatch scan for user {user_id}")
-                    except Exception as task_e:
-                        s_logger.error(f"Failed to dispatch task for {user_id}: {task_e}")
+                        s_logger.info(f"Executing scan directly for user {user_id} ({len(hotels)} hotels)...")
+                        await run_monitor_background(
+                            user_id=UUID(user_id),
+                            hotels=hotels,
+                            options=None,
+                            db=supabase,
+                            session_id=UUID(session_id) if session_id else None
+                        )
+                        s_logger.info(f"Direct scan completed for user {user_id} (session={session_id})")
+                    except Exception as direct_e:
+                        s_logger.error(f"Direct execution failed for {user_id}: {direct_e}")
+                        # Fallback: try Celery dispatch if direct execution fails
+                        try:
+                            from backend.celery_app import celery_app
+                            celery_app.send_task("backend.tasks.run_scan_task", kwargs={
+                                "user_id": user_id,
+                                "hotels": hotels,
+                                "options_dict": None,
+                                "session_id": str(session_id) if session_id else None
+                            })
+                            s_logger.info(f"Fallback: Dispatched to Celery for user {user_id}")
+                        except Exception as fallback_e:
+                            s_logger.error(f"Both direct and Celery dispatch failed for {user_id}: {fallback_e}")
                 
             except Exception as u_e:
                 s_logger.error(f"Error processing user {user.get('id')}: {u_e}")
