@@ -183,7 +183,8 @@ async def debug_analysis_data(
                 "recorded_at": str(r.get("recorded_at","?"))[:19],
                 "source": r.get("source"),
                 "is_estimated": r.get("is_estimated"),
-                "room_types_in_log": len(rt) if isinstance(rt, list) else "N/A"
+                "room_types_in_log": len(rt) if isinstance(rt, list) else "N/A",
+                "room_names": [room.get("name") for room in rt if isinstance(room, dict)] if isinstance(rt, list) else []
             })
         
         # 5. Scan sessions (last 3)
