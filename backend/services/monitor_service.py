@@ -162,55 +162,57 @@ async def trigger_monitor_logic(
         currency=currency
     )
 
-    # 4. Background Execution (Celery)
-    # Hybrid Architecture: Vercel (API) -> Redis -> VM (Celery Worker)
-    from backend.celery_app import celery_app
-    
-    # We serialize complex objects to basic types for JSON transport
-    task_args = {
-        "user_id": str(user_id),
-        "hotels": hotels, # Already dicts
-        "options_dict": normalized_options.model_dump() if normalized_options else None,
-        "session_id": str(session_id) if session_id else None
-    }
-    
-    # EXPLANATION: Name-based Task Dispatch
+    # 4. Background Execution (Direct → Celery Fallback)
+    # EXPLANATION: Direct Execution Priority
+    # Previously this dispatched exclusively to Celery/Redis, requiring the VM worker
+    # to be alive. Now we use FastAPI's BackgroundTasks for direct in-process execution,
+    # which works reliably on Vercel serverless. Celery is kept as a fallback only.
     try:
-        broker_pre = (celery_app.conf.broker_url or "")[:15]
-        trace_msg = f"Dispatching to Redis ({broker_pre}...) via send_task"
-        logger.info(trace_msg)
-        
-        # Log trace to DB for Vercel visibility
-        if session_id:
-            try:
-                db.table("scan_sessions").update({
-                    "reasoning_trace": [trace_msg]
-                }).eq("id", str(session_id)).execute()
-            except: pass
-
-        celery_app.send_task("backend.tasks.run_scan_task", kwargs=task_args)
-        
-        # Log success trace
-        if session_id:
-            try:
-                current_trace = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute().data[0]["reasoning_trace"]
-                db.table("scan_sessions").update({
-                    "reasoning_trace": current_trace + ["Dispatched successfully to Redis"]
-                }).eq("id", str(session_id)).execute()
-            except: pass
-
-        logger.info(f"Dispatched Celery task for session {session_id}")
+        if background_tasks is not None:
+            # Primary: Execute directly via FastAPI BackgroundTasks
+            trace_msg = "Executing scan directly via BackgroundTasks"
+            logger.info(trace_msg)
+            
+            if session_id:
+                try:
+                    db.table("scan_sessions").update({
+                        "reasoning_trace": [trace_msg]
+                    }).eq("id", str(session_id)).execute()
+                except: pass
+            
+            background_tasks.add_task(
+                run_monitor_background,
+                user_id=user_id,
+                hotels=hotels,
+                options=normalized_options,
+                db=db,
+                session_id=UUID(session_id) if session_id else None
+            )
+            logger.info(f"Direct execution queued for session {session_id}")
+        else:
+            # Fallback: Celery dispatch (only if BackgroundTasks unavailable)
+            raise RuntimeError("BackgroundTasks not available, falling back to Celery")
     except Exception as e:
-        logger.critical(f"Redis Dispatch Failed: {e}")
-        # Log failure trace
-        if session_id:
-            try:
-                current_trace = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute().data[0]["reasoning_trace"]
-                db.table("scan_sessions").update({
-                    "reasoning_trace": current_trace + [f"DISPATCH_FAILED: {str(e)}"]
-                }).eq("id", str(session_id)).execute()
-            except: pass
-        raise HTTPException(status_code=500, detail=f"Redis Dispatch Failed: {str(e)}")
+        logger.warning(f"Direct execution failed ({e}), trying Celery fallback...")
+        try:
+            from backend.celery_app import celery_app
+            task_args = {
+                "user_id": str(user_id),
+                "hotels": hotels,
+                "options_dict": normalized_options.model_dump() if normalized_options else None,
+                "session_id": str(session_id) if session_id else None
+            }
+            celery_app.send_task("backend.tasks.run_scan_task", kwargs=task_args)
+            logger.info(f"Celery fallback dispatched for session {session_id}")
+            
+            if session_id:
+                try:
+                    db.table("scan_sessions").update({
+                        "reasoning_trace": ["Dispatched via Celery fallback"]
+                    }).eq("id", str(session_id)).execute()
+                except: pass
+        except Exception as fallback_e:
+            logger.critical(f"Both direct and Celery dispatch failed: {fallback_e}")
 
     return MonitorResult(
         hotels_checked=len(hotels),
