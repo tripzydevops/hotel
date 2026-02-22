@@ -70,18 +70,21 @@ const ScansPanel = () => {
     }
   };
 
-  const fetchScanDetails = useCallback(async (id: string) => {
-    setScanDetailsLoading(true);
-    try {
-      const data = await api.getAdminScanDetails(id);
-      setScanDetails(data);
-    } catch (err: any) {
-      toast.error("Error: " + err.message);
-      setSelectedScanId(null);
-    } finally {
-      setScanDetailsLoading(false);
-    }
-  }, [toast]);
+  const fetchScanDetails = useCallback(
+    async (id: string) => {
+      setScanDetailsLoading(true);
+      try {
+        const data = await api.getAdminScanDetails(id);
+        setScanDetails(data);
+      } catch (err: any) {
+        toast.error("Error: " + err.message);
+        setSelectedScanId(null);
+      } finally {
+        setScanDetailsLoading(false);
+      }
+    },
+    [toast],
+  );
 
   useEffect(() => {
     if (activeTab === "history") loadScans();
@@ -371,15 +374,23 @@ const ScansPanel = () => {
                               {log.hotel_name}
                             </td>
                             <td className="p-3">
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                  log.status === "success"
-                                    ? "bg-green-500/20 text-green-400"
-                                    : "bg-red-500/20 text-red-400"
-                                }`}
-                              >
-                                {log.status.toUpperCase()}
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${
+                                    log.status === "success"
+                                      ? "bg-green-500/20 text-green-400"
+                                      : "bg-red-500/20 text-red-400"
+                                  }`}
+                                >
+                                  {log.status.toUpperCase()}
+                                </span>
+                                {log.metadata?.is_shallow && (
+                                  <span className="flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 w-fit">
+                                    <AlertCircle className="w-3 h-3" />
+                                    SHALLOW
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-3 text-white">
                               {log.price

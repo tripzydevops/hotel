@@ -385,7 +385,12 @@ class SerpApiClient:
         if not check_out: check_out = check_in + timedelta(days=1)
         params = {"engine": "google_hotels", "q": f"{hotel_name} {location}", "check_in_date": check_in.isoformat(),
                   "check_out_date": check_out.isoformat(), "adults": adults, "currency": currency, "gl": "us", "hl": "en", "api_key": self.api_key}
-        if serp_api_id: params["property_token"] = serp_api_id
+        if serp_api_id:
+            if str(serp_api_id).isdigit():
+                params["hotel_id"] = serp_api_id
+            else:
+                params["property_token"] = serp_api_id
+
         if currency == "TRY": params["gl"], params["hl"] = "tr", "tr"
         elif currency == "GBP": params["gl"] = "uk"
         elif currency == "EUR": params["gl"] = "fr"

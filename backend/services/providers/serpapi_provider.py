@@ -112,9 +112,13 @@ class SerpApiProvider(HotelDataProvider):
             }
             
             if token:
-                # Optimized Token Handling: SerpApi google_hotels engine uses property_token for details.
-                # hotel_class_id was an incorrect mapping for these numeric tokens.
-                params["property_token"] = token
+                # KAİZEN: Robust ID Resolution
+                # Detect if token is a numeric Google Hotel ID (hotel_id) or a SerpApi Property Token (property_token)
+                if str(token).isdigit():
+                    params["hotel_id"] = token
+                else:
+                    params["property_token"] = token
+
 
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:

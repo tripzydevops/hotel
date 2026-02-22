@@ -224,6 +224,29 @@ class AnalystAgent:
                     except Exception as e:
                         print(f"[AnalystAgent] Continuity lookup failed: {e}")
 
+                # KAİZEN: Market Depth Safeguard
+                # Detects if we are getting "shallow" results compared to historical volume.
+                offers = price_data.get("offers", [])
+                is_shallow = False
+                if len(offers) < 5 and not is_estimated:
+                    is_shallow = True
+                    # KAİZEN: Persistence Check
+                    # As per user request: a single low result might be transient, 
+                    # but if it keeps happening, it's a critical logic problem.
+                    try:
+                        prev_res = self.db.table("price_logs").select("metadata").eq("hotel_id", hotel_id).order("recorded_at", desc=True).limit(2).execute()
+                        prev_shallow_count = 0
+                        for row in prev_res.data:
+                            if row.get("metadata", {}).get("is_shallow"):
+                                prev_shallow_count += 1
+                        
+                        if prev_shallow_count >= 2:
+                            await self._log_reasoning(session_id, f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}. 3 consecutive scans failed to capture full market depth. Investigation required.")
+                        else:
+                            await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found. Transient drop or low availability.")
+                    except:
+                        await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found.")
+
                 # Prepare Price Log
                 # KAİZEN: Use explicit hotel_id variable to prevent accidental shadowing 
                 # from nested price_data objects (Global Pulse protection)
@@ -235,11 +258,16 @@ class AnalystAgent:
                     "source": price_data.get("source", "serpapi"),
                     "vendor": price_data.get("vendor", "Unknown"),
                     "search_rank": price_data.get("search_rank"),
-                    "parity_offers": price_data.get("offers", []),
+                    "parity_offers": offers,
                     "room_types": price_data.get("room_types", []),
                     "is_estimated": is_estimated,
-                    "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id")
+                    "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id"),
+                    "metadata": {
+                        "is_shallow": is_shallow,
+                        "extraction_depth": len(offers)
+                    }
                 })
+
                 analysis_summary["prices_updated"] += 1
 
                 # [Global Pulse] Phase 2: Collect pulse data for batching

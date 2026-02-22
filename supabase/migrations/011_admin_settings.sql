@@ -25,11 +25,8 @@ WHERE NOT EXISTS (
 -- Enable RLS
 ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
 -- Allow read access to authenticated users (for system status checks)
-CREATE POLICY "Allow public read access" ON admin_settings FOR
+CREATE POLICY "Users can view admin settings" ON admin_settings FOR
 SELECT USING (true);
--- Allow update only by service role (admin logic handled in backend via service key)
--- But effectively initially we can allow authenticated for now if admin panel uses user token
--- Ideally this should be restricted. For now, let's keep it open to authenticated users since UI uses user token.
--- In a real app, we'd check for admin role.
-CREATE POLICY "Allow update by authenticated users" ON admin_settings FOR
+-- Allow update only by service role
+CREATE POLICY "Service role can update admin settings" ON admin_settings FOR
 UPDATE USING (auth.role() = 'authenticated');
