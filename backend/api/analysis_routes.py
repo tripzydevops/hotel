@@ -4,7 +4,7 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user
-from backend.agents.analyst_agent import AnalystAgent
+# from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -22,6 +22,7 @@ async def discover_competitors_v1(hotel_id: str, limit: int = 5, current_user = 
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database service unavailable")
+        from backend.agents.analyst_agent import AnalystAgent
         agent = AnalystAgent(db)
         rivals = await agent.discover_rivals(hotel_id, limit=limit)
         return rivals
@@ -77,6 +78,7 @@ async def get_market_intelligence(
 async def discover_competitors_trigger(hotel_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Trigger Ghost Competitor Discovery."""
     try:
+        from backend.agents.analyst_agent import AnalystAgent
         analyst = AnalystAgent(db)
         hotel = db.table("hotels").select("*").eq("id", str(hotel_id)).single().execute()
         if not hotel.data:
