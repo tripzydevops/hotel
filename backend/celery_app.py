@@ -23,17 +23,22 @@ celery_app = Celery(
 
 import ssl
 
-celery_app.conf.update(
-    task_serializer="json",
-    accept_content=["json"],
-    result_serializer="json",
-    timezone="UTC",
-    enable_utc=True,
-    # SSL Configuration for Upstash (rediss://)
-    broker_use_ssl={
-        'ssl_cert_reqs': ssl.CERT_NONE
-    },
-    redis_backend_use_ssl={
-        'ssl_cert_reqs': ssl.CERT_NONE
-    }
-)
+config = {
+    "task_serializer": "json",
+    "accept_content": ["json"],
+    "result_serializer": "json",
+    "timezone": "UTC",
+    "enable_utc": True,
+}
+
+if REDIS_URL.startswith("rediss://"):
+    config.update({
+        "broker_use_ssl": {
+            "ssl_cert_reqs": ssl.CERT_NONE
+        },
+        "redis_backend_use_ssl": {
+            "ssl_cert_reqs": ssl.CERT_NONE
+        }
+    })
+
+celery_app.conf.update(**config)
