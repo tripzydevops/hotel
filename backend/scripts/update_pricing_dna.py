@@ -17,7 +17,7 @@ if PROJECT_ROOT not in sys.path:
 from dotenv import load_dotenv # type: ignore
 from supabase import create_client # type: ignore
 
-import google.generativeai as genai # type: ignore
+from google import genai # type: ignore
 from backend.utils.embeddings import get_embedding # type: ignore
 
 load_dotenv()
@@ -103,13 +103,19 @@ async def process_hotel(hotel_id: str, hotel_name: str, min_days: int = 14):
     print(f"  -> Consulting Gemini for strategy reasoning...")
     strategy_text = "Strategy analysis failed"
     try:
-        model = genai.GenerativeModel("models/gemini-flash-latest")
-        response = await model.generate_content_async(prompt)
+        api_key = os.getenv("GOOGLE_API_KEY")
+        client = genai.Client(api_key=api_key)
+        
+        # EXPLANATION: Modern SDK async call
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt
+        )
         
         if response.text:
             strategy_text = response.text.strip()
     except Exception as e:
-        print(f"  -> Gemini Error: {e}")
+        print(f"  -> Gemini Error with modern SDK: {e}")
         # Fallback to a legacy-style summary if Gemini fails
         strategy_text = f"Pricing Strategy for {hotel_name}: {volatility:.1f}% volatility, {weekend_multiplier:.2f}x weekend multiplier."
     

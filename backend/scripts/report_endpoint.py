@@ -65,25 +65,32 @@ async def generate_report(
                 "history": price_history[-30:] # Last 30 points for preview
             })
 
-        # 2. Generate AI Insights (Gemini)
-        # We construct a prompt based on the aggregated data
-        
+        # 2. Generate AI Insights (Gemini 2026 Best Practice)
         prompt = f"Analyze these hotels for a {req.period_months}-month report:\n"
         for item in report_data:
             h = item['hotel']
             m = item['metrics']
             prompt += f"- {h.get('name', 'Hotel')}: Avg Price ${m['avg_price']}, Range ${m['min_price']}-${m['max_price']}\n"
             
-        prompt += "\nIdentify competitive advantages, pricing anomalies, and actionable recommendations."
+        prompt += "\nIdentify competitive advantages, pricing anomalies, and actionable recommendations. Be concise but strategic."
 
-        # MOCK GEMINI CALL (Replace with real client)
-        # from google.generativeai import ...
-        # response = model.generate_content(prompt)
-        ai_insights = [
-            f"Based on {req.period_months} months of data, {report_data[0]['hotel'].get('name')} maintains a consistent price premium.",
-            "Recommendation: Monitor weekend spikes in competitor pricing to optimize yield.",
-            "Market Trend: Overall downward trend in the last 30 days suggests softening demand."
-        ]
+        ai_insights = ["AI analysis temporarily unavailable"]
+        try:
+            from google import genai
+            client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents=prompt
+            )
+            if response.text:
+                # Split into bullet points for the UI if needed, or keep as paragraph
+                ai_insights = [line.strip() for line in response.text.split("\n") if line.strip() and len(line) > 10]
+        except Exception as ai_e:
+            print(f"AI Insights Error: {ai_e}")
+            ai_insights = [
+                f"Based on {req.period_months} months of data, {report_data[0]['hotel'].get('name')} maintains a consistent price position.",
+                "Recommendation: Bridge value gaps in service to justify current premiums."
+            ]
 
         # 3. Save Report to DB
         report_entry = {

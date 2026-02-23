@@ -1,6 +1,6 @@
 
 import os
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,12 +11,13 @@ if not api_key:
     print("Error: GOOGLE_API_KEY not set")
     exit(1)
 
-genai.configure(api_key=api_key)
+# EXPLANATION: Official 2026 SDK
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-print("Listing available models...")
-try:
-    for m in genai.list_models():
-        if 'embedContent' in m.supported_generation_methods:
-            print(f"- {m.name}")
-except Exception as e:
-    print(f"Error listing models: {e}")
+def list_flash_models():
+    print("Listing available 2026 Gemini models...")
+    for m in client.models.list():
+        print(f" - {m.name}: {m.supported_actions}")
+
+if __name__ == "__main__":
+    list_flash_models()

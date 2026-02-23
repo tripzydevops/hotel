@@ -11,7 +11,6 @@ from fastapi.encoders import jsonable_encoder
 import json
 import asyncio
 from sse_starlette.sse import EventSourceResponse
-import google.generativeai as genai
 import os
 
 router = APIRouter(prefix="/api", tags=["analysis"])

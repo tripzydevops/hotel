@@ -10,7 +10,8 @@ logger = get_logger(__name__)
 import math
 import re
 from datetime import datetime, date, timedelta, timezone
-import google.generativeai as genai
+import asyncio
+from google import genai
 import os
 import calendar
 from typing import Optional, List, Dict, Any, Tuple
@@ -255,13 +256,13 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
             yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
             return
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash') # 2026 standard for high-speed analysis
+        client = genai.Client(api_key=api_key)
         
-        response = await asyncio.to_thread(
-            model.generate_content,
-            prompt,
-            stream=True
+        # EXPLANATION: Modern Streaming with google-genai
+        # We use client.models.generate_content_stream for the 2026 standard.
+        response = client.models.generate_content_stream(
+            model='gemini-3-flash-preview',
+            contents=prompt,
         )
         
         for chunk in response:
@@ -270,7 +271,7 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
                 await asyncio.sleep(0.05) # Subtle pacing for UX
                 
     except Exception as e:
-        print(f"[SSE] AI Narrative failed: {e}")
+        logger.error(f"[SSE] AI Narrative failed with modern SDK: {e}")
         yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
 
 

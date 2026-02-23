@@ -3,7 +3,7 @@ import asyncio
 import os
 import sys
 from dotenv import load_dotenv # type: ignore
-import google.generativeai as genai # type: ignore (Suppressing warning)
+from google import genai # type: ignore (Suppressing warning)
 
 # Add root to path
 sys.path.append(os.getcwd())
@@ -27,6 +27,17 @@ async def check_sentiment_data():
         
         rich_history = [e for e in history if e.get('sentiment_breakdown') and len(e['sentiment_breakdown']) > 0]
         print(f"Entries with non-empty sentiment_breakdown: {len(rich_history)}")
+        
+        # EXPLANATION: Use the modern client
+        api_key = os.getenv("GOOGLE_API_KEY")
+        client = genai.Client(api_key=api_key)
+        
+        # Test basic connectivity
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents="Say 'OK'"
+        )
+        print(f"  -> API Connectivity: {response.text.strip()}")
         
         # Safe slicing
         for i in range(min(3, len(rich_history))):
