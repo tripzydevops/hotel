@@ -284,6 +284,10 @@ export const en = {
     lostValue: "Value Gap",
     soWhat: "So What?",
     stealthPattern: "Stealth Pattern Detected",
+    yourRate: "Your Rate",
+    marketSpread: "Market Spread",
+    weakestArea: "Weakest Area",
+    yourEdge: "Your Edge",
   },
   subscription: {
     title: "Subscription Plans",
