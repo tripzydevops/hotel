@@ -1,45 +1,49 @@
 import os
-import google.generativeai as genai # type: ignore
+from google import genai
 from typing import List
-from dotenv import load_dotenv # type: ignore
+from dotenv import load_dotenv
 
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
-# Configure Gemini
+# Configure Gemini Client
+client = None
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-async def get_embedding(text: str, model: str = "models/gemini-embedding-001") -> List[float]:
-    """Generates a semantic embedding for the given text using Gemini."""
-    if not api_key:
-        print("[Embedding] Warning: GOOGLE_API_KEY not set. Returning dummy zeros.")
+async def get_embedding(text: str, model: str = "text-embedding-004") -> List[float]:
+    """
+    Generates a semantic embedding for the given text using the modern GenAI SDK.
+    Why: gemini-embedding-001 is legacy. text-embedding-004 is current state-of-the-art.
+    """
+    if not client:
+        print("[Embedding] Warning: Gemini Client not initialized. Returning dummy zeros.")
         return [0.0] * 768
         
     try:
-        # EXPLANATION: Legacy SDK Stability
-        # We switch back to google-generativeai as the newer google-genai
-        # returned 404s for standard models in this environment.
-        result = genai.embed_content(
+        # EXPLANATION: Modern SDK Migration
+        # We use the official 'google-genai' SDK as per the gemini-api-dev skill.
+        result = client.models.embed_content(
             model=model,
-            content=text,
-            task_type="retrieval_document",
-            title="Hotel Metadata"
+            contents=text,
+            config={
+                "task_type": "RETRIEVAL_DOCUMENT",
+                "title": "Hotel Metadata",
+                "output_dimensionality": 768
+            }
         )
         
-        if not result or 'embedding' not in result:
+        if not result or not result.embeddings:
              return [0.0] * 768
              
-        # EXPLANATION: Dimension Mismatch Workaround
-        # The database expects 768 dimensions. Models like gemini-embedding-001
-        # return 3072. We slice the first 768 elements to maintain compatibility.
-        raw_emb = result['embedding']
-        if len(raw_emb) > 768:
-            return raw_emb[:768]
-        return raw_emb
+        # EXPLANATION: Dimensionality Match
+        # By setting output_dimensionality=768 in the config, we avoid manual slicing
+        # and ensure the vector perfectly fits the database schema.
+        embedding = result.embeddings[0].values
+        return embedding
     except Exception as e:
-        print(f"[Embedding] Error generating embedding: {e}")
+        print(f"[Embedding] Error generating embedding with modern SDK: {e}")
         return [0.0] * 768
 
 def format_hotel_for_embedding(hotel: dict) -> str:
@@ -48,79 +52,38 @@ def format_hotel_for_embedding(hotel: dict) -> str:
     stars = hotel.get("stars", "N/A")
     rating = hotel.get("rating", "N/A")
     location = hotel.get("location", "Unknown")
-    
-    # Extract city context from location string
     city = location.split(",")[0] if "," in location else location
-    
-    # Enrich with snippets and amenities if available
     snippets = ", ".join(hotel.get("snippets", []))
     amenities = ", ".join(hotel.get("amenities", [])) if isinstance(hotel.get("amenities"), list) else ""
-    
     return f"Hotel Name: {name}. Stars: {stars}. Rating: {rating}. City Context: {city}. Full Location: {location}. Amenities: {amenities}. Snippets: {snippets}"
 
-
-def format_room_type_for_embedding(room: dict, hotel_context: dict = None) -> str:  # type: ignore[assignment]
-    """Formats room type metadata into a rich string for semantic embedding.
-    
-    This creates a language-agnostic semantic representation so that
-    'Standart Oda' (TR) matches 'Standard Room' (EN) via cosine similarity.
-    
-    Args:
-        room: Room type dict with keys like 'name', 'price', 'amenities', 'sqm'
-        hotel_context: Optional hotel dict for star rating / location context
-    """
+def format_room_type_for_embedding(room: dict, hotel_context: dict = None) -> str:
+    """Formats room type metadata into a rich string for semantic embedding."""
     name = room.get("name", "Unknown Room")
     price = room.get("price", "N/A")
     currency = room.get("currency", "TRY")
+    size_hint = f"Size: {room['sqm']}m²." if room.get("sqm") else ""
     
-    # Extract room attributes from name heuristics
-    # These help the embedding understand the room category
-    size_hint = ""
-    if room.get("sqm"):
-        size_hint = f"Size: {room['sqm']}m²."
-    
-    # Occupancy hints from name
-    occupancy = "double"  # default
     name_lower = name.lower()
-    if any(kw in name_lower for kw in ["single", "tek", "1 kişi"]):
-        occupancy = "single"
-    elif any(kw in name_lower for kw in ["triple", "üçlü", "3 kişi"]):
-        occupancy = "triple"
-    elif any(kw in name_lower for kw in ["family", "aile"]):
-        occupancy = "family"
-    elif any(kw in name_lower for kw in ["suite", "süit"]):
-        occupancy = "suite"
+    occupancy = "double"
+    if any(kw in name_lower for kw in ["single", "tek", "1 kişi"]): occupancy = "single"
+    elif any(kw in name_lower for kw in ["triple", "üçlü", "3 kişi"]): occupancy = "triple"
+    elif any(kw in name_lower for kw in ["family", "aile"]): occupancy = "family"
+    elif any(kw in name_lower for kw in ["suite", "süit"]): occupancy = "suite"
     
-    # Category detection
     category = "standard"
-    if any(kw in name_lower for kw in ["deluxe", "lüks", "premium"]):
-        category = "deluxe"
-    elif any(kw in name_lower for kw in ["suite", "süit"]):
-        category = "suite"
-    elif any(kw in name_lower for kw in ["superior", "üstün"]):
-        category = "superior"
-    elif any(kw in name_lower for kw in ["economy", "ekonomi", "budget"]):
-        category = "economy"
-    elif any(kw in name_lower for kw in ["junior"]):
-        category = "junior suite"
-    elif any(kw in name_lower for kw in ["king", "kral"]):
-        category = "king"
-    elif any(kw in name_lower for kw in ["presidential", "başkanlık"]):
-        category = "presidential"
+    if any(kw in name_lower for kw in ["deluxe", "lüks", "premium"]): category = "deluxe"
+    elif any(kw in name_lower for kw in ["suite", "süit"]): category = "suite"
+    elif any(kw in name_lower for kw in ["superior", "üstün"]): category = "superior"
+    elif any(kw in name_lower for kw in ["economy", "ekonomi", "budget"]): category = "economy"
     
-    # Build amenities string
     amenities_list = room.get("amenities", [])
     amenities_str = ", ".join(amenities_list) if isinstance(amenities_list, list) else ""
     
-    # Hotel context for better matching
     hotel_str = ""
     if hotel_context:
         stars = hotel_context.get("stars", "N/A")
         location = hotel_context.get("location", "")
         hotel_str = f"Hotel Stars: {stars}. Location: {location}."
     
-    return (
-        f"Room: {name}. Category: {category}. Occupancy: {occupancy}. "
-        f"{size_hint} Price: {price} {currency}. "
-        f"Amenities: {amenities_str}. {hotel_str}"
-    )
+    return f"Room: {name}. Category: {category}. Occupancy: {occupancy}. {size_hint} Price: {price} {currency}. Amenities: {amenities_str}. {hotel_str}"
