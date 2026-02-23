@@ -10,6 +10,18 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+
+// EXPLANATION: Maps the upstream `label` prop (e.g. "Value Leader") to the
+// corresponding i18n dictionary key (e.g. "strategicMap.positions.valueLeader").
+const LABEL_TO_KEY: Record<string, string> = {
+  "Value Leader": "valueLeader",
+  "Premium King": "premiumKing",
+  "Budget / Economy": "budget",
+  "Danger Zone": "dangerZone",
+  Standard: "standard",
+  "Insufficient Data": "insufficientData",
+};
 
 interface AdvisorQuadrantProps {
   x: number; // -50 to 50
@@ -29,52 +41,15 @@ interface AdvisorQuadrantProps {
 //   X-axis (ARI) = Price Index — how your price compares to market average
 //   Y-axis = Value Index — how your guest perception compares to competitors
 // The label is computed upstream (in the Sentiment page) based on these scores.
-const QUADRANT_INFO: Record<
-  string,
-  { color: string; icon: React.ReactNode; insight: string; action: string; description: string }
-> = {
-  "Value Leader": {
-    color: "text-blue-400",
-    icon: <Target className="w-4 h-4" />,
-    insight: "Optimal position with strong value perception",
-    action: "Maintain pricing strategy, focus on upsells",
-    description: "Your hotel delivers excellent guest satisfaction at a competitive price point. Guests perceive high value for money compared to alternatives in your market. This is the strongest strategic position — protect it by maintaining service quality while exploring premium upsell opportunities.",
-  },
-  "Premium King": {
-    color: "text-[var(--soft-gold)]",
-    icon: <Zap className="w-4 h-4" />,
-    insight: "High price justified by superior reputation",
-    action: "Leverage brand premium, maintain quality",
-    description: "You command premium pricing and your guest ratings justify it. Your reputation acts as a moat — guests willingly pay more because they trust the experience. Continue investing in quality to sustain this advantage, and monitor competitor moves closely to stay ahead.",
-  },
-  "Budget / Economy": {
-    color: "text-[var(--optimal-green)]",
-    icon: <TrendingDown className="w-4 h-4" />,
-    insight: "Competitive pricing with room to grow",
-    action: "Consider strategic price increases",
-    description: "Your pricing is below market average while guest perception is moderate. This could indicate untapped pricing power — guests may be willing to pay more. Consider incremental price increases paired with small experience upgrades to move toward the Value Leader quadrant.",
-  },
-  "Danger Zone": {
-    color: "text-red-400",
-    icon: <AlertTriangle className="w-4 h-4" />,
-    insight: "High price with lower perceived value",
-    action: "Review pricing or improve reputation",
-    description: "Your rates are above market average but guest satisfaction trails behind competitors. This mismatch creates churn risk — guests feel they're overpaying. Prioritize addressing the weakest sentiment categories (check Experience Core below) or consider a rate adjustment to realign value perception.",
-  },
-  Standard: {
-    color: "text-white/60",
-    icon: <Target className="w-4 h-4" />,
-    insight: "Neutral market position",
-    action: "Pick one strength to amplify — service, location, or amenities",
-    description: "Your hotel sits near the market average on both price and guest perception. While stable, this position lacks differentiation — you're competing on the same terms as everyone else. Identify one strength to amplify (service, location, amenities) to carve out a distinct competitive advantage.",
-  },
-  "Insufficient Data": {
-    color: "text-white/40",
-    icon: <AlertTriangle className="w-4 h-4" />,
-    insight: "Analysis pending more competitive data",
-    action: "Add more competitors to tracking list",
-    description: "We don't have enough competitor data yet to accurately place your hotel on the strategic map. Add more hotels to your tracking list and run a scan to populate this analysis with meaningful market positioning data.",
-  },
+// EXPLANATION: Quadrant Visual Registry (styling + icons only)
+// Text content is now pulled from i18n dictionaries via the t() function.
+const QUADRANT_STYLE: Record<string, { color: string; icon: React.ReactNode }> = {
+  "Value Leader": { color: "text-blue-400", icon: <Target className="w-4 h-4" /> },
+  "Premium King": { color: "text-[var(--soft-gold)]", icon: <Zap className="w-4 h-4" /> },
+  "Budget / Economy": { color: "text-[var(--optimal-green)]", icon: <TrendingDown className="w-4 h-4" /> },
+  "Danger Zone": { color: "text-red-400", icon: <AlertTriangle className="w-4 h-4" /> },
+  Standard: { color: "text-white/60", icon: <Target className="w-4 h-4" /> },
+  "Insufficient Data": { color: "text-white/40", icon: <AlertTriangle className="w-4 h-4" /> },
 };
 
 export default function AdvisorQuadrant({
@@ -88,20 +63,25 @@ export default function AdvisorQuadrant({
   compact = false,
 }: AdvisorQuadrantProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { t } = useI18n();
 
   // EXPLANATION: Coordinate Mapping
-  // The backend sends x,y in [-50, 50] range. We need to map these to CSS
-  // percentage positions within the chart area. We add 15% padding on each
-  // side so the indicator icon never clips against the chart border.
-  // Y-axis is inverted because CSS 'top' increases downward but higher
-  // value index should appear higher on the chart.
+  // The backend sends x,y in [-50, 50] range. We map to CSS percentages
+  // with 15% padding so the indicator never clips the chart border.
+  // Y-axis is inverted (CSS top goes down, value index goes up).
   const clamp = (val: number, min: number, max: number) =>
     Math.max(min, Math.min(max, val));
 
   const leftPercent = clamp(((x + 50) / 100) * 70 + 15, 15, 85);
   const topPercent = clamp(85 - ((y + 50) / 100) * 70, 15, 85);
 
-  const quadrantData = QUADRANT_INFO[label] || QUADRANT_INFO["Standard"];
+  const quadrantStyle = QUADRANT_STYLE[label] || QUADRANT_STYLE["Standard"];
+  const posKey = LABEL_TO_KEY[label] || "standard";
+  // Pull i18n text for this quadrant position
+  const posLabel = t(`strategicMap.positions.${posKey}.label`);
+  const posInsight = t(`strategicMap.positions.${posKey}.insight`);
+  const posAction = t(`strategicMap.positions.${posKey}.action`);
+  const posDescription = t(`strategicMap.positions.${posKey}.description`);
 
   return (
     <div className={`overflow-hidden ${!compact ? "glass-card" : ""}`}>
@@ -150,10 +130,10 @@ export default function AdvisorQuadrant({
 
           {/* Axis Labels */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em]">
-            Price Index (ARI)
+            {t("strategicMap.priceIndex")}
           </div>
           <div className="absolute left-1 top-1/2 -rotate-90 -translate-y-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em] whitespace-nowrap">
-            Value Index
+            {t("strategicMap.valueIndex")}
           </div>
 
           {/* Crosshair lines */}
@@ -202,17 +182,17 @@ export default function AdvisorQuadrant({
                     ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
                 />
                 <div className="relative bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl shadow-black/60">
-                  <div className={`flex items-center gap-2 mb-2 ${quadrantData.color}`}>
-                    {quadrantData.icon}
-                    <span className="text-xs font-black uppercase tracking-wide">{label}</span>
+                  <div className={`flex items-center gap-2 mb-2 ${quadrantStyle.color}`}>
+                    {quadrantStyle.icon}
+                    <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
                   </div>
                   <p className="text-[11px] leading-relaxed text-white/70 mb-3">
-                    {quadrantData.description}
+                    {posDescription}
                   </p>
                   <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
                     <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
                     <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
-                      {quadrantData.action}
+                      {posAction}
                     </span>
                   </div>
                 </div>
@@ -241,14 +221,14 @@ export default function AdvisorQuadrant({
             {/* Current Position */}
             <div className="mb-6">
               <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
-                Current Position
+                {t("strategicMap.currentPosition")}
               </div>
               <div
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 ${quadrantData.color}`}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 ${quadrantStyle.color}`}
               >
-                {quadrantData.icon}
+                {quadrantStyle.icon}
                 <span className="text-sm font-black uppercase tracking-wide">
-                  {label}
+                  {posLabel}
                 </span>
               </div>
             </div>
@@ -256,10 +236,10 @@ export default function AdvisorQuadrant({
             {/* Insight */}
             <div className="mb-6">
               <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
-                Market Insight
+                {t("strategicMap.marketInsight")}
               </div>
               <p className="text-xs font-medium text-white/80 leading-relaxed">
-                {quadrantData.insight}
+                {posInsight}
               </p>
             </div>
           </div>
@@ -276,7 +256,7 @@ export default function AdvisorQuadrant({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                  Sentiment Index
+                  {t("strategicMap.sentimentIndex")}
                 </span>
                 <span
                   className={`text-xs font-black ${(sentiment || 100) >= 100 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}

@@ -580,4 +580,51 @@ export const en = {
       ctaSecondary: "Already have an account? Log In",
     },
   },
+  strategicMap: {
+    title: "Strategic Map",
+    advisorQuadrant: "Advisor Quadrant",
+    currentPosition: "Current Position",
+    marketInsight: "Market Insight",
+    sentimentIndex: "Sentiment Index",
+    priceIndex: "Price Index (ARI)",
+    valueIndex: "Value Index",
+    positions: {
+      valueLeader: {
+        label: "Value Leader",
+        insight: "Optimal position with strong value perception",
+        action: "Maintain quality, explore upsell opportunities",
+        description: "Your hotel delivers excellent guest satisfaction at a competitive price point. Guests perceive high value for money compared to alternatives in your market. This is the strongest strategic position — protect it by maintaining service quality while exploring premium upsell opportunities.",
+      },
+      premiumKing: {
+        label: "Premium King",
+        insight: "High price justified by superior reputation",
+        action: "Protect your brand premium, invest in quality",
+        description: "You command premium pricing and your guest ratings justify it. Your reputation acts as a moat — guests willingly pay more because they trust the experience. Continue investing in quality to sustain this advantage, and monitor competitor moves closely to stay ahead.",
+      },
+      budget: {
+        label: "Budget / Economy",
+        insight: "Competitive pricing with room to grow",
+        action: "Test incremental price increases alongside small upgrades",
+        description: "Your pricing is below market average while guest perception is moderate. This could indicate untapped pricing power — guests may be willing to pay more. Consider incremental price increases paired with small experience upgrades to move toward the Value Leader quadrant.",
+      },
+      dangerZone: {
+        label: "Danger Zone",
+        insight: "High price with lower perceived value",
+        action: "Address weak areas below or adjust pricing to match perception",
+        description: "Your rates are above market average but guest satisfaction trails behind competitors. This mismatch creates churn risk — guests feel they're overpaying. Prioritize addressing the weakest sentiment categories (check Experience Core below) or consider a rate adjustment to realign value perception.",
+      },
+      standard: {
+        label: "Standard",
+        insight: "Neutral market position",
+        action: "Improve your weakest areas below to stand out from the market",
+        description: "Your hotel sits near the market average on both price and guest perception. While stable, this position lacks differentiation — you're competing on the same terms as everyone else. Focus on improving the weakest Experience Core categories below to carve out a competitive edge.",
+      },
+      insufficientData: {
+        label: "Insufficient Data",
+        insight: "Analysis pending more competitive data",
+        action: "Add more competitors and run a scan to populate this analysis",
+        description: "We don't have enough competitor data yet to accurately place your hotel on the strategic map. Add more hotels to your tracking list and run a scan to populate this analysis with meaningful market positioning data.",
+      },
+    },
+  },
 };

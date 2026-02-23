@@ -584,4 +584,51 @@ export const tr = {
       ctaSecondary: "Zaten Hesabınız Var mı? Giriş Yapın",
     },
   },
+  strategicMap: {
+    title: "Stratejik Harita",
+    advisorQuadrant: "Danışman Kadranı",
+    currentPosition: "Mevcut Konum",
+    marketInsight: "Pazar Görüşü",
+    sentimentIndex: "Memnuniyet Endeksi",
+    priceIndex: "Fiyat Endeksi (ARI)",
+    valueIndex: "Değer Endeksi",
+    positions: {
+      valueLeader: {
+        label: "Değer Lideri",
+        insight: "Güçlü değer algısıyla optimum konum",
+        action: "Kaliteyi koruyun, ek satış fırsatlarını keşfedin",
+        description: "Oteliniz rekabetçi bir fiyat noktasında mükemmel misafir memnuniyeti sunuyor. Misafirler, pazardaki alternatiflere kıyasla yüksek fiyat-performans oranı algılıyor. Bu en güçlü stratejik konumdur — hizmet kalitesini koruyarak ve premium ek satış fırsatlarını keşfederek bu avantajınızı sürdürün.",
+      },
+      premiumKing: {
+        label: "Premium Kral",
+        insight: "Üstün itibarla desteklenen yüksek fiyat",
+        action: "Marka priminizi koruyun, kaliteye yatırım yapın",
+        description: "Premium fiyatlandırma uyguluyorsunuz ve misafir puanlarınız bunu haklı çıkarıyor. İtibarınız bir kalkan görevi görüyor — misafirler deneyime güvendikleri için daha fazla ödemeye istekli. Bu avantajı sürdürmek için kaliteye yatırım yapmaya devam edin ve rakip hamlelerini yakından izleyin.",
+      },
+      budget: {
+        label: "Bütçe / Ekonomi",
+        insight: "Büyüme potansiyeli olan rekabetçi fiyatlandırma",
+        action: "Küçük iyileştirmelerle kademeli fiyat artışlarını test edin",
+        description: "Fiyatlandırmanız pazar ortalamasının altındayken misafir algısı orta düzeyde. Bu, kullanılmayan fiyatlandırma gücüne işaret edebilir — misafirler daha fazla ödemeye istekli olabilir. Değer Lideri kadranına doğru ilerlemek için küçük deneyim iyileştirmeleriyle eşleştirilmiş kademeli fiyat artışlarını değerlendirin.",
+      },
+      dangerZone: {
+        label: "Tehlike Bölgesi",
+        insight: "Düşük algılanan değerle yüksek fiyat",
+        action: "Aşağıdaki zayıf alanları iyileştirin veya fiyatı algıya göre ayarlayın",
+        description: "Fiyatlarınız pazar ortalamasının üzerinde ancak misafir memnuniyeti rakiplerin gerisinde kalıyor. Bu uyumsuzluk müşteri kaybı riski yaratıyor — misafirler fazla ödediklerini hissediyor. En zayıf memnuniyet kategorilerini (aşağıdaki Deneyim Çekirdeği'ni kontrol edin) önceliklendirin veya değer algısını yeniden dengelemek için fiyat ayarlaması yapın.",
+      },
+      standard: {
+        label: "Standart",
+        insight: "Nötr pazar konumu",
+        action: "Pazardan ayrışmak için aşağıdaki en zayıf alanlarınızı iyileştirin",
+        description: "Oteliniz hem fiyat hem de misafir algısında pazar ortalamasına yakın konumda. Stabil olsa da bu konum farklılaşmadan yoksun — herkes ile aynı koşullarda rekabet ediyorsunuz. Rekabet avantajı oluşturmak için aşağıdaki en zayıf Deneyim Çekirdeği kategorilerini iyileştirmeye odaklanın.",
+      },
+      insufficientData: {
+        label: "Yetersiz Veri",
+        insight: "Daha fazla rakip verisi bekleniyor",
+        action: "Daha fazla rakip ekleyin ve bu analizi doldurmak için tarama yapın",
+        description: "Otelinizi stratejik haritada doğru konumlandırmak için henüz yeterli rakip verimiz yok. İzleme listenize daha fazla otel ekleyin ve anlamlı pazar konumlandırma verisiyle bu analizi doldurmak için tarama yapın.",
+      },
+    },
+  },
 };
