@@ -110,6 +110,258 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 };
 
 /**
+ * ParityHealthSection - Intelligence Layer Pillar
+ * Visualizes rate integrity and revenue leakage risks.
+ */
+function ParityHealthSection({
+  targetHotel,
+  competitors = [],
+  currency = "TRY",
+}: {
+  targetHotel?: any;
+  competitors?: any[];
+  currency?: string;
+}) {
+  const targetPrice = targetHotel?.price_info?.current_price || 0;
+  const undercuts = competitors.filter(
+    (c) => c.price_info?.current_price && c.price_info.current_price < targetPrice
+  );
+  
+  const parityScore = competitors.length > 0
+    ? Math.round(((competitors.length - undercuts.length) / competitors.length) * 100)
+    : 100;
+
+  const revenueRisk = undercuts.reduce((acc, c) => {
+    const diff = targetPrice - (c.price_info?.current_price || 0);
+    return acc + diff;
+  }, 0);
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: currency,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="glass-card p-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <Shield className="w-16 h-16 text-[#F6C344]" />
+        </div>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+          Parity Health
+        </h3>
+        <div className="flex flex-col">
+          <span className="text-4xl font-black text-white">{parityScore}%</span>
+          <span className="text-[10px] text-emerald-400 font-bold mt-1">Live Market Integrity</span>
+        </div>
+      </div>
+
+      <div className="glass-card p-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <AlertCircle className="w-16 h-16 text-rose-500" />
+        </div>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+          Discrepancies
+        </h3>
+        <div className="flex flex-col">
+          <span className="text-4xl font-black text-white">{undercuts.length}</span>
+          <span className="text-[10px] text-rose-400 font-bold mt-1">Active Undercuts Detected</span>
+        </div>
+      </div>
+
+      <div className="glass-card p-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <Activity className="w-16 h-16 text-blue-400" />
+        </div>
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+          Revenue Leakage
+        </h3>
+        <div className="flex flex-col">
+          <span className="text-4xl font-black text-white">{formatCurrency(revenueRisk)}</span>
+          <span className="text-[10px] text-slate-400 font-bold mt-1">Est. Daily Parity Risk</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * PricingDNAProfileCard - Intelligence Layer Pillar
+ * Surfaces the AI-generated pricing personality.
+ */
+function PricingDNAProfileCard({ 
+  dnaText, 
+  hotelName,
+  isLocked 
+}: { 
+  dnaText?: string; 
+  hotelName: string;
+  isLocked: boolean;
+}) {
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className={`glass-card p-6 border-l-4 border-l-[var(--soft-gold)] relative overflow-hidden ${isLocked ? 'grayscale opacity-50' : ''}`}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/40 backdrop-blur-[2px]">
+           <div className="flex flex-col items-center gap-2">
+             <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
+             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">Upgrade to Pro</span>
+           </div>
+        </div>
+      )}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center">
+          <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-white">Strategic Personality</h3>
+          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+            Pricing DNA Profile
+          </p>
+        </div>
+      </div>
+      <p className="text-sm text-white/80 leading-relaxed italic font-medium">
+        &quot;{dnaText || `Analyzing ${hotelName}'s market footprint to determine strategic intent...`}&quot;
+      </p>
+    </motion.div>
+  );
+}
+
+/**
+ * RecommendationCard - Phase 3 Action Layer
+ * Displays suggested rate actions with animated impact indicators.
+ */
+function RecommendationCard({ 
+  recommendation, 
+  currency,
+  isLocked 
+}: { 
+  recommendation: any; 
+  currency: string;
+  isLocked: boolean;
+}) {
+  if (!recommendation || recommendation.action === "no_data") return null;
+
+  const isPositive = recommendation.action === "increase";
+  const isNegative = recommendation.action === "decrease";
+
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className={`glass-card p-6 border-l-4 ${isPositive ? 'border-l-emerald-500 bg-emerald-500/5' : isNegative ? 'border-l-rose-500 bg-rose-500/5' : 'border-l-blue-500 bg-blue-500/5'} relative overflow-hidden ${isLocked ? 'grayscale opacity-50' : ''}`}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/60 backdrop-blur-[4px]">
+           <div className="flex flex-col items-center gap-2">
+             <Trophy className="w-8 h-8 text-[#F6C344]" />
+             <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
+             <Link href="/billing" className="mt-2 px-4 py-1.5 rounded-full bg-[#F6C344] text-[var(--deep-ocean)] text-[10px] font-black uppercase tracking-tighter hover:scale-105 transition-transform">
+                Upgrade Now
+             </Link>
+           </div>
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isPositive ? 'bg-emerald-500/20 text-emerald-400' : isNegative ? 'bg-rose-500/20 text-rose-400' : 'bg-blue-500/20 text-blue-400'}`}>
+            {isPositive ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-white">Strategic Recommendation</h3>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+              Actionable AI Layer
+            </p>
+          </div>
+        </div>
+        {recommendation.amount !== 0 && (
+          <div className={`px-3 py-1 rounded-full text-xs font-black ${isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+            {isPositive ? '+' : ''}{recommendation.amount}%
+          </div>
+        )}
+      </div>
+      
+      <div className="space-y-4">
+        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+          <p className="text-lg font-black text-white mb-1">
+            {recommendation.action === "increase" ? "Increase Rates" : recommendation.action === "decrease" ? "Decrease Rates" : "Maintain Rates"}
+          </p>
+          <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed">
+            {recommendation.reason}
+          </p>
+        </div>
+
+        {recommendation.new_price && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Target ADR</span>
+            <span className="text-base font-black text-white">
+               {getCurrencySymbol(currency)}{recommendation.new_price.toLocaleString()}
+            </span>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * OperationalAuditChecklist - Phase 3 Action Layer
+ * Specific tasks to improve hotel performance.
+ */
+function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; isLocked: boolean }) {
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className={`glass-card p-6 border border-white/10 relative overflow-hidden ${isLocked ? 'grayscale opacity-50' : ''}`}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/60 backdrop-blur-[4px]">
+           <div className="flex flex-col items-center gap-2">
+             <Trophy className="w-8 h-8 text-[#F6C344]" />
+             <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
+           </div>
+        </div>
+      )}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+          <CheckCircle2 className="w-5 h-5 text-indigo-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-white">Operational Audit</h3>
+          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+            Kaizen Priority Tasks
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {checklist.map((item, idx) => (
+          <div key={idx} className="flex gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors group">
+            <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-indigo-500/20 transition-colors">
+              <span className="text-[10px] font-black text-indigo-400">{idx + 1}</span>
+            </div>
+            <div>
+              <p className="text-xs font-black text-white/90 mb-1">{item.pillar}</p>
+              <p className="text-[11px] text-[var(--text-muted)] font-medium leading-relaxed mb-2">
+                {item.issue}
+              </p>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-400">
+                <ArrowRight className="w-3 h-3" />
+                {item.action}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
  * getCategoryScore - Multi-layered score resolver
  * Attempts to find a score for a specific category using:
  * 1. Current breakdown (live data)
@@ -613,9 +865,11 @@ export default function ReportsPage() {
         const kpiData = [
           ["Your Rate", analysis?.target_price ? `${getCurrencySymbol(currency)}${analysis.target_price.toLocaleString()}` : "N/A"],
           ["Market Average", analysis?.market_average ? `${getCurrencySymbol(currency)}${analysis.market_average.toLocaleString()}` : "N/A"],
-          ["ARI", analysis?.ari?.toFixed(1) || "N/A"],
-          ["GRI", analysis?.sentiment_index?.toFixed(1) || "N/A"],
+          ["ARI (Avg Rate Index)", analysis?.ari?.toFixed(1) || "N/A"],
+          ["GRI (Guest Rating Index)", analysis?.sentiment_index?.toFixed(1) || "N/A"],
+          ["Parity Score", targetHotel ? `${Math.round(((competitors.length - competitors.filter(c => c.price_info?.current_price && c.price_info.current_price < (targetHotel.price_info?.current_price || 0)).length) / (competitors.length || 1)) * 100)}%` : "N/A"],
           ["Competitive Rank", analysis?.competitive_rank ? `#${analysis.competitive_rank} of ${(analysis.competitors?.length || 0) + 1}` : "N/A"],
+          ["Strategic Personality", analysis?.pricing_dna_text || "Standard Positioning"],
         ];
 
         autoTable(doc, {
@@ -880,6 +1134,50 @@ export default function ReportsPage() {
           </motion.div>
         )}
 
+        {/* ── INTELLIGENCE LAYER: PARITY & PERSISTENCE ── */}
+        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-10">
+          <ParityHealthSection 
+            targetHotel={targetHotel} 
+            competitors={competitors} 
+            currency={currency} 
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PricingDNAProfileCard 
+              dnaText={analysis?.pricing_dna_text} 
+              hotelName={targetHotel?.name || "Target"} 
+              isLocked={profile?.plan_type === 'starter'}
+            />
+            <div className="glass-card p-6 bg-blue-500/5 border border-blue-500/10 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <Target className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">Market Sentiment Match</h4>
+                <p className="text-sm text-white/80 font-medium">
+                  {analysis?.sentiment_index && analysis.sentiment_index > 100 
+                    ? "Your brand reputation is outperforming market baseline. You have pricing power." 
+                    : "Sentiment is currently below market par. Focus on Cleanliness and Service pillars to regain leverage."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── ACTION LAYER: RECOMMENDATIONS & AUDIT ── */}
+        {analysis && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+             <RecommendationCard 
+               recommendation={analysis.recommendation} 
+               currency={currency}
+               isLocked={profile?.plan_type !== 'enterprise'}
+             />
+             <OperationalAuditChecklist 
+               checklist={analysis.audit_checklist || []}
+               isLocked={profile?.plan_type !== 'enterprise'}
+             />
+          </div>
+        )}
+
         {/* ═══════════════════════════════════════════════ */}
         {/* ── SO WHAT? INSIGHT CARD ──                    */}
         {/* ═══════════════════════════════════════════════ */}
@@ -888,28 +1186,34 @@ export default function ReportsPage() {
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            className="glass-card p-5 bg-[var(--soft-gold)]/5 border border-dashed border-[var(--soft-gold)]/20 flex items-center gap-4 mb-10"
+            className="glass-card p-6 bg-gradient-to-br from-[var(--soft-gold)]/10 to-transparent border border-white/[0.08] relative mb-10 overflow-hidden"
           >
-            <div className="w-12 h-12 rounded-full bg-[var(--soft-gold)]/10 flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-6 h-6 text-[var(--soft-gold)]" />
+            <div className="absolute -right-4 -bottom-4 opacity-[0.05]">
+              <Sparkles className="w-32 h-32 text-[var(--soft-gold)]" />
             </div>
-            <div>
-              <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)] mb-1">
-                {t("reports.soWhat")}
-              </h5>
-              <p className="text-sm text-[var(--text-secondary)] font-medium leading-relaxed">
-                {analysis.ari &&
-                analysis.ari < 95 &&
-                analysis.sentiment_index &&
-                analysis.sentiment_index > 105
-                  ? "Your 'Underpriced' status combined with 'Value Premium' sentiment suggests an immediate 5-10% rate increase opportunity without losing occupancy."
-                  : analysis.ari &&
-                      analysis.ari > 105 &&
-                      analysis.sentiment_index &&
-                      analysis.sentiment_index < 95
-                    ? "Warning: High Pricing with low sentiment indicates a 'Value Gap'. You are at risk of major ADR loss if competitors lower rates."
-                    : "Market data suggests a balanced pricing position. Monitor Stealth Patterns for unexpected competitor shifts."}
-              </p>
+            <div className="flex gap-5 items-start relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-[var(--soft-gold)]/20 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-7 h-7 text-[var(--soft-gold)]" />
+              </div>
+              <div>
+                <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--soft-gold)] mb-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                  Synthetic AI Narrative
+                </h5>
+                <p className="text-base text-white/95 font-semibold leading-relaxed tracking-tight">
+                  {analysis.synthetic_narrative || analysis.advisory_msg || "Synthesizing market intelligence..."}
+                </p>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                    <Activity className="w-3 h-3" />
+                    ARI: {analysis.ari?.toFixed(1)}
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                    <Shield className="w-3 h-3" />
+                    Market Pulse: {analysis.quadrant_label}
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

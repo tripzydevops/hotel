@@ -55,6 +55,7 @@ export interface Hotel {
     sentiment: "positive" | "negative" | "neutral";
   }>;
   reviews?: Array<{ text: string; sentiment?: string; date?: string }>;
+  pricing_dna_text?: string;
 }
 
 export interface PriceInfo {
@@ -302,6 +303,20 @@ export interface MarketAnalysis {
   quadrant_x: number;
   quadrant_y: number;
   quadrant_label: string;
+  pricing_dna_text?: string;
+  synthetic_narrative?: string;
+  market_avg_scores?: Record<string, number>;
+  recommendation?: {
+    action: string;
+    amount?: number;
+    new_price?: number;
+    reason: string;
+  };
+  audit_checklist?: Array<{
+    pillar: string;
+    issue: string;
+    action: string;
+  }>;
 }
 
 

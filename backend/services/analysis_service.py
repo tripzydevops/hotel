@@ -188,6 +188,120 @@ def get_price_for_room(
     # Else: Strict Mode. We return None if no match found for specific/premium room types.
 
 
+def generate_synthetic_narrative(
+    ari: Optional[float], 
+    sent_index: Optional[float], 
+    dna_text: Optional[str],
+    hotel_name: str
+) -> str:
+    """
+    KAIZEN: Synthetic AI Narrative ("So What?" Card)
+    Generates a high-level strategic verdict based on pricing (ARI), 
+    guest sentiment (GRI/SentIndex), and the hotel's DNA.
+    """
+    if ari is None or sent_index is None:
+        return "Insufficient market data to generate a strategic narrative. Please ensure competitors and target prices are correctly configured."
+
+    # Status buckets
+    price_status = "premium" if ari >= 105 else "aligned" if ari >= 95 else "aggressive"
+    sent_status = "superior" if sent_index >= 105 else "standard" if sent_index >= 95 else "at-risk"
+    
+    dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
+    
+    # Narrative creation
+    if price_status == "premium" and sent_status == "superior":
+        return f"{hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates through superior guest experiences. Maintain this trajectory to maximize ADR."
+    elif price_status == "aggressive" and sent_status == "superior":
+        return f"Despite your '{price_status}' pricing,{dna_blurb} guests are providing {sent_status} feedback. This indicates room to push rates upward by 3-5% without compromising volume."
+    elif price_status == "premium" and sent_status == "at-risk":
+        return f"Warning: Your pricing is in the danger zone.{dna_blurb} your rates are {int(ari-100)}% above market average, but sentiment is lagging. Expect a drop in occupancy unless service quality improves immediately."
+    elif price_status == "aggressive" and sent_status == "at-risk":
+        return f"{hotel_name} is in a budget-volume cycle. With {price_status} rates and {sent_status} sentiment, focus on operational essentials to prevent a 'race to the bottom'."
+    
+    # Fallback
+    return f"{hotel_name} is maintaining a balanced market position.{dna_blurb} stay vigilant on competitor parity to protect your current rank."
+
+
+def calculate_rate_recommendation(
+    ari: Optional[float], 
+    sent_index: Optional[float], 
+    current_price: Optional[float]
+) -> dict:
+    """
+    KAIZEN: Rate Recommendation Engine
+    Returns suggested action, percentage, and reasoning.
+    """
+    if not ari or not sent_index or not current_price:
+        return {"action": "no_data", "impact": 0, "reason": "Insufficient market benchmarks."}
+
+    # Scenario A: Underpriced Value Leader
+    if sent_index >= 105 and ari < 95:
+        return {
+            "action": "increase",
+            "amount": 5,
+            "new_price": round(current_price * 1.05),
+            "reason": "Strong guest sentiment justifies a higher rate. Capture missing ADR."
+        }
+    
+    # Scenario B: Overpriced & At-Risk
+    if sent_index < 95 and ari > 105:
+        return {
+            "action": "decrease",
+            "amount": -5,
+            "new_price": round(current_price * 0.95),
+            "reason": "Sentiment is lagging behind high rates. Reduce to protect occupancy."
+        }
+    
+    # Scenario C: Parity Aggression
+    if ari < 85:
+        return {
+            "action": "maintain",
+            "amount": 0,
+            "reason": "Deep discounting detected. Monitor if this is gaining volume or just losing margin."
+        }
+
+    return {
+        "action": "maintain",
+        "amount": 0,
+        "new_price": current_price,
+        "reason": "Current pricing is aligned with market sentiment and competitor benchmarks."
+    }
+
+
+def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
+    """
+    KAIZEN: Operational Audit Checklist
+    Identifies specific pillar weaknesses compared to market average.
+    """
+    checklist = []
+    if not target_h or not market_avg_scores:
+        return checklist
+
+    pillars = ["Cleanliness", "Service", "Location", "Value"]
+    
+    for pillar in pillars:
+        my_score = getCategoryScore(target_h, pillar.lower())
+        mkt_score = market_avg_scores.get(pillar, 3.5)
+        
+        if my_score > 0 and my_score < mkt_score * 0.95:
+            diff_pct = round(( (mkt_score - my_score) / mkt_score ) * 100)
+            checklist.append({
+                "pillar": pillar,
+                "issue": f"{pillar} score is {diff_pct}% below market average.",
+                "action": f"Task: Conduct {pillar} audit and review recent staff feedback."
+            })
+    
+    # Fallback success message
+    if not checklist:
+        checklist.append({
+            "pillar": "Global",
+            "issue": "All pillars are performing at or above market average.",
+            "action": "Maintain current operational standards."
+        })
+        
+    return checklist[:3] # Max 3 items
+
+
     # If price found is 0, we treat as None for calculations but mark as sellout
     match_price = None
     match_name = None
@@ -605,10 +719,20 @@ async def perform_market_analysis(
         "competitors": comp_list,
         "price_history": target_history,
         "sentiment_breakdown": sent_bd,
+        "market_avg_scores": market_avg_scores,
+        "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
+        "audit_checklist": generate_audit_checklist(target_h, market_avg_scores) if target_h else [],
         "sentiment_raw_breakdown": raw_bd,
         "guest_mentions": target_h.get("guest_mentions") or generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
         "available_room_types": sorted(list(available_room_types)),
-        "all_hotels": [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels]
+        "all_hotels": [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels],
+        "pricing_dna_text": target_h.get("pricing_dna_text") if target_h else None,
+        "synthetic_narrative": generate_synthetic_narrative(
+            ari, 
+            sent_index, 
+            target_h.get("pricing_dna_text") if target_h else None,
+            target_hotel_name
+        )
     }
 
 async def get_market_intelligence_data(

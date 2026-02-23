@@ -115,14 +115,17 @@ async def process_hotel(hotel_id: str, hotel_name: str, min_days: int = 14):
     
     print(f"  -> Strategic DNA Profile:\n{strategy_text}")
     
-    # 4. Generate Embedding
+    # 4. Generate Embedding and Save Result
     embedding = await get_embedding(strategy_text)
     
     if embedding:
-        supabase.table("hotels").update({"pricing_dna": embedding}).eq("id", hotel_id).execute()
-        print("  -> DNA Saved.")
+        supabase.table("hotels").update({
+            "pricing_dna": embedding,
+            "pricing_dna_text": strategy_text
+        }).eq("id", hotel_id).execute()
+        print("  -> DNA and Strategy Text Saved.")
     else:
-        print("  -> Embedding Failed.")
+        print("  -> Embedding Failed. Strategy text not saved.")
 
 async def main():
     parser = argparse.ArgumentParser()
