@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from backend.celery_app import celery_app
 from backend.utils.db import get_supabase
-from backend.agents.scraper_agent import ScraperAgent
-from backend.agents.analyst_agent import AnalystAgent
-from backend.agents.notifier_agent import NotifierAgent
+# from backend.agents.scraper_agent import ScraperAgent
+# from backend.agents.analyst_agent import AnalystAgent
+# from backend.agents.notifier_agent import NotifierAgent
 from backend.models.schemas import ScanOptions
 from backend.utils.logger import get_logger
 
@@ -33,6 +33,11 @@ def run_scan_task(self, user_id: str, hotels: List[Dict], options_dict: Optional
             logger.warning(f"Failed to log worker receipt: {e}")
 
     async def _async_wrapper():
+        # Lazy Loading for AI Agents to support slim Vercel deployments
+        from backend.agents.scraper_agent import ScraperAgent
+        from backend.agents.analyst_agent import AnalystAgent
+        from backend.agents.notifier_agent import NotifierAgent
+
         db = get_supabase()
         scraper = ScraperAgent(db)
         analyst = AnalystAgent(db)

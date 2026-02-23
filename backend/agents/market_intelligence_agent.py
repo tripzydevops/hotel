@@ -4,7 +4,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime
-from google.adk.agents.llm_agent import Agent
+# from google.adk.agents.llm_agent import Agent
 
 from backend.services.price_comparator import price_comparator
 from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions
@@ -32,6 +32,7 @@ class MarketIntelligenceAgent:
     """
     def __init__(self, model: str = 'gemini-3-flash-preview'):
         # NOTE: Using gemini-3-flash-preview as per newest gemini-api-dev skill
+        from google.adk.agents.llm_agent import Agent
         self.agent = Agent(
             model=model,
             name='market_analyst',

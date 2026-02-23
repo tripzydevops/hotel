@@ -6,17 +6,28 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
-# Configure Gemini Client
-client = None
-api_key = os.getenv("GOOGLE_API_KEY")
-if api_key:
-    client = genai.Client(api_key=api_key)
+# Configure Gemini Client (Lazy)
+_client = None
+
+def get_genai_client():
+    global _client
+    if _client is None:
+        try:
+            from google import genai
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if api_key:
+                _client = genai.Client(api_key=api_key)
+        except ImportError:
+            # Safe for Vercel where google-genai is not installed
+            print("[Embedding] Warning: google-genai SDK missing. Using zero-vector fallback.")
+    return _client
 
 async def get_embedding(text: str, model: str = "text-embedding-004") -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
     Why: gemini-embedding-001 is legacy. text-embedding-004 is current state-of-the-art.
     """
+    client = get_genai_client()
     if not client:
         print("[Embedding] Warning: Gemini Client not initialized. Returning dummy zeros.")
         return [0.0] * 768

@@ -18,9 +18,9 @@ from fastapi import BackgroundTasks, HTTPException
 from supabase import Client
 
 from backend.models.schemas import ScanOptions, MonitorResult
-from backend.agents.scraper_agent import ScraperAgent
-from backend.agents.analyst_agent import AnalystAgent
-from backend.agents.notifier_agent import NotifierAgent
+# from backend.agents.scraper_agent import ScraperAgent
+# from backend.agents.analyst_agent import AnalystAgent
+# from backend.agents.notifier_agent import NotifierAgent
 
 # EXPLANATION: Dedicated Scheduler Logging
 # We use a separate logger and file handler for the scheduler to make 
@@ -180,6 +180,8 @@ async def trigger_monitor_logic(
                     }).eq("id", str(session_id)).execute()
                 except: pass
             
+            # Lazy import
+            from backend.services.monitor_service import run_monitor_background
             background_tasks.add_task(
                 run_monitor_background,
                 user_id=user_id,
@@ -233,7 +235,11 @@ async def run_monitor_background(
     Background orchestrator. Mission Control for specialized AI agents.
     """
     try:
-        # 1. Initialize Agents
+        # 1. Initialize Agents (Lazy Loading)
+        from backend.agents.scraper_agent import ScraperAgent
+        from backend.agents.analyst_agent import AnalystAgent
+        from backend.agents.notifier_agent import NotifierAgent
+        
         scraper = ScraperAgent(db)
         analyst = AnalystAgent(db)
         notifier = NotifierAgent()
