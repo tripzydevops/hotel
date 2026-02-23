@@ -469,6 +469,14 @@ export default function HotelTile(props: HotelTileProps) {
                     {t("hotelDetails.foundVia")} {vendor}
                   </span>
                 )}
+                {offers && offers.length > 0 && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20">
+                    <Tag className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
+                    <span className="text-[8px] font-bold text-[var(--soft-gold)] whitespace-nowrap">
+                      +{offers.length} {t("hotelDetails.offers")}
+                    </span>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -495,6 +503,14 @@ export default function HotelTile(props: HotelTileProps) {
                         */}
                         {t("hotelDetails.foundVia") || "Found via"} {vendor}
                       </span>
+                    )}
+                    {offers && offers.length > 0 && (
+                      <div className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20">
+                        <Tag className="w-3 h-3 text-[var(--soft-gold)]" />
+                        <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wider">
+                          +{offers.length} {t("hotelDetails.offers")}
+                        </span>
+                      </div>
                     )}
                   </div>
                 ) : (

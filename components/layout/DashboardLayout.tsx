@@ -305,7 +305,9 @@ export default function DashboardLayout({
           onClose={() => setIsDetailsModalOpen(false)}
           hotel={selectedHotelForDetails}
           isEnterprise={
-            profile?.plan_type === "enterprise" || profile?.plan_type === "pro"
+            profile?.role === "admin" ||
+            profile?.plan_type?.toLowerCase() === "enterprise" ||
+            profile?.plan_type?.toLowerCase() === "pro"
           }
           onUpgrade={() => {
             setIsDetailsModalOpen(false);

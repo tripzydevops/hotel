@@ -126,8 +126,11 @@ export default function Dashboard() {
   );
 
   const isEnterprise = useMemo(
-    () => profile?.plan_type === "enterprise" || profile?.plan_type === "pro",
-    [profile?.plan_type],
+    () =>
+      profile?.role === "admin" ||
+      profile?.plan_type?.toLowerCase() === "enterprise" ||
+      profile?.plan_type?.toLowerCase() === "pro",
+    [profile?.plan_type, profile?.role],
   );
 
   // Memoized market pulse calculation (was calculated inline multiple times)
