@@ -116,12 +116,12 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                   </div>
               )}
 
-              <div className="flex items-center gap-2.5 mb-4">
+              <div className="flex items-center gap-2.5 mb-4 mt-3">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isSecure ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                   {isSecure ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold text-white truncate pr-6">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-white leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {comp.name}
                   </h4>
                   <div className="flex items-center gap-1 mt-0.5">
