@@ -22,10 +22,10 @@ def get_genai_client():
             print("[Embedding] Warning: google-genai SDK missing. Using zero-vector fallback.")
     return _client
 
-async def get_embedding(text: str, model: str = "text-embedding-004") -> List[float]:
+async def get_embedding(text: str, model: str = "gemini-embedding-001") -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
-    Why: gemini-embedding-001 is legacy. text-embedding-004 is current state-of-the-art.
+    Uses gemini-embedding-001 which is available for embedContent via the Gemini API.
     """
     client = get_genai_client()
     if not client:
