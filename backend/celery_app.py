@@ -29,6 +29,7 @@ config = {
     "result_serializer": "json",
     "timezone": "UTC",
     "enable_utc": True,
+    "worker_concurrency": 2,
 }
 
 if REDIS_URL.startswith("rediss://"):
