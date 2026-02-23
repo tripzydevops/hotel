@@ -29,25 +29,30 @@ class MarketIntelligenceAgent:
     """
     AI Orchestrator using Google Agent Development Kit (ADK).
     Provides sophisticated market reasoning traces.
+    Falls back to heuristic mode if google-adk is not installed.
     """
     def __init__(self, model: str = 'gemini-3-flash-preview'):
         # NOTE: Using gemini-3-flash-preview as per newest gemini-api-dev skill
-        from google.adk.agents.llm_agent import Agent
-        self.agent = Agent(
-            model=model,
-            name='market_analyst',
-            instruction="""
-            You are a leading Hotel Revenue Expert. Your task is to analyze price logs and sentiment.
-            
-            - Use 'check_price_drops' to validate if a price move is actionable.
-            - Use 'process_sentiment' to understand if reviews correlate with pricing power.
-            - If prices are dropping while sentiment is high, suggest it might be a 'Flash Sale' or 'Error Rate'.
-            - If prices are rising while sentiment is low, flag it as a 'Risk' to occupancy.
-            
-            Provide a step-by-step reasoning trace in your final output.
-            """,
-            tools=[check_price_drops, process_sentiment]
-        )
+        self.agent = None
+        try:
+            from google.adk.agents.llm_agent import Agent
+            self.agent = Agent(
+                model=model,
+                name='market_analyst',
+                instruction="""
+                You are a leading Hotel Revenue Expert. Your task is to analyze price logs and sentiment.
+                
+                - Use 'check_price_drops' to validate if a price move is actionable.
+                - Use 'process_sentiment' to understand if reviews correlate with pricing power.
+                - If prices are dropping while sentiment is high, suggest it might be a 'Flash Sale' or 'Error Rate'.
+                - If prices are rising while sentiment is low, flag it as a 'Risk' to occupancy.
+                
+                Provide a step-by-step reasoning trace in your final output.
+                """,
+                tools=[check_price_drops, process_sentiment]
+            )
+        except ImportError:
+            print("[MarketIntelligenceAgent] Warning: google-adk not available. Running in heuristic mode.")
 
     async def run_analysis(self, scraper_results: List[Dict[str, Any]], threshold: float = 2.0) -> Dict[str, Any]:
         """
