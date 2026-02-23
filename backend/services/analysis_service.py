@@ -11,7 +11,6 @@ import math
 import re
 from datetime import datetime, date, timedelta, timezone
 import asyncio
-from google import genai
 import os
 import calendar
 from typing import Optional, List, Dict, Any, Tuple
@@ -224,6 +223,24 @@ def generate_synthetic_narrative(
     # Fallback
     return f"{hotel_name} is maintaining a balanced market position.{dna_blurb} stay vigilant on competitor parity to protect your current rank."
 
+# EXPLANATION: Vercel-Safe Lazy Loader
+# Why: Vercel serverless environments may not always have the heavy genai SDK 
+# installed if it's not in the root requirements. This lazy loader prevents 
+# top-level import crashes, ensuring the rest of the API remains functional.
+_genai_client = None
+
+def get_genai_client():
+    global _genai_client
+    if _genai_client is None:
+        try:
+            from google import genai
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if api_key:
+                _genai_client = genai.Client(api_key=api_key)
+        except ImportError:
+            logger.warning("[AI] google-genai SDK missing. Falling back to heuristics.")
+    return _genai_client
+
 async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     """
     KAIZEN: Streaming Narrative Producer
@@ -250,14 +267,12 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     """
     
     try:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            # Fallback to heuristic if no API key
+        client = get_genai_client()
+        if not client:
+            # Fallback to heuristic if no client or no API key
             yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
             return
 
-        client = genai.Client(api_key=api_key)
-        
         # EXPLANATION: Modern Streaming with google-genai
         # We use client.models.generate_content_stream for the 2026 standard.
         response = client.models.generate_content_stream(
