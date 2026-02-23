@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Zap,
   AlertTriangle,
@@ -24,43 +24,49 @@ interface AdvisorQuadrantProps {
 
 const QUADRANT_INFO: Record<
   string,
-  { color: string; icon: React.ReactNode; insight: string; action: string }
+  { color: string; icon: React.ReactNode; insight: string; action: string; description: string }
 > = {
   "Value Leader": {
     color: "text-blue-400",
     icon: <Target className="w-4 h-4" />,
     insight: "Optimal position with strong value perception",
     action: "Maintain pricing strategy, focus on upsells",
+    description: "Your hotel delivers excellent guest satisfaction at a competitive price point. Guests perceive high value for money compared to alternatives in your market. This is the strongest strategic position — protect it by maintaining service quality while exploring premium upsell opportunities.",
   },
   "Premium King": {
     color: "text-[var(--soft-gold)]",
     icon: <Zap className="w-4 h-4" />,
     insight: "High price justified by superior reputation",
     action: "Leverage brand premium, maintain quality",
+    description: "You command premium pricing and your guest ratings justify it. Your reputation acts as a moat — guests willingly pay more because they trust the experience. Continue investing in quality to sustain this advantage, and monitor competitor moves closely to stay ahead.",
   },
   "Budget / Economy": {
     color: "text-[var(--optimal-green)]",
     icon: <TrendingDown className="w-4 h-4" />,
     insight: "Competitive pricing with room to grow",
     action: "Consider strategic price increases",
+    description: "Your pricing is below market average while guest perception is moderate. This could indicate untapped pricing power — guests may be willing to pay more. Consider incremental price increases paired with small experience upgrades to move toward the Value Leader quadrant.",
   },
   "Danger Zone": {
     color: "text-red-400",
     icon: <AlertTriangle className="w-4 h-4" />,
     insight: "High price with lower perceived value",
     action: "Review pricing or improve reputation",
+    description: "Your rates are above market average but guest satisfaction trails behind competitors. This mismatch creates churn risk — guests feel they're overpaying. Prioritize addressing the weakest sentiment categories (check Experience Core below) or consider a rate adjustment to realign value perception.",
   },
   Standard: {
     color: "text-white/60",
     icon: <Target className="w-4 h-4" />,
     insight: "Neutral market position",
     action: "Define differentiation strategy",
+    description: "Your hotel sits near the market average on both price and guest perception. While stable, this position lacks differentiation — you're competing on the same terms as everyone else. Identify one strength to amplify (service, location, amenities) to carve out a distinct competitive advantage.",
   },
   "Insufficient Data": {
     color: "text-white/40",
     icon: <AlertTriangle className="w-4 h-4" />,
     insight: "Analysis pending more competitive data",
     action: "Add more competitors to tracking list",
+    description: "We don't have enough competitor data yet to accurately place your hotel on the strategic map. Add more hotels to your tracking list and run a scan to populate this analysis with meaningful market positioning data.",
   },
 };
 
@@ -74,6 +80,7 @@ export default function AdvisorQuadrant({
   marketRating,
   compact = false,
 }: AdvisorQuadrantProps) {
+  const [isHovered, setIsHovered] = useState(false);
   // Convert -50/50 range to percentage, clamped to stay within bounds
   // Add padding (15% on each side) so indicator stays fully visible
   const clamp = (val: number, min: number, max: number) =>
@@ -150,8 +157,10 @@ export default function AdvisorQuadrant({
               left: `${leftPercent}%`,
               top: `${topPercent}%`,
             }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
           >
-            <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
               {/* Pulse Effect */}
               <div className="absolute inset-0 bg-[var(--soft-gold)] rounded-full animate-ping opacity-20" />
               <div className="absolute inset-0 bg-[var(--soft-gold)]/20 rounded-full blur-lg animate-pulse" />
@@ -160,6 +169,35 @@ export default function AdvisorQuadrant({
                 <Trophy className="w-4 h-4" />
               </div>
             </div>
+
+            {/* Hover Tooltip */}
+            {isHovered && (
+              <div
+                className={`absolute left-1/2 -translate-x-1/2 z-50 w-[280px] pointer-events-none
+                  ${topPercent < 45 ? "top-full mt-3" : "bottom-full mb-3"}`}
+              >
+                {/* Arrow */}
+                <div
+                  className={`absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-black/90 border border-white/10
+                    ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
+                />
+                <div className="relative bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl shadow-black/60">
+                  <div className={`flex items-center gap-2 mb-2 ${quadrantData.color}`}>
+                    {quadrantData.icon}
+                    <span className="text-xs font-black uppercase tracking-wide">{label}</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-white/70 mb-3">
+                    {quadrantData.description}
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
+                    <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
+                    <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
+                      {quadrantData.action}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Corner Icons */}
