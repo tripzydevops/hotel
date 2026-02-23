@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 import sys
@@ -8,13 +7,18 @@ from datetime import datetime, timedelta
 import collections
 import statistics
 
-from dotenv import load_dotenv
-from supabase import create_client
+# EXPLANATION: Path Injection Safeguard
+# Ensures the 'backend' package is discoverable regardless of how the script is invoked.
+# This also helps IDE linters resolve absolute imports correctly.
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-# Ensure backend module is on path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from dotenv import load_dotenv # type: ignore
+from supabase import create_client # type: ignore
 
-from backend.utils.embeddings import get_embedding
+import google.generativeai as genai # type: ignore
+from backend.utils.embeddings import get_embedding # type: ignore
 
 load_dotenv()
 load_dotenv(".env.local", override=True)
@@ -77,28 +81,39 @@ async def process_hotel(hotel_id: str, hotel_name: str, min_days: int = 14):
     
     weekend_multiplier = (avg_weekend / avg_weekday) if avg_weekday > 0 else 1.0
     
-    # 3. Generate Strategy Description
-    # We construct a text prompt describing the behavior
+    # 3. Generate Strategy Description (AGENTIC UPGRADE)
+    # We use Gemini Flash to analyze the price behavior instead of hardcoded rules.
+    history_str = "\n".join([f"Date: {h['date']}, Price: {h['avg_price']}" for h in history])
     
-    volatility_desc = "Stable"
-    if volatility > 10: volatility_desc = "Moderate volatility"
-    if volatility > 25: volatility_desc = "Highly volatile"
+    prompt = f"""
+    Analyze the following 60-day price history for {hotel_name} and write a concise 'Pricing DNA' strategy profile (approx 40-60 words).
     
-    weekend_desc = "Flat pricing across week"
-    if weekend_multiplier > 1.1: weekend_desc = f"Weekend surge ({int((weekend_multiplier-1)*100)}% higher)"
-    if weekend_multiplier < 0.9: weekend_desc = f"Weekday premium ({int((1-weekend_multiplier)*100)}% higher)"
+    FOCUS ON:
+    - Yield Management: Do they keep prices flat or are they volatile?
+    - Market Positioning: Are they premium anchoring or budget undercutting?
+    - Weekly Patterns: Do they have consistent weekend surges or weekday premiums?
+    - Strategic Intent: Describe their 'personality' (e.g., 'Aggressive Opportunist', 'Premium Stabilizer', 'Budget Follower').
     
-    price_range_desc = f"Rates range from {min_price:.0f} to {max_price:.0f}"
+    PRICE HISTORY:
+    {history_str}
     
-    strategy_text = f"""
-Pricing Strategy Analysis for {hotel_name}:
-- Behavior: {volatility_desc} pricing pattern.
-- Weekly Pattern: {weekend_desc}.
-- Range: {price_range_desc} (Avg: {avg_price:.0f}).
-- Data points: {len(prices)} days observed.
+    Format the output as a single paragraph. No bullet points.
     """.strip()
+
+    print(f"  -> Consulting Gemini for strategy reasoning...")
+    strategy_text = "Strategy analysis failed"
+    try:
+        model = genai.GenerativeModel("models/gemini-flash-latest")
+        response = await model.generate_content_async(prompt)
+        
+        if response.text:
+            strategy_text = response.text.strip()
+    except Exception as e:
+        print(f"  -> Gemini Error: {e}")
+        # Fallback to a legacy-style summary if Gemini fails
+        strategy_text = f"Pricing Strategy for {hotel_name}: {volatility:.1f}% volatility, {weekend_multiplier:.2f}x weekend multiplier."
     
-    print(f"  -> Strategy Profile:\n{strategy_text}")
+    print(f"  -> Strategic DNA Profile:\n{strategy_text}")
     
     # 4. Generate Embedding
     embedding = await get_embedding(strategy_text)

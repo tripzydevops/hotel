@@ -1,45 +1,43 @@
 import os
-from google import genai
-from google.genai import types
+import google.generativeai as genai # type: ignore
 from typing import List
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
 # Configure Gemini
 api_key = os.getenv("GOOGLE_API_KEY")
-client = None
 if api_key:
-    client = genai.Client(api_key=api_key)
+    genai.configure(api_key=api_key)
 
-async def get_embedding(text: str, model: str = "text-embedding-004") -> List[float]:
+async def get_embedding(text: str, model: str = "models/gemini-embedding-001") -> List[float]:
     """Generates a semantic embedding for the given text using Gemini."""
-    if not client:
+    if not api_key:
         print("[Embedding] Warning: GOOGLE_API_KEY not set. Returning dummy zeros.")
         return [0.0] * 768
         
     try:
-        # EXPLANATION: SDK Versioning
-        # We use the modern 'google-genai' library (Go-style client) rather than the older 'google-generativeai'.
-        # This requires 'google-genai>=1.0.0' in requirements.txt. Mismatches here cause
-        # "ImportError: No module named 'google.genai'" in production.
-        result = client.models.embed_content(
+        # EXPLANATION: Legacy SDK Stability
+        # We switch back to google-generativeai as the newer google-genai
+        # returned 404s for standard models in this environment.
+        result = genai.embed_content(
             model=model,
-            contents=text,
-            config=types.EmbedContentConfig(
-                task_type="RETRIEVAL_DOCUMENT",
-                title="Hotel Metadata",
-                output_dimensionality=768
-            )
+            content=text,
+            task_type="retrieval_document",
+            title="Hotel Metadata"
         )
         
-        # Verify result structure
-        if not result.embeddings or not result.embeddings[0].values:
+        if not result or 'embedding' not in result:
              return [0.0] * 768
              
-        emb = result.embeddings[0].values
-        return emb
+        # EXPLANATION: Dimension Mismatch Workaround
+        # The database expects 768 dimensions. Models like gemini-embedding-001
+        # return 3072. We slice the first 768 elements to maintain compatibility.
+        raw_emb = result['embedding']
+        if len(raw_emb) > 768:
+            return raw_emb[:768]
+        return raw_emb
     except Exception as e:
         print(f"[Embedding] Error generating embedding: {e}")
         return [0.0] * 768
