@@ -17,6 +17,7 @@ class AnalystAgent:
     2026 Strategy: Uses high-reasoning models (Deep Think) to explain market shifts.
     """
     def __init__(self, db: Client):
+        self.adk_agent = MarketIntelligenceAgent()
         self.db = db
 
     async def _log_reasoning(self, session_id: Optional[UUID], message: str):
@@ -414,6 +415,17 @@ class AnalystAgent:
 
         # Final Cleanup
         analysis_summary["reasoning"] = reasoning_log
+
+        # [ADK INTEGRATION] Senior AI Reasoning
+        try:
+            print('[AnalystAgent] Invoking ADK Senior reasoning...')
+            adk_analysis = await self.adk_agent.run_analysis(scraper_results, threshold)
+            if adk_analysis and 'reasoning' in adk_analysis:
+                for msg in adk_analysis['reasoning']:
+                    reasoning_log.append(f'[ADK Analyst] {msg}')
+            print(f'[AnalystAgent] ADK reasoning trace added: {len(adk_analysis.get("reasoning", []))} steps')
+        except Exception as adk_e:
+            print(f'[AnalystAgent] ADK reasoning failed: {adk_e}')
         
         # 5. Reasoning Trace persistence
         if session_id and reasoning_log:
