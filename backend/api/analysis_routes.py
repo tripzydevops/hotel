@@ -6,8 +6,13 @@ from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
+import json
+import asyncio
+from sse_starlette.sse import EventSourceResponse
+import google.generativeai as genai
+import os
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
@@ -218,3 +223,53 @@ async def debug_analysis_data(
     except Exception as e:
         raise HTTPException(500, f"Debug endpoint error: {str(e)}")
 
+
+@router.get("/v2/analysis/stream/{user_id}")
+async def stream_market_intelligence(
+    user_id: UUID,
+    room_type: str = "Standard",
+    display_currency: str = "TRY",
+    currency: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    KAIZEN: AI Business Intelligence Stream (SSE)
+    Streams market data followed by real-time generated narratives.
+    """
+    from backend.services.analysis_service import get_market_intelligence_data, stream_narrative_gen
+    
+    async def event_generator():
+        try:
+            # 1. Immediate Market Stats
+            analysis_data = await get_market_intelligence_data(
+                db=db,
+                user_id=str(user_id),
+                room_type=room_type,
+                display_currency=currency if currency else display_currency,
+                currency=currency,
+                start_date=str(start_date) if start_date else None,
+                end_date=str(end_date) if end_date else None
+            )
+            
+            # Send initial payload
+            yield {
+                "event": "data_init",
+                "data": json.dumps(jsonable_encoder(analysis_data))
+            }
+
+            # 2. Stream AI Narrative
+            async for chunk in stream_narrative_gen(analysis_data):
+                yield {
+                    "event": "narrative_chunk",
+                    "data": json.dumps({"chunk": chunk})
+                }
+            
+            yield {"event": "complete", "data": "done"}
+            
+        except Exception as e:
+            yield {"event": "error", "data": json.dumps({"detail": str(e)})}
+
+    return EventSourceResponse(event_generator())

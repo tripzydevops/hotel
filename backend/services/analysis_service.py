@@ -9,7 +9,9 @@ logger = get_logger(__name__)
 
 import math
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, date, timedelta, timezone
+import google.generativeai as genai
+import os
 import calendar
 from typing import Optional, List, Dict, Any, Tuple
 from fastapi.encoders import jsonable_encoder
@@ -220,6 +222,56 @@ def generate_synthetic_narrative(
     
     # Fallback
     return f"{hotel_name} is maintaining a balanced market position.{dna_blurb} stay vigilant on competitor parity to protect your current rank."
+
+async def stream_narrative_gen(analysis_data: Dict[str, Any]):
+    """
+    KAIZEN: Streaming Narrative Producer
+    Uses Gemini to generate a data-driven market insight trace.
+    """
+    hotel_name = analysis_data.get("hotel_name")
+    ari = analysis_data.get("ari")
+    sent_index = analysis_data.get("sent_index")
+    dna_text = analysis_data.get("pricing_dna_text")
+    q_label = analysis_data.get("quadrant_label")
+    
+    prompt = f"""
+    You are a Strategic Revenue Analyst for {hotel_name}. 
+    Market Context:
+    - Market Position: {q_label}
+    - ARI (Price Index): {ari} (100 is market average)
+    - Sentiment Index: {sent_index} (100 is market average)
+    - DNA Strategy: {dna_text or 'None defined'}
+    
+    Task:
+    Provide a concise (2-3 sentences) strategic "So What?" verdict. 
+    Focus on the correlation between price position and guest sentiment. 
+    Do not use placeholders. Be direct and professional.
+    """
+    
+    try:
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            # Fallback to heuristic if no API key
+            yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
+            return
+
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash') # 2026 standard for high-speed analysis
+        
+        response = await asyncio.to_thread(
+            model.generate_content,
+            prompt,
+            stream=True
+        )
+        
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
+                await asyncio.sleep(0.05) # Subtle pacing for UX
+                
+    except Exception as e:
+        print(f"[SSE] AI Narrative failed: {e}")
+        yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
 
 
 def calculate_rate_recommendation(
@@ -771,7 +823,6 @@ async def get_market_intelligence_data(
     # A 90-day rolling window is more predictable than a fixed row count.
     # As data grows, limit(5000) would either miss data or cause memory spikes.
     # The time window scales linearly with calendar time, not data volume.
-    from datetime import datetime, timedelta
     cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
     
     hotel_ids_list = [str(h["id"]) for h in hotels]

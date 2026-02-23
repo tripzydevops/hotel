@@ -27,6 +27,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useAnalysisStream } from "@/hooks/useAnalysisStream";
 import {
   BarChart3,
   TrendingUp,
@@ -194,10 +195,14 @@ function ParityHealthSection({
  */
 function PricingDNAProfileCard({ 
   dnaText, 
+  streamingNarrative,
+  isStreaming,
   hotelName,
   isLocked 
 }: { 
   dnaText?: string; 
+  streamingNarrative?: string;
+  isStreaming?: boolean;
   hotelName: string;
   isLocked: boolean;
 }) {
@@ -214,19 +219,27 @@ function PricingDNAProfileCard({
            </div>
         </div>
       )}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center">
-          <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 flex items-center justify-center">
+            <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-white">Strategic Personality</h3>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+              Pricing DNA Profile
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-black text-white">Strategic Personality</h3>
-          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
-            Pricing DNA Profile
-          </p>
-        </div>
+        {isStreaming && (
+          <div className="flex items-center gap-2 bg-[var(--soft-gold)]/10 px-2 py-1 rounded-md">
+            <div className="w-1.5 h-1.5 bg-[var(--soft-gold)] rounded-full animate-pulse" />
+            <span className="text-[8px] font-black text-[var(--soft-gold)] uppercase tracking-tighter">AI Reasoning</span>
+          </div>
+        )}
       </div>
       <p className="text-sm text-white/80 leading-relaxed italic font-medium">
-        &quot;{dnaText || `Analyzing ${hotelName}'s market footprint to determine strategic intent...`}&quot;
+        &quot;{streamingNarrative || dnaText || `Analyzing ${hotelName}'s market footprint to determine strategic intent...`}&quot;
       </p>
     </motion.div>
   );
@@ -727,13 +740,22 @@ export default function ReportsPage() {
   const supabase = createClient();
   const { data: dashboardData, loading: dashLoading } = useDashboard(userId, t);
 
+  const [currency, setCurrency] = useState("TRY");
+  const { 
+    data: analysisData, 
+    narrative: streamingNarrative, 
+    isStreaming, 
+    error: streamError 
+  } = useAnalysisStream(userId || undefined, "Standard");
+
   const [data, setData] = useState<any>(null);
-  const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [currency, setCurrency] = useState("TRY");
   const [scanHistoryOpen, setScanHistoryOpen] = useState(false);
+
+  // Use either streaming data or static analytical data
+  const analysis = analysisData;
 
   const {
     setIsProfileOpen,
@@ -744,26 +766,22 @@ export default function ReportsPage() {
     setSelectedSession,
   } = useModalContext();
 
-  // ── Data fetching (async-parallel per Vercel best practices) ──
+  // ── Data fetching (Reports history only, analysis handled by stream hook) ──
   useEffect(() => {
-    async function loadData() {
+    async function loadReports() {
       if (!userId) return;
       setLoading(true);
       try {
-        const [reportsResult, analysisResult] = await Promise.all([
-          api.getReports(userId),
-          api.getAnalysis(userId, currency),
-        ]);
+        const reportsResult = await api.getReports(userId);
         setData(reportsResult);
-        setAnalysis(analysisResult);
       } catch (err) {
         console.error("Failed to load reports:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
-  }, [userId, currency]);
+    loadReports();
+  }, [userId]);
 
   // ── Derived state (rerender-derived-state, no useEffect) ──
   const targetHotel = useMemo(
@@ -1142,10 +1160,12 @@ export default function ReportsPage() {
             currency={currency} 
           />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PricingDNAProfileCard 
-              dnaText={analysis?.pricing_dna_text} 
-              hotelName={targetHotel?.name || "Target"} 
-              isLocked={profile?.plan_type === 'starter'}
+            <PricingDNAProfileCard
+              dnaText={analysis?.pricing_dna_text}
+              streamingNarrative={streamingNarrative}
+              isStreaming={isStreaming}
+              hotelName={targetHotel?.name || "Target Hotel"}
+              isLocked={isLocked}
             />
             <div className="glass-card p-6 bg-blue-500/5 border border-blue-500/10 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
