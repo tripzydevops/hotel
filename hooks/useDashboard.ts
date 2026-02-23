@@ -97,6 +97,33 @@ export function useDashboard(
         variables.currency,
         variables.serpApiId,
       ),
+    onMutate: async (newHotel) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["dashboard", userId] });
+
+      // Snapshot the previous value
+      const previousDashboard = queryClient.getQueryData(["dashboard", userId]);
+
+      // Optimistically update to the new value
+      if (previousDashboard) {
+        queryClient.setQueryData(["dashboard", userId], (old: any) => ({
+          ...old,
+          competitors: [...(old.competitors || []), { 
+            id: 'temp-id-' + Math.random(), 
+            name: newHotel.name, 
+            location: newHotel.location,
+            is_target_hotel: newHotel.isTarget,
+            created_at: new Date().toISOString()
+          }]
+        }));
+      }
+
+      return { previousDashboard };
+    },
+    onError: (err, newHotel, context: any) => {
+      queryClient.setQueryData(["dashboard", userId], context.previousDashboard);
+      toast.error(t("dashboard.addError") || "Failed to add hotel");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
     },
@@ -104,13 +131,25 @@ export function useDashboard(
 
   const deleteHotelMutation = useMutation({
     mutationFn: (hotelId: string) => api.deleteHotel(hotelId),
-    onSuccess: () => {
-      toast.success(t("dashboard.removeSuccess"));
-      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+    onMutate: async (hotelId) => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard", userId] });
+      const previousDashboard = queryClient.getQueryData(["dashboard", userId]);
+
+      if (previousDashboard) {
+        queryClient.setQueryData(["dashboard", userId], (old: any) => ({
+          ...old,
+          competitors: (old.competitors || []).filter((h: any) => h.id !== hotelId)
+        }));
+      }
+
+      return { previousDashboard };
     },
-    onError: (error) => {
-      console.error("Failed to delete hotel:", error);
-      toast.error(t("dashboard.removeError"));
+    onError: (err, hotelId, context: any) => {
+      queryClient.setQueryData(["dashboard", userId], context.previousDashboard);
+      toast.error(t("dashboard.removeError") || "Failed to delete hotel");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
     },
   });
 

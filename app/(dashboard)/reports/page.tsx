@@ -59,6 +59,7 @@ import dynamic from "next/dynamic";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 import { motion } from "framer-motion";
 import { getCurrencySymbol } from "@/lib/utils";
+import { Sparkline } from "@/components/ui/Sparkline";
 
 // Dynamic imports for heavy chart components (bundle-dynamic-imports)
 const MarketPositionChart = dynamic(
@@ -432,6 +433,7 @@ function KpiCard({
   accentColor = "var(--soft-gold)",
   trend,
   trendLabel,
+  history,
 }: {
   label: string;
   value: string | number;
@@ -440,11 +442,14 @@ function KpiCard({
   accentColor?: string;
   trend?: "up" | "down" | "neutral";
   trendLabel?: string;
+  history?: number[];
 }) {
   return (
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      role="region"
+      aria-label={`${label} metric: ${value}${suffix || ''}`}
       className="glass-card p-5 border border-white/[0.08] hover:border-white/15 transition-all duration-300 cursor-default group relative overflow-hidden"
     >
       {/* Subtle gradient overlay on hover */}
@@ -464,21 +469,29 @@ function KpiCard({
             <div style={{ color: accentColor }}>{icon}</div>
           </div>
           {trend && (
-            <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                trend === "up"
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : trend === "down"
-                    ? "bg-red-500/10 text-red-400"
-                    : "bg-white/5 text-gray-500"
-              }`}
-            >
-              {trend === "up" ? (
-                <TrendingUp className="w-3 h-3" />
-              ) : trend === "down" ? (
-                <TrendingDown className="w-3 h-3" />
-              ) : null}
-              {trendLabel}
+            <div className="flex flex-col items-end gap-1">
+              <div
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  trend === "up"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : trend === "down"
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-white/5 text-gray-500"
+                }`}
+              >
+                {trend === "up" ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : trend === "down" ? (
+                  <TrendingDown className="w-3 h-3" />
+                ) : null}
+                {trendLabel}
+              </div>
+              {history && history.length > 1 && (
+                <Sparkline 
+                  data={history} 
+                  color={trend === "up" ? "#10B981" : trend === "down" ? "#EF4444" : accentColor} 
+                />
+              )}
             </div>
           )}
         </div>
@@ -1061,6 +1074,7 @@ export default function ReportsPage() {
                   ? `${Math.abs(((analysis.target_price - analysis.market_average) / analysis.market_average) * 100).toFixed(0)}%`
                   : undefined
               }
+              history={analysis.price_history?.map((h: any) => h.price).slice(-7)}
             />
             <KpiCard
               label={t("reports.marketAvg") !== "reports.marketAvg" ? t("reports.marketAvg") : "Market Avg"}
@@ -1071,6 +1085,7 @@ export default function ReportsPage() {
               }
               icon={<BarChart3 className="w-4 h-4" />}
               accentColor="#94A3B8"
+              history={analysis.price_history?.map((h: any) => h.market_avg).slice(-7)}
             />
             <KpiCard
               label={t("reports.ariLabel")}
@@ -1097,6 +1112,7 @@ export default function ReportsPage() {
                     ? t("reports.underpriced") !== "reports.underpriced" ? t("reports.underpriced") : "Low"
                     : "Balanced"
               }
+              history={analysis.price_history?.map((h: any) => h.ari).slice(-7)}
             />
             <KpiCard
               label={t("reports.sentimentLabel")}
@@ -1123,6 +1139,7 @@ export default function ReportsPage() {
                     ? t("reports.lostValue") !== "reports.lostValue" ? t("reports.lostValue") : "Weak"
                     : "Balanced"
               }
+              history={analysis.price_history?.map((h: any) => h.sentiment_index).slice(-7)}
             />
             <KpiCard
               label={t("reports.competitiveRank")}
@@ -1220,8 +1237,11 @@ export default function ReportsPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                   Synthetic AI Narrative
                 </h5>
-                <p className="text-base text-white/95 font-semibold leading-relaxed tracking-tight">
-                  {analysis.synthetic_narrative || analysis.advisory_msg || "Synthesizing market intelligence..."}
+                <p 
+                  className="text-base text-white/95 font-semibold leading-relaxed tracking-tight"
+                  aria-live="polite"
+                >
+                  {streamingNarrative || analysis.synthetic_narrative || analysis.advisory_msg || "Synthesizing market intelligence..."}
                 </p>
                 <div className="mt-4 flex items-center gap-4">
                   <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
@@ -1247,6 +1267,8 @@ export default function ReportsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mb-10 glass-card border border-white/[0.08] relative overflow-hidden group min-h-[400px]"
+            role="region"
+            aria-label="Strategic Market Map"
           >
             <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
               <Brain className="w-16 h-16 text-blue-300" />
@@ -1361,6 +1383,8 @@ export default function ReportsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             className="glass-card p-6 md:p-8 mb-10 border border-white/[0.06]"
+            role="region"
+            aria-label="Experience Scorecard"
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
