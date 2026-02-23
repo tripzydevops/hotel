@@ -1,5 +1,5 @@
 import os
-from google import genai
+# from google import genai  # Moved to lazy getter
 from typing import List
 from dotenv import load_dotenv
 
