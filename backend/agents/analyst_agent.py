@@ -1,3 +1,4 @@
+from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 import asyncio
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
