@@ -472,8 +472,10 @@ async def update_admin_hotel_logic(hotel_id: str, updates: dict, db: Client) -> 
     return {"status": "success", "hotel_id": hotel_id}
 
 async def delete_admin_hotel_logic(hotel_id: str, db: Client) -> Dict[str, Any]:
-    """Delete hotel and price logs."""
-    db.table("price_logs").delete().eq("hotel_id", hotel_id).execute()
+    """Delete hotel but PRESERVE price_logs for historical data."""
+    # SAFEGUARD: Price logs are NOT deleted.
+    # Historical pricing data is valuable and should persist even if the hotel
+    # is removed. If the hotel is re-added later, the data reconnects via hotel_id.
     db.table("alerts").delete().eq("hotel_id", hotel_id).execute()
     db.table("hotels").delete().eq("id", hotel_id).execute()
     return {"status": "success"}
@@ -697,7 +699,7 @@ async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:
         hotel_ids = [h["id"] for h in (test_hotels.data or [])]
         
         if hotel_ids:
-            db.table("price_logs").delete().in_("hotel_id", hotel_ids).execute()
+            # SAFEGUARD: Price logs are NOT deleted — historical data is preserved.
             db.table("alerts").delete().in_("hotel_id", hotel_ids).execute()
             db.table("hotels").delete().in_("id", hotel_ids).execute()
             

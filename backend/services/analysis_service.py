@@ -667,11 +667,57 @@ async def get_market_intelligence_data(
         sample = logs_data[0]
         logger.info(f"[DIAG] Latest log: hotel_id={str(sample.get('hotel_id','?'))[:8]}, price={sample.get('price')}, currency={sample.get('currency')}, room_types_count={len(sample.get('room_types') or [])}, recorded_at={str(sample.get('recorded_at','?'))[:19]}")
     else:
-        # DIAGNOSTIC: If no logs, also try without date filter to see if ANY exist
-        any_logs = db.table("price_logs").select("id, recorded_at", count="exact").in_("hotel_id", hotel_ids_list).limit(1).execute()
-        logger.warning(f"[DIAG] No price_logs in 90-day window. Total price_logs for these hotels (all time): {any_logs.count}")
-        if any_logs.data:
-            logger.warning(f"[DIAG] Oldest available log recorded_at: {any_logs.data[0].get('recorded_at', '?')}")
+        # SAFEGUARD: query_logs fallback
+        # If price_logs is empty (e.g. after accidental deletion), pull historical
+        # prices from query_logs which is never deleted. This ensures the dashboard
+        # always shows data as long as any scan has ever run.
+        logger.warning(f"[SAFEGUARD] No price_logs found. Falling back to query_logs for user {user_id}")
+        
+        # Build hotel name -> id mapping for query_logs (which stores hotel_name, not hotel_id)
+        hotel_name_to_id = {}
+        for h in hotels:
+            hotel_name_to_id[h["name"].lower().strip()] = str(h["id"])
+        
+        ql_res = db.table("query_logs") \
+            .select("hotel_name, price, currency, vendor, created_at, check_in_date") \
+            .eq("user_id", str(user_id)) \
+            .gte("created_at", cutoff_date) \
+            .order("created_at", desc=True) \
+            .execute()
+        
+        fallback_count = 0
+        for ql in (ql_res.data or []):
+            price = ql.get("price")
+            if not price or float(price) <= 0:
+                continue
+            
+            ql_name = (ql.get("hotel_name") or "").lower().strip()
+            hotel_id = hotel_name_to_id.get(ql_name)
+            if not hotel_id:
+                # Partial name match fallback
+                for name, hid in hotel_name_to_id.items():
+                    if ql_name in name or name in ql_name:
+                        hotel_id = hid
+                        break
+            if not hotel_id:
+                continue
+            
+            logs_data.append({
+                "hotel_id": hotel_id,
+                "price": float(price),
+                "currency": ql.get("currency") or "TRY",
+                "vendor": ql.get("vendor") or "Unknown",
+                "source": "serpapi",
+                "check_in_date": ql.get("check_in_date") or ql.get("created_at", "")[:10],
+                "recorded_at": ql.get("created_at"),
+                "is_estimated": False,
+                "parity_offers": [],
+                "room_types": [],
+                "metadata": {"source": "query_logs_fallback"}
+            })
+            fallback_count += 1
+        
+        logger.info(f"[SAFEGUARD] Recovered {fallback_count} price entries from query_logs")
     
     # Group logs by hotel_id
     hotel_prices_map = {}
