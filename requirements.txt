@@ -7,11 +7,8 @@ httpx>=0.26.0
 
 pywebpush>=1.14.0
 requests>=2.31.0
-beautifulsoup4>=4.12.0
-google-genai>=1.0.0
-google-generativeai>=0.8.6
 py-vapid>=1.9.0
 celery>=5.3.6
 redis>=5.0.1
-psycopg2-binary>=2.9.0
-google-adk>=0.1.0
+# AI dependencies (google-adk, google-genai, bs4, psycopg2) removed for Vercel limit.
+# Full dependencies are in requirements-all.txt for the background worker.
