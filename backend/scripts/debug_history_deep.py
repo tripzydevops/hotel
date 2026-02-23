@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 load_dotenv(os.path.join(os.getcwd(), '.env.local'))
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-from backend.main import get_supabase
+from backend.utils.db import get_supabase
 
 async def check_history_deep():
     db = get_supabase()

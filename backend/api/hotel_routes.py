@@ -36,16 +36,26 @@ async def search_hotel_directory(
     # new smart filtering capability in the Add Hotel modal.
 
 @router.get("/hotels/{user_id}", response_model=List[Hotel])
-async def list_hotels(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+async def list_hotels(
+    user_id: UUID, 
+    db: Optional[Client] = Depends(get_supabase), 
+    current_user = Depends(get_current_active_user),
+    include_deleted: bool = False
+):
     """
     Retrieves a list of hotels associated with a specific user ID.
     Requires authentication.
     """
     if not db:
         return []
-    # EXPLANATION: User Property List
-    # Powers the sidebar and dashboard selector for switching between properties.
-    result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    # EXPLANATION: User Property List (Soft-Delete Aware)
+    # Powers the sidebar and dashboard selector. By default, it hides 
+    # archived hotels to prevent cluttering the UI.
+    query = db.table("hotels").select("*").eq("user_id", str(user_id))
+    if not include_deleted:
+        query = query.is_("deleted_at", "null")
+        
+    result = query.execute()
     return result.data or []
 
 @router.get("/locations", response_model=List[LocationRegistry])
@@ -208,5 +218,9 @@ async def update_hotel(hotel_id: UUID, hotel: HotelUpdate, db: Client = Depends(
 
 @router.delete("/hotels/{hotel_id}")
 async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase)):
-    db.table("hotels").delete().eq("id", str(hotel_id)).execute()
-    return {"status": "deleted"}
+    # EXPLANATION: Accidental Deletion Prevention
+    # Instead of a hard DELETE, we set 'deleted_at'. This preserves 
+    # historical price_logs and allows for easy data recovery if needed.
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    db.table("hotels").update({"deleted_at": now_iso}).eq("id", str(hotel_id)).execute()
+    return {"status": "archived", "message": "Hotel successfully archived"}

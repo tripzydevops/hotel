@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 
 load_dotenv(".env.local", override=True)
 
-from backend.main import get_supabase
+from backend.utils.db import get_supabase
 from backend.agents.scraper_agent import ScraperAgent
 from backend.agents.analyst_agent import AnalystAgent
 from backend.models.schemas import ScanOptions

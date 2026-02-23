@@ -9,7 +9,7 @@ sys.path.append(os.getcwd())
 load_dotenv(os.path.join(os.getcwd(), '.env.local'))
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-from backend.main import get_supabase # type: ignore
+from backend.utils.db import get_supabase # type: ignore
 
 async def check_guest_mentions():
     db = get_supabase()

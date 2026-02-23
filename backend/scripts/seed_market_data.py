@@ -8,7 +8,7 @@ from uuid import uuid4
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.main import get_supabase
+from backend.utils.db import get_supabase
 import asyncio
 
 CITIES = ["Istanbul", "Antalya", "Bodrum", "Izmir", "Fethiye"]

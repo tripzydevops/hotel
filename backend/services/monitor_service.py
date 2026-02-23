@@ -66,8 +66,8 @@ async def trigger_monitor_logic(
     Enterprise users have unlimited background agent cycles.
     """
     
-    # Get all hotels for user
-    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    # Get all active hotels for user (exclude soft-deleted)
+    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
     hotels = hotels_result.data or []
     
     if not hotels:
@@ -348,8 +348,8 @@ async def run_scheduler_check_logic():
         settings_res = supabase.table("settings").select("user_id, check_frequency_minutes").in_("user_id", due_ids).execute()
         settings_map = {s['user_id']: s['check_frequency_minutes'] for s in settings_res.data or []}
 
-        # 1.3 Pool all hotels
-        hotels_res = supabase.table("hotels").select("*").in_("user_id", due_ids).execute()
+        # 1.3 Pool all hotels (active only)
+        hotels_res = supabase.table("hotels").select("*").in_("user_id", due_ids).is_("deleted_at", "null").execute()
         all_hotels = hotels_res.data or []
         
         # Group hotels by user for processing

@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 
 load_dotenv(".env.local", override=True)
 
-from backend.main import get_supabase
+from backend.utils.db import get_supabase
 
 async def create_samples():
     db = get_supabase()

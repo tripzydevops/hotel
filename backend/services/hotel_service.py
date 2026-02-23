@@ -222,7 +222,7 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     existed becomes shared and searchable by others.
     """
     # Fetch unique hotels from the main table
-    hotels_res = db.table("hotels").select("name, location, serp_api_id").execute()
+    hotels_res = db.table("hotels").select("name, location, serp_api_id").is_("deleted_at", "null").execute()
     if not hotels_res.data:
         return {"status": "success", "count": 0}
 

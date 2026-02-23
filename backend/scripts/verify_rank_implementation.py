@@ -16,7 +16,7 @@ mock_serpapi = AsyncMock()
 with patch('backend.services.serpapi_client.SerpApiClient.fetch_hotel_price', mock_serpapi), \
      patch('backend.agents.scraper_agent.ScraperAgent.run_scan', new_callable=AsyncMock) as mock_agent_scan:
     
-    from backend.main import get_supabase
+    from backend.utils.db import get_supabase
     from backend.models.schemas import ScanOptions
     from backend.agents.analyst_agent import AnalystAgent
     

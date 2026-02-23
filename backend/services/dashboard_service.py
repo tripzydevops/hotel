@@ -72,7 +72,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             # 6. Recent Sessions
             asyncio.to_thread(lambda: db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()),
             # 7. Hotels (Bulk Fetch)
-            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).execute())
+            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute())
         ]
         
         results = await asyncio.gather(*tasks, return_exceptions=True)

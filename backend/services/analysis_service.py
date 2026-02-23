@@ -633,7 +633,7 @@ async def get_market_intelligence_data(
     if currency:
         display_currency = currency
         
-    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
     hotels = hotels_result.data or []
     
     # DIAGNOSTIC: Log hotel count for this user
