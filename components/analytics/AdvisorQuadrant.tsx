@@ -22,6 +22,13 @@ interface AdvisorQuadrantProps {
   compact?: boolean;
 }
 
+// EXPLANATION: Quadrant Position Registry
+// Each entry defines the visual styling, short insight, recommended action,
+// and a rich user-facing description for the hover tooltip.
+// The quadrant is determined by the intersection of two axes:
+//   X-axis (ARI) = Price Index — how your price compares to market average
+//   Y-axis = Value Index — how your guest perception compares to competitors
+// The label is computed upstream (in the Sentiment page) based on these scores.
 const QUADRANT_INFO: Record<
   string,
   { color: string; icon: React.ReactNode; insight: string; action: string; description: string }
@@ -58,7 +65,7 @@ const QUADRANT_INFO: Record<
     color: "text-white/60",
     icon: <Target className="w-4 h-4" />,
     insight: "Neutral market position",
-    action: "Define differentiation strategy",
+    action: "Pick one strength to amplify — service, location, or amenities",
     description: "Your hotel sits near the market average on both price and guest perception. While stable, this position lacks differentiation — you're competing on the same terms as everyone else. Identify one strength to amplify (service, location, amenities) to carve out a distinct competitive advantage.",
   },
   "Insufficient Data": {
@@ -81,14 +88,17 @@ export default function AdvisorQuadrant({
   compact = false,
 }: AdvisorQuadrantProps) {
   const [isHovered, setIsHovered] = useState(false);
-  // Convert -50/50 range to percentage, clamped to stay within bounds
-  // Add padding (15% on each side) so indicator stays fully visible
+
+  // EXPLANATION: Coordinate Mapping
+  // The backend sends x,y in [-50, 50] range. We need to map these to CSS
+  // percentage positions within the chart area. We add 15% padding on each
+  // side so the indicator icon never clips against the chart border.
+  // Y-axis is inverted because CSS 'top' increases downward but higher
+  // value index should appear higher on the chart.
   const clamp = (val: number, min: number, max: number) =>
     Math.max(min, Math.min(max, val));
 
-  // Map x from [-50, 50] to [15, 85] for left position
   const leftPercent = clamp(((x + 50) / 100) * 70 + 15, 15, 85);
-  // Map y from [-50, 50] to [85, 15] for top position (inverted because CSS top goes down)
   const topPercent = clamp(85 - ((y + 50) / 100) * 70, 15, 85);
 
   const quadrantData = QUADRANT_INFO[label] || QUADRANT_INFO["Standard"];
@@ -150,6 +160,11 @@ export default function AdvisorQuadrant({
           <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-white/10 -translate-y-1/2" />
           <div className="absolute left-1/2 top-12 bottom-6 w-[1px] bg-white/10 -translate-x-1/2" />
 
+          {/* EXPLANATION: Position Indicator
+              The gold Trophy icon represents the hotel's current strategic position
+              on the quadrant map. Its CSS position is computed from the x/y props.
+              On hover, it reveals a tooltip with an in-depth explanation of what
+              the position means and what action the hotelier should take. */}
           {/* The Indicator */}
           <div
             className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-out z-20"
@@ -170,6 +185,11 @@ export default function AdvisorQuadrant({
               </div>
             </div>
 
+            {/* EXPLANATION: Smart Tooltip Positioning
+                If the indicator is in the upper half of the chart (topPercent < 45),
+                the tooltip renders BELOW the icon to avoid clipping off the top edge.
+                Otherwise it renders ABOVE. The tooltip is pointer-events-none so it
+                doesn't interfere with the hover detection on the parent div. */}
             {/* Hover Tooltip */}
             {isHovered && (
               <div
@@ -244,6 +264,12 @@ export default function AdvisorQuadrant({
             </div>
           </div>
 
+          {/* EXPLANATION: Key Performance Indices
+              Sentiment Index: Your guest rating divided by market average (×100).
+              Values >= 100 mean you're outperforming the market (green).
+              Values < 100 mean you're underperforming (red).
+              ARI (Average Rate Index): Your price divided by market average (×100).
+              Together these two indices determine the quadrant position above. */}
           {/* Key Indices */}
           <div className="space-y-4 pt-4 border-t border-white/5">
             {/* Sentiment Index */}
