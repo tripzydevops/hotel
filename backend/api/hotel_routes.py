@@ -13,7 +13,9 @@ from backend.services.hotel_service import (
 )
 from backend.services.location_service import LocationService
 from backend.utils.helpers import log_query
-from datetime import datetime
+from backend.services.auth_service import get_current_active_user
+from backend.utils.security import verify_ownership
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api", tags=["hotels"])
 
@@ -199,25 +201,38 @@ async def create_hotel(
     return result.data[0]
 
 @router.patch("/hotels/{hotel_id}")
-async def update_hotel(hotel_id: UUID, hotel: HotelUpdate, db: Client = Depends(get_supabase)):
+async def update_hotel(hotel_id: UUID, hotel: HotelUpdate, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+    # KAIZEN: Ownership Verification for specific resource
+    try:
+        current_res = db.table("hotels").select("user_id").eq("id", str(hotel_id)).single().execute()
+        if not current_res.data:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        verify_ownership(current_res.data["user_id"], current_user)
+    except HTTPException as he: raise he
+    except Exception: raise HTTPException(status_code=500, detail="Ownership check failed")
+
     update_data = {k: v for k, v in hotel.model_dump().items() if v is not None}
     if not update_data:
         return None
 
     if update_data.get("is_target_hotel"):
-        try:
-            current_res = db.table("hotels").select("user_id").eq("id", str(hotel_id)).single().execute()
-            if current_res.data:
-                uid = current_res.data["user_id"]
-                db.table("hotels").update({"is_target_hotel": False}).eq("user_id", uid).execute()
-        except Exception:
-            pass
+        uid = current_res.data["user_id"]
+        db.table("hotels").update({"is_target_hotel": False}).eq("user_id", uid).execute()
 
     result = db.table("hotels").update(update_data).eq("id", str(hotel_id)).execute()
     return result.data[0] if result.data else None
 
 @router.delete("/hotels/{hotel_id}")
-async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase)):
+async def delete_hotel(hotel_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+    # KAIZEN: Ownership Verification
+    try:
+        current_res = db.table("hotels").select("user_id").eq("id", str(hotel_id)).single().execute()
+        if not current_res.data:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        verify_ownership(current_res.data["user_id"], current_user)
+    except HTTPException as he: raise he
+    except Exception: raise HTTPException(status_code=500, detail="Ownership check failed")
+
     # EXPLANATION: Accidental Deletion Prevention
     # Instead of a hard DELETE, we set 'deleted_at'. This preserves 
     # historical price_logs and allows for easy data recovery if needed.

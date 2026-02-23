@@ -525,9 +525,12 @@ class SerpApiClient:
 
     async def fetch_multiple_hotels(self, hotels: List[Dict[str, str]], check_in: Optional[date] = None, 
                                    check_out: Optional[date] = None, currency: str = "USD") -> Dict[str, Any]:
-        results = {}
+        """HYPERSPEED KAIZEN: Parallelized batch fetching for auxiliary calls."""
+        tasks = []
         for h in hotels:
-            results[h["name"]] = await self.fetch_hotel_price(h["name"], h["location"], check_in, check_out, 2, currency, h.get("serp_api_id"))
-        return results
+            tasks.append(self.fetch_hotel_price(h["name"], h["location"], check_in, check_out, 2, currency, h.get("serp_api_id")))
+        
+        responses = await asyncio.gather(*tasks)
+        return {h["name"]: resp for h, resp in zip(hotels, responses)}
 
 serpapi_client = SerpApiClient()

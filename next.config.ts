@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // KAIZEN: Enforce type safety for production stability
+    ignoreBuildErrors: false,
   },
   async rewrites() {
     return [

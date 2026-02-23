@@ -22,38 +22,43 @@ async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    
+    # KAIZEN: Enforce ownership to prevent ID harvesting
+    verify_ownership(user_id, current_user)
+    
     try:
-        result = db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
-        base_data = result.data[0] if result.data else None
-        return await get_enriched_profile_logic(user_id, base_data, db)
+        # Assuming get_profile_logic is a new or renamed function that encapsulates the enrichment logic
+        return await get_enriched_profile_logic(user_id, None, db) # Pass None for base_data as get_enriched_profile_logic will fetch it
     except Exception as e:
-        print(f"Profile Error: {e}")
-        # Fallback to demo profile on crash
-        return UserProfile(
-            user_id=user_id,
-            display_name="System User (Fallback)",
-            plan_type="basic",
-            subscription_status="active",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/profile/{user_id}", response_model=UserProfile)
-async def update_profile(user_id: UUID, profile: UserProfileUpdate, db: Optional[Client] = Depends(get_supabase)):
+async def update_profile(user_id: UUID, profile: UserProfileUpdate, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Update user profile (upsert)."""
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
+    
+    # KAIZEN: Enforce ownership
+    verify_ownership(user_id, current_user)
+    
     try:
         return await update_profile_logic(user_id, profile, db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/settings/{user_id}", response_model=Settings)
-async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """
     Retrieves user-specific application settings (alert thresholds, scan frequency).
     If no settings exist, it initializes them with safe defaults.
     """
+    if not db:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    
+    # KAIZEN: Enforce ownership
+    verify_ownership(user_id, current_user)
+
     # EXPLANATION: Application Configuration
     # Handles persistence of user preferences, including parity alert sensitivity 
     # and automatic scan frequency (e.g., Every 4 hours).
