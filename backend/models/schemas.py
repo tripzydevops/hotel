@@ -83,6 +83,7 @@ class PriceLogBase(BaseModel):
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     search_rank: Optional[int] = None
     serp_api_id: Optional[str] = Field(default=None, description="Global ID for deduplication across users")
+    session_id: Optional[UUID] = Field(default=None, description="Links the price log to a specific scan session")
 
 
 class PriceLogCreate(PriceLogBase):
