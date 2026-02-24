@@ -8,11 +8,11 @@ if path not in sys.path:
     sys.path.append(path)
 
 try:
-    from backend_api.index import app
+    from api.backend import app
     client = TestClient(app)
     
     paths_to_test = [
-        "/api/dashboard/eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+        "/api/dashboard/eb284dd9-7198-47be-acd0-fdb0402bcd0a"
     ]
     
     print(f"Testing routes with VERCEL=1 simulated...")
