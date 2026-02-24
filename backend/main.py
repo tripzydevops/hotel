@@ -48,13 +48,9 @@ from backend.api import (
 
 # Initialize FastAPI
 # EXPLANATION: Vercel Routing Normalization
-# We use root_path="/api" to ensure that the app correctly handles 
-# path stripping performed by Vercel when rewriting /api/* to /api/index.py.
-# This fixes 404/405 errors caused by path mismatches.
 app = FastAPI(
     title="Hotel Rate Sentinel API",
-    version="2026.02",
-    root_path="/api" if os.getenv("VERCEL") == "1" else ""
+    version="2026.02"
 )
 
 # CORS configuration
