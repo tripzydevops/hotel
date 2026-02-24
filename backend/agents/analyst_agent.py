@@ -262,6 +262,34 @@ class AnalystAgent:
                     except:
                         await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found.")
 
+                # KAİZEN: Room Type Persistence (Carry-Forward)
+                # SerpApi intermittently returns empty room_types even for hotels
+                # that previously had rich room data. When room_types is empty,
+                # we carry forward from the most recent successful scan (within 7 days).
+                current_room_types = price_data.get("room_types", [])
+                if not current_room_types and not is_estimated:
+                    try:
+                        rt_cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+                        rt_history = self.db.table("price_logs") \
+                            .select("room_types, recorded_at") \
+                            .eq("hotel_id", hotel_id) \
+                            .gt("recorded_at", rt_cutoff) \
+                            .order("recorded_at", desc=True) \
+                            .limit(10) \
+                            .execute()
+                        
+                        for prev_log in (rt_history.data or []):
+                            prev_rt = prev_log.get("room_types") or []
+                            if len(prev_rt) > 0:
+                                current_room_types = prev_rt
+                                reasoning_log.append(
+                                    f"[Room Persistence] Carried forward {len(prev_rt)} room types "
+                                    f"from {prev_log['recorded_at'][:19]} for {hotel_id}"
+                                )
+                                break
+                    except Exception as rt_e:
+                        print(f"[AnalystAgent] Room type carry-forward failed: {rt_e}")
+
                 # Prepare Price Log
                 # KAİZEN: Use explicit hotel_id variable to prevent accidental shadowing 
                 # from nested price_data objects (Global Pulse protection)
@@ -274,7 +302,7 @@ class AnalystAgent:
                     "vendor": price_data.get("vendor", "Unknown"),
                     "search_rank": price_data.get("search_rank"),
                     "parity_offers": offers,
-                    "room_types": price_data.get("room_types", []),
+                    "room_types": current_room_types,
                     "is_estimated": is_estimated,
                     "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id"),
                     "metadata": {

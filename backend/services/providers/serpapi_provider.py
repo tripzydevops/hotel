@@ -247,27 +247,42 @@ class SerpApiProvider(HotelDataProvider):
         # print(f"[SerpApi] Extracted {len(offers)} market offers")
         return offers
 
-    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str) -> List[Dict[str, Any]]:
-        """Extract room types from featured_prices or rooms array."""
+    def _extract_all_room_types(self, best_match: Dict[str, Any], currency: str, root_data: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """Extract room types from featured_prices, rooms array, or root level for KG results."""
         rooms = []
         room_names = set()
         raw_rooms = []
+        
+        # 1. Check Root Level (for Knowledge Graph results)
+        if root_data:
+            if root_data.get("rooms"): raw_rooms.extend(root_data["rooms"])
+            if root_data.get("room_types"): raw_rooms.extend(root_data["room_types"])
+            
+        # 2. Check Match Object Level
         if best_match.get("rooms"): raw_rooms.extend(best_match["rooms"])
         if best_match.get("room_types"): raw_rooms.extend(best_match["room_types"])
+        
+        # 3. Check within Featured Prices and Prices
         featured = best_match.get("featured_prices", []) or []
         for p in featured:
             if "rooms" in p: raw_rooms.extend(p["rooms"])
+            elif "room_type" in p: raw_rooms.append(p) # Single room type in featured
+            
         prices = best_match.get("prices", []) or []
         for p in prices:
             if "rooms" in p: raw_rooms.extend(p["rooms"])
+            elif "room_type" in p: raw_rooms.append(p)
 
         for r in raw_rooms:
-            name = r.get("name") or r.get("title")
+            name = r.get("name") or r.get("title") or r.get("room_type")
             if not name or name in room_names: continue
+            
             raw_p = r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night") or r.get("price")
             price = self._clean_price_string(raw_p, currency)
+            
             rooms.append({"name": name, "price": price, "currency": currency})
             room_names.add(name)
+            
         return rooms
 
     def _parse_hotel_result(self, data: Dict[str, Any], target_hotel: str, currency: str, target_serp_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -421,7 +436,7 @@ class SerpApiProvider(HotelDataProvider):
             "photos": [p.get("thumbnail") for p in best_match.get("images", []) if p.get("thumbnail")],
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
             "offers": offers,
-            "room_types": self._extract_all_room_types(best_match, currency),
+            "room_types": self._extract_all_room_types(best_match, currency, data),
             "reviews_breakdown": best_match.get("reviews_breakdown", []),
             "reviews_list": best_match.get("actual_reviews", []) if isinstance(best_match.get("actual_reviews"), list) else [],
             "raw_data": best_match

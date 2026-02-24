@@ -237,6 +237,10 @@ def get_price_for_room(
             match_price, match_name, confidence = top_price, "Standard (Legacy)", 0.7
             
     # If match_price is 0, we return it as 0.0 to indicate sellout
+    # KAIZEN: Reject fallback if NO MATCH was found but a SPECIFIC type was requested
+    if match_price is None and not is_standard_request:
+        return None, None, 0.0
+
     return match_price, match_name, confidence
 
 
@@ -567,6 +571,7 @@ async def perform_market_analysis(
         # 3. If a successful scan is found within history, we use it and mark as 'Estimated'.
         date_price_map: Dict[str, Dict[str, Any]] = {}
 
+        today_date = date.today()
         for hid, prices in hotel_prices_map.items():
             # prices are sorted by recorded_at DESC
             # Group by check-in date
@@ -977,10 +982,19 @@ async def get_market_intelligence_data(
     logger.info(f"[DIAG] User {user_id}: Combined {len(logs_data)} price_logs including global data")
     
     # SAFEGUARD: Proactive query_logs integration
-    # Instead of waiting for zero logs, we pull query_logs if our dataset is "thin" 
-    # or if the user specifically requested historical completeness.
-    if len(logs_data) < (len(hotels) * 5): # Arbitrary threshold for "thin" data
-        logger.info(f"[SAFEGUARD] Dataset thin ({len(logs_data)}). Pulling historical query_logs for user {user_id}")
+    # We pull query_logs if:
+    # 1. Our dataset is "thin" (< 5 logs per hotel)
+    # 2. The requested range (start_date) is older than our 90-day price_logs window
+    is_historical_request = False
+    if start_date:
+        try:
+            s_dt = datetime.fromisoformat(str(start_date).split('T')[0])
+            if s_dt < datetime.fromisoformat(cutoff_date.split('T')[0]):
+                is_historical_request = True
+        except: pass
+
+    if is_historical_request or len(logs_data) < (len(hotels) * 5):
+        logger.info(f"[SAFEGUARD] Pulling historical query_logs for user {user_id} (Historical={is_historical_request}, Thin={len(logs_data)})")
         
         hotel_name_to_id = {h["name"].lower().strip(): str(h["id"]) for h in hotels}
         fallback_cutoff = (datetime.utcnow() - timedelta(days=180)).isoformat()
