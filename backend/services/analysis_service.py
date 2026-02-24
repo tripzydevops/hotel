@@ -110,8 +110,12 @@ def get_price_for_room(
     allowed_names = allowed_room_names_map.get(hid)
     
     if allowed_names:
+        # Convert allowed_names to lowercase set for O(1) case-insensitive lookup
+        allowed_lower = {a.lower().strip() for a in allowed_names}
         for r in r_types:
-            if isinstance(r, dict) and r.get("name") in allowed_names:
+            if isinstance(r, dict):
+                r_name = r.get("name", "")
+                if r_name.lower().strip() in allowed_lower:
                  # KAIZEN: "Strict Keyword Guard"
                  # Even if DB/Vector Search maps "Standard Room" to "Suite", we REJECT it 
                  # if the names mismatch significantly.
@@ -139,6 +143,12 @@ def get_price_for_room(
     # Kaizen: Add Suite synonyms (Turkish)
     if "suite" in target_room_type.lower():
          target_variants.append("süit")
+    # Kaizen: Add Deluxe/Superior synonyms
+    if any(k in target_room_type.lower() for k in ["deluxe", "superior", "premium"]):
+         target_variants.extend(["deluxe", "superior", "premium", "corner"])
+    # Kaizen: Add Family synonyms
+    if any(k in target_room_type.lower() for k in ["family", "aile"]):
+         target_variants.extend(["family", "aile", "connection", "connected", "bağlantılı"])
     
     for r in r_types:
         if not isinstance(r, dict): continue
@@ -1007,11 +1017,26 @@ async def get_market_intelligence_data(
     # Room Type Slicing Logic (pgvector)
     allowed_room_names_map = {}
     try:
+        # EXPLANATION: Smart Catalog Search
+        # We first try to find the exact embedding for the requested room type.
+        # If that fails, we extract core keywords (Suite, Deluxe, Family) 
+        # to find the best representative embedding from the catalog.
         catalog_res = db.table("room_type_catalog").select("embedding") \
             .ilike("normalized_name", f"%{room_type}%").limit(1).execute()
         
+        if not catalog_res.data:
+            # Keyword-based fallback search in catalog
+            keywords = []
+            rt_low = room_type.lower()
+            if "suite" in rt_low or "süit" in rt_low: keywords.append("Suite")
+            elif any(k in rt_low for k in ["deluxe", "superior", "premium"]): keywords.append("Deluxe")
+            elif any(k in rt_low for k in ["family", "aile"]): keywords.append("Family")
+            
+            if keywords:
+                catalog_res = db.table("room_type_catalog").select("embedding") \
+                    .in_("normalized_name", keywords).limit(1).execute()
+
         # Fallback for Standard/Standart mismatch in catalog
-        # Improved: check if it CONTAINS standard/standart
         is_std = any(s in room_type.lower() for s in ["standard", "standart"])
         if not catalog_res.data and is_std:
             # Try searching for the other variant specifically
