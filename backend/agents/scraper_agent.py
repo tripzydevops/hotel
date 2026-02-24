@@ -277,7 +277,9 @@ class ScraperAgent:
                                 serp_api_id=serp_api_id
                             )
                     except Exception as e:
-                        await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {e}", "error", {"error_message": str(e)})
+                        err_msg = str(e)
+                        await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {err_msg}", "error", {"error_message": err_msg})
+                        price_data = {"status": "error", "error": err_msg}
                     
                     # [NEW] Normalize Room Types if present
                     if price_data and price_data.get("room_types"):

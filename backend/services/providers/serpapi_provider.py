@@ -126,27 +126,32 @@ class SerpApiProvider(HotelDataProvider):
                     current_key_suffix = self._serp_client.api_key[-5:]
                     
                     if self._is_quota_error(response):
-                        is_rate_limit = response.status_code == 429
-                        print(f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_key_suffix}")
-                        
-                        # Use unified rotation
-                        if self._serp_client._key_manager.rotate_key(reason="quota_exhausted" if not is_rate_limit else "rate_limit"):
-                            new_key = self._serp_client.api_key
-                            print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
-                            params["api_key"] = new_key
-                            response = await client.get(self.BASE_URL, params=params)
-                        else:
-                            print("[SerpApi] All configured keys exhausted.")
-                            return None
+                        # BATCH ROTATION: Try all available keys until success or exhaustion
+                        while self._is_quota_error(response):
+                            is_rate_limit = response.status_code == 429
+                            current_suffix = self._serp_client.api_key[-5:]
+                            print(f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_suffix}")
+                            
+                            if self._serp_client._key_manager.rotate_key(reason="quota_exhausted" if not is_rate_limit else "rate_limit"):
+                                new_key = self._serp_client.api_key
+                                print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
+                                params["api_key"] = new_key
+                                response = await client.get(self.BASE_URL, params=params)
+                            else:
+                                print("[SerpApi] All configured keys exhausted.")
+                                return {"status": "error", "error": "quota_exhausted"}
                     
                 if response.status_code == 200:
-                        data = response.json()
-                        if "error" in data:
-                            print(f"[SerpApi] API Error: {data['error']} (Key: ...{current_key_suffix})")
-                        return self._parse_hotel_result(data, hotel_name, currency, target_serp_id=token)
+                    data = response.json()
+                    if "error" in data:
+                        print(f"[SerpApi] API Error: {data['error']} (Key: ...{current_key_suffix})")
+                        return {"status": "error", "error": data["error"]}
+                    return self._parse_hotel_result(data, hotel_name, currency, target_serp_id=token)
+                else:
+                    return {"status": "error", "error": f"HTTP {response.status_code}"}
             except Exception as e:
                 print(f"[SerpApi] Fetch Error: {e}")
-            return None
+                return {"status": "error", "error": str(e)}
 
         # 1. Primary Attempt (with ID if available)
         # Optimized Query: Prevent redundant "City City" patterns which can confuse Google.
