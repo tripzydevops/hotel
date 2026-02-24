@@ -286,9 +286,9 @@ export default function RateIntelligenceGrid({
                           </div>
                         ) : isVerificationFailed ? (
                           <div className="flex flex-col items-center justify-center opacity-70">
-                             <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price verification failed (No data available)">
+                             <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price not available for this room type">
                                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest whitespace-nowrap">
-                                  Failed
+                                  N/A
                                 </span>
                              </div>
                           </div>
