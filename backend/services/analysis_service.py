@@ -188,64 +188,39 @@ def get_price_for_room(
             
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
-    # EXPLANATION: Standard Request Detection & Global Fallback
-    # Why: If no semantic or string match was found, but we are looking for a 'Standard' 
-    # room, we fall back to the lowest available room price. 
-    # KAIZEN (2026-02-19): We disable this fallback for specific room types (e.g., Suite)
-    # to prevent misleading comparisons. If you ask for Suite, you get Suite or N/A.
-    # Standard variants in Turkish and English
-    std_variants = ["standard", "standart", "base", "any", "all", "klasik", "classic", "ekonomik", "economy", "promo"]
-    target_lower = target_room_type.lower().strip()
+    # --- FALLBACK LOGIC ---
     
-    # KAIZEN: Strict Standard Detection
-    # We only treat it as a standard request if the target is empty, explicitly 'standard', 
-    # or a known 'base' variant. We use EXACT match or word-boundary match to prevent 
-    # "Standard Suite" from falling back to a basic "Standard" room price.
-    is_standard_request = (
-        not target_lower or 
-        target_lower == "oda" or
-        any(v == target_lower for v in std_variants)
-    )
+    # 1. Define Request Type (Standard vs Specific)
+    # We treat it as a Standard request if the prompt is empty or contains base keywords (Standard, Classic, etc.)
+    # and DOES NOT contain specific premium keywords (Suite, Deluxe, Family).
+    target_low = target_room_type.lower().strip()
+    is_premium = any(k in target_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile", "balcony", "view"])
+    is_base = not target_low or target_low == "oda" or any(v in target_low for v in ["standard", "standart", "base", "klasik", "classic", "eco", "promo"])
     
-    if is_standard_request:
-        try:
-            valid_prices = []
-            for r in r_types:
-                if not isinstance(r, dict): continue
-                p = _extract_price(r.get("price"))
-                if p is not None:
-                    valid_prices.append((p, r.get("name") or "Standard (Min)"))
-            
-            if valid_prices:
-                valid_prices.sort(key=lambda x: x[0])
-                # Increase confidence (0.65) for lowest-price fallback to guarantee UI display
-                return valid_prices[0][0], valid_prices[0][1], 0.65
-        except Exception:
-            pass
-    
-    # EXPLANATION: Legacy Price Fallback
-    # If no specific room match was found, but we are looking for a 'Standard' 
-    # room and the log has a top-level price, we use that as a last resort.
-    match_price = None
-    match_name = None
-    confidence = 0.0
+    # A request is "Standard" if it's explicitly base OR empty, and NOT specifically premium.
+    is_standard_request = (is_base and not is_premium) or not target_room_type
 
-    if (not r_types or len(r_types) == 0) and is_standard_request:
-        top_price = _extract_price(price_log.get("price"))
-        if top_price is not None:
-            # Kaizen: Improved confidence for legacy data to ensure continuity
-            match_price, match_name, confidence = top_price, "Standard (Legacy)", 0.7
-            
-    # If match_price is 0, we return it as 0.0 to indicate sellout
-    # KAIZEN: Reject fallback if NO MATCH was found but a SPECIFIC type was requested
-    if match_price is None and not is_standard_request:
-        if (not r_types or len(r_types) == 0) and is_standard_request:
-            top_p = _extract_price(price_log.get("price"))
-            if top_p is not None and top_p > 0:
-                return top_p, "Legacy Fallback", 0.6
-        return None, None, 0.0
+    # 2. Standard Fallback: Lowest price in room_types (for Standard requests only)
+    if is_standard_request and r_types:
+        valid_prices = []
+        for r in r_types:
+            if not isinstance(r, dict): continue
+            p = _extract_price(r.get("price"))
+            if p is not None:
+                valid_prices.append((p, r.get("name") or "Standard (Min)"))
+        if valid_prices:
+            valid_prices.sort(key=lambda x: x[0])
+            return valid_prices[0][0], valid_prices[0][1], 0.65
 
-    return match_price, match_name, confidence
+    # 3. Legacy Fallback: Top-level price if rooms are empty (for Standard requests only)
+    if is_standard_request and not r_types:
+        top_p = _extract_price(price_log.get("price"))
+        if top_p is not None and top_p > 0:
+            return top_p, "Standard (Legacy)", 0.7
+
+    # 4. Final Fail: If we reach here, we have no specific room match.
+    # We return None to indicate no data for this specific room type, preventing leakage.
+    return None, None, 0.0
 
 
 def generate_synthetic_narrative(
