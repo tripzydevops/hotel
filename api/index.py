@@ -10,6 +10,16 @@ if path not in sys.path:
 try:
     from backend.main import app as _app
     app = _app
+    
+    # EXPLANATION: Runtime Route Diagnostic
+    # If we are getting 404s, we need to know what the app actually thinks its routes are.
+    @app.get("/api/debug/routes-list")
+    async def list_registered_routes():
+        return {
+            "routes": [{"path": r.path, "name": r.name} for r in app.routes],
+            "sys_path": sys.path,
+            "cwd": os.getcwd()
+        }
 except Exception as e:
     import traceback
     from fastapi import FastAPI
@@ -24,10 +34,10 @@ except Exception as e:
         return JSONResponse(
             status_code=500,
             content={
-                "error": "Emergency Backend Diagnostic",
+                "error": "Emergency Backend Diagnostic (Import Failed)",
                 "detail": error_detail,
                 "hint": "Check requirements.txt or circular imports."
             }
         )
 
-# Version: 2026-02-24 10:28
+# Version: 2026-02-24 10:48
