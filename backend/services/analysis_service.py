@@ -581,10 +581,10 @@ async def perform_market_analysis(
                                     break
                     except Exception: pass
 
-                # 2. Global Fallback for this Hotel (Any-Date Continuity)
-                if price_val is None or price_val <= 0:
-                    # Look through ALL prices for this hotel (outside this check-in group)
-                    # hotel_prices_map[hid] contains all logs sorted by recorded_at DESC
+                # 2. Global Fallback for this Hotel (Any-Date Continuity) - RESTRICTED
+                # Why: We only use cross-date continuity for dates in the past or today.
+                # For future dates, we ONLY show data if a scan exists for that specific check-in date.
+                if (price_val is None or price_val <= 0) and datetime.strptime(d_str, "%Y-%m-%d").date() <= today_date:
                     all_hotel_logs = hotel_prices_map.get(hid, [])
                     for fallback_log in all_hotel_logs:
                         fb_p, _, _ = get_price_for_room(fallback_log, room_type, allowed_room_names_map)
@@ -652,8 +652,9 @@ async def perform_market_analysis(
             if data and data["target"] is not None:
                 last_known_target = float(data["target"])
                 target_val = last_known_target
-            elif last_known_target is not None:
-                # [KAİZEN] Carry forward last known price to ensure grid is never empty.
+            elif last_known_target is not None and current_date <= today_date:
+                # [KAİZEN] Carry forward ONLY for past/today to fill gaps in historical records.
+                # For future dates, we leave it empty if no specific scan exists.
                 target_val = last_known_target
             
             # 2. Competitor Logic (Conditional Full Fill)
@@ -672,16 +673,17 @@ async def perform_market_analysis(
                     unique_competitors.append(c)
                     seen_competitors.add(c["name"])
             
-            # Horizontal Continuity (Competitor Fill)
+            # Horizontal Continuity (Competitor Fill) - RESTRICTED TO PAST/TODAY
             for name, state in competitor_states.items():
                 if name not in seen_competitors:
-                    # Carry competitor prices forward for the entire grid range
-                    unique_competitors.append({
-                        "name": name,
-                        "price": state["price"],
-                        "is_estimated": True 
-                    })
-                    seen_competitors.add(name)
+                    # Carry competitor prices forward ONLY for past/today dates.
+                    if current_date <= today_date:
+                        unique_competitors.append({
+                            "name": name,
+                            "price": state["price"],
+                            "is_estimated": True 
+                        })
+                        seen_competitors.add(name)
             
             if unique_competitors:
                 comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
