@@ -171,7 +171,10 @@ export default function CalendarPage() {
     new Set(
       visiblePrices.flatMap((p: any) => p.competitors.map((c: any) => c.name))
     )
-  ).map((name) => ({ id: name, name }));
+  ).map((name) => {
+      const compData = data?.competitors?.find((c: any) => c.name === name);
+      return { id: compData?.id || name, name };
+  });
 
   const visibleRangeLabel =
     visiblePrices.length > 0
