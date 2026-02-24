@@ -91,14 +91,23 @@ class ApiKeyManager:
         with self._lock:
             return self._current_index + 1 if self._keys else 0
     
-    def rotate_key(self, reason: str = "quota_exhausted") -> bool:
+    def rotate_key(self, reason: str = "quota_exhausted", is_permanent: bool = True) -> bool:
         """Mark current key as exhausted and rotate to next available key."""
         with self._lock:
             if not self._keys:
                 return False
 
             current_key = self._keys[self._current_index]
-            self._exhausted_keys[current_key] = datetime.now()
+            
+            # EXPLANATION: Smart Rotation logic
+            # If is_permanent is True (Hard Quota), we apply the 24h cooldown.
+            # If False (429 Rate Limit), we just rotate to give the key a break 
+            # without banning it.
+            if is_permanent:
+                self._exhausted_keys[current_key] = datetime.now()
+                logger.warning(f"Key {self._current_index + 1} PERMANENTLY exhausted (24h cooldown). Reason: {reason}")
+            else:
+                logger.info(f"Key {self._current_index + 1} hitting temporary limit (429). Rotating to next key...")
             
             # Try to find next available key
             attempts = 0
@@ -106,6 +115,7 @@ class ApiKeyManager:
                 self._current_index = (self._current_index + 1) % len(self._keys)
                 next_key = self._keys[self._current_index]
                 
+                # Check if the next key is currently BANNED
                 if next_key in self._exhausted_keys:
                     exhaust_time = self._exhausted_keys[next_key]
                     if datetime.now() - exhaust_time > self._exhaustion_cooldown:
@@ -118,7 +128,7 @@ class ApiKeyManager:
                 
                 attempts += 1
             
-            logger.warning("All API keys are exhausted!")
+            logger.warning("All API keys are exhausted or banned!")
             return False
     
     def reset_all(self):
@@ -230,15 +240,28 @@ class SerpApiClient:
             cleaned = re.sub(re.escape(phrase), "", cleaned, flags=re.IGNORECASE).strip()
         return self._normalize_string(cleaned)
     
-    def _is_quota_error(self, response: httpx.Response) -> bool:
-        if response.status_code == 429: return True
+    def _is_quota_error(self, response: httpx.Response) -> tuple[bool, bool]:
+        """Returns (is_error, is_permanent)."""
+        # EXPLANATION: Error Differentiation
+        # 429 means "Too many requests per second" (Temporary).
+        # "Quota" or "Searches" in the JSON means "Out of money/credits" (Permanent).
+        if response.status_code == 429: 
+            return True, False 
+            
         try:
-            error = response.json().get("error", "").lower()
-            # Catch multiple variations of quota exhaustion
-            quota_phrases = ["quota", "limit", "exceeded", "run out", "searches"]
-            if any(x in error for x in quota_phrases): return True
-        except: pass
-        return False
+            error_data = response.json().get("error", "").lower()
+            # Hard quota phrases
+            permanent_phrases = ["quota", "run out", "searches", "insufficient credits"]
+            if any(x in error_data for x in permanent_phrases): 
+                return True, True
+            
+            # General limit phrases (often temporary)
+            if "limit" in error_data or "exceeded" in error_data:
+                return True, False
+        except: 
+            pass
+            
+        return False, False
 
     def _clean_price_string(self, price: Any, currency: str) -> Optional[float]:
         """Robusly clean price string into a float."""
@@ -333,11 +356,13 @@ class SerpApiClient:
                     response = await client.get(SERPAPI_BASE_URL, params=params)
                     
                     # Robust Rotation Loop: Continue trying other keys until success or exhaustion
-                    while self._is_quota_error(response):
-                        logger.warning(f"Key {self._key_manager.current_key_index} exhausted. Attempting rotation...")
-                        if self._key_manager.rotate_key():
+                    is_err, is_perm = self._is_quota_error(response)
+                    while is_err:
+                        logger.warning(f"Key {self._key_manager.current_key_index} encountered { 'PERMANENT' if is_perm else 'TEMPORARY' } limit. Rotating...")
+                        if self._key_manager.rotate_key(is_permanent=is_perm):
                             params["api_key"] = self.api_key
                             response = await client.get(SERPAPI_BASE_URL, params=params)
+                            is_err, is_perm = self._is_quota_error(response)
                         else:
                             logger.critical("All SerpApi keys exhausted for search_hotels")
                             break
@@ -399,11 +424,13 @@ class SerpApiClient:
                 response = await client.get(SERPAPI_BASE_URL, params=params)
                 
                 # Robust Rotation Loop: Continue trying other keys until success or exhaustion
-                while self._is_quota_error(response):
-                    logger.warning(f"Key {self._key_manager.current_key_index} exhausted for property fetch. Rotating...")
-                    if self._key_manager.rotate_key():
+                is_err, is_perm = self._is_quota_error(response)
+                while is_err:
+                    logger.warning(f"Key {self._key_manager.current_key_index} encountered { 'PERMANENT' if is_perm else 'TEMPORARY' } limit. Rotating...")
+                    if self._key_manager.rotate_key(is_permanent=is_perm):
                         params["api_key"] = self.api_key
                         response = await client.get(SERPAPI_BASE_URL, params=params)
+                        is_err, is_perm = self._is_quota_error(response)
                     else: 
                         logger.critical("All SerpApi keys exhausted for fetch_hotel_price")
                         return {"error": "quota_exhausted", "status": "error"}
