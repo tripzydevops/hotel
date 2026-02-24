@@ -315,7 +315,13 @@ class ScraperAgent:
         # Run all hotels in parallel with semaphore control
         await asyncio.gather(*(fetch_hotel(h) for h in hotels))
         
-        # HYPERSPEED: Batch flush all reasoning logs and price logs
+        # HYPERSPEED: Batch flush all reasoning logs
+        # EXPLANATION: Single Source of Truth Architecture
+        # We previously experienced database collisions because both Scraper 
+        # and Analyst were writing to price_logs. We have removed the 
+        # _flush_price_logs call here. The AnalystAgent is now the 
+        # sole writer of price data, ensuring consistency and 
+        # resolving the "PARTIAL" scan status issue.
         if session_id:
             await self._flush_logs(session_id)
             

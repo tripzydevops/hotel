@@ -292,7 +292,12 @@ class AnalystAgent:
 
                 # Prepare Price Log
                 # KAİZEN: Use explicit hotel_id variable to prevent accidental shadowing 
-                # from nested price_data objects (Global Pulse protection)
+                # [KAİZEN] Robust Metadata Processing
+                # EXPLANATION: Single Source of Truth Persistence
+                # This AnalystAgent is the primary writer to the price_logs table.
+                # It receives raw data from the Scraper, performs currency and 
+                # room-type normalization, and flushes the result. This prevents 
+                # duplicate key collisions and ensures all data is session-linked.
                 price_logs_to_insert.append({
                     "hotel_id": hotel_id,
                     "price": current_price if current_price else 0.0,
