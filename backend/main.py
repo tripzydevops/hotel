@@ -6,18 +6,20 @@ Main entry point using modular routers.
 # ruff: noqa
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Ensure backend module is resolvable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 # GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+from supabase import Client
+from backend.utils.db import get_supabase
 
 # Load environment variables
 load_dotenv()
@@ -116,28 +118,56 @@ async def health_check():
         "version": "1.1.0-modular"
     }
 
-@app.get("/api/debug/routes")
-async def debug_routes():
-    """List all registered routes for debugging 404 errors."""
-    redis_status = "unknown"
-    redis_error = None
-    try:
-        from backend.celery_app import celery_app
-        with celery_app.connection_for_write() as conn:
-            conn.ensure_connection(max_retries=1)
-            redis_status = "connected"
-    except Exception as e:
-        redis_status = "failed"
-        redis_error = str(e)
+@app.get("/api/debug/system-report")
+async def system_report(db: Client = Depends(get_supabase)):
+    """Deep diagnostics for environment and database connectivity."""
+    
+    # 1. Environment Check (Masked)
+    import os
+    env_vars = {
+        "NEXT_PUBLIC_SUPABASE_URL": "PRESENT" if os.getenv("NEXT_PUBLIC_SUPABASE_URL") else "MISSING",
+        "SUPABASE_SERVICE_ROLE_KEY": "PRESENT" if os.getenv("SUPABASE_SERVICE_ROLE_KEY") else "MISSING",
+        "VERCEL": os.getenv("VERCEL", "0"),
+        "PYTHON_VERSION": sys.version,
+        "PYTHONPATH": os.getenv("PYTHONPATH", "NOT_SET")
+    }
+    
+    # 2. Database Connectivity & Table Check
+    db_results = {}
+    tables_to_check = ["hotels", "settings", "price_logs", "scan_sessions", "alerts"]
+    
+    if not db:
+        db_results["status"] = "DB_CLIENT_INIT_FAILED"
+    else:
+        for table in tables_to_check:
+            try:
+                # Just check if we can select 1 record
+                res = db.table(table).select("*").limit(1).execute()
+                db_results[table] = {"status": "OK", "count_hint": len(res.data or [])}
+            except Exception as e:
+                db_results[table] = {"status": "FAILED", "error": str(e)}
 
-    routes = []
-    for route in app.routes:
-        if hasattr(route, "path"):
-            routes.append({
-                "path": route.path,
-                "name": route.name,
-                "methods": list(route.methods) if hasattr(route, "methods") else None
-            })
+    # 3. Memory & Health (Optional Diagnostic)
+    process_stats = {"status": "psutil_not_installed"}
+    try:
+        import psutil
+        process = psutil.Process(os.getpid())
+        process_stats = {
+            "memory_usage_mb": process.memory_info().rss / (1024 * 1024),
+            "pid": os.getpid(),
+            "status": "OK"
+        }
+    except ImportError:
+        pass
+    except Exception as e:
+        process_stats = {"status": "ERROR", "error": str(e)}
+    
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "environment": env_vars,
+        "database": db_results,
+        "process": process_stats
+    }
     return {
         "count": len(routes),
         "routes": routes,
