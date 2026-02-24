@@ -10,68 +10,88 @@ url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 supabase: Client = create_client(url, key)
 
-async def dedupe_hotels():
-    print("--- Starting Hotel De-duplication Process ---")
+async def comprehensive_data_restoration():
+    print("--- Starting Comprehensive Data Restoration ---")
     
-    # 1. Fetch all hotels
-    res = supabase.table("hotels").select("*").execute()
-    hotels = res.data or []
-    print(f"Fetched {len(hotels)} total hotels (including potentially deleted).")
+    target_user_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a" # tripzydevops
     
-    ramadas = [h for h in hotels if "Ramada" in (h.get("name") or "")]
-    print(f"Ramadas in DB: {len(ramadas)}")
-    for r in ramadas:
-        print(f"  ID: {r['id']}, User: {r['user_id']}, SERP: {r['serp_api_id']}, DeletedAt: {r['deleted_at']}, Target: {r['is_target_hotel']}")
-
-    # 2. Group by user_id and serp_api_id
-    groups = {}
-    for h in hotels:
-        if h.get("deleted_at"): continue # Skip deleted
-        sid = h.get("serp_api_id")
-        uid = h.get("user_id")
-        if not sid or not uid: continue
+    # 1. Fetch active hotels for the target user
+    res = supabase.table("hotels").select("*").eq("user_id", target_user_id).is_("deleted_at", "null").execute()
+    active_hotels = res.data or []
+    print(f"Active Hotels for tripzydevops: {len(active_hotels)}")
+    
+    for h in active_hotels:
+        h_name = h.get("name")
+        h_id = h.get("id")
+        serp_id = h.get("serp_api_id")
         
-        key = (uid, sid)
-        if key not in groups:
-            groups[key] = []
-        groups[key].append(h)
-    
-    print(f"Grouped into {len(groups)} unique (user, serp) pairs.")
-    
-    # 3. Process groups with duplicates
-    for (uid, sid), h_list in groups.items():
-        if len(h_list) < 2:
+        if not serp_id:
+            print(f"  Skipping {h_name} (No SERP ID)")
             continue
             
-        print(f"\nFound {len(h_list)} duplicates for User {uid}, SERP {sid}")
+        print(f"\nProcessing {h_name} ({h_id})...")
         
-        # Determine Primary: 
-        # Priority 1: is_target_hotel
-        # Priority 2: updated_at
-        h_list.sort(key=lambda x: (bool(x.get("is_target_hotel")), x.get("updated_at", "")), reverse=True)
+        # A. Migrate price_logs from OTHER hotel records with SAME serp_id
+        # We find any other hotel record (deleted or other user) with the same SERP ID.
+        others_res = supabase.table("hotels").select("id").eq("serp_api_id", serp_id).neq("id", h_id).execute()
+        other_ids = [oh["id"] for oh in others_res.data or []]
         
-        primary = h_list[0]
-        secondaries = h_list[1:]
+        if other_ids:
+            print(f"  Found {len(other_ids)} other hotel records for this property.")
+            log_res = supabase.table("price_logs").select("id").in_("hotel_id", other_ids).execute()
+            other_logs = log_res.data or []
+            if other_logs:
+                print(f"  Migrating {len(other_logs)} price_logs to active record...")
+                for log in other_logs:
+                    try:
+                        supabase.table("price_logs").update({"hotel_id": h_id}).eq("id", log["id"]).execute()
+                    except Exception as e:
+                        if "duplicate key value" in str(e):
+                            # Already exists in primary, just delete the secondary log
+                            supabase.table("price_logs").delete().eq("id", log["id"]).execute()
+                        else:
+                            raise e
+
+        # B. Migrate query_logs (Legacy) to price_logs
+        # We search by SERP ID or Hotel Name (flexible)
+        # 2026-02-24: We use Name for query_logs as serp_api_id column might be missing/inconsistent there
+        ql_res = supabase.table("query_logs").select("*").ilike("hotel_name", f"%{h_name}%").gte("check_in_date", "2026-01-01").execute()
+        legacy_logs = ql_res.data or []
         
-        print(f"PRIMARY: {primary['name']} ({primary['id']})")
-        
-        for sec in secondaries:
-            print(f"SECONDARY TO BE MERGED: {sec['id']}")
-            
-            # Step A: Migrate price_logs
-            logs_res = supabase.table("price_logs").select("id").eq("hotel_id", sec["id"]).execute()
-            logs = logs_res.data or []
-            
-            if logs:
-                print(f"  Moving {len(logs)} logs to primary...")
-                for log in logs:
-                    supabase.table("price_logs").update({"hotel_id": primary["id"]}).eq("id", log["id"]).execute()
-            
-            # Step B: Mark secondary as deleted
-            print(f"  Marking secondary {sec['id']} as deleted...")
-            supabase.table("hotels").update({"deleted_at": datetime.utcnow().isoformat()}).eq("id", sec["id"]).execute()
-            
-    print("\n--- De-duplication Complete ---")
+        if legacy_logs:
+            print(f"  Found {len(legacy_logs)} legacy query_logs. Checking for missing dates...")
+            migrated_count = 0
+            for l in legacy_logs:
+                if l.get("price") is None: continue
+                
+                # Check if price_log already exists for this date and price
+                dup_check = supabase.table("price_logs").select("id").eq("hotel_id", h_id).eq("check_in_date", l["check_in_date"]).eq("price", float(l["price"])).execute()
+                
+                if not dup_check.data:
+                    # Insert into price_logs
+                    p_log = {
+                        "hotel_id": h_id,
+                        "price": float(l["price"]),
+                        "currency": l.get("currency") or "TRY",
+                        "vendor": l.get("vendor") or "Legacy Import",
+                        "source": "legacy_query_log",
+                        "check_in_date": l["check_in_date"],
+                        "recorded_at": l["created_at"],
+                        "is_estimated": True,
+                        "serp_api_id": serp_id,
+                        "room_types": []
+                    }
+                    try:
+                        supabase.table("price_logs").insert(p_log).execute()
+                        migrated_count += 1
+                    except Exception as e:
+                        if "duplicate key value" in str(e):
+                            pass # Skip if already exists for this exact minute
+                        else:
+                            raise e
+            print(f"  Succesfully migrated {migrated_count} legacy records.")
+
+    print("\n--- Data Restoration Complete ---")
 
 if __name__ == "__main__":
-    asyncio.run(dedupe_hotels())
+    asyncio.run(comprehensive_data_restoration())

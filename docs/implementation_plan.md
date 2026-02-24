@@ -1,31 +1,30 @@
-# Plan: Fix Rate Calendar Fragmentation (Duplicate Targets)
+# Plan: Fix Rate Calendar "N/A" and Missing Competitors
 
-The Rate Calendar currently shows "N/A" for the Ramada hotel because the user has three duplicate records for it. The backend maps incoming price data to the *last* duplicate ID, but selects the *first* duplicate ID as the active "target" for the dashboard.
+The previous fix addressed hotel record duplication, but Price Data is still not rendering correctly for the target hotel or most competitors. Investigation reveals that `query_logs` (legacy) contains the January/February data, but the current filtering logic in `get_price_for_room` is too strict for logs with empty `room_types`.
 
 ## Proposed Changes
 
 ### [Backend] Analysis Service
 
 #### [MODIFY] [analysis_service.py](file:///home/tripzydevops/hotel/backend/services/analysis_service.py)
-- **Unify Mapping & Selection**: Refactor `get_market_intelligence_data` to ensure that when multiple local hotels share a `serp_api_id`, logs are mapped to the hotel currently designated as the "Active Target" (if one exists).
-- **Hardened Selection**: Ensure `perform_market_analysis` uses a consistent selection priority for target hotels if multiple are mistakenly marked as `is_target_hotel`.
+- **Legacy Room Fallback**: Update `get_price_for_room` to always fall back to the top-level `price` field if `room_types` is empty, even for non-standard requests, IF no other data is available. This ensures historical continuity.
+- **Competitor Mapping Fix**: Ensure that competitor hotel IDs are correctly matched across both `price_logs` and `query_logs` regardless of minor name variations.
+- **Expand Search Window**: Ensure data gathering correctly pulls from `query_logs` for any gaps in `price_logs` all the way back to January.
 
-### [Backend] Cleanup Utility
+### [Backend] Data Migration
 
-#### [NEW] [dedupe_hotels.py](file:///home/tripzydevops/hotel/backend/scripts/dedupe_hotels.py)
-- **Automatic De-duplication**: Script to identify hotels sharing the same `user_id` and `serp_api_id`.
-- **Log Migration**: Move any `price_logs` from duplicate records to the primary record before deleting/marking duplicates as deleted.
-- **Safety**: Preserve the record with the most history or the most recent `updated_at` timestamp.
+#### [MODIFY] [dedupe_hotels.py](file:///home/tripzydevops/hotel/backend/scripts/dedupe_hotels.py)
+- **Multi-Account Deduplication**: Update the script to handle duplicates across different `user_id`s (e.g., merging `askin` and `tripzydevops` logs for the same hotel).
+- **Comprehensive Migration**: Migrate all valid historical records for all 5 hotels from `query_logs` to `price_logs` to centralize the data.
 
 ## Verification Plan
 
 ### Automated Verification
-1. **Reproduction Script**: Create [repro_dupes.py](file:///home/tripzydevops/hotel/tests/repro_dupes.py) that manually creates a duplicate target hotel and verifies the fragmentation "N/A" state.
-2. **Fix Validation**: Run `repro_dupes.py` after the code changes to verify that data is correctly merged into the analysis response.
+1. **Reproduction Script**: Run `reproduce_calendar_bug.py` with specific checks for January/February data across all 5 hotels.
    ```bash
-   export $(cat .env | xargs) && ./venv/bin/python3 tests/repro_dupes.py
+   export $(cat .env | xargs) && ./venv/bin/python3 reproduce_calendar_bug.py
    ```
 
 ### Manual Verification
-- **Dashboard Check**: Verify that the Rate Calendar for Ramada no longer shows "N/A" for historical February dates.
-- **Admin Panel**: Check the Admin Panel to ensure only one Ramada instance is visible after running the dedupe script.
+- **Dashboard Check**: Verify that the Rate Calendar shows prices for Ramada and all 4 competitors for Feb 19 and earlier.
+- **Date Navigation**: Verify that the "N/A" state is eliminated for all dates where any historical data exists.

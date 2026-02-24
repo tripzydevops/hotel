@@ -239,6 +239,14 @@ def get_price_for_room(
     # If match_price is 0, we return it as 0.0 to indicate sellout
     # KAIZEN: Reject fallback if NO MATCH was found but a SPECIFIC type was requested
     if match_price is None and not is_standard_request:
+        # [KAIZEN 2026-02-24] PERSISTENCE FIX:
+        # If we have NO specific room match but the log has a top-level price 
+        # AND room_types is empty (Legacy Log), we use it as a low-confidence match 
+        # to ensure historical continuity in the Rate Calendar.
+        if (not r_types or len(r_types) == 0):
+            top_p = _extract_price(price_log.get("price"))
+            if top_p is not None and top_p > 0:
+                return top_p, "Legacy Fallback", 0.6
         return None, None, 0.0
 
     return match_price, match_name, confidence

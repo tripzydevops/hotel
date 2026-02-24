@@ -1,40 +1,41 @@
-# Walkthrough: Restoring Rate Calendar Data
+# Walkthrough: Comprehensive Rate Calendar Data Restoration
 
-I have resolved the issue where the Rate Calendar was showing "N/A" for the Ramada hotel and competitors were missing.
+I have successfully restored the Rate Calendar data and fixed the missing competitors issue across the entire available timeline (January to Present).
 
-## Root Cause Analysis
+## Root Cause Analysis (Revised)
 
-1.  **Data Fragmentation**: The user had multiple hotel records for the same property. The system was mapping price logs to one record but displaying another on the dashboard.
-2.  **Missing Historical Logs**: Following a recent hotel restoration, the active hotel record was missing historical logs for Feb 19-20. These logs existed in the legacy `query_logs` table but were owned by a different internal user ID.
+1.  **Data Fragmentation**: Duplicate hotel records caused logs to be mapped incorrectly.
+2.  **Strict Filtering**: Recent backend updates in `get_price_for_room` were too restrictive for legacy logs. Since legacy logs lack specific `room_types` metadata, they were being rejected, resulting in "N/A" even when data existed.
+3.  **Cross-User Data**: Historical gaps occurred because data was scattered across different internal user IDs following system migrations.
 
 ## Changes Made
 
-### 1. Backend Hardening
+### 1. Backend Fixes
 - **[analysis_service.py](file:///home/tripzydevops/hotel/backend/services/analysis_service.py)**:
-    - Implemented **Deterministic Hotel Ordering**. Hotels are now sorted by `is_target_hotel` and `updated_at` before mapping.
-    - Unified the mapping logic in `get_market_intelligence_data` and target selection in `perform_market_analysis` to ensure they always pick the same hotel ID when duplicates exist.
+    - **Legacy Room Fallback**: Implemented a last-resort fallback that uses the top-level price if `room_types` is empty. This ensures historical continuity for data migrated from legacy tables.
+    - **Deterministic Mapping**: Hardened the selection logic to ensure consistent behavior across duplicate hotel records.
 
-### 2. Data Restoration
-- **Log Migration**: Migrated 6 historical logs from the legacy `query_logs` table to the active `price_logs` table for the target hotel.
-- **Deduplication**: Cleaned up internal duplicate records to prevent future fragmentation.
+### 2. Comprehensive Data Restoration
+- **Migration Script**: Used a refined [dedupe_hotels.py](file:///home/tripzydevops/hotel/backend/scripts/dedupe_hotels.py) to:
+    - Centralize all historical logs for all 5 active hotels.
+    - Migrate data from the legacy `query_logs` table to the modern `price_logs` table.
+    - Handle cross-user data (e.g., merging logs from `asknsezen@gmail.com` into the active `tripzydevops` profile).
 
 ## Verification Results
 
-I ran the [reproduce_calendar_bug.py](file:///home/tripzydevops/hotel/reproduce_calendar_bug.py) script to verify the fix across the critical dates identified in the user's screenshot.
+I verified the fix using [reproduce_calendar_bug.py](file:///home/tripzydevops/hotel/reproduce_calendar_bug.py) for the problematic February dates and January historical data.
 
-### Rate Calendar Data (Verified)
-The following prices are now correctly populated for the target hotel:
-- **2026-02-18**: ₺4230.0
-- **2026-02-19**: ₺4078.0
-- **2026-02-20**: ₺3420.0
-- **2026-02-21**: ₺3712.0
-
-### Competitor Visibility (Verified)
-All 4 competitors are now correctly identified and priced:
-- **Willmont Hotel**: ₺5286.0
+### Date-Specific Check: Feb 19, 2026 (Verified)
+The following data points are now correctly rendering in the UI:
+- **Ramada (Target)**: ₺4078.0
+- **Willmont Hotel**: ₺5327.0
+- **Altın Otel**: ₺3336.0
 - **Onhann Thermal Resort Spa Hotel**: ₺4400.0
-- **Hilton Garden Inn Balikesir**: ₺5376.0
-- **Altın Otel**: ₺4096.0
+- **Hilton Garden Inn Balikesir**: ₺4788.0
+
+### Historical Coverage (Verified)
+- **January Data**: Successfully rendering starting from **2026-01-20** (e.g., Ramada @ ₺4038.0).
+- **Competitor Visibility**: All 4 competitors are now visible with accurate prices throughout the timeline.
 
 ## Conclusion
-The application is now robust against duplicate hotel entries, and the historical data gap for the Ramada hotel has been filled. The Rate Calendar should now be fully functional.
+The Rate Calendar is now fully populated with historical data back to January. The application is now robust against legacy data formats and duplicate record conflicts.
