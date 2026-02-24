@@ -37,6 +37,17 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         return _STATS_CACHE["data"]
 
     try:
+        if not db:
+             logger.warning("Pulse: Database connection unavailable")
+             return {
+                "active_users_count": 0,
+                "hotels_monitored": 0,
+                "cache_hit_rate_24h": 0,
+                "total_scans_24h": 0,
+                "cache_hits_24h": 0,
+                "estimated_savings_credits": 0,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
         # EXPLANATION: We run 4 lightweight count queries.
         # These are fast index scans on Supabase/PostgreSQL.
 
