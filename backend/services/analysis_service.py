@@ -886,59 +886,62 @@ async def get_market_intelligence_data(
             .order("created_at", desc=True) \
             .execute()
         
-        fallback_count = 0
-        for ql in (ql_res.data or []):
-            price = ql.get("price")
-            if not price or float(price) <= 0:
-                continue
+            for ql in (ql_res.data or []):
+                price = ql.get("price")
+                if not price or float(price) <= 0:
+                    continue
+                
+                ql_name = (ql.get("hotel_name") or "").lower().strip()
+                hotel_id = hotel_name_to_id.get(ql_name)
+                if not hotel_id:
+                    # Partial name match fallback
+                    for name, hid in hotel_name_to_id.items():
+                        if ql_name in name or name in ql_name:
+                            hotel_id = hid
+                            break
+                if not hotel_id:
+                    continue
+                
+                fallback_count += 1
+                logs_data.append({
+                    "hotel_id": hotel_id,
+                    "price": float(price),
+                    "currency": ql.get("currency") or "TRY",
+                    "vendor": ql.get("vendor") or "Unknown",
+                    "source": "serpapi",
+                    "check_in_date": ql.get("check_in_date") or ql.get("created_at", "")[:10],
+                    "recorded_at": ql.get("created_at"),
+                    "is_estimated": False,
+                    "parity_offers": [],
+                    "room_types": [],
+                    "metadata": {"source": "query_logs_fallback"}
+                        })
             
-            ql_name = (ql.get("hotel_name") or "").lower().strip()
-            hotel_id = hotel_name_to_id.get(ql_name)
-            if not hotel_id:
-                # Partial name match fallback
-                for name, hid in hotel_name_to_id.items():
-                    if ql_name in name or name in ql_name:
-                        hotel_id = hid
-                        break
-            if not hotel_id:
-                continue
+            logger.info(f"[SAFEGUARD] Recovered {fallback_count} entries from query_logs. Total logs_data: {len(logs_data)}")
             
-            logs_data.append({
-                "hotel_id": hotel_id,
-                "price": float(price),
-                "currency": ql.get("currency") or "TRY",
-                "vendor": ql.get("vendor") or "Unknown",
-                "source": "serpapi",
-                "check_in_date": ql.get("check_in_date") or ql.get("created_at", "")[:10],
-                "recorded_at": ql.get("created_at"),
-                "is_estimated": False,
-                "parity_offers": [],
-                "room_types": [],
-                "metadata": {"source": "query_logs_fallback"}
-                    })
-        
-        logger.info(f"[SAFEGUARD] Recovered {fallback_count} entries from query_logs. Total logs_data: {len(logs_data)}")
-        
-        # FINAL FALLBACK: Latest Price from Hotels table
-        # If still empty, we use the cached 'latest_price' from the hotels table itself
-        if not logs_data:
-            logger.warning(f"[SAFEGUARD] Still no data. Seeding from hotels table for user {user_id}")
-            for h in hotels:
-                lp = h.get("latest_price")
-                if lp and float(lp) > 0:
-                    logs_data.append({
-                        "hotel_id": str(h["id"]),
-                        "price": float(lp),
-                        "currency": h.get("preferred_currency") or "TRY",
-                        "vendor": "Cached",
-                        "source": "hotels_table",
-                        "check_in_date": datetime.now().strftime("%Y-%m-%d"),
-                        "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
-                        "is_estimated": True,
-                        "parity_offers": [],
-                        "room_types": [],
-                        "metadata": {"source": "hotels_table_fallback"}
-                    })
+            # FINAL FALLBACK: Latest Price from Hotels table
+            # If still empty, we use the cached 'current_price' from the hotels table itself
+            if not logs_data:
+                logger.warning(f"[SAFEGUARD] Still no data. Seeding from hotels table for user {user_id}")
+                for h in hotels:
+                    lp = h.get("current_price") # [FIX] Correct column name
+                    if lp and float(lp) > 0:
+                        # [KAİZEN] Seed a 14-day range to avoid "No Data" viewing range errors
+                        for i in range(14):
+                            target_date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
+                            logs_data.append({
+                                "hotel_id": str(h["id"]),
+                                "price": float(lp),
+                                "currency": h.get("currency") or h.get("preferred_currency") or "TRY",
+                                "vendor": "Cached",
+                                "source": "hotels_table",
+                                "check_in_date": target_date,
+                                "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
+                                "is_estimated": True,
+                                "parity_offers": [],
+                                "room_types": [],
+                                "metadata": {"source": "hotels_table_fallback"}
+                            })
     
     # Group logs by hotel_id
     hotel_prices_map = {}
