@@ -100,12 +100,25 @@ class AnalystAgent:
                 price_data = res.get("price_data")
                 status = res.get("status")
                 
-                if not hotel_id or status != "success" or not price_data:
-                    reasoning_log.append(f"[Skip] Hotel {hotel_id} - status: {status}")
+                if not hotel_id:
                     continue
 
-                current_price = price_data.get("price", 0.0)
-                currency = price_data.get("currency", "TRY")
+                if status != "success" or not price_data:
+                    error_detail = "Unknown Error"
+                    if isinstance(price_data, dict) and price_data.get("error"):
+                        error_detail = price_data.get("error")
+                    elif status:
+                        error_detail = status
+                    
+                    reasoning_log.append(f"[Skip] Hotel {hotel_id} - status: {error_detail}")
+                    # KAİZEN: Allow non-success hotels to continue to trigger Smart Continuity (historical fallback)
+                    # Instead of 'continue', we proceed so that current_price = 0 triggers lookback
+                    current_price = 0.0
+                    currency = "TRY"
+                    price_data = price_data or {}
+                else:
+                    current_price = price_data.get("price", 0.0)
+                    currency = price_data.get("currency", "TRY")
                 
                 if not current_price or current_price <= 0:
                      reasoning_log.append(f"[Start] Analyzing {hotel_id}. No Price Found.")

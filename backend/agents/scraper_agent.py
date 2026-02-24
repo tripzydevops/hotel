@@ -280,6 +280,7 @@ class ScraperAgent:
                         err_msg = str(e)
                         await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {err_msg}", "error", {"error_message": err_msg})
                         price_data = {"status": "error", "error": err_msg}
+                        status = "error" # Ensure status is set for Analyst
                     
                     # [NEW] Normalize Room Types if present
                     if price_data and price_data.get("room_types"):
@@ -298,9 +299,9 @@ class ScraperAgent:
                         # Also normalize offers/parity_offers if they have room names? 
                         # Providers usually put specific room names in 'room_types' array.
                     
-                    status = "success" if price_data else "not_found"
-                    if price_data and price_data.get("status") == "error":
-                        status = price_data.get("error", "failed")
+                    status = "success" if price_data and price_data.get("status") != "error" else "error"
+                    if price_data and "error" in price_data:
+                        status = "error"
 
                     # HYPERSPEED: Buffer price log for batch insertion
                     if price_data:
