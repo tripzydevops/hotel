@@ -874,10 +874,15 @@ async def get_market_intelligence_data(
         for h in hotels:
             hotel_name_to_id[h["name"].lower().strip()] = str(h["id"])
         
+        # EXPLANATION: Broader Fallback Window
+        # We look back 180 days in query_logs to ensure historical continuity 
+        # even if fresh scans haven't run recently.
+        fallback_cutoff = (datetime.utcnow() - timedelta(days=180)).isoformat()
+        
         ql_res = db.table("query_logs") \
             .select("hotel_name, price, currency, vendor, created_at, check_in_date") \
             .eq("user_id", str(user_id)) \
-            .gte("created_at", cutoff_date) \
+            .gte("created_at", fallback_cutoff) \
             .order("created_at", desc=True) \
             .execute()
         
@@ -910,10 +915,30 @@ async def get_market_intelligence_data(
                 "parity_offers": [],
                 "room_types": [],
                 "metadata": {"source": "query_logs_fallback"}
-            })
-            fallback_count += 1
+                    })
         
-        logger.info(f"[SAFEGUARD] Recovered {fallback_count} price entries from query_logs")
+        logger.info(f"[SAFEGUARD] Recovered {fallback_count} entries from query_logs. Total logs_data: {len(logs_data)}")
+        
+        # FINAL FALLBACK: Latest Price from Hotels table
+        # If still empty, we use the cached 'latest_price' from the hotels table itself
+        if not logs_data:
+            logger.warning(f"[SAFEGUARD] Still no data. Seeding from hotels table for user {user_id}")
+            for h in hotels:
+                lp = h.get("latest_price")
+                if lp and float(lp) > 0:
+                    logs_data.append({
+                        "hotel_id": str(h["id"]),
+                        "price": float(lp),
+                        "currency": h.get("preferred_currency") or "TRY",
+                        "vendor": "Cached",
+                        "source": "hotels_table",
+                        "check_in_date": datetime.now().strftime("%Y-%m-%d"),
+                        "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
+                        "is_estimated": True,
+                        "parity_offers": [],
+                        "room_types": [],
+                        "metadata": {"source": "hotels_table_fallback"}
+                    })
     
     # Group logs by hotel_id
     hotel_prices_map = {}

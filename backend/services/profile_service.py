@@ -21,6 +21,15 @@ async def get_enriched_profile_logic(user_id: UUID, base_data: Optional[Dict[str
     user_id_str = str(user_id)
     is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
     
+    # 0. Fetch base metadata if not provided
+    if base_data is None:
+        try:
+            res = db.table("user_profiles").select("*").eq("user_id", user_id_str).execute()
+            if res.data:
+                base_data = res.data[0]
+        except Exception as e:
+            print(f"Base Profile Fetch Error: {e}")
+    
     # 1. Fetch subscription info (truth source) from the auth profiles table
     # We use the Service Role key here because standard RLS might block 
     # cross-user lookups even for enrichment logic.
