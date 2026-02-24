@@ -116,23 +116,30 @@ def get_price_for_room(
             if isinstance(r, dict):
                 r_name = r.get("name", "")
                 if r_name.lower().strip() in allowed_lower:
-                 # KAIZEN: "Strict Keyword Guard"
-                 # Even if DB/Vector Search maps "Standard Room" to "Suite", we REJECT it 
-                 # if the names mismatch significantly.
-                 r_name = r.get("name", "")
-                 t_lower = target_room_type.lower()
-                 r_lower = r_name.lower()
-                 
-                 # 1. Suite Guard: If asking for Suite, offer MUST have "suite" or "süit" in name
-                 if "suite" in t_lower and not any(k in r_lower for k in ["suite", "süit"]):
-                     continue
-                     
-                 # 2. Villa/Res Guard
-                 if "villa" in t_lower and "villa" not in r_lower:
-                     continue
+                  # KAIZEN: "Strict Category Guards"
+                  # We ensure that a match actually belongs to the requested category.
+                  r_name = r.get("name", "")
+                  t_lower = target_room_type.lower()
+                  r_lower = r_name.lower()
+                  
+                  is_standard_t = any(s in t_lower for s in ["standard", "standart"])
+                  is_standard_r = any(s in r_lower for s in ["standard", "standart"])
 
-                 # High confidence if in allowed map (and passed guards)
-                 return _extract_price(r.get("price")), r_name, 0.82 + (0.1 * int(r_name == target_room_type))
+                  # 1. Suite Guard: If asking for Suite, offer MUST have "suite" or "süit"
+                  if "suite" in t_lower and not any(k in r_lower for k in ["suite", "süit"]):
+                      continue
+                      
+                  # 2. Deluxe Guard: If asking for Deluxe, reject plain Standard rooms
+                  if any(k in t_lower for k in ["deluxe", "superior", "premium"]) and is_standard_r and "deluxe" not in r_lower:
+                      continue
+
+                  # 3. Standard Leak Guard: If asking for specific non-standard type, reject plain Standard
+                  if not is_standard_t and is_standard_r:
+                      # Exception: "Standard Suite" is fine if asking for Suite
+                      if not ("suite" in t_lower and "suite" in r_lower):
+                          continue
+
+                  return _extract_price(r.get("price")), r_name, 0.82 + (0.1 * int(r_name == target_room_type))
     
     # 2. Fallback: String Match (Substring) with Turkish/English variant support
     # We check for common "standard" room variants in both languages.
@@ -162,10 +169,23 @@ def get_price_for_room(
 
         # Priority 2: Canonical Name Match
         if any(v in c_name for v in target_variants):
+             # Apply guards even to substring matches
+             if "suite" in target_room_type.lower() and not any(k in c_name for k in ["suite", "süit"]):
+                 continue
              return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
 
         # Priority 3: Name Substring Match
         if any(v in r_name for v in target_variants):
+            # Apply guards: If asking for Suite/Deluxe, don't match a plain Standard
+            t_low = target_room_type.lower()
+            is_std_t = any(s in t_low for s in ["standard", "standart"])
+            is_std_r = any(s in r_name for s in ["standard", "standart"])
+            
+            if "suite" in t_low and not any(k in r_name for k in ["suite", "süit"]):
+                continue
+            if not is_std_t and is_std_r and "deluxe" not in r_name and "superior" not in r_name:
+                continue
+                
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
     # EXPLANATION: Standard Request Detection & Global Fallback
@@ -173,13 +193,18 @@ def get_price_for_room(
     # room, we fall back to the lowest available room price. 
     # KAIZEN (2026-02-19): We disable this fallback for specific room types (e.g., Suite)
     # to prevent misleading comparisons. If you ask for Suite, you get Suite or N/A.
-    std_variants = ["standard", "standart", "any", "base", "all room types", "all", "promo", "ekonomik", "economy", "klasik", "classic"]
-    target_lower = target_room_type.lower()
+    # Standard variants in Turkish and English
+    std_variants = ["standard", "standart", "base", "any", "all", "klasik", "classic", "ekonomik", "economy", "promo"]
+    target_lower = target_room_type.lower().strip()
     
+    # KAIZEN: Strict Standard Detection
+    # We only treat it as a standard request if the target is empty, explicitly 'standard', 
+    # or a known 'base' variant. We use EXACT match or word-boundary match to prevent 
+    # "Standard Suite" from falling back to a basic "Standard" room price.
     is_standard_request = (
         not target_lower or 
-        any(v in target_lower for v in std_variants) or
-        target_lower == "oda" # Generic 'Room' in Turkish
+        target_lower == "oda" or
+        any(v == target_lower for v in std_variants)
     )
     
     if is_standard_request:
@@ -465,12 +490,6 @@ async def perform_market_analysis(
             try:
                 lead_currency = prices[0].get("currency") or "USD"
                 orig_price, matched_room, match_score = get_price_for_room(prices[0], room_type, allowed_room_names_map)
-                
-                # DIAGNOSTIC: Log per-hotel matching result
-                hotel_label = hotel.get("name", "?")[:25]
-                rt_count = len(prices[0].get("room_types") or [])
-                top_price = prices[0].get("price")
-                logger.info(f"[DIAG] Hotel '{hotel_label}': {len(prices)} logs, top_price={top_price}, room_types={rt_count}, matched={matched_room}, orig_price={orig_price}, score={match_score:.2f}")
                 
                 if orig_price is not None:
                     # Detect Sellout (0.0 or less)
@@ -978,9 +997,12 @@ async def get_market_intelligence_data(
             })
         logger.info(f"[SAFEGUARD] Recovered {fallback_count} additional entries from query_logs.")
         
-    # FINAL FALLBACK: Latest Price from Hotels table (Always seed if thin)
-    if not logs_data or len(logs_data) < len(hotels):
-        logger.warning(f"[SAFEGUARD] Seeding from hotels table current_price for user {user_id}")
+    # FINAL FALLBACK: Latest Price from Hotels table (Only for Standard requests)
+    # Why: If the user is exploring specific categories like 'Suite' and we have NO data,
+    # it is better to show 'N/A' (None) than to seed with misleading 'Standard' prices.
+    is_std = not room_type or any(v in room_type.lower() for v in ["standard", "standart", "any", "base"])
+    if is_std and (not logs_data or len(logs_data) < len(hotels)):
+        logger.warning(f"[SAFEGUARD] Seeding from hotels table current_price for standard request (user {user_id})")
         for h in hotels:
             lp = h.get("current_price") or 0.0
             if float(lp) > 0:

@@ -59,7 +59,6 @@ async def get_market_intelligence(
     This route only handles HTTP concerns: dependency injection, response formatting, errors.
     """
     from backend.services.analysis_service import get_market_intelligence_data
-    
     try:
         if not db:
             raise HTTPException(503, "Database unavailable")
