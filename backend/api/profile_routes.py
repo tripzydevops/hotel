@@ -3,15 +3,16 @@ from uuid import UUID
 from typing import Optional
 from supabase import Client
 from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user  # noqa: F401
+from backend.services.auth_service import get_current_active_user
 from backend.models.schemas import UserProfile, UserProfileUpdate, Settings, SettingsUpdate
 from backend.services.profile_service import update_profile_logic, get_enriched_profile_logic
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from backend.utils.security import verify_ownership
 
 router = APIRouter(prefix="/api", tags=["profile"])
 
 @router.get("/profile/{user_id}", response_model=UserProfile)
-async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase)):
+async def get_profile(user_id: UUID, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """Fetch user profile with enriched data."""
     if not db:
         return UserProfile(
@@ -95,7 +96,7 @@ async def get_settings(user_id: UUID, db: Optional[Client] = Depends(get_supabas
         return safe_defaults
 
 @router.put("/settings/{user_id}", response_model=Settings)
-async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[Client] = Depends(get_supabase)):
+async def update_settings(user_id: UUID, settings: SettingsUpdate, db: Optional[Client] = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """
     Persists user settings updates. 
     Handles both creation (first-time) and modification.

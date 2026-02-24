@@ -34,7 +34,8 @@ async def trigger_monitor(
         current_user_email=getattr(current_active_user, 'email', None)
     )
 
-@router.api_route("/trigger-scan/{user_id}", methods=["GET", "POST", "OPTIONS"])
+@router.get("/trigger-scan/{user_id}")
+@router.post("/trigger-scan/{user_id}")
 async def check_scheduled_scan(
     user_id: UUID,
     background_tasks: BackgroundTasks,
@@ -43,9 +44,6 @@ async def check_scheduled_scan(
     db: Optional[Client] = Depends(get_supabase)
 ):
     """Lazy cron workaround for Vercel free tier."""
-    # Handle preflight OPTIONS explicitly (CORS)
-    if request.method == "OPTIONS":
-        return {"status": "ok"}
 
     # EXPLANATION: Frontend-Triggered Scheduler
     # This endpoint allows the frontend to 'tick' the scheduler when the user
