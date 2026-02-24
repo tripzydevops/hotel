@@ -90,9 +90,13 @@ async def global_exception_handler(request: Request, exc: Exception):
         
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
+    
+    # EXPLANATION: Debug-Friendly Error Response
+    # We include the exception message in the response to help debug cloud-specific issues.
+    # In a strict production environment, this should be logged to Sentry/Datadog and masked.
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}" if not any(allowed_origins) else "Internal Server Error"},
+        content={"detail": f"Internal Server Error: {str(exc)}"},
     )
 
 @app.exception_handler(RequestValidationError)
