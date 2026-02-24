@@ -22,10 +22,13 @@ We utilize a **Hybrid Deployment Strategy** to balance performance and capabilit
 
 ## 📊 Core Features
 
+-   **Gemini 2026 Intelligence 🧠**: Powered by `gemini-3-flash-preview` and `google-genai` SDK for autonomous market reasoning and "Deep Think" insights.
 -   **Market Analysis**: Real-time price benchmarking against market averages.
 -   **Rate Intelligence Grid**: 14-day lookahead comparison with "Strict Matching" for Suites.
 -   **Discovery Engine 👻**: Autonomous "Ghost Competitor" identification using semantic vector search.
 -   **Quadrant Visualization**: Dynamic 2x2 grid for strategic positioning.
+-   **Strategic Reports**: Data-rich executive summaries with KPI snapshots and competitive battlefield tables.
+-   **Diagnostic Dashboard 🛠️**: A dedicated `/debug` page for monitoring system health, environment variables, and Vercel serverless function status.
 -   **Hybrid Room Config**: Dynamic room type mapping via Database (`room_tokens`, `room_aliases`) with static fallbacks.
 
 ## 🚀 Getting Started

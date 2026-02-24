@@ -32,7 +32,7 @@ def get_scheduler_logger():
         # EXPLANATION: Environment-Aware Log Path
         # The VM uses a fixed path; GitHub Actions and local dev use a relative path.
         # This prevents crashes when the scheduler runs outside the VM.
-        vm_path = "/home/successofmentors/.gemini/antigravity/scratch/hotel/scheduler.log"
+        vm_path = "/home/tripzydevops/hotel/scheduler.log"
         local_path = os.path.join(os.path.dirname(__file__), "..", "..", "scheduler.log")
         
         log_path = vm_path if os.path.isdir(os.path.dirname(vm_path)) else os.path.abspath(local_path)

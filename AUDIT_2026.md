@@ -70,12 +70,12 @@ The current Tripzy.travel platform is a state-of-the-art **Automated Monitoring 
 
 ## 🚀 Technical Roadmap
 
-| Timeline    | Milestone                | Key Technology            |
-| :---------- | :----------------------- | :------------------------ |
-| **Q1 2026** | Backend Modularization   | Multi-agent FastAPI pods  |
-| **Q2 2026** | Reasoning Layer          | Gemini-Agentic-Middleware |
-| **Q3 2026** | Behavioral Vectorization | Supabase `pgvector`       |
-| **Q4 2026** | Generative UI Rollout    | Next.js Server Components |
+| Timeline    | Milestone                | Key Technology            | Status |
+| :---------- | :----------------------- | :------------------------ | :----- |
+| **Q1 2026** | Backend Modularization   | Multi-agent FastAPI pods  | ✅ Live |
+| **Q2 2026** | Reasoning Layer          | Gemini-3-Flash (google-genai) | ✅ Live |
+| **Q3 2026** | Behavioral Vectorization | Supabase `pgvector`       | 🔄 Ongoing |
+| **Q4 2026** | Generative UI Rollout    | Next.js Server Components | 📅 Planned |
 
 ---
 

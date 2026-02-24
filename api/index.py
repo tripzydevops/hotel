@@ -29,7 +29,7 @@ except Exception as e:
     error_detail = f"CRITICAL IMPORT ERROR: {str(e)}\n{traceback.format_exc()}"
     print(error_detail)
     
-    @app.get("/{path:path}")
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
     async def catch_all(path: str):
         return JSONResponse(
             status_code=500,

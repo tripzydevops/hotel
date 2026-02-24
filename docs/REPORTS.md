@@ -47,7 +47,20 @@ The Reports page supports multi-currency analysis to accommodate international u
 
 The reports provide automated insights based on market data:
 
-- **Market Position:** Compares target hotel price against market Min/Avg/Max.
-- **Price Velocity:** Historical trend over the last 30 scans.
-- **Competitive Rank:** Ranking among competitors (1 = cheapest).
-- **Volatility Alert:** Notifies users if the price spread is unusually high.
+- **6-Card KPI Snapshot**: Real-time monitoring of DRI, ARI, and price velocity metrics.
+- **Experience Scorecard**: AI-driven guest sentiment visualization across key pillars (Cleanliness, Service, Value).
+- **Competitive Battlefield**: Direct head-to-head benchmarking against top rivals.
+- **Collapsible Scan History**: Auditable trail of recent market investigations.
+
+### Internal Implementation
+- **Frontend Layer**: `app/reports/page.tsx` manages the state for currency and rival selection.
+- **KPI Components**: `components/analytics/KpiCards.tsx` (Phase 1 Redesign).
+- **Sentiment Grid**: `components/analytics/ExperienceScorecard.tsx`.
+- **Rival Table**: `components/analytics/CompetitiveBattlefield.tsx`.
+- **Backend Analytics**: `backend/main.py` -> `get_analysis` aggregates logs using the target currency.
+- **Reasoning Engine**: `backend/agents/analyst_agent.py` generates the narrative insights shown in the reports.
+
+## 🛠️ Diagnostics & Troubleshooting
+For deployment-specific issues (e.g., Vercel serverless environment), use the following tools:
+- **System Report**: `/api/debug/system-report` (Checks DB, AI, and Env Vars).
+- **Debug Dashboard**: Accessible via `/debug` route in the frontend.

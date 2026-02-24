@@ -47,10 +47,14 @@ from backend.api import (
 
 
 # Initialize FastAPI
+# EXPLANATION: Vercel Routing Normalization
+# We use root_path="/api" to ensure that the app correctly handles 
+# path stripping performed by Vercel when rewriting /api/* to /api/index.py.
+# This fixes 404/405 errors caused by path mismatches.
 app = FastAPI(
-    title="Hotel Rate Monitor API",
-    description="API for monitoring hotel competitor pricing",
-    version="1.1.0",
+    title="Hotel Rate Sentinel API",
+    version="2026.02",
+    root_path="/api" if os.getenv("VERCEL") == "1" else ""
 )
 
 # CORS configuration
@@ -171,13 +175,6 @@ async def system_report(db: Client = Depends(get_supabase)):
         "environment": env_vars,
         "database": db_results,
         "process": process_stats
-    }
-    return {
-        "count": len(routes),
-        "routes": routes,
-        "redis_status": redis_status,
-        "redis_error": redis_error,
-        "celery_broker": os.getenv("REDIS_URL", "NOT_SET")[:20] + "..." if os.getenv("REDIS_URL") else "MISSING"
     }
 
 @app.get("/api/debug/redis")

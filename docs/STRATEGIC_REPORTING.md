@@ -12,11 +12,11 @@ This document outlines the architecture for transforming raw data into subscript
 
 ## 🎯 Implementation Archetypes
 
-### 1. Executive Strategic Pulse (Option A)
+### 1. Executive Strategic Pulse (Option A) — ✅ LIVE
 - **High-level synthesis**: DRI/ARI scores converted into board-ready narratives.
 - **Quadrant Position**: Visualizing "Value Risk" vs "Growth Opportunity".
 
-### 2. Competitive Battlefield (Option B)
+### 2. Competitive Battlefield (Option B) — ✅ LIVE
 - **Tactical Benchmarking**: Direct head-to-head on Sentiment Pillars (Cleanliness, Service, Location, Value).
 - **Threat Detection**: Early warning on competitor pricing shifts.
 
