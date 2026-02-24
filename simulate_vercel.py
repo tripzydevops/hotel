@@ -8,7 +8,7 @@ if path not in sys.path:
     sys.path.append(path)
 
 try:
-    from api.backend import app
+    from api.index import app
     client = TestClient(app)
     
     paths_to_test = [
