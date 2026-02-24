@@ -187,7 +187,21 @@ def get_price_for_room(
                 return valid_prices[0][0], valid_prices[0][1], 0.65
         except Exception:
             pass
-    # Else: Strict Mode. We return None if no match found for specific/premium room types.
+    # EXPLANATION: Legacy Price Fallback
+    # If no specific room match was found, but we are looking for a 'Standard' 
+    # room and the log has a top-level price, we use that as a last resort.
+    match_price = None
+    match_name = None
+    confidence = 0.0
+
+    if (not r_types or len(r_types) == 0) and is_standard_request:
+        top_price = _extract_price(price_log.get("price"))
+        if top_price is not None:
+            # Kaizen: Improved confidence for legacy data to ensure continuity
+            match_price, match_name, confidence = top_price, "Standard (Legacy)", 0.7
+            
+    # If match_price is 0, we return it as 0.0 to indicate sellout
+    return match_price, match_name, confidence
 
 
 def generate_synthetic_narrative(
@@ -370,20 +384,6 @@ def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
     return checklist[:3] # Max 3 items
 
 
-    # If price found is 0, we treat as None for calculations but mark as sellout
-    match_price = None
-    match_name = None
-    confidence = 0.0
-
-    if (not r_types or len(r_types) == 0) and is_standard_request:
-        top_price = _extract_price(price_log.get("price"))
-        if top_price is not None:
-            # Kaizen: Improved confidence for legacy data to ensure continuity
-            match_price, match_name, confidence = top_price, "Standard (Legacy)", 0.7
-            
-    # If match_price is 0, we return it as 0.0 to indicate sellout
-    return match_price, match_name, confidence
-
 async def perform_market_analysis(
     user_id: str,
     hotels: List[Dict[str, Any]],
@@ -512,15 +512,20 @@ async def perform_market_analysis(
             p = hotel_prices_map.get(str(h["id"]), [])
             if p:
                 try:
-                    price_val = float(p[0]["price"])
-                    comp_list.append({
-                        "id": str(h["id"]),
-                        "name": h.get("name"),
-                        "price": convert_currency(price_val, p[0].get("currency") or "USD", display_currency),
-                        "rating": h.get("rating"),
-                        "offers": p[0].get("parity_offers") or p[0].get("offers") or []
-                    })
-                except: continue
+                    price_val, c_room, c_score = get_price_for_room(p[0], room_type, allowed_room_names_map)
+                    if price_val is not None:
+                        comp_list.append({
+                            "id": str(h["id"]),
+                            "name": h.get("name"),
+                            "price": convert_currency(price_val, p[0].get("currency") or "USD", display_currency),
+                            "rating": h.get("rating"),
+                            "offers": p[0].get("parity_offers") or p[0].get("offers") or [],
+                            "matched_room": c_room,
+                            "match_score": c_score
+                        })
+                except Exception as ce:
+                    logger.warning(f"Failed to process competitor {h.get('name')}: {ce}")
+                    continue
 
     # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
