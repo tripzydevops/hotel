@@ -10,6 +10,10 @@ try:
     from backend.main import app as _app
     app = _app
     
+    @app.get("/api/simple-test")
+    async def simple_test():
+        return {"status": "ok", "message": "Index.py is reachable"}
+    
     print(f"Index.py: Backend app loaded successfully.")
     
     # EXPLANATION: Runtime Route Diagnostic
