@@ -543,31 +543,41 @@ async def perform_market_analysis(
     for i, item in enumerate(price_rank_list):
         item["rank"] = i + 1
 
-    # 2.5 Build Competitors List (Needed for Calendar Continuity seeding)
-    # EXPLANATION: Competitor List Population Logic
-    # We populate `comp_list` early and verify its contents to support data consistency
-    # in the Market Intelligence Grid. Moving this here resolved the previously reported 
-    # 'No Data' issues caused by late initialization.
+    # 2.5 Build Competitors List (Needed for Calendar Columns & Continuity)
+    # EXPLANATION: All-inclusive Competitor List 
+    # We include EVERY tracked competitor in the top-level list, even if their latest scan
+    # matched no price for the current filter. This ensures the Rate Intelligence Grid
+    # always has columns for all competitors, even if some cells show "-" or "N/A".
     comp_list = []
     for h in hotels:
-        if str(h["id"]) != target_hotel_id:
-            p = hotel_prices_map.get(str(h["id"]), [])
-            if p:
-                try:
-                    price_val, c_room, c_score = get_price_for_room(p[0], room_type, allowed_room_names_map)
-                    if price_val is not None:
-                        comp_list.append({
-                            "id": str(h["id"]),
-                            "name": h.get("name"),
-                            "price": convert_currency(price_val, p[0].get("currency") or "USD", display_currency),
-                            "rating": h.get("rating"),
-                            "offers": p[0].get("parity_offers") or p[0].get("offers") or [],
-                            "matched_room": c_room,
-                            "match_score": c_score
-                        })
-                except Exception as ce:
-                    logger.warning(f"Failed to process competitor {h.get('name')}: {ce}")
-                    continue
+        hid_str = str(h["id"])
+        if hid_str == target_hotel_id:
+            continue
+            
+        p = hotel_prices_map.get(hid_str, [])
+        latest_comp_price = None
+        c_room = None
+        c_score = 0.0
+        
+        if p:
+            try:
+                latest_p, latest_room, latest_score = get_price_for_room(p[0], room_type, allowed_room_names_map)
+                if latest_p is not None:
+                    latest_comp_price = convert_currency(latest_p, p[0].get("currency") or "USD", display_currency)
+                    c_room = latest_room
+                    c_score = latest_score
+            except Exception as ce:
+                logger.warning(f"Failed to extract latest price for competitor {h.get('name')}: {ce}")
+
+        comp_list.append({
+            "id": hid_str,
+            "name": h.get("name"),
+            "price": latest_comp_price, # Might be None, Grid handles this
+            "rating": h.get("rating"),
+            "offers": p[0].get("parity_offers") or p[0].get("offers") or [] if p else [],
+            "matched_room": c_room,
+            "match_score": c_score
+        })
 
     # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
