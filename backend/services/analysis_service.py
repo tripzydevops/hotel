@@ -652,8 +652,8 @@ async def perform_market_analysis(
             if data and data["target"] is not None:
                 last_known_target = float(data["target"])
                 target_val = last_known_target
-            elif last_known_target is not None and current_date <= today_date:
-                # Only carry forward for past/today to fill gaps in historical data
+            elif last_known_target is not None:
+                # [KAİZEN] Carry forward last known price to ensure grid is never empty.
                 target_val = last_known_target
             
             # 2. Competitor Logic (Conditional Full Fill)
@@ -672,17 +672,16 @@ async def perform_market_analysis(
                     unique_competitors.append(c)
                     seen_competitors.add(c["name"])
             
-            # Horizontal Continuity (Competitor Fill) - Restricted to past/today
+            # Horizontal Continuity (Competitor Fill)
             for name, state in competitor_states.items():
                 if name not in seen_competitors:
-                    # Only carry competitor prices forward if in the past
-                    if current_date <= today_date:
-                        unique_competitors.append({
-                            "name": name,
-                            "price": state["price"],
-                            "is_estimated": True 
-                        })
-                        seen_competitors.add(name)
+                    # Carry competitor prices forward for the entire grid range
+                    unique_competitors.append({
+                        "name": name,
+                        "price": state["price"],
+                        "is_estimated": True 
+                    })
+                    seen_competitors.add(name)
             
             if unique_competitors:
                 comp_avg = sum(float(c["price"]) for c in unique_competitors) / len(unique_competitors)
@@ -759,6 +758,26 @@ async def perform_market_analysis(
     sent_bd = normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else []
     raw_bd = translate_breakdown(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else []
     
+    # EXPLANATION: Market Sentiment Average Calculation
+    # We aggregate sentiment scores across all tracked hotels to provide 
+    # a market baseline for the Discovery Engine and Audit reports.
+    market_avg_scores: Dict[str, float] = {}
+    pillar_totals: Dict[str, List[float]] = {}
+    
+    for h in hotels:
+        bd = h.get("sentiment_breakdown")
+        if isinstance(bd, list):
+            for pillar in bd:
+                if not isinstance(pillar, dict): continue
+                p_name = pillar.get("name")
+                p_score = pillar.get("score")
+                if p_name and p_score is not None:
+                    if p_name not in pillar_totals: pillar_totals[p_name] = []
+                    pillar_totals[p_name].append(float(p_score))
+    
+    for p_name, scores in pillar_totals.items():
+        market_avg_scores[p_name] = sum(scores) / len(scores) if scores else 0.0
+
     # KAİZEN: Value Synthesis if missing
     # If Value score is 0 but we have competitive data, we can synthesize based on ARI
     value_pillar = next((p for p in sent_bd if p["name"] == "Value"), None)
