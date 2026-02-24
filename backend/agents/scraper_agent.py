@@ -1,6 +1,6 @@
 
 import asyncio
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
@@ -304,19 +304,14 @@ class ScraperAgent:
                         status = "error"
 
                     # HYPERSPEED: Buffer price log for batch insertion
-                    if price_data:
+                    if price_data and price_data.get("price") is not None:
                         price_log_entry = {
-                            "user_id": str(user_id),
-                            "hotel_name": hotel_name,
-                            "location": location,
-                            "action_type": "monitor",
-                            "status": status,
+                            "hotel_id": str(hotel_id),
                             "price": price_data.get("price"),
                             "currency": price_data.get("currency"),
                             "vendor": price_data.get("vendor"),
                             "session_id": str(session_id) if session_id else None,
                             "check_in_date": str(check_in),
-                            "adults": adults,
                             "recorded_at": datetime.now(timezone.utc).isoformat(),
                             "serp_api_id": serp_api_id,
                             "room_types": price_data.get("room_types"),

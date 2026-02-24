@@ -304,12 +304,29 @@ class AnalystAgent:
                     "parity_offers": offers,
                     "room_types": current_room_types,
                     "is_estimated": is_estimated,
+                    "session_id": str(session_id) if session_id else None,
                     "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id"),
                     "metadata": {
                         "is_shallow": is_shallow,
                         "extraction_depth": len(offers)
                     }
                 })
+                
+                # KAİZEN: UI Persistence for successful monitor results
+                # This ensures the hotel appears in the Pulse Intelligence scan summary
+                if session_id and not is_estimated:
+                     await log_query(
+                        db=self.db,
+                        user_id=user_id,
+                        hotel_name=res.get("hotel_name", "Hotel"),
+                        location=res.get("location"),
+                        action_type="monitor",
+                        status="success" if current_price > 0 else "error",
+                        price=current_price,
+                        currency=currency,
+                        vendor=price_data.get("vendor"),
+                        session_id=session_id
+                    )
 
                 analysis_summary["prices_updated"] += 1
 
