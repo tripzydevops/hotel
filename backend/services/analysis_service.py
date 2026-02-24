@@ -451,6 +451,8 @@ async def perform_market_analysis(
     price_rank_list: List[Dict[str, Any]] = []
 
     # 1. Map Prices and Find Target
+    # [KAIZEN] Consistent Target Selection: We pick the FIRST target hotel 
+    # encountered in the sorted list to ensure it matches the ID used for log mapping.
     for hotel in hotels:
         hid = str(hotel["id"])
         hotel_rating = float(hotel.get("rating") or 0.0)
@@ -460,7 +462,7 @@ async def perform_market_analysis(
         weighted_sentiment = hotel_rating * weight
         market_sentiments.append(weighted_sentiment)
         
-        if hotel.get("is_target_hotel"):
+        if hotel.get("is_target_hotel") and not target_hotel_id:
             target_hotel_id = hid
             target_hotel_name = hotel.get("name") or "Unknown"
             target_sentiment = weighted_sentiment
@@ -468,8 +470,6 @@ async def perform_market_analysis(
     # EXPLANATION: Target Hotel Auto-Select Fallback
     # If no hotel has is_target_hotel=True (common for new users who haven't 
     # configured their target yet), we auto-select the first hotel in their list.
-    # Without this, ALL analysis KPIs show "N/A" and the Discovery page says
-    # "No hotel configured. Add a target hotel first."
     if not target_hotel_id and hotels:
         target_hotel_id = str(hotels[0]["id"])
         target_hotel_name = hotels[0].get("name") or "Unknown"
@@ -919,6 +919,12 @@ async def get_market_intelligence_data(
     hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
     hotels = hotels_result.data or []
     
+    # EXPLANATION: Deterministic Hotel Ordering (Deduplication Guard)
+    # Why: If multiple local records share the same serp_api_id, we MUST ensure 
+    # all analysis and mapping logic picks the SAME record (the active target).
+    # We sort by is_target_hotel DESC, then updated_at DESC.
+    hotels.sort(key=lambda x: (bool(x.get("is_target_hotel")), x.get("updated_at", "")), reverse=True)
+
     # DIAGNOSTIC: Log hotel count for this user
     logger.info(f"[DIAG] User {user_id}: Found {len(hotels)} hotels")
     
@@ -969,7 +975,13 @@ async def get_market_intelligence_data(
     # Map logs back to local hotel IDs for grouping
     # Rationale: A global log will have its own hotel_id, but for our user's
     # analysis, we must map it to OUR local hotel_id that shares the same serp_api_id.
-    serp_to_local_map = {h["serp_api_id"]: str(h["id"]) for h in hotels if h.get("serp_api_id")}
+    # [KAIZEN] Robust ID Mapping: We pick the FIRST matching hotel from our sorted 
+    # list to ensure consistency when duplicates exist.
+    serp_to_local_map = {}
+    for h in hotels:
+        sid = h.get("serp_api_id")
+        if sid and sid not in serp_to_local_map:
+            serp_to_local_map[sid] = str(h["id"])
     
     for log in logs_data:
         # If the log's hotel_id isn't in our local list, but its serp_api_id matches one of ours
