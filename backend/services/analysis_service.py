@@ -185,7 +185,7 @@ def get_price_for_room(
                 continue
             if not is_std_t and is_std_r and "deluxe" not in r_name and "superior" not in r_name:
                 continue
-                
+            
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
             
     # EXPLANATION: Standard Request Detection & Global Fallback
@@ -222,6 +222,7 @@ def get_price_for_room(
                 return valid_prices[0][0], valid_prices[0][1], 0.65
         except Exception:
             pass
+    
     # EXPLANATION: Legacy Price Fallback
     # If no specific room match was found, but we are looking for a 'Standard' 
     # room and the log has a top-level price, we use that as a last resort.
@@ -613,6 +614,8 @@ async def perform_market_analysis(
                 # 2. Global Fallback for this Hotel (Any-Date Continuity) - RESTRICTED
                 # Why: We only use cross-date continuity for dates in the past or today.
                 # For future dates, we ONLY show data if a scan exists for that specific check-in date.
+                # KAİZEN: Re-enabled for all types, but strict matching in get_price_for_room 
+                # prevents Standard leakage into non-Standard views.
                 if (price_val is None or price_val <= 0) and datetime.strptime(d_str, "%Y-%m-%d").date() <= today_date:
                     all_hotel_logs = hotel_prices_map.get(hid, [])
                     for fallback_log in all_hotel_logs:
@@ -651,16 +654,44 @@ async def perform_market_analysis(
             except Exception: pass
         
         curr = range_start
-        # EXPLANATION: State tracking for Grid Continuity (Horizontal Fill)
-        # We seed the initial state from the latest overall scan (target_price)
-        # to ensure the grid starts populated even if early dates lack specific scans.
-        last_known_target = target_price
-        # EXPLANATION: Competitor Price State Initialization
-        # We initialize `competitor_states` here to ensure it exists even if the logic below
-        # for processing `comp_list` branches differently. This prevents UnboundLocalError.
-        competitor_states: Dict[str, Dict[str, Any]] = {
-            c["name"]: {"price": c["price"], "is_estimated": True} for c in comp_list
-        }
+        # EXPLANATION: Relative-Date Continuity Seeding
+        # We find the most recent scan BEFORE our window starts to avoid the "sticky price"
+        # issue where navigating backwards still shows today's prices.
+        last_known_target = None
+        target_logs = hotel_prices_map.get(target_hotel_id, [])
+        for log in target_logs:
+            log_date = str(log.get("check_in_date", "")).split('T')[0]
+            if log_date <= range_start.strftime("%Y-%m-%d"):
+                lp, _, _ = get_price_for_room(log, room_type, allowed_room_names_map)
+                if lp and lp > 0:
+                    last_known_target = convert_currency(lp, log.get("currency") or "USD", display_currency)
+                    break
+        
+        # If still None, fall back to the very latest known price for this room_type
+        if last_known_target is None:
+            last_known_target = target_price
+        # Relative Seeding for Competitors
+        # We find the most recent scan for each competitor BEFORE our window starts.
+        competitor_states: Dict[str, Dict[str, Any]] = {}
+        for h in hotels:
+            if str(h["id"]) == target_hotel_id: continue
+            h_name = h.get("name")
+            h_logs = hotel_prices_map.get(str(h["id"]), [])
+            for log in h_logs:
+                log_date = str(log.get("check_in_date", "")).split('T')[0]
+                if log_date <= range_start.strftime("%Y-%m-%d"):
+                    lp, _, _ = get_price_for_room(log, room_type, allowed_room_names_map)
+                    if lp and lp > 0:
+                        competitor_states[h_name] = {
+                            "price": convert_currency(lp, log.get("currency") or "USD", display_currency),
+                            "is_estimated": True
+                        }
+                        break
+                        
+        # Fallback to comp_list (latest overall) for any competitors still missing
+        for c in comp_list:
+            if c["name"] not in competitor_states:
+                competitor_states[c["name"]] = {"price": c["price"], "is_estimated": True}
         
         today_date = datetime.now().date()
         while curr.date() <= range_end.date():

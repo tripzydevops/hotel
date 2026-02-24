@@ -9,7 +9,7 @@ export function getStandardizedRoomCategory(rawName: string): string {
   // 1. Suite
   if (
     lower.includes("suite") ||
-    lower.includes("sült") ||
+    lower.includes("süit") ||
     lower.includes("junior") ||
     lower.includes("executive") ||
     lower.includes("king suite")

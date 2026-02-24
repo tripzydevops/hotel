@@ -137,31 +137,31 @@ export default function CalendarPage() {
 
   const getVisiblePrices = () => {
     if (!data?.daily_prices) return [];
+    
+    const results = [];
+    const startTs = new Date(viewDate);
+    startTs.setHours(0, 0, 0, 0);
 
-    // Sort all data first
-    const sorted = [...data.daily_prices].sort(
-      (a: any, b: any) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-
-    // Simple approach: Filter for dates >= viewDate, take 14
-    const startTs = viewDate.setHours(0, 0, 0, 0);
-    // Find the first index that is >= viewDate
-    let startIndex = sorted.findIndex(
-      (p: any) => new Date(p.date).getTime() >= startTs,
-    );
-
-    // Fallback if viewDate is out of range
-    if (startIndex === -1 && sorted.length > 0) {
-      // If viewDate is before all data, start at 0
-      if (viewDate.getTime() < new Date(sorted[0].date).getTime())
-        startIndex = 0;
-      // If viewDate is after all data, start at end - 14
-      else startIndex = Math.max(0, sorted.length - 14);
+    for (let i = 0; i < 14; i++) {
+      const curr = new Date(startTs);
+      curr.setDate(curr.getDate() + i);
+      const dStr = curr.toISOString().split("T")[0];
+      
+      const existing = data.daily_prices.find((p: any) => p.date === dStr);
+      if (existing) {
+        results.push(existing);
+      } else {
+        results.push({
+          date: dStr,
+          price: null,
+          is_estimated_target: false,
+          comp_avg: 0,
+          vs_comp: 0,
+          competitors: [],
+        });
+      }
     }
-    if (startIndex === -1) startIndex = 0; // Empty data
-
-    return sorted.slice(startIndex, startIndex + 14);
+    return results;
   };
 
   const visiblePrices = getVisiblePrices();
