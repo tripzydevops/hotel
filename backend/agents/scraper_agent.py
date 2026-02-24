@@ -174,22 +174,6 @@ class ScraperAgent:
         except Exception as e:
             print(f"[ScraperAgent] Log flush failed: {e}")
 
-    async def _flush_price_logs(self, session_id: Optional[UUID]):
-        """Batch insert all buffered price logs in a single transaction."""
-        sid_key = str(session_id) if session_id else "global"
-        if not hasattr(self, '_price_log_buffer') or sid_key not in self._price_log_buffer:
-            return
-            
-        logs = self._price_log_buffer[sid_key]
-        if not logs:
-            return
-            
-        try:
-            # HYPERSPEED KAIZEN: Batch insert instead of n+1 round-trips
-            self.db.table("price_logs").insert(logs).execute()
-            self._price_log_buffer[sid_key] = []
-        except Exception as e:
-            print(f"[ScraperAgent] Price log batch insert failed: {e}")
 
     async def run_scan(
         self,
@@ -303,28 +287,6 @@ class ScraperAgent:
                     if price_data and "error" in price_data:
                         status = "error"
 
-                    # HYPERSPEED: Buffer price log for batch insertion
-                    if price_data and price_data.get("price") is not None:
-                        price_log_entry = {
-                            "hotel_id": str(hotel_id),
-                            "price": price_data.get("price"),
-                            "currency": price_data.get("currency"),
-                            "vendor": price_data.get("vendor"),
-                            "session_id": str(session_id) if session_id else None,
-                            "check_in_date": str(check_in),
-                            "recorded_at": datetime.now(timezone.utc).isoformat(),
-                            "serp_api_id": serp_api_id,
-                            "room_types": price_data.get("room_types"),
-                            "offers": price_data.get("offers"),
-                            "search_rank": price_data.get("search_rank")
-                        }
-                        if not hasattr(self, '_price_log_buffer'):
-                            self._price_log_buffer = {}
-                        
-                        sid_key = str(session_id) if session_id else "global"
-                        if sid_key not in self._price_log_buffer:
-                            self._price_log_buffer[sid_key] = []
-                        self._price_log_buffer[sid_key].append(price_log_entry)
 
                 result = {
                     "hotel_id": hotel_id,
@@ -356,8 +318,5 @@ class ScraperAgent:
         # HYPERSPEED: Batch flush all reasoning logs and price logs
         if session_id:
             await self._flush_logs(session_id)
-            await self._flush_price_logs(session_id)
-        else:
-            await self._flush_price_logs(None)
             
         return results
