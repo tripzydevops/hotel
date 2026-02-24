@@ -846,9 +846,17 @@ async def get_market_intelligence_data(
     # The time window scales linearly with calendar time, not data volume.
     cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
     
+    # EXPLANATION: Global Price Retrieval (Pillar of Global Pulse)
+    # We now fetch prices based on BOTH local hotel_id and global serp_api_id.
+    # This ensures that as long as ANY user scans a hotel, EVERY user tracking it 
+    # gets the fresh data in their Rate Calendar.
     hotel_ids_list = [str(h["id"]) for h in hotels]
-    logger.info(f"[DIAG] Querying price_logs for {len(hotel_ids_list)} hotel_ids since {cutoff_date[:10]}")
+    serp_ids_list = [h.get("serp_api_id") for h in hotels if h.get("serp_api_id")]
     
+    logger.info(f"[DIAG] User {user_id}: Querying price_logs for {len(hotel_ids_list)} local IDs and {len(serp_ids_list)} global IDs since {cutoff_date[:10]}")
+    
+    # Building a combined OR query is complex in postgrest, so we fetch both and merge
+    # Step 1: Local ID logs
     price_logs_res = db.table("price_logs") \
         .select("*") \
         .in_("hotel_id", hotel_ids_list) \
@@ -857,26 +865,43 @@ async def get_market_intelligence_data(
         .execute()
     logs_data = price_logs_res.data or []
     
+    # Step 2: Global ID logs (Pulse Data)
+    if serp_ids_list:
+        global_logs_res = db.table("price_logs") \
+            .select("*") \
+            .in_("serp_api_id", serp_ids_list) \
+            .gte("recorded_at", cutoff_date) \
+            .order("recorded_at", desc=True) \
+            .execute()
+        
+        # Merge global logs, ensuring we don't have duplicates
+        existing_log_ids = {l["id"] for l in logs_data}
+        for g_log in (global_logs_res.data or []):
+            if g_log["id"] not in existing_log_ids:
+                logs_data.append(g_log)
+    
+    # Map logs back to local hotel IDs for grouping
+    # Rationale: A global log will have its own hotel_id, but for our user's
+    # analysis, we must map it to OUR local hotel_id that shares the same serp_api_id.
+    serp_to_local_map = {h["serp_api_id"]: str(h["id"]) for h in hotels if h.get("serp_api_id")}
+    
+    for log in logs_data:
+        # If the log's hotel_id isn't in our local list, but its serp_api_id matches one of ours
+        if str(log.get("hotel_id")) not in hotel_ids_list:
+            local_id = serp_to_local_map.get(log.get("serp_api_id"))
+            if local_id:
+                log["hotel_id"] = local_id # Map to local
+    
     # DIAGNOSTIC: Log price_logs count and sample data
-    logger.info(f"[DIAG] User {user_id}: Found {len(logs_data)} price_logs in 90-day window")
-    if logs_data:
-        sample = logs_data[0]
-        logger.info(f"[DIAG] Latest log: hotel_id={str(sample.get('hotel_id','?'))[:8]}, price={sample.get('price')}, currency={sample.get('currency')}, room_types_count={len(sample.get('room_types') or [])}, recorded_at={str(sample.get('recorded_at','?'))[:19]}")
-    else:
-        # SAFEGUARD: query_logs fallback
-        # If price_logs is empty (e.g. after accidental deletion), pull historical
-        # prices from query_logs which is never deleted. This ensures the dashboard
-        # always shows data as long as any scan has ever run.
-        logger.warning(f"[SAFEGUARD] No price_logs found. Falling back to query_logs for user {user_id}")
+    logger.info(f"[DIAG] User {user_id}: Combined {len(logs_data)} price_logs including global data")
+    
+    # SAFEGUARD: Proactive query_logs integration
+    # Instead of waiting for zero logs, we pull query_logs if our dataset is "thin" 
+    # or if the user specifically requested historical completeness.
+    if len(logs_data) < (len(hotels) * 5): # Arbitrary threshold for "thin" data
+        logger.info(f"[SAFEGUARD] Dataset thin ({len(logs_data)}). Pulling historical query_logs for user {user_id}")
         
-        # Build hotel name -> id mapping for query_logs (which stores hotel_name, not hotel_id)
-        hotel_name_to_id = {}
-        for h in hotels:
-            hotel_name_to_id[h["name"].lower().strip()] = str(h["id"])
-        
-        # EXPLANATION: Broader Fallback Window
-        # We look back 180 days in query_logs to ensure historical continuity 
-        # even if fresh scans haven't run recently.
+        hotel_name_to_id = {h["name"].lower().strip(): str(h["id"]) for h in hotels}
         fallback_cutoff = (datetime.utcnow() - timedelta(days=180)).isoformat()
         
         ql_res = db.table("query_logs") \
@@ -886,62 +911,63 @@ async def get_market_intelligence_data(
             .order("created_at", desc=True) \
             .execute()
         
-            for ql in (ql_res.data or []):
-                price = ql.get("price")
-                if not price or float(price) <= 0:
-                    continue
-                
-                ql_name = (ql.get("hotel_name") or "").lower().strip()
-                hotel_id = hotel_name_to_id.get(ql_name)
-                if not hotel_id:
-                    # Partial name match fallback
-                    for name, hid in hotel_name_to_id.items():
-                        if ql_name in name or name in ql_name:
-                            hotel_id = hid
-                            break
-                if not hotel_id:
-                    continue
-                
-                fallback_count += 1
-                logs_data.append({
-                    "hotel_id": hotel_id,
-                    "price": float(price),
-                    "currency": ql.get("currency") or "TRY",
-                    "vendor": ql.get("vendor") or "Unknown",
-                    "source": "serpapi",
-                    "check_in_date": ql.get("check_in_date") or ql.get("created_at", "")[:10],
-                    "recorded_at": ql.get("created_at"),
-                    "is_estimated": False,
-                    "parity_offers": [],
-                    "room_types": [],
-                    "metadata": {"source": "query_logs_fallback"}
-                        })
+        fallback_count = 0
+        existing_combos = {(str(l["hotel_id"]), l.get("check_in_date"), l.get("price")) for l in logs_data}
+
+        for ql in (ql_res.data or []):
+            price = ql.get("price")
+            if not price or float(price) <= 0: continue
             
-            logger.info(f"[SAFEGUARD] Recovered {fallback_count} entries from query_logs. Total logs_data: {len(logs_data)}")
+            ql_name = (ql.get("hotel_name") or "").lower().strip()
+            hotel_id = hotel_name_to_id.get(ql_name)
+            if not hotel_id:
+                for name, hid in hotel_name_to_id.items():
+                    if ql_name in name or name in ql_name:
+                        hotel_id = hid; break
             
-            # FINAL FALLBACK: Latest Price from Hotels table
-            # If still empty, we use the cached 'current_price' from the hotels table itself
-            if not logs_data:
-                logger.warning(f"[SAFEGUARD] Still no data. Seeding from hotels table for user {user_id}")
-                for h in hotels:
-                    lp = h.get("current_price") # [FIX] Correct column name
-                    if lp and float(lp) > 0:
-                        # [KAİZEN] Seed a 14-day range to avoid "No Data" viewing range errors
-                        for i in range(14):
-                            target_date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
-                            logs_data.append({
-                                "hotel_id": str(h["id"]),
-                                "price": float(lp),
-                                "currency": h.get("currency") or h.get("preferred_currency") or "TRY",
-                                "vendor": "Cached",
-                                "source": "hotels_table",
-                                "check_in_date": target_date,
-                                "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
-                                "is_estimated": True,
-                                "parity_offers": [],
-                                "room_types": [],
-                                "metadata": {"source": "hotels_table_fallback"}
-                            })
+            if not hotel_id: continue
+            check_in = ql.get("check_in_date") or ql.get("created_at", "")[:10]
+            
+            # Avoid duplicate data if already in price_logs
+            if (hotel_id, check_in, float(price)) in existing_combos: continue
+
+            fallback_count += 1
+            logs_data.append({
+                "hotel_id": hotel_id,
+                "price": float(price),
+                "currency": ql.get("currency") or "TRY",
+                "vendor": "Unknown",
+                "source": "serpapi",
+                "check_in_date": check_in,
+                "recorded_at": ql.get("created_at"),
+                "is_estimated": False,
+                "parity_offers": [],
+                "room_types": [],
+                "metadata": {"source": "query_logs_fallback"}
+            })
+        logger.info(f"[SAFEGUARD] Recovered {fallback_count} additional entries from query_logs.")
+        
+    # FINAL FALLBACK: Latest Price from Hotels table (Always seed if thin)
+    if not logs_data or len(logs_data) < len(hotels):
+        logger.warning(f"[SAFEGUARD] Seeding from hotels table current_price for user {user_id}")
+        for h in hotels:
+            lp = h.get("current_price") or 0.0
+            if float(lp) > 0:
+                for i in range(14):
+                    target_date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
+                    logs_data.append({
+                        "hotel_id": str(h["id"]),
+                        "price": float(lp),
+                        "currency": h.get("currency") or h.get("preferred_currency") or "TRY",
+                        "vendor": "Cached",
+                        "source": "hotels_table",
+                        "check_in_date": target_date,
+                        "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
+                        "is_estimated": True,
+                        "parity_offers": [],
+                        "room_types": [],
+                        "metadata": {"source": "hotels_table_fallback"}
+                    })
     
     # Group logs by hotel_id
     hotel_prices_map = {}
