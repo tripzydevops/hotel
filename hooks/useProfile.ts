@@ -4,13 +4,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { AdminUser } from "@/types";
 
-export function useProfile(userId: string | null) {
+export function useProfile(userId: string | null, enabled: boolean = true) {
   const queryClient = useQueryClient();
-
+  
   const profileQuery = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => api.getProfile(userId!),
-    enabled: !!userId,
+    enabled: !!userId && enabled,
   });
 
   const updateProfileMutation = useMutation({

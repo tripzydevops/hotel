@@ -60,12 +60,15 @@ export default function Dashboard() {
     setProfile,
   } = useDashboard(userId, t);
 
-  // Trigger lazy scan check on dashboard load
+  // Trigger lazy scan check on dashboard load (Delayed to prioritize render)
   useEffect(() => {
     if (userId) {
-      api.checkScheduledScan(userId).catch((err) => {
-        console.error("[LazyCron] Failed to check scheduled scan:", err);
-      });
+      const timer = setTimeout(() => {
+        api.checkScheduledScan(userId).catch((err) => {
+          console.error("[LazyCron] Failed to check scheduled scan:", err);
+        });
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [userId]);
 

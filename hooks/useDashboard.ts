@@ -17,19 +17,24 @@ export function useDashboard(
   const [isPolling, setIsPolling] = useState(false);
 
   // --- Composed Hooks ---
+  // PERFORMANCE: We disable these independent fetches on initial load 
+  // if we don't have dashboard data yet, because the dashboard response 
+  // bundle will seed their caches automatically.
+  const hasDashboardData = !!queryClient.getQueryData(["dashboard", userId]);
+  
   const {
     settings,
     updateSettings,
     loading: settingsLoading,
     error: settingsError,
-  } = useSettings(userId);
+  } = useSettings(userId, hasDashboardData);
 
   const {
     profile,
     setProfile,
     loading: profileLoading,
     error: profileError,
-  } = useProfile(userId);
+  } = useProfile(userId, hasDashboardData);
 
   // --- Queries ---
   const dashboardQuery = useQuery({

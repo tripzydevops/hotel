@@ -52,38 +52,42 @@ async def check_scheduled_scan(
         return {"triggered": False, "reason": "DB_UNAVAILABLE"}
     
     try:
-        settings_result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-        if not settings_result.data:
+        # KAİZEN: Parallel Multi-Gate Check
+        # Instead of 4 sequential DB round-trips, we fetch all gates concurrently.
+        check_tasks = [
+            asyncio.to_thread(lambda: db.table("settings").select("*").eq("user_id", str(user_id)).execute()),
+            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).execute()),
+            asyncio.to_thread(lambda: db.table("scan_sessions").select("created_at").eq("user_id", str(user_id)).in_("status", ["pending", "running"]).order("created_at", desc=True).limit(1).execute()),
+            asyncio.to_thread(lambda: db.table("price_logs").select("recorded_at").eq("user_id", str(user_id)).order("recorded_at", desc=True).limit(1).execute())
+        ]
+        
+        check_results = await asyncio.gather(*check_tasks)
+        settings_res, hotels_res, pending_scan, last_log = check_results
+
+        # 1. Settings Check
+        if not settings_res.data:
             return {"triggered": False, "reason": "NO_SETTINGS"}
         
-        settings = settings_result.data[0]
+        settings = settings_res.data[0]
         freq_minutes = settings.get("check_frequency_minutes", 0)
         if not force and freq_minutes <= 0:
             return {"triggered": False, "reason": "MANUAL_ONLY"}
         
-        hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-        hotels = hotels_result.data or []
+        # 2. Hotels Check
+        hotels = hotels_res.data or []
         if not hotels:
             return {"triggered": False, "reason": "NO_HOTELS"}
         
-        hotel_ids = [h["id"] for h in hotels]
-        
-        pending_scan = db.table("scan_sessions") \
-            .select("created_at") \
-            .eq("user_id", str(user_id)) \
-            .in_("status", ["pending", "running"]) \
-            .order("created_at", desc=True) \
-            .limit(1).execute()
-            
+        # 3. Pending/Running Check (Anti-Collision)
         if pending_scan.data:
             pending_time = datetime.fromisoformat(pending_scan.data[0]["created_at"].replace("Z", "+00:00"))
             if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600:
                  if not force:
                      return {"triggered": False, "reason": "ALREADY_PENDING"}
         
+        # 4. Due Check
         should_run = force
         if not should_run:
-            last_log = db.table("price_logs").select("recorded_at").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(1).execute()
             if not last_log.data:
                 should_run = True
             else:

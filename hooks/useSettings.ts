@@ -4,13 +4,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { UserSettings } from "@/types";
 
-export function useSettings(userId: string | null) {
+export function useSettings(userId: string | null, enabled: boolean = true) {
   const queryClient = useQueryClient();
 
   const settingsQuery = useQuery({
     queryKey: ["settings", userId],
     queryFn: () => api.getSettings(userId!),
-    enabled: !!userId,
+    enabled: !!userId && enabled,
   });
 
   const updateSettingsMutation = useMutation({
