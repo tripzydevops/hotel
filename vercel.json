@@ -1,14 +1,14 @@
 {
   "framework": "nextjs",
   "functions": {
-    "api/index.py": {
+    "backend_api/index.py": {
       "runtime": "vercel-python@0.1.0"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/index.py"
+      "destination": "/backend_api/index.py"
     }
   ],
   "crons": [
