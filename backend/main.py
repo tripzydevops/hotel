@@ -75,11 +75,22 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback
+    from fastapi import HTTPException
+    
+    # EXPLANATION: Transparent Error Handling
+    # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
+    # the root cause from the client and makes debugging impossible.
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+        
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error. Please try again."},
+        content={"detail": f"Internal Server Error: {str(exc)}" if not any(allowed_origins) else "Internal Server Error"},
     )
 
 @app.exception_handler(RequestValidationError)
