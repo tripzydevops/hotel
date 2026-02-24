@@ -53,8 +53,7 @@ from backend.api import (
 # This fixes 404/405 errors caused by path mismatches.
 app = FastAPI(
     title="Hotel Rate Sentinel API",
-    version="2026.02",
-    root_path="/api" if os.getenv("VERCEL") == "1" else ""
+    version="2026.02"
 )
 
 # CORS configuration

@@ -6,10 +6,11 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if path not in sys.path:
     sys.path.append(path)
 
-# Import the FastAPI application from backend.main
 try:
     from backend.main import app as _app
     app = _app
+    
+    print(f"Index.py: Backend app loaded successfully.")
     
     # EXPLANATION: Runtime Route Diagnostic
     # If we are getting 404s, we need to know what the app actually thinks its routes are.
