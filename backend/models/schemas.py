@@ -42,6 +42,9 @@ class HotelBase(BaseModel):
     amenities: Optional[List[Any]] = Field(default_factory=list)
     images: Optional[List[Any]] = Field(default_factory=list)
     sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
+    pricing_dna: Optional[str] = None
+    sentiment_embedding: Optional[List[float]] = None
+    embedding_status: Optional[str] = "current"
     reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
     class Config:

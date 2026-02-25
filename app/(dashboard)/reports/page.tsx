@@ -128,7 +128,7 @@ function ParityHealthSection({
   const undercuts = competitors.filter(
     (c) => c.price_info?.current_price && c.price_info.current_price < targetPrice
   );
-  
+
   const parityScore = competitors.length > 0
     ? Math.round(((competitors.length - undercuts.length) / competitors.length) * 100)
     : 100;
@@ -194,14 +194,14 @@ function ParityHealthSection({
  * PricingDNAProfileCard - Intelligence Layer Pillar
  * Surfaces the AI-generated pricing personality.
  */
-function PricingDNAProfileCard({ 
-  dnaText, 
+function PricingDNAProfileCard({
+  dnaText,
   streamingNarrative,
   isStreaming,
   hotelName,
-  isLocked 
-}: { 
-  dnaText?: string; 
+  isLocked
+}: {
+  dnaText?: string;
   streamingNarrative?: string;
   isStreaming?: boolean;
   hotelName: string;
@@ -214,10 +214,10 @@ function PricingDNAProfileCard({
     >
       {isLocked && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/40 backdrop-blur-[2px]">
-           <div className="flex flex-col items-center gap-2">
-             <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
-             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">Upgrade to Pro</span>
-           </div>
+          <div className="flex flex-col items-center gap-2">
+            <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">Upgrade to Pro</span>
+          </div>
         </div>
       )}
       <div className="flex items-center justify-between mb-4">
@@ -250,12 +250,12 @@ function PricingDNAProfileCard({
  * RecommendationCard - Phase 3 Action Layer
  * Displays suggested rate actions with animated impact indicators.
  */
-function RecommendationCard({ 
-  recommendation, 
+function RecommendationCard({
+  recommendation,
   currency,
-  isLocked 
-}: { 
-  recommendation: any; 
+  isLocked
+}: {
+  recommendation: any;
   currency: string;
   isLocked: boolean;
 }) {
@@ -271,13 +271,13 @@ function RecommendationCard({
     >
       {isLocked && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/60 backdrop-blur-[4px]">
-           <div className="flex flex-col items-center gap-2">
-             <Trophy className="w-8 h-8 text-[#F6C344]" />
-             <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
-             <Link href="/billing" className="mt-2 px-4 py-1.5 rounded-full bg-[#F6C344] text-[var(--deep-ocean)] text-[10px] font-black uppercase tracking-tighter hover:scale-105 transition-transform">
-                Upgrade Now
-             </Link>
-           </div>
+          <div className="flex flex-col items-center gap-2">
+            <Trophy className="w-8 h-8 text-[#F6C344]" />
+            <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
+            <Link href="/billing" className="mt-2 px-4 py-1.5 rounded-full bg-[#F6C344] text-[var(--deep-ocean)] text-[10px] font-black uppercase tracking-tighter hover:scale-105 transition-transform">
+              Upgrade Now
+            </Link>
+          </div>
         </div>
       )}
       <div className="flex justify-between items-start mb-4">
@@ -298,7 +298,7 @@ function RecommendationCard({
           </div>
         )}
       </div>
-      
+
       <div className="space-y-4">
         <div className="p-4 rounded-xl bg-white/5 border border-white/5">
           <p className="text-lg font-black text-white mb-1">
@@ -313,7 +313,7 @@ function RecommendationCard({
           <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
             <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Target ADR</span>
             <span className="text-base font-black text-white">
-               {getCurrencySymbol(currency)}{recommendation.new_price.toLocaleString()}
+              {getCurrencySymbol(currency)}{recommendation.new_price.toLocaleString()}
             </span>
           </div>
         )}
@@ -334,10 +334,10 @@ function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; 
     >
       {isLocked && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/60 backdrop-blur-[4px]">
-           <div className="flex flex-col items-center gap-2">
-             <Trophy className="w-8 h-8 text-[#F6C344]" />
-             <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
-           </div>
+          <div className="flex flex-col items-center gap-2">
+            <Trophy className="w-8 h-8 text-[#F6C344]" />
+            <span className="text-xs font-black uppercase tracking-widest text-[#F6C344]">Enterprise Feature</span>
+          </div>
         </div>
       )}
       <div className="flex items-center gap-3 mb-6">
@@ -471,13 +471,12 @@ function KpiCard({
           {trend && (
             <div className="flex flex-col items-end gap-1">
               <div
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  trend === "up"
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : trend === "down"
-                      ? "bg-red-500/10 text-red-400"
-                      : "bg-white/5 text-gray-500"
-                }`}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${trend === "up"
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : trend === "down"
+                    ? "bg-red-500/10 text-red-400"
+                    : "bg-white/5 text-gray-500"
+                  }`}
               >
                 {trend === "up" ? (
                   <TrendingUp className="w-3 h-3" />
@@ -487,9 +486,9 @@ function KpiCard({
                 {trendLabel}
               </div>
               {history && history.length > 1 && (
-                <Sparkline 
-                  data={history} 
-                  color={trend === "up" ? "#10B981" : trend === "down" ? "#EF4444" : accentColor} 
+                <Sparkline
+                  data={history}
+                  color={trend === "up" ? "#10B981" : trend === "down" ? "#EF4444" : accentColor}
                 />
               )}
             </div>
@@ -690,13 +689,12 @@ function CompetitiveBattlefield({
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`text-sm font-black ${
-                      (comp.rating || 0) >= 4.0
-                        ? "text-emerald-400"
-                        : (comp.rating || 0) >= 3.5
-                          ? "text-amber-400"
-                          : "text-red-400"
-                    }`}
+                    className={`text-sm font-black ${(comp.rating || 0) >= 4.0
+                      ? "text-emerald-400"
+                      : (comp.rating || 0) >= 3.5
+                        ? "text-amber-400"
+                        : "text-red-400"
+                      }`}
                   >
                     {(comp.rating || 0).toFixed(1)}
                   </span>
@@ -747,6 +745,108 @@ function CompetitiveBattlefield({
 // ═══════════════════════════════════════════════════════
 // ──── MAIN REPORTS PAGE ────
 // ═══════════════════════════════════════════════════════
+/**
+ * BriefingIntelligence - Agentic Reasoning Layer
+ * Visualizes the 4 narrative modules from the AnalystAgent.
+ */
+function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExportPdf: () => void }) {
+  if (!briefing) return null;
+
+  const target = briefing.target;
+  const metrics = briefing.metrics;
+  const narrative = briefing.narrative_raw || "";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-12"
+    >
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--soft-gold)]/20 flex items-center justify-center border border-[var(--soft-gold)]/30">
+            <Brain className="w-6 h-6 text-[var(--soft-gold)]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              Agentic Executive Briefing
+              <span className="text-[10px] font-black uppercase tracking-widest bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] px-2 py-0.5 rounded border border-[var(--soft-gold)]/20">
+                Live AI Insight
+              </span>
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] font-medium">
+              Synthetic market intelligence generated via gemini-3-flash-preview
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onExportPdf}
+          className="btn-gold flex items-center gap-2 px-6 py-2"
+        >
+          <FileType className="w-4 h-4" />
+          <span className="text-xs font-black uppercase tracking-widest">Download AI PDF</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Battlefield Card */}
+        <div className="glass-card p-6 border-l-4 border-l-blue-500 bg-blue-500/5">
+          <div className="flex items-center gap-2 mb-4">
+            <Swords className="w-4 h-4 text-blue-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">The Battlefield</span>
+          </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+              <span className="text-xs font-bold text-slate-400">Market Rank</span>
+              <span className="text-lg font-black text-white">#{metrics.avg_rank || '—'}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+              <span className="text-xs font-bold text-slate-400">Bench ADR</span>
+              <span className="text-lg font-black text-white">{metrics.avg_price?.toLocaleString()}</span>
+            </div>
+            <p className="text-xs text-white/70 italic leading-relaxed">
+              Analyzing market share vs. search visibility for {target.name}.
+            </p>
+          </div>
+        </div>
+
+        {/* Friction Card */}
+        <div className="glass-card p-6 border-l-4 border-l-rose-500 bg-rose-500/5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">Yield Friction</span>
+          </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+              <span className="text-xs font-bold text-slate-400">Parity Leaks</span>
+              <span className="text-lg font-black text-rose-400">{metrics.parity_leaks || 0}</span>
+            </div>
+            <p className="text-xs text-white/70 leading-relaxed">
+              Revenue leakage detected via OTA undercutting in the last 30 days.
+            </p>
+          </div>
+        </div>
+
+        {/* Narrative Box */}
+        <div className="lg:col-span-1 glass-card p-6 bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 relative overflow-hidden">
+          <div className="absolute -right-4 -bottom-4 opacity-5">
+            <Brain className="w-24 h-24 text-[var(--soft-gold)]" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">AI Synthesis</span>
+          </div>
+          <div className="h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+            <p className="text-xs text-white/90 font-medium leading-relaxed whitespace-pre-line">
+              {narrative}
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function ReportsPage() {
   const { t, locale } = useI18n();
   const { userId } = useAuth();
@@ -754,11 +854,11 @@ export default function ReportsPage() {
   const { data: dashboardData, loading: dashLoading } = useDashboard(userId, t);
 
   const [currency, setCurrency] = useState("TRY");
-  const { 
-    data: analysisData, 
-    narrative: streamingNarrative, 
-    isStreaming, 
-    error: streamError 
+  const {
+    data: analysisData,
+    narrative: streamingNarrative,
+    isStreaming,
+    error: streamError
   } = useAnalysisStream(userId || undefined, "Standard");
 
   const [data, setData] = useState<any>(null);
@@ -766,6 +866,34 @@ export default function ReportsPage() {
   const [exporting, setExporting] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [scanHistoryOpen, setScanHistoryOpen] = useState(false);
+  const [briefing, setBriefing] = useState<any>(null);
+  const [loadingBriefing, setLoadingBriefing] = useState(false);
+
+  const handleGenerateBriefing = async () => {
+    if (!targetHotel?.id) return;
+    setLoadingBriefing(true);
+    try {
+      const res = await api.generateBriefing({
+        target_hotel_id: targetHotel.id,
+        rival_hotel_id: competitors[0]?.id,
+        days: 30
+      });
+      setBriefing(res);
+    } catch (err) {
+      console.error("Briefing failed:", err);
+    } finally {
+      setLoadingBriefing(false);
+    }
+  };
+
+  const handleExportBriefingPdf = async () => {
+    if (!targetHotel?.id) return;
+    try {
+      await api.exportBriefingPdf(targetHotel.id, competitors[0]?.id);
+    } catch (err) {
+      console.error("Briefing PDF failed:", err);
+    }
+  };
 
   // Use either streaming data or static analytical data
   const analysis = analysisData;
@@ -821,7 +949,7 @@ export default function ReportsPage() {
     () =>
       allHotels.length > 0
         ? allHotels.reduce((sum, h) => sum + (Number(h.rating) || 0), 0) /
-          allHotels.length
+        allHotels.length
         : 0,
     [allHotels]
   );
@@ -838,10 +966,10 @@ export default function ReportsPage() {
     const avgMarketPrice =
       validCompetitors.length > 0
         ? validCompetitors.reduce(
-            (sum: number, c: any) =>
-              sum + (Number(c.price_info?.current_price) || 0),
-            0
-          ) / validCompetitors.length
+          (sum: number, c: any) =>
+            sum + (Number(c.price_info?.current_price) || 0),
+          0
+        ) / validCompetitors.length
         : myPrice;
 
     const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
@@ -1040,8 +1168,33 @@ export default function ReportsPage() {
                 {exporting === "pdf" ? t("reports.exporting") : t("reports.exportPdf")}
               </span>
             </button>
+
+            <div className="w-[1px] h-8 bg-white/10 mx-1" />
+
+            <button
+              onClick={handleGenerateBriefing}
+              disabled={loadingBriefing}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white flex items-center gap-2 shadow-lg shadow-indigo-500/20 group transition-all"
+            >
+              {loadingBriefing ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Brain className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              )}
+              <span className="text-xs font-black uppercase tracking-widest">
+                {loadingBriefing ? "AI Reasoning..." : "Agentic Briefing"}
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* ── INTELLIGENCE LAYER: AGENTIC BRIEFING ── */}
+        {briefing && (
+          <BriefingIntelligence
+            briefing={briefing}
+            onExportPdf={handleExportBriefingPdf}
+          />
+        )}
 
         {/* ═══════════════════════════════════════════════ */}
         {/* ── SECTION 1: EXECUTIVE KPI SNAPSHOT ──        */}
@@ -1171,10 +1324,10 @@ export default function ReportsPage() {
 
         {/* ── INTELLIGENCE LAYER: PARITY & PERSISTENCE ── */}
         <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-10">
-          <ParityHealthSection 
-            targetHotel={targetHotel} 
-            competitors={competitors} 
-            currency={currency} 
+          <ParityHealthSection
+            targetHotel={targetHotel}
+            competitors={competitors}
+            currency={currency}
           />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <PricingDNAProfileCard
@@ -1191,8 +1344,8 @@ export default function ReportsPage() {
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">Market Sentiment Match</h4>
                 <p className="text-sm text-white/80 font-medium">
-                  {analysis?.sentiment_index && analysis.sentiment_index > 100 
-                    ? "Your brand reputation is outperforming market baseline. You have pricing power." 
+                  {analysis?.sentiment_index && analysis.sentiment_index > 100
+                    ? "Your brand reputation is outperforming market baseline. You have pricing power."
                     : "Sentiment is currently below market par. Focus on Cleanliness and Service pillars to regain leverage."}
                 </p>
               </div>
@@ -1203,15 +1356,15 @@ export default function ReportsPage() {
         {/* ── ACTION LAYER: RECOMMENDATIONS & AUDIT ── */}
         {analysis && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-             <RecommendationCard 
-               recommendation={analysis.recommendation} 
-               currency={currency}
-               isLocked={profile?.plan_type !== 'enterprise'}
-             />
-             <OperationalAuditChecklist 
-               checklist={analysis.audit_checklist || []}
-               isLocked={profile?.plan_type !== 'enterprise'}
-             />
+            <RecommendationCard
+              recommendation={analysis.recommendation}
+              currency={currency}
+              isLocked={profile?.plan_type !== 'enterprise'}
+            />
+            <OperationalAuditChecklist
+              checklist={analysis.audit_checklist || []}
+              isLocked={profile?.plan_type !== 'enterprise'}
+            />
           </div>
         )}
 
@@ -1237,7 +1390,7 @@ export default function ReportsPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                   Synthetic AI Narrative
                 </h5>
-                <p 
+                <p
                   className="text-base text-white/95 font-semibold leading-relaxed tracking-tight"
                   aria-live="polite"
                 >

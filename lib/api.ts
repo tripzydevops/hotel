@@ -546,6 +546,44 @@ class ApiClient {
       body: JSON.stringify({ locale, configs }),
     });
   }
+
+  async generateBriefing(params: {
+    target_hotel_id: string;
+    rival_hotel_id?: string;
+    days?: number;
+  }): Promise<any> {
+    return this.fetch<any>("/api/reports/briefing", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async exportBriefingPdf(target_hotel_id: string, rival_hotel_id?: string, days: number = 30): Promise<void> {
+    const token = await this.getToken();
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const params = new URLSearchParams({ days: days.toString() });
+    if (rival_hotel_id) params.append("rival_hotel_id", rival_hotel_id);
+
+    const url = `${API_BASE_URL}/api/reports/briefing/${target_hotel_id}/pdf?${params.toString()}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("Briefing PDF Export failed");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `briefing_${target_hotel_id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+  }
 }
 
 export const api = new ApiClient();

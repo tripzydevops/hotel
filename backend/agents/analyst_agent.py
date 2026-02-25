@@ -781,6 +781,134 @@ class AnalystAgent:
         return False
 
 
+    async def generate_executive_briefing(
+        self, 
+        user_id: UUID, 
+        target_hotel_id: str,
+        rival_hotel_id: Optional[str] = None,
+        days: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Agentic Executive Briefing Generator.
+        
+        Orchestrates the retrieval and synthesis of market data into a high-reasoning 
+        executive report. This process utilizes vector similarity for competitive analysis 
+        and Gemini-3-Flash for narrative generation.
+        
+        Args:
+            user_id: The UUID of the requesting user.
+            target_hotel_id: The Supabase ID of the focus hotel.
+            rival_hotel_id: Optional ID of a competitor for the "Bout" comparison.
+            days: Lookback window for historical log analysis (default 30).
+            
+        Returns:
+            A dictionary containing hotel metadata, calculated metrics, and the AI-generated narrative.
+        """
+        print(f"[AnalystAgent] Generating Executive Briefing for {target_hotel_id} (Days: {days})")
+        
+        # 1. DATA ACQUISITION: Fetch core profiles from the 'hotels' table.
+        # This includes pricing DNA and sentiment embeddings.
+        target_res = self.db.table("hotels").select("*").eq("id", target_hotel_id).single().execute()
+        target = target_res.data
+        if not target:
+            return {"error": "Target hotel not found"}
+            
+        rival = None
+        if rival_hotel_id:
+            rival_res = self.db.table("hotels").select("*").eq("id", rival_hotel_id).single().execute()
+            rival = rival_res.data
+
+        # 2. HISTORICAL ANALYSIS: Aggregate logs within the lookback window.
+        # We focus on price trends, search ranking visibility, and parity offers.
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        logs_res = self.db.table("price_logs") \
+            .select("price, currency, recorded_at, search_rank, parity_offers") \
+            .eq("hotel_id", target_hotel_id) \
+            .gte("recorded_at", cutoff) \
+            .order("recorded_at", desc=True) \
+            .execute()
+        target_logs = logs_res.data or []
+        
+        # 3. METRIC CALCULATION: Derive benchmark ADR and Search visibility rank.
+        avg_price = sum(l["price"] for l in target_logs) / len(target_logs) if target_logs else target.get("current_price", 0)
+        avg_rank = sum(l["search_rank"] for l in target_logs if l.get("search_rank")) / len([l for l in target_logs if l.get("search_rank")]) if any(l.get("search_rank") for l in target_logs) else 1
+        
+        # 4. FRICTION DETECTION: Identify OTA undercutting events.
+        # A 'leak' is defined as any OTA offer price lower than the hotel's direct log price.
+        parity_leaks = []
+        for l in target_logs:
+            offers = l.get("parity_offers") or []
+            for o in offers:
+                o_price = float(o.get("price", 0))
+                if o_price > 0 and o_price < l["price"]:
+                    parity_leaks.append({
+                        "date": l["recorded_at"][:10],
+                        "vendor": o.get("vendor", "OTA"),
+                        "leak_price": o_price,
+                        "direct_price": l["price"]
+                    })
+        
+        # 5. SEMANTIC BENCHMARKING (The "Bout"): Calculate cosine similarity between embeddings.
+        # This determines how closely the market perceives the two hotels based on review sentiment.
+        similarity = 0.0
+        if target and rival and target.get("sentiment_embedding") and rival.get("sentiment_embedding"):
+            import numpy as np
+            v1 = np.array(target["sentiment_embedding"])
+            v2 = np.array(rival["sentiment_embedding"])
+            # Ensure vectors are non-zero before calculation to avoid NaN
+            if v1.any() and v2.any():
+                similarity = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+        
+        # 6. AI SYNTHESIS: Generate the executive narrative using Gemini-3-Flash.
+        # We reuse the centralized GenAI client to ensure credential consistency.
+        from backend.services.analysis_service import get_genai_client
+        client = get_genai_client()
+        
+        briefing_payload = {
+            "target": target,
+            "rival": rival,
+            "metrics": {
+                "avg_price": round(avg_price, 2),
+                "avg_rank": round(avg_rank, 1),
+                "gri": target.get("rating", 0),
+                "parity_leaks_count": len(parity_leaks),
+                "bout_similarity": round(float(similarity) * 100, 1) if rival else None
+            },
+            "narrative_raw": ""
+        }
+        
+        if client:
+            prompt = f"""
+            You are a Senior Revenue Analyst. Generate an Agentic Executive Briefing for {target['name']}.
+            
+            Context:
+            - Target GRI: {target.get('rating')} ({target.get('review_count')} reviews).
+            - Avg Price: {avg_price} {target.get('preferred_currency', 'TRY')}.
+            - Search Rank: {avg_rank}.
+            - Pricing DNA: {target.get('pricing_dna') or 'Standard Market Follower'}.
+            - Rival: {rival['name'] if rival else 'N/A'}.
+            - Parity Issues: {len(parity_leaks)} leaks detected in 30 days.
+            
+            Generate 4 sectioned insights:
+            1. [Battlefield]: Market position summary.
+            2. [Friction]: Revenue leak hotspots.
+            3. [The Bout]: If rival exists, compare competitive stance.
+            4. [Pivot]: Final strategic move.
+            
+            Be direct, professional, and use bullet points.
+            """
+            try:
+                response = client.models.generate_content(
+                    model='gemini-3-flash-preview',
+                    contents=prompt
+                )
+                if response and response.text:
+                    briefing_payload["narrative_raw"] = response.text
+            except Exception as ai_e:
+                print(f"[AnalystAgent] Briefing AI Error: {ai_e}")
+                
+        return briefing_payload
+
     async def _update_sentiment_embedding(self, hotel_id: str, meta_update: Dict[str, Any]) -> bool:
         """Generates and saves the sentiment embedding. Returns True on success."""
         try:
