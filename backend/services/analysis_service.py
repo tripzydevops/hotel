@@ -597,40 +597,44 @@ async def perform_market_analysis(
                 intraday_events = []
                 seen_intraday = set()
                 
-                # [KAİZEN] Multi-Vendor Price Extraction
-                # Why: A single scan often finds multiple vendors with different prices.
-                # Previously, we only added the LEAD price. Now we include all vendors
-                # from the parity_offers/offers arrays to show a richer price story.
+                # [KAİZEN] Multi-Vendor Price Extraction (Refined)
+                # Why: A single scan often finds 10+ vendors. We only want to show
+                # the "story" without noise. We now only add the Primary price
+                # and the single lowest Market price from that scan if it differs.
                 for l in logs:
                     # 1. Primary Matched Price
                     lp, _, _ = get_price_for_room(l, room_type, allowed_room_names_map)
+                    primary_p = None
                     if lp and lp > 0:
-                        rounded_lp = round(float(lp), 2)
-                        if rounded_lp not in seen_intraday:
+                        primary_p = round(float(lp), 2)
+                        if primary_p not in seen_intraday:
                             intraday_events.append({
-                                "price": rounded_lp,
+                                "price": primary_p,
                                 "recorded_at": l.get("recorded_at"),
                                 "vendor": l.get("vendor") or "Primary"
                             })
-                            seen_intraday.add(rounded_lp)
+                            seen_intraday.add(primary_p)
                     
-                    # 2. Secondary Vendor Prices (Parity)
-                    # We only extract parity prices for "Standard" requests to avoid
-                    # mixing premium room prices with standard parity data.
+                    # 2. Market Low Price (Grouped)
                     is_std_req = not room_type or any(s in room_type.lower() for s in ["standard", "standart"])
                     if is_std_req:
                         other_offers = l.get("parity_offers") or l.get("offers") or []
+                        parity_prices = []
                         for offer in other_offers:
                             op = _extract_price(offer.get("price"))
                             if op and op > 0:
-                                rounded_op = round(float(op), 2)
-                                if rounded_op not in seen_intraday:
-                                    intraday_events.append({
-                                        "price": rounded_op,
-                                        "recorded_at": l.get("recorded_at"),
-                                        "vendor": offer.get("vendor") or "Other"
-                                    })
-                                    seen_intraday.add(rounded_op)
+                                parity_prices.append((round(float(op), 2), offer.get("vendor") or "Market"))
+                        
+                        if parity_prices:
+                            # Add ONLY the absolute lowest from this specific scan
+                            min_p, min_v = min(parity_prices, key=lambda x: x[0])
+                            if min_p != primary_p and min_p not in seen_intraday:
+                                intraday_events.append({
+                                    "price": min_p,
+                                    "recorded_at": l.get("recorded_at"),
+                                    "vendor": f"Min: {min_v}"
+                                })
+                                seen_intraday.add(min_p)
 
                 # 1. Analyze the logs for this specific check-in date
                 latest = logs[0]
