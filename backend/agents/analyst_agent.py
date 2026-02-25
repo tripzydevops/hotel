@@ -914,36 +914,128 @@ class AnalystAgent:
             dna = target.get('pricing_dna')
             dna_str = dna if isinstance(dna, str) else "Semantic Hybrid (Premium Focus)"
             
-            prompt = f"""
-            You are a Senior Revenue Strategist. Generate a High-Depth {report_type} for {target['name']}.
+            if report_type == "Sentiment Deep-Dive":
+                # KAİZEN: Specialized Sentiment Analysis Prompt
+                breakdown = target.get("sentiment_breakdown", [])
+                mentions = target.get("guest_mentions", [])
+                reviews = target.get("reviews", [])
+                
+                prompt = f"""
+            You are a Senior Experience & Quality Consultant. Generate a High-Depth Sentiment Deep-Dive for {target['name']}.
+            TIMEFRAME: {timeframe}
+            
+            EXPERIENCE DATA:
+            - Overall Rating: {target.get('rating')} / 5.0
+            - Sentiment Pillars: {str(breakdown[:15])}
+            - Guest Voices: {str(mentions[:15])}
+            - Real Review Snippets: {str(reviews[:3])}
+            
+            MARKET CONTEXT:
+            - Benchmark Pricing: {avg_price} {target.get('preferred_currency', 'TRY')}
+            - Search Visibility: #{avg_rank}
+            
+            INSTRUCTIONS:
+            - Focus on GUEST PERCEPTION and OPERATIONAL EXCELLENCE.
+            - Identify "Silent Killers" (negative trends) and "Brand Champions" (competitive strengths).
+            - Analyze the 'Value' pillar in relation to the {avg_price} benchmark.
+            - Provide in-depth explanations of WHY guests feel a certain way based on keywords.
+            - Use a sharp, consultative, and highly analytical tone.
+            
+            REPORT SECTIONS:
+            1. [Experience Snapshot]: Emotional pulse summary.
+            2. [Pillar Performance]: Deep-dive into Service, Cleanliness, Location, and Value.
+            3. [The Guest Voice]: Analysis of specific keywords and persistent feedback loops.
+            4. [Value-Price Correlation]: Is the guest perception of 'Value' justified by the current rate?
+            5. [Operational Friction]: Where the property is failing its brand promise.
+            6. [Strategic Pivot]: SINGLE most impactful operational change to drive GRI growth.
+
+            Format: Use markdown bullet points. Be punchy, professional, and dense with insight.
+            """
+            elif report_type == "Yield Audit":
+                # KAİZEN: Specialized Revenue Leakage Prompt
+                prompt = f"""
+            You are a Forensic Revenue Auditor. Generate a High-Depth Yield Audit for {target['name']}.
+            TIMEFRAME: {timeframe}
+            
+            FINANCIAL CONTEXT:
+            - Market Rate Benchmark: {avg_price} {target.get('preferred_currency', 'TRY')}
+            - Your Search Rank: #{avg_rank}
+            - Parity Health: {len(parity_leaks)} leakage events detected.
+            - Current Pricing DNA: {dna_str}.
+            
+            PARITY LEAKS DATA:
+            {str(parity_leaks[:10])}
+            
+            INSTRUCTIONS:
+            - Focus on REVENUE LEAKAGE and CHANNEL INTEGRITY.
+            - Quantify the 'Yield Friction' caused by OTA undercutting.
+            - Analyze the correlation between Search Rank and Parity violations.
+            - Provide a deep explanation of how these leaks impact the hotel's direct booking strategy.
+            - Use a rigorous, financial-focused, and directive tone.
+            
+            REPORT SECTIONS:
+            1. [Integrity Frame]: Brief summary of current market discipline.
+            2. [Leakage Analysis]: Detailed breakdown of OTA undercutting events.
+            3. [Visibility Impact]: How search ranking is affected by price disparity.
+            4. [Revenue Attrition]: Estimated impact on direct-to-total booking ratios.
+            5. [Corrective Pivot]: IMMEDIATE action to take with channel managers or OTAs.
+
+            Format: Use markdown bullet points. Be sharp and data-driven.
+            """
+            elif report_type == "Competitive Battlefield":
+                # KAİZEN: Specialized Competitor Comparison Prompt
+                prompt = f"""
+            You are a Senior Market Strategist. Generate a High-Depth Competitive Battlefield report for {target['name']}.
+            TIMEFRAME: {timeframe}
+            
+            COMPETITIVE CONTEXT (The Bout):
+            - Rival: {rival['name'] if rival else 'General Market'}
+            - Similarity Score: {briefing_payload['metrics'].get('bout_similarity', 0)}%
+            - Your Rating: {target.get('rating')} vs Rival: {rival.get('rating') if rival else 'N/A'}
+            - Your Price: {target.get('current_price')} vs Rival: {rival.get('current_price') if rival else 'N/A'}
+            
+            INSTRUCTIONS:
+            - Focus on SUBSTITUTION RISK and MARKET CAPTURE.
+            - Analyze the "Semantic Overlap" — why would a guest choose one over the other?
+            - Compare Experience Pillars (Cleanliness, Service) between the two properties.
+            - Provide a deep explanation of the rival's strategy vs yours.
+            - Use a competitive, sharp, and strategic tone.
+            
+            REPORT SECTIONS:
+            1. [Battlefield Frame]: Summary of the competitive landscape.
+            2. [The Bout]: Comparative analysis of strengths and vulnerabilities.
+            3. [Substitution Risk]: Quantify the risk of guests switching to the rival.
+            4. [Sentiment Variance]: Where do guests perceive the most difference?
+            5. [Victory Pivot]: Key move to outperform the rival in the next 30 days.
+
+            Format: Use markdown bullet points. Be punchy and professional.
+            """
+            else: # Strategic Market Pulse (Default)
+                prompt = f"""
+            You are a Senior Revenue Strategist. Generate a High-Depth Strategic Market Pulse for {target['name']}.
             TIMEFRAME: {timeframe}
             
             COMMERCIAL CONTEXT:
-            - Guest Perception (GRI): {target.get('rating')} / 5.0 (from {target.get('review_count', 0)} reviews).
-            - Top Sentiment: {sentiment_summary[:300]}
-            - Market Rate Benchmark ({days}d): {avg_price} {target.get('preferred_currency', 'TRY')}.
+            - Guest Perception (GRI): {target.get('rating')} / 5.0 from {target.get('review_count', 0)} reviews.
+            - Market Rate Benchmark: {avg_price} {target.get('preferred_currency', 'TRY')}.
             - Search Visibility Rank: #{avg_rank}.
-            - Current Pricing DNA: {dna_str}.
-            - Parity Health: {len(parity_leaks)} leakage events detected.
+            - Pricing DNA: {dna_str}.
+            - Top Sentiment: {sentiment_summary[:300]}
             
-            {f"COMPETITIVE CONTEXT (The Bout): {rival['name']} with {briefing_payload['metrics']['bout_similarity']}% semantic overlap." if rival else "SCOPE: General market positioning without direct rival benchmarking."}
-
             INSTRUCTIONS:
-            - Start with a single 'Executive Frame' sentence explaining what this report is (e.g., "This 30-day competitive audit analyzes {target['name']}'s positioning against {rival['name'] if rival else 'the market'}").
-            - Do NOT just restate the numbers. ANALYZE them.
-            - Explain the impact of the Search Rank on potential revenue capture.
-            - Connect Sentiment (GRI) to the Pricing DNA strategy.
-            - If Parity leaks exist, quantify the 'Yield Friction' risk.
+            - Focus on MARKET POSITIONING and PRICE ELASTICITY.
+            - Analyze the "Health" of the current rate relative to guest satisfaction.
+            - Provide deep insight into how the Pricing DNA aligns with the current market pulse.
             - Use a professional, sharp, and directive tone.
             
             REPORT SECTIONS:
-            1. [Contextual Frame]: Briefly define the report scope and timeframe.
-            2. [Market Battlefield]: Executive summary of market positioning.
-            3. [Yield Friction]: Analysis of revenue losing to OTA undercutting or visibility drops.
-            4. [The Bout/Market Stance]: {f"Deep comparison vs {rival['name']}. Analyze substitution risk." if rival else "Strategic market alignment summary."}
-            5. [Executive Pivot]: SINGLE most important strategic move for the GM to execute today.
+            1. [Contextual Frame]: Summary of market stance.
+            2. [Market Battlefield]: Performance analysis against the {timeframe} baseline.
+            3. [Visibility Pulse]: Analysis of search rank and its revenue impact.
+            4. [The DNA Match]: Is the strategy aligned with guest expectations?
+            5. [Executive Pivot]: SINGLE most important strategic move for today.
 
-            Format: Use markdown bullet points. Be punchy and professional.
+            Format: Use markdown bullet points. Be punchy, analytical, and professional.
             """
             try:
                 response = client.models.generate_content(
@@ -986,7 +1078,12 @@ class AnalystAgent:
                     "target_meta": {
                         "name": payload["target"]["name"],
                         "location": payload["target"]["location"]
-                    }
+                    },
+                    "rival_meta": {
+                        "name": payload["rival"]["name"],
+                        "location": payload["rival"]["location"]
+                    } if payload.get("rival") else None,
+                    "context": payload.get("context", {})
                 },
                 "created_by": user_id
             }
