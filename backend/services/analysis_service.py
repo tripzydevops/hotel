@@ -193,6 +193,10 @@ def get_price_for_room(
     # 1. Define Request Type (Standard vs Specific)
     # We treat it as a Standard request if the prompt is empty or contains base keywords (Standard, Classic, etc.)
     # and DOES NOT contain specific premium keywords (Suite, Deluxe, Family).
+    target_low = target_room_type.lower().strip()
+    is_premium = any(k in target_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile", "balcony", "view"])
+    is_base = not target_low or target_low == "oda" or any(v in target_low for v in ["standard", "standart", "base", "klasik", "classic", "eco", "promo"])
+    
     # A request is "Standard" if it's explicitly base OR empty, and NOT specifically premium.
     is_standard_request = (is_base and not is_premium) or not target_room_type
 
