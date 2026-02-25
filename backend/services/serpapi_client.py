@@ -192,6 +192,13 @@ class ApiKeyManager:
         await asyncio.gather(*tasks)
 
         with self._lock:
+            # TRIGGER PROACTIVE ROTATION (Kaizen 2026)
+            # If the current key was just found to be exhausted during quota fetch, rotate now
+            curr_key = self._keys[self._current_index]
+            if curr_key in self._exhausted_keys:
+                logger.info(f"Key {self._current_index + 1} found exhausted during status check. Rotating...")
+                self._rotate_key_locked("proactive_status_check")
+
             for i, key in enumerate(self._keys):
                 key_info = {
                     "index": i + 1,
