@@ -103,6 +103,7 @@ class AnalystAgent:
                 if not hotel_id:
                     continue
 
+                sentiment_changed = False
                 if status != "success" or not price_data:
                     error_detail = "Unknown Error"
                     if isinstance(price_data, dict) and price_data.get("error"):
@@ -363,11 +364,6 @@ class AnalystAgent:
                     # meta_update["currency"] = currency # Column check
                 
                 # [Smart Memory - Sentiment Merging Logic]
-                # EXPLANATION: We maintain historical context by merging existing
-                # categories from the database with new ones from the current scan result.
-                # This prevents old (but still relevant) issues from disappearing 
-                # if the latest guest reviews don't mention them.
-                sentiment_changed = False
                 if "reviews_breakdown" in price_data:
                     new_breakdown = price_data["reviews_breakdown"]
                     merged_breakdown = merge_sentiment_breakdowns(current_breakdown, new_breakdown)

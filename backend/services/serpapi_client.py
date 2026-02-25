@@ -570,15 +570,22 @@ class SerpApiClient:
         rank = None
         if properties and best_match:
             try:
-                # Find index in properties list (1-based)
-                rank = properties.index(best_match) + 1
-            except ValueError:
+                # Robust Rank Detection: Match by token or name if exact object reference fails
+                target_token = best_match.get("property_token") or best_match.get("hotel_id")
+                target_name = best_match.get("name", "").lower()
+                
+                for idx, prop in enumerate(properties):
+                    prop_token = prop.get("property_token") or prop.get("hotel_id")
+                    if (target_token and prop_token == target_token) or (prop.get("name", "").lower() == target_name):
+                        rank = idx + 1
+                        break
+            except Exception:
                 pass
 
         return {
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": price, "currency": default_currency, "source": "serpapi",
-            "vendor": best_match.get("deal_description") or best_match.get("vendor") or (best_match.get("featured_prices")[0].get("source") if best_match.get("featured_prices") else "Unknown"),
+            "vendor": best_match.get("deal_description") or best_match.get("vendor") or (best_match.get("featured_prices")[0].get("source") if best_match.get("featured_prices") else "SerpApi"),
             "rating": best_match.get("overall_rating"),
             "review_count": best_match.get("reviews"),
             "stars": best_match.get("extracted_hotel_class"),
