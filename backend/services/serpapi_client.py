@@ -89,6 +89,15 @@ class ApiKeyManager:
         with self._lock:
             if not self._keys:
                 raise ValueError("No API keys configured")
+            
+            # PROACTIVE ROTATION (Kaizen 2026)
+            # If the current key is already known to be exhausted (via real-time quota check),
+            # we skip it immediately instead of waiting for a 403 error.
+            current_key = self._keys[self._current_index]
+            if current_key in self._exhausted_keys:
+                logger.info(f"Key {self._current_index + 1} known to be exhausted. Proactively rotating...")
+                self._rotate_key_locked("proactive_exhaustion")
+            
             key = self._keys[self._current_index]
             self._usage_counts[key] = self._usage_counts.get(key, 0) + 1
             return key
@@ -119,39 +128,43 @@ class ApiKeyManager:
     def rotate_key(self, reason: str = "quota_exhausted", is_permanent: bool = True) -> bool:
         """Mark current key as exhausted and rotate to next available key."""
         with self._lock:
-            if not self._keys:
-                return False
+            return self._rotate_key_locked(reason, is_permanent)
 
-            current_key = self._keys[self._current_index]
-            
-            # EXPLANATION: Smart Rotation logic
-            if is_permanent:
-                self._exhausted_keys[current_key] = datetime.now()
-                logger.warning(f"Key {self._current_index + 1} PERMANENTLY exhausted (24h cooldown). Reason: {reason}")
-            else:
-                logger.info(f"Key {self._current_index + 1} hitting temporary limit (429). Rotating to next key...")
-            
-            # Try to find next available key
-            attempts = 0
-            while attempts < len(self._keys):
-                self._current_index = (self._current_index + 1) % len(self._keys)
-                next_key = self._keys[self._current_index]
-                
-                # Check if the next key is currently BANNED
-                if next_key in self._exhausted_keys:
-                    exhaust_time = self._exhausted_keys[next_key]
-                    if datetime.now() - exhaust_time > self._exhaustion_cooldown:
-                        del self._exhausted_keys[next_key]
-                        logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)")
-                        return True
-                else:
-                    logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)}")
-                    return True
-                
-                attempts += 1
-            
-            logger.warning("All API keys are exhausted or banned!")
+    def _rotate_key_locked(self, reason: str = "quota_exhausted", is_permanent: bool = True) -> bool:
+        """Internal rotation logic (expects lock)."""
+        if not self._keys:
             return False
+
+        current_key = self._keys[self._current_index]
+        
+        # EXPLANATION: Smart Rotation logic
+        if is_permanent:
+            self._exhausted_keys[current_key] = datetime.now()
+            logger.warning(f"Key {self._current_index + 1} PERMANENTLY exhausted (24h cooldown). Reason: {reason}")
+        else:
+            logger.info(f"Key {self._current_index + 1} hitting temporary limit (429). Rotating to next key...")
+        
+        # Try to find next available key
+        attempts = 0
+        while attempts < len(self._keys):
+            self._current_index = (self._current_index + 1) % len(self._keys)
+            next_key = self._keys[self._current_index]
+            
+            # Check if the next key is currently BANNED
+            if next_key in self._exhausted_keys:
+                exhaust_time = self._exhausted_keys[next_key]
+                if datetime.now() - exhaust_time > self._exhaustion_cooldown:
+                    del self._exhausted_keys[next_key]
+                    logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)")
+                    return True
+            else:
+                logger.info(f"Rotated to key {self._current_index + 1}/{len(self._keys)}")
+                return True
+            
+            attempts += 1
+        
+        logger.warning("All API keys are exhausted or banned!")
+        return False
     
     def reset_all(self):
         """Reset all keys."""
