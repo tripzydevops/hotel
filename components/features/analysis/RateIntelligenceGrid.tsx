@@ -8,13 +8,19 @@ import {
   TrendingDown,
   TrendingUp,
   AlertTriangle,
+  History,
+  Clock,
 } from "lucide-react";
-// Deployment Poke: Global Pulse Phase 1 Integrated - 2026-02-14
-import React, { useMemo, useState } from 'react';
 
 interface Competitor {
   id: string;
   name: string;
+}
+
+interface IntradayEvent {
+  price: number;
+  recorded_at: string;
+  vendor?: string;
 }
 
 interface DailyPrice {
@@ -23,7 +29,13 @@ interface DailyPrice {
   comp_avg: number;
   vs_comp: number;
   is_estimated_target?: boolean;
-  competitors: { name: string; price: number; is_estimated?: boolean }[];
+  intraday_events?: IntradayEvent[];
+  competitors: {
+    name: string;
+    price: number;
+    is_estimated?: boolean;
+    intraday_events?: IntradayEvent[];
+  }[];
 }
 
 interface RateIntelligenceGridProps {
@@ -32,6 +44,38 @@ interface RateIntelligenceGridProps {
   currency: string;
   hotelName?: string;
 }
+
+const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol: string }) => {
+  if (!events || events.length <= 1) return null;
+
+  return (
+    <div className="absolute top-1 left-1 group/intraday z-20">
+      <div className="p-0.5 rounded bg-white/5 border border-white/10 text-white/40 hover:text-[var(--soft-gold)] transition-colors cursor-help">
+        <Clock className="w-2 h-2" />
+      </div>
+
+      {/* Tooltip Content */}
+      <div className="absolute top-0 left-full ml-2 w-32 p-2 bg-[#0a1622]/95 backdrop-blur-md border border-[var(--soft-gold)]/20 rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
+        <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-white/10">
+          <History className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
+          <span className="text-[8px] font-black uppercase text-white tracking-widest">Intraday</span>
+        </div>
+        <div className="space-y-1">
+          {events.map((ev, idx) => (
+            <div key={idx} className="flex items-center justify-between gap-1">
+              <span className="text-[7px] font-bold text-white/40">
+                {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <span className="text-[8px] font-black text-white">
+                {symbol}{ev.price.toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",
@@ -66,8 +110,8 @@ export default function RateIntelligenceGrid({
     competitors && competitors.length > 0
       ? competitors
       : Array.from(
-          new Set(dailyPrices.flatMap((d) => d.competitors.map((c) => c.name))),
-        ).map((name) => ({ id: name, name })); // Mock ID as name
+        new Set(dailyPrices.flatMap((d) => d.competitors.map((c) => c.name))),
+      ).map((name) => ({ id: name, name })); // Mock ID as name
 
   // Sort dates ascending
   const sortedData = [...dailyPrices].sort(
@@ -176,18 +220,21 @@ export default function RateIntelligenceGrid({
                   >
                     {row.price > 0 ? (
                       <div className={`flex flex-col items-center ${row.is_estimated_target ? "opacity-60 grayscale-[0.5]" : ""}`}>
+                        {/* Intraday Indicator */}
+                        <IntradayIndicator events={row.intraday_events || []} symbol={symbol} />
+
                         {row.is_estimated_target && (
-                            <div className="absolute top-1.5 right-1.5 opacity-100 z-10">
-                              <div 
-                                className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-400/20 bg-amber-400/10 text-amber-400 animate-pulse cursor-help"
-                                title={t("common.estimated") || "ESTIMATED / SOLD OUT"}
-                              >
-                                <AlertTriangle className="w-2 h-2" />
-                                <span className="text-[7px] font-black uppercase tracking-tighter whitespace-nowrap">
-                                  {t("common.estimated") || "ESTIMATED"}
-                                </span>
-                              </div>
+                          <div className="absolute top-1.5 right-1.5 opacity-100 z-10">
+                            <div
+                              className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-400/20 bg-amber-400/10 text-amber-400 animate-pulse cursor-help"
+                              title={t("common.estimated") || "ESTIMATED / SOLD OUT"}
+                            >
+                              <AlertTriangle className="w-2 h-2" />
+                              <span className="text-[7px] font-black uppercase tracking-tighter whitespace-nowrap">
+                                {t("common.estimated") || "ESTIMATED"}
+                              </span>
                             </div>
+                          </div>
                         )}
                         <span
                           className={`text-sm font-black ${isMyPriceLowest ? "text-[var(--optimal-green)]" : "text-[var(--soft-gold)]"} ${row.is_estimated_target ? "decoration-dotted underline decoration-white/30" : ""}`}
@@ -253,9 +300,12 @@ export default function RateIntelligenceGrid({
                       >
                         {price > 0 ? (
                           <div className={`flex flex-col items-center ${isEstimated ? "opacity-60 grayscale-[0.5]" : ""}`}>
+                            {/* Intraday Indicator */}
+                            <IntradayIndicator events={compPriceData?.intraday_events || []} symbol={symbol} />
+
                             {isEstimated && (
                               <div className="absolute top-1.5 right-1.5 opacity-100 z-10">
-                                <div 
+                                <div
                                   className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-400/20 bg-amber-400/10 text-amber-400 animate-pulse cursor-help"
                                   title={t("common.estimated") || "ESTIMATED / SOLD OUT"}
                                 >
@@ -286,11 +336,11 @@ export default function RateIntelligenceGrid({
                           </div>
                         ) : isVerificationFailed ? (
                           <div className="flex flex-col items-center justify-center opacity-70">
-                             <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price not available for this room type">
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest whitespace-nowrap">
-                                  N/A
-                                </span>
-                             </div>
+                            <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price not available for this room type">
+                              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest whitespace-nowrap">
+                                N/A
+                              </span>
+                            </div>
                           </div>
                         ) : (
                           <span className="text-xl text-white/10">-</span>

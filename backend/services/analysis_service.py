@@ -584,16 +584,32 @@ async def perform_market_analysis(
 
             for d_str, logs in checkin_groups.items():
                 if d_str not in date_price_map:
-                    date_price_map[d_str] = {"target": None, "target_is_estimated": False, "competitors": []}
+                    date_price_map[d_str] = {
+                        "target": None, 
+                        "target_is_estimated": False, 
+                        "target_intraday": [],
+                        "competitors": []
+                    }
                 
-                # EXPLANATION: Rate Calendar Continuity (Vertical Fill)
-                # We prioritize fresh data for the specific check-in date.
-                # If the latest scan failed (e.g., Sold Out), we look back 7 days for 
-                # a previous successful scan for the SAME check-in date.
-                # If that ALSO fails, we fall back to ANY recent valid price for this hotel.
-                # This ensures the Grid stays populated while clearly marking the data as 'Estimated'.
-                
-                # Analyze the logs for this specific check-in date
+                # EXPLANATION: Intraday Event Collection
+                # We collect ALL unique successful scan prices for this check-in date
+                # to show the "price story" of the day in the UI.
+                intraday_events = []
+                seen_intraday = set()
+                for l in logs:
+                    lp, _, _ = get_price_for_room(l, room_type, allowed_room_names_map)
+                    if lp and lp > 0:
+                        # Normalize to 2 decimal places for comparison
+                        rounded_lp = round(float(lp), 2)
+                        if rounded_lp not in seen_intraday:
+                            intraday_events.append({
+                                "price": rounded_lp,
+                                "recorded_at": l.get("recorded_at"),
+                                "vendor": l.get("vendor")
+                            })
+                            seen_intraday.add(rounded_lp)
+
+                # 1. Analyze the logs for this specific check-in date
                 latest = logs[0]
                 price_val, _, _ = get_price_for_room(latest, room_type, allowed_room_names_map)
                 is_est = latest.get("is_estimated", False)
@@ -637,11 +653,13 @@ async def perform_market_analysis(
                     if hid == target_hotel_id:
                         date_price_map[d_str]["target"] = converted_price
                         date_price_map[d_str]["target_is_estimated"] = is_est
+                        date_price_map[d_str]["target_intraday"] = intraday_events
                     else:
                         date_price_map[d_str]["competitors"].append({
                             "name": hotel_name, 
                             "price": converted_price,
-                            "is_estimated": is_est
+                            "is_estimated": is_est,
+                            "intraday_events": intraday_events
                         })
         
         range_start = datetime.now()
@@ -767,6 +785,7 @@ async def perform_market_analysis(
                 "date": d_str,
                 "price": round(float(target_val), 2) if target_val is not None else None,
                 "is_estimated_target": data.get("target_is_estimated", False) if data else False,
+                "intraday_events": data.get("target_intraday", []) if data else [],
                 "is_sellout": is_day_sellout, # Tag for frontend "Possible Sellout"
                 "comp_avg": round(float(comp_avg), 2),
                 "vs_comp": round(float(vs_comp), 1),
