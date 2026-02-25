@@ -12,7 +12,12 @@ export function getStandardizedRoomCategory(rawName: string): string {
     lower.includes("süit") ||
     lower.includes("junior") ||
     lower.includes("executive") ||
-    lower.includes("king suite")
+    lower.includes("king suite") ||
+    lower.includes("başkanlık") || // Presidential
+    lower.includes("kral") || // King (Suite context)
+    lower.includes("balayı") || // Honeymoon
+    lower.includes("dubleks") || // Duplex
+    lower.includes("loft")
   ) {
     return "Suite";
   }
@@ -22,7 +27,9 @@ export function getStandardizedRoomCategory(rawName: string): string {
     lower.includes("family") ||
     lower.includes("aile") ||
     lower.includes("connection") ||
-    lower.includes("connected")
+    lower.includes("connected") ||
+    lower.includes("bağlantılı") ||
+    lower.includes("geniş") // Large/Spacious
   ) {
     return "Family";
   }
@@ -32,7 +39,11 @@ export function getStandardizedRoomCategory(rawName: string): string {
     lower.includes("deluxe") ||
     lower.includes("superior") ||
     lower.includes("premium") ||
-    lower.includes("corner")
+    lower.includes("corner") ||
+    lower.includes("rezidans") ||
+    lower.includes("residence") ||
+    lower.includes("business") ||
+    lower.includes("executive")
   ) {
     return "Deluxe";
   }
@@ -44,12 +55,15 @@ export function getStandardizedRoomCategory(rawName: string): string {
     lower.includes("classic") ||
     lower.includes("klasik") ||
     lower.includes("double") ||
-    lower.includes("king") || // Often King Room is just a standard room with big bed
+    lower.includes("king") ||
     lower.includes("queen") ||
     lower.includes("twin") ||
     lower.includes("single") ||
     lower.includes("tek") ||
-    lower.includes("çift")
+    lower.includes("çift") ||
+    lower.includes("ekonomik") ||
+    lower.includes("promo") ||
+    lower.includes("yan oda")
   ) {
     return "Standard";
   }

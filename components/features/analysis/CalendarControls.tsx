@@ -50,9 +50,22 @@ export default function CalendarControls({
 
   // Helper to find the first actual room type for a selected category
   const getFirstRoomForCategory = (category: string) => {
-    return availableRoomTypes.find(
+    const matches = availableRoomTypes.filter(
       (rt) => getStandardizedRoomCategory(rt) === category
     );
+
+    if (matches.length === 0) return undefined;
+
+    // KAIZEN: If category is Standard, prioritize those that are actually named "Standard"
+    // to avoid picking "Başkanlık" or other miscategorized rooms first.
+    if (category === "Standard") {
+      const explicitStandard = matches.find(rt =>
+        rt.toLowerCase().includes("standard") || rt.toLowerCase().includes("standart")
+      );
+      if (explicitStandard) return explicitStandard;
+    }
+
+    return matches[0];
   };
 
   const [isCompDropdownOpen, setIsCompDropdownOpen] = useState(false);
@@ -81,16 +94,16 @@ export default function CalendarControls({
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/10 shadow-lg">
-      
+
       {/* LEFT: Room Type Selector */}
       <div className="flex items-center gap-3 w-full md:w-auto">
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[var(--soft-gold)]">
           <BedDouble className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Room Type</span>
         </div>
-        
+
         <div className="relative min-w-[180px]">
-           <select
+          <select
             value={getStandardizedRoomCategory(roomType)}
             onChange={(e) => {
               const category = e.target.value;
@@ -146,18 +159,17 @@ export default function CalendarControls({
       <div className="relative w-full md:w-auto" ref={dropdownRef}>
         <button
           onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
-          className={`flex items-center justify-between gap-3 w-full md:w-auto min-w-[200px] px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${
-            isCompDropdownOpen
+          className={`flex items-center justify-between gap-3 w-full md:w-auto min-w-[200px] px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${isCompDropdownOpen
               ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)] text-white"
               : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2">
             <Filter className="w-3.5 h-3.5" />
             <span>
-                {excludedHotelIds.length === 0 
-                    ? "All Competitors" 
-                    : `${competitors.length - excludedHotelIds.length} Selected`}
+              {excludedHotelIds.length === 0
+                ? "All Competitors"
+                : `${competitors.length - excludedHotelIds.length} Selected`}
             </span>
           </div>
           <ChevronDown className={`w-3 h-3 transition-transform ${isCompDropdownOpen ? "rotate-180" : ""}`} />
@@ -166,58 +178,57 @@ export default function CalendarControls({
         {isCompDropdownOpen && (
           <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
             <div className="max-h-[300px] overflow-y-auto space-y-1 custom-scrollbar">
-                {competitors.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-white/40 italic">
-                        No competitors found for this period.
-                    </div>
-                ) : (
-                    competitors.map((comp) => {
-                        const isSelected = !excludedHotelIds.includes(comp.id);
-                        return (
-                        <label
-                            key={comp.id}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer group transition-colors"
-                        >
-                            <div
-                            className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                isSelected
-                                ? "bg-[var(--optimal-green)] border-[var(--optimal-green)] text-[var(--deep-ocean)]"
-                                : "border-white/20 bg-transparent group-hover:border-white/40"
-                            }`}
-                            >
-                            {isSelected && <Check className="w-2.5 h-2.5 stroke-[4]" />}
-                            </div>
-                            <input
-                            type="checkbox"
-                            className="hidden"
-                            checked={isSelected}
-                            onChange={() => toggleHotel(comp.id)}
-                            />
-                            <span className={`text-xs truncate transition-colors ${isSelected ? "text-white font-medium" : "text-white/40 group-hover:text-white/80"}`}>
-                            {comp.name}
-                            </span>
-                        </label>
-                        );
-                    })
-                )}
+              {competitors.length === 0 ? (
+                <div className="p-4 text-center text-xs text-white/40 italic">
+                  No competitors found for this period.
+                </div>
+              ) : (
+                competitors.map((comp) => {
+                  const isSelected = !excludedHotelIds.includes(comp.id);
+                  return (
+                    <label
+                      key={comp.id}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer group transition-colors"
+                    >
+                      <div
+                        className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isSelected
+                            ? "bg-[var(--optimal-green)] border-[var(--optimal-green)] text-[var(--deep-ocean)]"
+                            : "border-white/20 bg-transparent group-hover:border-white/40"
+                          }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[4]" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={isSelected}
+                        onChange={() => toggleHotel(comp.id)}
+                      />
+                      <span className={`text-xs truncate transition-colors ${isSelected ? "text-white font-medium" : "text-white/40 group-hover:text-white/80"}`}>
+                        {comp.name}
+                      </span>
+                    </label>
+                  );
+                })
+              )}
             </div>
-            
+
             {/* Actions */}
             {competitors.length > 0 && (
-                <div className="pt-2 mt-2 border-t border-white/10 flex gap-2">
-                    <button 
-                        onClick={() => onExcludedChange([])} // Select All = Clear Excluded
-                        className="flex-1 py-1.5 text-[10px] font-bold text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/10 rounded"
-                    >
-                        Select All
-                    </button>
-                    <button 
-                        onClick={() => onExcludedChange(competitors.map(c => c.id))} // Deselect All = Exclude All
-                        className="flex-1 py-1.5 text-[10px] font-bold text-white/40 hover:text-white hover:bg-white/5 rounded"
-                    >
-                        Clear
-                    </button>
-                </div>
+              <div className="pt-2 mt-2 border-t border-white/10 flex gap-2">
+                <button
+                  onClick={() => onExcludedChange([])} // Select All = Clear Excluded
+                  className="flex-1 py-1.5 text-[10px] font-bold text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/10 rounded"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={() => onExcludedChange(competitors.map(c => c.id))} // Deselect All = Exclude All
+                  className="flex-1 py-1.5 text-[10px] font-bold text-white/40 hover:text-white hover:bg-white/5 rounded"
+                >
+                  Clear
+                </button>
+              </div>
             )}
           </div>
         )}

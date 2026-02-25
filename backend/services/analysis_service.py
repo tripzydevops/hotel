@@ -193,18 +193,25 @@ def get_price_for_room(
     # 1. Define Request Type (Standard vs Specific)
     # We treat it as a Standard request if the prompt is empty or contains base keywords (Standard, Classic, etc.)
     # and DOES NOT contain specific premium keywords (Suite, Deluxe, Family).
-    target_low = target_room_type.lower().strip()
-    is_premium = any(k in target_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile", "balcony", "view"])
-    is_base = not target_low or target_low == "oda" or any(v in target_low for v in ["standard", "standart", "base", "klasik", "classic", "eco", "promo"])
-    
     # A request is "Standard" if it's explicitly base OR empty, and NOT specifically premium.
     is_standard_request = (is_base and not is_premium) or not target_room_type
+
+    # KAIZEN: "Premium Shield"
+    # Even if is_standard_request is True, we must ensure the candidate room 
+    # doesn't contain heavy premium keywords that might have been miscategorized.
+    premium_shields = ["presidential", "başkanlık", "kral", "king suite", "queen suite", "balayı", "honeymoon", "dubleks", "duplex"]
 
     # 2. Standard Fallback: Lowest price in room_types (for Standard requests only)
     if is_standard_request and r_types:
         valid_prices = []
         for r in r_types:
             if not isinstance(r, dict): continue
+            r_name = (r.get("name") or "").lower()
+            
+            # Skip rooms that hit the premium shield
+            if any(k in r_name for k in premium_shields):
+                continue
+                
             p = _extract_price(r.get("price"))
             if p is not None:
                 valid_prices.append((p, r.get("name") or "Standard (Min)"))
