@@ -60,6 +60,7 @@ import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 import { motion } from "framer-motion";
 import { getCurrencySymbol } from "@/lib/utils";
 import { Sparkline } from "@/components/ui/Sparkline";
+import { useToast } from "@/components/ui/ToastContext";
 
 // Dynamic imports for heavy chart components (bundle-dynamic-imports)
 const MarketPositionChart = dynamic(
@@ -850,6 +851,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
 export default function ReportsPage() {
   const { t, locale } = useI18n();
   const { userId } = useAuth();
+  const { toast } = useToast();
   const supabase = createClient();
   const { data: dashboardData, loading: dashLoading } = useDashboard(userId, t);
 
@@ -879,8 +881,11 @@ export default function ReportsPage() {
         days: 30
       });
       setBriefing(res);
-    } catch (err) {
+      toast.success("Executive briefing generated successfully!");
+    } catch (err: any) {
       console.error("Briefing failed:", err);
+      const isQuota = err.message?.includes("RESOURCE_EXHAUSTED") || err.message?.includes("429");
+      toast.error(isQuota ? "AI Quota Exhausted. Please try again in ~90 minutes." : "Generation failed. Check logs.");
     } finally {
       setLoadingBriefing(false);
     }
@@ -1077,6 +1082,40 @@ export default function ReportsPage() {
   const handleOpenSession = (session: ScanSession) => {
     setSelectedSession(session);
     setIsSessionModalOpen(true);
+  };
+
+  /* ── ACTION: Download Saved Briefing PDF (Phase 4) ── */
+  const handleDownloadSavedBriefing = async (reportId: string) => {
+    try {
+      await api.exportSavedBriefingPdf(reportId);
+      toast.success("Downloading archived PDF...");
+    } catch (error) {
+      console.error("PDF Export Error:", error);
+      toast.error("Failed to download saved PDF.");
+    }
+  };
+
+  /* ── ACTION: View Saved Briefing Details (Phase 4) ── */
+  const handleViewSavedBriefing = async (reportId: string) => {
+    try {
+      const briefingRes = await api.getSavedBriefing(reportId);
+      if (briefingRes) {
+        // Transform saved format back to live format for the component
+        const displayBriefing = {
+          target: briefingRes.report_data.target_meta,
+          metrics: briefingRes.report_data.metrics,
+          narrative_raw: briefingRes.report_data.narrative
+        };
+
+        setBriefing(displayBriefing);
+        // Scroll to top to show the briefing layer
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.info("Archived briefing loaded.");
+      }
+    } catch (error) {
+      console.error("Fetch Briefing Error:", error);
+      toast.error("Failed to fetch archived briefing.");
+    }
   };
 
   const isLocked =
@@ -1602,7 +1641,72 @@ export default function ReportsPage() {
         )}
 
         {/* ═══════════════════════════════════════════════ */}
-        {/* ── SECTION 6: SCAN HISTORY (Collapsible) ──    */}
+        {/* ── SECTION 6: SAVED BRIEFINGS (Phase 4) ──     */}
+        {/* ═══════════════════════════════════════════════ */}
+        {data?.briefings?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card mb-8 border border-[var(--soft-gold)]/20 overflow-hidden"
+          >
+            <div className="p-5 border-b border-white/[0.06] bg-[var(--soft-gold)]/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
+                <h2 className="text-base font-bold text-white">
+                  Saved Agentic Briefings
+                </h2>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-2 py-1 rounded">
+                Archived Reports
+              </span>
+            </div>
+            <div className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Archive Date</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Briefing Title</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {data.briefings.map((b: any) => (
+                      <tr key={b.id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="px-6 py-4 text-sm text-[var(--text-muted)] font-medium">
+                          {new Date(b.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-bold text-white/90">
+                          {b.title || "Executive Briefing"}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleDownloadSavedBriefing(b.id)}
+                              className="p-2 rounded-lg bg-white/5 hover:bg-[var(--soft-gold)]/20 hover:text-[var(--soft-gold)] transition-colors"
+                              title="Download PDF"
+                            >
+                              <FileType className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleViewSavedBriefing(b.id)}
+                              className="p-2 rounded-lg bg-white/5 hover:bg-[var(--soft-gold)] text-white hover:text-[var(--deep-ocean)] transition-all"
+                            >
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* ── SECTION 7: SCAN HISTORY (Collapsible) ──    */}
         {/* ═══════════════════════════════════════════════ */}
         <div className="glass-card overflow-hidden border border-white/[0.06]">
           <button

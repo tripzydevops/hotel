@@ -584,6 +584,34 @@ class ApiClient {
     window.URL.revokeObjectURL(downloadUrl);
     document.body.removeChild(a);
   }
+
+  async exportSavedBriefingPdf(reportId: string): Promise<void> {
+    const token = await this.getToken();
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const url = `${API_BASE_URL}/api/reports/briefing/saved/${reportId}/pdf`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("Saved Briefing PDF Export failed");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `briefing_saved_${reportId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+  }
+
+  async getSavedBriefing(reportId: string): Promise<any> {
+    return this.fetch<any>(`/api/reports/briefing/${reportId}`);
+  }
 }
 
 export const api = new ApiClient();

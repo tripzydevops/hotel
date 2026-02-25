@@ -489,22 +489,36 @@ async def get_admin_feed_logic(limit: int = 50, db: Client = None) -> List[Dict[
 async def get_reports_logic(user_id: UUID, db: Client) -> JSONResponse:
     """Fetch data for reporting."""
     try:
+        # 1. Fetch Scan Sessions (Traditional reports)
         sessions_res = db.table("scan_sessions") \
             .select("*") \
             .eq("user_id", str(user_id)) \
             .order("created_at", desc=True) \
-            .limit(100) \
+            .limit(50) \
             .execute()
         
-        filtered = [s for s in (sessions_res.data or []) if (s.get("hotels_count") or 0) > 0]
+        sessions = [s for s in (sessions_res.data or []) if (s.get("hotels_count") or 0) > 0]
+        
+        # 2. Fetch Agentic Briefings (Phase 4 saved reports)
+        briefings_res = db.table("reports") \
+            .select("id, title, report_type, created_at") \
+            .eq("report_type", "briefing") \
+            .eq("created_by", str(user_id)) \
+            .order("created_at", desc=True) \
+            .limit(50) \
+            .execute()
+        
+        briefings = briefings_res.data or []
         
         summary = {
-            "total_scans": len(filtered),
+            "total_scans": len(sessions),
+            "total_briefings": len(briefings),
             "system_health": "100%"
         }
         
         return JSONResponse(content=jsonable_encoder({
-            "sessions": filtered,
+            "sessions": sessions,
+            "briefings": briefings,
             "weekly_summary": summary
         }))
     except Exception as e:

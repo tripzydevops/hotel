@@ -21,26 +21,173 @@ async def generate_briefing(
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
-    """
-    EXPLANATION: Agentic Briefing Initiation
-    This endpoint serves as the bridge between the frontend 'Agentic Briefing' button 
-    and the high-reasoning AnalystAgent. It calculates metrics and triggers the 
-    Gemini-3-Flash narrative module.
-    """
-    from backend.agents.analyst_agent import AnalystAgent
-    agent = AnalystAgent(db)
-    
-    briefing = await agent.generate_executive_briefing(
-        user_id=current_user.id,
-        target_hotel_id=request.target_hotel_id,
-        rival_hotel_id=request.rival_hotel_id,
-        days=request.days
-    )
-    
-    if "error" in briefing:
-        raise HTTPException(status_code=400, detail=briefing["error"])
-        
     return briefing
+
+@router.get("/briefing/{report_id}")
+async def get_briefing_detail(
+    report_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Fetches the full details of a saved Agentic Briefing.
+    """
+    res = db.table("reports").select("*").eq("id", str(report_id)).eq("created_by", str(current_user.id)).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Briefing not found")
+    return res.data
+
+@router.get("/briefing/saved/{report_id}/pdf")
+async def export_saved_briefing_pdf(
+    report_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    EXPLANATION: Saved Briefing PDF Export
+    Instead of regenerating the briefing (which consumes AI tokens), this route
+    renders a PDF from the previously saved narrative and metrics in the 'reports' table.
+    """
+    from xhtml2pdf import pisa
+    import io
+    
+    res = db.table("reports").select("*").eq("id", str(report_id)).eq("created_by", str(current_user.id)).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Briefing not found")
+        
+    data = res.data
+    report_data = data.get("report_data", {})
+    metrics = report_data.get("metrics", {})
+    narrative = report_data.get("narrative", "No narrative saved.")
+    target_meta = report_data.get("target_meta", {"name": "Unknown", "location": "Unknown"})
+    
+    # Reuse the same 'Deep Ocean & Soft Gold' template
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            @page {{ size: A4; margin: 0; }}
+            body {{ 
+                font-family: 'Helvetica', sans-serif; 
+                background-color: #0a192f; 
+                color: #e6f1ff; 
+                margin: 0; 
+                padding: 40px;
+            }}
+            .report-wrapper {{ width: 100%; }}
+            .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
+            h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
+            .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
+            
+            .grid-table {{ width: 100%; border-spacing: 20px 0; }}
+            .card {{ 
+                background-color: #112240; 
+                border: 1px solid #d4af37; 
+                border-radius: 12px; 
+                padding: 20px; 
+                margin-bottom: 20px;
+                vertical-align: top;
+            }}
+            h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
+            
+            .metric-table {{ width: 100%; shadow: none; }}
+            .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
+            .metric-label {{ color: #8892b0; font-size: 12px; }}
+            
+            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; }}
+            .bout-sim {{ font-size: 24px; color: #d4af37; text-align: center; margin: 20px 0; }}
+            
+            .footer {{ 
+                margin-top: 50px; 
+                text-align: center; 
+                color: #8892b0; 
+                font-size: 12px; 
+                border-top: 1px solid #233554;
+                padding-top: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="report-wrapper">
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <h1>Executive Briefing (Saved)</h1>
+                        <div class="cadence">{target_meta['name']} | Historical Pulse Snapshot</div>
+                    </td>
+                    <td style="text-align: right; vertical-align: bottom;">
+                        <div class="cadence">{data['created_at'][:10]}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="grid-table">
+                <tr>
+                    <td width="50%">
+                        <div class="card">
+                            <h2>Market Battlefield</h2>
+                            <table class="metric-table">
+                                <tr>
+                                    <td>
+                                        <div class="metric-val">{metrics.get('avg_price', 0)}</div>
+                                        <div class="metric-label">Avg Rate Index (ARI)</div>
+                                    </td>
+                                    <td style="text-align: right">
+                                        <div class="metric-val">#{metrics.get('avg_rank', 1)}</div>
+                                        <div class="metric-label">Avg Search Rank</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding-top: 10px;">
+                                        <div class="metric-val">{metrics.get('gri', 0)}</div>
+                                        <div class="metric-label">Guest Rating Index (GRI)</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td>
+                    <td width="50%">
+                        <div class="card">
+                            <h2>The Friction</h2>
+                            <div class="metric-val" style="color: {'#ff4d4d' if metrics.get('parity_leaks_count', 0) > 0 else '#4dff4d'}">
+                                {metrics.get('parity_leaks_count', 0)} Parity Leaks
+                            </div>
+                            <div class="metric-label">Detected via direct log vs OTA benchmark</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            {f'''
+            <div class="card" style="border-color: #d4af37;">
+                <h2>The Bout</h2>
+                <div class="bout-sim">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
+                <div class="metric-label" style="text-align: center;">Strategic Alignment Index</div>
+            </div>
+            ''' if metrics.get('bout_similarity') is not None else ""}
+
+            <div class="card">
+                <h2>🤖 AI Strategic Narrative</h2>
+                <div class="narrative">{narrative}</div>
+            </div>
+
+            <div class="footer">
+                Intelligence archived by Agentic Tripzy Hub | Powered by Gemini-3-Flash
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    result = io.BytesIO()
+    pisa.CreatePDF(html_content, dest=result)
+    pdf_bytes = result.getvalue()
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=briefing_saved_{report_id}.pdf"}
+    )
 
 @router.get("/{user_id}")
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):

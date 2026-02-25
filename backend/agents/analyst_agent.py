@@ -853,8 +853,21 @@ class AnalystAgent:
         similarity = 0.0
         if target and rival and target.get("sentiment_embedding") and rival.get("sentiment_embedding"):
             import numpy as np
-            v1 = np.array(target["sentiment_embedding"])
-            v2 = np.array(rival["sentiment_embedding"])
+            import json
+            
+            # EXPLANATION: Unicode Serialization Fix
+            # Supabase/Postgres may return the vector as a serialized JSON string 
+            # instead of a Python list. We force-decode it to prevent 'ufunc multiply' 
+            # errors on Unicode types.
+            v1_raw = target["sentiment_embedding"]
+            v2_raw = rival["sentiment_embedding"]
+            
+            v1_list = json.loads(v1_raw) if isinstance(v1_raw, str) else v1_raw
+            v2_list = json.loads(v2_raw) if isinstance(v2_raw, str) else v2_raw
+            
+            v1 = np.array(v1_list, dtype=np.float32)
+            v2 = np.array(v2_list, dtype=np.float32)
+            
             # Ensure vectors are non-zero before calculation to avoid NaN
             if v1.any() and v2.any():
                 similarity = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
@@ -906,8 +919,50 @@ class AnalystAgent:
                     briefing_payload["narrative_raw"] = response.text
             except Exception as ai_e:
                 print(f"[AnalystAgent] Briefing AI Error: {ai_e}")
+        
+        # 7. PERSISTENCE: Save to 'reports' table for administrative review (Phase 4)
+        try:
+            report_id = self._save_briefing_to_db(user_id, briefing_payload)
+            briefing_payload["report_id"] = report_id
+        except Exception as db_e:
+            print(f"[AnalystAgent] Briefing Save Error: {db_e}")
                 
         return briefing_payload
+
+    def _save_briefing_to_db(self, user_id: str, payload: Dict[str, Any]) -> str:
+        """
+        Saves the generated briefing to the 'reports' table.
+        Returns the ID of the created report.
+        """
+        try:
+            target_name = payload["target"].get("name", "Unknown Hotel")
+            rival_name = payload["rival"].get("name", "N/A") if payload.get("rival") else "Market"
+            
+            report_data = {
+                "title": f"Agentic Briefing: {target_name} vs {rival_name}",
+                "report_type": "briefing",
+                "hotel_ids": [payload["target"]["id"]] + ([payload["rival"]["id"]] if payload.get("rival") else []),
+                "period_months": 1,
+                "period_start": (datetime.now() - timedelta(days=30)).isoformat(),
+                "period_end": datetime.now().isoformat(),
+                "report_data": {
+                    "metrics": payload["metrics"],
+                    "narrative": payload["narrative_raw"],
+                    "target_meta": {
+                        "name": payload["target"]["name"],
+                        "location": payload["target"]["location"]
+                    }
+                },
+                "created_by": user_id
+            }
+            
+            res = self.db.table("reports").insert(report_data).execute()
+            if res.data:
+                return res.data[0]["id"]
+            return ""
+        except Exception as e:
+            print(f"[_save_briefing_to_db] Error: {e}")
+            return ""
 
     async def _update_sentiment_embedding(self, hotel_id: str, meta_update: Dict[str, Any]) -> bool:
         """Generates and saves the sentiment embedding. Returns True on success."""
