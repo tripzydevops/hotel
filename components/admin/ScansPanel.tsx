@@ -114,24 +114,71 @@ const ScansPanel = () => {
       <div className="flex bg-[var(--deep-ocean-card)]/30 p-1.5 rounded-xl border border-white/5 w-fit shadow-lg">
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
-            activeTab === "history"
-              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
-              : "text-[var(--text-muted)] hover:text-white"
-          }`}
+          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === "history"
+            ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
+            : "text-[var(--text-muted)] hover:text-white"
+            }`}
         >
           Scan History
         </button>
         <button
           onClick={() => setActiveTab("queue")}
-          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${
-            activeTab === "queue"
-              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
-              : "text-[var(--text-muted)] hover:text-white"
-          }`}
+          className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all duration-300 ${activeTab === "queue"
+            ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner"
+            : "text-[var(--text-muted)] hover:text-white"
+            }`}
         >
           Upcoming Queue
         </button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-4 animate-in slide-in-from-left duration-500">
+        {activeTab === "queue" && queue.some(item => item.status === "overdue") && (
+          <button
+            onClick={async () => {
+              toast.success("Initiating global trigger...");
+              try {
+                await api.triggerAllOverdue();
+                toast.success("All overdue scans triggered!");
+                loadQueue();
+              } catch (err: any) {
+                toast.error("Failed: " + err.message);
+              }
+            }}
+            className="group relative flex items-center gap-3 px-6 py-3 bg-[var(--soft-gold)] text-[var(--deep-ocean)] rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-all hover:-translate-y-0.5"
+          >
+            <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
+            Trigger All Overdue
+          </button>
+        )}
+
+        {activeTab === "history" && (
+          <button
+            onClick={async () => {
+              if (!confirm("Are you sure you want to remove all failed and empty scan sessions from the last 7 days?")) return;
+              toast.success("Cleaning up empty scans...");
+              try {
+                const res = await api.cleanupEmptyScans();
+                toast.success(res.message || "Cleanup complete!");
+                loadScans();
+              } catch (err: any) {
+                toast.error("Cleanup failed: " + err.message);
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Cleanup Empty Scans
+          </button>
+        )}
+
+        {activeTab === "queue" && queue.some(item => item.status === "overdue") && (
+          <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/5">
+            <Info className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+            System has {queue.filter(i => i.status === 'overdue').length} overdue tasks
+          </div>
+        )}
       </div>
 
       {activeTab === "queue" && (
@@ -189,11 +236,10 @@ const ScansPanel = () => {
                         </td>
                         <td className="p-5">
                           <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                              isOverdue
-                                ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                                : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-                            }`}
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${isOverdue
+                              ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                              : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                              }`}
                           >
                             {item.status}
                           </span>
@@ -280,13 +326,12 @@ const ScansPanel = () => {
                       </td>
                       <td className="p-5">
                         <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
-                            scan.status === "completed"
-                              ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
-                              : scan.status === "running"
-                                ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 animate-pulse"
-                                : "bg-red-500/10 text-red-400 border border-red-500/20"
-                          }`}
+                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${scan.status === "completed"
+                            ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                            : scan.status === "running"
+                              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 animate-pulse"
+                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                            }`}
                         >
                           {scan.status}
                         </span>
@@ -376,11 +421,10 @@ const ScansPanel = () => {
                             <td className="p-3">
                               <div className="flex flex-col gap-1">
                                 <span
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${
-                                    log.status === "success"
-                                      ? "bg-green-500/20 text-green-400"
-                                      : "bg-red-500/20 text-red-400"
-                                  }`}
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${log.status === "success"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : "bg-red-500/20 text-red-400"
+                                    }`}
                                 >
                                   {log.status.toUpperCase()}
                                 </span>
@@ -503,8 +547,8 @@ const ScansPanel = () => {
                                     <span className="text-[10px] font-mono text-white/40">
                                       {timestamp
                                         ? new Date(
-                                            timestamp * 1000,
-                                          ).toLocaleTimeString()
+                                          timestamp * 1000,
+                                        ).toLocaleTimeString()
                                         : ""}
                                     </span>
                                   </div>
@@ -531,70 +575,68 @@ const ScansPanel = () => {
                   {scanDetails.logs?.some(
                     (log: any) => log.parity_offers?.length > 0,
                   ) && (
-                    <div className="mt-6">
-                      <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                        Market Parity (OTA Offers)
-                      </h4>
-                      <div className="space-y-4">
-                        {scanDetails.logs
-                          .filter((log: any) => log.parity_offers?.length > 0)
-                          .map((log: any) => (
-                            <div
-                              key={log.id}
-                              className="bg-black/20 rounded-lg p-4"
-                            >
-                              <p className="text-xs font-medium text-white mb-2">
-                                {log.hotel_name}
-                              </p>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                {log.parity_offers.map(
-                                  (offer: any, idx: number) => {
-                                    const isLowest = log.parity_offers.every(
-                                      (o: any) => offer.price <= o.price,
-                                    );
-                                    const isHighest = log.parity_offers.every(
-                                      (o: any) => offer.price >= o.price,
-                                    );
+                      <div className="mt-6">
+                        <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          Market Parity (OTA Offers)
+                        </h4>
+                        <div className="space-y-4">
+                          {scanDetails.logs
+                            .filter((log: any) => log.parity_offers?.length > 0)
+                            .map((log: any) => (
+                              <div
+                                key={log.id}
+                                className="bg-black/20 rounded-lg p-4"
+                              >
+                                <p className="text-xs font-medium text-white mb-2">
+                                  {log.hotel_name}
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                  {log.parity_offers.map(
+                                    (offer: any, idx: number) => {
+                                      const isLowest = log.parity_offers.every(
+                                        (o: any) => offer.price <= o.price,
+                                      );
+                                      const isHighest = log.parity_offers.every(
+                                        (o: any) => offer.price >= o.price,
+                                      );
 
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className={`p-2 rounded border ${
-                                          isLowest
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`p-2 rounded border ${isLowest
                                             ? "border-green-500/50 bg-green-500/10"
                                             : isHighest
                                               ? "border-red-500/50 bg-red-500/10"
                                               : "border-white/10 bg-white/5"
-                                        }`}
-                                      >
-                                        <p className="text-[10px] text-[var(--text-muted)] uppercase">
-                                          {offer.vendor ||
-                                            offer.source ||
-                                            "Unknown"}
-                                        </p>
-                                        <p
-                                          className={`text-sm font-bold ${
-                                            isLowest
+                                            }`}
+                                        >
+                                          <p className="text-[10px] text-[var(--text-muted)] uppercase">
+                                            {offer.vendor ||
+                                              offer.source ||
+                                              "Unknown"}
+                                          </p>
+                                          <p
+                                            className={`text-sm font-bold ${isLowest
                                               ? "text-green-400"
                                               : isHighest
                                                 ? "text-red-400"
                                                 : "text-white"
-                                          }`}
-                                        >
-                                          {offer.price?.toLocaleString()}{" "}
-                                          {offer.currency || log.currency}
-                                        </p>
-                                      </div>
-                                    );
-                                  },
-                                )}
+                                              }`}
+                                          >
+                                            {offer.price?.toLocaleString()}{" "}
+                                            {offer.currency || log.currency}
+                                          </p>
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               ) : (
                 <div className="p-8 text-center text-[var(--text-muted)]">

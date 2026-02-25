@@ -598,14 +598,34 @@ async def create_admin_plan_logic(plan: PlanCreate, db: Client) -> Dict[str, Any
     except Exception as e:
         raise HTTPException(500, str(e))
 
-async def update_admin_plan_logic(id: UUID, plan: PlanUpdate, db: Client) -> Dict[str, Any]:
-    """Update an existing membership plan."""
+async def update_admin_settings_logic(updates: AdminSettingsUpdate, db: Client) -> Dict[str, Any]:
+    """Update global settings."""
     try:
-        data = plan.model_dump(exclude_unset=True)
-        res = db.table("membership_plans").update(data).eq("id", str(id)).execute()
-        return res.data[0] if res.data else {"status": "success"}
+        # Standardize updates
+        data = updates.model_dump(exclude_unset=True)
+        
+        db.table("settings") \
+            .update(data) \
+            .eq("user_id", "00000000-0000-0000-0000-000000000000") \
+            .execute()
+            
+        return {"status": "success"}
     except Exception as e:
-        raise HTTPException(500, str(e))
+        print(f"Admin Settings Update Error: {e}")
+        return {"error": str(e)}
+
+async def trigger_all_overdue_logic() -> Dict[str, Any]:
+    """
+    Manually triggers the background scheduler loop.
+    Finds all users who are currently due/overdue and triggers their scans.
+    """
+    try:
+        from backend.services.monitor_service import run_scheduler_check_logic
+        await run_scheduler_check_logic()
+        return {"status": "success", "message": "All overdue scans triggered successfully."}
+    except Exception as e:
+        print(f"Trigger All Overdue Error: {e}")
+        return {"error": str(e)}
 
 async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
     """Delete a membership plan."""
@@ -1131,3 +1151,63 @@ async def update_admin_settings_logic(updates: AdminSettingsUpdate, db: Client) 
     data_to_upsert = {**current.model_dump(), **update_data, "id": str(current.id)}
     res = db.table("admin_settings").upsert(data_to_upsert).execute()
     return AdminSettings(**res.data[0]) if res.data else current.model_copy(update=update_data)
+
+async def trigger_all_overdue_logic() -> Dict[str, Any]:
+    """
+    Manually triggers the background scheduler loop.
+    Finds all users who are currently due/overdue and triggers their scans.
+    """
+    try:
+        from backend.services.monitor_service import run_scheduler_check_logic
+        await run_scheduler_check_logic()
+        return {"status": "success", "message": "All overdue scans triggered successfully."}
+    except Exception as e:
+        print(f"Trigger All Overdue Error: {e}")
+        return {"error": str(e)}
+
+async def cleanup_empty_scans_logic(db: Client) -> Dict[str, Any]:
+    """
+    Identifies and removes scan sessions that have no results.
+    Criteria:
+    - Status is 'failed'
+    - Status is 'completed' or 'partial' but resulted in 0 successful price logs.
+    """
+    try:
+        # 1. Get all failed sessions
+        failed_res = db.table("scan_sessions").select("id").eq("status", "failed").execute()
+        failed_ids = [s["id"] for s in (failed_res.data or [])]
+        
+        # 2. Get all completed/partial sessions and check their result count
+        # This is more intensive, so we limit to last 7 days for safety
+        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+        sessions_res = db.table("scan_sessions") \
+            .select("id") \
+            .in_("status", ["completed", "partial"]) \
+            .gte("created_at", cutoff) \
+            .execute()
+        
+        potential_empty_ids = [s["id"] for s in (sessions_res.data or [])]
+        empty_ids = []
+        
+        for sid in potential_empty_ids:
+            # Check if there are any successful logs for this session
+            logs_res = db.table("price_logs").select("id", count="exact").eq("session_id", sid).execute()
+            if logs_res.count == 0:
+                empty_ids.append(sid)
+        
+        all_to_delete = list(set(failed_ids + empty_ids))
+        
+        if not all_to_delete:
+            return {"status": "success", "count": 0, "message": "No empty scans found to clean up."}
+            
+        # 3. Delete sessions
+        db.table("scan_sessions").delete().in_("id", all_to_delete).execute()
+        
+        return {
+            "status": "success", 
+            "count": len(all_to_delete), 
+            "message": f"Successfully removed {len(all_to_delete)} empty or failed scan sessions."
+        }
+    except Exception as e:
+        print(f"Cleanup Empty Scans Error: {e}")
+        return {"error": str(e)}

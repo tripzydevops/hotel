@@ -41,7 +41,9 @@ from backend.services.admin_service import (
     cleanup_test_data_logic,
     get_admin_market_intelligence_logic,
     get_scheduler_queue_logic,
-    get_admin_providers_logic
+    get_admin_providers_logic,
+    trigger_all_overdue_logic,
+    cleanup_empty_scans_logic
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -324,3 +326,18 @@ async def get_scheduler_queue(db: Client = Depends(get_supabase), admin=Depends(
     showed 'No scheduled scans found'.
     """
     return await get_scheduler_queue_logic(db)
+
+@router.post("/scheduler/trigger-all")
+async def trigger_all_overdue(admin=Depends(get_current_admin_user)):
+    """
+    Manually triggers all overdue/due scans at once.
+    Wakes up the background scheduler pipeline.
+    """
+    return await trigger_all_overdue_logic()
+
+@router.delete("/scans/cleanup-empty")
+async def cleanup_empty_scans(admin=Depends(get_current_admin_user), db: Client = Depends(get_supabase)):
+    """
+    Administrative cleanup: Removes scans that failed or have no results.
+    """
+    return await cleanup_empty_scans_logic(db)

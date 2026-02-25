@@ -496,6 +496,18 @@ class ApiClient {
     return this.fetch<any[]>("/api/admin/scheduler/queue");
   }
 
+  async triggerAllOverdue() {
+    return this.fetch<any>("/api/admin/scheduler/trigger-all", {
+      method: "POST",
+    });
+  }
+
+  async cleanupEmptyScans() {
+    return this.fetch<any>("/api/admin/scans/cleanup-empty", {
+      method: "DELETE",
+    });
+  }
+
   async generateReport(params: {
     hotel_ids: string[];
     period_months: number;
