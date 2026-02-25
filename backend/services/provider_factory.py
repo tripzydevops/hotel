@@ -34,9 +34,13 @@ class ProviderFactory:
         
         # 1. SerpApi (Primary - High Fidelity)
         serp_keys = []
-        if os.getenv("SERPAPI_API_KEY"): serp_keys.append(os.getenv("SERPAPI_API_KEY"))
-        if os.getenv("SERPAPI_KEY"): serp_keys.append(os.getenv("SERPAPI_KEY"))
-        if os.getenv("SERPAPI_API_KEY_2"): serp_keys.append(os.getenv("SERPAPI_API_KEY_2"))
+        primary = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
+        if primary: serp_keys.append(primary)
+        
+        # Check for numbered backup keys (up to 10)
+        for i in range(2, 11):
+            if os.getenv(f"SERPAPI_API_KEY_{i}"):
+                serp_keys.append(os.getenv(f"SERPAPI_API_KEY_{i}"))
         
         if serp_keys:
             cls._providers.append(SerpApiProvider())
@@ -65,13 +69,12 @@ class ProviderFactory:
 
         # Mock Usage Data (In a real app, this would come from a DB)
         from datetime import date, timedelta
-        today = date.today()
         
         # 1. SerpApi Key 1 (Primary)
         report.append({
             "name": "SerpApi Key 1 (Primary)",
             "type": "Hotel Prices",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY")),
+            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
             "priority": 1,
             "limit": "250/mo",
             "refresh": "Mar 05", 
@@ -100,8 +103,19 @@ class ProviderFactory:
             "limit": "250/mo",
             "refresh": "Mar 04",
             "latency": "Pending",
-            "health": "Active" if active_key_index == 2 else "Ready",
-            "created_at": "Feb 04, 2026"
+            "health": "Active" if active_key_index == 2 else "Ready"
+        })
+
+        # 4. SerpApi Key 4 (Dynamic Support)
+        report.append({
+            "name": "SerpApi Key 4",
+            "type": "Hotel Prices",
+            "enabled": bool(os.getenv("SERPAPI_API_KEY_4")),
+            "priority": 4,
+            "limit": "250/mo",
+            "refresh": "Mar 25",
+            "latency": "Pending",
+            "health": "Active" if active_key_index == 3 else "Ready"
         })
         
         return report

@@ -150,7 +150,8 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
             "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing",
             "NEXT_PUBLIC_SERPAPI_API_KEY": "Set" if os.getenv("NEXT_PUBLIC_SERPAPI_API_KEY") else "Missing",
             "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
-            "SERPAPI_API_KEY_3": "Set" if os.getenv("SERPAPI_API_KEY_3") else "Missing"
+            "SERPAPI_API_KEY_3": "Set" if os.getenv("SERPAPI_API_KEY_3") else "Missing",
+            "SERPAPI_API_KEY_4": "Set" if os.getenv("SERPAPI_API_KEY_4") else "Missing"
         }
         return status
     except Exception as e:

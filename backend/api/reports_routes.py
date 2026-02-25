@@ -439,10 +439,10 @@ async def export_briefing_pdf(
                     {str(rival.get('pricing_dna', 'Standard'))[:30] if not isinstance(rival.get('pricing_dna'), list) else 'Semantic Match'}
                 </div>
             </div>
-            ''' if rival else ""])}
+            ''' if rival else ""}
 
             <div class="card" style="background-color: #112240;">
-                <h2 style="color: #d4af37;">🤖 AI Strategic Narrative</h2>
+                <h2 style="color: #d4af37;">AI Strategic Narrative</h2>
                 <div class="narrative">{narrative}</div>
             </div>
 

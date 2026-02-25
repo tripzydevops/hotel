@@ -276,7 +276,7 @@ class ScanSession(BaseModel):
     check_out_date: Optional[date] = None
     adults: Optional[int] = 2
     currency: Optional[str] = "TRY"
-    reasoning_trace: Optional[List[Dict[str, Any]]] = None
+    reasoning_trace: Optional[List[Any]] = None
 
     class Config:
         from_attributes = True
