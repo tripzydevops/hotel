@@ -770,13 +770,13 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
           </div>
           <div>
             <h2 className="text-xl font-black text-white flex items-center gap-2">
-              Agentic Executive Briefing
+              {briefing.context?.report_type || 'Agentic Executive Briefing'}
               <span className="text-[10px] font-black uppercase tracking-widest bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] px-2 py-0.5 rounded border border-[var(--soft-gold)]/20">
                 Live AI Insight
               </span>
             </h2>
             <p className="text-xs text-[var(--text-muted)] font-medium">
-              Synthetic market intelligence generated via gemini-3-flash-preview
+              {briefing.context?.timeframe || '30-Day'} Pulse Summary via gemini-3-flash-preview
             </p>
           </div>
         </div>

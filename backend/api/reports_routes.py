@@ -64,8 +64,7 @@ async def export_saved_briefing_pdf(
 ):
     """
     EXPLANATION: Saved Briefing PDF Export
-    Instead of regenerating the briefing (which consumes AI tokens), this route
-    renders a PDF from the previously saved narrative and metrics in the 'reports' table.
+    Polished 'Deep Ocean' template with standardized metrics and narrative visibility.
     """
     from xhtml2pdf import pisa
     import io
@@ -80,7 +79,6 @@ async def export_saved_briefing_pdf(
     narrative = report_data.get("narrative", "No narrative saved.")
     target_meta = report_data.get("target_meta", {"name": "Unknown", "location": "Unknown"})
     
-    # Reuse the same 'Deep Ocean & Soft Gold' template
     html_content = f"""
     <html>
     <head>
@@ -97,7 +95,6 @@ async def export_saved_briefing_pdf(
             .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
             h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
             .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
-            
             .grid-table {{ width: 100%; border-spacing: 20px 0; }}
             .card {{ 
                 background-color: #112240; 
@@ -108,14 +105,10 @@ async def export_saved_briefing_pdf(
                 vertical-align: top;
             }}
             h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
-            
-            .metric-table {{ width: 100%; shadow: none; }}
+            .metric-table {{ width: 100%; }}
             .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
             .metric-label {{ color: #8892b0; font-size: 12px; }}
-            
-            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; }}
-            .bout-sim {{ font-size: 24px; color: #d4af37; text-align: center; margin: 20px 0; }}
-            
+            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }}
             .footer {{ 
                 margin-top: 50px; 
                 text-align: center; 
@@ -131,8 +124,8 @@ async def export_saved_briefing_pdf(
             <table class="header-table">
                 <tr>
                     <td>
-                        <h1>Executive Briefing (Saved)</h1>
-                        <div class="cadence">{target_meta['name']} | Historical Pulse Snapshot</div>
+                        <h1>{report_data.get('context', {}).get('report_type', 'Executive Briefing (Saved)')}</h1>
+                        <div class="cadence">{target_meta['name']} | {report_data.get('context', {}).get('timeframe', 'Historical Pulse Snapshot')}</div>
                     </td>
                     <td style="text-align: right; vertical-align: bottom;">
                         <div class="cadence">{data['created_at'][:10]}</div>
@@ -143,50 +136,50 @@ async def export_saved_briefing_pdf(
             <table class="grid-table">
                 <tr>
                     <td width="50%">
-                        <div class="card">
-                            <h2>Market Battlefield</h2>
-                            <table class="metric-table">
+                        <div class="card" style="background-color: #112240;">
+                            <h2 style="color: #d4af37;">Market Battlefield</h2>
+                            <table class="metric-table" style="background-color: #112240;">
                                 <tr>
-                                    <td>
-                                        <div class="metric-val">{metrics.get('avg_price', 0)}</div>
-                                        <div class="metric-label">Avg Rate Index (ARI)</div>
+                                    <td style="padding: 10px;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{(metrics.get('avg_price') or 0)}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
                                     </td>
-                                    <td style="text-align: right">
-                                        <div class="metric-val">#{metrics.get('avg_rank', 1)}</div>
-                                        <div class="metric-label">Avg Search Rank</div>
+                                    <td style="text-align: right; padding: 10px;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{(metrics.get('avg_rank') or 1)}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2" style="padding-top: 10px;">
-                                        <div class="metric-val">{metrics.get('gri', 0)}</div>
-                                        <div class="metric-label">Guest Rating Index (GRI)</div>
+                                    <td colspan="2" style="padding: 10px; border-top: 1px solid #233554;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{(metrics.get('gri') or 0)}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
                                     </td>
                                 </tr>
                             </table>
                         </div>
                     </td>
                     <td width="50%">
-                        <div class="card">
-                            <h2>The Friction</h2>
-                            <div class="metric-val" style="color: {'#ff4d4d' if metrics.get('parity_leaks_count', 0) > 0 else '#4dff4d'}">
-                                {metrics.get('parity_leaks_count', 0)} Parity Leaks
+                        <div class="card" style="background-color: #112240;">
+                            <h2 style="color: #d4af37;">The Friction</h2>
+                            <div class="metric-val" style="font-size: 22px; color: {'#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'}">
+                                {(metrics.get('parity_leaks_count') or 0)} Parity Leaks
                             </div>
-                            <div class="metric-label">Detected via direct log vs OTA benchmark</div>
+                            <div class="metric-label" style="color: #8892b0;">Detected via direct log vs OTA benchmark</div>
                         </div>
                     </td>
                 </tr>
             </table>
 
             {f'''
-            <div class="card" style="border-color: #d4af37;">
-                <h2>The Bout</h2>
-                <div class="bout-sim">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
-                <div class="metric-label" style="text-align: center;">Strategic Alignment Index</div>
+            <div class="card" style="border-color: #d4af37; background-color: #112240;">
+                <h2 style="color: #d4af37;">The Bout</h2>
+                <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
+                <div class="metric-label" style="text-align: center; color: #8892b0;">Strategic Alignment Index</div>
             </div>
             ''' if metrics.get('bout_similarity') is not None else ""}
 
-            <div class="card">
-                <h2>🤖 AI Strategic Narrative</h2>
+            <div class="card" style="background-color: #112240;">
+                <h2 style="color: #d4af37;">🤖 AI Strategic Narrative</h2>
                 <div class="narrative">{narrative}</div>
             </div>
 
@@ -212,8 +205,7 @@ async def export_saved_briefing_pdf(
 async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
     """
     EXPLANATION: User Report Management
-    Lists all saved reports in the database. Delegation of logic to 'admin_service' 
-    ensures that listing rules are consistent across Admin and User views.
+    Lists all saved reports in the database.
     """
     return await get_reports_logic(user_id, db)
 
@@ -221,7 +213,6 @@ async def get_reports(user_id: UUID, db: Client = Depends(get_supabase), current
 async def export_report(user_id: UUID, format: str = "csv", db: Client = Depends(get_supabase)):
     """
     Triggers a data export (CSV/Excel) for a specific user report.
-    Delegates generation to admin_service.
     """
     return await export_report_logic(user_id, format, db)
 
@@ -232,10 +223,9 @@ async def export_report_pdf(
     admin=Depends(get_current_admin_user)
 ):
     """
-    Generate and stream a PDF for a specific report.
+    Generate and stream a PDF for a specific report (Admin view).
     """
     try:
-        # 1. Fetch Report Data
         report = db.table("reports").select("*").eq("id", str(report_id)).single().execute()
         if not report.data:
             raise HTTPException(status_code=404, detail="Report not found")
@@ -243,7 +233,6 @@ async def export_report_pdf(
         data = report.data
         report_data = data.get("report_data", {})
         
-        # 2. Render HTML Template
         html_content = f"""
         <html>
         <head>
@@ -303,7 +292,6 @@ async def export_report_pdf(
         </html>
         """
 
-        # 3. Generate PDF
         import io
         from xhtml2pdf import pisa
         result = io.BytesIO()
@@ -327,10 +315,8 @@ async def export_briefing_pdf(
     current_user = Depends(get_current_active_user)
 ):
     """
-    EXPLANATION: 'Deep Ocean' Agentic PDF Generation
-    This is the signature export for the Agentic Executive Briefing. 
-    It leverages the AnalystAgent to regenerate the data (to ensure accuracy) 
-    and applies the 'Soft Gold & Deep Ocean' glassmorphism theme.
+    EXPLANATION: Signature 'Deep Ocean' Agentic PDF Generation
+    Regenerates live market pulse with upgraded AI depth and visual styling.
     """
     from backend.agents.analyst_agent import AnalystAgent
     import io
@@ -352,8 +338,6 @@ async def export_briefing_pdf(
     metrics = briefing["metrics"]
     narrative = briefing.get("narrative_raw", "No narrative generated.")
     
-    # Render PDF using the 'Deep Ocean & Soft Gold' Theme
-    # KAIZEN: xhtml2pdf does not support Grid/Flex. Using <table> for 2-column grid.
     html_content = f"""
     <html>
     <head>
@@ -370,7 +354,6 @@ async def export_briefing_pdf(
             .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
             h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
             .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
-            
             .grid-table {{ width: 100%; border-spacing: 20px 0; }}
             .card {{ 
                 background-color: #112240; 
@@ -381,14 +364,10 @@ async def export_briefing_pdf(
                 vertical-align: top;
             }}
             h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
-            
             .metric-table {{ width: 100%; }}
             .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
             .metric-label {{ color: #8892b0; font-size: 12px; }}
-            
-            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; }}
-            .bout-sim {{ font-size: 24px; color: #d4af37; text-align: center; margin: 20px 0; }}
-            
+            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }}
             .footer {{ 
                 margin-top: 50px; 
                 text-align: center; 
@@ -404,8 +383,8 @@ async def export_briefing_pdf(
             <table class="header-table">
                 <tr>
                     <td>
-                        <h1>Executive Briefing</h1>
-                        <div class="cadence">{target['name']} | 30-Day Market Pulse</div>
+                        <h1>{briefing.get('context', {}).get('report_type', 'Executive Briefing')}</h1>
+                        <div class="cadence">{target['name']} | {briefing.get('context', {}).get('timeframe', '30-Day Market Pulse')}</div>
                     </td>
                     <td style="text-align: right; vertical-align: bottom;">
                         <div class="cadence">{datetime.now().strftime('%B %Y')}</div>
@@ -416,50 +395,54 @@ async def export_briefing_pdf(
             <table class="grid-table">
                 <tr>
                     <td width="50%">
-                        <div class="card">
-                            <h2>Market Battlefield</h2>
-                            <table class="metric-table">
+                        <div class="card" style="background-color: #112240;">
+                            <h2 style="color: #d4af37;">Market Battlefield</h2>
+                            <table class="metric-table" style="background-color: #112240;">
                                 <tr>
-                                    <td>
-                                        <div class="metric-val">{metrics['avg_price']} {target.get('preferred_currency', 'TRY')}</div>
-                                        <div class="metric-label">Avg Rate Index (ARI)</div>
+                                    <td style="padding: 10px;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{(metrics.get('avg_price') or 0)} {target.get('preferred_currency', 'TRY')}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
                                     </td>
-                                    <td style="text-align: right">
-                                        <div class="metric-val">#{metrics['avg_rank']}</div>
-                                        <div class="metric-label">Avg Search Rank</div>
+                                    <td style="text-align: right; padding: 10px;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{(metrics.get('avg_rank') or 1)}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2" style="padding-top: 10px;">
-                                        <div class="metric-val">{metrics['gri']}</div>
-                                        <div class="metric-label">Guest Rating Index (GRI)</div>
+                                    <td colspan="2" style="padding: 10px; border-top: 1px solid #233554;">
+                                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{(metrics.get('gri') or 0)}</div>
+                                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
                                     </td>
                                 </tr>
                             </table>
                         </div>
                     </td>
                     <td width="50%">
-                        <div class="card">
-                            <h2>The Friction</h2>
-                            <div class="metric-val" style="color: {'#ff4d4d' if metrics['parity_leaks_count'] > 0 else '#4dff4d'}">
-                                {metrics['parity_leaks_count']} Parity Leaks
+                        <div class="card" style="background-color: #112240;">
+                            <h2 style="color: #d4af37;">The Friction</h2>
+                            <div class="metric-val" style="font-size: 22px; color: {'#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'}">
+                                {(metrics.get('parity_leaks_count') or 0)} Parity Leaks
                             </div>
-                            <div class="metric-label">Detected via direct log vs OTA benchmark</div>
+                            <div class="metric-label" style="color: #8892b0;">Detected via direct log vs OTA benchmark</div>
                         </div>
                     </td>
                 </tr>
             </table>
 
-            {"".join([f'''
-            <div class="card" style="border-color: #d4af37;">
-                <h2>The Bout: {target['name']} vs {rival['name']}</h2>
-                <div class="bout-sim">{metrics['bout_similarity']}% Semantic Similarity</div>
-                <div class="metric-label" style="text-align: center;">Strategic Personality: {target.get('pricing_dna', 'Standard')} vs {rival.get('pricing_dna', 'Standard')}</div>
+            {f'''
+            <div class="card" style="border-color: #d4af37; background-color: #112240;">
+                <h2 style="color: #d4af37;">The Bout: {target['name']} vs {rival['name']}</h2>
+                <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
+                <div class="metric-label" style="text-align: center; color: #8892b0;">
+                    Strategic Alignment Trace: 
+                    {str(target.get('pricing_dna', 'Standard'))[:30] if not isinstance(target.get('pricing_dna'), list) else 'Semantic Match'} vs 
+                    {str(rival.get('pricing_dna', 'Standard'))[:30] if not isinstance(rival.get('pricing_dna'), list) else 'Semantic Match'}
+                </div>
             </div>
             ''' if rival else ""])}
 
-            <div class="card">
-                <h2>🤖 AI Strategic Narrative</h2>
+            <div class="card" style="background-color: #112240;">
+                <h2 style="color: #d4af37;">🤖 AI Strategic Narrative</h2>
                 <div class="narrative">{narrative}</div>
             </div>
 

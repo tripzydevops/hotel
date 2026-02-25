@@ -872,43 +872,77 @@ class AnalystAgent:
             if v1.any() and v2.any():
                 similarity = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
         
-        # 6. AI SYNTHESIS: Generate the executive narrative using Gemini-3-Flash.
-        # We reuse the centralized GenAI client to ensure credential consistency.
+        # 6. AI SYNTHESIS: Generate a high-depth executive narrative using Gemini-3-Flash.
         from backend.services.analysis_service import get_genai_client
         client = get_genai_client()
         
+        # KAİZEN: Sentiment Summary for AI Context
+        sentiment_summary = "N/A"
+        try:
+            if target.get("sentiment_breakdown"):
+                if isinstance(target["sentiment_breakdown"], list):
+                    sentiment_summary = ", ".join([f"{s.get('name', 'General')}: {s.get('score', s.get('positive', 0))}" for s in target["sentiment_breakdown"][:5]])
+                elif isinstance(target["sentiment_breakdown"], dict):
+                    sentiment_summary = str(target["sentiment_breakdown"])
+        except: pass
+
+        report_type = "Head-to-Head Comparison" if rival else "Strategic Market Pulse"
+        timeframe = f"Last {days} Days"
+
         briefing_payload = {
             "target": target,
             "rival": rival,
+            "context": {
+                "report_type": report_type,
+                "timeframe": timeframe,
+                "scope": f"Analyzing {target['name']} vs {rival['name'] if rival else 'General Market'}"
+            },
             "metrics": {
                 "avg_price": round(avg_price, 2),
                 "avg_rank": round(avg_rank, 1),
                 "gri": target.get("rating", 0),
                 "parity_leaks_count": len(parity_leaks),
-                "bout_similarity": round(float(similarity) * 100, 1) if rival else None
+                "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
+                "sentiment_snapshot": sentiment_summary[:200]
             },
             "narrative_raw": ""
         }
         
         if client:
+            # KAİZEN: High-Depth Strategy Prompt
+            dna = target.get('pricing_dna')
+            dna_str = dna if isinstance(dna, str) else "Semantic Hybrid (Premium Focus)"
+            
             prompt = f"""
-            You are a Senior Revenue Analyst. Generate an Agentic Executive Briefing for {target['name']}.
+            You are a Senior Revenue Strategist. Generate a High-Depth {report_type} for {target['name']}.
+            TIMEFRAME: {timeframe}
             
-            Context:
-            - Target GRI: {target.get('rating')} ({target.get('review_count')} reviews).
-            - Avg Price: {avg_price} {target.get('preferred_currency', 'TRY')}.
-            - Search Rank: {avg_rank}.
-            - Pricing DNA: {target.get('pricing_dna') or 'Standard Market Follower'}.
-            - Rival: {rival['name'] if rival else 'N/A'}.
-            - Parity Issues: {len(parity_leaks)} leaks detected in 30 days.
+            COMMERCIAL CONTEXT:
+            - Guest Perception (GRI): {target.get('rating')} / 5.0 (from {target.get('review_count', 0)} reviews).
+            - Top Sentiment: {sentiment_summary[:300]}
+            - Market Rate Benchmark ({days}d): {avg_price} {target.get('preferred_currency', 'TRY')}.
+            - Search Visibility Rank: #{avg_rank}.
+            - Current Pricing DNA: {dna_str}.
+            - Parity Health: {len(parity_leaks)} leakage events detected.
             
-            Generate 4 sectioned insights:
-            1. [Battlefield]: Market position summary.
-            2. [Friction]: Revenue leak hotspots.
-            3. [The Bout]: If rival exists, compare competitive stance.
-            4. [Pivot]: Final strategic move.
+            {f"COMPETITIVE CONTEXT (The Bout): {rival['name']} with {briefing_payload['metrics']['bout_similarity']}% semantic overlap." if rival else "SCOPE: General market positioning without direct rival benchmarking."}
+
+            INSTRUCTIONS:
+            - Start with a single 'Executive Frame' sentence explaining what this report is (e.g., "This 30-day competitive audit analyzes {target['name']}'s positioning against {rival['name'] if rival else 'the market'}").
+            - Do NOT just restate the numbers. ANALYZE them.
+            - Explain the impact of the Search Rank on potential revenue capture.
+            - Connect Sentiment (GRI) to the Pricing DNA strategy.
+            - If Parity leaks exist, quantify the 'Yield Friction' risk.
+            - Use a professional, sharp, and directive tone.
             
-            Be direct, professional, and use bullet points.
+            REPORT SECTIONS:
+            1. [Contextual Frame]: Briefly define the report scope and timeframe.
+            2. [Market Battlefield]: Executive summary of market positioning.
+            3. [Yield Friction]: Analysis of revenue losing to OTA undercutting or visibility drops.
+            4. [The Bout/Market Stance]: {f"Deep comparison vs {rival['name']}. Analyze substitution risk." if rival else "Strategic market alignment summary."}
+            5. [Executive Pivot]: SINGLE most important strategic move for the GM to execute today.
+
+            Format: Use markdown bullet points. Be punchy and professional.
             """
             try:
                 response = client.models.generate_content(
