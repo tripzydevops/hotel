@@ -111,7 +111,7 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
 async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
     """Get status of SerpApi keys for monitoring quota usage."""
     try:
-        status = serpapi_client.get_key_status()
+        status = await serpapi_client.get_key_status()
         
         # Calculate monthly usage from scan_sessions
         now = datetime.now()
@@ -128,7 +128,7 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         status["quota_period"] = "monthly"
         status["monthly_usage"] = monthly_usage
         
-        detailed = serpapi_client.get_detailed_status()
+        detailed = await serpapi_client.get_detailed_status()
         keys_list = detailed.get("keys_status", [])
         
         # EXPLANATION: Metadata Injection (Kaizen 2026)
@@ -138,9 +138,6 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         factory_report = ProviderFactory.get_status_report()
         
         for i, key_entry in enumerate(keys_list):
-            # Key 1 is index 0, Key 2 is index 1, etc.
-            # Match with SerpApi provider entries in the report
-            # The report has entries like "SerpApi Key 1 (Primary)"
             match_name = f"SerpApi Key {i+1}"
             meta = next((r for r in factory_report if match_name in r["name"]), None)
             if meta:
@@ -184,7 +181,7 @@ async def force_rotate_api_key_logic() -> Dict[str, Any]:
         return {
             "status": "success" if success else "failed",
             "message": "Rotated to next key" if success else "No available keys",
-            "current_status": serpapi_client.get_key_status()
+            "current_status": await serpapi_client.get_key_status()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

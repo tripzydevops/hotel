@@ -277,12 +277,12 @@ const ApiKeysPanel = () => {
                   </td>
                   <td className="p-5">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted
-                          ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
-                          : "bg-red-500/10 text-red-500 border border-red-500/20"
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted && (key.searches_left === undefined || key.searches_left > 0)
+                        ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                        : "bg-red-500/10 text-red-500 border border-red-500/20"
                         }`}
                     >
-                      {key.is_exhausted ? "Exhausted" : "Active"}
+                      {key.is_exhausted || (key.searches_left !== undefined && key.searches_left <= 0) ? "Exhausted" : "Active"}
                     </span>
                   </td>
                   <td className="p-5 text-right">
@@ -295,6 +295,16 @@ const ApiKeysPanel = () => {
                           Requests
                         </span>
                       </div>
+                      {key.searches_left !== undefined && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-md border border-white/5 mt-0.5">
+                          <span className={`text-[9px] font-black tabular-nums ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-400'}`}>
+                            {key.searches_left}
+                          </span>
+                          <span className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
+                            Searches Left
+                          </span>
+                        </div>
+                      )}
                       <div className="flex flex-col items-end opacity-60">
                         <div className="text-[8px] font-bold text-[var(--text-muted)] tracking-widest uppercase italic">
                           Limit: {key.limit || `${keyStatus?.quota_per_key || 250} / mo`}

@@ -56,8 +56,32 @@ class ApiKeyManager:
         self._lock = threading.Lock()
         self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
         self._usage_counts: Dict[str, int] = {k: 0 for k in self._keys} # key -> request count
+        self._quota_info: Dict[str, int] = {} # key -> searches_left
+        self._last_quota_check: Dict[str, datetime] = {} # key -> last check time
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
-    
+
+    async def _fetch_quota(self, api_key: str):
+        """Fetch actual searches left from SerpApi Account API."""
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"https://serpapi.com/account?api_key={api_key}")
+                if response.status_code == 200:
+                    data = response.json()
+                    left = data.get("total_searches_left", 0)
+                    self._quota_info[api_key] = left
+                    self._last_quota_check[api_key] = datetime.now()
+                    
+                    # Also update exhaustion status based on real data
+                    if left <= 0:
+                        self._exhausted_keys[api_key] = datetime.now()
+                    elif api_key in self._exhausted_keys:
+                        del self._exhausted_keys[api_key]
+                    
+                    return left
+        except Exception as e:
+            logger.error(f"Quota Check Error for {api_key[-6:]}: {e}")
+        return None
+
     @property
     def current_key(self) -> str:
         """Get the current active API key."""
@@ -100,9 +124,6 @@ class ApiKeyManager:
             current_key = self._keys[self._current_index]
             
             # EXPLANATION: Smart Rotation logic
-            # If is_permanent is True (Hard Quota), we apply the 24h cooldown.
-            # If False (429 Rate Limit), we just rotate to give the key a break 
-            # without banning it.
             if is_permanent:
                 self._exhausted_keys[current_key] = datetime.now()
                 logger.warning(f"Key {self._current_index + 1} PERMANENTLY exhausted (24h cooldown). Reason: {reason}")
@@ -135,6 +156,7 @@ class ApiKeyManager:
         """Reset all keys."""
         with self._lock:
             self._exhausted_keys.clear()
+            self._quota_info.clear()
             self._current_index = 0
             logger.info("All keys reset to active status")
     
@@ -144,19 +166,26 @@ class ApiKeyManager:
             self._keys = new_keys or []
             self._current_index = 0
             self._exhausted_keys.clear()
+            self._quota_info.clear()
             logger.info(f"Reloaded keys. Total: {len(self._keys)}")
     
-    def get_detailed_status(self) -> Dict[str, Any]:
-        """Get detailed status including per-key usage."""
+    async def get_detailed_status(self) -> Dict[str, Any]:
+        """Get detailed status including per-key usage and REAL quota."""
+        keys_status = []
+        
+        # Check quotas first
+        tasks = [self._fetch_quota(k) for k in self._keys]
+        await asyncio.gather(*tasks)
+
         with self._lock:
-            keys_status = []
             for i, key in enumerate(self._keys):
                 key_info = {
                     "index": i + 1,
                     "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
                     "is_current": i == self._current_index,
                     "is_exhausted": key in self._exhausted_keys,
-                    "usage": self._usage_counts.get(key, 0)
+                    "usage": self._usage_counts.get(key, 0),
+                    "searches_left": self._quota_info.get(key)
                 }
                 if key in self._exhausted_keys:
                     key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
@@ -218,15 +247,15 @@ class SerpApiClient:
     def api_key(self) -> str:
         return self._key_manager.current_key
     
-    def get_key_status(self) -> Dict[str, Any]:
+    async def get_key_status(self) -> Dict[str, Any]:
         current_keys = load_api_keys()
         if len(current_keys) != self._key_manager.total_keys:
              self._key_manager.reload_keys(current_keys)
-        return self._key_manager.get_status()
+        return await self._key_manager.get_detailed_status()
 
-    def get_detailed_status(self) -> Dict[str, Any]:
+    async def get_detailed_status(self) -> Dict[str, Any]:
         """Returns comprehensive status including usage per key."""
-        return self.get_key_status()
+        return await self.get_key_status()
 
     def _normalize_string(self, text: Optional[str]) -> str:
         if not text: return ""

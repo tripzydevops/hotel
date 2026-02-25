@@ -79,14 +79,14 @@ class ProviderFactory:
             "health": "Active" if active_key_index == 0 else "Ready"
         })
 
-        # 2. SerpApi Key 2 (Backup)
+        # 2. SerpApi Key 2 (Aşkın Sezen)
         report.append({
-            "name": "SerpApi Key 2 (Backup)", 
+            "name": "SerpApi Key 2 (Aşkın Sezen)", 
             "type": "Hotel Prices",
             "enabled": bool(os.getenv("SERPAPI_API_KEY_2")),
             "priority": 2,
             "limit": "250/mo",
-            "refresh": "Feb 27",
+            "refresh": "Mar 23",
             "latency": "0.8s",
             "health": "Active" if active_key_index == 1 else "Ready"
         })

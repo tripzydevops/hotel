@@ -275,6 +275,7 @@ export interface KeyStatus {
     usage?: number;
     refresh_date?: string;
     limit?: string;
+    searches_left?: number;
   }[];
   env_debug?: Record<string, string>; // Add env_debug
 }
