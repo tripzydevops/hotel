@@ -21,7 +21,26 @@ async def generate_briefing(
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
-    return briefing
+    """
+    EXPLANATION: Agentic Briefing Generation
+    Triggers the AnalystAgent to perform semantic benchmarking and 
+    historical log analysis. The result is automatically persisted 
+    to the 'reports' table for future retrieval.
+    """
+    from backend.agents.analyst_agent import AnalystAgent
+    agent = AnalystAgent(db)
+    
+    result = await agent.generate_executive_briefing(
+        user_id=current_user.id,
+        target_hotel_id=request.target_hotel_id,
+        rival_hotel_id=request.rival_hotel_id,
+        days=request.days
+    )
+    
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+        
+    return result
 
 @router.get("/briefing/{report_id}")
 async def get_briefing_detail(
