@@ -8,13 +8,12 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
 import os
-import sys
 import logging
 import traceback
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID
-from fastapi import BackgroundTasks, HTTPException
+from fastapi import BackgroundTasks
 from supabase import Client
 
 from backend.models.schemas import ScanOptions, MonitorResult

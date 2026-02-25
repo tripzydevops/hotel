@@ -5,7 +5,6 @@ and system-level reporting.
 """
 
 import os
-import time
 import traceback
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
@@ -15,8 +14,7 @@ from supabase import create_client, Client
 
 from backend.models.schemas import (
     AdminStats, AdminUser, AdminUserCreate, AdminUserUpdate, AdminDirectoryEntry, 
-    AdminLog, AdminSettings, AdminSettingsUpdate, SchedulerQueueEntry,
-    PlanCreate, PlanUpdate
+    AdminLog, AdminSettings, AdminSettingsUpdate, PlanCreate, PlanUpdate
 )
 from backend.services.serpapi_client import serpapi_client
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -597,7 +595,7 @@ async def get_admin_plans_logic(db: Client) -> List[Dict[str, Any]]:
     try:
         res = db.table("membership_plans").select("*").order("price_monthly").execute()
         return res.data or []
-    except Exception as e:
+    except Exception:
         # Fallback to defaults if table doesn't exist yet
         return [
             {"id": "starter", "name": "Starter", "price_monthly": 49, "hotel_limit": 5},

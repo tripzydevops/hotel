@@ -2,6 +2,9 @@ import os
 from typing import List
 from .data_provider_interface import HotelDataProvider
 from .providers.serpapi_provider import SerpApiProvider 
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class ProviderFactory:
     _providers: List[HotelDataProvider] = []
@@ -69,7 +72,6 @@ class ProviderFactory:
 
         # 1. Real Status from SerpApi Manager
         from backend.services.serpapi_client import serpapi_client
-        import asyncio
 
         try:
             # We use the sync-wrapped get_status from the client for quick report

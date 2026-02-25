@@ -3,12 +3,9 @@ Dashboard Service.
 Aggregates hotel data, pricing history, alerts, and scan status for the user cockpit.
 """
 import asyncio
-import time
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional
-from uuid import UUID
+from typing import Dict, Any, List
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 from supabase import Client
 
 from backend.utils.logger import get_logger

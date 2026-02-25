@@ -9,15 +9,11 @@ logger = get_logger(__name__)
 
 import math
 import re
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta
 import asyncio
 import os
-import calendar
 from typing import Optional, List, Dict, Any, Tuple
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from supabase import Client
-from backend.services.serpapi_client import serpapi_client
 from backend.utils.helpers import convert_currency
 from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
 
