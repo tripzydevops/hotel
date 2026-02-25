@@ -186,29 +186,8 @@ async def system_report(db: Client = Depends(get_supabase)):
         "process": process_stats
     }
 
-@app.get("/api/debug/redis")
-async def debug_redis():
-    """Explicit Redis probe for Vercel debugging."""
-    import os
-    from celery import Celery
-    import ssl
-    
-    redis_url = os.getenv("REDIS_URL")
-    if not redis_url:
-        return {"status": "error", "message": "REDIS_URL env var is MISSING"}
-    
-    try:
-        # Test 1: Simple Connection
-        app = Celery('test', broker=redis_url)
-        app.conf.update(
-            broker_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
-            redis_backend_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE}
-        )
-        with app.connection_for_write() as conn:
-            conn.ensure_connection(max_retries=1)
-            return {"status": "ok", "message": "Connected to Redis successfully", "transport": str(conn.transport)}
-    except Exception as e:
-        return {"status": "error", "message": str(e), "type": type(e).__name__}
+    # EXPLANATION: Redis Decommissioned (2026-02-25)
+    return {"status": "decommissioned", "message": "Redis/Celery infrastructure has been moved to in-process BackgroundTasks."}
 
 
 # Include Modular Routers

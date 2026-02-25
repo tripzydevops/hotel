@@ -162,14 +162,12 @@ async def trigger_monitor_logic(
         currency=currency
     )
 
-    # 4. Background Execution (Direct → Celery Fallback)
-    # EXPLANATION: Direct Execution Priority
-    # Previously this dispatched exclusively to Celery/Redis, requiring the VM worker
-    # to be alive. Now we use FastAPI's BackgroundTasks for direct in-process execution,
-    # which works reliably on Vercel serverless. Celery is kept as a fallback only.
+    # 4. Background Execution (Direct via BackgroundTasks)
+    # EXPLANATION: Lean Serverless Execution
+    # Redis/Celery dependency has been removed to avoid Upstash free-tier limits.
+    # We now exclusively use FastAPI's BackgroundTasks for in-process execution.
     try:
         if background_tasks is not None:
-            # Primary: Execute directly via FastAPI BackgroundTasks
             trace_msg = "Executing scan directly via BackgroundTasks"
             logger.info(trace_msg)
             
@@ -190,34 +188,11 @@ async def trigger_monitor_logic(
                 db=db,
                 session_id=UUID(session_id) if session_id else None
             )
-            logger.info(f"Direct execution queued for session {session_id}")
+            logger.info(f"Background scan started for session {session_id}")
         else:
-            # Fallback: Celery dispatch (only if BackgroundTasks unavailable)
-            raise RuntimeError("BackgroundTasks not available, falling back to Celery")
+            logger.error("BackgroundTasks unavailable. Scan cannot be started in-process.")
     except Exception as e:
-        logger.warning(f"Direct execution failed ({e}), trying Celery fallback...")
-        try:
-            from backend.celery_app import celery_app
-            task_args = {
-                "user_id": str(user_id),
-                "hotels": hotels,
-                "options_dict": normalized_options.model_dump() if normalized_options else None,
-                "session_id": str(session_id) if session_id else None
-            }
-            celery_app.send_task("backend.tasks.run_scan_task", kwargs=task_args)
-            logger.info(f"Celery fallback dispatched for session {session_id}")
-            
-            if session_id:
-                try:
-                    res = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
-                    trace = res.data[0].get("reasoning_trace") or [] if res.data else []
-                    trace.append("Dispatched via Celery fallback")
-                    db.table("scan_sessions").update({
-                        "reasoning_trace": trace
-                    }).eq("id", str(session_id)).execute()
-                except: pass
-        except Exception as fallback_e:
-            logger.critical(f"Both direct and Celery dispatch failed: {fallback_e}")
+        logger.error(f"Background execution failed: {e}")
 
     return MonitorResult(
         hotels_checked=len(hotels),
@@ -456,18 +431,6 @@ async def run_scheduler_check_logic():
                         s_logger.info(f"Direct scan completed for user {user_id} (session={session_id})")
                     except Exception as direct_e:
                         s_logger.error(f"Direct execution failed for {user_id}: {direct_e}")
-                        # Fallback: try Celery dispatch if direct execution fails
-                        try:
-                            from backend.celery_app import celery_app
-                            celery_app.send_task("backend.tasks.run_scan_task", kwargs={
-                                "user_id": user_id,
-                                "hotels": hotels,
-                                "options_dict": None,
-                                "session_id": str(session_id) if session_id else None
-                            })
-                            s_logger.info(f"Fallback: Dispatched to Celery for user {user_id}")
-                        except Exception as fallback_e:
-                            s_logger.error(f"Both direct and Celery dispatch failed for {user_id}: {fallback_e}")
                 
             except Exception as u_e:
                 s_logger.error(f"Error processing user {user.get('id')}: {u_e}")

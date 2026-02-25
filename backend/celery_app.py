@@ -4,15 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Use Redis as the broker and result backend
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-# KAİZEN: Automatic SSL Parameter Injection
-# Newer redis-py/kombu versions require ssl_cert_reqs in the URL for rediss://
-# if not explicitly passed in connection options.
-if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
-    sep = "&" if "?" in REDIS_URL else "?"
-    REDIS_URL = f"{REDIS_URL}{sep}ssl_cert_reqs=none"
+# EXPLANATION: Redis/Celery Decommissioned (2026-02-25)
+# We have transition to FastAPI BackgroundTasks to avoid Upstash command limits.
+# Redis is no longer required for scans.
+REDIS_URL = "memory://"
 
 celery_app = Celery(
     "hotel_app",
