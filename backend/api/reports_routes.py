@@ -138,8 +138,11 @@ async def export_report_pdf(
         """
 
         # 3. Generate PDF
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        import io
+        from xhtml2pdf import pisa
+        result = io.BytesIO()
+        pisa.CreatePDF(html_content, dest=result)
+        pdf_bytes = result.getvalue()
         
         return Response(
             content=pdf_bytes,
@@ -164,7 +167,8 @@ async def export_briefing_pdf(
     and applies the 'Soft Gold & Deep Ocean' glassmorphism theme.
     """
     from backend.agents.analyst_agent import AnalystAgent
-    from weasyprint import HTML
+    import io
+    from xhtml2pdf import pisa
     
     agent = AnalystAgent(db)
     briefing = await agent.generate_executive_briefing(
@@ -183,98 +187,102 @@ async def export_briefing_pdf(
     narrative = briefing.get("narrative_raw", "No narrative generated.")
     
     # Render PDF using the 'Deep Ocean & Soft Gold' Theme
+    # KAIZEN: xhtml2pdf does not support Grid/Flex. Using <table> for 2-column grid.
     html_content = f"""
     <html>
     <head>
         <style>
             @page {{ size: A4; margin: 0; }}
             body {{ 
-                font-family: 'Inter', 'Helvetica', sans-serif; 
-                background: #0a192f; 
+                font-family: 'Helvetica', sans-serif; 
+                background-color: #0a192f; 
                 color: #e6f1ff; 
                 margin: 0; 
                 padding: 40px;
             }}
-            .report-wrapper {{ max-width: 800px; margin: auto; }}
-            header {{ 
-                border-bottom: 2px solid #d4af37; 
-                padding-bottom: 20px; 
-                margin-bottom: 40px;
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-            }}
+            .report-wrapper {{ width: 100%; }}
+            .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
             h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
             .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
             
-            .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+            .grid-table {{ width: 100%; border-spacing: 20px 0; }}
             .card {{ 
-                background: rgba(255, 255, 255, 0.05); 
-                border: 1px solid rgba(212, 175, 55, 0.2); 
+                background-color: #112240; 
+                border: 1px solid #d4af37; 
                 border-radius: 12px; 
                 padding: 20px; 
                 margin-bottom: 20px;
+                vertical-align: top;
             }}
             h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
             
-            .metric-row {{ display: flex; justify-content: space-between; margin-bottom: 10px; }}
+            .metric-table {{ width: 100%; }}
             .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
             .metric-label {{ color: #8892b0; font-size: 12px; }}
             
-            .narrative {{ line-height: 1.6; white-space: pre-wrap; font-size: 14px; color: #ccd6f6; }}
+            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; }}
             .bout-sim {{ font-size: 24px; color: #d4af37; text-align: center; margin: 20px 0; }}
             
-            footer {{ 
+            .footer {{ 
                 margin-top: 50px; 
                 text-align: center; 
                 color: #8892b0; 
                 font-size: 12px; 
-                border-top: 1px solid rgba(255,255,255,0.1);
+                border-top: 1px solid #233554;
                 padding-top: 20px;
             }}
         </style>
     </head>
     <body>
         <div class="report-wrapper">
-            <header>
-                <div>
-                    <h1>Executive Briefing</h1>
-                    <div class="cadence">{target['name']} | 30-Day Market Pulse</div>
-                </div>
-                <div class="cadence">{datetime.now().strftime('%B %Y')}</div>
-            </header>
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <h1>Executive Briefing</h1>
+                        <div class="cadence">{target['name']} | 30-Day Market Pulse</div>
+                    </td>
+                    <td style="text-align: right; vertical-align: bottom;">
+                        <div class="cadence">{datetime.now().strftime('%B %Y')}</div>
+                    </td>
+                </tr>
+            </table>
 
-            <div class="grid">
-                <div class="card">
-                    <h2>Market Battlefield</h2>
-                    <div class="metric-row">
-                        <div>
-                            <div class="metric-val">{metrics['avg_price']} {target.get('preferred_currency', 'TRY')}</div>
-                            <div class="metric-label">Avg Rate Index (ARI)</div>
+            <table class="grid-table">
+                <tr>
+                    <td width="50%">
+                        <div class="card">
+                            <h2>Market Battlefield</h2>
+                            <table class="metric-table">
+                                <tr>
+                                    <td>
+                                        <div class="metric-val">{metrics['avg_price']} {target.get('preferred_currency', 'TRY')}</div>
+                                        <div class="metric-label">Avg Rate Index (ARI)</div>
+                                    </td>
+                                    <td style="text-align: right">
+                                        <div class="metric-val">#{metrics['avg_rank']}</div>
+                                        <div class="metric-label">Avg Search Rank</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding-top: 10px;">
+                                        <div class="metric-val">{metrics['gri']}</div>
+                                        <div class="metric-label">Guest Rating Index (GRI)</div>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
-                        <div style="text-align: right">
-                            <div class="metric-val">#{metrics['avg_rank']}</div>
-                            <div class="metric-label">Avg Search Rank</div>
+                    </td>
+                    <td width="50%">
+                        <div class="card">
+                            <h2>The Friction</h2>
+                            <div class="metric-val" style="color: {'#ff4d4d' if metrics['parity_leaks_count'] > 0 else '#4dff4d'}">
+                                {metrics['parity_leaks_count']} Parity Leaks
+                            </div>
+                            <div class="metric-label">Detected via direct log vs OTA benchmark</div>
                         </div>
-                    </div>
-                    <div class="metric-row">
-                         <div>
-                            <div class="metric-val">{metrics['gri']}</div>
-                            <div class="metric-label">Guest Rating Index (GRI)</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2>The Friction</h2>
-                    <div class="metric-row">
-                        <div class="metric-val" style="color: {'#ff4d4d' if metrics['parity_leaks_count'] > 0 else '#4dff4d'}">
-                            {metrics['parity_leaks_count']} Parity Leaks
-                        </div>
-                    </div>
-                    <div class="metric-label">Undercuts detected across 30 days</div>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
 
             {"".join([f'''
             <div class="card" style="border-color: #d4af37;">
@@ -289,15 +297,17 @@ async def export_briefing_pdf(
                 <div class="narrative">{narrative}</div>
             </div>
 
-            <footer>
-                Intelligence generated by Agentic Tripzy Hub | Processed via gemini-3-flash-preview
-            </footer>
+            <div class="footer">
+                Intelligence generated by Agentic Tripzy Hub | Powered by Gemini-3-Flash
+            </div>
         </div>
     </body>
     </html>
     """
     
-    pdf_bytes = HTML(string=html_content).write_pdf()
+    result = io.BytesIO()
+    pisa.CreatePDF(html_content, dest=result)
+    pdf_bytes = result.getvalue()
     
     return Response(
         content=pdf_bytes,
