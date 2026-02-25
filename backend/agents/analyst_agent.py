@@ -786,7 +786,8 @@ class AnalystAgent:
         user_id: UUID, 
         target_hotel_id: str,
         rival_hotel_id: Optional[str] = None,
-        days: int = 30
+        days: int = 30,
+        report_type: Optional[str] = "Standard Comparison"
     ) -> Dict[str, Any]:
         """
         Agentic Executive Briefing Generator.
@@ -886,14 +887,14 @@ class AnalystAgent:
                     sentiment_summary = str(target["sentiment_breakdown"])
         except: pass
 
-        report_type = "Head-to-Head Comparison" if rival else "Strategic Market Pulse"
+        final_report_type = report_type or ("Head-to-Head Comparison" if rival else "Strategic Market Pulse")
         timeframe = f"Last {days} Days"
 
         briefing_payload = {
             "target": target,
             "rival": rival,
             "context": {
-                "report_type": report_type,
+                "report_type": final_report_type,
                 "timeframe": timeframe,
                 "scope": f"Analyzing {target['name']} vs {rival['name'] if rival else 'General Market'}"
             },

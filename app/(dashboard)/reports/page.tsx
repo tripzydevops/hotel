@@ -871,14 +871,21 @@ export default function ReportsPage() {
   const [briefing, setBriefing] = useState<any>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
 
+  // -- FILTER STATE (Phase 8) --
+  const [timeframe, setTimeframe] = useState(30);
+  const [reportType, setReportType] = useState("Strategic Market Pulse");
+  const [selectedRivalId, setSelectedRivalId] = useState<string | null>(null);
+  const [reportDraftMode, setReportDraftMode] = useState(true);
+
   const handleGenerateBriefing = async () => {
     if (!targetHotel?.id) return;
     setLoadingBriefing(true);
     try {
       const res = await api.generateBriefing({
         target_hotel_id: targetHotel.id,
-        rival_hotel_id: competitors[0]?.id,
-        days: 30
+        rival_hotel_id: selectedRivalId || undefined,
+        days: timeframe,
+        report_type: reportType
       });
       setBriefing(res);
       toast.success("Executive briefing generated successfully!");
@@ -894,7 +901,7 @@ export default function ReportsPage() {
   const handleExportBriefingPdf = async () => {
     if (!targetHotel?.id) return;
     try {
-      await api.exportBriefingPdf(targetHotel.id, competitors[0]?.id);
+      await api.exportBriefingPdf(targetHotel.id, selectedRivalId || undefined, timeframe, reportType);
     } catch (err) {
       console.error("Briefing PDF failed:", err);
     }
@@ -1210,29 +1217,109 @@ export default function ReportsPage() {
 
             <div className="w-[1px] h-8 bg-white/10 mx-1" />
 
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* ── PHASE 8: REPORT CONTROL PANEL ──            */}
+        {/* ═══════════════════════════════════════════════ */}
+        <div className="glass p-6 rounded-2xl border border-white/10 mb-8 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-32 -mt-32" />
+
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Timeframe Dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Period</label>
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                  <History className="w-4 h-4 text-[var(--soft-gold)]" />
+                  <select
+                    value={timeframe}
+                    onChange={(e) => setTimeframe(Number(e.target.value))}
+                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[100px]"
+                  >
+                    <option value={7} className="bg-[var(--deep-ocean)]">Last 7 Days</option>
+                    <option value={30} className="bg-[var(--deep-ocean)]">Last 30 Days</option>
+                    <option value={90} className="bg-[var(--deep-ocean)]">Last 90 Days</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Report Type Dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Analytical Lens</label>
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                  <select
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[180px]"
+                  >
+                    <option value="Strategic Market Pulse" className="bg-[var(--deep-ocean)]">Strategic Market Pulse</option>
+                    <option value="Yield Audit" className="bg-[var(--deep-ocean)]">Yield Audit</option>
+                    <option value="Sentiment Deep-Dive" className="bg-[var(--deep-ocean)]">Sentiment Deep-Dive</option>
+                    <option value="Competitive Battlefield" className="bg-[var(--deep-ocean)]">Competitive Battlefield</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Rival Selection */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Rival Benchmarking</label>
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                  <Swords className="w-4 h-4 text-red-400" />
+                  <select
+                    value={selectedRivalId || ""}
+                    onChange={(e) => setSelectedRivalId(e.target.value || null)}
+                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[200px]"
+                  >
+                    <option value="" className="bg-[var(--deep-ocean)]">All Market (Avg)</option>
+                    {competitors.map((c: any) => (
+                      <option key={c.id} value={c.id} className="bg-[var(--deep-ocean)]">{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <button
-              onClick={handleGenerateBriefing}
+              onClick={() => {
+                handleGenerateBriefing();
+                setReportDraftMode(false);
+              }}
               disabled={loadingBriefing}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white flex items-center gap-2 shadow-lg shadow-indigo-500/20 group transition-all"
+              className="w-full lg:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--soft-gold)] to-yellow-600 text-[var(--deep-ocean)] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl shadow-yellow-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {loadingBriefing ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-[var(--deep-ocean)]/20 border-t-[var(--deep-ocean)] rounded-full animate-spin" />
               ) : (
-                <Brain className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <Sparkles className="w-5 h-5" />
               )}
-              <span className="text-xs font-black uppercase tracking-widest">
-                {loadingBriefing ? "AI Reasoning..." : "Agentic Briefing"}
-              </span>
+              {loadingBriefing ? "Synthesizing Data..." : "Run Intelligence Agent"}
             </button>
           </div>
         </div>
 
         {/* ── INTELLIGENCE LAYER: AGENTIC BRIEFING ── */}
-        {briefing && (
-          <BriefingIntelligence
-            briefing={briefing}
-            onExportPdf={handleExportBriefingPdf}
-          />
+        {!reportDraftMode ? (
+          briefing ? (
+            <BriefingIntelligence
+              briefing={briefing}
+              onExportPdf={handleExportBriefingPdf}
+            />
+          ) : loadingBriefing ? (
+            <div className="glass p-12 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4 mb-8">
+              <div className="w-12 h-12 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+              <p className="text-sm font-bold text-indigo-400 animate-pulse uppercase tracking-widest">Generating {reportType}...</p>
+            </div>
+          ) : null
+        ) : (
+          <div className="glass p-12 rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 mb-10 opacity-60">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-2">
+              <Brain className="w-8 h-8 text-[#8892b0]" />
+            </div>
+            <p className="text-sm font-black text-center text-[#8892b0] uppercase tracking-[0.2em]">Select analytical lens to generate briefing</p>
+          </div>
         )}
 
         {/* ═══════════════════════════════════════════════ */}

@@ -551,6 +551,7 @@ class ApiClient {
     target_hotel_id: string;
     rival_hotel_id?: string;
     days?: number;
+    report_type?: string;
   }): Promise<any> {
     return this.fetch<any>("/api/reports/briefing", {
       method: "POST",
@@ -558,12 +559,20 @@ class ApiClient {
     });
   }
 
-  async exportBriefingPdf(target_hotel_id: string, rival_hotel_id?: string, days: number = 30): Promise<void> {
+  async exportBriefingPdf(
+    target_hotel_id: string,
+    rival_hotel_id?: string,
+    days: number = 30,
+    report_type: string = "Standard Comparison",
+  ): Promise<void> {
     const token = await this.getToken();
     const headers: any = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const params = new URLSearchParams({ days: days.toString() });
+    const params = new URLSearchParams({
+      days: days.toString(),
+      report_type,
+    });
     if (rival_hotel_id) params.append("rival_hotel_id", rival_hotel_id);
 
     const url = `${API_BASE_URL}/api/reports/briefing/${target_hotel_id}/pdf?${params.toString()}`;

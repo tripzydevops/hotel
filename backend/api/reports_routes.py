@@ -14,6 +14,7 @@ class BriefingRequest(BaseModel):
     target_hotel_id: str
     rival_hotel_id: Optional[str] = None
     days: int = 30
+    report_type: Optional[str] = "Standard Comparison"
 
 @router.post("/briefing")
 async def generate_briefing(
@@ -34,7 +35,8 @@ async def generate_briefing(
         user_id=current_user.id,
         target_hotel_id=request.target_hotel_id,
         rival_hotel_id=request.rival_hotel_id,
-        days=request.days
+        days=request.days,
+        report_type=request.report_type
     )
     
     if "error" in result:
@@ -311,6 +313,7 @@ async def export_briefing_pdf(
     target_hotel_id: str,
     rival_hotel_id: Optional[str] = None,
     days: int = 30,
+    report_type: Optional[str] = "Standard Comparison",
     db: Client = Depends(get_supabase),
     current_user = Depends(get_current_active_user)
 ):
@@ -327,7 +330,8 @@ async def export_briefing_pdf(
         user_id=current_user.id,
         target_hotel_id=target_hotel_id,
         rival_hotel_id=rival_hotel_id,
-        days=days
+        days=days,
+        report_type=report_type
     )
     
     if "error" in briefing:
