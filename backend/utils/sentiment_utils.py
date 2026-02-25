@@ -133,7 +133,10 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         List of exactly 4 dicts, one per pillar, always in the same order.
         Missing pillars get a fallback rating based on the average of found ones.
     """
-    if not breakdown or not isinstance(breakdown, list):
+    if breakdown is None:
+        breakdown = []
+    
+    if not isinstance(breakdown, list):
         return []
 
     # EXPLANATION: Initialize all 4 pillars with zero counts.

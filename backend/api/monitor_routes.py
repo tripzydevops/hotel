@@ -57,7 +57,7 @@ async def check_scheduled_scan(
         # Instead of 4 sequential DB round-trips, we fetch all gates concurrently.
         check_tasks = [
             asyncio.to_thread(lambda: db.table("settings").select("*").eq("user_id", str(user_id)).execute()),
-            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).execute()),
+            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()),
             asyncio.to_thread(lambda: db.table("scan_sessions").select("created_at").eq("user_id", str(user_id)).in_("status", ["pending", "running"]).order("created_at", desc=True).limit(1).execute()),
             asyncio.to_thread(lambda: db.table("price_logs").select("recorded_at").eq("user_id", str(user_id)).order("recorded_at", desc=True).limit(1).execute())
         ]

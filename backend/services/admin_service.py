@@ -140,9 +140,10 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         for i, key_entry in enumerate(keys_list):
             match_name = f"SerpApi Key {i+1}"
             meta = next((r for r in factory_report if match_name in r["name"]), None)
-            if meta:
-                key_entry["refresh_date"] = meta.get("refresh")
-                key_entry["limit"] = meta.get("limit")
+            
+            # Use real data from serpapi_client if available, fallback to mock
+            key_entry["refresh_date"] = key_entry.get("renewal_date") or (meta.get("refresh") if meta else "Unknown")
+            key_entry["limit"] = meta.get("limit") if meta else "250/mo"
         
         status["keys_status"] = keys_list
         status["env_debug"] = {

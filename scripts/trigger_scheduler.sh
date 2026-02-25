@@ -12,7 +12,7 @@
 # 3. Writes a heartbeat timestamp so we can detect if cron itself stops
 # ============================================================================
 
-PROJECT_DIR="/home/successofmentors/.gemini/antigravity/scratch/hotel"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ERROR_LOG="${PROJECT_DIR}/scheduler_errors.log"
 HEARTBEAT_FILE="${PROJECT_DIR}/scheduler_heartbeat.txt"
 VENV_PYTHON="${PROJECT_DIR}/venv/bin/python3"

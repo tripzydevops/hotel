@@ -33,9 +33,9 @@ def get_scheduler_logger():
         # The VM uses a fixed path; GitHub Actions and local dev use a relative path.
         # This prevents crashes when the scheduler runs outside the VM.
         vm_path = "/home/tripzydevops/hotel/scheduler.log"
-        local_path = os.path.join(os.path.dirname(__file__), "..", "..", "scheduler.log")
+        local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scheduler.log"))
         
-        log_path = vm_path if os.path.isdir(os.path.dirname(vm_path)) else os.path.abspath(local_path)
+        log_path = vm_path if os.path.isfile(vm_path) or os.path.isdir(os.path.dirname(vm_path)) else local_path
         
         try:
             handler = RotatingFileHandler(log_path, maxBytes=5*1024*1024, backupCount=3)

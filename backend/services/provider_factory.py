@@ -67,55 +67,51 @@ class ProviderFactory:
         if serp_provider:
             active_key_index = serp_provider.get_active_key_index()
 
-        # Mock Usage Data (In a real app, this would come from a DB)
-        from datetime import date, timedelta
-        
-        # 1. SerpApi Key 1 (Primary)
-        report.append({
-            "name": "SerpApi Key 1 (Primary)",
-            "type": "Hotel Prices",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")),
-            "priority": 1,
-            "limit": "250/mo",
-            "refresh": "Mar 05", 
-            "latency": "1.2s",
-            "health": "Active" if active_key_index == 0 else "Ready"
-        })
+        # 1. Real Status from SerpApi Manager
+        from backend.services.serpapi_client import serpapi_client
+        import asyncio
 
-        # 2. SerpApi Key 2 (Aşkın Sezen)
-        report.append({
-            "name": "SerpApi Key 2 (Aşkın Sezen)", 
-            "type": "Hotel Prices",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY_2")),
-            "priority": 2,
-            "limit": "250/mo",
-            "refresh": "Mar 23",
-            "latency": "0.8s",
-            "health": "Active" if active_key_index == 1 else "Ready"
-        })
+        try:
+            # We use the sync-wrapped get_status from the client for quick report
+            detailed = serpapi_client.get_status()
+            keys_info = detailed.get("keys_status", [])
+            mgr = serpapi_client._key_manager
+            
+            for i, info in enumerate(keys_info):
+                k = mgr._keys[i] if i < len(mgr._keys) else None
+                name_meta = ["Primary", "Aşkın Sezen", "Free Tier", "Dynamic Support"]
+                name = f"SerpApi Key {i+1} ({name_meta[i]})" if i < len(name_meta) else f"SerpApi Key {i+1}"
+                
+                # Health logic: "Active" for currently selected index, else Ready/Exhausted
+                health = "Ready"
+                if i == detailed.get("current_key_index", 0) - 1:
+                    health = "Active"
+                elif info.get("is_exhausted"):
+                    health = "Exhausted"
 
-        # 3. SerpApi Key 3 (Free Tier)
-        report.append({
-            "name": "SerpApi Key 3 (Free Tier)",
-            "type": "General Search",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY_3")),
-            "priority": 3,
-            "limit": "250/mo",
-            "refresh": "Mar 04",
-            "latency": "Pending",
-            "health": "Active" if active_key_index == 2 else "Ready"
-        })
+                report.append({
+                    "name": name,
+                    "type": "Hotel Prices",
+                    "enabled": True,
+                    "priority": i + 1,
+                    "limit": "250/mo",
+                    "refresh": mgr._renewal_info.get(k, "Pending") if k else "Unknown",
+                    "latency": "Matched",
+                    "health": health
+                })
+        except Exception as e:
+            logger.error(f"Status report fetch error: {e}")
+            # Fallback to simple list if manager access fails
+            for i in range(1, 5):
+                 report.append({
+                    "name": f"SerpApi Key {i}",
+                    "type": "Hotel Prices",
+                    "enabled": bool(os.getenv(f"SERPAPI_API_KEY{'_'+str(i) if i>1 else ''}")),
+                    "priority": i,
+                    "limit": "250/mo",
+                    "refresh": "Pending",
+                    "latency": "Error",
+                    "health": "Ready"
+                })
 
-        # 4. SerpApi Key 4 (Dynamic Support)
-        report.append({
-            "name": "SerpApi Key 4",
-            "type": "Hotel Prices",
-            "enabled": bool(os.getenv("SERPAPI_API_KEY_4")),
-            "priority": 4,
-            "limit": "250/mo",
-            "refresh": "Mar 25",
-            "latency": "Pending",
-            "health": "Active" if active_key_index == 3 else "Ready"
-        })
-        
         return report

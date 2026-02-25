@@ -58,6 +58,7 @@ class ApiKeyManager:
         self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
         self._usage_counts: Dict[str, int] = {k: 0 for k in self._keys} # key -> request count
         self._quota_info: Dict[str, int] = {} # key -> searches_left
+        self._renewal_info: Dict[str, str] = {} # key -> renewal_date
         self._last_quota_check: Dict[str, datetime] = {} # key -> last check time
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
 
@@ -70,6 +71,7 @@ class ApiKeyManager:
                     data = response.json()
                     left = data.get("total_searches_left", 0)
                     self._quota_info[api_key] = left
+                    self._renewal_info[api_key] = data.get("plan_renewal_date", "Unknown")
                     self._last_quota_check[api_key] = datetime.now()
                     
                     # Also update exhaustion status based on real data
@@ -206,7 +208,8 @@ class ApiKeyManager:
                     "is_current": i == self._current_index,
                     "is_exhausted": key in self._exhausted_keys,
                     "usage": self._usage_counts.get(key, 0),
-                    "searches_left": self._quota_info.get(key)
+                    "searches_left": self._quota_info.get(key),
+                    "renewal_date": self._renewal_info.get(key, "Unknown")
                 }
                 if key in self._exhausted_keys:
                     key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
@@ -277,6 +280,10 @@ class SerpApiClient:
     async def get_detailed_status(self) -> Dict[str, Any]:
         """Returns comprehensive status including usage per key."""
         return await self.get_key_status()
+
+    def get_status(self) -> Dict[str, Any]:
+        """Returns basic cached status (sync)."""
+        return self._key_manager.get_status()
 
     def _normalize_string(self, text: Optional[str]) -> str:
         if not text: return ""

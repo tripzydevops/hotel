@@ -220,11 +220,13 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         # Recent Searches Deduplication
         seen_searches = set()
         recent_searches = []
+        active_names = {h["name"].lower().strip() for h in all_hotels}
         for s in recent_searches_raw:
             name = s.get("hotel_name")
-            if name and name not in seen_searches:
+            name_low = (name or "").lower().strip()
+            if name and name_low not in seen_searches and name_low in active_names:
                 recent_searches.append(s)
-                seen_searches.add(name)
+                seen_searches.add(name_low)
             if len(recent_searches) >= 10: break
 
         # Calculate Next Scan
@@ -276,7 +278,7 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
         if not raw_alerts: return []
 
         hotel_ids = list(set([a["hotel_id"] for a in raw_alerts]))
-        hotels_res = db.table("hotels").select("id, name").in_("id", hotel_ids).execute()
+        hotels_res = db.table("hotels").select("id, name").in_("id", hotel_ids).is_("deleted_at", "null").execute()
         hotel_name_map = {h["id"]: h["name"] for h in hotels_res.data}
 
         wins = []
