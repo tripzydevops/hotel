@@ -20,3 +20,4 @@ sse-starlette>=2.0.0
 xhtml2pdf>=0.2.16
 reportlab>=4.1.0
 html5lib>=1.1
+svglib<1.6.0
