@@ -48,14 +48,23 @@ from backend.api import (
 
 # Initialize FastAPI
 # EXPLANATION: Vercel Routing Normalization
-# Per Attempt 11 of the cloud debug journal, we must set root_path="/api" 
-# only when running on Vercel to ensure the router correctly matches paths
-# rewritten by Vercel/Next.js.
+# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api" 
+# because our routers already include the "/api" prefix. Setting it 
+# causes FastAPI to strip "/api" from incoming requests, making them 
+# fail to match the registered routes (Double Prefixing Conflict).
 app = FastAPI(
     title="Hotel Rate Sentinel API",
-    version="2026.02",
-    root_path="/api" if os.getenv("VERCEL") == "1" else None
+    version="2026.02"
 )
+
+# DIAGNOSTIC: Root Ping
+@app.get("/ping")
+async def root_ping():
+    return {"status": "ok", "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)"}
+
+@app.get("/api/ping")
+async def api_ping():
+    return {"status": "ok", "message": "Pong from /api/ping (FastAPI matched full path)"}
 
 # CORS configuration
 # KAIZEN: Restrict CORS to authorized origins only
