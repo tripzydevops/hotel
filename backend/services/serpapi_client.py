@@ -242,9 +242,10 @@ class SerpApiClient:
     
     def _is_quota_error(self, response: httpx.Response) -> tuple[bool, bool]:
         """Returns (is_error, is_permanent)."""
-        # EXPLANATION: Error Differentiation
+        # EXPLANATION: Error Differentiation (Kaizen 2026)
         # 429 means "Too many requests per second" (Temporary).
-        # "Quota" or "Searches" in the JSON means "Out of money/credits" (Permanent).
+        # We only mark as PERMANENT if status is 403 (Daily Limit/Account Ban)
+        # and it specifically mentions credits or quota.
         if response.status_code == 429: 
             return True, False 
             
@@ -252,11 +253,14 @@ class SerpApiClient:
             error_data = response.json().get("error", "").lower()
             # Hard quota phrases
             permanent_phrases = ["quota", "run out", "searches", "insufficient credits"]
-            if any(x in error_data for x in permanent_phrases): 
+            
+            # If 403 AND a permanent phrase is found, it's a hard ban.
+            # If 429 or other status, we treat as temporary rotation.
+            if response.status_code == 403 and any(x in error_data for x in permanent_phrases):
                 return True, True
             
-            # General limit phrases (often temporary)
-            if "limit" in error_data or "exceeded" in error_data:
+            # General limit phrases - treat as temporary to allow rotation/retry
+            if any(x in error_data for x in ["limit", "exceeded", "quota", "searches"]):
                 return True, False
         except: 
             pass
@@ -297,11 +301,22 @@ class SerpApiClient:
     def _parse_market_offers(self, prices_data: List[Dict[str, Any]], currency: str) -> List[Dict[str, Any]]:
         offers = []
         for p in prices_data:
-            raw = p.get("rate_per_night", {}).get("lowest") if isinstance(p.get("rate_per_night"), dict) else p.get("rate_per_night")
+            # EXPLANATION: Deep Parsing (Kaizen 2026)
+            # SerpApi uses various keys for price. We check them all to ensure Wilmont 
+            # and others show full market depth.
+            raw = None
+            # Check price containers
+            price_keys = ["rate_per_night", "price", "total_rate", "rate"]
+            for k in price_keys:
+                val = p.get(k)
+                if val:
+                    raw = val.get("lowest") if isinstance(val, dict) else val
+                    if raw: break
+            
             price = self._clean_price_string(raw, currency)
             if price is not None:
                 offers.append({
-                    "vendor": p.get("source") or "Unknown",
+                    "vendor": p.get("source") or p.get("name") or "Unknown",
                     "price": price,
                     "currency": currency
                 })
@@ -479,6 +494,21 @@ class SerpApiClient:
         if best_match.get("prices"):
             all_offers_raw.extend(best_match["prices"])
 
+        parsed_offers = self._parse_market_offers(all_offers_raw, default_currency)
+
+        # KAİZEN: Absolute Lowest Price Selection
+        # Instead of trusting the top-level "raw_price", we scan the parsed offers
+        # to find the true market minimum.
+        if parsed_offers:
+            # Sort by price ascending
+            sorted_offers = sorted(parsed_offers, key=lambda x: x["price"])
+            cheapest_offer = sorted_offers[0]
+            
+            # If our parsed minimum is lower than the featured top-level price, use it.
+            if price is None or cheapest_offer["price"] < price:
+                price = cheapest_offer["price"]
+                best_match["deal_description"] = cheapest_offer["vendor"] # Update for vendor accuracy
+
         # Determine rank
         rank = None
         if properties and best_match:
@@ -499,7 +529,7 @@ class SerpApiClient:
             "image_url": best_match.get("images", [{}])[0].get("thumbnail"),
             "amenities": best_match.get("amenities", []),
             "images": [{"thumbnail": i.get("thumbnail"), "original": i.get("original")} for i in best_match.get("images", [])[:10]],
-            "offers": self._parse_market_offers(all_offers_raw, default_currency),
+            "offers": parsed_offers,
             "room_types": self._extract_all_room_types(best_match, default_currency),
             "reviews_breakdown": self._normalize_reviews_breakdown(best_match.get("reviews_breakdown", []), best_match.get("overall_rating")),
             "reviews": best_match.get("reviews", []),

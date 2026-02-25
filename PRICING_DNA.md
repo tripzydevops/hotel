@@ -39,6 +39,13 @@ The pipeline follows a four-stage process:
 - `backend/scripts/aggregate_daily_prices.py`: Pre-requisite data aggregator.
 - `.github/workflows/pricing_dna.yml`: Automation definition.
 
+## Market Selection Reliability (Kaizen 2026)
+
+To ensure the Pricing DNA is based on the true market low rather than featured advertisements, the ingestion pipeline uses:
+- **Deep Key Mapping**: Scans multiple SerpApi JSON keys (`rate_per_night`, `price`, `total_rate`) to prevent market depth restriction.
+- **Absolute Minimum Selection**: The system ignores sponsored "top-level" prices if a lower vendor rate is found in the competitive set.
+- **Quota Resilience**: Differentiates between 429 (Rate Limit) and 403 (Quota Out) to maintain scan continuity across large hotel sets.
+
 ---
 
 _Maintained by Antigravity AI_

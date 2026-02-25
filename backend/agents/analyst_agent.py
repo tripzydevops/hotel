@@ -256,9 +256,9 @@ class AnalystAgent:
                                 prev_shallow_count += 1
                         
                         if prev_shallow_count >= 2:
-                            await self._log_reasoning(session_id, f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}. 3 consecutive scans failed to capture full market depth. Investigation required.")
+                            await self._log_reasoning(session_id, f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}. 3 consecutive scans failed to capture full market depth. This usually indicates a change in SerpApi JSON structure (e.g., price keys) or a significant drop in vendor availability.")
                         else:
-                            await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found. Transient drop or low availability.")
+                            await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found. If this persists, it may imply vendors are moving to untracked price keys.")
                     except:
                         await self._log_reasoning(session_id, f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found.")
 
