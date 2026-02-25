@@ -596,18 +596,41 @@ async def perform_market_analysis(
                 # to show the "price story" of the day in the UI.
                 intraday_events = []
                 seen_intraday = set()
+                
+                # [KAİZEN] Multi-Vendor Price Extraction
+                # Why: A single scan often finds multiple vendors with different prices.
+                # Previously, we only added the LEAD price. Now we include all vendors
+                # from the parity_offers/offers arrays to show a richer price story.
                 for l in logs:
+                    # 1. Primary Matched Price
                     lp, _, _ = get_price_for_room(l, room_type, allowed_room_names_map)
                     if lp and lp > 0:
-                        # Normalize to 2 decimal places for comparison
                         rounded_lp = round(float(lp), 2)
                         if rounded_lp not in seen_intraday:
                             intraday_events.append({
                                 "price": rounded_lp,
                                 "recorded_at": l.get("recorded_at"),
-                                "vendor": l.get("vendor")
+                                "vendor": l.get("vendor") or "Primary"
                             })
                             seen_intraday.add(rounded_lp)
+                    
+                    # 2. Secondary Vendor Prices (Parity)
+                    # We only extract parity prices for "Standard" requests to avoid
+                    # mixing premium room prices with standard parity data.
+                    is_std_req = not room_type or any(s in room_type.lower() for s in ["standard", "standart"])
+                    if is_std_req:
+                        other_offers = l.get("parity_offers") or l.get("offers") or []
+                        for offer in other_offers:
+                            op = _extract_price(offer.get("price"))
+                            if op and op > 0:
+                                rounded_op = round(float(op), 2)
+                                if rounded_op not in seen_intraday:
+                                    intraday_events.append({
+                                        "price": rounded_op,
+                                        "recorded_at": l.get("recorded_at"),
+                                        "vendor": offer.get("vendor") or "Other"
+                                    })
+                                    seen_intraday.add(rounded_op)
 
                 # 1. Analyze the logs for this specific check-in date
                 latest = logs[0]

@@ -27,12 +27,12 @@ async def trigger_scan():
     #     return
     
     # user_id = users.data[0]['user_id']
-    user_id = "d33fc277-7006-468f-91b6-8cc7897fd910"
+    user_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"  # tripzydevops
     print(f"Using User ID: {user_id}")
 
     # 2. Get hotels for this user
     print("Fetching hotels...")
-    hotels = db.table("hotels").select("*").eq("user_id", user_id).limit(3).execute()
+    hotels = db.table("hotels").select("*").eq("user_id", user_id).execute()
     if not hotels.data:
         print("No hotels found for this user.")
         return
