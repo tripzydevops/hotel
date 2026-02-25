@@ -63,13 +63,13 @@ Specialized LLM-powered agents:
 - **AnalystAgent:** Vector-based reasoning and parity detection.
 - **NotifierAgent:** Intelligent alerting based on user preferences.
 
-## ⚙️ Background Operations
+## ⚙️ Background Operations (Redis-Free)
 
-The system maintains persistent health and data freshness through a decoupled background layer:
+The system maintains persistent health and data freshness through a **Lean Serverless Infrastructure**:
 
-- **Persistent Scheduler**: A multi-layered cron system (VM-level + GitHub Actions) ensures scans run on time independent of user activity.
-- **Agent-Mesh Orchestration**: The `monitor_service.py` coordinates the flow from raw scraping to AI-driven sentiment analysis.
-- **Smart Memory Persistence**: Cumulative data merging ensures zero loss of historical context during background cycles.
+- **FastAPI BackgroundTasks**: All manual and asynchronous monitoring logic runs in-process. This eliminates the need for a separate Celery/Redis cluster and stays within free-tier infrastructure limits.
+- **Supabase-Backed State Machine**: The `scan_sessions` table acts as the system-wide queue. Analysts and Scrapers update their "Reasoning Trace" directly in the database for real-time frontend auditing.
+- **Self-Healing Scheduler**: A multi-layered trigger (Cron + GitHub Actions) ensures scans are dispatched on time. The system anchors next scan times to the database to prevent drift.
 
 ## ⚡ Speed & AI Optimization
 
