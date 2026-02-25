@@ -19,6 +19,7 @@ from typing import Optional, List, Dict, Any
 from datetime import date, timedelta, datetime
 from dotenv import load_dotenv
 import threading
+import asyncio
 
 load_dotenv()
 load_dotenv(".env.local", override=True)
