@@ -48,9 +48,13 @@ from backend.api import (
 
 # Initialize FastAPI
 # EXPLANATION: Vercel Routing Normalization
+# Per Attempt 11 of the cloud debug journal, we must set root_path="/api" 
+# only when running on Vercel to ensure the router correctly matches paths
+# rewritten by Vercel/Next.js.
 app = FastAPI(
     title="Hotel Rate Sentinel API",
-    version="2026.02"
+    version="2026.02",
+    root_path="/api" if os.getenv("VERCEL") == "1" else None
 )
 
 # CORS configuration

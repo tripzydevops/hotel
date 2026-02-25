@@ -17,3 +17,6 @@ redis>=5.0.1
 # Full dependencies are in requirements-all.txt for the background worker.
 google-genai>=1.0.0
 sse-starlette>=2.0.0
+weasyprint>=61.0
+cffi>=1.16.0
+pisa>=0.5.1

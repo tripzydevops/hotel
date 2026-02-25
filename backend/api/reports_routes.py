@@ -146,6 +146,8 @@ async def export_report_pdf(
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename=report_{report_id}.pdf"}
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/briefing/{target_hotel_id}/pdf")
 async def export_briefing_pdf(
