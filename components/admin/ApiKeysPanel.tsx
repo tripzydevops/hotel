@@ -276,44 +276,52 @@ const ApiKeysPanel = () => {
                     </code>
                   </td>
                   <td className="p-5">
-                    <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted && (key.searches_left === undefined || key.searches_left > 0)
-                        ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
-                        : "bg-red-500/10 text-red-500 border border-red-500/20"
-                        }`}
-                    >
-                      {key.is_exhausted || (key.searches_left !== undefined && key.searches_left <= 0) ? "Exhausted" : "Active"}
-                    </span>
-                  </td>
-                  <td className="p-5 text-right">
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-black tabular-nums">
-                          {key.usage || 0}
-                        </span>
-                        <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-tight">
-                          Requests
-                        </span>
-                      </div>
-                      {key.searches_left !== undefined && (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-md border border-white/5 mt-0.5">
-                          <span className={`text-[9px] font-black tabular-nums ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-400'}`}>
-                            {key.searches_left}
-                          </span>
-                          <span className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
-                            Searches Left
-                          </span>
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted && (key.searches_left === undefined || key.searches_left > 0)
+                          ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                          : "bg-red-500/10 text-red-500 border border-red-500/20"
+                          }`}
+                      >
+                        {key.is_exhausted || (key.searches_left !== undefined && key.searches_left <= 0) ? "Exhausted" : "Active"}
+                      </span>
+                      {key.is_current && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Scanning Key</span>
                         </div>
                       )}
-                      <div className="flex flex-col items-end opacity-60">
-                        <div className="text-[8px] font-bold text-[var(--text-muted)] tracking-widest uppercase italic">
-                          Limit: {key.limit || `${keyStatus?.quota_per_key || 250} / mo`}
+                    </div>
+                  </td>
+                  <td className="p-5 text-right">
+                    <div className="flex flex-col items-end gap-1.5">
+                      {/* Live Data Block */}
+                      {key.searches_left !== undefined && (
+                        <div className="flex flex-col items-end px-3 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xl font-black tabular-nums tracking-tighter ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-500'}`}>
+                              {key.searches_left}
+                            </span>
+                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Scans Left</span>
+                          </div>
+                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-60 mt-0.5">
+                            of {key.limit || `${keyStatus?.quota_per_key || 250}`} limit
+                          </div>
                         </div>
+                      )}
+
+                      <div className="flex flex-col items-end gap-1 opacity-90">
                         {key.refresh_date && (
-                          <div className="text-[8px] font-bold text-[var(--soft-gold)] tracking-widest uppercase italic mt-0.5">
-                            Renew: {key.refresh_date}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-tighter">Renew Date:</span>
+                            <span className="text-[10px] font-black text-[var(--soft-gold)] tabular-nums px-2 py-0.5 bg-[var(--soft-gold)]/5 rounded border border-[var(--soft-gold)]/10">
+                              {key.refresh_date}
+                            </span>
                           </div>
                         )}
+                        <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-1">
+                          Requests: {key.usage || 0}
+                        </div>
                       </div>
                     </div>
                   </td>
