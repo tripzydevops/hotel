@@ -277,11 +277,10 @@ const ApiKeysPanel = () => {
                   </td>
                   <td className="p-5">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        !key.is_exhausted
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted
                           ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
                           : "bg-red-500/10 text-red-500 border border-red-500/20"
-                      }`}
+                        }`}
                     >
                       {key.is_exhausted ? "Exhausted" : "Active"}
                     </span>
@@ -296,8 +295,15 @@ const ApiKeysPanel = () => {
                           Requests
                         </span>
                       </div>
-                      <div className="text-[8px] font-bold text-[var(--text-muted)] tracking-widest uppercase opacity-50 italic">
-                        Limit: {keyStatus?.quota_per_key || 2500} / mo
+                      <div className="flex flex-col items-end opacity-60">
+                        <div className="text-[8px] font-bold text-[var(--text-muted)] tracking-widest uppercase italic">
+                          Limit: {key.limit || `${keyStatus?.quota_per_key || 250} / mo`}
+                        </div>
+                        {key.refresh_date && (
+                          <div className="text-[8px] font-bold text-[var(--soft-gold)] tracking-widest uppercase italic mt-0.5">
+                            Renew: {key.refresh_date}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

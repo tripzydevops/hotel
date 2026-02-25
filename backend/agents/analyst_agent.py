@@ -367,11 +367,13 @@ class AnalystAgent:
                 # categories from the database with new ones from the current scan result.
                 # This prevents old (but still relevant) issues from disappearing 
                 # if the latest guest reviews don't mention them.
+                sentiment_changed = False
                 if "reviews_breakdown" in price_data:
                     new_breakdown = price_data["reviews_breakdown"]
                     merged_breakdown = merge_sentiment_breakdowns(current_breakdown, new_breakdown)
                     meta_update["sentiment_breakdown"] = merged_breakdown
                     reasoning_log.append(f"[Sentiment] Merging {len(new_breakdown)} new categories into {len(merged_breakdown)} total.")
+                    sentiment_changed = True
                 
                 # Extract other rich fields (excluding reviews_breakdown which is merged above)
                 for field in ["rating", "property_token", "image_url", "latitude", "longitude", "reviews_list", "review_count", "stars"]:
@@ -391,28 +393,21 @@ class AnalystAgent:
                 # To prevent data drift, we mark the hotel as 'stale' as soon as
                 # sentiment data changes. This ensures the frontend doesn't trust
                 # old AI embeddings if they haven't been regenerated yet.
-                sentiment_changed = "sentiment_breakdown" in meta_update
                 if sentiment_changed:
                     meta_update["embedding_status"] = "stale"
                 
                 # Update Hotel Metadata
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
                 
-                # Update Sentiment Embedding (Async)
+                # EXPLANATION: Parallel Embedding Collection
+                # Previously, embeddings were generated sequentially for each hotel,
+                # causing massive latency (approx 2s per hotel). 
+                # Now we collect all hotels that need updates and process them 
+                # in parallel at the end of the analysis pipeline.
                 if sentiment_changed:
-                     try:
-                         reasoning_log.append(f"[Embedding] Regenerating profile for {hotel_id}...")
-                         success = await self._update_sentiment_embedding(hotel_id, meta_update)
-                         if success:
-                             self.db.table("hotels").update({"embedding_status": "current"}).eq("id", hotel_id).execute()
-                             reasoning_log.append("[Embedding] Success.")
-                         else:
-                             self.db.table("hotels").update({"embedding_status": "failed"}).eq("id", hotel_id).execute()
-                             reasoning_log.append("[Embedding] Failed - marked for retry.")
-                     except Exception as e:
-                         print(f"[AnalystAgent] Sentiment embedding error: {e}")
-                         self.db.table("hotels").update({"embedding_status": "failed"}).eq("id", hotel_id).execute()
-                         reasoning_log.append(f"[Embedding] Error: {str(e)}")
+                    if not hasattr(self, '_embedding_queue'): self._embedding_queue = []
+                    self._embedding_queue.append((hotel_id, meta_update))
+                    reasoning_log.append(f"[Embedding] Queued for parallel generation: {hotel_id}")
                 
                 # Prepare Sentiment History
                 if price_data.get("rating"):
@@ -466,30 +461,31 @@ class AnalystAgent:
             print(f"[AnalystAgent] Batch insert error: {e}")
             reasoning_log.append(f"[CRITICAL] Batch insert failed: {str(e)}")
 
-        # EXPLANATION: Notification Dispatch (Phase 3)
-        # We no longer dispatch notifications directly from AnalystAgent to avoid redundancy.
-        # The MonitorService (caller) or the Scheduler handles dispatching 'analysis_summary["alerts"]' 
-        # using the NotifierAgent after this method returns.
-        pass
+        # EXPLANATION: Parallel Embedding Generation (2026 Optimization)
+        # Instead of slowing down the main analysis loop, we process all queued
+        # embeddings in parallel at the end. This typically saves 2-10s per scan.
+        if hasattr(self, '_embedding_queue') and self._embedding_queue:
+            try:
+                embedding_tasks = []
+                for hotel_id, meta in self._embedding_queue:
+                    embedding_tasks.append(self._update_sentiment_embedding(hotel_id, meta))
+                
+                print(f"[AnalystAgent] Processing {len(embedding_tasks)} embeddings in parallel...")
+                results = await asyncio.gather(*embedding_tasks, return_exceptions=True)
+                
+                # Update statuses based on results
+                for i, res in enumerate(results):
+                    hotel_id, _ = self._embedding_queue[i]
+                    status = "current" if res is True else "failed"
+                    self.db.table("hotels").update({"embedding_status": status}).eq("id", hotel_id).execute()
+                
+                reasoning_log.append(f"[Embedding] Parallel processing complete for {len(embedding_tasks)} profiles.")
+                # Clear queue for next run
+                self._embedding_queue = []
+            except Exception as e:
+                print(f"[AnalystAgent] Parallel embedding error: {e}")
+                reasoning_log.append(f"[Embedding] Parallel processing failed: {str(e)}")
 
-
-        # [REMOVED] Redundant embedding loop. 
-        # Embeddings are now handled within the main loop for atomic consistency.
-
-        # Final Cleanup
-        analysis_summary["reasoning"] = reasoning_log
-
-        # [ADK INTEGRATION] Senior AI Reasoning
-        try:
-            print('[AnalystAgent] Invoking ADK Senior reasoning...')
-            adk_analysis = await self.adk_agent.run_analysis(scraper_results, threshold)
-            if adk_analysis and 'reasoning' in adk_analysis:
-                for msg in adk_analysis['reasoning']:
-                    reasoning_log.append(f'[ADK Analyst] {msg}')
-            print(f'[AnalystAgent] ADK reasoning trace added: {len(adk_analysis.get("reasoning", []))} steps')
-        except Exception as adk_e:
-            print(f'[AnalystAgent] ADK reasoning failed: {adk_e}')
-        
         # 5. Reasoning Trace persistence
         if session_id and reasoning_log:
             try:

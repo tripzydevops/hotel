@@ -39,7 +39,9 @@ async def update_room_type_catalog(
     hotel_map = {h["id"]: h for h in hotels}
     new_count = 0
     skip_count = 0
+    embedding_queue = [] # List of (room_dict, hotel_context, original_name, hotel_id)
 
+    # 1. Collect all room types that need embeddings
     for result in scraper_results:
         if result.get("status") != "success":
             continue
@@ -49,13 +51,10 @@ async def update_room_type_catalog(
             continue
 
         hotel_context = hotel_map.get(hotel_id, {})
-
-        # Extract room types from the scan result
         room_types = result.get("room_types") or []
         if not isinstance(room_types, list) or not room_types:
             continue
 
-        # Check which room types already exist for this hotel
         try:
             existing_res = (
                 db.table("room_type_catalog")
@@ -73,11 +72,9 @@ async def update_room_type_catalog(
                 skip_count += 1
                 continue
 
-            # Calculate average price for this room type
             price = room.get("price")
             avg_price = float(price) if price and isinstance(price, (int, float)) else None
 
-            # Generate semantic embedding
             room_dict = {
                 "name": name,
                 "price": avg_price or "N/A",
@@ -85,33 +82,57 @@ async def update_room_type_catalog(
                 "sqm": room.get("sqm"),
                 "amenities": room.get("amenities", []),
             }
+            
+            embedding_queue.append({
+                "room_dict": room_dict,
+                "hotel_context": hotel_context,
+                "original_name": name,
+                "hotel_id": hotel_id,
+                "avg_price": avg_price,
+                "currency": room.get("currency", "TRY")
+            })
+            existing_names.add(name)
 
+    # 2. Process embeddings in parallel
+    if embedding_queue:
+        import asyncio
+        import time
+        start_time = time.time()
+        print(f"[RoomTypeCatalog] Generating {len(embedding_queue)} embeddings in parallel...")
+        
+        async def get_and_pack(item):
             try:
-                text = format_room_type_for_embedding(room_dict, hotel_context=hotel_context)
+                text = format_room_type_for_embedding(item["room_dict"], hotel_context=item["hotel_context"])
                 embedding = await get_embedding(text)
-
-                if not embedding or all(v == 0.0 for v in embedding):
-                    print(f"[RoomTypeCatalog] ⚠ Failed to embed: {name}")
-                    continue
-
-                # Upsert into catalog
-                db.table("room_type_catalog").upsert(
-                    {
-                        "hotel_id": hotel_id,
-                        "original_name": name,
+                if embedding and not all(v == 0.0 for v in embedding):
+                    return {
+                        "hotel_id": item["hotel_id"],
+                        "original_name": item["original_name"],
                         "embedding": embedding,
-                        "avg_price": avg_price,
-                        "currency": room.get("currency", "TRY"),
-                    },
-                    on_conflict="hotel_id,original_name",
-                ).execute()
-
-                new_count += 1
-                print(f"[RoomTypeCatalog] ✓ New room type embedded: {name} ({hotel_context.get('name', 'Unknown')})")
-                existing_names.add(name)  # Prevent duplicates within same scan
-
+                        "avg_price": item["avg_price"],
+                        "currency": item["currency"]
+                    }
             except Exception as e:
-                print(f"[RoomTypeCatalog] ✗ Error processing {name}: {e}")
-                continue
+                print(f"[RoomTypeCatalog] Embedding error for {item['original_name']}: {e}")
+            return None
 
-    print(f"[RoomTypeCatalog] Done — {new_count} new, {skip_count} skipped (already cataloged)")
+        tasks = [get_and_pack(item) for item in embedding_queue]
+        results = await asyncio.gather(*tasks)
+        
+        valid_upserts = [r for r in results if r is not None]
+        
+        # 3. Batch Upsert
+        if valid_upserts:
+            try:
+                # Supabase handles batch upserts via list of dicts
+                db.table("room_type_catalog").upsert(
+                    valid_upserts,
+                    on_conflict="hotel_id,original_name"
+                ).execute()
+                new_count = len(valid_upserts)
+                duration = time.time() - start_time
+                print(f"[RoomTypeCatalog] ✓ Batch upsert complete: {new_count} items in {duration:.2f}s")
+            except Exception as e:
+                print(f"[RoomTypeCatalog] ✗ Batch upsert failed: {e}")
+                
+    print(f"[RoomTypeCatalog] Done — {new_count} new, {skip_count} skipped")

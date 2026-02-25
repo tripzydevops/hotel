@@ -272,7 +272,9 @@ export interface KeyStatus {
     is_current: boolean;
     is_exhausted: boolean;
     exhausted_at: string | null;
-    usage?: number; // Add usage
+    usage?: number;
+    refresh_date?: string;
+    limit?: string;
   }[];
   env_debug?: Record<string, string>; // Add env_debug
 }

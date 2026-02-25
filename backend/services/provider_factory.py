@@ -74,7 +74,7 @@ class ProviderFactory:
             "enabled": bool(os.getenv("SERPAPI_API_KEY")),
             "priority": 1,
             "limit": "250/mo",
-            "refresh": "Refreshed Today (Feb 05)", 
+            "refresh": "Mar 05", 
             "latency": "1.2s",
             "health": "Active" if active_key_index == 0 else "Ready"
         })
@@ -86,7 +86,7 @@ class ProviderFactory:
             "enabled": bool(os.getenv("SERPAPI_API_KEY_2")),
             "priority": 2,
             "limit": "250/mo",
-            "refresh": (today + timedelta(days=5)).strftime("%b %d"),
+            "refresh": "Feb 27",
             "latency": "0.8s",
             "health": "Active" if active_key_index == 1 else "Ready"
         })
@@ -98,11 +98,10 @@ class ProviderFactory:
             "enabled": bool(os.getenv("SERPAPI_API_KEY_3")),
             "priority": 3,
             "limit": "250/mo",
-             # USER REQUEST: Mark creation date and refresh in a month
-            "refresh": (today + timedelta(days=30)).strftime("%b %d"),
+            "refresh": "Mar 04",
             "latency": "Pending",
             "health": "Active" if active_key_index == 2 else "Ready",
-            "created_at": today.strftime("%b %d, %Y")
+            "created_at": "Feb 04, 2026"
         })
         
         return report

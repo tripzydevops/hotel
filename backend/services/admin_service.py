@@ -129,7 +129,25 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         status["monthly_usage"] = monthly_usage
         
         detailed = serpapi_client.get_detailed_status()
-        status["keys_status"] = detailed.get("keys_status", [])
+        keys_list = detailed.get("keys_status", [])
+        
+        # EXPLANATION: Metadata Injection (Kaizen 2026)
+        # We merge hardcoded metadata (renewal dates, limits) from ProviderFactory 
+        # into the dynamic usage data from serpapi_client.
+        from backend.services.provider_factory import ProviderFactory
+        factory_report = ProviderFactory.get_status_report()
+        
+        for i, key_entry in enumerate(keys_list):
+            # Key 1 is index 0, Key 2 is index 1, etc.
+            # Match with SerpApi provider entries in the report
+            # The report has entries like "SerpApi Key 1 (Primary)"
+            match_name = f"SerpApi Key {i+1}"
+            meta = next((r for r in factory_report if match_name in r["name"]), None)
+            if meta:
+                key_entry["refresh_date"] = meta.get("refresh")
+                key_entry["limit"] = meta.get("limit")
+        
+        status["keys_status"] = keys_list
         status["env_debug"] = {
             "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
             "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing",
@@ -153,28 +171,7 @@ async def get_admin_providers_logic() -> List[Dict[str, Any]]:
     """
     try:
         from backend.services.provider_factory import ProviderFactory
-        
-        # This is a simplified static list for now, as dynamic provider registration 
-        # is managed via code/env. In a future version, this could query a DB table.
-        providers = []
-        
-        # Check SerpApi
-        serp_key = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
-        providers.append({
-            "name": "SerpApi (Google Hotels)",
-            "enabled": bool(serp_key),
-            "priority": 1
-        })
-        
-        # Check RapidAPI (placeholder)
-        rapid_key = os.getenv("RAPIDAPI_KEY")
-        providers.append({
-            "name": "RapidAPI (Booking.com)",
-            "enabled": bool(rapid_key),
-            "priority": 2
-        })
-        
-        return providers
+        return ProviderFactory.get_status_report()
     except Exception as e:
         print(f"Admin Providers Error: {e}")
         return []

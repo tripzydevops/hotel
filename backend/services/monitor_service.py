@@ -209,8 +209,11 @@ async def trigger_monitor_logic(
             
             if session_id:
                 try:
+                    res = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+                    trace = res.data[0].get("reasoning_trace") or [] if res.data else []
+                    trace.append("Dispatched via Celery fallback")
                     db.table("scan_sessions").update({
-                        "reasoning_trace": ["Dispatched via Celery fallback"]
+                        "reasoning_trace": trace
                     }).eq("id", str(session_id)).execute()
                 except: pass
         except Exception as fallback_e:
@@ -294,8 +297,14 @@ async def run_monitor_background(
         traceback.print_exc()
         if session_id:
             try:
+                # Capture Error in reasoning trace
+                res = db.table("scan_sessions").select("reasoning_trace").eq("id", str(session_id)).execute()
+                trace = res.data[0].get("reasoning_trace") or [] if res.data else []
+                trace.append(f"[SYSTEM FAILURE] {str(e)}")
+                
                 db.table("scan_sessions").update({
                     "status": "failed",
+                    "reasoning_trace": trace,
                     "completed_at": datetime.now().isoformat()
                 }).eq("id", str(session_id)).execute()
             except: pass
@@ -324,6 +333,28 @@ async def run_scheduler_check_logic():
         if not supabase:
             logger.error("CRON: Database unavailable")
             return
+
+        # 0. Cleanup Zombie Sessions
+        # EXPLANATION: Long-running sessions (likely crashed/stalled) inflate the
+        # "active" scan count and the system-wide error rate stats.
+        # We mark sessions running for > 2 hours as failed to maintain signal integrity.
+        try:
+            zombie_cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            zombies = supabase.table("scan_sessions") \
+                .select("id") \
+                .in_("status", ["pending", "running"]) \
+                .lt("created_at", zombie_cutoff) \
+                .execute()
+            
+            if zombies.data:
+                z_ids = [z["id"] for z in zombies.data]
+                s_logger.warning(f"CRON: Cleaning up {len(z_ids)} zombie sessions: {z_ids}")
+                supabase.table("scan_sessions") \
+                    .update({"status": "failed", "completed_at": datetime.now().isoformat()}) \
+                    .in_("id", z_ids) \
+                    .execute()
+        except Exception as z_e:
+            s_logger.error(f"CRON: Zombie cleanup failed: {z_e}")
 
         # 1. Get all active users with schedules due
         # KAİZEN: Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)

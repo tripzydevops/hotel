@@ -251,15 +251,25 @@ class ScraperAgent:
                             primary_provider = ProviderFactory.get_provider()
                             await self.log_reasoning(session_id, "API Call", f"Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...", "info", {"provider": primary_provider.get_provider_name()})
                             
-                            price_data = await primary_provider.fetch_price(
-                                hotel_name=hotel_name,
-                                location=location,
-                                check_in=check_in,
-                                check_out=check_out,
-                                adults=adults,
-                                currency=options.currency if options and options.currency else "TRY",
-                                serp_api_id=serp_api_id
-                            )
+                            # KAİZEN: Per-Request Timeout
+                            # We wrap the provider call in a timeout to ensure a single stalling
+                            # request doesn't block the entire background process.
+                            try:
+                                price_data = await asyncio.wait_for(
+                                    primary_provider.fetch_price(
+                                        hotel_name=hotel_name,
+                                        location=location,
+                                        check_in=check_in,
+                                        check_out=check_out,
+                                        adults=adults,
+                                        currency=options.currency if options and options.currency else "TRY",
+                                        serp_api_id=serp_api_id
+                                    ),
+                                    timeout=60.0
+                                )
+                            except asyncio.TimeoutError:
+                                await self.log_reasoning(session_id, "Timeout", f"Request for {hotel_name} timed out after 60s.", "warning")
+                                price_data = {"status": "error", "error": "request_timeout"}
                     except Exception as e:
                         err_msg = str(e)
                         await self.log_reasoning(session_id, "API Error", f"Primary Provider Error for {hotel_name}: {err_msg}", "error", {"error_message": err_msg})
