@@ -598,34 +598,14 @@ async def create_admin_plan_logic(plan: PlanCreate, db: Client) -> Dict[str, Any
     except Exception as e:
         raise HTTPException(500, str(e))
 
-async def update_admin_settings_logic(updates: AdminSettingsUpdate, db: Client) -> Dict[str, Any]:
-    """Update global settings."""
+async def update_admin_plan_logic(id: UUID, plan: PlanUpdate, db: Client) -> Dict[str, Any]:
+    """Update an existing membership plan."""
     try:
-        # Standardize updates
-        data = updates.model_dump(exclude_unset=True)
-        
-        db.table("settings") \
-            .update(data) \
-            .eq("user_id", "00000000-0000-0000-0000-000000000000") \
-            .execute()
-            
-        return {"status": "success"}
+        data = plan.model_dump(exclude_unset=True)
+        res = db.table("membership_plans").update(data).eq("id", str(id)).execute()
+        return res.data[0] if res.data else {"status": "success"}
     except Exception as e:
-        print(f"Admin Settings Update Error: {e}")
-        return {"error": str(e)}
-
-async def trigger_all_overdue_logic() -> Dict[str, Any]:
-    """
-    Manually triggers the background scheduler loop.
-    Finds all users who are currently due/overdue and triggers their scans.
-    """
-    try:
-        from backend.services.monitor_service import run_scheduler_check_logic
-        await run_scheduler_check_logic()
-        return {"status": "success", "message": "All overdue scans triggered successfully."}
-    except Exception as e:
-        print(f"Trigger All Overdue Error: {e}")
-        return {"error": str(e)}
+        raise HTTPException(500, str(e))
 
 async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
     """Delete a membership plan."""

@@ -7,6 +7,7 @@ from backend.services.auth_service import get_current_active_user
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog
 from backend.services.monitor_service import trigger_monitor_logic, run_monitor_background
 from datetime import datetime, timezone
+import asyncio
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 
