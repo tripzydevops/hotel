@@ -80,7 +80,108 @@ async def export_saved_briefing_pdf(
     metrics = report_data.get("metrics", {})
     narrative = report_data.get("narrative", "No narrative saved.")
     target_meta = report_data.get("target_meta", {"name": "Unknown", "location": "Unknown"})
+    created_at = data.get('created_at', 'N/A')[:10]
     
+    # PHASE 12: Multi-Lens Dynamic Layouts for Saved Briefings
+    context = report_data.get("context", {})
+    report_type_clean = context.get('report_type', 'Strategic Market Pulse')
+    rival_meta = report_data.get("rival_meta")
+    
+    middle_cards_html = ""
+    if report_type_clean == "Sentiment Deep-Dive":
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Experience Snapshot</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 20px;">{metrics.get('sentiment_snapshot', 'N/A')}</div>
+                        <div class="metric-label" style="color: #8892b0; margin-top: 10px;">Archived Guest Pillars</div>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Emotional Pulse</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)} / 5.0</div>
+                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    elif report_type_clean == "Yield Audit":
+        parity_color = '#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Pricing Discipline</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)}</div>
+                        <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Parity Friction</h2>
+                        <div class="metric-val" style="font-size: 22px; color: {parity_color}">
+                            {metrics.get('parity_leaks_count', 0)} Leakage Events
+                        </div>
+                        <div class="metric-label" style="color: #8892b0;">Detected OTA Discrepancies</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    elif report_type_clean == "Competitive Battlefield" or rival_meta:
+        rival_name = rival_meta.get("name", "Market") if rival_meta else "Market"
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="100%">
+                    <div class="card" style="border-color: #d4af37; background-color: #112240;">
+                        <h2 style="color: #d4af37;">The Bout: {target_meta.get('name', 'Unknown')} vs {rival_name}</h2>
+                        <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
+                        <div class="metric-label" style="text-align: center; color: #8892b0;">
+                            Strategic Alignment Match: Indexing guest substitution risk based on historical overlaps.
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    else: # Default: Strategic Market Pulse
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Market Battlefield</h2>
+                        <table class="metric-table" style="background-color: #112240;">
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)}</div>
+                                    <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
+                                </td>
+                                <td style="text-align: right; padding: 10px;">
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{metrics.get('avg_rank', 1)}</div>
+                                    <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Commercial Health</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)}</div>
+                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+
     html_content = f"""
     <html>
     <head>
@@ -126,182 +227,29 @@ async def export_saved_briefing_pdf(
             <table class="header-table">
                 <tr>
                     <td>
-                        <h1>{report_data.get('context', {}).get('report_type', 'Executive Briefing (Saved)')}</h1>
-                        <div class="cadence">{target_meta['name']} | {report_data.get('context', {}).get('timeframe', 'Historical Pulse Snapshot')}</div>
+                        <h1>{report_type_clean}</h1>
+                        <div class="cadence">{target_meta.get('name', 'Unknown')} | {context.get('timeframe', 'Snapshot Pulse')}</div>
                     </td>
                     <td style="text-align: right; vertical-align: bottom;">
-                        <div class="cadence">{data['created_at'][:10]}</div>
+                        <div class="cadence">{created_at}</div>
                     </td>
                 </tr>
             </table>
 
-            # PHASE 12: Multi-Lens Dynamic Layouts for Saved Briefings
-            context = report_data.get("context", {})
-            report_type_clean = context.get('report_type', 'Strategic Market Pulse')
-            rival_meta = report_data.get("rival_meta")
-            
-            middle_cards_html = ""
-            if report_type_clean == "Sentiment Deep-Dive":
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Experience Snapshot</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 20px;">{metrics.get('sentiment_snapshot', 'N/A')}</div>
-                                <div class="metric-label" style="color: #8892b0; margin-top: 10px;">Archived Guest Pillars</div>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Emotional Pulse</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)} / 5.0</div>
-                                <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            elif report_type_clean == "Yield Audit":
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Pricing Discipline</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)}</div>
-                                <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Parity Friction</h2>
-                                <div class="metric-val" style="font-size: 22px; color: {'#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'}">
-                                    {metrics.get('parity_leaks_count', 0)} Leakage Events
-                                </div>
-                                <div class="metric-label" style="color: #8892b0;">Detected OTA Discrepancies</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            elif report_type_clean == "Competitive Battlefield" or rival_meta:
-                rival_name = rival_meta.get("name", "Market") if rival_meta else "Market"
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="100%">
-                            <div class="card" style="border-color: #d4af37; background-color: #112240;">
-                                <h2 style="color: #d4af37;">The Bout: {target_meta['name']} vs {rival_name}</h2>
-                                <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
-                                <div class="metric-label" style="text-align: center; color: #8892b0;">
-                                    Strategic Alignment Match: Indexing guest substitution risk based on historical overlaps.
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            else: # Default: Strategic Market Pulse
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Market Battlefield</h2>
-                                <table class="metric-table" style="background-color: #112240;">
-                                    <tr>
-                                        <td style="padding: 10px;">
-                                            <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)}</div>
-                                            <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
-                                        </td>
-                                        <td style="text-align: right; padding: 10px;">
-                                            <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{metrics.get('avg_rank', 1)}</div>
-                                            <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Commercial Health</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)}</div>
-                                <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
+            {middle_cards_html}
 
-            html_content = f"""
-            <html>
-            <head>
-                <style>
-                    @page {{ size: A4; margin: 0; }}
-                    body {{ 
-                        font-family: 'Helvetica', sans-serif; 
-                        background-color: #0a192f; 
-                        color: #e6f1ff; 
-                        margin: 0; 
-                        padding: 40px;
-                    }}
-                    .report-wrapper {{ width: 100%; }}
-                    .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
-                    h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
-                    .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
-                    .grid-table {{ width: 100%; border-spacing: 20px 0; }}
-                    .card {{ 
-                        background-color: #112240; 
-                        border: 1px solid #d4af37; 
-                        border-radius: 12px; 
-                        padding: 20px; 
-                        margin-bottom: 20px;
-                        vertical-align: top;
-                    }}
-                    h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
-                    .metric-table {{ width: 100%; }}
-                    .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
-                    .metric-label {{ color: #8892b0; font-size: 12px; }}
-                    .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }}
-                    .footer {{ 
-                        margin-top: 50px; 
-                        text-align: center; 
-                        color: #8892b0; 
-                        font-size: 12px; 
-                        border-top: 1px solid #233554;
-                        padding-top: 20px;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="report-wrapper">
-                    <table class="header-table">
-                        <tr>
-                            <td>
-                                <h1>{report_type_clean}</h1>
-                                <div class="cadence">{target_meta['name']} | {context.get('timeframe', 'Snapshot Pulse')}</div>
-                            </td>
-                            <td style="text-align: right; vertical-align: bottom;">
-                                <div class="cadence">{data['created_at'][:10]}</div>
-                            </td>
-                        </tr>
-                    </table>
+            <div class="card" style="background-color: #112240;">
+                <h2 style="color: #d4af37;">Archived Strategic Narrative</h2>
+                <div class="narrative">{narrative}</div>
+            </div>
 
-                    {middle_cards_html}
-
-                    <div class="card" style="background-color: #112240;">
-                        <h2 style="color: #d4af37;">Archived Strategic Narrative</h2>
-                        <div class="narrative">{narrative}</div>
-                    </div>
-
-                    <div class="footer">
-                        Intelligence archived by Agentic Tripzy Hub | Specialized Multi-Lens Engine
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
+            <div class="footer">
+                Intelligence archived by Agentic Tripzy Hub | Specialized Multi-Lens Engine
+            </div>
+        </div>
+    </body>
+    </html>
+    """
     
     result = io.BytesIO()
     pisa.CreatePDF(html_content, dest=result)
@@ -452,103 +400,104 @@ async def export_briefing_pdf(
     metrics = briefing["metrics"]
     narrative = briefing.get("narrative_raw", "No narrative generated.")
     
-            # PHASE 12: Multi-Lens Dynamic Layouts
-            report_type_clean = briefing.get('context', {}).get('report_type', 'Strategic Market Pulse')
-            
-            middle_cards_html = ""
-            if report_type_clean == "Sentiment Deep-Dive":
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Experience Snapshot</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 20px;">{briefing['metrics'].get('sentiment_snapshot', 'N/A')}</div>
-                                <div class="metric-label" style="color: #8892b0; margin-top: 10px;">Top Guest Pillars</div>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Emotional Pulse</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)} / 5.0</div>
-                                <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            elif report_type_clean == "Yield Audit":
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Pricing Discipline</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)} {target.get('preferred_currency', 'TRY')}</div>
-                                <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Parity Friction</h2>
-                                <div class="metric-val" style="font-size: 22px; color: {'#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'}">
-                                    {metrics.get('parity_leaks_count', 0)} Leakage Events
-                                </div>
-                                <div class="metric-label" style="color: #8892b0;">Detected OTA Discrepancies</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            elif report_type_clean == "Competitive Battlefield" or rival:
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="100%">
-                            <div class="card" style="border-color: #d4af37; background-color: #112240;">
-                                <h2 style="color: #d4af37;">The Bout: {target['name']} vs {rival['name'] if rival else 'Market'}</h2>
-                                <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
-                                <div class="metric-label" style="text-align: center; color: #8892b0;">
-                                    Strategic Alignment Match: Indexing guest substitution risk based on sentiment overlaps.
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
-            else: # Default: Strategic Market Pulse
-                middle_cards_html = f"""
-                <table class="grid-table">
-                    <tr>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Market Battlefield</h2>
-                                <table class="metric-table" style="background-color: #112240;">
-                                    <tr>
-                                        <td style="padding: 10px;">
-                                            <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)} {target.get('preferred_currency', 'TRY')}</div>
-                                            <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
-                                        </td>
-                                        <td style="text-align: right; padding: 10px;">
-                                            <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{metrics.get('avg_rank', 1)}</div>
-                                            <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </td>
-                        <td width="50%">
-                            <div class="card" style="background-color: #112240;">
-                                <h2 style="color: #d4af37;">Commercial Health</h2>
-                                <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)}</div>
-                                <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                """
+    # PHASE 12: Multi-Lens Dynamic Layouts
+    report_type_clean = briefing.get('context', {}).get('report_type', 'Strategic Market Pulse')
+    
+    middle_cards_html = ""
+    if report_type_clean == "Sentiment Deep-Dive":
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Experience Snapshot</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 20px;">{briefing['metrics'].get('sentiment_snapshot', 'N/A')}</div>
+                        <div class="metric-label" style="color: #8892b0; margin-top: 10px;">Top Guest Pillars</div>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Emotional Pulse</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)} / 5.0</div>
+                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    elif report_type_clean == "Yield Audit":
+        parity_color = '#ff4d4d' if (metrics.get('parity_leaks_count') or 0) > 0 else '#4dff4d'
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Pricing Discipline</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)} {target.get('preferred_currency', 'TRY')}</div>
+                        <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Parity Friction</h2>
+                        <div class="metric-val" style="font-size: 22px; color: {parity_color}">
+                            {metrics.get('parity_leaks_count', 0)} Leakage Events
+                        </div>
+                        <div class="metric-label" style="color: #8892b0;">Detected OTA Discrepancies</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    elif report_type_clean == "Competitive Battlefield" or rival:
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="100%">
+                    <div class="card" style="border-color: #d4af37; background-color: #112240;">
+                        <h2 style="color: #d4af37;">The Bout: {target['name']} vs {rival['name'] if rival else 'Market'}</h2>
+                        <div class="bout-sim" style="color: #d4af37; font-size: 24px; text-align: center; margin: 20px 0;">{metrics.get('bout_similarity', 0)}% Semantic Similarity</div>
+                        <div class="metric-label" style="text-align: center; color: #8892b0;">
+                            Strategic Alignment Match: Indexing guest substitution risk based on sentiment overlaps.
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
+    else: # Default: Strategic Market Pulse
+        middle_cards_html = f"""
+        <table class="grid-table">
+            <tr>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Market Battlefield</h2>
+                        <table class="metric-table" style="background-color: #112240;">
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get('avg_price', 0)} {target.get('preferred_currency', 'TRY')}</div>
+                                    <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
+                                </td>
+                                <td style="text-align: right; padding: 10px;">
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">#{metrics.get('avg_rank', 1)}</div>
+                                    <div class="metric-label" style="color: #8892b0;">Avg Search Rank</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+                <td width="50%">
+                    <div class="card" style="background-color: #112240;">
+                        <h2 style="color: #d4af37;">Commercial Health</h2>
+                        <div class="metric-val" style="color: #ffffff; font-size: 28px;">{metrics.get('gri', 0)}</div>
+                        <div class="metric-label" style="color: #8892b0;">Guest Rating Index (GRI)</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        """
 
-            html_content = f"""
+    html_content = f"""
             <html>
             <head>
                 <style>
@@ -614,8 +563,7 @@ async def export_briefing_pdf(
                     </div>
                 </div>
             </body>
-            </html>
-            """
+    """
     
     result = io.BytesIO()
     pisa.CreatePDF(html_content, dest=result)
