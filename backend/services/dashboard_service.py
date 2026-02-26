@@ -12,6 +12,7 @@ from backend.utils.logger import get_logger
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
+from backend.services.profile_service import get_enriched_profile_logic
 
 logger = get_logger(__name__)
 

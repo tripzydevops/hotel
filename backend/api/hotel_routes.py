@@ -12,6 +12,8 @@ from backend.services.hotel_service import (
     add_hotel_to_account_logic
 )
 from backend.services.location_service import LocationService
+from backend.services.profile_service import get_enriched_profile_logic
+from backend.services.subscription import SubscriptionService
 from backend.utils.helpers import log_query
 from backend.services.auth_service import get_current_active_user
 from backend.utils.security import verify_ownership
