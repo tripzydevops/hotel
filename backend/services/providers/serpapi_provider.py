@@ -132,7 +132,10 @@ class SerpApiProvider(HotelDataProvider):
                             current_suffix = self._serp_client.api_key[-5:]
                             print(f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_suffix}")
                             
-                            if self._serp_client._key_manager.rotate_key(reason="quota_exhausted" if not is_rate_limit else "rate_limit"):
+                            if self._serp_client._key_manager.rotate_key(
+                                reason="quota_exhausted" if not is_rate_limit else "rate_limit",
+                                is_permanent=not is_rate_limit
+                            ):
                                 new_key = self._serp_client.api_key
                                 print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
                                 params["api_key"] = new_key

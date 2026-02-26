@@ -87,10 +87,23 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
         user_settings = settings_res.data if settings_res and hasattr(settings_res, 'data') else {}
         unread_count = alerts_res.count if alerts_res and hasattr(alerts_res, 'count') else 0
         recent_searches_raw = searches_res.data if searches_res and hasattr(searches_res, 'data') else []
-        scan_history = history_res.data if history_res and hasattr(history_res, 'data') else []
         recent_sessions = sessions_res.data if sessions_res and hasattr(sessions_res, 'data') else []
         all_hotels = hotels_res.data if hotels_res and hasattr(hotels_res, 'data') else []
 
+        # [FIX] Scan History Query (Mapping via Hotel IDs)
+        # The price_logs table does not contain a user_id column.
+        # We fetch the latest 10 logs across all the user's active hotels.
+        scan_history = []
+        if all_hotels:
+            hids = [str(h["id"]) for h in all_hotels]
+            hist_res = db.table("price_logs") \
+                .select("*") \
+                .in_("hotel_id", hids) \
+                .order("recorded_at", desc=True) \
+                .limit(10) \
+                .execute()
+            scan_history = hist_res.data or []
+        
         if not all_hotels:
             fallback_data.update({
                 "profile": user_profile,
