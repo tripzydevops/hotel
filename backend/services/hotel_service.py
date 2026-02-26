@@ -161,17 +161,26 @@ async def add_hotel_to_account_logic(
         # find a matching property in our global directory before inserting.
         serp_api_id = hotel_data.get("serp_api_id")
         
-        if not serp_api_id:
+        # Prepare metadata defaults
+        rating = hotel_data.get("rating")
+        review_count = hotel_data.get("review_count")
+        image_url = hotel_data.get("image_url")
+        
+        if not serp_api_id or not rating:
             name = hotel_data.get("name")
             location = hotel_data.get("location")
             if name:
-                dir_res = db.table("hotel_directory").select("serp_api_id")\
+                # KAİZEN: Use available columns (hotel_directory lacks review_count)
+                dir_res = db.table("hotel_directory").select("serp_api_id, rating, image_url")\
                     .eq("name", name)\
                     .eq("location", location)\
                     .execute()
                 if dir_res.data:
-                    serp_api_id = dir_res.data[0].get("serp_api_id")
-                    print(f"Service: Auto-discovered token {serp_api_id} for {name}")
+                    d = dir_res.data[0]
+                    serp_api_id = serp_api_id or d.get("serp_api_id")
+                    rating = rating or d.get("rating")
+                    image_url = image_url or d.get("image_url")
+                    print(f"Service: Auto-discovered metadata for {name}")
 
         # Prepare data for insertion
         data = {
@@ -180,7 +189,10 @@ async def add_hotel_to_account_logic(
             "location": hotel_data.get("location"),
             "is_target_hotel": hotel_data.get("is_target_hotel", False),
             "serp_api_id": serp_api_id,
-            "preferred_currency": hotel_data.get("preferred_currency", "USD")
+            "preferred_currency": hotel_data.get("preferred_currency", "USD"),
+            "rating": rating,
+            "review_count": review_count,
+            "image_url": image_url
         }
         
         # Insert into user's hotels list
@@ -208,7 +220,6 @@ async def add_hotel_to_account_logic(
                     "rating": hotel_data.get("rating"),
                     "stars": hotel_data.get("stars"),
                     "image_url": hotel_data.get("image_url"),
-                    "review_count": hotel_data.get("review_count"),
                     "last_verified_at": datetime.now().isoformat()
                 }, on_conflict="serp_api_id").execute()
             except Exception as e:
