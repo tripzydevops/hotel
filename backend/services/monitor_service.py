@@ -339,7 +339,7 @@ async def run_scheduler_check_logic():
         # 1.1 Fetch all active profiles
         result = supabase.table("profiles").select("id, next_scan_at, scan_frequency_minutes, subscription_status") \
             .lte("next_scan_at", now_iso) \
-            .eq("subscription_status", "active") \
+            .in_("subscription_status", ["active", "trial"]) \
             .execute()
         
         active_due = result.data or []

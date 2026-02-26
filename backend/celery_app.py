@@ -8,11 +8,12 @@ load_dotenv()
 # We have transition to FastAPI BackgroundTasks to avoid Upstash command limits.
 # Redis is no longer required for scans.
 REDIS_URL = "memory://"
+RESULT_BACKEND = "rpc://"
 
 celery_app = Celery(
     "hotel_app",
     broker=REDIS_URL,
-    backend=REDIS_URL,
+    backend=RESULT_BACKEND,
     include=["backend.tasks"]
 )
 
