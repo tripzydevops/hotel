@@ -156,13 +156,30 @@ async def add_hotel_to_account_logic(
     association, allowing for validation and side-effects (like logging).
     """
     try:
+        # KAİZEN: Automatic Token Discovery (Phase 1.1)
+        # If the incoming hotel_data is missing a serp_api_id, we attempt to 
+        # find a matching property in our global directory before inserting.
+        serp_api_id = hotel_data.get("serp_api_id")
+        
+        if not serp_api_id:
+            name = hotel_data.get("name")
+            location = hotel_data.get("location")
+            if name:
+                dir_res = db.table("hotel_directory").select("serp_api_id")\
+                    .eq("name", name)\
+                    .eq("location", location)\
+                    .execute()
+                if dir_res.data:
+                    serp_api_id = dir_res.data[0].get("serp_api_id")
+                    print(f"Service: Auto-discovered token {serp_api_id} for {name}")
+
         # Prepare data for insertion
         data = {
             "user_id": str(user_id),
             "name": hotel_data.get("name"),
             "location": hotel_data.get("location"),
             "is_target_hotel": hotel_data.get("is_target_hotel", False),
-            "serp_api_id": hotel_data.get("serp_api_id"),
+            "serp_api_id": serp_api_id,
             "preferred_currency": hotel_data.get("preferred_currency", "USD")
         }
         

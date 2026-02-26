@@ -646,6 +646,7 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
     """
     Consolidated logic to sync active hotels into the global directory.
     Replaces fragmented backfill_*.py scripts.
+    KAİZEN: Bi-directional Token Correction (Phase 1.1)
     """
     try:
         # 1. Fetch all hotels from active 'hotels' table
@@ -654,18 +655,20 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
         
         synced_count = 0
         updated_count = 0
+        token_backfills = 0
         
         for hotel in active_hotels:
             # 2. Check if already in directory (by SerpApi ID or exact name+location)
             serp_id = hotel.get("serp_api_id")
+            hid = hotel["id"]
             
             existing = None
             if serp_id:
-                existing_res = db.table("hotel_directory").select("id").eq("serp_api_id", serp_id).execute()
+                existing_res = db.table("hotel_directory").select("*").eq("serp_api_id", serp_id).execute()
                 existing = existing_res.data[0] if existing_res.data else None
             
             if not existing:
-                existing_res = db.table("hotel_directory").select("id").eq("name", hotel["name"]).eq("location", hotel["location"]).execute()
+                existing_res = db.table("hotel_directory").select("*").eq("name", hotel["name"]).eq("location", hotel["location"]).execute()
                 existing = existing_res.data[0] if existing_res.data else None
             
             dir_data = {
@@ -680,8 +683,15 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
             }
             
             if existing:
+                # Update directory logic
                 db.table("hotel_directory").update(dir_data).eq("id", existing["id"]).execute()
                 updated_count += 1
+                
+                # KAİZEN: Re-align hotel token if directory has a better one
+                dir_serp_id = existing.get("serp_api_id")
+                if dir_serp_id and dir_serp_id != serp_id:
+                     db.table("hotels").update({"serp_api_id": dir_serp_id}).eq("id", hid).execute()
+                     token_backfills += 1
             else:
                 db.table("hotel_directory").insert(dir_data).execute()
                 synced_count += 1
@@ -690,7 +700,8 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
             "status": "success",
             "hotels_processed": len(active_hotels),
             "new_entries": synced_count,
-            "updated_entries": updated_count
+            "updated_entries": updated_count,
+            "token_corrections": token_backfills
         }
     except Exception as e:
         print(f"Admin: Directory Sync Error: {e}")
