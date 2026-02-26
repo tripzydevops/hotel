@@ -21,6 +21,7 @@ interface IntradayEvent {
   price: number;
   recorded_at: string;
   vendor?: string;
+  label?: string;
 }
 
 interface DailyPrice {
@@ -46,7 +47,7 @@ interface RateIntelligenceGridProps {
 }
 
 const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol: string }) => {
-  if (!events || events.length <= 1) return null;
+  if (!events || events.length === 0) return null;
 
   return (
     <div className="absolute top-1 left-1 group/intraday z-20">
@@ -55,17 +56,24 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
       </div>
 
       {/* Tooltip Content */}
-      <div className="absolute top-0 left-full ml-2 w-32 p-2 bg-[#0a1622]/95 backdrop-blur-md border border-[var(--soft-gold)]/20 rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
+      <div className="absolute top-0 left-full ml-2 w-36 p-2 bg-[#0a1622]/95 backdrop-blur-md border border-[var(--soft-gold)]/20 rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
         <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-white/10">
           <History className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-          <span className="text-[8px] font-black uppercase text-white tracking-widest">Intraday</span>
+          <span className="text-[8px] font-black uppercase text-white tracking-widest">Intraday Story</span>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {events.map((ev, idx) => (
             <div key={idx} className="flex items-center justify-between gap-1">
-              <span className="text-[7px] font-bold text-white/40">
-                {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <div className="flex flex-col items-start">
+                <span className="text-[7px] font-bold text-white/40 leading-none">
+                  {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                {ev.label && (
+                  <span className="text-[6px] font-black text-[var(--soft-gold)] uppercase tracking-tighter leading-none mt-0.5">
+                    {ev.label}
+                  </span>
+                )}
+              </div>
               <span className="text-[8px] font-black text-white">
                 {symbol}{ev.price.toLocaleString()}
               </span>

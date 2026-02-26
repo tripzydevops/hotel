@@ -590,30 +590,21 @@ async def perform_market_analysis(
                 # EXPLANATION: Intraday Event Collection
                 # We collect ALL unique successful scan prices for this check-in date
                 # to show the "price story" of the day in the UI.
-                intraday_events = []
-                seen_intraday = set()
-                
-                # [KAİZEN] Multi-Vendor Price Extraction (Refined)
-                # Why: A single scan often finds 10+ vendors. We only want to show
-                # the "story" without noise. We now only add the Primary price
-                # and the single lowest Market price from that scan if it differs.
+                # [KAİZEN] Multi-Vendor Price Milestone Extraction (Refined)
+                # Why: Showing every single scan creates clutter. We now only show
+                # the "story" by picking the Highest, Lowest, and most recent pulses.
+                all_raw_events = []
                 for l in logs:
                     # 1. Primary Matched Price
                     lp, _, _ = get_price_for_room(l, room_type, allowed_room_names_map)
-                    primary_p = None
-                    rec_time = (l.get("recorded_at") or "")[:16] # Minute-level granularity
-                    
                     if lp and lp > 0:
-                        primary_p = round(float(lp), 2)
-                        if (primary_p, rec_time) not in seen_intraday:
-                            intraday_events.append({
-                                "price": primary_p,
-                                "recorded_at": l.get("recorded_at"),
-                                "vendor": l.get("vendor") or "Primary"
-                            })
-                            seen_intraday.add((primary_p, rec_time))
+                        all_raw_events.append({
+                            "price": round(float(lp), 2),
+                            "recorded_at": l.get("recorded_at"),
+                            "vendor": l.get("vendor") or "Primary"
+                        })
                     
-                    # 2. Market Low Price (Grouped)
+                    # 2. Market Low Price (Standard rooms only)
                     is_std_req = not room_type or any(s in room_type.lower() for s in ["standard", "standart"])
                     if is_std_req:
                         other_offers = l.get("parity_offers") or l.get("offers") or []
@@ -624,18 +615,39 @@ async def perform_market_analysis(
                                 parity_prices.append((round(float(op), 2), offer.get("vendor") or "Market"))
                         
                         if parity_prices:
-                            # Add ONLY the absolute lowest from this specific scan
                             min_p, min_v = min(parity_prices, key=lambda x: x[0])
-                            if (min_p, rec_time) not in seen_intraday:
-                                intraday_events.append({
-                                    "price": min_p,
-                                    "recorded_at": l.get("recorded_at"),
-                                    "vendor": f"Min: {min_v}"
-                                })
-                                # Note: we don't seen_intraday.add(min_p) here to allow primary 
-                                # and market-low to coexist for the same scan, but we 
-                                # deduplicate across *different* scans if they hit the same value.
-                                seen_intraday.add((min_p, rec_time))
+                            all_raw_events.append({
+                                "price": min_p,
+                                "recorded_at": l.get("recorded_at"),
+                                "vendor": f"Min: {min_v}"
+                            })
+
+                intraday_events = []
+                if all_raw_events:
+                    # Select Milestone: Highest, Lowest, and Last
+                    # 1. Last (Latest scan time)
+                    last_event = max(all_raw_events, key=lambda x: x["recorded_at"] or "")
+                    # 2. Highest price
+                    high_event = max(all_raw_events, key=lambda x: x["price"])
+                    # 3. Lowest price
+                    low_event = min(all_raw_events, key=lambda x: x["price"])
+                    
+                    # Deduplicate milestones and attach labels
+                    ms_map = {}
+                    for ev, label in [(high_event, "High"), (low_event, "Low"), (last_event, "Last")]:
+                        ms_key = (ev["price"], (ev["recorded_at"] or "")[:16])
+                        if ms_key not in ms_map:
+                            # Create a copy to avoid mutating the same dict multiple times
+                            ms_map[ms_key] = dict(ev)
+                            ms_map[ms_key]["label"] = label
+                        else:
+                            # Append label if not already present
+                            if label not in ms_map[ms_key]["label"]:
+                                ms_map[ms_key]["label"] += f"/{label}"
+                    
+                    # Convert map back to chronological list
+                    intraday_events = list(ms_map.values())
+                    intraday_events.sort(key=lambda x: x["recorded_at"] or "")
 
                 # 1. Analyze the logs for this specific check-in date
                 latest = logs[0]
