@@ -495,6 +495,7 @@ async def perform_market_analysis(
                         "name": hotel.get("name"),
                         "price": converted,
                         "rating": hotel.get("rating"),
+                        "review_count": int(hotel.get("review_count") or 0),
                         "is_target": is_target,
                         "is_sellout": is_sellout, # CRITICAL: Inform frontend of sellout
                         "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
@@ -552,6 +553,7 @@ async def perform_market_analysis(
             "name": h.get("name"),
             "price": latest_comp_price, # Might be None, Grid handles this
             "rating": h.get("rating"),
+            "review_count": int(h.get("review_count") or 0),
             "offers": p[0].get("parity_offers") or p[0].get("offers") or [] if p else [],
             "matched_room": c_room,
             "match_score": c_score
