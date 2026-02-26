@@ -89,8 +89,8 @@ export default function PricingPage() {
   /* EXPLANATION: Feature comparison rows for the pricing table.
      true = included, false = not included */
   const features = [
-    { name: "Otel takibi", values: ["1", "3", "Sınırsız"] },
-    { name: "Rakip izleme", values: ["5", "15", "Sınırsız"] },
+    { name: "Ekli Otel Takibi", values: ["5", "20", "100"] },
+    { name: "Pazar Karşılaştırma", values: ["5", "5", "10"] },
     { name: "Tarama sıklığı", values: ["Günlük", "Saatlik", "Gerçek zamanlı"] },
     { name: "E-posta uyarıları", values: [true, true, true] },
     { name: "Push bildirimleri", values: [false, true, true] },
@@ -165,9 +165,8 @@ export default function PricingPage() {
           {plans.map((plan, i) => (
             <RevealSection key={i} delay={i * 100}>
               <div
-                className={`command-card p-8 h-full flex flex-col relative ${
-                  plan.popular ? "border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20" : ""
-                }`}
+                className={`command-card p-8 h-full flex flex-col relative ${plan.popular ? "border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20" : ""
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] text-xs font-bold px-4 py-1 rounded-full">
@@ -182,9 +181,8 @@ export default function PricingPage() {
                 </div>
                 <Link
                   href="/contact"
-                  className={`text-center py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer mt-auto ${
-                    plan.popular ? "btn-gold" : "btn-ghost"
-                  }`}
+                  className={`text-center py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer mt-auto ${plan.popular ? "btn-gold" : "btn-ghost"
+                    }`}
                 >
                   {plan.cta}
                 </Link>
@@ -212,9 +210,8 @@ export default function PricingPage() {
                         Özellik
                       </th>
                       {plans.map((plan, i) => (
-                        <th key={i} className={`text-center p-4 font-bold text-xs uppercase tracking-wider ${
-                          plan.popular ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"
-                        }`}>
+                        <th key={i} className={`text-center p-4 font-bold text-xs uppercase tracking-wider ${plan.popular ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"
+                          }`}>
                           {plan.name}
                         </th>
                       ))}
@@ -275,17 +272,15 @@ export default function PricingPage() {
                       fill="none"
                       stroke="var(--text-muted)"
                       strokeWidth="2"
-                      className={`shrink-0 transition-transform duration-300 ${
-                        openFaq === i ? "rotate-180" : ""
-                      }`}
+                      className={`shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""
+                        }`}
                     >
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
                   <div
-                    className={`overflow-hidden transition-all duration-300 ${
-                      openFaq === i ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                    }`}
+                    className={`overflow-hidden transition-all duration-300 ${openFaq === i ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                      }`}
                   >
                     <p className="px-5 pb-5 text-sm text-[var(--text-secondary)] leading-relaxed">
                       {faq.answer}

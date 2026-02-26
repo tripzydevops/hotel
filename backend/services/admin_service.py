@@ -297,14 +297,15 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
                 udata["scan_count"] = s_count
                 
                 # EXPLANATION: Plan-Based Quota Logic
-                # Map plan types to their hardcoded (or DB-stored) hotel limits 
-                # to allow the frontend to display accurate "Capacity Gauges".
-                plan = udata.get("plan_type", "trial").lower()
-                limit_map = {"starter": 5, "pro": 25, "enterprise": 999}
-                udata["max_hotels"] = limit_map.get(plan, 5)
+                # Map plan types to their dynamic hotel limits to ensure Admin Panel 
+                # Gauges reflect reality.
+                from backend.services.subscription import SubscriptionService
+                access = await SubscriptionService.get_user_limits(db, udata)
+                udata["max_hotels"] = access.get("limits", {}).get("hotel_limit", 5)
                 
                 final_users.append(AdminUser(**udata))
             except Exception:
+                udata["max_hotels"] = 5 # Absolute fallback
                 final_users.append(AdminUser(**udata))
                 
         return final_users

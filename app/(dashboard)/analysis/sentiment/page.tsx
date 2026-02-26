@@ -104,11 +104,10 @@ const ScoreCard = ({
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className={`relative rounded-2xl border transition-all duration-300 group overflow-hidden cursor-default ${
-        isTarget
-          ? "bg-gradient-to-br from-blue-950/80 via-indigo-950/60 to-slate-900/80 backdrop-blur-xl border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.12),0_8px_32px_rgba(0,0,0,0.3)]"
-          : "bg-white/[0.04] backdrop-blur-lg border-white/[0.08] hover:border-white/15 hover:bg-white/[0.06] hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
-      }`}
+      className={`relative rounded-2xl border transition-all duration-300 group overflow-hidden cursor-default ${isTarget
+        ? "bg-gradient-to-br from-blue-950/80 via-indigo-950/60 to-slate-900/80 backdrop-blur-xl border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.12),0_8px_32px_rgba(0,0,0,0.3)]"
+        : "bg-white/[0.04] backdrop-blur-lg border-white/[0.08] hover:border-white/15 hover:bg-white/[0.06] hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
+        }`}
     >
       {/* Animated gradient border shimmer for target hotel */}
       {isTarget && (
@@ -123,20 +122,18 @@ const ScoreCard = ({
         {/* Header: Label + Rank Badge */}
         <div className="flex justify-between items-start mb-5">
           <div className="flex flex-col gap-1">
-            <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${
-              isTarget ? "text-blue-400/80" : "text-gray-500"
-            }`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${isTarget ? "text-blue-400/80" : "text-gray-500"
+              }`}>
               {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
             </span>
             <h3 className="text-sm font-bold text-white/90 truncate max-w-[140px]">
               {hotel.name}
             </h3>
           </div>
-          <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
-            isTarget 
-              ? "bg-blue-500/10 border-blue-500/20 text-blue-300" 
-              : "bg-white/5 border-white/[0.08] text-gray-400"
-          }`}>
+          <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${isTarget
+            ? "bg-blue-500/10 border-blue-500/20 text-blue-300"
+            : "bg-white/5 border-white/[0.08] text-gray-400"
+            }`}>
             {rank}
           </div>
         </div>
@@ -182,11 +179,10 @@ const ScoreCard = ({
             <span className="font-medium">{(hotel.review_count || 0).toLocaleString()} reviews</span>
           </div>
           {hotel.price_info?.price_change_percent !== undefined && (
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              hotel.price_info.price_change_percent > 0
-                ? "bg-red-500/10 text-red-400"
-                : "bg-emerald-500/10 text-emerald-400"
-            }`}>
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hotel.price_info.price_change_percent > 0
+              ? "bg-red-500/10 text-red-400"
+              : "bg-emerald-500/10 text-emerald-400"
+              }`}>
               {hotel.price_info.price_change_percent > 0 ? (
                 <TrendingUp className="w-3 h-3" />
               ) : (
@@ -320,9 +316,8 @@ const KeywordTag = ({
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
       <span
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium cursor-default transition-colors ${colors[sentiment]} ${
-          size === "md" ? "text-sm" : "text-[11px]"
-        }`}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium cursor-default transition-colors ${colors[sentiment]} ${size === "md" ? "text-sm" : "text-[11px]"
+          }`}
       >
         <span className="capitalize">{t_name}</span>
         <span className="w-[1px] h-3 bg-white/10" />
@@ -379,16 +374,17 @@ export default function SentimentPage() {
     allHotels.length > 0
       ? allHotels.reduce((sum, h) => sum + (Number(h.rating) || 0), 0) / allHotels.length
       : 0
-  , [allHotels]);
+    , [allHotels]);
 
   // 3. Selection Initialization
   useEffect(() => {
     if (targetHotel && !initialized) {
+      const compLimit = data?.comparison_limit || 5;
       const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
-      setSelectedHotelIds(initialIds.slice(0, 5));
+      setSelectedHotelIds(initialIds.slice(0, compLimit));
       setInitialized(true);
     }
-  }, [targetHotel, competitors, initialized]);
+  }, [targetHotel, competitors, initialized, data?.comparison_limit]);
 
   // 4. Sentiment History State & Fetching Effect
   const [sentimentHistory, setSentimentHistory] = useState<Record<string, any[]>>({});
@@ -396,7 +392,7 @@ export default function SentimentPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       if (selectedHotelIds.length === 0) return;
-      
+
       const historyMap: Record<string, any[]> = {};
       const days = timeframe === "daily" ? 7 : timeframe === "weekly" ? 30 : 90;
 
@@ -441,7 +437,7 @@ export default function SentimentPage() {
       location: ["konum", "neighborhood", "mevki", "location"],
       value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "fiyat/performans", "cost", "money", "ucuz", "pahalı", "ekonomik"],
     };
-    
+
     // Attempt Level 1: Current Breakdown
     const item = hotel.sentiment_breakdown.find((s: any) => {
       const name = (s.name || s.category || "").toLowerCase().trim();
@@ -450,52 +446,52 @@ export default function SentimentPage() {
     });
 
     if (!item) {
-       // Attempt Level 2: History Search
-       if (history && history.length > 0) {
-          const sortedHistory = [...history].sort((a, b) => {
-             const dateA = new Date(a.date || a.recorded_at || 0).getTime();
-             const dateB = new Date(b.date || b.recorded_at || 0).getTime();
-             return dateB - dateA;
+      // Attempt Level 2: History Search
+      if (history && history.length > 0) {
+        const sortedHistory = [...history].sort((a, b) => {
+          const dateA = new Date(a.date || a.recorded_at || 0).getTime();
+          const dateB = new Date(b.date || b.recorded_at || 0).getTime();
+          return dateB - dateA;
+        });
+        for (const record of sortedHistory) {
+          const histBreakdown = record.sentiment_breakdown || record.breakdown || [];
+          const histItem = histBreakdown.find((s: any) => {
+            const name = (s.name || s.category || "").toLowerCase().trim();
+            if (name === target) return true;
+            return aliases[target]?.some(alias => name.includes(alias));
           });
-          for (const record of sortedHistory) {
-              const histBreakdown = record.sentiment_breakdown || record.breakdown || [];
-              const histItem = histBreakdown.find((s: any) => {
-                  const name = (s.name || s.category || "").toLowerCase().trim();
-                  if (name === target) return true;
-                  return aliases[target]?.some(alias => name.includes(alias));
-              });
-              if (histItem) {
-                  if (histItem.rating) return Number(histItem.rating);
-                  const pos = Number(histItem.positive) || 0;
-                  const neu = Number(histItem.neutral) || 0;
-                  const neg = Number(histItem.negative) || 0;
-                  const total = pos + neu + neg;
-                  if (total > 0) return (pos * 5 + neu * 3 + neg * 1) / total;
-              }
+          if (histItem) {
+            if (histItem.rating) return Number(histItem.rating);
+            const pos = Number(histItem.positive) || 0;
+            const neu = Number(histItem.neutral) || 0;
+            const neg = Number(histItem.negative) || 0;
+            const total = pos + neu + neg;
+            if (total > 0) return (pos * 5 + neu * 3 + neg * 1) / total;
           }
-       }
-       
-       // Attempt Level 3: Guest Mentions Scaling
-       if (hotel.guest_mentions?.length > 0) {
-          const relevantMentions = hotel.guest_mentions.filter((m: any) => {
-             const text = (m.keyword || m.text || "").toLowerCase();
-             return aliases[target]?.some(alias => text.includes(alias));
+        }
+      }
+
+      // Attempt Level 3: Guest Mentions Scaling
+      if (hotel.guest_mentions?.length > 0) {
+        const relevantMentions = hotel.guest_mentions.filter((m: any) => {
+          const text = (m.keyword || m.text || "").toLowerCase();
+          return aliases[target]?.some(alias => text.includes(alias));
+        });
+        if (relevantMentions.length > 0) {
+          let weightedSum = 0;
+          let totalCount = 0;
+          relevantMentions.forEach((m: any) => {
+            const count = Number(m.count) || 1;
+            totalCount += count;
+            const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
+            weightedSum += score * count;
           });
-          if (relevantMentions.length > 0) {
-              let weightedSum = 0;
-              let totalCount = 0;
-              relevantMentions.forEach((m: any) => {
-                 const count = Number(m.count) || 1;
-                 totalCount += count;
-                 const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
-                 weightedSum += score * count;
-              });
-              if (totalCount > 0) return weightedSum / totalCount;
-          }
-       }
-       return 0;
+          if (totalCount > 0) return weightedSum / totalCount;
+        }
+      }
+      return 0;
     }
-    
+
     if (item.rating !== undefined && item.rating !== null) return Number(item.rating);
     const pos = Number(item.positive) || 0;
     const neu = Number(item.neutral) || 0;
@@ -513,23 +509,23 @@ export default function SentimentPage() {
     const myPrice = Number(targetHotel.price_info?.current_price) || 0;
     const myRating = Number(targetHotel.rating) || 0;
     const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
-    
+
     const avgMarketPrice = validCompetitors.length > 0
-        ? validCompetitors.reduce((sum: number, c: any) => sum + (Number(c.price_info?.current_price) || 0), 0) / validCompetitors.length
-        : myPrice;
-        
+      ? validCompetitors.reduce((sum: number, c: any) => sum + (Number(c.price_info?.current_price) || 0), 0) / validCompetitors.length
+      : myPrice;
+
     const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
     const sentimentIndex = marketAvgRating > 0 ? (myRating / marketAvgRating) * 100 : 100;
-    
+
     const x = Math.min(Math.max(sentimentIndex - 100, -50), 50);
     const y = Math.min(Math.max(ari - 100, -50), 50);
-    
+
     let label = "Standard";
     if (x > 2 && y > 2) label = "Premium King";
     else if (x > 2 && y < -2) label = "Value Leader";
     else if (x < -2 && y < -2) label = "Budget / Economy";
     else if (x < -2 && y > 2) label = "Danger Zone";
-    
+
     return { x, y, label, ari, sentiment: sentimentIndex, targetRating: myRating, marketRating: marketAvgRating };
   }, [targetHotel, competitors, marketAvgRating]);
 
@@ -538,8 +534,8 @@ export default function SentimentPage() {
   const radarData = useMemo(() => {
     if (!targetHotel) return [];
     return ["Cleanliness", "Service", "Location", "Value"].map((cat) => ({
-      subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}` 
-        ? t(`sentiment.${cat.toLowerCase()}`) 
+      subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}`
+        ? t(`sentiment.${cat.toLowerCase()}`)
         : cat,
       A: getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id]),
       B: leader ? getCategoryScore(leader, cat, sentimentHistory[leader.id]) : 0,
@@ -548,13 +544,13 @@ export default function SentimentPage() {
   }, [targetHotel, leader, sentimentHistory, marketAvgRating, t]);
 
   // 7. Computed Visibility Toggles
-  const visibleCompetitors = useMemo(() => 
+  const visibleCompetitors = useMemo(() =>
     competitors.filter((c: any) => selectedHotelIds.includes(c.id))
-  , [competitors, selectedHotelIds]);
+    , [competitors, selectedHotelIds]);
 
-  const isTargetSelected = useMemo(() => 
+  const isTargetSelected = useMemo(() =>
     !!(targetHotel && selectedHotelIds.includes(targetHotel.id))
-  , [targetHotel, selectedHotelIds]);
+    , [targetHotel, selectedHotelIds]);
 
   return (
     <div className="min-h-screen bg-[#060d1b] p-6 md:p-8 relative overflow-hidden">
@@ -564,7 +560,7 @@ export default function SentimentPage() {
         <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/[0.03] rounded-full blur-[150px]" />
         <div className="absolute top-[40%] left-[50%] w-[300px] h-[300px] bg-purple-600/[0.02] rounded-full blur-[100px]" />
       </div>
-      
+
       <div className="relative z-10 max-w-[1600px] mx-auto">
         {/* ── Glass Breadcrumb Pill ── */}
         <div className="flex items-center gap-3 mb-8">
@@ -585,7 +581,7 @@ export default function SentimentPage() {
             </h2>
             <p className="text-gray-400/80 text-sm md:text-base">{t("sentiment.subtitle")}</p>
           </div>
-          
+
           {/* Hotel Selector Pills with checkmarks */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
@@ -596,17 +592,17 @@ export default function SentimentPage() {
                 <button
                   onClick={() => {
                     setSelectedHotelIds((prev) => {
+                      const limit = data?.comparison_limit || 5;
                       const exists = prev.includes(targetHotel.id);
                       if (exists) return prev.filter((id) => id !== targetHotel.id);
-                      if (prev.length >= 5) return prev;
+                      if (prev.length >= limit) return prev;
                       return [...prev, targetHotel.id];
                     });
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
-                    selectedHotelIds.includes(targetHotel.id)
-                      ? "bg-blue-500/15 border-blue-500/30 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                      : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
-                  }`}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(targetHotel.id)
+                    ? "bg-blue-500/15 border-blue-500/30 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                    : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    }`}
                 >
                   {selectedHotelIds.includes(targetHotel.id) ? (
                     <Check className="w-3 h-3 text-blue-400" />
@@ -621,17 +617,17 @@ export default function SentimentPage() {
                   key={comp.id}
                   onClick={() => {
                     setSelectedHotelIds((prev) => {
+                      const limit = data?.comparison_limit || 5;
                       const exists = prev.includes(comp.id);
                       if (exists) return prev.filter((id) => id !== comp.id);
-                      if (prev.length >= 5) return prev;
+                      if (prev.length >= limit) return prev;
                       return [...prev, comp.id];
                     });
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
-                    selectedHotelIds.includes(comp.id)
-                      ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
-                      : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
-                  }`}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(comp.id)
+                    ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
+                    : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    }`}
                 >
                   {selectedHotelIds.includes(comp.id) ? (
                     <Check className="w-3 h-3 text-amber-400" />
@@ -699,29 +695,29 @@ export default function SentimentPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-white/[0.08] shadow-xl relative overflow-hidden group min-h-[440px]"
             >
-               <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
-                  <Brain className="w-16 h-16 text-blue-300" />
-               </div>
-               <div className="p-6 pb-0">
-                 <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-indigo-400" />
-                    </div>
-                    Strategic Map
-                 </h3>
-               </div>
-               {strategicMap && (
-                 <AdvisorQuadrant
-                   x={strategicMap.x}
-                   y={strategicMap.y}
-                   label={strategicMap.label}
-                   ari={strategicMap.ari}
-                   sentiment={strategicMap.sentiment}
-                   targetRating={strategicMap.targetRating}
-                   marketRating={strategicMap.marketRating}
-                   compact
-                 />
-               )}
+              <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+                <Brain className="w-16 h-16 text-blue-300" />
+              </div>
+              <div className="p-6 pb-0">
+                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  Strategic Map
+                </h3>
+              </div>
+              {strategicMap && (
+                <AdvisorQuadrant
+                  x={strategicMap.x}
+                  y={strategicMap.y}
+                  label={strategicMap.label}
+                  ari={strategicMap.ari}
+                  sentiment={strategicMap.sentiment}
+                  targetRating={strategicMap.targetRating}
+                  marketRating={strategicMap.marketRating}
+                  compact
+                />
+              )}
             </motion.div>
 
             {/* ── Intelligence Hub: Experience Core (Left) + Competitive Insights (Right) ── */}
@@ -798,260 +794,255 @@ export default function SentimentPage() {
               </div>
             </div>
 
-          {/* ── Gradient Section Divider ── */}
-          <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
+            {/* ── Gradient Section Divider ── */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
 
-          {/* ── Sentiment Deep Dive ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06] mb-8"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-purple-400" />
-                </div>
-                Sentiment Deep Dive
-              </h3>
-            </div>
-            <SentimentBreakdown
-              items={
-                (targetHotel?.sentiment_raw_breakdown ||
-                targetHotel?.sentiment_breakdown || [])
-                .map((s: any) => ({
-                   ...s,
-                   description: s.description || s.summary
-                }))
-                .filter((item: any) => item.total_mentioned > 0)
-                .slice(0, 24)
-              }
-            />
-          </motion.div>
+            {/* ── Sentiment Deep Dive ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06] mb-8"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-purple-400" />
+                  </div>
+                  Sentiment Deep Dive
+                </h3>
+              </div>
+              <SentimentBreakdown
+                items={
+                  (targetHotel?.sentiment_raw_breakdown ||
+                    targetHotel?.sentiment_breakdown || [])
+                    .map((s: any) => ({
+                      ...s,
+                      description: s.description || s.summary
+                    }))
+                    .filter((item: any) => item.total_mentioned > 0)
+                    .slice(0, 24)
+                }
+              />
+            </motion.div>
 
-          {/* ── Gradient Section Divider ── */}
-          <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
+            {/* ── Gradient Section Divider ── */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
 
-          {/* ── Competitive Position ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
-          >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                  <LineChart className="w-4 h-4 text-sky-400" />
-                </div>
-                Competitive Position
-              </h3>
-              {/* Segmented control with animated sliding indicator */}
-              <div className="flex bg-white/[0.04] rounded-xl p-1 border border-white/[0.08]">
-                {(["battlefield", "history"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
-                      view === v
+            {/* ── Competitive Position ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                    <LineChart className="w-4 h-4 text-sky-400" />
+                  </div>
+                  Competitive Position
+                </h3>
+                {/* Segmented control with animated sliding indicator */}
+                <div className="flex bg-white/[0.04] rounded-xl p-1 border border-white/[0.08]">
+                  {(["battlefield", "history"] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${view === v
                         ? "bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.1)] border border-blue-500/20"
                         : "text-gray-400 hover:text-white border border-transparent"
-                    }`}
-                  >
-                    {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                {(["daily", "weekly", "monthly"] as const).map((tf) => (
-                  <button
-                    key={tf}
-                    disabled={view === "battlefield"}
-                    onClick={() => setTimeframe(tf)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs border transition-all duration-200 cursor-pointer ${
-                      view === "battlefield"
+                        }`}
+                    >
+                      {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  {(["daily", "weekly", "monthly"] as const).map((tf) => (
+                    <button
+                      key={tf}
+                      disabled={view === "battlefield"}
+                      onClick={() => setTimeframe(tf)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs border transition-all duration-200 cursor-pointer ${view === "battlefield"
                         ? "opacity-20 cursor-not-allowed"
                         : timeframe === tf
-                        ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
-                        : "bg-white/[0.03] text-gray-400 border-white/[0.08] hover:text-white hover:border-white/15"
-                    }`}
-                  >
-                    {tf.charAt(0).toUpperCase() + tf.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {view === "battlefield" ? (
-              <div className="mb-10">
-                <SentimentBattlefield 
-                  targetHotel={targetHotel as any} 
-                  competitors={visibleCompetitors as any} 
-                  sentimentHistory={sentimentHistory}
-                />
-              </div>
-            ) : (
-              <>
-                {/* History chart with gradient strokes and grid */}
-                <div className="h-[400px] w-full relative mb-10 bg-white/[0.01] rounded-2xl border border-white/[0.04] p-4">
-                  {/* Horizontal grid lines for visual reference */}
-                  <div className="absolute inset-4 flex flex-col justify-between pointer-events-none">
-                    {[5.0, 4.5, 4.0, 3.5, 3.0].map((v) => (
-                      <div key={v} className="flex items-center gap-2 w-full">
-                        <span className="text-[9px] text-gray-600 w-6 text-right font-mono">{v.toFixed(1)}</span>
-                        <div className="flex-1 h-px bg-white/[0.04]" />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="absolute inset-4 left-10 flex items-end">
-                    {(function () {
-                      const allData = Object.values(sentimentHistory).flat();
-                      if (allData.length === 0) return null;
-                      
-                      const maxScore = 5;
-                      const minScore = 3;
-                      const range = maxScore - minScore;
-
-                      return selectedHotelIds.map((id) => {
-                        const history = sentimentHistory[id] || [];
-                        if (history.length === 0) return null;
-
-                        const points = history
-                          .map((h: any, i: number) => {
-                            const val = Number(h.rating) || 3;
-                            const x = (i / (history.length - 1)) * 100;
-                            const y = 100 - ((val - minScore) / range) * 100;
-                            return `${x},${y}`;
-                          })
-                          .join(" ");
-
-                        const isTarget = id === targetHotel?.id;
-
-                        return (
-                          <svg
-                            key={id}
-                            className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
-                            viewBox="0 0 100 100"
-                            preserveAspectRatio="none"
-                          >
-                            {/* Gradient stroke for target hotel line */}
-                            {isTarget && (
-                              <defs>
-                                <linearGradient id={`line-grad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-                                  <stop offset="50%" stopColor="#60a5fa" stopOpacity="1" />
-                                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
-                                </linearGradient>
-                              </defs>
-                            )}
-                            <polyline
-                              points={points}
-                              fill="none"
-                              stroke={isTarget ? `url(#line-grad-${id})` : "rgba(107,114,128,0.4)"}
-                              strokeWidth={isTarget ? "1.5" : "0.5"}
-                              strokeDasharray={isTarget ? "0" : "2 2"}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="transition-all duration-1000"
-                            />
-                          </svg>
-                        );
-                      });
-                    })()}
-                  </div>
-                  {/* Date axis labels */}
-                  <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-gray-600 font-medium tracking-wide">
-                    {(function() {
-                      const firstHist = Object.values(sentimentHistory)[0] || [];
-                      if (firstHist.length < 2) return null;
-                      return [firstHist[0], firstHist[Math.floor(firstHist.length/2)], firstHist[firstHist.length-1]].map((h: any, i: number) => {
-                        if (!h) return null;
-                        return (
-                          <span key={i}>
-                            {new Date(h.date || h.recorded_at).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                        );
-                      });
-                    })()}
-                  </div>
+                          ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
+                          : "bg-white/[0.03] text-gray-400 border-white/[0.08] hover:text-white hover:border-white/15"
+                        }`}
+                    >
+                      {tf.charAt(0).toUpperCase() + tf.slice(1)}
+                    </button>
+                  ))}
                 </div>
-              </>
-            )}
+              </div>
 
-            {/* ── Visual Ranking Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
-              {allHotels
-                .filter((h) => selectedHotelIds.includes(h.id))
-                .map((hotel, idx) => (
-                  <motion.div
-                    key={hotel.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 ${
-                      hotel.isTarget
+              {view === "battlefield" ? (
+                <div className="mb-10">
+                  <SentimentBattlefield
+                    targetHotel={targetHotel as any}
+                    competitors={visibleCompetitors as any}
+                    sentimentHistory={sentimentHistory}
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* History chart with gradient strokes and grid */}
+                  <div className="h-[400px] w-full relative mb-10 bg-white/[0.01] rounded-2xl border border-white/[0.04] p-4">
+                    {/* Horizontal grid lines for visual reference */}
+                    <div className="absolute inset-4 flex flex-col justify-between pointer-events-none">
+                      {[5.0, 4.5, 4.0, 3.5, 3.0].map((v) => (
+                        <div key={v} className="flex items-center gap-2 w-full">
+                          <span className="text-[9px] text-gray-600 w-6 text-right font-mono">{v.toFixed(1)}</span>
+                          <div className="flex-1 h-px bg-white/[0.04]" />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="absolute inset-4 left-10 flex items-end">
+                      {(function () {
+                        const allData = Object.values(sentimentHistory).flat();
+                        if (allData.length === 0) return null;
+
+                        const maxScore = 5;
+                        const minScore = 3;
+                        const range = maxScore - minScore;
+
+                        return selectedHotelIds.map((id) => {
+                          const history = sentimentHistory[id] || [];
+                          if (history.length === 0) return null;
+
+                          const points = history
+                            .map((h: any, i: number) => {
+                              const val = Number(h.rating) || 3;
+                              const x = (i / (history.length - 1)) * 100;
+                              const y = 100 - ((val - minScore) / range) * 100;
+                              return `${x},${y}`;
+                            })
+                            .join(" ");
+
+                          const isTarget = id === targetHotel?.id;
+
+                          return (
+                            <svg
+                              key={id}
+                              className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+                              viewBox="0 0 100 100"
+                              preserveAspectRatio="none"
+                            >
+                              {/* Gradient stroke for target hotel line */}
+                              {isTarget && (
+                                <defs>
+                                  <linearGradient id={`line-grad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+                                    <stop offset="50%" stopColor="#60a5fa" stopOpacity="1" />
+                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
+                                  </linearGradient>
+                                </defs>
+                              )}
+                              <polyline
+                                points={points}
+                                fill="none"
+                                stroke={isTarget ? `url(#line-grad-${id})` : "rgba(107,114,128,0.4)"}
+                                strokeWidth={isTarget ? "1.5" : "0.5"}
+                                strokeDasharray={isTarget ? "0" : "2 2"}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="transition-all duration-1000"
+                              />
+                            </svg>
+                          );
+                        });
+                      })()}
+                    </div>
+                    {/* Date axis labels */}
+                    <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-gray-600 font-medium tracking-wide">
+                      {(function () {
+                        const firstHist = Object.values(sentimentHistory)[0] || [];
+                        if (firstHist.length < 2) return null;
+                        return [firstHist[0], firstHist[Math.floor(firstHist.length / 2)], firstHist[firstHist.length - 1]].map((h: any, i: number) => {
+                          if (!h) return null;
+                          return (
+                            <span key={i}>
+                              {new Date(h.date || h.recorded_at).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── Visual Ranking Cards ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
+                {allHotels
+                  .filter((h) => selectedHotelIds.includes(h.id))
+                  .map((hotel, idx) => (
+                    <motion.div
+                      key={hotel.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 ${hotel.isTarget
                         ? "bg-blue-500/5 border-blue-500/15"
                         : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    {/* Position badge with medal colors for top 3 */}
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${
-                      idx === 0 ? "bg-amber-500/15 text-amber-400" :
-                      idx === 1 ? "bg-gray-400/10 text-gray-400" :
-                      idx === 2 ? "bg-amber-700/10 text-amber-600" :
-                      "bg-white/5 text-gray-500"
-                    }`}>
-                      #{idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span
-                          className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-white/70"}`}
-                        >
-                          {hotel.name}
-                        </span>
-                        <span className="text-xs font-black text-white/80">
-                          {(hotel.rating || 0).toFixed(1)} ★
-                        </span>
+                        }`}
+                    >
+                      {/* Position badge with medal colors for top 3 */}
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? "bg-amber-500/15 text-amber-400" :
+                        idx === 1 ? "bg-gray-400/10 text-gray-400" :
+                          idx === 2 ? "bg-amber-700/10 text-amber-600" :
+                            "bg-white/5 text-gray-500"
+                        }`}>
+                        #{idx + 1}
                       </div>
-                      <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
-                          transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.08 }}
-                          className={`h-full rounded-full ${
-                            hotel.isTarget ? "bg-gradient-to-r from-blue-500 to-blue-400" :
-                            idx === 0 ? "bg-gradient-to-r from-amber-500 to-amber-400" :
-                            "bg-gradient-to-r from-gray-500/60 to-gray-400/40"
-                          }`}
-                        />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span
+                            className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-white/70"}`}
+                          >
+                            {hotel.name}
+                          </span>
+                          <span className="text-xs font-black text-white/80">
+                            {(hotel.rating || 0).toFixed(1)} ★
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.08 }}
+                            className={`h-full rounded-full ${hotel.isTarget ? "bg-gradient-to-r from-blue-500 to-blue-400" :
+                              idx === 0 ? "bg-gradient-to-r from-amber-500 to-amber-400" :
+                                "bg-gradient-to-r from-gray-500/60 to-gray-400/40"
+                              }`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-            </div>
+                    </motion.div>
+                  ))}
+              </div>
 
-            {/* ── Legend (glass pills) ── */}
-            <div className="flex flex-wrap justify-center gap-4 mt-8 mb-2">
-              {[
-                { color: "bg-blue-500", label: "My Hotel" },
-                { color: "bg-amber-500", label: "Market Leader" },
-                { color: "bg-gray-500", label: "Competitors" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
-                  <span className={`w-3 h-1 ${item.color} rounded-full`} />
-                  <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </>
-      )}
+              {/* ── Legend (glass pills) ── */}
+              <div className="flex flex-wrap justify-center gap-4 mt-8 mb-2">
+                {[
+                  { color: "bg-blue-500", label: "My Hotel" },
+                  { color: "bg-amber-500", label: "Market Leader" },
+                  { color: "bg-gray-500", label: "Competitors" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                    <span className={`w-3 h-1 ${item.color} rounded-full`} />
+                    <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
       </div>
     </div>
   );

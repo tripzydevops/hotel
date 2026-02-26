@@ -113,48 +113,17 @@ async def create_hotel(
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
         
-    limit = 1 # Default
+    # EXPLANATION: Plan-Based Limit Enforcement
+    # We fetch the enriched profile (which handles admin bypasses and overrides)
+    # and then delegate the limit check to the SubscriptionService.
+    from backend.services.profile_service import get_enriched_profile_logic
+    from backend.services.subscription import SubscriptionService
     
-    # Check Admin Status
-    is_admin = False
-    email = getattr(current_user, 'email', None)
-    if email:
-        email_lower = email.lower()
-        if (email_lower in ["admin@hotel.plus", "selcuk@rate-sentinel.com", "asknsezen@gmail.com", "askinsezen@gmail.com", "yusuf@tripzy.travel", "elif@tripzy.travel"] 
-            or email_lower.endswith("@hotel.plus")):
-            is_admin = True
-            
-    if not is_admin:
-        try:
-            profile_res = db.table("user_profiles").select("role").eq("user_id", str(user_id)).execute()
-            if profile_res.data and profile_res.data[0].get("role") and profile_res.data[0].get("role").lower() in ["admin", "market_admin", "market admin"]:
-                is_admin = True
-        except Exception:
-            pass
-
-    if is_admin or str(user_id) == "eb284dd9-7198-47be-acd0-fdb0403bcd0a":
-        limit = 999
-    else:
-        plan = "trial"
-        try:
-            profiles_res = db.table("profiles").select("plan_type").eq("id", str(user_id)).execute()
-            if profiles_res.data and profiles_res.data[0].get("plan_type"):
-                plan = profiles_res.data[0].get("plan_type")
-            else:
-                user_profiles_res = db.table("user_profiles").select("plan_type").eq("user_id", str(user_id)).execute()
-                if user_profiles_res.data:
-                    plan = user_profiles_res.data[0].get("plan_type", "trial")
-            
-            PLAN_LIMITS = {
-                "trial": 1, "starter": 5, "pro": 25, "professional": 25, "enterprise": 999
-            }
-            limit = PLAN_LIMITS.get(plan, 1)
-        except Exception as e:
-            print(f"Plan check failed: {e}")
-
-    existing = db.table("hotels").select("id").eq("user_id", str(user_id)).execute()
-    if existing.data and len(existing.data) >= limit:
-        raise HTTPException(status_code=403, detail=f"Hotel limit reached (Max {limit}).")
+    profile = await get_enriched_profile_logic(user_id, None, db)
+    can_add, reason = await SubscriptionService.check_hotel_limit(db, str(user_id), profile)
+    
+    if not can_add:
+        raise HTTPException(status_code=403, detail=reason)
         
     if hotel.serp_api_id:
         dup = db.table("hotels").select("*").eq("user_id", str(user_id)).eq("serp_api_id", hotel.serp_api_id).execute()

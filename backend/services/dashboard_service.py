@@ -252,6 +252,12 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                 last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
                 next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
 
+        # 7. Plan Limits
+        from backend.services.subscription import SubscriptionService
+        enriched_profile = await get_enriched_profile_logic(user_id, user_profile, db)
+        access = await SubscriptionService.get_user_limits(db, enriched_profile)
+        comp_limit = access.get("limits", {}).get("ui_comparison_limit", 5)
+
         return {
             "target_hotel": target_hotel,
             "competitors": competitors,
@@ -259,6 +265,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             "scan_history": scan_history,
             "recent_sessions": recent_sessions,
             "unread_alerts_count": unread_count,
+            "comparison_limit": comp_limit,
             "next_scan_at": next_scan_at,
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "profile": user_profile,
