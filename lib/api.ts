@@ -21,6 +21,7 @@ const API_BASE_URL =
 
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
+  private supabase: any = null;
 
   public async getHeaders(): Promise<HeadersInit> {
     const token = await this.getToken();
@@ -35,14 +36,15 @@ class ApiClient {
 
   private async getToken(): Promise<string | null> {
     try {
-      // EXPLANATION: Auth Session Retrieval
-      // We use the browser client to fetch the session. This relies on 
-      // Supabase's internal persistence (cookies/localStorage).
-      const { createClient } = await import("@/utils/supabase/client");
-      const supabase = createClient();
+      // EXPLANATION: Auth Session Retrieval (Singleton Pattern)
+      // We use a singleton instance of the browser client to maintain session 
+      // hydration and prevent race conditions on Vercel/SSR environments.
+      if (!this.supabase) {
+        const { createClient } = await import("@/utils/supabase/client");
+        this.supabase = createClient();
+      }
       
-      // Get session directly - this is fastest on client side
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await this.supabase.auth.getSession();
       
       if (error) {
         console.warn("[ApiClient] Auth session error:", error);
@@ -52,7 +54,7 @@ class ApiClient {
       const token = session?.access_token || null;
       if (!token) {
         // Optional: Check if we have a user but no session yet (rare)
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await this.supabase.auth.getUser();
         if (user) {
           console.log("[ApiClient] User found but no active session found for token.");
         }
