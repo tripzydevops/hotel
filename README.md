@@ -44,8 +44,7 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
     source venv/bin/activate
     pip install -r requirements.txt
     ```
-4.  Set up `.env` (See `.env.example`).
-    -   **Crucial:** Must include `REDIS_URL` (rediss://...) for Worker connection.
+4.  Set up `.env` (See `.env.local` for the latest Supabase keys).
 
 ### Running Locally (Development)
 
@@ -66,4 +65,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-02-19 (Infrastructure Hardening & Hybrid Deploy)
+**Last Updated:** 2026-02-27 (Redis Removal, Notification Fix & AI Optimization)
