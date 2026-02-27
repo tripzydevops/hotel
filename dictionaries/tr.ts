@@ -35,7 +35,7 @@ export const tr = {
     checkOut: "Çıkış",
     loadingError: "Panel verileri yüklenemedi.",
     footerCopyright:
-      "© 2026 Otel Fiyat Takibi. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
+      "© 2026 Hotel Rate Sentinel. Tüm fiyatlar SerpApi aracılığıyla alınmıştır.",
     close: "Kapat",
     errorTitle: "Hata",
     estimated: "TAHMİNİ / YER YOK",
@@ -59,8 +59,8 @@ export const tr = {
     emailPlaceholder: "isim@sirket.com",
   },
   dashboard: {
-    title: "Fiyat Takibi",
-    subtitle: "Gelir yönetimi için doğrudan istihbarat",
+    title: "Fiyat İstihbarat Matrisi",
+    subtitle: "Otonom Zeka / Komuta Merkezi",
     marketPulse: "Pazar Nabzı",
     nextScheduledScan: "Sonraki Planlı Tarama",
     yieldRisk: "Verimlilik Riski Alanı",
@@ -474,7 +474,7 @@ export const tr = {
       pages: "Sayfalar",
       product: "Ürün",
       contact: "İletişim",
-      rights: "© 2026 Hotel Plus. Tüm hakları saklıdır.",
+      rights: "© 2026 Hotel Rate Sentinel. Tüm hakları saklıdır.",
     },
     hero: {
       topLabel: "Yapay Zeka Destekli Otel Fiyat İstihbaratı",

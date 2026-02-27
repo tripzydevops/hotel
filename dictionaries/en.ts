@@ -35,7 +35,7 @@ export const en = {
     checkOut: "Check-out",
     loadingError: "Failed to load dashboard data.",
     footerCopyright:
-      "© 2026 Hotel Rate Monitor. All rates fetched via SerpApi.",
+      "© 2026 Hotel Rate Sentinel. All rates fetched via SerpApi.",
     close: "Close",
     errorTitle: "Error",
     estimated: "ESTIMATED / SOLD OUT",
@@ -59,8 +59,8 @@ export const en = {
     emailPlaceholder: "name@company.com",
   },
   dashboard: {
-    title: "Rate Monitor",
-    subtitle: "Direct intelligence for revenue management",
+    title: "Rate Intelligence Grid",
+    subtitle: "Autonomous Intelligence / Command Center",
     marketPulse: "Market Pulse",
     nextScheduledScan: "Next Scheduled Scan",
     yieldRisk: "Yield Risk Area",
@@ -474,7 +474,7 @@ export const en = {
       pages: "Pages",
       product: "Product",
       contact: "Contact",
-      rights: "© 2026 Hotel Plus. All rights reserved.",
+      rights: "© 2026 Hotel Rate Sentinel. All rights reserved.",
     },
     hero: {
       topLabel: "AI-Powered Hotel Price Intelligence",

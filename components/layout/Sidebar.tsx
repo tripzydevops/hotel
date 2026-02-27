@@ -104,10 +104,10 @@ export default function Sidebar({
           </div>
           <div className="flex flex-col">
             <span className="text-white font-black text-xl tracking-tighter leading-none">
-              Hotel Plus
+              Rate Sentinel
             </span>
-            <span className="text-[9px] text-[#F6C344]/80 uppercase tracking-[0.3em] font-black mt-1.5">
-              Enterprise Core
+            <span className="text-[9px] text-[var(--soft-gold)]/80 uppercase tracking-[0.3em] font-black mt-1.5">
+              Autonomous Intelligence
             </span>
           </div>
         </div>
@@ -118,11 +118,10 @@ export default function Sidebar({
         {/* Market Price Search */}
         <Link
           href="/"
-          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
-            pathname === "/"
-              ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
+          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/"
+            ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+            : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
         >
           {pathname === "/" && (
             <motion.div
@@ -143,11 +142,10 @@ export default function Sidebar({
         <div>
           <button
             onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
-            className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
-              isAnalysisActive
-                ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
+            className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${isAnalysisActive
+              ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
           >
             {isAnalysisActive && (
               <motion.div
@@ -185,11 +183,10 @@ export default function Sidebar({
                       <Link
                         key={subItem.href}
                         href={subItem.href}
-                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${
-                          isSubActive
-                            ? "bg-white/10 text-white font-bold"
-                            : "text-slate-500 hover:text-white hover:bg-white/5"
-                        }`}
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isSubActive
+                          ? "bg-white/10 text-white font-bold"
+                          : "text-slate-500 hover:text-white hover:bg-white/5"
+                          }`}
                       >
                         <subItem.icon className="w-4 h-4" />
                         <span>{subItem.label}</span>
@@ -205,11 +202,10 @@ export default function Sidebar({
         {/* Reports */}
         <Link
           href="/reports"
-          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${
-            pathname === "/reports"
-              ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
+          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/reports"
+            ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+            : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
         >
           {pathname === "/reports" && (
             <motion.div
@@ -235,11 +231,10 @@ export default function Sidebar({
             </div>
             <Link
               href={adminItem.href}
-              className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${
-                pathname.startsWith("/admin")
-                  ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
+              className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin")
+                ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
             >
               <adminItem.icon
                 className={`w-5 h-5 ${pathname.startsWith("/admin") ? "text-amber-500" : "group-hover:text-amber-500 transition-colors"}`}
