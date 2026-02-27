@@ -240,7 +240,7 @@ function PricingDNAProfileCard({
           </div>
         )}
       </div>
-      <p className="text-sm text-white/80 leading-relaxed italic font-medium">
+      <p className="text-sm text-white/80 leading-relaxed italic font-medium whitespace-pre-line">
         &quot;{streamingNarrative || dnaText || `Analyzing ${hotelName}'s market footprint to determine strategic intent...`}&quot;
       </p>
     </motion.div>
@@ -837,7 +837,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">AI Synthesis</span>
           </div>
-          <div className="h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="min-h-[160px] max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             <p className="text-xs text-white/90 font-medium leading-relaxed whitespace-pre-line">
               {narrative}
             </p>

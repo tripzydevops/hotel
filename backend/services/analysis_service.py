@@ -250,18 +250,42 @@ def generate_synthetic_narrative(
     
     dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
     
-    # Narrative creation
+    # Narrative creation (Expanded High-Depth Fallbacks)
     if price_status == "premium" and sent_status == "superior":
-        return f"{hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates through superior guest experiences. Maintain this trajectory to maximize ADR."
+        return (
+            f"{hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates "
+            "through superior guest experiences and brand prestige. Your pricing index (ARI: {ari}) is well-supported "
+            "by guest satisfaction (SentIndex: {sent_index}). Strategic recommendation: Maintain this trajectory "
+            "while exploring minor ADR increases during high-demand periods to further maximize yield."
+        )
     elif price_status == "aggressive" and sent_status == "superior":
-        return f"Despite your '{price_status}' pricing,{dna_blurb} guests are providing {sent_status} feedback. This indicates room to push rates upward by 3-5% without compromising volume."
+        return (
+            f"Despite your '{price_status}' pricing,{dna_blurb} guests are providing {sent_status} feedback. "
+            f"With a pricing index of {ari} and sentiment at {sent_index}, you are 'leaving money on the table'. "
+            "The market perceives significantly higher value than what you are currently charging. "
+            "Action: Implement a structured rate increase of 3-5% across all segments to capture fair market value."
+        )
     elif price_status == "premium" and sent_status == "at-risk":
-        return f"Warning: Your pricing is in the danger zone.{dna_blurb} your rates are {int(ari-100)}% above market average, but sentiment is lagging. Expect a drop in occupancy unless service quality improves immediately."
+        return (
+            f"Critical Warning: Your pricing is in the danger zone.{dna_blurb} your rates are {int(ari-100)}% above "
+            f"market average, but guest sentiment ({sent_index}) is significantly lagging. You are vulnerable to "
+            "negative substitution as guests compare your premium price against subpar experiences. "
+            "Action: Immediate audit of operational friction points is required to protect occupancy and brand reputation."
+        )
     elif price_status == "aggressive" and sent_status == "at-risk":
-        return f"{hotel_name} is in a budget-volume cycle. With {price_status} rates and {sent_status} sentiment, focus on operational essentials to prevent a 'race to the bottom'."
+        return (
+            f"{hotel_name} is currently trapped in a budget-volume cycle. With {price_status} rates and {sent_status} "
+            "sentiment, you risk a permanent brand perception shift toward the 'economy' segment. "
+            "Strategic move: Focus on cost-effective 'Value' drivers — cleanliness and service essentials — "
+            "to stabilize sentiment before attempting any upward rate movement."
+        )
     
     # Fallback
-    return f"{hotel_name} is maintaining a balanced market position.{dna_blurb} stay vigilant on competitor parity to protect your current rank."
+    return (
+        f"{hotel_name} is maintaining a balanced market position with rates and sentiment closely aligned to averages. "
+        f"{dna_blurb} your strategy ensures stability, but stay vigilant on competitor parity. "
+        "Recommendation: Monitor 'Value' pillar shifts weekly to identify early signs of market momentum or fatigue."
+    )
 
 # EXPLANATION: Vercel-Safe Lazy Loader
 # Why: Vercel serverless environments may not always have the heavy genai SDK 
@@ -293,7 +317,7 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     q_label = analysis_data.get("quadrant_label")
     
     prompt = f"""
-    You are a Strategic Revenue Analyst for {hotel_name}. 
+    You are a Senior Strategic Revenue Analyst for {hotel_name}. 
     Market Context:
     - Market Position: {q_label}
     - ARI (Price Index): {ari} (100 is market average)
@@ -301,9 +325,10 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     - DNA Strategy: {dna_text or 'None defined'}
     
     Task:
-    Provide a concise (2-3 sentences) strategic "So What?" verdict. 
+    Provide a high-depth strategic "So What?" verdict. 
     Focus on the correlation between price position and guest sentiment. 
-    Do not use placeholders. Be direct and professional.
+    Explain HOW current market trends are impacting revenue potential and WHERE the most significant opportunity for growth lies.
+    Be direct, analytical, and professional. Aim for 2-3 detailed paragraphs.
     """
     
     try:

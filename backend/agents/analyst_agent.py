@@ -900,7 +900,7 @@ class AnalystAgent:
                 "gri": target.get("rating", 0),
                 "parity_leaks_count": len(parity_leaks),
                 "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
-                "sentiment_snapshot": sentiment_summary[:200]
+                "sentiment_snapshot": sentiment_summary[:1000]
             },
             "narrative_raw": ""
         }
@@ -1022,16 +1022,18 @@ class AnalystAgent:
             - Focus on MARKET POSITIONING and PRICE ELASTICITY.
             - Analyze the "Health" of the current rate relative to guest satisfaction.
             - Provide deep insight into how the Pricing DNA aligns with the current market pulse.
+            - Explain the long-term impact of current visibility trends on ADR sustainability.
             - Use a professional, sharp, and directive tone.
+            - Aim for an executive-level summary that provides both high-level context and specific strategic reasoning.
             
             REPORT SECTIONS:
-            1. [Contextual Frame]: Summary of market stance.
-            2. [Market Battlefield]: Performance analysis against the {timeframe} baseline.
-            3. [Visibility Pulse]: Analysis of search rank and its revenue impact.
-            4. [The DNA Match]: Is the strategy aligned with guest expectations?
-            5. [Executive Pivot]: SINGLE most important strategic move for today.
+            1. [Contextual Frame]: Summary of market stance and strategic intent.
+            2. [Market Battlefield]: Performance analysis against the {timeframe} baseline, including specific price-rank correlations.
+            3. [Visibility Pulse]: Analysis of search rank, visibility health, and its projected revenue impact.
+            4. [The DNA Match]: Evaluation of strategic alignment with guest expectations and current market reality.
+            5. [Executive Pivot]: Comprehensive strategic move for today, including expected outcomes and risk mitigation.
 
-            Format: Use markdown bullet points. Be punchy, analytical, and professional.
+            Format: Use markdown bullet points and distinct paragraphs. Be analytical, professional, and dense with insight.
             """
             try:
                 response = client.models.generate_content(
