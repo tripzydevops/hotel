@@ -60,7 +60,7 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter text-center mt-6">
-            Hotel <span className="text-[var(--soft-gold)]">Plus</span>
+            Rate <span className="text-[var(--soft-gold)]">Sentinel</span>
           </h1>
           <p className="text-[10px] text-[#F6C344]/80 uppercase tracking-[0.5em] font-black mt-2">
             Rate Sentinel
@@ -118,11 +118,10 @@ export default function LoginPage() {
 
           <button
             disabled={isLoading}
-            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-black text-lg transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${
-              isLoading
+            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-black text-lg transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${isLoading
                 ? "bg-white/10 text-white/40 cursor-not-allowed"
                 : "bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] hover:shadow-[var(--soft-gold)]/20"
-            }`}
+              }`}
           >
             {isLoading ? (
               <div className="w-6 h-6 border-3 border-[var(--deep-ocean)]/30 border-t-[var(--deep-ocean)] rounded-full animate-spin" />
