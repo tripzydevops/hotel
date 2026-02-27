@@ -521,10 +521,10 @@ export default function SentimentPage() {
     const y = Math.min(Math.max(ari - 100, -50), 50);
 
     let label = "Standard";
-    if (x > 2 && y > 2) label = "Premium King";
-    else if (x > 2 && y < -2) label = "Value Leader";
-    else if (x < -2 && y < -2) label = "Budget / Economy";
-    else if (x < -2 && y > 2) label = "Danger Zone";
+    if (ari >= 100 && sentimentIndex >= 100) label = "Premium King";
+    else if (ari < 100 && sentimentIndex >= 100) label = "Value Leader";
+    else if (ari >= 100 && sentimentIndex < 100) label = "Danger Zone";
+    else label = "Budget / Economy";
 
     return { x, y, label, ari, sentiment: sentimentIndex, targetRating: myRating, marketRating: marketAvgRating };
   }, [targetHotel, competitors, marketAvgRating]);
@@ -715,6 +715,7 @@ export default function SentimentPage() {
                   sentiment={strategicMap.sentiment}
                   targetRating={strategicMap.targetRating}
                   marketRating={strategicMap.marketRating}
+                  customInsight={data?.market_insight}
                   compact
                 />
               )}

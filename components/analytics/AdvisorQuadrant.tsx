@@ -32,6 +32,7 @@ interface AdvisorQuadrantProps {
   targetRating?: number;
   marketRating?: number;
   compact?: boolean;
+  customInsight?: string;
 }
 
 // EXPLANATION: Quadrant Position Registry
@@ -61,6 +62,7 @@ export default function AdvisorQuadrant({
   targetRating,
   marketRating,
   compact = false,
+  customInsight,
 }: AdvisorQuadrantProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { t } = useI18n();
@@ -186,8 +188,8 @@ export default function AdvisorQuadrant({
                     {quadrantStyle.icon}
                     <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-white/70 mb-3">
-                    {posDescription}
+                  <p className="text-[11px] leading-relaxed text-white/70 mb-3 whitespace-pre-line">
+                    {customInsight || posDescription}
                   </p>
                   <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
                     <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
@@ -238,8 +240,8 @@ export default function AdvisorQuadrant({
               <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
                 {t("strategicMap.marketInsight")}
               </div>
-              <p className="text-xs font-medium text-white/80 leading-relaxed">
-                {posInsight}
+              <p className="text-xs font-medium text-white/80 leading-relaxed whitespace-pre-line">
+                {customInsight || posInsight}
               </p>
             </div>
           </div>

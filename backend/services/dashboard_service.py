@@ -13,6 +13,7 @@ from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
 from backend.services.profile_service import get_enriched_profile_logic
+from backend.services.analysis_service import generate_synthetic_narrative
 
 logger = get_logger(__name__)
 
@@ -215,6 +216,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
 
         # 5. Value Synthesis
         market_avg = sum(active_prices) / len(active_prices) if active_prices else 0
+        market_avg_rating = sum(float(h.get("rating") or 0) for h in enriched_hotels) / len(enriched_hotels) if enriched_hotels else 0
         for hotel_data in enriched_hotels:
             sentiment = hotel_data["sentiment_breakdown"]
             value_pillar = next((p for p in sentiment if p["name"] == "Value"), None)
@@ -253,11 +255,24 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
                 last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
                 next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
 
-        # 7. Plan Limits
-        from backend.services.subscription import SubscriptionService
-        enriched_profile = await get_enriched_profile_logic(user_id, user_profile, db)
-        access = await SubscriptionService.get_user_limits(db, enriched_profile)
-        comp_limit = access.get("limits", {}).get("ui_comparison_limit", 5)
+        # 8. Dynamic Market Insight (Sentiment Page bridging)
+        market_insight = "Neutral market position"
+        if target_hotel and market_avg > 0:
+            try:
+                # Calculate metrics for narrative
+                th_price = target_hotel.get("price_info", {}).get("current_price") or 0
+                th_rating = float(target_hotel.get("rating") or 0)
+                th_ari = (th_price / market_avg) * 100 if th_price > 0 else 100
+                th_sent_index = (th_rating / market_avg_rating) * 100 if market_avg_rating > 0 else 100
+                
+                market_insight = generate_synthetic_narrative(
+                    ari=th_ari,
+                    sentiment_index=th_sent_index,
+                    pricing_dna=target_hotel.get("pricing_dna_text"),
+                    hotel_name=target_hotel.get("name", "Your Hotel")
+                )
+            except Exception as nie:
+                logger.warning(f"Narrative generation failed for dashboard: {nie}")
 
         return {
             "target_hotel": target_hotel,
@@ -271,6 +286,7 @@ async def get_dashboard_logic(user_id: str, current_user_id: str, current_user_e
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "profile": user_profile,
             "user_settings": user_settings,
+            "market_insight": market_insight
         }
 
     except Exception as e:
