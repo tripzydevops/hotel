@@ -153,6 +153,7 @@ export interface DashboardData {
   // BUNDLED DATA (Kaizen Fast-Load)
   profile?: any;
   user_settings?: UserSettings;
+  market_insight?: string;
 }
 
 export interface ScanOptions {
