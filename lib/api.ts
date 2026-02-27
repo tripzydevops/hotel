@@ -44,19 +44,30 @@ class ApiClient {
         this.supabase = createClient();
       }
       
-      const { data: { session }, error } = await this.supabase.auth.getSession();
+      let { data: { session }, error } = await this.supabase.auth.getSession();
       
       if (error) {
         console.warn("[ApiClient] Auth session error:", error);
         return null;
       }
       
-      const token = session?.access_token || null;
+      let token = session?.access_token || null;
+      
+      // EXPLANATION: Hydration Guard
+      // If we have no token, check if a user exists. If user exists but no session,
+      // it might be a hydration lag. We wait briefly and retry once.
       if (!token) {
-        // Optional: Check if we have a user but no session yet (rare)
         const { data: { user } } = await this.supabase.auth.getUser();
         if (user) {
-          console.log("[ApiClient] User found but no active session found for token.");
+          console.log("[ApiClient] User found but no session. Retrying in 500ms...");
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const retry = await this.supabase.auth.getSession();
+          token = retry.data.session?.access_token || null;
+          if (token) {
+            console.log("[ApiClient] Session recovered after retry.");
+          } else {
+            console.warn("[ApiClient] Session still missing after retry for user:", user.id);
+          }
         }
       }
       
@@ -66,6 +77,7 @@ class ApiClient {
       return null;
     }
   }
+
 
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     // Get session token safely

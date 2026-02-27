@@ -1,5 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+let browserService: any = null;
+
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -12,6 +14,7 @@ export function createClient() {
     return {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        getUser: () => Promise.resolve({ data: { user: null }, error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
         signOut: () => Promise.resolve({ error: null }),
       },
@@ -19,5 +22,14 @@ export function createClient() {
     } as any;
   }
 
+  // Singleton instance for browser-side usage
+  if (typeof window !== "undefined") {
+    if (!browserService) {
+      browserService = createBrowserClient(url, key);
+    }
+    return browserService;
+  }
+
   return createBrowserClient(url, key);
 }
+
