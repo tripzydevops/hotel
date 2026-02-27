@@ -878,7 +878,7 @@ class AnalystAgent:
         try:
             if target.get("sentiment_breakdown"):
                 if isinstance(target["sentiment_breakdown"], list):
-                    sentiment_summary = ", ".join([f"{s.get('name', 'General')}: {s.get('score', s.get('positive', 0))}" for s in target["sentiment_breakdown"][:5]])
+                    sentiment_summary = ", ".join([f"{s.get('name', 'General')}: {s.get('score', s.get('positive', 0))}" for s in target["sentiment_breakdown"][:15]])
                 elif isinstance(target["sentiment_breakdown"], dict):
                     sentiment_summary = str(target["sentiment_breakdown"])
         except: pass
@@ -935,6 +935,7 @@ class AnalystAgent:
             - Identify "Silent Killers" (negative trends) and "Brand Champions" (competitive strengths).
             - Analyze the 'Value' pillar in relation to the {avg_price} benchmark.
             - Provide in-depth explanations of WHY guests feel a certain way based on keywords.
+            - Focus on long-form reasoning and high-density strategic insights.
             - Use a sharp, consultative, and highly analytical tone.
             
             REPORT SECTIONS:
@@ -967,7 +968,7 @@ class AnalystAgent:
             - Quantify the 'Yield Friction' caused by OTA undercutting.
             - Analyze the correlation between Search Rank and Parity violations.
             - Provide a deep explanation of how these leaks impact the hotel's direct booking strategy.
-            - Use a rigorous, financial-focused, and directive tone.
+            - Use a rigorous, financial-focused, and directive tone with high-density analysis.
             
             REPORT SECTIONS:
             1. [Integrity Frame]: Brief summary of current market discipline.
@@ -1016,7 +1017,7 @@ class AnalystAgent:
             - Market Rate Benchmark: {avg_price} {target.get('preferred_currency', 'TRY')}.
             - Search Visibility Rank: #{avg_rank}.
             - Pricing DNA: {dna_str}.
-            - Top Sentiment: {sentiment_summary[:300]}
+            - Top Sentiment: {sentiment_summary[:1000]}
             
             INSTRUCTIONS:
             - Focus on MARKET POSITIONING and PRICE ELASTICITY.
@@ -1024,6 +1025,7 @@ class AnalystAgent:
             - Provide deep insight into how the Pricing DNA aligns with the current market pulse.
             - Explain the long-term impact of current visibility trends on ADR sustainability.
             - Use a professional, sharp, and directive tone.
+            - Prioritize high-density analysis and long-form strategic reasoning.
             - Aim for an executive-level summary that provides both high-level context and specific strategic reasoning.
             
             REPORT SECTIONS:

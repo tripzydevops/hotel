@@ -242,7 +242,11 @@ def generate_synthetic_narrative(
     guest sentiment (GRI/SentIndex), and the hotel's DNA.
     """
     if ari is None or sent_index is None:
-        return "Insufficient market data to generate a strategic narrative. Please ensure competitors and target prices are correctly configured."
+        return (
+            "Insufficient market data to generate a strategic narrative. "
+            "Analysis requires at least one active competitor and a valid target price. "
+            "Please ensure your tracking list is populated and your target hotel is correctly identified."
+        )
 
     # Status buckets
     price_status = "premium" if ari >= 105 else "aligned" if ari >= 95 else "aggressive"
@@ -250,41 +254,50 @@ def generate_synthetic_narrative(
     
     dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
     
-    # Narrative creation (Expanded High-Depth Fallbacks)
+    # Narrative creation (Expanded High-Depth Strategic Fallbacks)
     if price_status == "premium" and sent_status == "superior":
         return (
-            f"{hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates "
-            "through superior guest experiences and brand prestige. Your pricing index (ARI: {ari}) is well-supported "
-            "by guest satisfaction (SentIndex: {sent_index}). Strategic recommendation: Maintain this trajectory "
-            "while exploring minor ADR increases during high-demand periods to further maximize yield."
+            f"STRATEGIC VERDICT: {hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates "
+            "through superior guest experiences and brand prestige. Your pricing index (ARI: {ari:.1f}) is well-supported "
+            "by high guest satisfaction (SentIndex: {sent_index:.1f}). \n\n"
+            "Opportunities: \n"
+            "1. Yield Management: Explore 2-4% ADR upside during peak demand weekends where competitive sell-out is predicted.\n"
+            "2. Loyalty Retention: Invest in high-touch amenities for repeat guests to sustain this premium positioning against new market entrants."
         )
     elif price_status == "aggressive" and sent_status == "superior":
         return (
-            f"Despite your '{price_status}' pricing,{dna_blurb} guests are providing {sent_status} feedback. "
-            f"With a pricing index of {ari} and sentiment at {sent_index}, you are 'leaving money on the table'. "
-            "The market perceives significantly higher value than what you are currently charging. "
-            "Action: Implement a structured rate increase of 3-5% across all segments to capture fair market value."
+            f"STRATEGIC VERDICT: Growth Potential Detected. Guests are providing '{sent_status}' feedback despite your '{price_status}' pricing.{dna_blurb} "
+            f"With a pricing index of {ari:.1f} and sentiment at {sent_index:.1f}, you are currently 'leaving money on the table'. "
+            "The market perceives significantly higher value than what you are currently charging.\n\n"
+            "Action Plan:\n"
+            "1. Rate Correction: Implement a structured rate increase of 5-8% across standard room types to capture fair market value.\n"
+            "2. Upsell Optimization: Promote premium room types more aggressively as guest willingness-to-pay is currently undervalued."
         )
     elif price_status == "premium" and sent_status == "at-risk":
         return (
-            f"Critical Warning: Your pricing is in the danger zone.{dna_blurb} your rates are {int(ari-100)}% above "
-            f"market average, but guest sentiment ({sent_index}) is significantly lagging. You are vulnerable to "
-            "negative substitution as guests compare your premium price against subpar experiences. "
-            "Action: Immediate audit of operational friction points is required to protect occupancy and brand reputation."
+            f"STRATEGIC VERDICT: Critical Position Warning. Your pricing is in the 'Danger Zone'.{dna_blurb} your rates are {int(ari-100)}% above "
+            f"market average, but guest sentiment ({sent_index:.1f}) is significantly lagging. You are highly vulnerable to "
+            "negative substitution as guests compare your premium price against subpar experiences.\n\n"
+            "Immediate Risks:\n"
+            "1. Review Deterioration: Sustained high prices with low sentiment will accelerate negative public feedback.\n"
+            "2. Volume Loss: Competitors with similar or better sentiment at lower prices will likely siphon your market share. Audit operational 'value leaks' immediately."
         )
     elif price_status == "aggressive" and sent_status == "at-risk":
         return (
-            f"{hotel_name} is currently trapped in a budget-volume cycle. With {price_status} rates and {sent_status} "
-            "sentiment, you risk a permanent brand perception shift toward the 'economy' segment. "
-            "Strategic move: Focus on cost-effective 'Value' drivers — cleanliness and service essentials — "
-            "to stabilize sentiment before attempting any upward rate movement."
+            f"STRATEGIC VERDICT: Volume Over Brand risk. {hotel_name} is currently trapped in a budget-volume cycle. With {price_status} rates and '{sent_status}' "
+            "sentiment, you risk a permanent brand perception shift toward the 'economy' segment, making future recovery difficult.\n\n"
+            "Strategic Stabilization:\n"
+            "1. Quality Lockdown: Prioritize cleanliness and service speed over advanced marketing. Sentiment must stabilize before price can scale.\n"
+            "2. Targeted Promotion: Run limited-time 'experience' bundles to attract more diverse guests and dilute the impact of negative operational data."
         )
     
-    # Fallback
+    # Fallback (Balanced)
     return (
-        f"{hotel_name} is maintaining a balanced market position with rates and sentiment closely aligned to averages. "
-        f"{dna_blurb} your strategy ensures stability, but stay vigilant on competitor parity. "
-        "Recommendation: Monitor 'Value' pillar shifts weekly to identify early signs of market momentum or fatigue."
+        f"STRATEGIC VERDICT: Market Anchor. {hotel_name} is maintaining a balanced market position with rates and sentiment closely aligned to averages ({ari:.1f} ARI / {sent_index:.1f} GRI). "
+        f"{dna_blurb} your strategy ensures stability in a volatile market. \n\n"
+        "Tactical Guidance:\n"
+        "1. Parity Surveillance: Monitor 'Value' pillar shifts weekly; your position as an anchor makes you sensitive to competitor price drops.\n"
+        "2. Efficiency Gains: Focus on incremental ADR improvements (+1-2%) without disrupting the current guest satisfaction equilibrium."
     )
 
 # EXPLANATION: Vercel-Safe Lazy Loader
@@ -325,10 +338,18 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     - DNA Strategy: {dna_text or 'None defined'}
     
     Task:
-    Provide a high-depth strategic "So What?" verdict. 
-    Focus on the correlation between price position and guest sentiment. 
-    Explain HOW current market trends are impacting revenue potential and WHERE the most significant opportunity for growth lies.
-    Be direct, analytical, and professional. Aim for 2-3 detailed paragraphs.
+    Generate a high-depth strategic "So What?" verdict. Your analysis must provide deep market context and actionable intelligence.
+    
+    Structure your response into 3 distinct sections:
+    1. MARKET DYNAMICS: Explain the correlation between the hotel's current price index ({ari}) and guest sentiment ({sent_index}).
+    2. STRATEGIC POSITIONING: Analyze how this alignment (or mismatch) compares to the target DNA strategy. Identify "value leakage" or "yield opportunities".
+    3. ACTIONABLE RECOMMENDATIONS: Provide 2-3 specific, data-driven suggestions for rate adjustments or operational focus areas.
+    
+    Guidelines:
+    - Be analytical, clinical, and high-density.
+    - Avoid fluff or generic greetings.
+    - Use clear paragraphs.
+    - Target 3-4 paragraphs of long-form reasoning.
     """
     
     try:
@@ -1147,17 +1168,43 @@ async def get_market_intelligence_data(
     # Why: If the user is exploring specific categories like 'Suite' and we have NO data,
     # it is better to show 'N/A' (None) than to seed with misleading 'Standard' prices.
     is_std = not room_type or any(v in room_type.lower() for v in ["standard", "standart", "any", "base"])
+    
     if is_std and (not logs_data or len(logs_data) < len(hotels)):
-        logger.warning(f"[SAFEGUARD] Seeding from hotels table current_price for standard request (user {user_id})")
+        logger.info(f"[SAFEGUARD] Seeding from hotels table current_price for standard request (user {user_id})")
+        
+        # KAIZEN: Outlier-Resilient Seeding (Baseline Guard)
+        # We calculate a market baseline from the existing price_logs/query_logs to ensure
+        # that erroneous 'current_price' entries don't corrupt the graph.
+        baseline_prices = [float(l["price"]) for l in logs_data if float(l.get("price", 0)) > 0]
+        baseline_avg = sum(baseline_prices) / len(baseline_prices) if baseline_prices else None
+        
         for h in hotels:
             lp = h.get("current_price") or 0.0
             if float(lp) > 0:
+                h_pref_currency = h.get("preferred_currency") or h.get("currency") or "TRY"
+                converted_lp = convert_currency(float(lp), h_pref_currency, display_currency)
+                
+                # [OUTLIER GUARD] 
+                # If the seeded price (after conversion) is more than 3.5x the current market average,
+                # we treat it as a likely currency/data-entry mismatch and skip seeding it.
+                if baseline_avg and converted_lp > (baseline_avg * 3.5):
+                    logger.warning(
+                        f"[OUTLIER REJECTION] Hotel '{h.get('name')}' seeded price {converted_lp} {display_currency} "
+                        f"is suspiciously high (>{baseline_avg*3.5:.0f}). Possible currency mismatch ({h_pref_currency} vs {display_currency}). Skipping."
+                    )
+                    continue
+
+                # CURRENCY SANITY LOGGING
+                if h_pref_currency == "USD" and float(lp) > 1000:
+                    logger.warning(f"[CURRENCY SUSPICION] Hotel '{h.get('name')}' has preferred_currency=USD but price={lp}. Likely Turkish Lira.")
+
                 for i in range(14):
+                    # We use check-in dates for the next 14 days to fill the "near future" calendar view
                     target_date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
                     logs_data.append({
                         "hotel_id": str(h["id"]),
                         "price": float(lp),
-                        "currency": h.get("currency") or h.get("preferred_currency") or "TRY",
+                        "currency": h_pref_currency,
                         "vendor": "Cached",
                         "source": "hotels_table",
                         "check_in_date": target_date,

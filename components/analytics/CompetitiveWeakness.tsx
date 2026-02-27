@@ -164,7 +164,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                       {w.keyword && (
                         <div className="flex items-start gap-1">
                           <TrendingDown className="w-2.5 h-2.5 text-red-500/50 mt-1" />
-                          <p className="text-[10px] text-gray-400 leading-normal">
+                          <p className="text-[10px] text-gray-400 leading-normal" title={w.keyword}>
                             {t("sentiment.guestComplaint") || "Guest Insight"}:{" "}
                             <span className="text-red-200/90 font-medium italic">
                               "{w.keyword}"

@@ -837,7 +837,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">AI Synthesis</span>
           </div>
-          <div className="min-h-[160px] max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="min-h-[160px] max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             <p className="text-xs text-white/90 font-medium leading-relaxed whitespace-pre-line">
               {narrative}
             </p>
@@ -1517,7 +1517,7 @@ export default function ReportsPage() {
                   Synthetic AI Narrative
                 </h5>
                 <p
-                  className="text-base text-white/95 font-semibold leading-relaxed tracking-tight"
+                  className="text-base text-white/95 font-semibold leading-relaxed tracking-tight whitespace-pre-line"
                   aria-live="polite"
                 >
                   {streamingNarrative || analysis.synthetic_narrative || analysis.advisory_msg || "Synthesizing market intelligence..."}
