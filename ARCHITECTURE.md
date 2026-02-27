@@ -69,7 +69,7 @@ The system maintains persistent health and data freshness through a **Lean Serve
 
 - **FastAPI BackgroundTasks**: All manual and asynchronous monitoring logic runs in-process. This eliminates the need for a separate Celery/Redis cluster and stays within free-tier infrastructure limits.
 - **Supabase-Backed State Machine**: The `scan_sessions` table acts as the system-wide queue. Analysts and Scrapers update their "Reasoning Trace" directly in the database for real-time frontend auditing.
-- **Self-Healing Scheduler**: A multi-layered trigger (Cron + GitHub Actions) ensures scans are dispatched on time. The system anchors next scan times to the database to prevent drift.
+- **Self-Healing Scheduler**: A multi-layered trigger (Cron + GitHub Actions) ensures scans are dispatched on time. The system anchors next scan times to the database to prevent drift and executes scans directly.
 
 ## ⚡ Speed & AI Optimization
 

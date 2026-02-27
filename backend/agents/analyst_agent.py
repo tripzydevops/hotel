@@ -95,6 +95,7 @@ class AnalystAgent:
         
         # 2. Main Analysis Loop
         for res in scraper_results:
+            sentiment_changed = False # EXPLANATION: Initialize before try to avoid UnboundLocalError
             try:
                 hotel_id = res.get("hotel_id")
                 price_data = res.get("price_data")
@@ -103,7 +104,6 @@ class AnalystAgent:
                 if not hotel_id:
                     continue
 
-                sentiment_changed = False
                 if status != "success" or not price_data:
                     error_detail = "Unknown Error"
                     if isinstance(price_data, dict) and price_data.get("error"):

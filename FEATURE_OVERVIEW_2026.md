@@ -10,7 +10,7 @@ To resolve the "lazy cron" issue (where scans only triggered when a user was act
 ### Architecture
 - **Layer 1: System Cron (VM)**: A Linux cron job on the production VM triggers the scheduler logic every 15 minutes. This is the primary trigger.
 - **Layer 2: GitHub Action**: A scheduled workflow serves as a robust backup, ensuring the schedule persists even if local VM services are interrupted.
-- **Logic Isolation**: The core scheduling logic is encapsulated in `backend/services/monitor_service.py:run_scheduler_check_logic`, decoupled from the HTTP routing layer.
+- **Logic Isolation**: The core scheduling logic is encapsulated in `backend/services/monitor_service.py:run_scheduler_check_logic`, decoupled from the HTTP routing layer. Dispatched scans run in-process via FastAPI `BackgroundTasks`.
 
 ### Key Components
 - [scripts/trigger_scheduler.sh](file:///home/tripzydevops/hotel/scripts/trigger_scheduler.sh): Fast entry point that executes the direct Python trigger.

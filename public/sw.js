@@ -36,8 +36,16 @@ self.addEventListener('push', function (event) {
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('Notification click received.');
+    console.log('Notification click received. Action:', event.action);
     event.notification.close();
+
+    // EXPLANATION: Handle 'close' action explicitly
+    // If the user clicks the 'Close' button, we should just dismiss the notification
+    // without opening or focusing any windows.
+    if (event.action === 'close') {
+        console.log('Notification closed by user action.');
+        return;
+    }
 
     // The base URL of the app
     const origin = self.location.origin;
@@ -61,6 +69,7 @@ self.addEventListener('notificationclick', function (event) {
             if (matchingClient) {
                 return matchingClient.focus();
             } else {
+                // Only open a new window if one doesn't already exist
                 return clients.openWindow(origin + '/dashboard');
             }
         })

@@ -2,23 +2,17 @@
 
 **Hotel Rate Sentinel** is a next-generation travel intelligence platform designed to solve the "Cold Start" problem using Autonomous Agents and LLM-based reasoning.
 
-## 🏗️ Technical Architecture (Hybrid Deployment)
+## 🏗️ Technical Architecture (Serverless Core)
 
-We utilize a **Hybrid Deployment Strategy** to balance performance and capability:
+We utilize a **Serverless-First Strategy** to ensure high availability and low maintenance:
 
-1.  **Frontend & API (Vercel)**:
+1.  **Backend & Frontend (Vercel)**:
     -   Next.js 14 (App Router)
     -   FastAPI Backend (Serverless Function)
-    -   Handles UI, User Management, and Light Data Requests.
-
-2.  **Background Worker (VM / VPS)**:
-    -   **Celery** + **Python 3.11**
-    -   Handles Heavy Scraping (SerpApi), Data Analysis, and Long-Running Tasks.
-    -   Managed via `systemd` for persistence.
-
-3.  **Data & Infrastructure**:
+    -   **Background Scans**: Powered by FastAPI `BackgroundTasks` for in-process, non-blocking AI execution.
+2.  **Infrastructure**:
     -   **Supabase**: Relational (PostgreSQL) and Vector Storage (`pgvector`).
-    -   **Upstash Redis**: Cloud-hosted Redis queue bridging Vercel and the Worker VM.
+    -   **Cron Management**: Multi-layered triggers (GitHub Actions + Cron) for scheduled monitoring.
 
 ## 📊 Core Features
 
@@ -39,7 +33,6 @@ We utilize a **Hybrid Deployment Strategy** to balance performance and capabilit
 -   Python 3.11+
 -   Supabase Account
 -   SerpApi Key
--   **Upstash Redis Database** (Required for background jobs)
 
 ### Installation
 
@@ -60,28 +53,14 @@ We utilize a **Hybrid Deployment Strategy** to balance performance and capabilit
 # Terminal 1: Frontend
 npm run dev
 
-# Terminal 2: Backend (API)
+# Terminal 2: Backend (API & Background Tasks)
 source venv/bin/activate
 uvicorn backend.main:app --reload
 
-# Terminal 3: Celery Worker
-source venv/bin/activate
-celery -A backend.celery_app worker --loglevel=info
 ```
 
-### 🔧 Production Maintenance
-
-**Restarting the Worker:**
-The worker is managed by `systemd`.
-```bash
-sudo systemctl restart hotel-worker
-sudo systemctl status hotel-worker
-```
-
-**Viewing Logs:**
-```bash
-journalctl -u hotel-worker -f
-```
+**Monitoring Scans:**
+Track background scan progress via the `scan_sessions` table in Supabase or the `/debug` dashboard.
 
 ---
 
