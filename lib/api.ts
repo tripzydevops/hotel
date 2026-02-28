@@ -85,9 +85,14 @@ class ApiClient {
   }
 
 
-  private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetch<T>(
+    endpoint: string,
+    options?: RequestInit & { authenticated?: boolean },
+  ): Promise<T> {
+    const shouldAuthenticate = options?.authenticated !== false;
+
     // Get session token safely
-    const token = await this.getToken();
+    const token = shouldAuthenticate ? await this.getToken() : null;
     
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -96,7 +101,7 @@ class ApiClient {
 
     if (token) {
       (headers as any)["Authorization"] = `Bearer ${token}`;
-    } else {
+    } else if (shouldAuthenticate) {
       console.warn(`[ApiClient] [AUTH_MISSING] ${endpoint}`);
     }
 
@@ -219,7 +224,7 @@ class ApiClient {
       url += `&city=${encodeURIComponent(city)}`;
     }
     console.log("[API] Searching:", url);
-    return this.fetch<any[]>(url);
+    return this.fetch<any[]>(url, { authenticated: false });
   }
   async addHotelToDirectory(
     name: string,
@@ -287,7 +292,7 @@ class ApiClient {
   }
 
   async getLocations(): Promise<any[]> {
-    return this.fetch<any[]>("/api/locations");
+    return this.fetch<any[]>("/api/locations", { authenticated: false });
   }
 
   async exportReport(userId: string, format: string = "csv"): Promise<void> {
@@ -552,7 +557,10 @@ class ApiClient {
   // ===== Landing Page CMS (Kaizen) =====
 
   async getLandingConfig(locale: string = "tr"): Promise<Record<string, any>> {
-    return this.fetch<Record<string, any>>(`/api/landing/config?locale=${locale}`);
+    return this.fetch<Record<string, any>>(
+      `/api/landing/config?locale=${locale}`,
+      { authenticated: false },
+    );
   }
 
   async getAdminLandingConfig(locale: string = "tr"): Promise<any[]> {
