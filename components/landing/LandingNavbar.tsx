@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon } from "lucide-react";
+import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
 
 export default function LandingNavbar() {
   /* Track scroll position to toggle solid background */
@@ -41,42 +42,16 @@ export default function LandingNavbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
           ? "bg-[var(--deep-ocean)]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl"
           : "bg-transparent"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            {/* EXPLANATION: Inline SVG logo icon matching the login page design */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-[var(--soft-gold)]/20 blur-xl group-hover:blur-2xl transition-all duration-500 rounded-full" />
-              <div className="relative bg-gradient-to-br from-[#bf953f] via-[#fcf6ba] to-[#aa771c] p-[1.5px] rounded-xl">
-                <div className="bg-[#050B18] rounded-[10px] flex items-center justify-center h-10 w-10 p-1">
-                  <div className="relative w-6 h-6">
-                    <div className="absolute left-0 top-0 w-1.5 h-full bg-[#003366] rounded-sm"></div>
-                    <div className="absolute right-0 top-0 w-1.5 h-full bg-[#003366] rounded-sm"></div>
-                    <div className="absolute left-0 top-[42%] w-full h-1 bg-[#003366]"></div>
-                    <div className="absolute left-[20%] bottom-0 flex items-end gap-[1px]">
-                      <div className="w-1 h-1.5 bg-[#F6C344]"></div>
-                      <div className="w-1 h-2.5 bg-[#F6C344]"></div>
-                      <div className="w-1 h-3.5 bg-[#F6C344]"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <span className="text-xl font-black text-[var(--text-primary)] tracking-tight">
-                Hotel <span className="text-[var(--soft-gold)]">Plus</span>
-              </span>
-              <p className="text-[8px] text-[#F6C344]/60 uppercase tracking-[0.3em] font-bold -mt-0.5">
-                Rate Sentinel
-              </p>
-            </div>
+            <HotelPlusLogo variant="navbar" showDomain />
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -97,24 +72,22 @@ export default function LandingNavbar() {
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="glass rounded-full p-1 border border-white/10 flex gap-1">
-                <button 
+                <button
                   onClick={() => setLocale("tr")}
-                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${
-                    locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
                 >
                   TR
                 </button>
-                <button 
+                <button
                   onClick={() => setLocale("en")}
-                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${
-                    locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
+                  className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-all ${locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
                 >
                   EN
                 </button>
               </div>
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="w-9 h-9 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)] hover:scale-110 transition-all"
               >
@@ -169,25 +142,23 @@ export default function LandingNavbar() {
             ))}
             <div className="pt-3 border-t border-white/5 space-y-2">
               <div className="flex justify-between items-center px-2 py-2">
-                 <div className="flex glass rounded-full p-1 border border-white/10 gap-1">
-                  <button 
+                <div className="flex glass rounded-full p-1 border border-white/10 gap-1">
+                  <button
                     onClick={() => setLocale("tr")}
-                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${
-                      locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
-                    }`}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${locale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
+                      }`}
                   >
                     TR
                   </button>
-                  <button 
+                  <button
                     onClick={() => setLocale("en")}
-                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${
-                      locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
-                    }`}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${locale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)]"
+                      }`}
                   >
                     EN
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={toggleTheme}
                   className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-[var(--soft-gold)]"
                 >

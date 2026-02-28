@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
 
 export default function LandingFooter() {
   const { t } = useI18n();
@@ -32,10 +33,8 @@ export default function LandingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand Column */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-black text-[var(--text-primary)] tracking-tight">
-                Hotel <span className="text-[var(--soft-gold)]">Plus</span>
-              </span>
+            <div className="mb-4">
+              <HotelPlusLogo variant="footer" />
             </div>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               {t("landing.footer.tagline")}
@@ -98,7 +97,7 @@ export default function LandingFooter() {
             {t("landing.footer.rights")}
           </p>
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">
-            Powered by Rate Sentinel AI
+            hotelplustr.com
           </p>
         </div>
       </div>

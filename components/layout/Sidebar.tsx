@@ -19,6 +19,7 @@ import {
   Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
 
 import { useModalContext } from "@/components/ui/ModalContext";
 
@@ -87,30 +88,7 @@ export default function Sidebar({
     <aside className="w-64 bg-[#050B18] border-r border-white/5 flex flex-col h-screen sticky top-0 z-40">
       {/* Logo Section */}
       <div className="p-8 mb-4">
-        <div className="flex items-center gap-4">
-          <div className="relative w-10 h-10">
-            <div className="absolute left-0 top-0 w-3 h-full bg-[#003366] rounded-sm"></div>
-            <div className="absolute right-0 top-0 w-3 h-full bg-[#003366] rounded-sm"></div>
-            <div className="absolute left-0 top-[42%] w-full h-2 bg-[#003366]"></div>
-            <div className="absolute left-[20%] bottom-0 flex items-end gap-[2px]">
-              <div className="w-1.5 h-3 bg-[#F6C344]"></div>
-              <div className="w-1.5 h-5 bg-[#F6C344]"></div>
-              <div className="w-1.5 h-7 bg-[#F6C344]"></div>
-            </div>
-            <div className="absolute -right-1 -top-1 w-4 h-4 flex items-center justify-center">
-              <div className="absolute w-3.5 h-1 bg-[#F6C344] rounded-full"></div>
-              <div className="absolute w-1 h-3.5 bg-[#F6C344] rounded-full"></div>
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-white font-black text-xl tracking-tighter leading-none">
-              Rate Sentinel
-            </span>
-            <span className="text-[9px] text-[var(--soft-gold)]/80 uppercase tracking-[0.3em] font-black mt-1.5">
-              Autonomous Intelligence
-            </span>
-          </div>
-        </div>
+        <HotelPlusLogo variant="sidebar" />
       </div>
 
       {/* Primary Navigation */}
