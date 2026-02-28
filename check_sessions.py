@@ -1,26 +1,28 @@
+
 import asyncio
 import os
-from dotenv import load_dotenv
-from supabase import create_client, Client
-from datetime import datetime, timezone, timedelta
+import sys
+from datetime import datetime, timedelta
 
-load_dotenv(".env.local")
+# Add backend to path
+sys.path.append(os.getcwd())
 
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(url, key)
+from backend.services.supabase_client import get_supabase
 
 async def check_sessions():
-    print("--- Recent Scan Sessions ---")
-    last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-    res = supabase.table("scan_sessions").select("*").gte("created_at", last_24h).order("created_at", desc=True).limit(20).execute()
-    sessions = res.data or []
+    supabase = get_supabase()
+    
+    # Check sessions created in the last 24 hours
+    since = (datetime.utcnow() - timedelta(hours=24)).isoformat()
+    
+    response = supabase.table("scan_sessions").select("*").gt("created_at", since).order("created_at", descending=True).execute()
+    sessions = response.data
+    
+    print(f"{'Created At':<25} | {'Type':<12} | {'Status':<10} | {'Hotels'}")
+    print("-" * 70)
     
     for s in sessions:
-        created = datetime.fromisoformat(s["created_at"].replace("Z", "+00:00"))
-        completed = datetime.fromisoformat(s["completed_at"].replace("Z", "+00:00")) if s.get("completed_at") else None
-        duration = (completed - created).total_seconds() * 1000 if completed else "N/A"
-        print(f"ID: {s['id']} | Type: {s['session_type']} | Status: {s['status']} | Hotels: {s['hotels_count']} | Duration: {duration} ms")
+        print(f"{s.get('created_at', 'N/A'):<25} | {s.get('session_type', 'N/A'):<12} | {s.get('status', 'N/A'):<10} | {s.get('hotels_count', 0)}")
 
 if __name__ == "__main__":
     asyncio.run(check_sessions())

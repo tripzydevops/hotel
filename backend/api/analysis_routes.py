@@ -347,7 +347,7 @@ async def stream_market_intelligence(
             }
 
             # 2. Stream AI Narrative
-            async for chunk in stream_narrative_gen(analysis_data):
+            async for chunk in stream_narrative_gen(analysis_data, db=db):
                 yield {"event": "narrative_chunk", "data": json.dumps({"chunk": chunk})}
 
             yield {"event": "complete", "data": "done"}

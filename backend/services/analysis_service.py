@@ -16,11 +16,64 @@ from backend.utils.sentiment_utils import (
     generate_mentions,
     translate_breakdown,
     synthesize_value_score,
+    calculate_stability,
 )
 from backend.utils.logger import get_logger
 
 # EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
+
+
+async def get_sentiment_trends(
+    db: Client, hotel_id: str, limit: int = 10
+) -> Dict[str, Any]:
+    """
+    KAIZEN: Sentiment Trend Engine
+    Analyzes historical sentiment data to determine momentum and stability.
+    """
+    try:
+        res = (
+            db.table("sentiment_history")
+            .select("rating, recorded_at")
+            .eq("hotel_id", hotel_id)
+            .order("recorded_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+
+        history = res.data or []
+        if not history or len(history) < 2:
+            return {"momentum": 0.0, "stability": 1.0, "trend": "stable", "history": []}
+
+        ratings = [float(h["rating"]) for h in history]
+        ratings.reverse()  # Oldest to newest
+
+        # Momentum: Change between start and end of window
+        momentum = round(ratings[-1] - ratings[0], 2)
+
+        # Stability: Standard deviation (using utility)
+        volatility = calculate_stability(ratings)
+        stability = round(max(0, 1.0 - volatility), 2)  # 1.0 is perfectly stable
+
+        trend = "stable"
+        if momentum >= 0.2:
+            trend = "improving"
+        elif momentum <= -0.2:
+            trend = "declining"
+
+        if volatility > 0.4:
+            trend = f"volatile_{trend}"
+
+        return {
+            "momentum": momentum,
+            "stability": stability,
+            "trend": trend,
+            "recent_rating": ratings[-1],
+            "history": ratings,
+        }
+    except Exception as e:
+        logger.error(f"[Trends] Failed to fetch sentiment trends: {e}")
+        return {"momentum": 0.0, "stability": 1.0, "trend": "unknown", "history": []}
 
 
 def _transform_serp_links(breakdown: Any) -> Any:
@@ -409,16 +462,30 @@ def get_genai_client():
     return _genai_client
 
 
-async def stream_narrative_gen(analysis_data: Dict[str, Any]):
+async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None):
     """
     KAIZEN: Streaming Narrative Producer
     Uses Gemini to generate a data-driven market insight trace.
+    Incorporates "Smart Memory" sentiment trends if DB client is provided.
     """
     hotel_name = analysis_data.get("hotel_name")
+    hotel_id = analysis_data.get("hotel_id")
     ari = analysis_data.get("ari")
     sent_index = analysis_data.get("sent_index")
     dna_text = analysis_data.get("pricing_dna_text")
     q_label = analysis_data.get("quadrant_label")
+
+    # Smart Memory: Cross-Scan Synthesis
+    trends_blurb = ""
+    if db and hotel_id:
+        trends = await get_sentiment_trends(db, hotel_id)
+        if trends["trend"] != "unknown":
+            trends_blurb = f"""
+    Sentiment Trends (Historical Context):
+    - Trend: {trends['trend']}
+    - Momentum: {trends['momentum']} (over last {len(trends['history'])} scans)
+    - Stability: {trends['stability']} (1.0 is stable, lower is volatile)
+    """
 
     prompt = f"""
     You are a Senior Strategic Revenue Analyst for {hotel_name}. 
@@ -427,9 +494,11 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     - ARI (Price Index): {ari} (100 is market average)
     - Sentiment Index: {sent_index} (100 is market average)
     - DNA Strategy: {dna_text or "None defined"}
+    {trends_blurb}
     
     Task:
     Generate a high-depth strategic "So What?" verdict. Your analysis must provide deep market context and actionable intelligence.
+    Use the historical sentiment trends to contextualize the current performance. For example, if sentiment is "declining" despite a currently high index, warn about potential future churn or price vulnerability.
     
     Structure your response into 3 distinct sections:
     1. MARKET DYNAMICS: Explain the correlation between the hotel's current price index ({ari}) and guest sentiment ({sent_index}).

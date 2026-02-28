@@ -617,3 +617,23 @@ def merge_sentiment_breakdowns(
         item["rating"] = round(item["rating"], 1)
 
     return sorted(merged_list, key=lambda x: x["total_mentioned"], reverse=True)
+
+def calculate_stability(ratings: List[float]) -> float:
+    """
+    KAIZEN: Stability Index (Reputation Volatility)
+    Calculates the standard deviation of a series of ratings.
+
+    - Low Stability (High Std Dev): High volatility. Reputation is fluctuates.
+    - High Stability (Low Std Dev): Stable reputation. Consistent guest experience.
+
+    Returns:
+        float: Standard deviation (0.0 to 2.0+). 0.0 is perfect stability.
+    """
+    if not ratings or len(ratings) < 2:
+        return 0.0
+
+    import math
+
+    avg = sum(ratings) / len(ratings)
+    variance = sum((x - avg) ** 2 for x in ratings) / len(ratings)
+    return round(math.sqrt(variance), 2)

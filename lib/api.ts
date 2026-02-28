@@ -36,9 +36,6 @@ class ApiClient {
 
   private async getToken(): Promise<string | null> {
     try {
-      // EXPLANATION: Auth Session Retrieval (Singleton Pattern)
-      // We use a singleton instance of the browser client to maintain session 
-      // hydration and prevent race conditions on Vercel/SSR environments.
       if (!this.supabase) {
         const { createClient } = await import("@/utils/supabase/client");
         this.supabase = createClient();
@@ -53,21 +50,30 @@ class ApiClient {
       
       let token = session?.access_token || null;
       
-      // EXPLANATION: Hydration Guard
+      // EXPLANATION: Aggressive Hydration Guard
       // If we have no token, check if a user exists. If user exists but no session,
-      // it might be a hydration lag. We wait briefly and retry once.
+      // it might be a hydration lag. We retry up to 3 times with backoff.
       if (!token) {
         const { data: { user } } = await this.supabase.auth.getUser();
         if (user) {
-          console.log("[ApiClient] User found but no session. Retrying in 500ms...");
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const retry = await this.supabase.auth.getSession();
-          token = retry.data.session?.access_token || null;
-          if (token) {
-            console.log("[ApiClient] Session recovered after retry.");
-          } else {
-            console.warn("[ApiClient] Session still missing after retry for user:", user.id);
+          const timestamp = new Date().toISOString();
+          console.log(`[${timestamp}] [ApiClient] User detected (${user.id}) but NO session. Starting recovery...`);
+          const retries = [500, 1000, 2000];
+          for (let i = 0; i < retries.length; i++) {
+            console.log(`[ApiClient] Recovery attempt ${i + 1}/${retries.length} (waiting ${retries[i]}ms)...`);
+            await new Promise(resolve => setTimeout(resolve, retries[i]));
+            const retry = await this.supabase.auth.getSession();
+            token = retry.data.session?.access_token || null;
+            if (token) {
+              console.log("[ApiClient] Session RECOVERED successfully.");
+              break;
+            }
           }
+          if (!token) {
+            console.error("[ApiClient] CRITICAL: Session still missing after multiple retries for user:", user.id);
+          }
+        } else {
+          console.log("[ApiClient] No user and no session found.");
         }
       }
       
@@ -82,10 +88,7 @@ class ApiClient {
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     // Get session token safely
     const token = await this.getToken();
-    if (!token) {
-      console.log("[ApiClient] No token found in session");
-    }
-
+    
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...options?.headers,
@@ -94,17 +97,19 @@ class ApiClient {
     if (token) {
       (headers as any)["Authorization"] = `Bearer ${token}`;
     } else {
-      console.warn(`[ApiClient] Sending request to ${endpoint} WITHOUT token`);
+      console.warn(`[ApiClient] [AUTH_MISSING] ${endpoint}`);
     }
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`[ApiClient] Fetching from ${API_BASE_URL}: ${fullUrl}`);
+    console.log(`[ApiClient] Requesting ${endpoint}...`);
 
     const response = await fetch(fullUrl, {
       ...options,
       cache: "no-store",
       headers,
     });
+
+    console.log(`[ApiClient] Response [${response.status}] ${endpoint}`);
 
     if (!response.ok) {
       let errorMessage = response.statusText;

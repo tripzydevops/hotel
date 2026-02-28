@@ -12,8 +12,6 @@ numpy>=1.26.0
 psutil>=5.9.0
 requests>=2.31.0
 py-vapid>=1.9.0
-celery>=5.3.6
-redis>=5.0.1
 # Full dependencies are in requirements-all.txt for the background worker.
 google-genai>=1.0.0
 sse-starlette>=2.0.0
