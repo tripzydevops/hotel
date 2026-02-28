@@ -307,17 +307,19 @@ async def run_monitor_background(
         analyst = AnalystAgent(db)
         notifier = NotifierAgent()
 
-        # 2. Get User Threshold
+        # 2. Get User Settings
         threshold = 2.0
+        settings = {}
         try:
             settings_res = (
                 db.table("settings")
-                .select("threshold_percent")
+                .select("*")
                 .eq("user_id", str(user_id))
                 .execute()
             )
             if settings_res.data:
-                threshold = settings_res.data[0].get("threshold_percent", 2.0)
+                settings = settings_res.data[0]
+                threshold = settings.get("threshold_percent", 2.0)
         except Exception:
             pass
 
@@ -328,7 +330,7 @@ async def run_monitor_background(
         # 4. Phase 2: Analyst Agent
         logger.info("Starting AnalystAgent...")
         analysis = await analyst.analyze_results(
-            user_id, scraper_results, threshold, options=options, session_id=session_id
+            user_id, scraper_results, threshold, settings=settings, options=options, session_id=session_id
         )
 
         # 4.5 Room Type Cataloging

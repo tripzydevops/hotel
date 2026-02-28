@@ -10,6 +10,7 @@ from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.helpers import convert_currency, log_query
 from backend.utils.sentiment_utils import generate_mentions, merge_sentiment_breakdowns
+from backend.services.predictive_service import predictive_service
 
 
 class AnalystAgent:
@@ -46,6 +47,7 @@ class AnalystAgent:
         user_id: UUID,
         scraper_results: List[Dict[str, Any]],
         threshold: float = 2.0,
+        settings: Optional[Dict[str, Any]] = None,
         options: Optional[ScanOptions] = None,
         session_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
@@ -565,8 +567,25 @@ class AnalystAgent:
                                 previous_price, previous_currency, currency
                             )
 
+                        # 3. Dynamic Thresholding (Predictive Yield)
+                        current_threshold = threshold
+                        if settings and settings.get("dynamic_threshold_enabled"):
+                            volatility = await predictive_service.calculate_market_volatility(
+                                self.db, hotel_id
+                            )
+                            sensitivity = settings.get("dynamic_threshold_sensitivity", 1.0)
+                            current_threshold = predictive_service.get_smart_threshold(
+                                threshold, volatility, sensitivity
+                            )
+                            
+                            if current_threshold > threshold:
+                                reasoning_log.append(
+                                    f"[Predictive Yield] Noise Suppression active. Adjusted threshold: {current_threshold}% "
+                                    f"(Baseline: {threshold}%, Volatility: {volatility}%)"
+                                )
+
                         alert = price_comparator.check_threshold_breach(
-                            current_price, previous_price, threshold
+                            current_price, previous_price, current_threshold
                         )
                         if alert:
                             await self._log_reasoning(

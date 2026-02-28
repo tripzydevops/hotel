@@ -39,6 +39,12 @@ export default function SettingsModal({
   const [pushEnabled, setPushEnabled] = useState(
     settings?.push_enabled ?? false,
   );
+  const [dynamicEnabled, setDynamicEnabled] = useState(
+    settings?.dynamic_threshold_enabled ?? false,
+  );
+  const [sensitivity, setSensitivity] = useState(
+    settings?.dynamic_threshold_sensitivity ?? 1.0,
+  );
 
   // Sync state with props when settings load
   React.useEffect(() => {
@@ -48,6 +54,8 @@ export default function SettingsModal({
       setEmail(settings.notification_email || "");
       setEnabled(settings.notifications_enabled ?? true);
       setPushEnabled(settings.push_enabled ?? false);
+      setDynamicEnabled(settings.dynamic_threshold_enabled ?? false);
+      setSensitivity(settings.dynamic_threshold_sensitivity ?? 1.0);
     }
   }, [settings]);
 
@@ -130,6 +138,8 @@ export default function SettingsModal({
         notification_email: email,
         notifications_enabled: enabled,
         push_enabled: pushEnabled,
+        dynamic_threshold_enabled: dynamicEnabled,
+        dynamic_threshold_sensitivity: sensitivity,
       });
       onClose();
     } catch (error) {
@@ -182,6 +192,50 @@ export default function SettingsModal({
             <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
               {t("settings.thresholdDesc").replace("{0}", threshold.toString())}
             </p>
+          </div>
+
+          <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium text-white flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[var(--soft-gold)]" />
+                  AI Smart Thresholds
+                </label>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
+                  Auto-adjust for market noise
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dynamicEnabled}
+                  onChange={(e) => setDynamicEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+              </label>
+            </div>
+
+            {dynamicEnabled && (
+              <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                  <span>Sensitivity</span>
+                  <span className="text-[var(--soft-gold)]">{sensitivity}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={sensitivity}
+                  onChange={(e) => setSensitivity(parseFloat(e.target.value))}
+                  className="w-full accent-[var(--soft-gold)] h-1"
+                />
+                <p className="text-[9px] text-[var(--text-muted)] leading-relaxed italic">
+                  Higher sensitivity silences more noise in volatile markets, but may delay alerts.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">

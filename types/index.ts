@@ -107,6 +107,8 @@ export interface UserSettings {
   push_enabled?: boolean;
   push_subscription?: Record<string, unknown>; // JSONB
   currency?: string;
+  dynamic_threshold_enabled?: boolean;
+  dynamic_threshold_sensitivity?: number;
 }
 export interface QueryLog {
   id: string;

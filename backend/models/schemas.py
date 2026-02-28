@@ -118,6 +118,8 @@ class SettingsBase(BaseModel):
     push_subscription: Optional[Dict[str, Any]] = None
     notifications_enabled: bool = True
     currency: str = Field(default="USD", max_length=3)
+    dynamic_threshold_enabled: bool = False
+    dynamic_threshold_sensitivity: float = Field(default=1.0, ge=0.1, le=5.0)
 
 
 class SettingsCreate(SettingsBase):
@@ -133,6 +135,8 @@ class SettingsUpdate(BaseModel):
     push_subscription: Optional[Dict[str, Any]] = None
     notifications_enabled: Optional[bool] = None
     currency: Optional[str] = None
+    dynamic_threshold_enabled: Optional[bool] = None
+    dynamic_threshold_sensitivity: Optional[float] = None
 
     class Config:
         extra = "ignore"
