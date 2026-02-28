@@ -63,7 +63,7 @@ export default function ScanSettingsModal({
   );
   const [adults, setAdults] = useState(initialValues?.adults || 2);
   const [currency, setCurrency] = useState("TRY");
-  const isEnterprise = userPlan === "enterprise" || userPlan === "trial";
+  const isEnterprise = userPlan === "enterprise" || userPlan === "trial" || userPlan === "pro";
 
   useEffect(() => {
     if (isOpen && initialValues) {

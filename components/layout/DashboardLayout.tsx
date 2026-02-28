@@ -154,21 +154,19 @@ export default function DashboardLayout({
               <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
                 <button
                   onClick={() => setLocale("en")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                    locale === "en"
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
                       ? "bg-[#F6C344] text-[#050B18]"
                       : "text-slate-500 hover:text-white"
-                  }`}
+                    }`}
                 >
                   EN
                 </button>
                 <button
                   onClick={() => setLocale("tr")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                    locale === "tr"
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
                       ? "bg-[#F6C344] text-[#050B18]"
                       : "text-slate-500 hover:text-white"
-                  }`}
+                    }`}
                 >
                   TR
                 </button>
@@ -307,7 +305,8 @@ export default function DashboardLayout({
           isEnterprise={
             profile?.role === "admin" ||
             profile?.plan_type?.toLowerCase() === "enterprise" ||
-            profile?.plan_type?.toLowerCase() === "pro"
+            profile?.plan_type?.toLowerCase() === "pro" ||
+            profile?.plan_type?.toLowerCase() === "trial"
           }
           onUpgrade={() => {
             setIsDetailsModalOpen(false);
