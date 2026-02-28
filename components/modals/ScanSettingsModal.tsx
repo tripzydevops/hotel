@@ -63,7 +63,7 @@ export default function ScanSettingsModal({
   );
   const [adults, setAdults] = useState(initialValues?.adults || 2);
   const [currency, setCurrency] = useState("TRY");
-  const isEnterprise = userPlan === "enterprise";
+  const isEnterprise = userPlan === "enterprise" || userPlan === "trial";
 
   useEffect(() => {
     if (isOpen && initialValues) {
@@ -231,10 +231,9 @@ export default function ScanSettingsModal({
               type="submit"
               disabled={loading || !isEnterprise || dailyLimitReached}
               className={`w-full py-3 flex items-center justify-center gap-2 group transition-all rounded-xl font-bold uppercase tracking-widest text-xs
-                ${
-                  !isEnterprise || dailyLimitReached
-                    ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
-                    : "btn-gold hover:scale-[1.02] active:scale-95 shadow-lg shadow-[var(--soft-gold)]/20"
+                ${!isEnterprise || dailyLimitReached
+                  ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
+                  : "btn-gold hover:scale-[1.02] active:scale-95 shadow-lg shadow-[var(--soft-gold)]/20"
                 }
               `}
             >
