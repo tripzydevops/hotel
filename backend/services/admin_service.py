@@ -432,11 +432,32 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
                 status_code=400, detail="Supabase Auth rejected creation"
             )
 
+        # 2. Add Profile
         admin_db.table("user_profiles").insert(
             {
                 "user_id": str(new_user.id),
                 "display_name": user.display_name or user.email.split("@")[0],
                 "email": user.email,
+                "plan_type": user.plan_type,
+                "subscription_status": user.subscription_status,
+            }
+        ).execute()
+
+        # 3. Add to Profiles (for subscription lookup)
+        admin_db.table("profiles").insert(
+            {
+                "id": str(new_user.id),
+                "plan_type": user.plan_type,
+                "subscription_status": user.subscription_status,
+            }
+        ).execute()
+
+        # 4. Add default Settings
+        admin_db.table("settings").insert(
+            {
+                "user_id": str(new_user.id),
+                "check_frequency_minutes": 1440,  # Daily default
+                "currency": "TRY",
             }
         ).execute()
 

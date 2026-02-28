@@ -343,6 +343,8 @@ class AdminUserCreate(BaseModel):
     email: str
     password: str
     display_name: Optional[str] = None
+    plan_type: Optional[str] = "trial"
+    subscription_status: Optional[str] = "trial"
 
 
 class AdminUserUpdate(BaseModel):

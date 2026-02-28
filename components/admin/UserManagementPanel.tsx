@@ -29,6 +29,8 @@ const UserManagementPanel = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPass, setNewUserPass] = useState("");
   const [newUserName, setNewUserName] = useState("");
+  const [newUserPlan, setNewUserPlan] = useState<AdminUser["plan_type"]>("trial");
+  const [newUserStatus, setNewUserStatus] = useState<AdminUser["subscription_status"]>("trial");
 
   // Edit User State
   const [userToEdit, setUserToEdit] = useState<AdminUser | null>(null);
@@ -89,11 +91,15 @@ const UserManagementPanel = () => {
         email: newUserEmail,
         password: newUserPass,
         display_name: newUserName || undefined,
+        plan_type: newUserPlan,
+        subscription_status: newUserStatus,
       });
       setUserSuccess(true);
       setNewUserEmail("");
       setNewUserPass("");
       setNewUserName("");
+      setNewUserPlan("trial");
+      setNewUserStatus("trial");
       loadUsers();
       setTimeout(() => setUserSuccess(false), 3000);
       toast.success("User created successfully");
@@ -110,10 +116,13 @@ const UserManagementPanel = () => {
     setUserSaveLoading(true);
     try {
       await api.updateAdminUser(userToEdit.id, {
+        email: editUserForm.email,
+        display_name: editUserForm.display_name,
+        password: editUserForm.password || undefined,
         plan_type: editUserForm.plan_type as AdminUserUpdate["plan_type"],
         subscription_status:
           editUserForm.subscription_status as AdminUserUpdate["subscription_status"],
-        scan_frequency_minutes: editUserForm.check_frequency_minutes,
+        check_frequency_minutes: editUserForm.check_frequency_minutes,
       });
       setUserToEdit(null);
       loadUsers();
@@ -218,7 +227,39 @@ const UserManagementPanel = () => {
               className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             />
           </div>
-          <div className="flex items-end">
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
+              Membership Tier
+            </label>
+            <select
+              value={newUserPlan}
+              onChange={(e) => setNewUserPlan(e.target.value as AdminUser["plan_type"])}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+            >
+              <option value="trial">TRIAL (5 Hotels)</option>
+              <option value="starter">STARTER (20 Hotels)</option>
+              <option value="pro">PRO (100 Hotels)</option>
+              <option value="enterprise">ENTERPRISE (Unlimited)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
+              Neural Link Status
+            </label>
+            <select
+              value={newUserStatus}
+              onChange={(e) => setNewUserStatus(e.target.value as AdminUser["subscription_status"])}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+            >
+              <option value="active">ACTIVE</option>
+              <option value="trial">TRIAL</option>
+              <option value="past_due">PAST_DUE</option>
+            </select>
+          </div>
+
+          <div className="flex items-end col-span-1 md:col-span-1">
             <button
               type="submit"
               className="w-full bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-black px-8 py-3.5 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[var(--soft-gold)]/10 text-xs uppercase tracking-widest flex items-center justify-center gap-2 group"
@@ -277,9 +318,9 @@ const UserManagementPanel = () => {
                       <div className="flex flex-col gap-1.5">
                         <span
                           className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${u.plan_type === "pro" ||
-                              u.plan_type === "enterprise"
-                              ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
-                              : "bg-white/5 text-white/50 border-white/10"
+                            u.plan_type === "enterprise"
+                            ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                            : "bg-white/5 text-white/50 border-white/10"
                             }`}
                         >
                           {u.plan_type || "TRIAL"}
@@ -311,10 +352,10 @@ const UserManagementPanel = () => {
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(100, (u.hotel_count / (u.max_hotels || 5)) * 100)}%` }}
                             className={`h-full rounded-full ${(u.hotel_count / (u.max_hotels || 5)) > 0.9
-                                ? 'bg-red-500'
-                                : (u.hotel_count / (u.max_hotels || 5)) > 0.7
-                                  ? 'bg-orange-500'
-                                  : 'bg-[var(--soft-gold)]'
+                              ? 'bg-red-500'
+                              : (u.hotel_count / (u.max_hotels || 5)) > 0.7
+                                ? 'bg-orange-500'
+                                : 'bg-[var(--soft-gold)]'
                               } shadow-[0_0_8px_currentColor] opacity-80`}
                           />
                         </div>
@@ -440,6 +481,49 @@ const UserManagementPanel = () => {
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
+
+              {/* Plan & Status Matrix */}
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Membership Tier
+                </label>
+                <select
+                  value={editUserForm.plan_type}
+                  onChange={(e) =>
+                    setEditUserForm({
+                      ...editUserForm,
+                      plan_type: e.target.value as AdminUser["plan_type"],
+                    })
+                  }
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
+                >
+                  <option value="trial">TRIAL (5 Hotels)</option>
+                  <option value="starter">STARTER (20 Hotels)</option>
+                  <option value="pro">PRO (100 Hotels + Hourly)</option>
+                  <option value="enterprise">ENTERPRISE (Unlimited)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                  Vector Link Status
+                </label>
+                <select
+                  value={editUserForm.subscription_status}
+                  onChange={(e) =>
+                    setEditUserForm({
+                      ...editUserForm,
+                      subscription_status: e.target.value as AdminUser["subscription_status"],
+                    })
+                  }
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
+                >
+                  <option value="active">ACTIVE (Neural Link Est.)</option>
+                  <option value="trial">TRIALING (Temporal)</option>
+                  <option value="past_due">PAST_DUE (Warning)</option>
+                  <option value="canceled">CANCELED (Cold Storage)</option>
+                </select>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
                   Frequency Matrix

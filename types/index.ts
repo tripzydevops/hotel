@@ -232,10 +232,25 @@ export interface AdminUser {
   next_scan_at?: string;
 }
 
-export interface AdminUserUpdate {
+export interface AdminUserCreate {
+  email: string;
+  password: string;
+  display_name?: string;
   plan_type?: "trial" | "starter" | "pro" | "enterprise";
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
-  scan_frequency_minutes?: number;
+}
+
+export interface AdminUserUpdate {
+  email?: string;
+  password?: string;
+  display_name?: string;
+  company_name?: string;
+  job_title?: string;
+  phone?: string;
+  timezone?: string;
+  plan_type?: "trial" | "starter" | "pro" | "enterprise";
+  subscription_status?: "active" | "trial" | "past_due" | "canceled";
+  check_frequency_minutes?: number;
 }
 
 export interface DirectoryEntry {
