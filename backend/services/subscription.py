@@ -6,10 +6,10 @@ import time
 # Fallback Configuration (Used if DB table is missing or unreachable)
 DEFAULT_TIERS = {
     "trial": {
-        "hotel_limit": 5,
-        "ui_comparison_limit": 5,
-        "can_scan_hourly": False,
-        "history_days": 7,
+        "hotel_limit": 9999,
+        "ui_comparison_limit": 15,
+        "can_scan_hourly": True,
+        "history_days": 9999,
     },
     "starter": {
         "hotel_limit": 20,

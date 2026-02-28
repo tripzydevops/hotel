@@ -301,6 +301,21 @@ async def admin_update_user_logic(
             db.table("settings").update(
                 {"check_frequency_minutes": updates.check_frequency_minutes}
             ).eq("user_id", user_id_str).execute()
+            
+            # KAİZEN: Synchronize next_scan_at in profiles if frequency changed
+            try:
+                now_dt = datetime.now(timezone.utc).replace(microsecond=0)
+                next_run = (
+                    (now_dt + timedelta(minutes=updates.check_frequency_minutes))
+                    .isoformat()
+                    .replace("+00:00", "Z")
+                )
+                db.table("profiles").update({"next_scan_at": next_run}).eq(
+                    "id", user_id_str
+                ).execute()
+                print(f"[Admin] Synced next_scan_at for {user_id_str} to {next_run}")
+            except Exception as e:
+                print(f"[Admin] Profile frequency sync failed: {e}")
 
         # 3. Update Auth Fields (Requires Admin Bypass)
         admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -444,11 +459,18 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
         ).execute()
 
         # 3. Add to Profiles (for subscription lookup)
+        now = datetime.now(timezone.utc)
+        trial_end = (now + timedelta(days=15)).isoformat().replace("+00:00", "Z")
+        # Initialize next scan for 24h from now (matching daily default)
+        next_scan = (now + timedelta(days=1)).isoformat().replace("+00:00", "Z")
+        
         admin_db.table("profiles").insert(
             {
                 "id": str(new_user.id),
                 "plan_type": user.plan_type,
                 "subscription_status": user.subscription_status,
+                "current_period_end": trial_end if user.subscription_status == "trial" else None,
+                "next_scan_at": next_scan
             }
         ).execute()
 
