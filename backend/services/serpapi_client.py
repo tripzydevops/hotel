@@ -57,6 +57,7 @@ class ApiKeyManager:
         self._current_index = 0
         self._lock = threading.Lock()
         self._exhausted_keys: Dict[str, datetime] = {}  # key -> exhaustion time
+        self._rate_limited_keys: Dict[str, datetime] = {}  # key -> 429 time
         self._usage_counts: Dict[str, int] = {
             k: 0 for k in self._keys
         }  # key -> request count
@@ -64,6 +65,7 @@ class ApiKeyManager:
         self._renewal_info: Dict[str, str] = {}  # key -> renewal_date
         self._last_quota_check: Dict[str, datetime] = {}  # key -> last check time
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
+        self._rate_limit_cooldown = timedelta(minutes=15)  # Reset after 15m
 
     async def _fetch_quota(self, api_key: str):
         """Fetch actual searches left from SerpApi Account API."""
@@ -81,11 +83,15 @@ class ApiKeyManager:
                     )
                     self._last_quota_check[api_key] = datetime.now()
 
-                    # Also update exhaustion status based on real data
+                    # Also update exhaustion status based on real data (PROACTIVE HEALING)
                     if left <= 0:
                         self._exhausted_keys[api_key] = datetime.now()
-                    elif api_key in self._exhausted_keys:
-                        del self._exhausted_keys[api_key]
+                    else:
+                        # If left > 0, it's healthy. Clear all lockout statuses immediately.
+                        if api_key in self._exhausted_keys:
+                            del self._exhausted_keys[api_key]
+                        if api_key in self._rate_limited_keys:
+                            del self._rate_limited_keys[api_key]
 
                     return left
         except Exception as e:
@@ -100,14 +106,13 @@ class ApiKeyManager:
                 raise ValueError("No API keys configured")
 
             # PROACTIVE ROTATION (Kaizen 2026)
-            # If the current key is already known to be exhausted (via real-time quota check),
-            # we skip it immediately instead of waiting for a 403 error.
+            # If the current key is known to be exhausted or rate-limited, skip it immediately.
             current_key = self._keys[self._current_index]
-            if current_key in self._exhausted_keys:
+            if current_key in self._exhausted_keys or current_key in self._rate_limited_keys:
                 logger.info(
-                    f"Key {self._current_index + 1} known to be exhausted. Proactively rotating..."
+                    f"Key {self._current_index + 1} known to be limited. Proactively rotating..."
                 )
-                self._rotate_key_locked("proactive_exhaustion")
+                self._rotate_key_locked("proactive_skip")
 
             key = self._keys[self._current_index]
             self._usage_counts[key] = self._usage_counts.get(key, 0) + 1
@@ -120,14 +125,25 @@ class ApiKeyManager:
 
     @property
     def active_keys(self) -> int:
-        """Number of non-exhausted keys."""
+        """Number of non-exhausted and non-rate-limited keys."""
         now = datetime.now()
         active = 0
         for key in self._keys:
-            if key not in self._exhausted_keys:
+            is_valid = True
+            if key in self._exhausted_keys:
+                if now - self._exhausted_keys[key] <= self._exhaustion_cooldown:
+                    is_valid = False
+                else:
+                    del self._exhausted_keys[key]  # Cleanup
+            
+            if is_valid and key in self._rate_limited_keys:
+                if now - self._rate_limited_keys[key] <= self._rate_limit_cooldown:
+                    is_valid = False
+                else:
+                    del self._rate_limited_keys[key]  # Cleanup
+
+            if is_valid:
                 active += 1
-            elif now - self._exhausted_keys[key] > self._exhaustion_cooldown:
-                active += 1  # Cooldown expired
         return active
 
     @property
@@ -159,8 +175,9 @@ class ApiKeyManager:
                 f"Key {self._current_index + 1} PERMANENTLY exhausted (24h cooldown). Reason: {reason}"
             )
         else:
+            self._rate_limited_keys[current_key] = datetime.now()
             logger.info(
-                f"Key {self._current_index + 1} hitting temporary limit (429). Rotating to next key..."
+                f"Key {self._current_index + 1} hitting temporary limit (15m cooldown). Rotating..."
             )
 
         # Try to find next available key
@@ -169,16 +186,21 @@ class ApiKeyManager:
             self._current_index = (self._current_index + 1) % len(self._keys)
             next_key = self._keys[self._current_index]
 
-            # Check if the next key is currently BANNED
+            # Check if the next key is currently BANNED or RESTRICTED
+            is_limited = False
             if next_key in self._exhausted_keys:
-                exhaust_time = self._exhausted_keys[next_key]
-                if datetime.now() - exhaust_time > self._exhaustion_cooldown:
+                if datetime.now() - self._exhausted_keys[next_key] > self._exhaustion_cooldown:
                     del self._exhausted_keys[next_key]
-                    logger.info(
-                        f"Rotated to key {self._current_index + 1}/{len(self._keys)} (cooldown expired)"
-                    )
-                    return True
-            else:
+                else:
+                    is_limited = True
+
+            if not is_limited and next_key in self._rate_limited_keys:
+                if datetime.now() - self._rate_limited_keys[next_key] > self._rate_limit_cooldown:
+                    del self._rate_limited_keys[next_key]
+                else:
+                    is_limited = True
+
+            if not is_limited:
                 logger.info(
                     f"Rotated to key {self._current_index + 1}/{len(self._keys)}"
                 )
@@ -230,12 +252,15 @@ class ApiKeyManager:
                     "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
                     "is_current": i == self._current_index,
                     "is_exhausted": key in self._exhausted_keys,
+                    "is_rate_limited": key in self._rate_limited_keys,
                     "usage": self._usage_counts.get(key, 0),
                     "searches_left": self._quota_info.get(key),
                     "renewal_date": self._renewal_info.get(key, "Unknown"),
                 }
                 if key in self._exhausted_keys:
                     key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
+                if key in self._rate_limited_keys:
+                    key_info["rate_limited_at"] = self._rate_limited_keys[key].isoformat()
                 keys_status.append(key_info)
 
             return {
@@ -262,10 +287,13 @@ class ApiKeyManager:
                     "key_suffix": f"...{key[-6:]}" if len(key) > 6 else "***",
                     "is_current": i == self._current_index,
                     "is_exhausted": key in self._exhausted_keys,
+                    "is_rate_limited": key in self._rate_limited_keys,
                     "usage": self._usage_counts.get(key, 0),
                 }
                 if key in self._exhausted_keys:
                     key_info["exhausted_at"] = self._exhausted_keys[key].isoformat()
+                if key in self._rate_limited_keys:
+                    key_info["rate_limited_at"] = self._rate_limited_keys[key].isoformat()
                 status["keys_status"].append(key_info)
             return status
 
