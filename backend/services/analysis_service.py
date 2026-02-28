@@ -2,10 +2,6 @@
 Analysis Service
 Handles complex market analysis, room type matching, and sentiment data processing.
 """
-from backend.utils.logger import get_logger
-
-# EXPLANATION: Module-level logger replaces raw print() for structured output
-logger = get_logger(__name__)
 
 import math
 import re
@@ -15,96 +11,112 @@ import os
 from typing import Optional, List, Dict, Any, Tuple
 from supabase import Client
 from backend.utils.helpers import convert_currency
-from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions, translate_breakdown, synthesize_value_score
+from backend.utils.sentiment_utils import (
+    normalize_sentiment,
+    generate_mentions,
+    translate_breakdown,
+    synthesize_value_score,
+)
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
+
 
 def _transform_serp_links(breakdown: Any) -> Any:
     """
     Transforms raw SerpApi JSON links into user-friendly Google Travel URLs.
-    
-    Why: The raw JSON often contains internal tokens. We convert these to 
+
+    Why: The raw JSON often contains internal tokens. We convert these to
     standard review URLs to improve the UI utility for our users.
     """
     if not isinstance(breakdown, list):
         return breakdown
-        
+
     for item in breakdown:
         if isinstance(item, dict) and "link" in item:
             link = item["link"]
             if "google.com/search" in link and "ludocid" in link:
                 try:
-                    params = dict(re.findall(r'(\w+)=([^&]+)', link))
+                    params = dict(re.findall(r"(\w+)=([^&]+)", link))
                     token = params.get("kp") or params.get("ludocid")
                     if token:
-                        item["link"] = f"https://www.google.com/travel/hotels/entity/{token}/reviews"
+                        item["link"] = (
+                            f"https://www.google.com/travel/hotels/entity/{token}/reviews"
+                        )
                 except Exception:
                     pass
     return breakdown
 
+
 def _extract_price(raw: Any) -> Optional[float]:
     """Helper to cleanly extract a numeric price from various raw formats (str, int, float)."""
-    if raw is None: return None
+    if raw is None:
+        return None
     try:
         if isinstance(raw, (float, int)):
             return float(raw)
-            
+
         s = str(raw).strip()
         # Remove currency symbols and whitespace
-        s_clean = re.sub(r'[^\d.,]', '', s)
-        
+        s_clean = re.sub(r"[^\d.,]", "", s)
+
         # Case 1: Both . and , exist (e.g. "3.825,00" or "3,825.00")
-        if '.' in s_clean and ',' in s_clean:
-            if s_clean.rfind(',') > s_clean.rfind('.'):
+        if "." in s_clean and "," in s_clean:
+            if s_clean.rfind(",") > s_clean.rfind("."):
                 # Turkish/European: Dot is thousand, Comma is decimal
-                s_clean = s_clean.replace('.', '').replace(',', '.')
+                s_clean = s_clean.replace(".", "").replace(",", ".")
             else:
                 # US/UK: Comma is thousand, Dot is decimal
-                s_clean = s_clean.replace(',', '')
-                
+                s_clean = s_clean.replace(",", "")
+
         # Case 2: Only Dot exists (e.g. "3.825" or "150.50")
-        elif '.' in s_clean:
+        elif "." in s_clean:
             # If it looks like a thousand separator (3 decimal places exactly)
             # AND the value if treated as float is suspiciously small (< 500)
             # We treat dot as thousand separator.
-            parts = s_clean.split('.')
+            parts = s_clean.split(".")
             if len(parts) == 2 and len(parts[1]) == 3:
                 val = float(s_clean)
-                if val < 500: # Threshold: 500 is extremely low for a hotel price
-                     s_clean = s_clean.replace('.', '')
-        
+                if val < 500:  # Threshold: 500 is extremely low for a hotel price
+                    s_clean = s_clean.replace(".", "")
+
         # Case 3: Only Comma exists (e.g. "125,50")
-        elif ',' in s_clean:
+        elif "," in s_clean:
             # Assume comma is decimal (common in TR)
-            s_clean = s_clean.replace(',', '.')
-            
+            s_clean = s_clean.replace(",", ".")
+
         return float(s_clean)
-    except Exception: 
+    except Exception:
         pass
     return None
-    
+
+
 # EXPLANATION: Sentiment Normalization & Synthesis
-# We use shared utilities from backend.utils.sentiment_utils to ensure 
+# We use shared utilities from backend.utils.sentiment_utils to ensure
 # consistency between the Dashboard and Analysis pages.
 # This prevents "N/A" issues caused by data-source mismatches.
 
+
 def get_price_for_room(
-    price_log: Dict[str, Any], 
-    target_room_type: str, 
-    allowed_room_names_map: Dict[str, List[str]]
+    price_log: Dict[str, Any],
+    target_room_type: str,
+    allowed_room_names_map: Dict[str, List[str]],
 ) -> Tuple[Optional[float], Optional[str], float]:
     """
     Finds the best matching room price within a price log.
-    
-    Why: Hotel listings have many room types (Standard, Deluxe, etc.). 
+
+    Why: Hotel listings have many room types (Standard, Deluxe, etc.).
     We use high-confidence semantic matching to compare apples-to-apples.
     """
     r_types = price_log.get("room_types") or []
     if not isinstance(r_types, list):
         return None, None, 0.0
-        
+
     # 1. Check for Semantic Match first (if map exists)
     hid = str(price_log.get("hotel_id", ""))
     allowed_names = allowed_room_names_map.get(hid)
-    
+
     if allowed_names:
         # Convert allowed_names to lowercase set for O(1) case-insensitive lookup
         allowed_lower = {a.lower().strip() for a in allowed_names}
@@ -112,63 +124,88 @@ def get_price_for_room(
             if isinstance(r, dict):
                 r_name = r.get("name", "")
                 if r_name.lower().strip() in allowed_lower:
-                  # KAIZEN: "Strict Category Guards"
-                  # We ensure that a match actually belongs to the requested category.
-                  r_name = r.get("name", "")
-                  t_lower = target_room_type.lower()
-                  r_lower = r_name.lower()
-                  
-                  is_standard_t = any(s in t_lower for s in ["standard", "standart"])
-                  is_standard_r = any(s in r_lower for s in ["standard", "standart"])
+                    # KAIZEN: "Strict Category Guards"
+                    # We ensure that a match actually belongs to the requested category.
+                    r_name = r.get("name", "")
+                    t_lower = target_room_type.lower()
+                    r_lower = r_name.lower()
 
-                  # 1. Suite Guard: If asking for Suite, offer MUST have "suite" or "süit"
-                  if "suite" in t_lower and not any(k in r_lower for k in ["suite", "süit"]):
-                      continue
-                      
-                  # 2. Deluxe Guard: If asking for Deluxe, reject plain Standard rooms
-                  if any(k in t_lower for k in ["deluxe", "superior", "premium"]) and is_standard_r and "deluxe" not in r_lower:
-                      continue
+                    is_standard_t = any(s in t_lower for s in ["standard", "standart"])
+                    is_standard_r = any(s in r_lower for s in ["standard", "standart"])
 
-                  # 3. Standard Leak Guard: If asking for specific non-standard type, reject plain Standard
-                  if not is_standard_t and is_standard_r:
-                      # Exception: "Standard Suite" is fine if asking for Suite
-                      if not ("suite" in t_lower and "suite" in r_lower):
-                          continue
+                    # 1. Suite Guard: If asking for Suite, offer MUST have "suite" or "süit"
+                    if "suite" in t_lower and not any(
+                        k in r_lower for k in ["suite", "süit"]
+                    ):
+                        continue
 
-                  return _extract_price(r.get("price")), r_name, 0.82 + (0.1 * int(r_name == target_room_type))
-    
+                    # 2. Deluxe Guard: If asking for Deluxe, reject plain Standard rooms
+                    if (
+                        any(k in t_lower for k in ["deluxe", "superior", "premium"])
+                        and is_standard_r
+                        and "deluxe" not in r_lower
+                    ):
+                        continue
+
+                    # 3. Standard Leak Guard: If asking for specific non-standard type, reject plain Standard
+                    if not is_standard_t and is_standard_r:
+                        # Exception: "Standard Suite" is fine if asking for Suite
+                        if not ("suite" in t_lower and "suite" in r_lower):
+                            continue
+
+                    return (
+                        _extract_price(r.get("price")),
+                        r_name,
+                        0.82 + (0.1 * int(r_name == target_room_type)),
+                    )
+
     # 2. Fallback: String Match (Substring) with Turkish/English variant support
     # We check for common "standard" room variants in both languages.
     target_variants = [target_room_type.lower()]
     # Improved check: detect 'standard' even if it's 'Standard Room'
     if any(s in target_room_type.lower() for s in ["standard", "standart"]):
-         target_variants.extend(["standard", "standart", "klasik", "classic", "ekonomik", "economy", "promo"])
+        target_variants.extend(
+            [
+                "standard",
+                "standart",
+                "klasik",
+                "classic",
+                "ekonomik",
+                "economy",
+                "promo",
+            ]
+        )
     # Kaizen: Add Suite synonyms (Turkish)
     if "suite" in target_room_type.lower():
-         target_variants.append("süit")
+        target_variants.append("süit")
     # Kaizen: Add Deluxe/Superior synonyms
     if any(k in target_room_type.lower() for k in ["deluxe", "superior", "premium"]):
-         target_variants.extend(["deluxe", "superior", "premium", "corner"])
+        target_variants.extend(["deluxe", "superior", "premium", "corner"])
     # Kaizen: Add Family synonyms
     if any(k in target_room_type.lower() for k in ["family", "aile"]):
-         target_variants.extend(["family", "aile", "connection", "connected", "bağlantılı"])
-    
+        target_variants.extend(
+            ["family", "aile", "connection", "connected", "bağlantılı"]
+        )
+
     for r in r_types:
-        if not isinstance(r, dict): continue
+        if not isinstance(r, dict):
+            continue
         r_name = (r.get("name") or "").lower()
         c_name = (r.get("canonical_name") or "").lower()
         c_code = (r.get("canonical_code") or "").upper()
-        
+
         # Priority 1: Canonical Code Match (Highest confidence)
         if target_room_type.lower() in ["standard", "standart"] and c_code == "STD":
-             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.95
+            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.95
 
         # Priority 2: Canonical Name Match
         if any(v in c_name for v in target_variants):
-             # Apply guards even to substring matches
-             if "suite" in target_room_type.lower() and not any(k in c_name for k in ["suite", "süit"]):
-                 continue
-             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
+            # Apply guards even to substring matches
+            if "suite" in target_room_type.lower() and not any(
+                k in c_name for k in ["suite", "süit"]
+            ):
+                continue
+            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
 
         # Priority 3: Name Substring Match
         if any(v in r_name for v in target_variants):
@@ -176,42 +213,86 @@ def get_price_for_room(
             t_low = target_room_type.lower()
             is_std_t = any(s in t_low for s in ["standard", "standart"])
             is_std_r = any(s in r_name for s in ["standard", "standart"])
-            
+
             if "suite" in t_low and not any(k in r_name for k in ["suite", "süit"]):
                 continue
-            if not is_std_t and is_std_r and "deluxe" not in r_name and "superior" not in r_name:
+            if (
+                not is_std_t
+                and is_std_r
+                and "deluxe" not in r_name
+                and "superior" not in r_name
+            ):
                 continue
-            
+
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
-            
+
     # --- FALLBACK LOGIC ---
-    
+
     # 1. Define Request Type (Standard vs Specific)
     # We treat it as a Standard request if the prompt is empty or contains base keywords (Standard, Classic, etc.)
     # and DOES NOT contain specific premium keywords (Suite, Deluxe, Family).
     target_low = target_room_type.lower().strip()
-    is_premium = any(k in target_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile", "balcony", "view"])
-    is_base = not target_low or target_low == "oda" or any(v in target_low for v in ["standard", "standart", "base", "klasik", "classic", "eco", "promo"])
-    
+    is_premium = any(
+        k in target_low
+        for k in [
+            "suite",
+            "süit",
+            "deluxe",
+            "superior",
+            "premium",
+            "family",
+            "aile",
+            "balcony",
+            "view",
+        ]
+    )
+    is_base = (
+        not target_low
+        or target_low == "oda"
+        or any(
+            v in target_low
+            for v in [
+                "standard",
+                "standart",
+                "base",
+                "klasik",
+                "classic",
+                "eco",
+                "promo",
+            ]
+        )
+    )
+
     # A request is "Standard" if it's explicitly base OR empty, and NOT specifically premium.
     is_standard_request = (is_base and not is_premium) or not target_room_type
 
     # KAIZEN: "Premium Shield"
-    # Even if is_standard_request is True, we must ensure the candidate room 
+    # Even if is_standard_request is True, we must ensure the candidate room
     # doesn't contain heavy premium keywords that might have been miscategorized.
-    premium_shields = ["presidential", "başkanlık", "kral", "king suite", "queen suite", "balayı", "honeymoon", "dubleks", "duplex"]
+    premium_shields = [
+        "presidential",
+        "başkanlık",
+        "kral",
+        "king suite",
+        "queen suite",
+        "balayı",
+        "honeymoon",
+        "dubleks",
+        "duplex",
+    ]
 
     # 2. Standard Fallback: Lowest price in room_types (for Standard requests only)
     if is_standard_request and r_types:
         valid_prices = []
         for r in r_types:
-            if not isinstance(r, dict): continue
+            if not isinstance(r, dict):
+                continue
             r_name = (r.get("name") or "").lower()
-            
+
             # Skip rooms that hit the premium shield
             if any(k in r_name for k in premium_shields):
                 continue
-                
+
             p = _extract_price(r.get("price"))
             if p is not None:
                 valid_prices.append((p, r.get("name") or "Standard (Min)"))
@@ -231,14 +312,14 @@ def get_price_for_room(
 
 
 def generate_synthetic_narrative(
-    ari: Optional[float], 
-    sent_index: Optional[float], 
+    ari: Optional[float],
+    sent_index: Optional[float],
     dna_text: Optional[str],
-    hotel_name: str
+    hotel_name: str,
 ) -> str:
     """
     KAIZEN: Synthetic AI Narrative ("So What?" Card)
-    Generates a high-level strategic verdict based on pricing (ARI), 
+    Generates a high-level strategic verdict based on pricing (ARI),
     guest sentiment (GRI/SentIndex), and the hotel's DNA.
     """
     if ari is None or sent_index is None:
@@ -250,10 +331,16 @@ def generate_synthetic_narrative(
 
     # Status buckets
     price_status = "premium" if ari >= 105 else "aligned" if ari >= 95 else "aggressive"
-    sent_status = "superior" if sent_index >= 105 else "standard" if sent_index >= 95 else "at-risk"
-    
+    sent_status = (
+        "superior"
+        if sent_index >= 105
+        else "standard"
+        if sent_index >= 95
+        else "at-risk"
+    )
+
     dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
-    
+
     # Narrative creation (Expanded High-Depth Strategic Fallbacks)
     if price_status == "premium" and sent_status == "superior":
         return (
@@ -275,7 +362,7 @@ def generate_synthetic_narrative(
         )
     elif price_status == "premium" and sent_status == "at-risk":
         return (
-            f"STRATEGIC VERDICT: Critical Position Warning. Your pricing is in the 'Danger Zone'.{dna_blurb} your rates are {int(ari-100)}% above "
+            f"STRATEGIC VERDICT: Critical Position Warning. Your pricing is in the 'Danger Zone'.{dna_blurb} your rates are {int(ari - 100)}% above "
             f"market average, but guest sentiment ({sent_index:.1f}) is significantly lagging. You are highly vulnerable to "
             "negative substitution as guests compare your premium price against subpar experiences.\n\n"
             "Immediate Risks:\n"
@@ -290,7 +377,7 @@ def generate_synthetic_narrative(
             "1. Quality Lockdown: Prioritize cleanliness and service speed over advanced marketing. Sentiment must stabilize before price can scale.\n"
             "2. Targeted Promotion: Run limited-time 'experience' bundles to attract more diverse guests and dilute the impact of negative operational data."
         )
-    
+
     # Fallback (Balanced)
     return (
         f"STRATEGIC VERDICT: Market Anchor. {hotel_name} is maintaining a balanced market position with rates and sentiment closely aligned to averages ({ari:.1f} ARI / {sent_index:.1f} GRI). "
@@ -300,23 +387,27 @@ def generate_synthetic_narrative(
         "2. Efficiency Gains: Focus on incremental ADR improvements (+1-2%) without disrupting the current guest satisfaction equilibrium."
     )
 
+
 # EXPLANATION: Vercel-Safe Lazy Loader
-# Why: Vercel serverless environments may not always have the heavy genai SDK 
-# installed if it's not in the root requirements. This lazy loader prevents 
+# Why: Vercel serverless environments may not always have the heavy genai SDK
+# installed if it's not in the root requirements. This lazy loader prevents
 # top-level import crashes, ensuring the rest of the API remains functional.
 _genai_client = None
+
 
 def get_genai_client():
     global _genai_client
     if _genai_client is None:
         try:
             from google import genai
+
             api_key = os.getenv("GOOGLE_API_KEY")
             if api_key:
                 _genai_client = genai.Client(api_key=api_key)
         except ImportError:
             logger.warning("[AI] google-genai SDK missing. Falling back to heuristics.")
     return _genai_client
+
 
 async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     """
@@ -328,14 +419,14 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     sent_index = analysis_data.get("sent_index")
     dna_text = analysis_data.get("pricing_dna_text")
     q_label = analysis_data.get("quadrant_label")
-    
+
     prompt = f"""
     You are a Senior Strategic Revenue Analyst for {hotel_name}. 
     Market Context:
     - Market Position: {q_label}
     - ARI (Price Index): {ari} (100 is market average)
     - Sentiment Index: {sent_index} (100 is market average)
-    - DNA Strategy: {dna_text or 'None defined'}
+    - DNA Strategy: {dna_text or "None defined"}
     
     Task:
     Generate a high-depth strategic "So What?" verdict. Your analysis must provide deep market context and actionable intelligence.
@@ -351,7 +442,7 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
     - Use clear paragraphs.
     - Target 3-4 paragraphs of long-form reasoning.
     """
-    
+
     try:
         client = get_genai_client()
         if not client:
@@ -362,31 +453,33 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any]):
         # EXPLANATION: Modern Streaming with google-genai
         # We use client.models.generate_content_stream for the 2026 standard.
         response = client.models.generate_content_stream(
-            model='gemini-3-flash-preview',
+            model="gemini-3-flash-preview",
             contents=prompt,
         )
-        
+
         for chunk in response:
             if chunk.text:
                 yield chunk.text
-                await asyncio.sleep(0.05) # Subtle pacing for UX
-                
+                await asyncio.sleep(0.05)  # Subtle pacing for UX
+
     except Exception as e:
         logger.error(f"[SSE] AI Narrative failed with modern SDK: {e}")
         yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
 
 
 def calculate_rate_recommendation(
-    ari: Optional[float], 
-    sent_index: Optional[float], 
-    current_price: Optional[float]
+    ari: Optional[float], sent_index: Optional[float], current_price: Optional[float]
 ) -> dict:
     """
     KAIZEN: Rate Recommendation Engine
     Returns suggested action, percentage, and reasoning.
     """
     if not ari or not sent_index or not current_price:
-        return {"action": "no_data", "impact": 0, "reason": "Insufficient market benchmarks."}
+        return {
+            "action": "no_data",
+            "impact": 0,
+            "reason": "Insufficient market benchmarks.",
+        }
 
     # Scenario A: Underpriced Value Leader
     if sent_index >= 105 and ari < 95:
@@ -394,32 +487,45 @@ def calculate_rate_recommendation(
             "action": "increase",
             "amount": 5,
             "new_price": round(current_price * 1.05),
-            "reason": "Strong guest sentiment justifies a higher rate. Capture missing ADR."
+            "reason": "Strong guest sentiment justifies a higher rate. Capture missing ADR.",
         }
-    
+
     # Scenario B: Overpriced & At-Risk
     if sent_index < 95 and ari > 105:
         return {
             "action": "decrease",
             "amount": -5,
             "new_price": round(current_price * 0.95),
-            "reason": "Sentiment is lagging behind high rates. Reduce to protect occupancy."
+            "reason": "Sentiment is lagging behind high rates. Reduce to protect occupancy.",
         }
-    
+
     # Scenario C: Parity Aggression
     if ari < 85:
         return {
             "action": "maintain",
             "amount": 0,
-            "reason": "Deep discounting detected. Monitor if this is gaining volume or just losing margin."
+            "reason": "Deep discounting detected. Monitor if this is gaining volume or just losing margin.",
         }
 
     return {
         "action": "maintain",
         "amount": 0,
         "new_price": current_price,
-        "reason": "Current pricing is aligned with market sentiment and competitor benchmarks."
+        "reason": "Current pricing is aligned with market sentiment and competitor benchmarks.",
     }
+
+
+def _get_category_score(hotel: dict, category: str) -> float:
+    """Helper to extract a specific category score from hotel sentiment breakdown."""
+    breakdown = hotel.get("sentiment_breakdown") or []
+    if isinstance(breakdown, list):
+        for item in breakdown:
+            if (
+                isinstance(item, dict)
+                and item.get("name", "").lower() == category.lower()
+            ):
+                return float(item.get("rating") or 0.0)
+    return 0.0
 
 
 def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
@@ -432,28 +538,32 @@ def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
         return checklist
 
     pillars = ["Cleanliness", "Service", "Location", "Value"]
-    
+
     for pillar in pillars:
-        my_score = getCategoryScore(target_h, pillar.lower())
+        my_score = _get_category_score(target_h, pillar.lower())
         mkt_score = market_avg_scores.get(pillar, 3.5)
-        
+
         if my_score > 0 and my_score < mkt_score * 0.95:
-            diff_pct = round(( (mkt_score - my_score) / mkt_score ) * 100)
-            checklist.append({
-                "pillar": pillar,
-                "issue": f"{pillar} score is {diff_pct}% below market average.",
-                "action": f"Task: Conduct {pillar} audit and review recent staff feedback."
-            })
-    
+            diff_pct = round(((mkt_score - my_score) / mkt_score) * 100)
+            checklist.append(
+                {
+                    "pillar": pillar,
+                    "issue": f"{pillar} score is {diff_pct}% below market average.",
+                    "action": f"Task: Conduct {pillar} audit and review recent staff feedback.",
+                }
+            )
+
     # Fallback success message
     if not checklist:
-        checklist.append({
-            "pillar": "Global",
-            "issue": "All pillars are performing at or above market average.",
-            "action": "Maintain current operational standards."
-        })
-        
-    return checklist[:3] # Max 3 items
+        checklist.append(
+            {
+                "pillar": "Global",
+                "issue": "All pillars are performing at or above market average.",
+                "action": "Maintain current operational standards.",
+            }
+        )
+
+    return checklist[:3]  # Max 3 items
 
 
 async def perform_market_analysis(
@@ -464,13 +574,13 @@ async def perform_market_analysis(
     room_type: str,
     start_date: Optional[str],
     end_date: Optional[str],
-    allowed_room_names_map: Dict[str, List[str]]
+    allowed_room_names_map: Dict[str, List[str]],
 ) -> Dict[str, Any]:
     """
     Executes the core market analysis logic.
-    
-    Why: This is the heavy lifting of the Dashboard. It calculates Price Rank, 
-    Market Average, Sentiment Index, and the Quadrant Status. 
+
+    Why: This is the heavy lifting of the Dashboard. It calculates Price Rank,
+    Market Average, Sentiment Index, and the Quadrant Status.
     Extracted from main.py to improve AI responsiveness and modularity.
     """
     current_prices: List[float] = []
@@ -483,38 +593,38 @@ async def perform_market_analysis(
     price_rank_list: List[Dict[str, Any]] = []
 
     # 1. Map Prices and Find Target
-    # [KAIZEN] Consistent Target Selection: We pick the FIRST target hotel 
+    # [KAIZEN] Consistent Target Selection: We pick the FIRST target hotel
     # encountered in the sorted list to ensure it matches the ID used for log mapping.
     for hotel in hotels:
         hid = str(hotel["id"])
         hotel_rating = float(hotel.get("rating") or 0.0)
         reviews = int(hotel.get("review_count") or 0)
-        
-        weight = math.log10(reviews + 10) / 2.0 
+
+        weight = math.log10(reviews + 10) / 2.0
         weighted_sentiment = hotel_rating * weight
         market_sentiments.append(weighted_sentiment)
-        
+
         if hotel.get("is_target_hotel") and not target_hotel_id:
             target_hotel_id = hid
             target_hotel_name = hotel.get("name") or "Unknown"
             target_sentiment = weighted_sentiment
 
     # EXPLANATION: Target Hotel Auto-Select Fallback
-    # If no hotel has is_target_hotel=True (common for new users who haven't 
+    # If no hotel has is_target_hotel=True (common for new users who haven't
     # configured their target yet), we auto-select the first hotel in their list.
     if not target_hotel_id and hotels:
         target_hotel_id = str(hotels[0]["id"])
         target_hotel_name = hotels[0].get("name") or "Unknown"
         target_sentiment = float(hotels[0].get("rating") or 0.0)
-            
+
     # 2. Build price rank list
     available_room_types = set()
 
     for hotel in hotels:
         hid = str(hotel["id"])
-        is_target = (hid == target_hotel_id)
+        is_target = hid == target_hotel_id
         prices = hotel_prices_map.get(hid, [])
-        
+
         # Track all room types for filter UI
         for p in prices:
             rt = p.get("room_types")
@@ -526,41 +636,57 @@ async def perform_market_analysis(
         if prices:
             try:
                 lead_currency = prices[0].get("currency") or "USD"
-                orig_price, matched_room, match_score = get_price_for_room(prices[0], room_type, allowed_room_names_map)
-                
+                orig_price, matched_room, match_score = get_price_for_room(
+                    prices[0], room_type, allowed_room_names_map
+                )
+
                 if orig_price is not None:
                     # Detect Sellout (0.0 or less)
-                    is_sellout = (orig_price <= 0)
-                    converted = convert_currency(orig_price, lead_currency, display_currency)
-                    
+                    is_sellout = orig_price <= 0
+                    converted = convert_currency(
+                        orig_price, lead_currency, display_currency
+                    )
+
                     if not is_sellout:
                         current_prices.append(converted)
-                    
-                    price_rank_list.append({
-                        "id": hid,
-                        "name": hotel.get("name"),
-                        "price": converted,
-                        "rating": hotel.get("rating"),
-                        "review_count": int(hotel.get("review_count") or 0),
-                        "is_target": is_target,
-                        "is_sellout": is_sellout, # CRITICAL: Inform frontend of sellout
-                        "offers": prices[0].get("parity_offers") or prices[0].get("offers") or [],
-                        "room_types": prices[0].get("room_types") or [],
-                        "matched_room_name": matched_room,
-                        "match_score": match_score
-                    })
-                    
+
+                    price_rank_list.append(
+                        {
+                            "id": hid,
+                            "name": hotel.get("name"),
+                            "price": converted,
+                            "rating": hotel.get("rating"),
+                            "review_count": int(hotel.get("review_count") or 0),
+                            "is_target": is_target,
+                            "is_sellout": is_sellout,  # CRITICAL: Inform frontend of sellout
+                            "offers": prices[0].get("parity_offers")
+                            or prices[0].get("offers")
+                            or [],
+                            "room_types": prices[0].get("room_types") or [],
+                            "matched_room_name": matched_room,
+                            "match_score": match_score,
+                        }
+                    )
+
                     if is_target:
                         target_price = converted
                         # Explicitly slice prices to avoid linter issues
                         p_subset = prices[:30]
-                        for p in p_subset: 
-                            hist_price, _, _ = get_price_for_room(p, room_type, allowed_room_names_map)
+                        for p in p_subset:
+                            hist_price, _, _ = get_price_for_room(
+                                p, room_type, allowed_room_names_map
+                            )
                             if hist_price is not None:
-                                target_history.append({
-                                    "price": convert_currency(float(hist_price), p.get("currency") or "USD", display_currency),
-                                    "recorded_at": p.get("recorded_at")
-                                })
+                                target_history.append(
+                                    {
+                                        "price": convert_currency(
+                                            float(hist_price),
+                                            p.get("currency") or "USD",
+                                            display_currency,
+                                        ),
+                                        "recorded_at": p.get("recorded_at"),
+                                    }
+                                )
             except Exception as e:
                 logger.error(f"Analysis error for hotel {hid}: {e}")
 
@@ -569,7 +695,7 @@ async def perform_market_analysis(
         item["rank"] = i + 1
 
     # 2.5 Build Competitors List (Needed for Calendar Columns & Continuity)
-    # EXPLANATION: All-inclusive Competitor List 
+    # EXPLANATION: All-inclusive Competitor List
     # We include EVERY tracked competitor in the top-level list, even if their latest scan
     # matched no price for the current filter. This ensures the Rate Intelligence Grid
     # always has columns for all competitors, even if some cells show "-" or "N/A".
@@ -578,32 +704,42 @@ async def perform_market_analysis(
         hid_str = str(h["id"])
         if hid_str == target_hotel_id:
             continue
-            
+
         p = hotel_prices_map.get(hid_str, [])
         latest_comp_price = None
         c_room = None
         c_score = 0.0
-        
+
         if p:
             try:
-                latest_p, latest_room, latest_score = get_price_for_room(p[0], room_type, allowed_room_names_map)
+                latest_p, latest_room, latest_score = get_price_for_room(
+                    p[0], room_type, allowed_room_names_map
+                )
                 if latest_p is not None:
-                    latest_comp_price = convert_currency(latest_p, p[0].get("currency") or "USD", display_currency)
+                    latest_comp_price = convert_currency(
+                        latest_p, p[0].get("currency") or "USD", display_currency
+                    )
                     c_room = latest_room
                     c_score = latest_score
             except Exception as ce:
-                logger.warning(f"Failed to extract latest price for competitor {h.get('name')}: {ce}")
+                logger.warning(
+                    f"Failed to extract latest price for competitor {h.get('name')}: {ce}"
+                )
 
-        comp_list.append({
-            "id": hid_str,
-            "name": h.get("name"),
-            "price": latest_comp_price, # Might be None, Grid handles this
-            "rating": h.get("rating"),
-            "review_count": int(h.get("review_count") or 0),
-            "offers": p[0].get("parity_offers") or p[0].get("offers") or [] if p else [],
-            "matched_room": c_room,
-            "match_score": c_score
-        })
+        comp_list.append(
+            {
+                "id": hid_str,
+                "name": h.get("name"),
+                "price": latest_comp_price,  # Might be None, Grid handles this
+                "rating": h.get("rating"),
+                "review_count": int(h.get("review_count") or 0),
+                "offers": p[0].get("parity_offers") or p[0].get("offers") or []
+                if p
+                else [],
+                "matched_room": c_room,
+                "match_score": c_score,
+            }
+        )
 
     # 3. Build Daily Prices for Calendar (Smart Continuity)
     daily_prices: List[Dict[str, Any]] = []
@@ -621,20 +757,22 @@ async def perform_market_analysis(
             # Group by check-in date
             checkin_groups = {}
             for p in prices:
-                d = str(p.get("check_in_date", "")).split('T')[0]
-                if not d: continue
-                if d not in checkin_groups: checkin_groups[d] = []
+                d = str(p.get("check_in_date", "")).split("T")[0]
+                if not d:
+                    continue
+                if d not in checkin_groups:
+                    checkin_groups[d] = []
                 checkin_groups[d].append(p)
 
             for d_str, logs in checkin_groups.items():
                 if d_str not in date_price_map:
                     date_price_map[d_str] = {
-                        "target": None, 
-                        "target_is_estimated": False, 
+                        "target": None,
+                        "target_is_estimated": False,
                         "target_intraday": [],
-                        "competitors": []
+                        "competitors": [],
                     }
-                
+
                 # EXPLANATION: Intraday Event Collection
                 # We collect ALL unique successful scan prices for this check-in date
                 # to show the "price story" of the day in the UI.
@@ -642,47 +780,64 @@ async def perform_market_analysis(
                 # Why: Showing every single scan creates clutter. We now only show
                 # the "story" by picking the Highest, Lowest, and most recent pulses.
                 all_raw_events = []
-                for l in logs:
+                for log_entry in logs:
                     # 1. Primary Matched Price
-                    lp, _, _ = get_price_for_room(l, room_type, allowed_room_names_map)
+                    lp, _, _ = get_price_for_room(log_entry, room_type, allowed_room_names_map)
                     if lp and lp > 0:
-                        all_raw_events.append({
-                            "price": round(float(lp), 2),
-                            "recorded_at": l.get("recorded_at"),
-                            "vendor": l.get("vendor") or "Primary"
-                        })
-                    
+                        all_raw_events.append(
+                            {
+                                "price": round(float(lp), 2),
+                                "recorded_at": log_entry.get("recorded_at"),
+                                "vendor": log_entry.get("vendor") or "Primary",
+                            }
+                        )
+
                     # 2. Market Low Price (Standard rooms only)
-                    is_std_req = not room_type or any(s in room_type.lower() for s in ["standard", "standart"])
+                    is_std_req = not room_type or any(
+                        s in room_type.lower() for s in ["standard", "standart"]
+                    )
                     if is_std_req:
-                        other_offers = l.get("parity_offers") or l.get("offers") or []
+                        other_offers = log_entry.get("parity_offers") or log_entry.get("offers") or []
                         parity_prices = []
                         for offer in other_offers:
                             op = _extract_price(offer.get("price"))
                             if op and op > 0:
-                                parity_prices.append((round(float(op), 2), offer.get("vendor") or "Market"))
-                        
+                                parity_prices.append(
+                                    (
+                                        round(float(op), 2),
+                                        offer.get("vendor") or "Market",
+                                    )
+                                )
+
                         if parity_prices:
                             min_p, min_v = min(parity_prices, key=lambda x: x[0])
-                            all_raw_events.append({
-                                "price": min_p,
-                                "recorded_at": l.get("recorded_at"),
-                                "vendor": f"Min: {min_v}"
-                            })
+                            all_raw_events.append(
+                                {
+                                    "price": min_p,
+                                    "recorded_at": log_entry.get("recorded_at"),
+                                    "vendor": f"Min: {min_v}",
+                                }
+                            )
 
                 intraday_events = []
                 if all_raw_events:
                     # Select Milestone: Highest, Lowest, and Last
                     # 1. Last (Latest scan time)
-                    last_event = max(all_raw_events, key=lambda x: x["recorded_at"] or "")
+                    last_event = max(
+                        all_raw_events, key=lambda x: x["recorded_at"] or ""
+                    )
                     # 2. Highest price
                     high_event = max(all_raw_events, key=lambda x: x["price"])
                     # 3. Lowest price
                     low_event = min(all_raw_events, key=lambda x: x["price"])
-                    
+
                     # Deduplicate milestones and attach labels
                     ms_map = {}
-                    for ev, label in [(high_event, "High"), (low_event, "Low"), (last_event, "Last")]:
+                    for ev, label in [
+                        (high_event, "High"),
+                        (low_event, "Low"),
+                        (last_event, "Last"),
+                    ]:
                         ms_key = (ev["price"], (ev["recorded_at"] or "")[:16])
                         if ms_key not in ms_map:
                             # Create a copy to avoid mutating the same dict multiple times
@@ -692,78 +847,99 @@ async def perform_market_analysis(
                             # Append label if not already present
                             if label not in ms_map[ms_key]["label"]:
                                 ms_map[ms_key]["label"] += f"/{label}"
-                    
+
                     # Convert map back to chronological list
                     intraday_events = list(ms_map.values())
                     intraday_events.sort(key=lambda x: x["recorded_at"] or "")
 
                 # 1. Analyze the logs for this specific check-in date
                 latest = logs[0]
-                price_val, _, _ = get_price_for_room(latest, room_type, allowed_room_names_map)
+                price_val, _, _ = get_price_for_room(
+                    latest, room_type, allowed_room_names_map
+                )
                 is_est = latest.get("is_estimated", False)
-                
+
                 # 1. Look back for SAME check-in date (Same-Date Continuity)
                 if (price_val is None or price_val <= 0) and len(logs) > 1:
                     try:
-                        latest_str = latest.get("recorded_at", "").replace('Z', '+00:00')
+                        latest_str = latest.get("recorded_at", "").replace(
+                            "Z", "+00:00"
+                        )
                         latest_time = datetime.fromisoformat(latest_str)
-                        
+
                         for prev in logs[1:]:
-                            prev_str = prev.get("recorded_at", "").replace('Z', '+00:00')
+                            prev_str = prev.get("recorded_at", "").replace(
+                                "Z", "+00:00"
+                            )
                             prev_time = datetime.fromisoformat(prev_str)
-                            
+
                             if (latest_time - prev_time).days <= 7:
-                                prev_p, _, _ = get_price_for_room(prev, room_type, allowed_room_names_map)
+                                prev_p, _, _ = get_price_for_room(
+                                    prev, room_type, allowed_room_names_map
+                                )
                                 if prev_p and prev_p > 0:
                                     price_val = prev_p
-                                    is_est = True 
+                                    is_est = True
                                     break
-                    except Exception: pass
+                    except Exception:
+                        pass
 
                 # 2. Global Fallback for this Hotel (Any-Date Continuity) - RESTRICTED
                 # Why: We only use cross-date continuity for dates in the past or today.
                 # For future dates, we ONLY show data if a scan exists for that specific check-in date.
-                # KAİZEN: Re-enabled for all types, but strict matching in get_price_for_room 
+                # KAİZEN: Re-enabled for all types, but strict matching in get_price_for_room
                 # prevents Standard leakage into non-Standard views.
-                if (price_val is None or price_val <= 0) and datetime.strptime(d_str, "%Y-%m-%d").date() <= today_date:
+                if (price_val is None or price_val <= 0) and datetime.strptime(
+                    d_str, "%Y-%m-%d"
+                ).date() <= today_date:
                     all_hotel_logs = hotel_prices_map.get(hid, [])
                     for fallback_log in all_hotel_logs:
-                        fb_p, _, _ = get_price_for_room(fallback_log, room_type, allowed_room_names_map)
+                        fb_p, _, _ = get_price_for_room(
+                            fallback_log, room_type, allowed_room_names_map
+                        )
                         if fb_p and fb_p > 0:
                             price_val = fb_p
                             is_est = True
                             break
 
                 if price_val is not None:
-                    converted_price = convert_currency(price_val, latest.get("currency") or "USD", display_currency)
-                    hotel_name = next((h["name"] for h in hotels if str(h["id"]) == hid), "Unknown")
-                    
+                    converted_price = convert_currency(
+                        price_val, latest.get("currency") or "USD", display_currency
+                    )
+                    hotel_name = next(
+                        (h["name"] for h in hotels if str(h["id"]) == hid), "Unknown"
+                    )
+
                     if hid == target_hotel_id:
                         date_price_map[d_str]["target"] = converted_price
                         date_price_map[d_str]["target_is_estimated"] = is_est
                         date_price_map[d_str]["target_intraday"] = intraday_events
                     else:
-                        date_price_map[d_str]["competitors"].append({
-                            "name": hotel_name, 
-                            "price": converted_price,
-                            "is_estimated": is_est,
-                            "intraday_events": intraday_events
-                        })
-        
+                        date_price_map[d_str]["competitors"].append(
+                            {
+                                "name": hotel_name,
+                                "price": converted_price,
+                                "is_estimated": is_est,
+                                "intraday_events": intraday_events,
+                            }
+                        )
+
         range_start = datetime.now()
         if start_date:
-            try: 
-                ds = str(start_date).split('T')[0]
+            try:
+                ds = str(start_date).split("T")[0]
                 range_start = datetime.strptime(ds, "%Y-%m-%d")
-            except Exception: pass
-        
+            except Exception:
+                pass
+
         range_end = range_start + timedelta(days=30)
         if end_date:
-            try: 
-                de = str(end_date).split('T')[0]
+            try:
+                de = str(end_date).split("T")[0]
                 range_end = datetime.strptime(de, "%Y-%m-%d")
-            except Exception: pass
-        
+            except Exception:
+                pass
+
         curr = range_start
         # EXPLANATION: Relative-Date Continuity Seeding
         # We find the most recent scan BEFORE our window starts to avoid the "sticky price"
@@ -771,13 +947,15 @@ async def perform_market_analysis(
         last_known_target = None
         target_logs = hotel_prices_map.get(target_hotel_id, [])
         for log in target_logs:
-            log_date = str(log.get("check_in_date", "")).split('T')[0]
+            log_date = str(log.get("check_in_date", "")).split("T")[0]
             if log_date <= range_start.strftime("%Y-%m-%d"):
                 lp, _, _ = get_price_for_room(log, room_type, allowed_room_names_map)
                 if lp and lp > 0:
-                    last_known_target = convert_currency(lp, log.get("currency") or "USD", display_currency)
+                    last_known_target = convert_currency(
+                        lp, log.get("currency") or "USD", display_currency
+                    )
                     break
-        
+
         # If still None, fall back to the very latest known price for this room_type
         if last_known_target is None:
             last_known_target = target_price
@@ -785,36 +963,44 @@ async def perform_market_analysis(
         # We find the most recent scan for each competitor BEFORE our window starts.
         competitor_states: Dict[str, Dict[str, Any]] = {}
         for h in hotels:
-            if str(h["id"]) == target_hotel_id: continue
+            if str(h["id"]) == target_hotel_id:
+                continue
             h_name = h.get("name")
             h_logs = hotel_prices_map.get(str(h["id"]), [])
             for log in h_logs:
-                log_date = str(log.get("check_in_date", "")).split('T')[0]
+                log_date = str(log.get("check_in_date", "")).split("T")[0]
                 if log_date <= range_start.strftime("%Y-%m-%d"):
-                    lp, _, _ = get_price_for_room(log, room_type, allowed_room_names_map)
+                    lp, _, _ = get_price_for_room(
+                        log, room_type, allowed_room_names_map
+                    )
                     if lp and lp > 0:
                         competitor_states[h_name] = {
-                            "price": convert_currency(lp, log.get("currency") or "USD", display_currency),
-                            "is_estimated": True
+                            "price": convert_currency(
+                                lp, log.get("currency") or "USD", display_currency
+                            ),
+                            "is_estimated": True,
                         }
                         break
-                        
+
         # Fallback to comp_list (latest overall) for any competitors still missing
         for c in comp_list:
             if c["name"] not in competitor_states:
-                competitor_states[c["name"]] = {"price": c["price"], "is_estimated": True}
-        
+                competitor_states[c["name"]] = {
+                    "price": c["price"],
+                    "is_estimated": True,
+                }
+
         today_date = datetime.now().date()
         while curr.date() <= range_end.date():
             current_date = curr.date()
             d_str = curr.strftime("%Y-%m-%d")
             data = date_price_map.get(d_str)
-            
+
             comp_avg = 0.0
             vs_comp = 0.0
             unique_competitors = []
             target_val = None
-            
+
             # 1. Target Logic (Primary + Conditional Forward Fill)
             # EXPLANATION: Restricted Forward Fill (Kaizen)
             # Why: The user wants to avoid misleading 'estimated' prices for future dates.
@@ -827,58 +1013,74 @@ async def perform_market_analysis(
                 # [KAİZEN] Carry forward ONLY for past/today to fill gaps in historical records.
                 # For future dates, we leave it empty if no specific scan exists.
                 target_val = last_known_target
-            
+
             # 2. Competitor Logic (Conditional Full Fill)
             daily_comps = (data.get("competitors") if data else []) or []
-            
+
             # Update state for current check-in date matches
             for c in daily_comps:
                 competitor_states[c["name"]] = {
                     "price": c["price"],
-                    "is_estimated": c.get("is_estimated", False)
+                    "is_estimated": c.get("is_estimated", False),
                 }
-            
+
             seen_competitors = set()
             for c in daily_comps:
                 if c["name"] not in seen_competitors:
                     unique_competitors.append(c)
                     seen_competitors.add(c["name"])
-            
+
             # Horizontal Continuity (Competitor Fill) - RESTRICTED TO PAST/TODAY
             for name, state in competitor_states.items():
                 if name not in seen_competitors:
                     # Carry competitor prices forward ONLY for past/today dates.
                     if current_date <= today_date:
-                        unique_competitors.append({
-                            "name": name,
-                            "price": state["price"],
-                            "is_estimated": True 
-                        })
+                        unique_competitors.append(
+                            {
+                                "name": name,
+                                "price": state["price"],
+                                "is_estimated": True,
+                            }
+                        )
                         seen_competitors.add(name)
-            
+
             if unique_competitors:
-                valid_comp_prices = [float(c["price"]) for c in unique_competitors if c.get("price") is not None]
+                valid_comp_prices = [
+                    float(c["price"])
+                    for c in unique_competitors
+                    if c.get("price") is not None
+                ]
                 if valid_comp_prices:
                     comp_avg = sum(valid_comp_prices) / len(valid_comp_prices)
-                
+
                 if target_val:
-                    vs_comp = ((target_val - comp_avg) / comp_avg) * 100 if comp_avg > 0 else 0.0
+                    vs_comp = (
+                        ((target_val - comp_avg) / comp_avg) * 100
+                        if comp_avg > 0
+                        else 0.0
+                    )
 
             # KAİZEN: Sellout Detection for Calendar
             # If the final target_val is 0, we mark the DAY as sellout.
             # (Note: target_val might be None if restricted due to future date)
-            is_day_sellout = (target_val is not None and target_val <= 0)
+            is_day_sellout = target_val is not None and target_val <= 0
 
-            daily_prices.append({
-                "date": d_str,
-                "price": round(float(target_val), 2) if target_val is not None else None,
-                "is_estimated_target": data.get("target_is_estimated", False) if data else False,
-                "intraday_events": data.get("target_intraday", []) if data else [],
-                "is_sellout": is_day_sellout, # Tag for frontend "Possible Sellout"
-                "comp_avg": round(float(comp_avg), 2),
-                "vs_comp": round(float(vs_comp), 1),
-                "competitors": unique_competitors
-            })
+            daily_prices.append(
+                {
+                    "date": d_str,
+                    "price": round(float(target_val), 2)
+                    if target_val is not None
+                    else None,
+                    "is_estimated_target": data.get("target_is_estimated", False)
+                    if data
+                    else False,
+                    "intraday_events": data.get("target_intraday", []) if data else [],
+                    "is_sellout": is_day_sellout,  # Tag for frontend "Possible Sellout"
+                    "comp_avg": round(float(comp_avg), 2),
+                    "vs_comp": round(float(vs_comp), 1),
+                    "competitors": unique_competitors,
+                }
+            )
             curr += timedelta(days=1)
 
     # EXPLANATION: ARI & Sentiment Index Calculation
@@ -888,12 +1090,22 @@ async def perform_market_analysis(
     # frontend displays "N/A" instead of a misleading "100% LOW".
     market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
     ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else None
-    avg_sent = sum(market_sentiments) / len(market_sentiments) if market_sentiments else 0.0
-    sent_index = (target_sentiment / avg_sent) * 100 if target_sentiment and avg_sent > 0 else None
-    
+    avg_sent = (
+        sum(market_sentiments) / len(market_sentiments) if market_sentiments else 0.0
+    )
+    sent_index = (
+        (target_sentiment / avg_sent) * 100
+        if target_sentiment and avg_sent > 0
+        else None
+    )
+
     q_x = max(-50.0, min(50.0, float(ari) - 100.0)) if ari is not None else 0.0
-    q_y = max(-50.0, min(50.0, float(sent_index) - 100.0)) if sent_index is not None else 0.0
-    
+    q_y = (
+        max(-50.0, min(50.0, float(sent_index) - 100.0))
+        if sent_index is not None
+        else 0.0
+    )
+
     advisory = ""
     q_label = "Neutral"
     # EXPLANATION: Quadrant Advisory — None-Safe
@@ -913,45 +1125,66 @@ async def perform_market_analysis(
         advisory = f"Caution: Your rate is {int(ari - 100)}% above market, unsupported by current sentiment."
     else:
         q_label = "Budget / Economy"
-        advisory = f"Volume Strategy: Your rate is {int(100 - ari)}% below market average."
-
+        advisory = (
+            f"Volume Strategy: Your rate is {int(100 - ari)}% below market average."
+        )
 
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
-    
+
     # EXPLANATION: Calculate Market Min/Max/Avg
-    # We calculate these statistics on the fly from the current price list 
+    # We calculate these statistics on the fly from the current price list
     # to ensure the dashboard reflects the real-time slice of data.
     market_min = min(current_prices) if current_prices else None
     market_max = max(current_prices) if current_prices else None
-    
+
     # Find Min/Max Hotels
-    min_hotel = next((p for p in price_rank_list if p["price"] == market_min), None) if market_min is not None else None
-    max_hotel = next((p for p in price_rank_list if p["price"] == market_max), None) if market_max is not None else None
+    min_hotel = (
+        next((p for p in price_rank_list if p["price"] == market_min), None)
+        if market_min is not None
+        else None
+    )
+    max_hotel = (
+        next((p for p in price_rank_list if p["price"] == market_max), None)
+        if market_max is not None
+        else None
+    )
 
     # Calculate Market Rank
-    market_rank = next((p["rank"] for p in price_rank_list if p["id"] == target_hotel_id), None)
+    market_rank = next(
+        (p["rank"] for p in price_rank_list if p["id"] == target_hotel_id), None
+    )
 
     # 6. Sentiment Breakdown & Synthesis
-    sent_bd = normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else []
-    raw_bd = translate_breakdown(_transform_serp_links(target_h.get("sentiment_breakdown"))) if target_h else []
-    
+    sent_bd = (
+        normalize_sentiment(_transform_serp_links(target_h.get("sentiment_breakdown")))
+        if target_h
+        else []
+    )
+    raw_bd = (
+        translate_breakdown(_transform_serp_links(target_h.get("sentiment_breakdown")))
+        if target_h
+        else []
+    )
+
     # EXPLANATION: Market Sentiment Average Calculation
-    # We aggregate sentiment scores across all tracked hotels to provide 
+    # We aggregate sentiment scores across all tracked hotels to provide
     # a market baseline for the Discovery Engine and Audit reports.
     market_avg_scores: Dict[str, float] = {}
     pillar_totals: Dict[str, List[float]] = {}
-    
+
     for h in hotels:
         bd = h.get("sentiment_breakdown")
         if isinstance(bd, list):
             for pillar in bd:
-                if not isinstance(pillar, dict): continue
+                if not isinstance(pillar, dict):
+                    continue
                 p_name = pillar.get("name")
                 p_score = pillar.get("score")
                 if p_name and p_score is not None:
-                    if p_name not in pillar_totals: pillar_totals[p_name] = []
+                    if p_name not in pillar_totals:
+                        pillar_totals[p_name] = []
                     pillar_totals[p_name].append(float(p_score))
-    
+
     for p_name, scores in pillar_totals.items():
         market_avg_scores[p_name] = sum(scores) / len(scores) if scores else 0.0
 
@@ -968,17 +1201,21 @@ async def perform_market_analysis(
         "hotel_id": target_hotel_id,
         "hotel_name": target_hotel_name,
         "market_avg": round(float(market_avg), 2),
-        "market_average": round(float(market_avg), 2), # Frontend Alias
+        "market_average": round(float(market_avg), 2),  # Frontend Alias
         "market_min": round(float(market_min), 2) if market_min is not None else None,
         "market_max": round(float(market_max), 2) if market_max is not None else None,
         "min_hotel": min_hotel,
         "max_hotel": max_hotel,
         "market_rank": market_rank,
-        "competitive_rank": market_rank, # Frontend Alias
+        "competitive_rank": market_rank,  # Frontend Alias
         "total_hotels": len(price_rank_list),
-        "target_price": round(float(target_price), 2) if target_price is not None else None,
+        "target_price": round(float(target_price), 2)
+        if target_price is not None
+        else None,
         "ari": round(float(ari), 1) if ari is not None else None,
-        "sentiment_index": round(float(sent_index), 1) if sent_index is not None else None,
+        "sentiment_index": round(float(sent_index), 1)
+        if sent_index is not None
+        else None,
         "advisory_msg": advisory,
         "quadrant_x": round(float(q_x), 1),
         "quadrant_y": round(float(q_y), 1),
@@ -990,19 +1227,32 @@ async def perform_market_analysis(
         "sentiment_breakdown": sent_bd,
         "market_avg_scores": market_avg_scores,
         "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
-        "audit_checklist": generate_audit_checklist(target_h, market_avg_scores) if target_h else [],
+        "audit_checklist": generate_audit_checklist(target_h, market_avg_scores)
+        if target_h
+        else [],
         "sentiment_raw_breakdown": raw_bd,
-        "guest_mentions": target_h.get("guest_mentions") or generate_mentions(target_h.get("sentiment_breakdown")) if target_h else [],
+        "guest_mentions": target_h.get("guest_mentions")
+        or generate_mentions(target_h.get("sentiment_breakdown"))
+        if target_h
+        else [],
         "available_room_types": sorted(list(available_room_types)),
-        "all_hotels": [{"id": str(h["id"]), "name": h.get("name"), "is_target": str(h["id"]) == target_hotel_id} for h in hotels],
+        "all_hotels": [
+            {
+                "id": str(h["id"]),
+                "name": h.get("name"),
+                "is_target": str(h["id"]) == target_hotel_id,
+            }
+            for h in hotels
+        ],
         "pricing_dna_text": target_h.get("pricing_dna_text") if target_h else None,
         "synthetic_narrative": generate_synthetic_narrative(
-            ari, 
-            sent_index, 
+            ari,
+            sent_index,
             target_h.get("pricing_dna_text") if target_h else None,
-            target_hotel_name
-        )
+            target_hotel_name,
+        ),
     }
+
 
 async def get_market_intelligence_data(
     db: Client,
@@ -1011,11 +1261,11 @@ async def get_market_intelligence_data(
     display_currency: str = "TRY",
     currency: Optional[str] = None,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Orchestrates the data gathering for market intelligence.
-    
+
     EXPLANATION: Single-Source Data Path (Cleaned Up)
     Previously this function fetched from both 'price_logs' (active) AND 'query_logs'
     (legacy) tables, then merged them. This doubled query cost and added complexity.
@@ -1025,19 +1275,28 @@ async def get_market_intelligence_data(
     # Currency Alias
     if currency:
         display_currency = currency
-        
-    hotels_result = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
+
+    hotels_result = (
+        db.table("hotels")
+        .select("*")
+        .eq("user_id", str(user_id))
+        .is_("deleted_at", "null")
+        .execute()
+    )
     hotels = hotels_result.data or []
-    
+
     # EXPLANATION: Deterministic Hotel Ordering (Deduplication Guard)
-    # Why: If multiple local records share the same serp_api_id, we MUST ensure 
+    # Why: If multiple local records share the same serp_api_id, we MUST ensure
     # all analysis and mapping logic picks the SAME record (the active target).
     # We sort by is_target_hotel DESC, then updated_at DESC.
-    hotels.sort(key=lambda x: (bool(x.get("is_target_hotel")), x.get("updated_at", "")), reverse=True)
+    hotels.sort(
+        key=lambda x: (bool(x.get("is_target_hotel")), x.get("updated_at", "")),
+        reverse=True,
+    )
 
     # DIAGNOSTIC: Log hotel count for this user
     logger.info(f"[DIAG] User {user_id}: Found {len(hotels)} hotels")
-    
+
     if not hotels:
         logger.warning(f"[DIAG] User {user_id}: No hotels found, returning empty")
         return {"summary": {}, "hotels": []}
@@ -1047,62 +1306,70 @@ async def get_market_intelligence_data(
     # As data grows, limit(5000) would either miss data or cause memory spikes.
     # The time window scales linearly with calendar time, not data volume.
     cutoff_date = (datetime.utcnow() - timedelta(days=90)).isoformat()
-    
+
     # EXPLANATION: Global Price Retrieval (Pillar of Global Pulse)
     # We now fetch prices based on BOTH local hotel_id and global serp_api_id.
-    # This ensures that as long as ANY user scans a hotel, EVERY user tracking it 
+    # This ensures that as long as ANY user scans a hotel, EVERY user tracking it
     # gets the fresh data in their Rate Calendar.
     hotel_ids_list = [str(h["id"]) for h in hotels]
     serp_ids_list = [h.get("serp_api_id") for h in hotels if h.get("serp_api_id")]
-    
-    logger.info(f"[DIAG] User {user_id}: Querying price_logs for {len(hotel_ids_list)} local IDs and {len(serp_ids_list)} global IDs since {cutoff_date[:10]}")
-    
+
+    logger.info(
+        f"[DIAG] User {user_id}: Querying price_logs for {len(hotel_ids_list)} local IDs and {len(serp_ids_list)} global IDs since {cutoff_date[:10]}"
+    )
+
     # Building a combined OR query is complex in postgrest, so we fetch both and merge
     # Step 1: Local ID logs
-    price_logs_res = db.table("price_logs") \
-        .select("*") \
-        .in_("hotel_id", hotel_ids_list) \
-        .gte("recorded_at", cutoff_date) \
-        .order("recorded_at", desc=True) \
+    price_logs_res = (
+        db.table("price_logs")
+        .select("*")
+        .in_("hotel_id", hotel_ids_list)
+        .gte("recorded_at", cutoff_date)
+        .order("recorded_at", desc=True)
         .execute()
+    )
     logs_data = price_logs_res.data or []
-    
+
     # Step 2: Global ID logs (Pulse Data)
     if serp_ids_list:
-        global_logs_res = db.table("price_logs") \
-            .select("*") \
-            .in_("serp_api_id", serp_ids_list) \
-            .gte("recorded_at", cutoff_date) \
-            .order("recorded_at", desc=True) \
+        global_logs_res = (
+            db.table("price_logs")
+            .select("*")
+            .in_("serp_api_id", serp_ids_list)
+            .gte("recorded_at", cutoff_date)
+            .order("recorded_at", desc=True)
             .execute()
-        
+        )
+
         # Merge global logs, ensuring we don't have duplicates
-        existing_log_ids = {l["id"] for l in logs_data}
-        for g_log in (global_logs_res.data or []):
+        existing_log_ids = {entry["id"] for entry in logs_data}
+        for g_log in global_logs_res.data or []:
             if g_log["id"] not in existing_log_ids:
                 logs_data.append(g_log)
-    
+
     # Map logs back to local hotel IDs for grouping
     # Rationale: A global log will have its own hotel_id, but for our user's
     # analysis, we must map it to OUR local hotel_id that shares the same serp_api_id.
-    # [KAIZEN] Robust ID Mapping: We pick the FIRST matching hotel from our sorted 
+    # [KAIZEN] Robust ID Mapping: We pick the FIRST matching hotel from our sorted
     # list to ensure consistency when duplicates exist.
     serp_to_local_map = {}
     for h in hotels:
         sid = h.get("serp_api_id")
         if sid and sid not in serp_to_local_map:
             serp_to_local_map[sid] = str(h["id"])
-    
+
     for log in logs_data:
         # If the log's hotel_id isn't in our local list, but its serp_api_id matches one of ours
         if str(log.get("hotel_id")) not in hotel_ids_list:
             local_id = serp_to_local_map.get(log.get("serp_api_id"))
             if local_id:
-                log["hotel_id"] = local_id # Map to local
-    
+                log["hotel_id"] = local_id  # Map to local
+
     # DIAGNOSTIC: Log price_logs count and sample data
-    logger.info(f"[DIAG] User {user_id}: Combined {len(logs_data)} price_logs including global data")
-    
+    logger.info(
+        f"[DIAG] User {user_id}: Combined {len(logs_data)} price_logs including global data"
+    )
+
     # SAFEGUARD: Proactive query_logs integration
     # We pull query_logs if:
     # 1. Our dataset is "thin" (< 5 logs per hotel)
@@ -1110,111 +1377,146 @@ async def get_market_intelligence_data(
     is_historical_request = False
     if start_date:
         try:
-            s_dt = datetime.fromisoformat(str(start_date).split('T')[0])
-            if s_dt < datetime.fromisoformat(cutoff_date.split('T')[0]):
+            s_dt = datetime.fromisoformat(str(start_date).split("T")[0])
+            if s_dt < datetime.fromisoformat(cutoff_date.split("T")[0]):
                 is_historical_request = True
-        except: pass
+        except Exception:
+            pass
 
     if is_historical_request or len(logs_data) < (len(hotels) * 5):
-        logger.info(f"[SAFEGUARD] Pulling historical query_logs for user {user_id} (Historical={is_historical_request}, Thin={len(logs_data)})")
-        
+        logger.info(
+            f"[SAFEGUARD] Pulling historical query_logs for user {user_id} (Historical={is_historical_request}, Thin={len(logs_data)})"
+        )
+
         hotel_name_to_id = {h["name"].lower().strip(): str(h["id"]) for h in hotels}
         fallback_cutoff = (datetime.utcnow() - timedelta(days=180)).isoformat()
-        
-        ql_res = db.table("query_logs") \
-            .select("hotel_name, price, currency, vendor, created_at, check_in_date") \
-            .eq("user_id", str(user_id)) \
-            .gte("created_at", fallback_cutoff) \
-            .order("created_at", desc=True) \
-            .execute()
-        
-        fallback_count = 0
-        existing_combos = {(str(l["hotel_id"]), l.get("check_in_date"), l.get("price")) for l in logs_data}
 
-        for ql in (ql_res.data or []):
+        ql_res = (
+            db.table("query_logs")
+            .select("hotel_name, price, currency, vendor, created_at, check_in_date")
+            .eq("user_id", str(user_id))
+            .gte("created_at", fallback_cutoff)
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+        fallback_count = 0
+        existing_combos = {
+            (str(entry["hotel_id"]), entry.get("check_in_date"), entry.get("price"))
+            for entry in logs_data
+        }
+
+        for ql in ql_res.data or []:
             price = ql.get("price")
-            if not price or float(price) <= 0: continue
-            
+            if not price or float(price) <= 0:
+                continue
+
             ql_name = (ql.get("hotel_name") or "").lower().strip()
             hotel_id = hotel_name_to_id.get(ql_name)
             if not hotel_id:
                 for name, hid in hotel_name_to_id.items():
                     if ql_name in name or name in ql_name:
-                        hotel_id = hid; break
-            
-            if not hotel_id: continue
+                        hotel_id = hid
+                        break
+
+            if not hotel_id:
+                continue
             check_in = ql.get("check_in_date") or ql.get("created_at", "")[:10]
-            
+
             # Avoid duplicate data if already in price_logs
-            if (hotel_id, check_in, float(price)) in existing_combos: continue
+            if (hotel_id, check_in, float(price)) in existing_combos:
+                continue
 
             fallback_count += 1
-            logs_data.append({
-                "hotel_id": hotel_id,
-                "price": float(price),
-                "currency": ql.get("currency") or "TRY",
-                "vendor": "Unknown",
-                "source": "serpapi",
-                "check_in_date": check_in,
-                "recorded_at": ql.get("created_at"),
-                "is_estimated": False,
-                "parity_offers": [],
-                "room_types": [],
-                "metadata": {"source": "query_logs_fallback"}
-            })
-        logger.info(f"[SAFEGUARD] Recovered {fallback_count} additional entries from query_logs.")
-        
+            logs_data.append(
+                {
+                    "hotel_id": hotel_id,
+                    "price": float(price),
+                    "currency": ql.get("currency") or "TRY",
+                    "vendor": "Unknown",
+                    "source": "serpapi",
+                    "check_in_date": check_in,
+                    "recorded_at": ql.get("created_at"),
+                    "is_estimated": False,
+                    "parity_offers": [],
+                    "room_types": [],
+                    "metadata": {"source": "query_logs_fallback"},
+                }
+            )
+        logger.info(
+            f"[SAFEGUARD] Recovered {fallback_count} additional entries from query_logs."
+        )
+
     # FINAL FALLBACK: Latest Price from Hotels table (Only for Standard requests)
     # Why: If the user is exploring specific categories like 'Suite' and we have NO data,
     # it is better to show 'N/A' (None) than to seed with misleading 'Standard' prices.
-    is_std = not room_type or any(v in room_type.lower() for v in ["standard", "standart", "any", "base"])
-    
+    is_std = not room_type or any(
+        v in room_type.lower() for v in ["standard", "standart", "any", "base"]
+    )
+
     if is_std and (not logs_data or len(logs_data) < len(hotels)):
-        logger.info(f"[SAFEGUARD] Seeding from hotels table current_price for standard request (user {user_id})")
-        
+        logger.info(
+            f"[SAFEGUARD] Seeding from hotels table current_price for standard request (user {user_id})"
+        )
+
         # KAIZEN: Outlier-Resilient Seeding (Baseline Guard)
         # We calculate a market baseline from the existing price_logs/query_logs to ensure
         # that erroneous 'current_price' entries don't corrupt the graph.
-        baseline_prices = [float(l["price"]) for l in logs_data if float(l.get("price", 0)) > 0]
-        baseline_avg = sum(baseline_prices) / len(baseline_prices) if baseline_prices else None
-        
+        baseline_prices = [
+            float(entry["price"]) for entry in logs_data if float(entry.get("price", 0)) > 0
+        ]
+        baseline_avg = (
+            sum(baseline_prices) / len(baseline_prices) if baseline_prices else None
+        )
+
         for h in hotels:
             lp = h.get("current_price") or 0.0
             if float(lp) > 0:
-                h_pref_currency = h.get("preferred_currency") or h.get("currency") or "TRY"
-                converted_lp = convert_currency(float(lp), h_pref_currency, display_currency)
-                
-                # [OUTLIER GUARD] 
+                h_pref_currency = (
+                    h.get("preferred_currency") or h.get("currency") or "TRY"
+                )
+                converted_lp = convert_currency(
+                    float(lp), h_pref_currency, display_currency
+                )
+
+                # [OUTLIER GUARD]
                 # If the seeded price (after conversion) is more than 3.5x the current market average,
                 # we treat it as a likely currency/data-entry mismatch and skip seeding it.
                 if baseline_avg and converted_lp > (baseline_avg * 3.5):
                     logger.warning(
                         f"[OUTLIER REJECTION] Hotel '{h.get('name')}' seeded price {converted_lp} {display_currency} "
-                        f"is suspiciously high (>{baseline_avg*3.5:.0f}). Possible currency mismatch ({h_pref_currency} vs {display_currency}). Skipping."
+                        f"is suspiciously high (>{baseline_avg * 3.5:.0f}). Possible currency mismatch ({h_pref_currency} vs {display_currency}). Skipping."
                     )
                     continue
 
                 # CURRENCY SANITY LOGGING
                 if h_pref_currency == "USD" and float(lp) > 1000:
-                    logger.warning(f"[CURRENCY SUSPICION] Hotel '{h.get('name')}' has preferred_currency=USD but price={lp}. Likely Turkish Lira.")
+                    logger.warning(
+                        f"[CURRENCY SUSPICION] Hotel '{h.get('name')}' has preferred_currency=USD but price={lp}. Likely Turkish Lira."
+                    )
 
                 for i in range(14):
                     # We use check-in dates for the next 14 days to fill the "near future" calendar view
-                    target_date = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
-                    logs_data.append({
-                        "hotel_id": str(h["id"]),
-                        "price": float(lp),
-                        "currency": h_pref_currency,
-                        "vendor": "Cached",
-                        "source": "hotels_table",
-                        "check_in_date": target_date,
-                        "recorded_at": h.get("updated_at") or datetime.now().isoformat(),
-                        "is_estimated": True,
-                        "parity_offers": [],
-                        "room_types": [],
-                        "metadata": {"source": "hotels_table_fallback"}
-                    })
-    
+                    target_date = (datetime.now() + timedelta(days=i)).strftime(
+                        "%Y-%m-%d"
+                    )
+                    logs_data.append(
+                        {
+                            "hotel_id": str(h["id"]),
+                            "price": float(lp),
+                            "currency": h_pref_currency,
+                            "vendor": "Cached",
+                            "source": "hotels_table",
+                            "check_in_date": target_date,
+                            "recorded_at": h.get("updated_at")
+                            or datetime.now().isoformat(),
+                            "is_estimated": True,
+                            "parity_offers": [],
+                            "room_types": [],
+                            "metadata": {"source": "hotels_table_fallback"},
+                        }
+                    )
+
     # Group logs by hotel_id
     hotel_prices_map = {}
     for log in logs_data:
@@ -1222,51 +1524,72 @@ async def get_market_intelligence_data(
         if hid not in hotel_prices_map:
             hotel_prices_map[hid] = []
         hotel_prices_map[hid].append(log)
-        
+
     # Ensure every hotel has at least an empty list if no logs found
     for h in hotels:
         hid = str(h["id"])
         if hid not in hotel_prices_map:
             hotel_prices_map[hid] = []
-    
+
     # Room Type Slicing Logic (pgvector)
     allowed_room_names_map = {}
     try:
         # EXPLANATION: Smart Catalog Search
         # We first try to find the exact embedding for the requested room type.
-        # If that fails, we extract core keywords (Suite, Deluxe, Family) 
+        # If that fails, we extract core keywords (Suite, Deluxe, Family)
         # to find the best representative embedding from the catalog.
-        catalog_res = db.table("room_type_catalog").select("embedding") \
-            .ilike("normalized_name", f"%{room_type}%").limit(1).execute()
-        
+        catalog_res = (
+            db.table("room_type_catalog")
+            .select("embedding")
+            .ilike("normalized_name", f"%{room_type}%")
+            .limit(1)
+            .execute()
+        )
+
         if not catalog_res.data:
             # Keyword-based fallback search in catalog
             keywords = []
             rt_low = room_type.lower()
-            if "suite" in rt_low or "süit" in rt_low: keywords.append("Suite")
-            elif any(k in rt_low for k in ["deluxe", "superior", "premium"]): keywords.append("Deluxe")
-            elif any(k in rt_low for k in ["family", "aile"]): keywords.append("Family")
-            
+            if "suite" in rt_low or "süit" in rt_low:
+                keywords.append("Suite")
+            elif any(k in rt_low for k in ["deluxe", "superior", "premium"]):
+                keywords.append("Deluxe")
+            elif any(k in rt_low for k in ["family", "aile"]):
+                keywords.append("Family")
+
             if keywords:
-                catalog_res = db.table("room_type_catalog").select("embedding") \
-                    .in_("normalized_name", keywords).limit(1).execute()
+                catalog_res = (
+                    db.table("room_type_catalog")
+                    .select("embedding")
+                    .in_("normalized_name", keywords)
+                    .limit(1)
+                    .execute()
+                )
 
         # Fallback for Standard/Standart mismatch in catalog
         is_std = any(s in room_type.lower() for s in ["standard", "standart"])
         if not catalog_res.data and is_std:
             # Try searching for the other variant specifically
             alt = "standart" if "standard" in room_type.lower() else "standard"
-            catalog_res = db.table("room_type_catalog").select("embedding") \
-                .ilike("normalized_name", f"%{alt}%").limit(1).execute()
+            catalog_res = (
+                db.table("room_type_catalog")
+                .select("embedding")
+                .ilike("normalized_name", f"%{alt}%")
+                .limit(1)
+                .execute()
+            )
 
         if catalog_res.data:
             embedding = catalog_res.data[0]["embedding"]
-            matches_res = db.rpc("match_room_types", {
-                "query_embedding": embedding,
-                "match_threshold": 0.82,
-                "match_count": 100 
-            }).execute()
-            for match in (matches_res.data or []):
+            matches_res = db.rpc(
+                "match_room_types",
+                {
+                    "query_embedding": embedding,
+                    "match_threshold": 0.82,
+                    "match_count": 100,
+                },
+            ).execute()
+            for match in matches_res.data or []:
                 hid = str(match["hotel_id"])
                 if hid not in allowed_room_names_map:
                     allowed_room_names_map[hid] = set()
@@ -1287,5 +1610,5 @@ async def get_market_intelligence_data(
         room_type=room_type,
         start_date=start_date,
         end_date=end_date,
-        allowed_room_names_map=allowed_room_names_map
+        allowed_room_names_map=allowed_room_names_map,
     )

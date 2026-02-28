@@ -9,8 +9,13 @@ from fastapi.encoders import jsonable_encoder
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
+
 @router.get("/dashboard/{user_id}")
-async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+async def get_dashboard(
+    user_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user=Depends(get_current_active_user),
+):
     """
     Main dashboard data aggregator.
     Fetches the user's primary hotel, its competitors, and recent price trends.
@@ -22,10 +27,11 @@ async def get_dashboard(user_id: UUID, db: Client = Depends(get_supabase), curre
     data = await get_dashboard_logic(
         user_id=str(user_id),
         current_user_id=str(current_user.id),
-        current_user_email=getattr(current_user, 'email', None),
-        db=db
+        current_user_email=getattr(current_user, "email", None),
+        db=db,
     )
     return JSONResponse(content=jsonable_encoder(data))
+
 
 @router.get("/global-pulse")
 async def get_global_pulse(db: Client = Depends(get_supabase)):
@@ -34,5 +40,6 @@ async def get_global_pulse(db: Client = Depends(get_supabase)):
     Anonymized and available to all users to show 'Community Intelligence'.
     """
     from backend.services.dashboard_service import get_recent_wins
+
     wins = await get_recent_wins(db)
     return JSONResponse(content=jsonable_encoder(wins))

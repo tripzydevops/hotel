@@ -7,6 +7,7 @@ from typing import List
 from datetime import datetime
 from supabase import Client
 
+
 class LocationService:
     def __init__(self, db: Client):
         self.db = db
@@ -15,11 +16,13 @@ class LocationService:
         """Fetch unique countries and their cities from the registry."""
         try:
             # Get unique countries and cities ordered by popularity
-            res = self.db.table("location_registry") \
-                .select("country, city, district, occurrence_count") \
-                .order("occurrence_count", desc=True) \
+            res = (
+                self.db.table("location_registry")
+                .select("country, city, district, occurrence_count")
+                .order("occurrence_count", desc=True)
                 .execute()
-            
+            )
+
             return res.data or []
         except Exception as e:
             print(f"Error fetching locations: {e}")
@@ -41,20 +44,24 @@ class LocationService:
 
             # Attempt UPSERT
             # In Supabase/PostgREST, upsert uses the UNIQUE constraint
-            res = self.db.table("location_registry").upsert(
-                {
-                    "country": country,
-                    "city": city,
-                    "district": district,
-                    "last_updated_at": datetime.now().isoformat()
-                },
-                on_conflict="country, city, district"
-            ).execute()
-            
-            # Note: The increment logic might need a raw RPC or separate update 
+            res = (
+                self.db.table("location_registry")
+                .upsert(
+                    {
+                        "country": country,
+                        "city": city,
+                        "district": district,
+                        "last_updated_at": datetime.now().isoformat(),
+                    },
+                    on_conflict="country, city, district",
+                )
+                .execute()
+            )
+
+            # Note: The increment logic might need a raw RPC or separate update
             # if upsert doesn't support 'occurrence_count = occurrence_count + 1' directly.
             # For now, let's keep it simple or use a raw SQL RPC if needed.
-            
+
             return res.data
         except Exception as e:
             print(f"Error upserting location {city}, {country}: {e}")

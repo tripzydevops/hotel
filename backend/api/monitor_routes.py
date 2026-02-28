@@ -5,11 +5,15 @@ from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog
-from backend.services.monitor_service import trigger_monitor_logic, run_monitor_background
+from backend.services.monitor_service import (
+    trigger_monitor_logic,
+    run_monitor_background,
+)
 from datetime import datetime, timezone
 import asyncio
 
 router = APIRouter(prefix="/api", tags=["monitor"])
+
 
 @router.post("/monitor/{user_id}", response_model=MonitorResult)
 async def trigger_monitor(
@@ -17,7 +21,7 @@ async def trigger_monitor(
     background_tasks: BackgroundTasks,
     options: Optional[ScanOptions] = None,
     db: Client = Depends(get_supabase),
-    current_active_user = Depends(get_current_active_user)
+    current_active_user=Depends(get_current_active_user),
 ) -> MonitorResult:
     """
     Triggers a manual price scan for all hotels in the user's account.
@@ -32,8 +36,9 @@ async def trigger_monitor(
         options=options,
         db=db,
         current_user_id=str(user_id),
-        current_user_email=getattr(current_active_user, 'email', None)
+        current_user_email=getattr(current_active_user, "email", None),
     )
+
 
 @router.get("/trigger-scan/{user_id}")
 @router.post("/trigger-scan/{user_id}")
@@ -42,7 +47,7 @@ async def check_scheduled_scan(
     background_tasks: BackgroundTasks,
     request: Request,
     force: bool = Query(False),
-    db: Optional[Client] = Depends(get_supabase)
+    db: Optional[Client] = Depends(get_supabase),
 ):
     """Lazy cron workaround for Vercel free tier."""
 
@@ -51,82 +56,140 @@ async def check_scheduled_scan(
     # visits the app, ensuring scans run even without a persistent cron.
     if not db:
         return {"triggered": False, "reason": "DB_UNAVAILABLE"}
-    
+
     try:
         # KAİZEN: Parallel Multi-Gate Check
         # Instead of 4 sequential DB round-trips, we fetch all gates concurrently.
         check_tasks = [
-            asyncio.to_thread(lambda: db.table("settings").select("*").eq("user_id", str(user_id)).execute()),
-            asyncio.to_thread(lambda: db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()),
-            asyncio.to_thread(lambda: db.table("scan_sessions").select("created_at").eq("user_id", str(user_id)).in_("status", ["pending", "running"]).order("created_at", desc=True).limit(1).execute()),
-            asyncio.to_thread(lambda: db.table("price_logs").select("recorded_at").eq("user_id", str(user_id)).order("recorded_at", desc=True).limit(1).execute())
+            asyncio.to_thread(
+                lambda: (
+                    db.table("settings")
+                    .select("*")
+                    .eq("user_id", str(user_id))
+                    .execute()
+                )
+            ),
+            asyncio.to_thread(
+                lambda: (
+                    db.table("hotels")
+                    .select("*")
+                    .eq("user_id", str(user_id))
+                    .is_("deleted_at", "null")
+                    .execute()
+                )
+            ),
+            asyncio.to_thread(
+                lambda: (
+                    db.table("scan_sessions")
+                    .select("created_at")
+                    .eq("user_id", str(user_id))
+                    .in_("status", ["pending", "running"])
+                    .order("created_at", desc=True)
+                    .limit(1)
+                    .execute()
+                )
+            ),
+            asyncio.to_thread(
+                lambda: (
+                    db.table("price_logs")
+                    .select("recorded_at")
+                    .eq("user_id", str(user_id))
+                    .order("recorded_at", desc=True)
+                    .limit(1)
+                    .execute()
+                )
+            ),
         ]
-        
+
         check_results = await asyncio.gather(*check_tasks)
         settings_res, hotels_res, pending_scan, last_log = check_results
 
         # 1. Settings Check
         if not settings_res.data:
             return {"triggered": False, "reason": "NO_SETTINGS"}
-        
+
         settings = settings_res.data[0]
         freq_minutes = settings.get("check_frequency_minutes", 0)
         if not force and freq_minutes <= 0:
             return {"triggered": False, "reason": "MANUAL_ONLY"}
-        
+
         # 2. Hotels Check
         hotels = hotels_res.data or []
         if not hotels:
             return {"triggered": False, "reason": "NO_HOTELS"}
-        
+
         # 3. Pending/Running Check (Anti-Collision)
         if pending_scan.data:
-            pending_time = datetime.fromisoformat(pending_scan.data[0]["created_at"].replace("Z", "+00:00"))
+            pending_time = datetime.fromisoformat(
+                pending_scan.data[0]["created_at"].replace("Z", "+00:00")
+            )
             if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600:
-                 if not force:
-                     return {"triggered": False, "reason": "ALREADY_PENDING"}
-        
+                if not force:
+                    return {"triggered": False, "reason": "ALREADY_PENDING"}
+
         # 4. Due Check
         should_run = force
         if not should_run:
             if not last_log.data:
                 should_run = True
             else:
-                last_run = datetime.fromisoformat(last_log.data[0]["recorded_at"].replace("Z", "+00:00"))
-                if (datetime.now(timezone.utc) - last_run).total_seconds() / 60 >= freq_minutes:
+                last_run = datetime.fromisoformat(
+                    last_log.data[0]["recorded_at"].replace("Z", "+00:00")
+                )
+                if (
+                    datetime.now(timezone.utc) - last_run
+                ).total_seconds() / 60 >= freq_minutes:
                     should_run = True
-        
+
         if should_run:
             session_id = None
             try:
-                session_result = db.table("scan_sessions").insert({
-                    "user_id": str(user_id),
-                    "session_type": "scheduled" if not force else "manual_admin",
-                    "hotels_count": len(hotels),
-                    "status": "pending"
-                }).execute()
+                session_result = (
+                    db.table("scan_sessions")
+                    .insert(
+                        {
+                            "user_id": str(user_id),
+                            "session_type": "scheduled"
+                            if not force
+                            else "manual_admin",
+                            "hotels_count": len(hotels),
+                            "status": "pending",
+                        }
+                    )
+                    .execute()
+                )
                 if session_result.data:
                     session_id = session_result.data[0]["id"]
             except Exception as e:
                 print(f"LazyScheduler: Failed to create session: {e}")
-            
-            background_tasks.add_task(run_monitor_background, user_id=user_id, hotels=hotels, options=None, db=db, session_id=session_id)
+
+            background_tasks.add_task(
+                run_monitor_background,
+                user_id=user_id,
+                hotels=hotels,
+                options=None,
+                db=db,
+                session_id=session_id,
+            )
             return {"triggered": True, "session_id": session_id}
-        
+
         return {"triggered": False, "reason": "NOT_DUE"}
     except Exception as e:
         print(f"LazyScheduler error: {e}")
         return {"triggered": False, "reason": str(e)}
 
+
 # EXPLANATION: GET a single scan session by ID.
-# The ScanSessionModal polls this to get live reasoning_trace and status 
-# updates. Without this, the Agent Mesh steps and Reasoning Timeline 
+# The ScanSessionModal polls this to get live reasoning_trace and status
+# updates. Without this, the Agent Mesh steps and Reasoning Timeline
 # stay stale after the modal opens.
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: UUID, db: Client = Depends(get_supabase)):
     """Fetch a single scan session by ID for live status/reasoning updates."""
     try:
-        result = db.table("scan_sessions").select("*").eq("id", str(session_id)).execute()
+        result = (
+            db.table("scan_sessions").select("*").eq("id", str(session_id)).execute()
+        )
         if result.data:
             return result.data[0]
         return {"error": "Session not found"}
@@ -134,20 +197,32 @@ async def get_session(session_id: UUID, db: Client = Depends(get_supabase)):
         print(f"Error fetching session: {e}")
         return {"error": str(e)}
 
+
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
 async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase)):
     """Fetch all query logs linked to a specific scan session."""
     try:
-        result = db.table("query_logs").select("*").eq("session_id", str(session_id)).order("created_at", desc=True).execute()
+        result = (
+            db.table("query_logs")
+            .select("*")
+            .eq("session_id", str(session_id))
+            .order("created_at", desc=True)
+            .execute()
+        )
         return result.data or []
     except Exception as e:
         print(f"Error fetching session logs: {e}")
         return []
 
+
 @router.delete("/logs/{log_id}")
-async def delete_log(log_id: UUID, db: Client = Depends(get_supabase), current_user = Depends(get_current_active_user)):
+async def delete_log(
+    log_id: UUID,
+    db: Client = Depends(get_supabase),
+    current_user=Depends(get_current_active_user),
+):
     """
-    Deletes a specific activity log. 
+    Deletes a specific activity log.
     Supports frontend's cleanup functionality.
     """
     try:

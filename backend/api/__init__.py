@@ -8,5 +8,5 @@ from . import (  # noqa: F401
     analysis_routes,
     alerts_routes,
     landing_routes,
-    pulse_routes
+    pulse_routes,
 )

@@ -39,6 +39,7 @@ class StructuredFormatter(logging.Formatter):
     Outputs logs in a structured format that Vercel and log aggregators can parse.
     Includes timestamp, level, logger name, and message on a single line.
     """
+
     def format(self, record: logging.LogRecord) -> str:
         # EXPLANATION: Single-Line Structured Output
         # Format: [LEVEL] module_name | message
@@ -52,19 +53,19 @@ class StructuredFormatter(logging.Formatter):
 def get_logger(name: str) -> logging.Logger:
     """
     Factory function to create a named logger with consistent configuration.
-    
+
     EXPLANATION: Module-Level Logger Pattern
     Each module calls get_logger(__name__) once at module level.
     This gives us per-module filtering and makes log sources traceable.
-    
+
     Args:
         name: Usually __name__ of the calling module.
-    
+
     Returns:
         A configured logging.Logger instance.
     """
     logger = logging.getLogger(name)
-    
+
     # EXPLANATION: Prevent Duplicate Handlers
     # If the logger already has handlers (e.g., module imported multiple times),
     # we skip adding another one to avoid duplicate log lines.
@@ -73,10 +74,10 @@ def get_logger(name: str) -> logging.Logger:
         handler.setFormatter(StructuredFormatter())
         logger.addHandler(handler)
         logger.setLevel(getattr(logging, _LOG_LEVEL, logging.INFO))
-        
+
         # EXPLANATION: Propagation Control
         # We disable propagation to the root logger to prevent duplicate output
         # when FastAPI/uvicorn also configure logging.
         logger.propagate = False
-    
+
     return logger

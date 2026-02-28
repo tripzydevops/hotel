@@ -33,20 +33,23 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
     """
     global _STATS_CACHE
 
-    if time.time() - _STATS_CACHE["timestamp"] < _STATS_CACHE_TTL and _STATS_CACHE["data"]:
+    if (
+        time.time() - _STATS_CACHE["timestamp"] < _STATS_CACHE_TTL
+        and _STATS_CACHE["data"]
+    ):
         return _STATS_CACHE["data"]
 
     try:
         if not db:
-             logger.warning("Pulse: Database connection unavailable")
-             return {
+            logger.warning("Pulse: Database connection unavailable")
+            return {
                 "active_users_count": 0,
                 "hotels_monitored": 0,
                 "cache_hit_rate_24h": 0,
                 "total_scans_24h": 0,
                 "cache_hits_24h": 0,
                 "estimated_savings_credits": 0,
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat(),
             }
         # EXPLANATION: We run 4 lightweight count queries.
         # These are fast index scans on Supabase/PostgreSQL.
@@ -54,9 +57,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 1. Active users: users who have at least 1 hotel
         active_users_count = 0
         try:
-            users_res = db.table("hotels") \
-                .select("user_id") \
-                .execute()
+            users_res = db.table("hotels").select("user_id").execute()
             unique_users = set(h["user_id"] for h in (users_res.data or []))
             active_users_count = len(unique_users)
         except Exception as e:
@@ -65,10 +66,12 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 2. Monitored hotels: distinct serp_api_ids across all users
         hotels_monitored = 0
         try:
-            hotels_res = db.table("hotels") \
-                .select("serp_api_id") \
-                .not_.is_("serp_api_id", "null") \
+            hotels_res = (
+                db.table("hotels")
+                .select("serp_api_id")
+                .not_.is_("serp_api_id", "null")
                 .execute()
+            )
             unique_hotels = set(h["serp_api_id"] for h in (hotels_res.data or []))
             hotels_monitored = len(unique_hotels)
         except Exception as e:
@@ -76,14 +79,16 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
 
         # 3. Cache performance: count scans in last 24h and those tagged as cache hits
         cutoff_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-        
+
         # Total scans in 24h
         total_scans_24h = 0
         try:
-            scans_res = db.table("price_logs") \
-                .select("id", count="exact") \
-                .gte("recorded_at", cutoff_24h) \
+            scans_res = (
+                db.table("price_logs")
+                .select("id", count="exact")
+                .gte("recorded_at", cutoff_24h)
                 .execute()
+            )
             total_scans_24h = scans_res.count or 0
         except Exception as e:
             logger.warning(f"Pulse: Failed to count total scans: {e}")
@@ -93,11 +98,13 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # we estimate cache hits from Global Pulse alerts (conservative estimate).
         cache_hits_24h = 0
         try:
-            pulse_alerts_res = db.table("alerts") \
-                .select("id", count="exact") \
-                .ilike("message", "%Global Pulse%") \
-                .gte("created_at", cutoff_24h) \
+            pulse_alerts_res = (
+                db.table("alerts")
+                .select("id", count="exact")
+                .ilike("message", "%Global Pulse%")
+                .gte("created_at", cutoff_24h)
                 .execute()
+            )
             # Each pulse alert represents at least 1 cache-served result
             cache_hits_24h = pulse_alerts_res.count or 0
         except Exception:
@@ -115,7 +122,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
             "total_scans_24h": total_scans_24h,
             "cache_hits_24h": cache_hits_24h,
             "estimated_savings_credits": estimated_savings,
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         _STATS_CACHE = {"data": stats, "timestamp": time.time()}
@@ -130,5 +137,5 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
             "total_scans_24h": 0,
             "cache_hits_24h": 0,
             "estimated_savings_credits": 0,
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }

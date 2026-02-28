@@ -26,7 +26,7 @@ async def get_network_stats(db: Client = Depends(get_supabase)):
     Returns live Global Pulse network metrics.
     Used by GlobalPulseFeed.tsx to display real-time stats
     instead of hardcoded placeholder values.
-    
+
     EXPLANATION:
     This endpoint is public (no auth required) because the stats
     are anonymized aggregate counts. No user-specific data is exposed.

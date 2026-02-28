@@ -23,6 +23,7 @@ class TrendDirection(str, Enum):
 
 # ===== Hotel Models =====
 
+
 class HotelBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     is_target_hotel: bool = False
@@ -71,22 +72,28 @@ class Hotel(HotelBase):
     user_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    
 
 
 # ===== Price Log Models =====
+
 
 class PriceLogBase(BaseModel):
     price: float = Field(..., gt=0)
     currency: str = Field(default="USD", max_length=3)
     check_in_date: Optional[date] = None
     source: str = Field(default="serpapi")
-    vendor: Optional[str] = Field(default=None, description="The specific booking site (e.g. Booking.com)")
+    vendor: Optional[str] = Field(
+        default=None, description="The specific booking site (e.g. Booking.com)"
+    )
     offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     search_rank: Optional[int] = None
-    serp_api_id: Optional[str] = Field(default=None, description="Global ID for deduplication across users")
-    session_id: Optional[UUID] = Field(default=None, description="Links the price log to a specific scan session")
+    serp_api_id: Optional[str] = Field(
+        default=None, description="Global ID for deduplication across users"
+    )
+    session_id: Optional[UUID] = Field(
+        default=None, description="Links the price log to a specific scan session"
+    )
 
 
 class PriceLogCreate(PriceLogBase):
@@ -97,10 +104,10 @@ class PriceLog(PriceLogBase):
     id: UUID
     hotel_id: UUID
     recorded_at: datetime
-    
 
 
 # ===== Settings Models =====
+
 
 class SettingsBase(BaseModel):
     threshold_percent: float = Field(default=2.0, ge=0, le=100)
@@ -135,10 +142,10 @@ class Settings(SettingsBase):
     user_id: UUID
     created_at: datetime
     updated_at: datetime
-    
 
 
 # ===== User Profile Models =====
+
 
 class UserProfileBase(BaseModel):
     display_name: Optional[str] = None
@@ -169,10 +176,10 @@ class UserProfile(UserProfileBase):
     subscription_status: Optional[str] = "trial"
     role: Optional[str] = "user"
     is_admin_bypass: bool = False
-    
 
 
 # ===== Location Models =====
+
 
 class LocationRegistry(BaseModel):
     country: str
@@ -185,6 +192,7 @@ class LocationRegistry(BaseModel):
 
 
 # ===== Alert Models =====
+
 
 class AlertBase(BaseModel):
     alert_type: AlertType
@@ -203,13 +211,14 @@ class Alert(AlertBase):
     hotel_id: UUID
     is_read: bool = False
     created_at: datetime
-    
 
 
 # ===== Dashboard / Response Models =====
 
+
 class PriceWithTrend(BaseModel):
     """Price data with calculated trend direction."""
+
     current_price: float
     previous_price: Optional[float] = None
     currency: str = "USD"
@@ -226,8 +235,6 @@ class PriceWithTrend(BaseModel):
     serp_api_id: Optional[str] = None
 
 
-
-
 class PricePoint(BaseModel):
     price: float
     recorded_at: Optional[datetime] = None
@@ -236,10 +243,9 @@ class PricePoint(BaseModel):
 
 class HotelWithPrice(Hotel):
     """Hotel data enriched with latest price info."""
+
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
-    
-
 
 
 class QueryLog(BaseModel):
@@ -256,12 +262,10 @@ class QueryLog(BaseModel):
     check_in_date: Optional[date] = None
     adults: Optional[int] = 2
     serp_api_id: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
         extra = "allow"
-
-
 
 
 class ScanSession(BaseModel):
@@ -284,6 +288,7 @@ class ScanSession(BaseModel):
 
 class DashboardResponse(BaseModel):
     """Response for the main dashboard Bento Grid."""
+
     target_hotel: Optional[HotelWithPrice] = None
     competitors: List[HotelWithPrice] = []
     recent_searches: List[QueryLog] = []
@@ -292,7 +297,9 @@ class DashboardResponse(BaseModel):
     unread_alerts_count: int = 0
     comparison_limit: int = 5
     next_scan_at: Optional[datetime] = None
-    last_updated: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: Optional[datetime] = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
 
     class Config:
         extra = "allow"
@@ -308,6 +315,7 @@ class ScanOptions(BaseModel):
 
 class MonitorResult(BaseModel):
     """Result of a monitoring run."""
+
     hotels_checked: int
     prices_updated: int
     alerts_generated: int
@@ -317,6 +325,7 @@ class MonitorResult(BaseModel):
 
 # ===== Admin Models =====
 
+
 class AdminStats(BaseModel):
     total_users: int
     total_hotels: int
@@ -324,15 +333,17 @@ class AdminStats(BaseModel):
     api_calls_today: int
     directory_size: int
     scraper_health: float = 100.0  # Percentage of successful scans in last 24h
-    avg_latency_ms: float = 0.0    # Average scan duration in ms
-    error_rate_24h: float = 0.0    # Detailed error rate
-    active_nodes: int = 1          # Count of active scraper nodes
+    avg_latency_ms: float = 0.0  # Average scan duration in ms
+    error_rate_24h: float = 0.0  # Detailed error rate
+    active_nodes: int = 1  # Count of active scraper nodes
     service_role_active: bool = False
+
 
 class AdminUserCreate(BaseModel):
     email: str
     password: str
     display_name: Optional[str] = None
+
 
 class AdminUserUpdate(BaseModel):
     email: Optional[str] = None
@@ -345,6 +356,7 @@ class AdminUserUpdate(BaseModel):
     plan_type: Optional[str] = None
     subscription_status: Optional[str] = None
     check_frequency_minutes: Optional[int] = None
+
 
 class AdminUser(BaseModel):
     id: UUID
@@ -361,8 +373,9 @@ class AdminUser(BaseModel):
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
     scan_frequency_minutes: Optional[int] = 0
-    max_hotels: int = 5            # Derived from plan
+    max_hotels: int = 5  # Derived from plan
     next_scan_at: Optional[datetime] = None
+
 
 class AdminDirectoryEntry(BaseModel):
     id: Any  # Can be UUID string or int depending on DB
@@ -370,7 +383,8 @@ class AdminDirectoryEntry(BaseModel):
     location: str
     serp_api_id: Optional[str] = None
     created_at: datetime
-    
+
+
 class AdminLog(BaseModel):
     id: UUID
     timestamp: datetime
@@ -380,11 +394,13 @@ class AdminLog(BaseModel):
     user_id: Optional[UUID] = None
     user_name: Optional[str] = None
 
+
 class AdminDataResponse(BaseModel):
     stats: AdminStats
     users: List[AdminUser] = []
     directory: List[AdminDirectoryEntry] = []
     logs: List[AdminLog] = []
+
 
 class SchedulerQueueEntry(BaseModel):
     user_id: UUID
@@ -392,9 +408,10 @@ class SchedulerQueueEntry(BaseModel):
     scan_frequency_minutes: int
     last_scan_at: Optional[datetime] = None
     next_scan_at: datetime
-    status: str = "pending" # pending, overdue, running
+    status: str = "pending"  # pending, overdue, running
     hotel_count: int = 0
     hotels: List[str] = []
+
 
 class MarketAnalysis(BaseModel):
     hotel_id: Optional[str] = None
@@ -411,9 +428,9 @@ class MarketAnalysis(BaseModel):
     mpi: float = 100.0  # Market Penetration Index (Requires Occ)
     rgi: float = 100.0  # Revenue Generation Index (Requires RevPAR)
     sentiment_index: float = 100.0  # Sentiment vs Market Avg
-    advisory_msg: Optional[str] = None # Natural language reasoning from Agent
-    quadrant_x: float = 0.0 # Normalized ARI offset (-50 to +50)
-    quadrant_y: float = 0.0 # Normalized Sentiment offset (-50 to +50)
+    advisory_msg: Optional[str] = None  # Natural language reasoning from Agent
+    quadrant_x: float = 0.0  # Normalized ARI offset (-50 to +50)
+    quadrant_y: float = 0.0  # Normalized Sentiment offset (-50 to +50)
     quadrant_label: str = "Standard"
     target_rating: float = 0.0
     market_rating: float = 0.0
@@ -427,8 +444,10 @@ class ReportsResponse(BaseModel):
 
 # ===== SerpApi Response Models =====
 
+
 class SerpApiHotelPrice(BaseModel):
     """Parsed hotel price from SerpApi response."""
+
     hotel_name: str
     price: float
     currency: str = "USD"
@@ -444,9 +463,10 @@ class AdminSettings(BaseModel):
     default_currency: str
     system_alert_message: Optional[str] = None
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 class AdminSettingsUpdate(BaseModel):
     maintenance_mode: Optional[bool] = None
@@ -457,17 +477,20 @@ class AdminSettingsUpdate(BaseModel):
 
 # ===== Membership Plan Models =====
 
+
 class PlanBase(BaseModel):
     name: str
     price_monthly: float
     hotel_limit: int
-    scan_frequency_limit: str = "daily" # hourly, daily, weekly
+    scan_frequency_limit: str = "daily"  # hourly, daily, weekly
     monthly_scan_limit: int = 100
     features: List[str] = []
     is_active: bool = True
 
+
 class PlanCreate(PlanBase):
     pass
+
 
 class PlanUpdate(BaseModel):
     name: Optional[str] = None
@@ -478,9 +501,10 @@ class PlanUpdate(BaseModel):
     features: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
+
 class MembershipPlan(PlanBase):
     id: UUID
     created_at: datetime
-    
+
     class Config:
         from_attributes = True

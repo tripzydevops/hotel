@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from datetime import date
 
+
 class HotelDataProvider(ABC):
     """
     Abstract Interface for Hotel Data Providers.
@@ -10,18 +11,18 @@ class HotelDataProvider(ABC):
 
     @abstractmethod
     async def fetch_price(
-        self, 
-        hotel_name: str, 
-        location: str, 
-        check_in: date, 
-        check_out: date, 
-        adults: int = 2, 
+        self,
+        hotel_name: str,
+        location: str,
+        check_in: date,
+        check_out: date,
+        adults: int = 2,
         currency: str = "USD",
-        serp_api_id: Optional[str] = None
+        serp_api_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch price and metadata for a specific hotel.
-        
+
         Returns:
             Dict containing:
             - price (float)

@@ -1,4 +1,3 @@
-
 from datetime import date
 from typing import Optional
 from uuid import UUID
@@ -7,10 +6,11 @@ from supabase import Client
 # Exchange rates to USD (approximate, update periodically or use API)
 EXCHANGE_RATES_TO_USD = {
     "USD": 1.0,
-    "EUR": 1.08,      # 1 EUR = 1.08 USD
-    "GBP": 1.26,      # 1 GBP = 1.26 USD
-    "TRY": 0.029,     # 1 TRY = 0.029 USD
+    "EUR": 1.08,  # 1 EUR = 1.08 USD
+    "GBP": 1.26,  # 1 GBP = 1.26 USD
+    "TRY": 0.029,  # 1 TRY = 0.029 USD
 }
+
 
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
     """Convert amount from one currency to another via USD."""
@@ -22,6 +22,7 @@ def convert_currency(amount: float, from_currency: str, to_currency: str) -> flo
     # Convert from USD to target
     target_rate = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
     return round(usd_amount / target_rate, 2)
+
 
 async def log_query(
     db: Client,
@@ -35,7 +36,7 @@ async def log_query(
     vendor: Optional[str] = None,
     session_id: Optional[UUID] = None,
     check_in: Optional[date] = None,
-    adults: Optional[int] = 2
+    adults: Optional[int] = 2,
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
@@ -50,9 +51,9 @@ async def log_query(
             "vendor": vendor,
             "session_id": str(session_id) if session_id else None,
             "check_in_date": check_in.isoformat() if check_in else None,
-            "adults": adults
+            "adults": adults,
         }
-        
+
         db.table("query_logs").insert(log_data).execute()
     except Exception as e:
         print(f"Error logging query: {e}")

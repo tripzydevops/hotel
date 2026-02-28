@@ -25,7 +25,10 @@ export function createClient() {
   // Singleton instance for browser-side usage
   if (typeof window !== "undefined") {
     if (!browserService) {
-      browserService = createBrowserClient(url, key);
+      const instanceId = Math.random().toString(36).substring(7);
+      console.log(`[SupabaseClient] Initializing singleton instance: ${instanceId}`);
+      browserService = createBrowserClient(url!, key!);
+      (browserService as any).__instanceId = instanceId;
     }
     return browserService;
   }

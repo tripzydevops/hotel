@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+
 # GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -36,7 +37,7 @@ from backend.api import (
     analysis_routes,
     alerts_routes,
     landing_routes,
-    pulse_routes
+    pulse_routes,
 )
 
 # EXPLANATION: Vercel Dependency & Import Safety
@@ -48,30 +49,36 @@ from backend.api import (
 
 # Initialize FastAPI
 # EXPLANATION: Vercel Routing Normalization
-# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api" 
-# because our routers already include the "/api" prefix. Setting it 
-# causes FastAPI to strip "/api" from incoming requests, making them 
+# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api"
+# because our routers already include the "/api" prefix. Setting it
+# causes FastAPI to strip "/api" from incoming requests, making them
 # fail to match the registered routes (Double Prefixing Conflict).
-app = FastAPI(
-    title="Hotel Rate Sentinel API",
-    version="2026.02"
-)
+app = FastAPI(title="Hotel Rate Sentinel API", version="2026.02")
+
 
 # DIAGNOSTIC: Root Ping
 @app.get("/ping")
 async def root_ping():
-    return {"status": "ok", "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)"}
+    return {
+        "status": "ok",
+        "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)",
+    }
+
 
 @app.get("/api/ping")
 async def api_ping():
-    return {"status": "ok", "message": "Pong from /api/ping (FastAPI matched full path)"}
+    return {
+        "status": "ok",
+        "message": "Pong from /api/ping (FastAPI matched full path)",
+    }
+
 
 # CORS configuration
 # KAIZEN: Restrict CORS to authorized origins only
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 if not any(allowed_origins):
     allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
-    
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -84,14 +91,15 @@ app.add_middleware(
 # This significantly improves performance for data-heavy API endpoints
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+
 # EXPLANATION: Centralized Error Handler (backend-specialist pattern)
-# Per .agent rules: "Don't expose internal errors to client" and 
+# Per .agent rules: "Don't expose internal errors to client" and
 # "Implement centralized error handling". Traces are logged server-side only.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback
     from fastapi import HTTPException
-    
+
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
@@ -100,10 +108,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             status_code=exc.status_code,
             content={"detail": exc.detail},
         )
-        
+
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
-    
+
     # EXPLANATION: Debug-Friendly Error Response
     # We include the exception message in the response to help debug cloud-specific issues.
     # In a strict production environment, this should be logged to Sentry/Datadog and masked.
@@ -111,6 +119,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": f"Internal Server Error: {str(exc)}"},
     )
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -120,39 +129,47 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": exc.errors(), "body": exc.body},
     )
 
+
 # Basic Health/Diagnostic Endpoints
 @app.get("/api/ping")
 async def ping():
     return {"status": "pong"}
 
+
 @app.get("/api/health")
 async def health_check():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "supabase_configured": bool(url),
         "timestamp": datetime.now().isoformat(),
-        "version": "1.1.0-modular"
+        "version": "1.1.0-modular",
     }
+
 
 @app.get("/api/debug/system-report")
 async def system_report(db: Client = Depends(get_supabase)):
     """Deep diagnostics for environment and database connectivity."""
-    
+
     # 1. Environment Check (Masked)
     import os
+
     env_vars = {
-        "NEXT_PUBLIC_SUPABASE_URL": "PRESENT" if os.getenv("NEXT_PUBLIC_SUPABASE_URL") else "MISSING",
-        "SUPABASE_SERVICE_ROLE_KEY": "PRESENT" if os.getenv("SUPABASE_SERVICE_ROLE_KEY") else "MISSING",
+        "NEXT_PUBLIC_SUPABASE_URL": "PRESENT"
+        if os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        else "MISSING",
+        "SUPABASE_SERVICE_ROLE_KEY": "PRESENT"
+        if os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        else "MISSING",
         "VERCEL": os.getenv("VERCEL", "0"),
         "PYTHON_VERSION": sys.version,
-        "PYTHONPATH": os.getenv("PYTHONPATH", "NOT_SET")
+        "PYTHONPATH": os.getenv("PYTHONPATH", "NOT_SET"),
     }
-    
+
     # 2. Database Connectivity & Table Check
     db_results = {}
     tables_to_check = ["hotels", "settings", "price_logs", "scan_sessions", "alerts"]
-    
+
     if not db:
         db_results["status"] = "DB_CLIENT_INIT_FAILED"
     else:
@@ -168,26 +185,30 @@ async def system_report(db: Client = Depends(get_supabase)):
     process_stats = {"status": "psutil_not_installed"}
     try:
         import psutil
+
         process = psutil.Process(os.getpid())
         process_stats = {
             "memory_usage_mb": process.memory_info().rss / (1024 * 1024),
             "pid": os.getpid(),
-            "status": "OK"
+            "status": "OK",
         }
     except ImportError:
         pass
     except Exception as e:
         process_stats = {"status": "ERROR", "error": str(e)}
-    
+
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "environment": env_vars,
         "database": db_results,
-        "process": process_stats
+        "process": process_stats,
     }
 
     # EXPLANATION: Redis Decommissioned (2026-02-25)
-    return {"status": "decommissioned", "message": "Redis/Celery infrastructure has been moved to in-process BackgroundTasks."}
+    return {
+        "status": "decommissioned",
+        "message": "Redis/Celery infrastructure has been moved to in-process BackgroundTasks.",
+    }
 
 
 # Include Modular Routers
@@ -202,21 +223,22 @@ app.include_router(alerts_routes.router)
 app.include_router(landing_routes.router)
 app.include_router(pulse_routes.router)
 
+
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
 @app.get("/api/cron")
-async def trigger_cron_job(
-    key: str,
-    background_tasks: BackgroundTasks
-):
+async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
     """External cron entry point."""
     cron_secret = os.getenv("CRON_SECRET", "super_secret_cron_key_123")
     if key != cron_secret:
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
-    
+
     from backend.services.monitor_service import run_scheduler_check_logic
+
     background_tasks.add_task(run_scheduler_check_logic)
     return {"status": "success", "message": "Scheduler triggered"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

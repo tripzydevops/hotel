@@ -1,6 +1,6 @@
-import os
 from celery import Celery
 from dotenv import load_dotenv
+import ssl
 
 load_dotenv()
 
@@ -11,13 +11,8 @@ REDIS_URL = "memory://"
 RESULT_BACKEND = "rpc://"
 
 celery_app = Celery(
-    "hotel_app",
-    broker=REDIS_URL,
-    backend=RESULT_BACKEND,
-    include=["backend.tasks"]
+    "hotel_app", broker=REDIS_URL, backend=RESULT_BACKEND, include=["backend.tasks"]
 )
-
-import ssl
 
 config = {
     "task_serializer": "json",
@@ -29,13 +24,11 @@ config = {
 }
 
 if REDIS_URL.startswith("rediss://"):
-    config.update({
-        "broker_use_ssl": {
-            "ssl_cert_reqs": ssl.CERT_NONE
-        },
-        "redis_backend_use_ssl": {
-            "ssl_cert_reqs": ssl.CERT_NONE
+    config.update(
+        {
+            "broker_use_ssl": {"ssl_cert_reqs": ssl.CERT_NONE},
+            "redis_backend_use_ssl": {"ssl_cert_reqs": ssl.CERT_NONE},
         }
-    })
+    )
 
 celery_app.conf.update(**config)

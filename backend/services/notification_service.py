@@ -11,9 +11,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class NotificationService:
     """Service for sending notifications."""
-    
+
     def __init__(self):
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
@@ -29,16 +30,12 @@ class NotificationService:
         alert_message: str,
         current_price: float,
         previous_price: float,
-        currency: str = "USD"
+        currency: str = "USD",
     ) -> dict:
         """
         Send notifications via all enabled channels.
         """
-        results = {
-            "email": False,
-            "whatsapp": False,
-            "push": False
-        }
+        results = {"email": False, "whatsapp": False, "push": False}
 
         # Global kill switch
         if not settings.get("notifications_enabled"):
@@ -52,79 +49,75 @@ class NotificationService:
                 alert_message,
                 current_price,
                 previous_price,
-                currency
+                currency,
             )
 
         # 2. WhatsApp (Placeholder)
         if settings.get("whatsapp_number"):
             results["whatsapp"] = await self.send_whatsapp(
-                settings["whatsapp_number"],
-                alert_message
+                settings["whatsapp_number"], alert_message
             )
 
         # 3. Push (Desktop Notifications via Web Push API)
         if settings.get("push_enabled") and settings.get("push_subscription"):
             results["push"] = await self.send_push(
-                settings.get("user_id"), 
+                settings.get("user_id"),
                 alert_message,
                 subscription=settings.get("push_subscription"),
-                hotel_name=hotel_name
+                hotel_name=hotel_name,
             )
-            
+
         return results
 
     async def send_summary_notifications(
-        self,
-        settings: dict,
-        alerts: list,
-        hotel_name_map: dict
+        self, settings: dict, alerts: list, hotel_name_map: dict
     ) -> dict:
         """
         Consolidates multiple alerts into a single summary notification per channel.
         This prevents 'notification spam' during large scans.
         """
         results = {"email": False, "whatsapp": False, "push": False}
-        
+
         if not settings.get("notifications_enabled") or not alerts:
             return results
 
         # Build summary message
         count = len(alerts)
         summary_lines = []
-        for alert in alerts[:5]: # Show first 5 in detail
+        for alert in alerts[:5]:  # Show first 5 in detail
             hname = hotel_name_map.get(alert["hotel_id"], "Unknown Hotel")
             summary_lines.append(f"• {hname}: {alert['message']}")
-        
+
         if count > 5:
             summary_lines.append(f"... and {count - 5} more alerts.")
-            
+
         full_summary = "\n".join(summary_lines)
         push_title = f"Rate Sentinel: {count} Price Alerts Found"
-        
+
         # 1. Email Summary
         if settings.get("notification_email"):
             results["email"] = await self.send_summary_email(
-                settings["notification_email"],
-                alerts,
-                hotel_name_map
+                settings["notification_email"], alerts, hotel_name_map
             )
 
         # 2. Push Summary
         if settings.get("push_enabled") and settings.get("push_subscription"):
             results["push"] = await self.send_push(
-                settings.get("user_id"), 
+                settings.get("user_id"),
                 full_summary,
                 subscription=settings.get("push_subscription"),
-                hotel_name=push_title # Use title as hotel_name for send_push logic
+                hotel_name=push_title,  # Use title as hotel_name for send_push logic
             )
-            
+
         return results
 
-    async def send_summary_email(self, to_email: str, alerts: list, hotel_name_map: dict) -> bool:
+    async def send_summary_email(
+        self, to_email: str, alerts: list, hotel_name_map: dict
+    ) -> bool:
         """Sends a batched email report for multiple alerts."""
         if not self.enabled:
             return False
-            
+
         try:
             msg = MIMEMultipart()
             msg["From"] = self.sender_email
@@ -170,13 +163,19 @@ class NotificationService:
         print(f"[Notification] WOULD send WhatsApp to {number}: {message}")
         return True
 
-    async def send_push(self, user_id: str, message: str, subscription: dict = None, hotel_name: str = "") -> bool:
+    async def send_push(
+        self,
+        user_id: str,
+        message: str,
+        subscription: dict = None,
+        hotel_name: str = "",
+    ) -> bool:
         """
         Send Web Push notification.
-        
+
         EXPLANATION: Data Format Fix (Feb 2026)
         The service worker (sw.js) expects a JSON payload with {title, body} fields.
-        Previously this method sent a plain text string, which caused 
+        Previously this method sent a plain text string, which caused
         event.data.json() to throw a silent parse error in the browser,
         killing the notification before it could display.
         """
@@ -186,8 +185,8 @@ class NotificationService:
 
         try:
             import json
-            from pywebpush import webpush, WebPushException
-            
+            from pywebpush import webpush
+
             # Get VAPID private key from env
             private_key = os.getenv("VAPID_PRIVATE_KEY")
             if not private_key:
@@ -201,20 +200,24 @@ class NotificationService:
             # EXPLANATION: JSON Payload for sw.js Compatibility
             # sw.js calls event.data.json() and reads .title and .body
             # We must send a JSON string, not plain text.
-            payload = json.dumps({
-                "title": f"Price Alert: {hotel_name}" if hotel_name else "Rate Sentinel Alert",
-                "body": message
-            })
+            payload = json.dumps(
+                {
+                    "title": f"Price Alert: {hotel_name}"
+                    if hotel_name
+                    else "Rate Sentinel Alert",
+                    "body": message,
+                }
+            )
 
             webpush(
                 subscription_info=subscription,
                 data=payload,
                 vapid_private_key=private_key,
-                vapid_claims=claims
+                vapid_claims=claims,
             )
             print(f"[Notification] Push sent to {user_id}")
             return True
-            
+
         except ImportError:
             print("[Notification] pywebpush not installed")
             return False
@@ -229,13 +232,15 @@ class NotificationService:
         alert_message: str,
         current_price: float,
         previous_price: float,
-        currency: str = "USD"
+        currency: str = "USD",
     ) -> bool:
         """
         Send an alert email to the user.
         """
         if not self.enabled:
-            print(f"[Notification] Email disabled. Would have sent to {to_email}: {alert_message}")
+            print(
+                f"[Notification] Email disabled. Would have sent to {to_email}: {alert_message}"
+            )
             return False
 
         try:
@@ -259,19 +264,20 @@ class NotificationService:
             """
             msg.attach(MIMEText(body, "html"))
 
-            # Synchronous SMTP call (could be made async with aiosmtplib if needed, 
+            # Synchronous SMTP call (could be made async with aiosmtplib if needed,
             # but for low volume this is acceptable)
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
                 server.send_message(msg)
-            
+
             print(f"[Notification] Sent email to {to_email}")
             return True
 
         except Exception as e:
             print(f"[Notification] Failed to send email: {e}")
             return False
+
 
 # Singleton instance
 notification_service = NotificationService()
