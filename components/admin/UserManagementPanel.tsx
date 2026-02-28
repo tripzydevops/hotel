@@ -54,7 +54,7 @@ const UserManagementPanel = () => {
     } catch (err: unknown) {
       toast.error(
         "An error occurred: " +
-          (err instanceof Error ? err.message : String(err)),
+        (err instanceof Error ? err.message : String(err)),
       );
     } finally {
       setLoading(false);
@@ -100,7 +100,7 @@ const UserManagementPanel = () => {
     } catch (err: unknown) {
       toast.error(
         "An error occurred: " +
-          (err instanceof Error ? err.message : String(err)),
+        (err instanceof Error ? err.message : String(err)),
       );
     }
   };
@@ -121,7 +121,7 @@ const UserManagementPanel = () => {
     } catch (err: unknown) {
       toast.error(
         "An error occurred: " +
-          (err instanceof Error ? err.message : String(err)),
+        (err instanceof Error ? err.message : String(err)),
       );
     } finally {
       setUserSaveLoading(false);
@@ -142,7 +142,7 @@ const UserManagementPanel = () => {
     } catch (err: unknown) {
       toast.error(
         "An error occurred: " +
-          (err instanceof Error ? err.message : String(err)),
+        (err instanceof Error ? err.message : String(err)),
       );
     }
   };
@@ -214,7 +214,7 @@ const UserManagementPanel = () => {
               required
               minLength={6}
               value={newUserPass}
-              onChange={(e) => newUserPass && setNewUserPass(e.target.value)}
+              onChange={(e) => setNewUserPass(e.target.value)}
               className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             />
           </div>
@@ -276,12 +276,11 @@ const UserManagementPanel = () => {
                     <td className="p-5">
                       <div className="flex flex-col gap-1.5">
                         <span
-                          className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
-                            u.plan_type === "pro" ||
-                            u.plan_type === "enterprise"
+                          className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${u.plan_type === "pro" ||
+                              u.plan_type === "enterprise"
                               ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
                               : "bg-white/5 text-white/50 border-white/10"
-                          }`}
+                            }`}
                         >
                           {u.plan_type || "TRIAL"}
                         </span>
@@ -308,23 +307,22 @@ const UserManagementPanel = () => {
                           </span>
                         </div>
                         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
-                          <motion.div 
+                          <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(100, (u.hotel_count / (u.max_hotels || 5)) * 100)}%` }}
-                            className={`h-full rounded-full ${
-                              (u.hotel_count / (u.max_hotels || 5)) > 0.9 
-                                ? 'bg-red-500' 
-                                : (u.hotel_count / (u.max_hotels || 5)) > 0.7 
-                                ? 'bg-orange-500' 
-                                : 'bg-[var(--soft-gold)]'
-                            } shadow-[0_0_8px_currentColor] opacity-80`}
+                            className={`h-full rounded-full ${(u.hotel_count / (u.max_hotels || 5)) > 0.9
+                                ? 'bg-red-500'
+                                : (u.hotel_count / (u.max_hotels || 5)) > 0.7
+                                  ? 'bg-orange-500'
+                                  : 'bg-[var(--soft-gold)]'
+                              } shadow-[0_0_8px_currentColor] opacity-80`}
                           />
                         </div>
                       </div>
                     </td>
                     <td className="p-5 text-center">
                       {u.scan_frequency_minutes &&
-                      u.scan_frequency_minutes > 0 ? (
+                        u.scan_frequency_minutes > 0 ? (
                         <div className="flex flex-col items-center gap-1 group/sync relative">
                           <div className="flex items-center gap-1.5 text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/10 px-2 py-1 rounded border border-[var(--soft-gold)]/20">
                             <RefreshCw className="w-3 h-3" />
