@@ -105,90 +105,55 @@ async def trigger_monitor_logic(
             is_admin = True
 
         if not is_admin:
-            # Enforce Limits
-            plan_type = "starter"
-            profiles_res = (
+            # FIX: Use SubscriptionService (not legacy tier_configs) to check limits.
+            # tier_configs is a separate table that may not have trial entries.
+            # SubscriptionService uses DEFAULT_TIERS as fallback (correctly configured
+            # for trial users to have enterprise-level access).
+            from backend.services.subscription import SubscriptionService
+
+            full_profile_res = (
                 db.table("profiles")
-                .select("plan_type")
+                .select("plan_type, subscription_status, current_period_end")
                 .eq("id", str(user_id))
                 .execute()
             )
-            if profiles_res.data:
-                plan_type = profiles_res.data[0].get("plan_type", "starter")
+            profile_data = full_profile_res.data[0] if full_profile_res.data else {}
+            access = await SubscriptionService.get_user_limits(db, profile_data)
 
-            # Fetch tier config
-            tier_res = (
-                db.table("tier_configs")
-                .select("manual_scans_per_day")
-                .eq("plan_type", plan_type)
-                .execute()
-            )
-            daily_manual_limit = (
-                tier_res.data[0].get("manual_scans_per_day", 0) if tier_res.data else 0
-            )
-
-            # Legacy monthly limit
-            plan_res = (
-                db.table("plans")
-                .select("monthly_scan_limit")
-                .eq("name", plan_type)
-                .execute()
-            )
-            monthly_total_limit = (
-                plan_res.data[0].get("monthly_scan_limit", 500)
-                if plan_res.data
-                else 500
-            )
-
-            # Recent scan counts
-            today_start = datetime.combine(
-                date.today(), datetime.min.time()
-            ).isoformat()
-            daily_manual_res = (
-                db.table("scan_sessions")
-                .select("id", count="exact")
-                .eq("user_id", str(user_id))
-                .eq("session_type", "manual")
-                .gte("created_at", today_start)
-                .execute()
-            )
-            current_daily_manual = daily_manual_res.count or 0
-
-            first_day = datetime(
-                datetime.now().year, datetime.now().month, 1
-            ).isoformat()
-            monthly_total_res = (
-                db.table("scan_sessions")
-                .select("id", count="exact")
-                .eq("user_id", str(user_id))
-                .gte("created_at", first_day)
-                .execute()
-            )
-            current_monthly_total = monthly_total_res.count or 0
-
-            if daily_manual_limit <= 0:
+            if access.get("state") == "locked":
+                reason = access.get("reason", "No Active Subscription")
+                logger.warning(f"Manual scan blocked for {user_id}: {reason}")
                 return MonitorResult(
                     hotels_checked=0,
                     prices_updated=0,
                     alerts_generated=0,
-                    errors=["MANUAL_SCAN_RESTRICTED"],
+                    errors=[f"SCAN_LOCKED: {reason}"],
                 )
 
-            if current_daily_manual >= daily_manual_limit:
-                return MonitorResult(
-                    hotels_checked=0,
-                    prices_updated=0,
-                    alerts_generated=0,
-                    errors=[f"DAILY_LIMIT_REACHED ({daily_manual_limit})"],
+            # Enterprise/trial/pro users with can_scan_hourly have unlimited manual scans.
+            # Only starter users without can_scan_hourly are rate-limited.
+            limits = access.get("limits", {})
+            if not limits.get("can_scan_hourly", False):
+                today_start = datetime.combine(
+                    date.today(), datetime.min.time()
+                ).isoformat()
+                daily_manual_res = (
+                    db.table("scan_sessions")
+                    .select("id", count="exact")
+                    .eq("user_id", str(user_id))
+                    .eq("session_type", "manual")
+                    .gte("created_at", today_start)
+                    .execute()
                 )
-
-            if current_monthly_total >= monthly_total_limit:
-                return MonitorResult(
-                    hotels_checked=0,
-                    prices_updated=0,
-                    alerts_generated=0,
-                    errors=[f"MONTHLY_LIMIT_REACHED ({monthly_total_limit})"],
-                )
+                current_daily_manual = daily_manual_res.count or 0
+                daily_manual_limit = 3  # Reasonable default for basic tiers
+                if current_daily_manual >= daily_manual_limit:
+                    return MonitorResult(
+                        hotels_checked=0,
+                        prices_updated=0,
+                        alerts_generated=0,
+                        errors=[f"DAILY_LIMIT_REACHED ({daily_manual_limit})"],
+                    )
 
     except Exception as e:
         logger.error(f"Limit check exception: {e}")
