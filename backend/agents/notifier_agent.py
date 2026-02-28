@@ -12,9 +12,17 @@ class NotifierAgent:
         from backend.utils.db import get_supabase
 
         self.db = db or get_supabase()
+        self._log_buffer = []
 
     async def log_reasoning(self, session_id, message: str):
+        """Append a message to the internal buffer instead of immediate DB write."""
         if not session_id:
+            return
+        self._log_buffer.append(f"[Notifier] {message}")
+
+    async def flush_logs(self, session_id):
+        """Perform a single batch update to persist all buffered reasoning traces."""
+        if not session_id or not self._log_buffer:
             return
         try:
             # Atomic fetch-modify-update
@@ -25,12 +33,13 @@ class NotifierAgent:
                 .execute()
             )
             trace = res.data[0]["reasoning_trace"] if res.data else []
-            trace.append(f"[Notifier] {message}")
+            trace.extend(self._log_buffer)
             self.db.table("scan_sessions").update({"reasoning_trace": trace}).eq(
                 "id", str(session_id)
             ).execute()
-        except Exception:
-            pass
+            self._log_buffer = []  # Clear after flush
+        except Exception as e:
+            print(f"[NotifierAgent] Failed to flush logs: {e}")
 
     async def dispatch_alerts(
         self,
@@ -46,6 +55,7 @@ class NotifierAgent:
                     session_id,
                     "No threshold breaches detected. Skipping notifications.",
                 )
+                await self.flush_logs(session_id)
             return
 
         if len(alerts) > 1:
@@ -86,3 +96,7 @@ class NotifierAgent:
             except Exception as e:
                 print(f"[NotifierAgent] Failed to dispatch alert: {e}")
                 await self.log_reasoning(session_id, f"Dispatch FAILED: {str(e)}")
+
+        # Final flush to persist all reasoning traces in one DB operation
+        if session_id:
+            await self.flush_logs(session_id)
