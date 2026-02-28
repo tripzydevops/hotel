@@ -10,7 +10,6 @@ from backend.services.monitor_service import (
     run_monitor_background,
 )
 from datetime import datetime, timezone
-import asyncio
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 
@@ -58,53 +57,15 @@ async def check_scheduled_scan(
         return {"triggered": False, "reason": "DB_UNAVAILABLE"}
 
     try:
-        # KAİZEN: Parallel Multi-Gate Check
-        # Instead of 4 sequential DB round-trips, we fetch all gates concurrently.
-        check_tasks = [
-            asyncio.to_thread(
-                lambda: (
-                    db.table("settings")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .execute()
-                )
-            ),
-            asyncio.to_thread(
-                lambda: (
-                    db.table("hotels")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .is_("deleted_at", "null")
-                    .execute()
-                )
-            ),
-            asyncio.to_thread(
-                lambda: (
-                    db.table("scan_sessions")
-                    .select("created_at")
-                    .eq("user_id", str(user_id))
-                    .in_("status", ["pending", "running"])
-                    .order("created_at", desc=True)
-                    .limit(1)
-                    .execute()
-                )
-            ),
-            asyncio.to_thread(
-                lambda: (
-                    db.table("price_logs")
-                    .select("recorded_at")
-                    .eq("user_id", str(user_id))
-                    .order("recorded_at", desc=True)
-                    .limit(1)
-                    .execute()
-                )
-            ),
-        ]
+        uid = str(user_id)
 
-        check_results = await asyncio.gather(*check_tasks)
-        settings_res, hotels_res, pending_scan, last_log = check_results
+        # FIX: Sequential queries — the old asyncio.gather + lambda approach ran 4
+        # concurrent Supabase queries on the same client object across threads,
+        # which is NOT thread-safe and was silently failing, causing all scans
+        # to return triggered:false while the UI still showed "Scan triggered!".
 
         # 1. Settings Check
+        settings_res = db.table("settings").select("*").eq("user_id", uid).execute()
         if not settings_res.data:
             return {"triggered": False, "reason": "NO_SETTINGS"}
 
@@ -114,22 +75,46 @@ async def check_scheduled_scan(
             return {"triggered": False, "reason": "MANUAL_ONLY"}
 
         # 2. Hotels Check
+        hotels_res = (
+            db.table("hotels")
+            .select("*")
+            .eq("user_id", uid)
+            .is_("deleted_at", "null")
+            .execute()
+        )
         hotels = hotels_res.data or []
         if not hotels:
             return {"triggered": False, "reason": "NO_HOTELS"}
 
-        # 3. Pending/Running Check (Anti-Collision)
-        if pending_scan.data:
-            pending_time = datetime.fromisoformat(
-                pending_scan.data[0]["created_at"].replace("Z", "+00:00")
+        # 3. Pending/Running Check (Anti-Collision — skipped when force=True)
+        if not force:
+            pending_res = (
+                db.table("scan_sessions")
+                .select("created_at")
+                .eq("user_id", uid)
+                .in_("status", ["pending", "running"])
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
             )
-            if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600:
-                if not force:
+            if pending_res.data:
+                pending_time = datetime.fromisoformat(
+                    pending_res.data[0]["created_at"].replace("Z", "+00:00")
+                )
+                if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600:
                     return {"triggered": False, "reason": "ALREADY_PENDING"}
 
-        # 4. Due Check
+        # 4. Due Check (skipped entirely when force=True)
         should_run = force
         if not should_run:
+            last_log = (
+                db.table("price_logs")
+                .select("recorded_at")
+                .eq("user_id", uid)
+                .order("recorded_at", desc=True)
+                .limit(1)
+                .execute()
+            )
             if not last_log.data:
                 should_run = True
             else:
@@ -148,10 +133,8 @@ async def check_scheduled_scan(
                     db.table("scan_sessions")
                     .insert(
                         {
-                            "user_id": str(user_id),
-                            "session_type": "scheduled"
-                            if not force
-                            else "manual_admin",
+                            "user_id": uid,
+                            "session_type": "manual" if force else "scheduled",
                             "hotels_count": len(hotels),
                             "status": "pending",
                         }
@@ -160,8 +143,9 @@ async def check_scheduled_scan(
                 )
                 if session_result.data:
                     session_id = session_result.data[0]["id"]
+                    print(f"[TriggerScan] Created session {session_id} for {uid}")
             except Exception as e:
-                print(f"LazyScheduler: Failed to create session: {e}")
+                print(f"[TriggerScan] Session create failed: {e}")
 
             background_tasks.add_task(
                 run_monitor_background,
@@ -175,7 +159,7 @@ async def check_scheduled_scan(
 
         return {"triggered": False, "reason": "NOT_DUE"}
     except Exception as e:
-        print(f"LazyScheduler error: {e}")
+        print(f"[TriggerScan] Unhandled error: {e}")
         return {"triggered": False, "reason": str(e)}
 
 
