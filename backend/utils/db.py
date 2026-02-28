@@ -17,9 +17,11 @@ def get_supabase() -> Client:
     """
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     # Prefer Service Role for backend logic, fallback to Anon for simple reads if necessary
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv(
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    )
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if not key:
+        print("WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Falling back to ANON_KEY. This may cause RLS-related data gaps (e.g., empty scan history).")
+        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+
 
     try:
         if not url or not key:
