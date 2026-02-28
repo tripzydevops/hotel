@@ -55,6 +55,16 @@ from backend.api import (
 # fail to match the registered routes (Double Prefixing Conflict).
 app = FastAPI(title="Hotel Rate Sentinel API", version="2026.02")
 
+# DIAGNOSTIC MIDDLEWARE: Log every request path to identify Vercel prefix issues
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    path = request.url.path
+    method = request.method
+    print(f"DEBUG: Request {method} {path}")
+    response = await call_next(request)
+    print(f"DEBUG: Response {response.status_code} for {path}")
+    return response
+
 
 # DIAGNOSTIC: Root Ping
 @app.get("/ping")
