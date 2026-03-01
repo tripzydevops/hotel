@@ -313,6 +313,8 @@ async def get_dashboard_logic(
             image_url = h.get("image_url") or dir_data.get("image_url")
             latitude = h.get("latitude") or dir_data.get("latitude")
             longitude = h.get("longitude") or dir_data.get("longitude")
+            amenities = h.get("amenities") or dir_data.get("amenities") or []
+            images = h.get("images") or dir_data.get("images") or []
 
             enriched_hotels.append(
                 {
@@ -328,6 +330,8 @@ async def get_dashboard_logic(
                     "sentiment_raw_breakdown": translate_breakdown(raw_breakdown),
                     "guest_mentions": h.get("guest_mentions")
                     or generate_mentions(raw_breakdown),
+                    "amenities": amenities,
+                    "images": images,
                     "price_info": price_info,
                     "price_history": [
                         {
@@ -403,28 +407,39 @@ async def get_dashboard_logic(
                     next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
 
         # 8. Dynamic Market Insight (Sentiment Page bridging)
-        market_insight = "Neutral market position"
+        synthetic_narrative = "No strategic narrative available yet. Run a scan to generate AI insights."
         comp_limit = 5  # Default comparison limit for dashboard UI
         if target_hotel and market_avg > 0:
             try:
-                # Calculate metrics for narrative
-                th_price = target_hotel.get("price_info", {}).get("current_price") or 0
-                th_rating = float(target_hotel.get("rating") or 0)
-                th_ari = (th_price / market_avg) * 100 if th_price > 0 else 100
-                th_sent_index = (
-                    (th_rating / market_avg_rating) * 100
-                    if market_avg_rating > 0
-                    else 100
+                from backend.services.analysis_service import (
+                    generate_synthetic_narrative,
+                    calculate_rate_recommendation,
                 )
 
-                market_insight = generate_synthetic_narrative(
-                    ari=th_ari,
-                    sentiment_index=th_sent_index,
-                    pricing_dna=target_hotel.get("pricing_dna_text"),
-                    hotel_name=target_hotel.get("name", "Your Hotel"),
-                )
-            except Exception as nie:
-                logger.warning(f"Narrative generation failed for dashboard: {nie}")
+                target_price = target_hotel.get("price_info", {}).get("current_price")
+                if target_price and market_avg > 0 and market_avg_rating > 0:
+                    ari = (target_price / market_avg) * 100
+                    target_rating = float(target_hotel.get("rating") or 0.0)
+                    sent_index = (target_rating / market_avg_rating) * 100
+                    
+                    # [FIX] Match signature in analysis_service.py
+                    synthetic_narrative = generate_synthetic_narrative(
+                        ari=ari,
+                        sent_index=sent_index,
+                        dna_text=target_hotel.get("pricing_dna_text"),
+                        hotel_name=target_hotel.get("name"),
+                    )
+            except Exception as e:
+                logger.warning(f"Narrative generation failed: {e}")
+
+        marketplace_data = {
+            "target_hotel": target_hotel,
+            "competitors": competitors,
+            "market_average": market_avg,
+            "synthetic_narrative": synthetic_narrative,
+            "last_updated": datetime.now().isoformat(),
+            "next_scan_at": next_scan_at,
+        }
 
         return {
             "target_hotel": target_hotel,
@@ -438,7 +453,7 @@ async def get_dashboard_logic(
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "profile": user_profile,
             "user_settings": user_settings,
-            "market_insight": market_insight,
+            "market_insight": synthetic_narrative, # Changed from market_insight to synthetic_narrative
         }
 
     except Exception as e:
