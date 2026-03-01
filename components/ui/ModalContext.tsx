@@ -25,8 +25,8 @@ interface ModalContextType {
   isScanSettingsOpen: boolean;
   setIsScanSettingsOpen: (open: boolean) => void;
   scanDefaults:
-    | { checkIn?: string; checkOut?: string; adults?: number }
-    | undefined;
+  | { checkIn?: string; checkOut?: string; adults?: number }
+  | undefined;
   setScanDefaults: (
     defaults:
       | { checkIn?: string; checkOut?: string; adults?: number }
@@ -105,12 +105,22 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   };
 
   const handleRefresh = (data: DashboardData | null) => {
+    // Only set defaults if they are current or future
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (data?.target_hotel?.price_info) {
-      setScanDefaults({
-        checkIn: data.target_hotel.price_info.check_in,
-        checkOut: data.target_hotel.price_info.check_out,
-        adults: data.target_hotel.price_info.adults,
-      });
+      const checkInDate = new Date(data.target_hotel.price_info.check_in);
+      if (checkInDate >= today) {
+        setScanDefaults({
+          checkIn: data.target_hotel.price_info.check_in,
+          checkOut: data.target_hotel.price_info.check_out,
+          adults: data.target_hotel.price_info.adults,
+        });
+      } else {
+        // Clear old dates to use "Today" default
+        setScanDefaults(undefined);
+      }
     }
     setIsScanSettingsOpen(true);
   };
