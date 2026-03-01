@@ -58,6 +58,17 @@ backend/libs
 debug_*.py
 reproduce_*.py
 test_*.py
+check_*.py
+diag_*.py
+verify_*.py
+lint_results*.json
+lint_report.txt
+tsc_output.txt
+*_heartbeat.txt
+session_check.txt
+log_dump.json
+price_logs_dump.json
+stitch_*.log
 
 # AI Agent Metadata
 .adal/
