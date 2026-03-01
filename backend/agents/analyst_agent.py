@@ -489,6 +489,8 @@ class AnalystAgent:
                     "reviews_list",
                     "review_count",
                     "stars",
+                    "amenities",
+                    "images",
                 ]:
                     key = (
                         "serp_api_id"
