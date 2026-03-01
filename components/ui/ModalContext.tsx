@@ -109,7 +109,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (data?.target_hotel?.price_info) {
+    if (data?.target_hotel?.price_info?.check_in) {
       const checkInDate = new Date(data.target_hotel.price_info.check_in);
       if (checkInDate >= today) {
         setScanDefaults({
@@ -121,6 +121,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         // Clear old dates to use "Today" default
         setScanDefaults(undefined);
       }
+    } else {
+      setScanDefaults(undefined);
     }
     setIsScanSettingsOpen(true);
   };

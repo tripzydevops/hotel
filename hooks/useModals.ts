@@ -54,7 +54,7 @@ export function useModals() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (data?.target_hotel?.price_info) {
+    if (data?.target_hotel?.price_info?.check_in) {
       const checkInDate = new Date(data.target_hotel.price_info.check_in);
       if (checkInDate >= today) {
         setScanDefaults({
@@ -65,6 +65,8 @@ export function useModals() {
       } else {
         setScanDefaults(undefined);
       }
+    } else {
+      setScanDefaults(undefined);
     }
     setIsScanSettingsOpen(true);
   };
