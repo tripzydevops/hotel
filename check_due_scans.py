@@ -4,11 +4,14 @@ import os
 import sys
 from datetime import datetime
 from uuid import UUID
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add backend to path
 sys.path.append(os.getcwd())
 
-from backend.services.supabase_client import get_supabase
+from backend.utils.db import get_supabase
 
 async def check_scans():
     supabase = get_supabase()

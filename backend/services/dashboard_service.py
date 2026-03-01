@@ -151,6 +151,16 @@ async def get_dashboard_logic(
                     .execute()
                 )
             ),
+            # 8. Core Profile (for next_scan_at)
+            asyncio.to_thread(
+                lambda: (
+                    db.table("profiles")
+                    .select("next_scan_at")
+                    .eq("id", str(user_id))
+                    .single()
+                    .execute()
+                )
+            ),
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -163,6 +173,7 @@ async def get_dashboard_logic(
         results[4] if not isinstance(results[4], Exception) else None
         sessions_res = results[5] if not isinstance(results[5], Exception) else None
         hotels_res = results[6] if not isinstance(results[6], Exception) else None
+        core_profile_res = results[7] if not isinstance(results[7], Exception) else None
 
         user_profile = (
             profile_res.data if profile_res and hasattr(profile_res, "data") else {}
@@ -365,21 +376,31 @@ async def get_dashboard_logic(
             if len(recent_searches) >= 10:
                 break
 
-        # Calculate Next Scan
-        next_scan_at = None
-        freq = (
-            (user_settings.get("check_frequency_minutes") or 0) if user_settings else 0
+        # [KAIZEN] Use profile next_scan_at as source of truth
+        # This aligns the Dashboard UI with the actual backend scheduler.
+        next_scan_at = (
+            core_profile_res.data.get("next_scan_at")
+            if core_profile_res and hasattr(core_profile_res, "data")
+            else None
         )
-        if freq > 0:
-            latest = None
-            for h in enriched_hotels:
-                if h["price_history"]:
-                    ts = h["price_history"][0]["recorded_at"]
-                    if latest is None or ts > latest:
-                        latest = ts
-            if latest:
-                last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
-                next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
+
+        # Fallback to calculated if next_scan_at is missing from profile
+        if not next_scan_at:
+            freq = (
+                (user_settings.get("check_frequency_minutes") or 0)
+                if user_settings
+                else 0
+            )
+            if freq > 0:
+                latest = None
+                for h in enriched_hotels:
+                    if h["price_history"]:
+                        ts = h["price_history"][0]["recorded_at"]
+                        if latest is None or ts > latest:
+                            latest = ts
+                if latest:
+                    last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
+                    next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
 
         # 8. Dynamic Market Insight (Sentiment Page bridging)
         market_insight = "Neutral market position"

@@ -2,6 +2,9 @@
 import asyncio
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Ensure backend module is resolvable
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
