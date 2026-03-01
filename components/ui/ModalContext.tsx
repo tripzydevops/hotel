@@ -84,14 +84,23 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
 
     // [FIX] The tile passes amenities/images in the hotel arg, but the cache
-    // lookup (fullHotel) may not have those fields. Merge to ensure they're preserved.
+    // lookup (fullHotel) may not have those fields (or may have empty arrays).
+    // Use || to fall back to the tile's values when cache has empty/undefined.
+    const cacheAmenities = (fullHotel as any)?.amenities;
+    const cacheImages = (fullHotel as any)?.images;
+
+    console.log("[HotelDetails] tile hotel.amenities:", hotel.amenities?.length, "| cache amenities:", cacheAmenities?.length);
+    console.log("[HotelDetails] tile hotel.images:", hotel.images?.length, "| cache images:", cacheImages?.length);
+
     const mergedHotel = fullHotel
       ? {
         ...fullHotel,
-        amenities: (fullHotel as any).amenities ?? hotel.amenities,
-        images: (fullHotel as any).images ?? hotel.images,
+        amenities: (cacheAmenities && cacheAmenities.length > 0) ? cacheAmenities : hotel.amenities,
+        images: (cacheImages && cacheImages.length > 0) ? cacheImages : hotel.images,
       }
       : hotel;
+
+    console.log("[HotelDetails] merged amenities:", (mergedHotel as any).amenities?.length, "images:", (mergedHotel as any).images?.length);
 
     setSelectedHotelForDetails(mergedHotel);
     setIsDetailsModalOpen(true);
