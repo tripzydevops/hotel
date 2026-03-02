@@ -39,23 +39,20 @@ export default function ScanSettingsModal({
 }: ScanSettingsModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
-  // Fix date calculation to use local time instead of UTC
-  const today = new Date();
-  const todayStr =
-    today.getFullYear() +
-    "-" +
-    String(today.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(today.getDate()).padStart(2, "0");
 
+  // Helper: format a Date to YYYY-MM-DD using local time
+  const toDateStr = (d: Date) =>
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0");
+
+  const today = new Date();
+  const todayStr = toDateStr(today);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr =
-    tomorrow.getFullYear() +
-    "-" +
-    String(tomorrow.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(tomorrow.getDate()).padStart(2, "0");
+  const tomorrowStr = toDateStr(tomorrow);
 
   const [checkIn, setCheckIn] = useState(initialValues?.checkIn || todayStr);
   const [checkOut, setCheckOut] = useState(
@@ -66,12 +63,36 @@ export default function ScanSettingsModal({
   const isEnterprise = userPlan === "enterprise" || userPlan === "trial" || userPlan === "pro";
 
   useEffect(() => {
-    if (isOpen && initialValues) {
-      if (initialValues.checkIn) setCheckIn(initialValues.checkIn);
-      if (initialValues.checkOut) setCheckOut(initialValues.checkOut);
-      if (initialValues.adults) setAdults(initialValues.adults);
+    if (!isOpen) return;
+    if (initialValues?.checkIn) {
+      setCheckIn(initialValues.checkIn);
+      // Use provided checkout only if it's strictly after checkin
+      const coDate = initialValues.checkOut ? new Date(initialValues.checkOut) : null;
+      const ciDate = new Date(initialValues.checkIn);
+      if (coDate && coDate > ciDate) {
+        setCheckOut(initialValues.checkOut!);
+      } else {
+        const next = new Date(ciDate);
+        next.setDate(next.getDate() + 1);
+        setCheckOut(toDateStr(next));
+      }
+    } else {
+      // No defaults provided — always reset to today/tomorrow
+      setCheckIn(todayStr);
+      setCheckOut(tomorrowStr);
     }
-  }, [isOpen, initialValues]);
+    if (initialValues?.adults) setAdults(initialValues.adults);
+  }, [isOpen, initialValues]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-advance checkout when user picks a check-in >= current checkout
+  const handleCheckInChange = (newCheckIn: string) => {
+    setCheckIn(newCheckIn);
+    if (checkOut <= newCheckIn) {
+      const next = new Date(newCheckIn);
+      next.setDate(next.getDate() + 1);
+      setCheckOut(toDateStr(next));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -165,7 +186,7 @@ export default function ScanSettingsModal({
                   type="date"
                   min={todayStr}
                   value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
+                  onChange={(e) => handleCheckInChange(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
                 />
               </div>

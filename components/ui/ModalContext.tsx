@@ -130,9 +130,22 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     if (data?.target_hotel?.price_info?.check_in) {
       const checkInDate = new Date(data.target_hotel.price_info.check_in);
       if (checkInDate >= today) {
+        // Validate that checkOut is strictly after checkIn; fix if not
+        const storedCheckOut = data.target_hotel.price_info.check_out;
+        const checkOutDate = storedCheckOut ? new Date(storedCheckOut) : null;
+        const minCheckOut = new Date(checkInDate);
+        minCheckOut.setDate(minCheckOut.getDate() + 1);
+        const validCheckOut =
+          checkOutDate && checkOutDate > checkInDate
+            ? storedCheckOut
+            : [
+              minCheckOut.getFullYear(),
+              String(minCheckOut.getMonth() + 1).padStart(2, "0"),
+              String(minCheckOut.getDate()).padStart(2, "0"),
+            ].join("-");
         setScanDefaults({
           checkIn: data.target_hotel.price_info.check_in,
-          checkOut: data.target_hotel.price_info.check_out,
+          checkOut: validCheckOut,
           adults: data.target_hotel.price_info.adults,
         });
       } else {
