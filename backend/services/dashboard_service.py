@@ -342,6 +342,21 @@ async def get_dashboard_logic(
             images = h.get("images") or dir_data.get("images") or []
             reviews = h.get("reviews") or dir_data.get("reviews") or []
 
+            # [PRO-FALLBACK] Cross-User Recovery for Rating & Review Count
+            # If still missing after directory check, we search global history.
+            if (rating is None or rating == 0) and h.get("serp_api_id"):
+                sid = h["serp_api_id"]
+                try:
+                    g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                    if g_res.data:
+                        g_hids = [str(gh["id"]) for gh in g_res.data]
+                        gh_res = db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
+                        if gh_res.data:
+                            rating = gh_res.data[0].get("rating")
+                            review_count = gh_res.data[0].get("review_count")
+                            logger.info(f"[GlobalPulse/ScoreCard] Recovered {rating} stars for {sid}")
+                except Exception: pass
+
             enriched_hotels.append(
                 {
                     **dir_data,
