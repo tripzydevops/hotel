@@ -86,7 +86,7 @@ export default function AdvisorQuadrant({
   const posDescription = t(`strategicMap.positions.${posKey}.description`);
 
   return (
-    <div className={`overflow-hidden ${!compact ? "glass-card" : ""}`}>
+    <div className={`${!compact ? "glass-card" : ""}`}>
       <div className="flex flex-col lg:flex-row">
         {/* Quadrant Visualization - Left Side */}
         <div className={`relative flex-1 ${compact ? "h-[320px] lg:h-[380px]" : "h-[240px] lg:h-[280px]"} p-4`}>
@@ -180,17 +180,23 @@ export default function AdvisorQuadrant({
             {/* EXPLANATION: Smart Tooltip Positioning
                 If the indicator is in the upper half of the chart (topPercent < 45),
                 the tooltip renders BELOW the icon to avoid clipping off the top edge.
-                Otherwise it renders ABOVE. The tooltip is pointer-events-none so it
-                doesn't interfere with the hover detection on the parent div. */}
+                Otherwise it renders ABOVE. 
+                
+                KAIZEN: Horizontal Smart Positioning
+                If indicator is too far left (leftPercent < 30) or too far right (leftPercent > 70),
+                we shift the tooltip horizontally to avoid sidebar/edge clipping.
+                */}
             {/* Hover Tooltip */}
             {isHovered && (
               <div
-                className={`absolute left-1/2 -translate-x-1/2 z-50 w-[280px] pointer-events-none
+                className={`absolute z-50 w-[280px] pointer-events-none transition-all duration-300
+                  ${leftPercent < 30 ? "left-0 translate-x-0" : leftPercent > 70 ? "right-0 translate-x-0" : "left-1/2 -translate-x-1/2"}
                   ${topPercent < 45 ? "top-full mt-3" : "bottom-full mb-3"}`}
               >
                 {/* Arrow */}
                 <div
-                  className={`absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-black/90 border border-white/10
+                  className={`absolute w-2.5 h-2.5 rotate-45 bg-black/90 border border-white/10
+                    ${leftPercent < 30 ? "left-4" : leftPercent > 70 ? "right-4" : "left-1/2 -translate-x-1/2"}
                     ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
                 />
                 <div className="relative bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl shadow-black/60">

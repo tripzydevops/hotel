@@ -693,7 +693,7 @@ export default function SentimentPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-white/[0.08] shadow-xl relative overflow-hidden group min-h-[440px]"
+              className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-white/[0.08] shadow-xl relative group min-h-[440px]"
             >
               <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
                 <Brain className="w-16 h-16 text-blue-300" />
