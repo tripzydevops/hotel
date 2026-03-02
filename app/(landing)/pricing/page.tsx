@@ -89,7 +89,7 @@ export default function PricingPage() {
   /* EXPLANATION: Feature comparison rows for the pricing table.
      true = included, false = not included */
   const features = [
-    { name: "Ekli Otel Takibi", values: ["5", "20", "100"] },
+    { name: "Ekli Otel Takibi", values: ["5", "25", "100"] },
     { name: "Pazar Karşılaştırma", values: ["5", "5", "10"] },
     { name: "Tarama sıklığı", values: ["Günlük", "Saatlik", "Gerçek zamanlı"] },
     { name: "E-posta uyarıları", values: [true, true, true] },
