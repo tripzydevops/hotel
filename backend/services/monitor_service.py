@@ -134,6 +134,30 @@ async def trigger_monitor_logic(
             # Only starter users without can_scan_hourly are rate-limited.
             limits = access.get("limits", {})
             if not limits.get("can_scan_hourly", False):
+                # Check Monthly Limit from DB
+                monthly_limit = limits.get("monthly_scan_limit", 30)
+                
+                # Count current month usage
+                month_start = date.today().replace(day=1).isoformat()
+                monthly_manual_res = (
+                    db.table("scan_sessions")
+                    .select("id", count="exact")
+                    .eq("user_id", str(user_id))
+                    .eq("session_type", "manual")
+                    .gte("created_at", month_start)
+                    .execute()
+                )
+                current_monthly_manual = monthly_manual_res.count or 0
+                
+                if current_monthly_manual >= monthly_limit:
+                    return MonitorResult(
+                        hotels_checked=0,
+                        prices_updated=0,
+                        alerts_generated=0,
+                        errors=[f"MONTHLY_LIMIT_REACHED ({monthly_limit})"],
+                    )
+
+                # Daily "burst" protection for non-priority tiers
                 today_start = datetime.combine(
                     date.today(), datetime.min.time()
                 ).isoformat()
@@ -146,13 +170,13 @@ async def trigger_monitor_logic(
                     .execute()
                 )
                 current_daily_manual = daily_manual_res.count or 0
-                daily_manual_limit = 3  # Reasonable default for basic tiers
-                if current_daily_manual >= daily_manual_limit:
+                daily_burst_limit = 5
+                if current_daily_manual >= daily_burst_limit:
                     return MonitorResult(
                         hotels_checked=0,
                         prices_updated=0,
                         alerts_generated=0,
-                        errors=[f"DAILY_LIMIT_REACHED ({daily_manual_limit})"],
+                        errors=[f"DAILY_BURST_LIMIT_REACHED ({daily_burst_limit})"],
                     )
 
     except Exception as e:
