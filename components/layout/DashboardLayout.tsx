@@ -89,7 +89,9 @@ export default function DashboardLayout({
   const isLoginPage = pathname === "/login";
   const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
-  if (!mounted) {
+  const { userId, loading: authLoading } = useAuth();
+
+  if (!mounted || authLoading) {
     if (isLoginPage || isAdminPage) return <>{children}</>;
     return null;
   }
@@ -155,8 +157,8 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("en")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                      ? "bg-[#F6C344] text-[#050B18]"
-                      : "text-slate-500 hover:text-white"
+                    ? "bg-[#F6C344] text-[#050B18]"
+                    : "text-slate-500 hover:text-white"
                     }`}
                 >
                   EN
@@ -164,8 +166,8 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("tr")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                      ? "bg-[#F6C344] text-[#050B18]"
-                      : "text-slate-500 hover:text-white"
+                    ? "bg-[#F6C344] text-[#050B18]"
+                    : "text-slate-500 hover:text-white"
                     }`}
                 >
                   TR

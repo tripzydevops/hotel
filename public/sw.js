@@ -55,22 +55,31 @@ self.addEventListener('notificationclick', function (event) {
             type: 'window',
             includeUncontrolled: true
         }).then((windowClients) => {
-            // Check if there is already a window/tab open with the target URL
+            // EXPLANATION: Enhanced Tab Deduplication & Navigation
+            // We search for any tab open on the same origin. 
+            // If found, we navigate it to /dashboard (if needed) and focus it.
+            // This prevents duplicate tabs while ensuring the user sees the latest data.
             let matchingClient = null;
+
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
-                // Match if the client is on the same origin (covers /dashboard, /, etc.)
                 if (new URL(client.url).origin === origin) {
                     matchingClient = client;
                     break;
                 }
             }
 
+            const targetUrl = origin + '/dashboard';
+
             if (matchingClient) {
+                // If it's already focused and on the right page, just return.
+                // Otherwise, navigate it to ensure we hit the dashboard.
+                if (matchingClient.url !== targetUrl) {
+                    return matchingClient.navigate(targetUrl).then(c => c.focus());
+                }
                 return matchingClient.focus();
             } else {
-                // Only open a new window if one doesn't already exist
-                return clients.openWindow(origin + '/dashboard');
+                return clients.openWindow(targetUrl);
             }
         })
     );

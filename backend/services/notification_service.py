@@ -92,7 +92,7 @@ class NotificationService:
             summary_lines.append(f"... and {count - 5} more alerts.")
 
         full_summary = "\n".join(summary_lines)
-        push_title = f"Rate Sentinel: {count} Price Alerts Found"
+        push_title = f"Hotel Plus: {count} Price Alerts Found"
 
         # 1. Email Summary
         if settings.get("notification_email"):
@@ -204,7 +204,7 @@ class NotificationService:
                 {
                     "title": f"Price Alert: {hotel_name}"
                     if hotel_name
-                    else "Rate Sentinel Alert",
+                    else "Hotel Plus Alert",
                     "body": message,
                 }
             )
