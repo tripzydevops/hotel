@@ -1,0 +1,13 @@
+# Vercel Ignore
+venv/
+.venv/
+.mypy_cache/
+.pytest_cache/
+node_modules/
+.next/
+.git/
+tests/
+*.log
+.agent/
+.agents/
+skills/
