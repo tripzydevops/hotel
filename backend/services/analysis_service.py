@@ -1364,11 +1364,14 @@ async def get_market_intelligence_data(
     hotels = hotels_result.data or []
 
     # EXPLANATION: Global Pulse Fallback (Cross-User Data Recovery)
-    # If a hotel is missing its main rating (None or 0) and its personal history is empty
-    # (common for re-added hotels), we search globally for ANY record sharing
-    # the same serp_api_id. This ensures "tons of data" from other users
-    # is inherited instantly.
-    hotels_to_recover = [h for h in hotels if h.get("rating") is None or h.get("rating") == 0]
+    # If a hotel is missing its main rating (None or 0) OR its review count (None or 0)
+    # and its personal history is empty (common for re-added hotels), we search 
+    # globally for ANY record sharing the same serp_api_id.
+    hotels_to_recover = [
+        h for h in hotels 
+        if h.get("rating") is None or h.get("rating") == 0 
+        or h.get("review_count") is None or h.get("review_count") == 0
+    ]
     if hotels_to_recover:
         for missing_h in hotels_to_recover:
             sid = missing_h.get("serp_api_id")

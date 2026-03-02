@@ -344,7 +344,7 @@ async def get_dashboard_logic(
 
             # [PRO-FALLBACK] Cross-User Recovery for Rating & Review Count
             # If still missing after directory check, we search global history.
-            if (rating is None or rating == 0) and h.get("serp_api_id"):
+            if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
                 try:
                     g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
