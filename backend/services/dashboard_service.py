@@ -301,7 +301,10 @@ async def get_dashboard_logic(
                     logger.warning(f"Price processing error: {e}")
 
             # Sentiment Processing
-            raw_breakdown = h.get("sentiment_breakdown") or []
+            # [FIX] Sentiment Fallback (Kaizen)
+            # If the user's specific hotel record is missing sentiment (e.g. newly re-added),
+            # we fallback to historical sentiment persisted in the global directory.
+            raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown") or []
             item_sentiment = normalize_sentiment(raw_breakdown)
 
             # [FIX] Resilient Metadata Merging
@@ -315,6 +318,7 @@ async def get_dashboard_logic(
             longitude = h.get("longitude") or dir_data.get("longitude")
             amenities = h.get("amenities") or dir_data.get("amenities") or []
             images = h.get("images") or dir_data.get("images") or []
+            reviews = h.get("reviews") or dir_data.get("reviews") or []
 
             enriched_hotels.append(
                 {
@@ -332,6 +336,7 @@ async def get_dashboard_logic(
                     or generate_mentions(raw_breakdown),
                     "amenities": amenities,
                     "images": images,
+                    "reviews": reviews,
                     "price_info": price_info,
                     "price_history": [
                         {

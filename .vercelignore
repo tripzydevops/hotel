@@ -6,6 +6,11 @@ node_modules/
 .next/
 .vercel/
 .git/
+.npm/
+.cache/
+.config/
+.local/
+.gemini/
 
 # AI Agent Metadata & Directories
 .agent/
@@ -55,3 +60,18 @@ tests/
 _supabase_shadow/
 docs/
 backend/libs/
+backend/docs/
+backend/tests/
+reproduce_*.py
+test_*.py
+check_*.py
+diag_*.py
+verify_*.py
+lint_results*.json
+lint_report.txt
+tsc_output.txt
+*_heartbeat.txt
+session_check.txt
+log_dump.json
+price_logs_dump.json
+stitch_*.log

@@ -204,7 +204,7 @@ async def add_hotel_to_account_logic(
                 # KAİZEN: Use available columns (hotel_directory lacks review_count)
                 dir_res = (
                     db.table("hotel_directory")
-                    .select("serp_api_id, rating, image_url")
+                    .select("serp_api_id, rating, image_url, sentiment_breakdown, reviews")
                     .eq("name", name)
                     .eq("location", location)
                     .execute()
@@ -214,6 +214,9 @@ async def add_hotel_to_account_logic(
                     serp_api_id = serp_api_id or d.get("serp_api_id")
                     rating = rating or d.get("rating")
                     image_url = image_url or d.get("image_url")
+                    # Fallback for historical sentiment
+                    sentiment_breakdown = hotel_data.get("sentiment_breakdown") or d.get("sentiment_breakdown")
+                    reviews = hotel_data.get("reviews") or d.get("reviews")
                     print(f"Service: Auto-discovered metadata for {name}")
 
         # Prepare data for insertion
@@ -227,6 +230,8 @@ async def add_hotel_to_account_logic(
             "rating": rating,
             "review_count": review_count,
             "image_url": image_url,
+            "sentiment_breakdown": hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None),
+            "reviews": hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None),
         }
 
         # Insert into user's hotels list
@@ -255,6 +260,8 @@ async def add_hotel_to_account_logic(
                         "rating": hotel_data.get("rating"),
                         "stars": hotel_data.get("stars"),
                         "image_url": hotel_data.get("image_url"),
+                        "sentiment_breakdown": hotel_data.get("sentiment_breakdown"),
+                        "reviews": hotel_data.get("reviews"),
                         "last_verified_at": datetime.now().isoformat(),
                     },
                     on_conflict="serp_api_id",

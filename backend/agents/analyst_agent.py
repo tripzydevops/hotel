@@ -545,6 +545,27 @@ class AnalystAgent:
                 # Update Hotel Metadata
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
 
+                # [Global Directory Sync]
+                # Sync sentiment and metadata back to the shared directory
+                # so that newly added hotels (by any user) can benefit from this data.
+                serp_id = meta_update.get("serp_api_id") or price_data.get("property_token") or price_data.get("serp_api_id")
+                if serp_id:
+                    dir_sync = {
+                        "rating": meta_update.get("rating"),
+                        "stars": meta_update.get("stars"),
+                        "review_count": meta_update.get("review_count"),
+                        "image_url": meta_update.get("image_url"),
+                        "sentiment_breakdown": meta_update.get("sentiment_breakdown"),
+                        "reviews": meta_update.get("reviews"),
+                        "last_verified_at": datetime.now().isoformat()
+                    }
+                    dir_sync = {k: v for k, v in dir_sync.items() if v is not None}
+                    if dir_sync:
+                        try:
+                            self.db.table("hotel_directory").update(dir_sync).eq("serp_api_id", serp_id).execute()
+                        except Exception as dse:
+                            print(f"[AnalystAgent] Directory sync failed: {dse}")
+
                 # EXPLANATION: Parallel Embedding Collection
                 # Previously, embeddings were generated sequentially for each hotel,
                 # causing massive latency (approx 2s per hotel).
