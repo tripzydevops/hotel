@@ -343,19 +343,39 @@ async def get_dashboard_logic(
             reviews = h.get("reviews") or dir_data.get("reviews") or []
 
             # [PRO-FALLBACK] Cross-User Recovery for Rating & Review Count
-            # If still missing after directory check, we search global history.
+            # If still missing after directory check, we search global data.
             if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
                 try:
-                    g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                    g_res = db.table("hotels").select("id, rating, review_count").eq("serp_api_id", sid).execute()
                     if g_res.data:
-                        g_hids = [str(gh["id"]) for gh in g_res.data]
-                        gh_res = db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
-                        if gh_res.data:
-                            rating = gh_res.data[0].get("rating")
-                            review_count = gh_res.data[0].get("review_count")
-                            logger.info(f"[GlobalPulse/ScoreCard] Recovered {rating} stars for {sid}")
-                except Exception: pass
+                        # First: try to get review_count directly from any hotel record
+                        for gh in g_res.data:
+                            if gh.get("review_count") and gh["review_count"] > 0:
+                                review_count = gh["review_count"]
+                                break
+                        # Also get rating from hotel records if still missing
+                        for gh in g_res.data:
+                            if gh.get("rating") and gh["rating"] > 0:
+                                rating = rating if (rating and rating > 0) else gh["rating"]
+                                break
+
+                        # If review_count still missing, check sentiment_history
+                        if not review_count or review_count == 0:
+                            g_hids = [str(gh["id"]) for gh in g_res.data]
+                            gh_res = db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
+                            if gh_res.data:
+                                sh_rating = gh_res.data[0].get("rating")
+                                sh_rc = gh_res.data[0].get("review_count")
+                                if sh_rating and (not rating or rating == 0):
+                                    rating = sh_rating
+                                if sh_rc and sh_rc > 0:
+                                    review_count = sh_rc
+
+                        if rating or review_count:
+                            logger.info(f"[GlobalPulse/ScoreCard] Recovered rating={rating}, reviews={review_count} for {sid}")
+                except Exception:
+                    pass
 
             enriched_hotels.append(
                 {

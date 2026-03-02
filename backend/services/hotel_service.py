@@ -204,7 +204,7 @@ async def add_hotel_to_account_logic(
                 # KAİZEN: Use available columns (hotel_directory lacks review_count)
                 dir_res = (
                     db.table("hotel_directory")
-                    .select("serp_api_id, rating, image_url, sentiment_breakdown, reviews")
+                    .select("serp_api_id, rating, review_count, image_url, sentiment_breakdown, reviews")
                     .eq("name", name)
                     .eq("location", location)
                     .execute()
@@ -213,6 +213,7 @@ async def add_hotel_to_account_logic(
                     d = dir_res.data[0]
                     serp_api_id = serp_api_id or d.get("serp_api_id")
                     rating = rating or d.get("rating")
+                    review_count = review_count or d.get("review_count")
                     image_url = image_url or d.get("image_url")
                     # Fallback for historical sentiment
                     sentiment_breakdown = hotel_data.get("sentiment_breakdown") or d.get("sentiment_breakdown")
@@ -259,6 +260,7 @@ async def add_hotel_to_account_logic(
                         "longitude": hotel_data.get("longitude"),
                         "rating": hotel_data.get("rating"),
                         "stars": hotel_data.get("stars"),
+                        "review_count": hotel_data.get("review_count"),
                         "image_url": hotel_data.get("image_url"),
                         "sentiment_breakdown": hotel_data.get("sentiment_breakdown"),
                         "reviews": hotel_data.get("reviews"),

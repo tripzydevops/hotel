@@ -1395,27 +1395,42 @@ async def get_market_intelligence_data(
                         continue
             except Exception: pass
 
-            # Step B: Check Global History (thorough)
+            # Step B: Check Global Data (Hotels and History)
             try:
-                global_h_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                global_h_res = db.table("hotels").select("id, rating, review_count").eq("serp_api_id", sid).execute()
                 if global_h_res.data:
-                    g_hids = [str(gh["id"]) for gh in global_h_res.data]
-                    sh_res = (
-                        db.table("sentiment_history")
-                        .select("rating, review_count, sentiment_breakdown")
-                        .in_("hotel_id", g_hids)
-                        .order("recorded_at", desc=True)
-                        .limit(1)
-                        .execute()
-                    )
-                    if sh_res.data:
-                        h_entry = sh_res.data[0]
-                        if h_entry.get("rating"):
-                            missing_h["rating"] = h_entry.get("rating")
-                            missing_h["review_count"] = h_entry.get("review_count")
-                        if h_entry.get("sentiment_breakdown"):
-                            missing_h["sentiment_breakdown"] = h_entry.get("sentiment_breakdown")
-                        logger.info(f"[GlobalPulse] Recovered from Global History for {sid}: {missing_h.get('rating')} stars")
+                    # First: try to get review_count directly from any hotel record
+                    for gh in global_h_res.data:
+                        if gh.get("review_count") and gh["review_count"] > 0:
+                            missing_h["review_count"] = gh["review_count"]
+                            break
+                    # Also get rating from hotel records if still missing
+                    for gh in global_h_res.data:
+                        if gh.get("rating") and gh["rating"] > 0:
+                            missing_h["rating"] = gh["rating"]
+                            break
+
+                    # If data still missing, check sentiment_history
+                    if not missing_h.get("review_count") or not missing_h.get("rating"):
+                        g_hids = [str(gh["id"]) for gh in global_h_res.data]
+                        sh_res = (
+                            db.table("sentiment_history")
+                            .select("rating, review_count, sentiment_breakdown")
+                            .in_("hotel_id", g_hids)
+                            .order("recorded_at", desc=True)
+                            .limit(1)
+                            .execute()
+                        )
+                        if sh_res.data:
+                            h_entry = sh_res.data[0]
+                            if h_entry.get("rating") and not missing_h.get("rating"):
+                                missing_h["rating"] = h_entry.get("rating")
+                            if h_entry.get("review_count") and not missing_h.get("review_count"):
+                                missing_h["review_count"] = h_entry.get("review_count")
+                            if h_entry.get("sentiment_breakdown") and not missing_h.get("sentiment_breakdown"):
+                                missing_h["sentiment_breakdown"] = h_entry.get("sentiment_breakdown")
+                    
+                    logger.info(f"[GlobalPulse] Recovered from Global Data for {sid}: {missing_h.get('rating')} stars, {missing_h.get('review_count')} reviews")
             except Exception as e:
                 logger.error(f"[GlobalPulse] Recovery failed for {sid}: {e}")
 

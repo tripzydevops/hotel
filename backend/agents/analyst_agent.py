@@ -585,7 +585,7 @@ class AnalystAgent:
                         {
                             "hotel_id": hotel_id,
                             "rating": price_data.get("rating"),
-                            "review_count": price_data.get("review_count", 0),
+                            "review_count": price_data.get("review_count") or None,
                             "sentiment_breakdown": price_data.get(
                                 "reviews_breakdown", []
                             ),

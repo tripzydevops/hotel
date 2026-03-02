@@ -727,6 +727,15 @@ class SerpApiClient:
             except Exception:
                 pass
 
+        # EXPLANATION: Smart Review Count Extraction (Kaizen 2026)
+        # SerpApi uses "reviews" as an integer in search results (properties list)
+        # but as an array of review objects on detail pages. We check "total_reviews"
+        # first (detail page integer), then fall back to "reviews" only if it's an int.
+        raw_reviews = best_match.get("total_reviews") or best_match.get("reviews")
+        review_count = raw_reviews if isinstance(raw_reviews, int) else (
+            len(raw_reviews) if isinstance(raw_reviews, list) else None
+        )
+
         return {
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": price,
@@ -740,7 +749,7 @@ class SerpApiClient:
                 else "SerpApi"
             ),
             "rating": best_match.get("overall_rating"),
-            "review_count": best_match.get("reviews"),
+            "review_count": review_count,
             "stars": best_match.get("extracted_hotel_class"),
             "property_token": best_match.get("property_token"),
             "image_url": best_match.get("images", [{}])[0].get("thumbnail"),
