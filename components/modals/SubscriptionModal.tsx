@@ -32,6 +32,7 @@ export default function SubscriptionModal({
         t("subscription.starter.features.1"),
         t("subscription.starter.features.2"),
         t("subscription.starter.features.3"),
+        t("subscription.starter.features.4"),
       ],
       limit: 5,
       icon: Building2,
@@ -49,6 +50,7 @@ export default function SubscriptionModal({
         t("subscription.pro.features.2"),
         t("subscription.pro.features.3"),
         t("subscription.pro.features.4"),
+        t("subscription.pro.features.5"),
       ],
       limit: 25,
       icon: Zap,
@@ -65,8 +67,9 @@ export default function SubscriptionModal({
         t("subscription.enterprise.features.2"),
         t("subscription.enterprise.features.3"),
         t("subscription.enterprise.features.4"),
+        t("subscription.enterprise.features.5"),
       ],
-      limit: 999,
+      limit: 100,
       icon: Crown,
     },
   ];
@@ -119,11 +122,10 @@ export default function SubscriptionModal({
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl p-6 border transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl md:hover:shadow-[var(--soft-gold)]/10 flex flex-col ${
-                  isPopular
+                className={`relative rounded-2xl p-6 border transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl md:hover:shadow-[var(--soft-gold)]/10 flex flex-col ${isPopular
                     ? "bg-gradient-to-b from-white/10 to-transparent border-[var(--soft-gold)]"
                     : "bg-white/5 border-white/10"
-                }`}
+                  }`}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--soft-gold)] text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
@@ -169,13 +171,12 @@ export default function SubscriptionModal({
                 <button
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={isCurrent || loading !== null}
-                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                    isCurrent
+                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isCurrent
                       ? "bg-white/10 text-white cursor-default"
                       : isPopular
                         ? "btn-gold shadow-lg shadow-[var(--soft-gold)]/20 hover:scale-[1.02]"
                         : "bg-white text-black hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   {loading === plan.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
