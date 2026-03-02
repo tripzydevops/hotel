@@ -1,3 +1,5 @@
+const VERSION = 'v1.1.0'; // KAİZEN: Version bump to force update
+
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
@@ -36,18 +38,13 @@ self.addEventListener('push', function (event) {
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('Notification click received. Action:', event.action);
+    console.log(`[SW ${VERSION}] Notification click received. Action:`, event.action);
     event.notification.close();
 
-    // EXPLANATION: Handle 'close' action explicitly
-    // If the user clicks the 'Close' button, we should just dismiss the notification
-    // without opening or focusing any windows.
     if (event.action === 'close') {
-        console.log('Notification closed by user action.');
         return;
     }
 
-    // The base URL of the app
     const origin = self.location.origin;
 
     event.waitUntil(
@@ -55,26 +52,33 @@ self.addEventListener('notificationclick', function (event) {
             type: 'window',
             includeUncontrolled: true
         }).then((windowClients) => {
-            // EXPLANATION: Enhanced Tab Deduplication & Navigation
-            // We search for any tab open on the same origin. 
-            // If found, we navigate it to /dashboard (if needed) and focus it.
-            // This prevents duplicate tabs while ensuring the user sees the latest data.
+            // EXPLANATION: Robust URL Normalization
+            // Browsers often treat 'site.com' and 'site.com/' as different strings.
+            // We normalize both to ensure we find the existing dashboard tab.
+            const normalize = (url) => url.replace(/\/$/, "");
+            const targetUrl = origin + '/dashboard';
+            const normalizedTarget = normalize(targetUrl);
+
             let matchingClient = null;
 
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
+                const normalizedClientUrl = normalize(client.url);
+
+                // Match if same origin (covers landing/login) or exact dashboard match
                 if (new URL(client.url).origin === origin) {
                     matchingClient = client;
-                    break;
+                    // If we find an exact match for dashboard, prioritize it
+                    if (normalizedClientUrl === normalizedTarget) {
+                        break;
+                    }
                 }
             }
 
-            const targetUrl = origin + '/dashboard';
-
             if (matchingClient) {
-                // If it's already focused and on the right page, just return.
-                // Otherwise, navigate it to ensure we hit the dashboard.
-                if (matchingClient.url !== targetUrl) {
+                // If it's already on the right page, just focus.
+                // Otherwise, navigate it to the dashboard.
+                if (normalize(matchingClient.url) !== normalizedTarget) {
                     return matchingClient.navigate(targetUrl).then(c => c.focus());
                 }
                 return matchingClient.focus();

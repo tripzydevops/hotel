@@ -14,6 +14,8 @@ import { ToastProvider } from "@/components/ui/ToastContext";
 import { ModalProvider } from "@/components/ui/ModalContext";
 import QueryProvider from "@/components/providers/QueryProvider";
 
+import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
+
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
@@ -43,7 +45,9 @@ export default function RootLayout({
             <QueryProvider>
               <ToastProvider>
                 <ModalProvider>
-                  {children}
+                  <ServiceWorkerProvider>
+                    {children}
+                  </ServiceWorkerProvider>
                 </ModalProvider>
               </ToastProvider>
             </QueryProvider>
