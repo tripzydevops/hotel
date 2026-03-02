@@ -1,13 +1,57 @@
 # Vercel Ignore
+# Core Exclusions
 venv/
 .venv/
-.mypy_cache/
-.pytest_cache/
 node_modules/
 .next/
+.vercel/
 .git/
-tests/
-*.log
+
+# AI Agent Metadata & Directories
 .agent/
 .agents/
-skills/
+.adal/
+.augment/
+.claude/
+.cline/
+.codebuddy/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.factory/
+.goose/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# Python & Build Caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+*.tsbuildinfo
+
+# Logs & Temporary Files
+*.log
+tests/
+_supabase_shadow/
+docs/
+backend/libs/
