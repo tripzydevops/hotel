@@ -1379,46 +1379,55 @@ async def get_market_intelligence_data(
         logger.warning(f"[DIAG] User {user_id}: No hotels found, returning empty")
         return {"summary": {}, "hotels": []}
 
-    # EXPLANATION: Historical Sentiment Fallback (Identity Recovery)
-    # If a hotel's top-level rating is missing, we check sentiment_history
-    # to find the latest processed snapshot. This prevents "N/A" and
-    # "Insufficient Data" issues when only metadata columns are empty.
+    # EXPLANATION: Global Pulse Fallback (Cross-User Data Recovery)
+    # If a hotel is missing its main rating and its personal history is empty
+    # (common for re-added hotels), we search globally for ANY record sharing
+    # the same serp_api_id. This ensures "tons of data" from other users
+    # is inherited instantly.
     hotels_missing_rating = [h for h in hotels if h.get("rating") is None]
     if hotels_missing_rating:
-        missing_ids = [str(h["id"]) for h in hotels_missing_rating]
-        logger.info(f"[DIAG] User {user_id}: Attempting rating fallback for {len(missing_ids)} hotels")
-        
-        # Fetch latest history entry for these hotels
-        try:
-            # We fetch more than one per hotel to be safe, but we'll pick the newest
-            hist_res = (
-                db.table("sentiment_history")
-                .select("hotel_id, rating, review_count, sentiment_breakdown, recorded_at")
-                .in_("hotel_id", missing_ids)
-                .order("recorded_at", desc=True)
-                .execute()
-            )
+        for missing_h in hotels_missing_rating:
+            sid = missing_h.get("serp_api_id")
+            if not sid:
+                continue
+
+            logger.info(f"[GlobalPulse] Searching for fallback for: {missing_h['id']} (SERP: {sid})")
             
-            if hist_res.data:
-                # Map newest history to hotels
-                seen_hids = set()
-                for h_entry in hist_res.data:
-                    hid = str(h_entry["hotel_id"])
-                    if hid in seen_hids:
-                        continue
-                    
-                    target_hotel = next((h for h in hotels_missing_rating if str(h["id"]) == hid), None)
-                    if target_hotel:
-                        target_hotel["rating"] = h_entry.get("rating")
-                        target_hotel["review_count"] = h_entry.get("review_count")
-                        # Also fill breakdown if missing
-                        if not target_hotel.get("sentiment_breakdown"):
-                            target_hotel["sentiment_breakdown"] = h_entry.get("sentiment_breakdown")
-                        
-                        seen_hids.add(hid)
-                        logger.info(f"[DIAG] Recovered rating {h_entry.get('rating')} for hotel {hid} from history")
-        except Exception as e:
-            logger.error(f"[DIAG] Historical fallback failed: {e}")
+            # Step A: Check Global Directory first (fastest)
+            try:
+                dir_res = db.table("hotel_directory").select("rating, review_count, sentiment_breakdown").eq("serp_api_id", sid).execute()
+                if dir_res.data and dir_res.data[0].get("rating"):
+                    d_entry = dir_res.data[0]
+                    missing_h["rating"] = d_entry.get("rating")
+                    missing_h["review_count"] = d_entry.get("review_count")
+                    missing_h["sentiment_breakdown"] = d_entry.get("sentiment_breakdown")
+                    logger.info(f"[GlobalPulse] Recovered {missing_h['rating']} from Directory for {sid}")
+                    continue
+            except Exception: pass
+
+            # Step B: Check Global History (thorough)
+            try:
+                # 1. Find ANY hotel IDs sharing this SERP ID
+                global_h_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                if global_h_res.data:
+                    g_hids = [str(gh["id"]) for gh in global_h_res.data]
+                    # 2. Get latest history for ANY of those IDs
+                    sh_res = (
+                        db.table("sentiment_history")
+                        .select("rating, review_count, sentiment_breakdown")
+                        .in_("hotel_id", g_hids)
+                        .order("recorded_at", desc=True)
+                        .limit(1)
+                        .execute()
+                    )
+                    if sh_res.data:
+                        h_entry = sh_res.data[0]
+                        missing_h["rating"] = h_entry.get("rating")
+                        missing_h["review_count"] = h_entry.get("review_count")
+                        missing_h["sentiment_breakdown"] = h_entry.get("sentiment_breakdown")
+                        logger.info(f"[GlobalPulse] Recovered {missing_h['rating']} from Global History for {sid}")
+            except Exception as e:
+                logger.error(f"[GlobalPulse] Fallback failed for {sid}: {e}")
 
     # EXPLANATION: Time-Windowed Price Fetching (replaces limit(5000))
     # A 90-day rolling window is more predictable than a fixed row count.
