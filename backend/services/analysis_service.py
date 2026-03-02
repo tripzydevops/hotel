@@ -678,6 +678,11 @@ async def perform_market_analysis(
             target_hotel_name = hotel.get("name") or "Unknown"
             target_sentiment = weighted_sentiment
 
+    # EXPLANATION: Market Sentiment Average (Raw Rating Base)
+    # We calculate the average market rating to return to the frontend sidebar.
+    raw_ratings = [float(h.get("rating") or 0.0) for h in hotels if h.get("rating")]
+    avg_sent_val = sum(raw_ratings) / len(raw_ratings) if raw_ratings else 0.0
+
     # EXPLANATION: Target Hotel Auto-Select Fallback
     # If no hotel has is_target_hotel=True (common for new users who haven't
     # configured their target yet), we auto-select the first hotel in their list.
@@ -1313,6 +1318,8 @@ async def perform_market_analysis(
             }
             for h in hotels
         ],
+        "target_rating": round(float(target_h.get("rating") or 0.0), 1) if target_h else 0.0,
+        "market_rating": round(avg_sent_val, 1) if 'avg_sent_val' in locals() else round(avg_sent, 1),
         "pricing_dna_text": target_h.get("pricing_dna_text") if target_h else None,
         "synthetic_narrative": generate_synthetic_narrative(
             ari,
@@ -1371,6 +1378,47 @@ async def get_market_intelligence_data(
     if not hotels:
         logger.warning(f"[DIAG] User {user_id}: No hotels found, returning empty")
         return {"summary": {}, "hotels": []}
+
+    # EXPLANATION: Historical Sentiment Fallback (Identity Recovery)
+    # If a hotel's top-level rating is missing, we check sentiment_history
+    # to find the latest processed snapshot. This prevents "N/A" and
+    # "Insufficient Data" issues when only metadata columns are empty.
+    hotels_missing_rating = [h for h in hotels if h.get("rating") is None]
+    if hotels_missing_rating:
+        missing_ids = [str(h["id"]) for h in hotels_missing_rating]
+        logger.info(f"[DIAG] User {user_id}: Attempting rating fallback for {len(missing_ids)} hotels")
+        
+        # Fetch latest history entry for these hotels
+        try:
+            # We fetch more than one per hotel to be safe, but we'll pick the newest
+            hist_res = (
+                db.table("sentiment_history")
+                .select("hotel_id, rating, review_count, sentiment_breakdown, recorded_at")
+                .in_("hotel_id", missing_ids)
+                .order("recorded_at", desc=True)
+                .execute()
+            )
+            
+            if hist_res.data:
+                # Map newest history to hotels
+                seen_hids = set()
+                for h_entry in hist_res.data:
+                    hid = str(h_entry["hotel_id"])
+                    if hid in seen_hids:
+                        continue
+                    
+                    target_hotel = next((h for h in hotels_missing_rating if str(h["id"]) == hid), None)
+                    if target_hotel:
+                        target_hotel["rating"] = h_entry.get("rating")
+                        target_hotel["review_count"] = h_entry.get("review_count")
+                        # Also fill breakdown if missing
+                        if not target_hotel.get("sentiment_breakdown"):
+                            target_hotel["sentiment_breakdown"] = h_entry.get("sentiment_breakdown")
+                        
+                        seen_hids.add(hid)
+                        logger.info(f"[DIAG] Recovered rating {h_entry.get('rating')} for hotel {hid} from history")
+        except Exception as e:
+            logger.error(f"[DIAG] Historical fallback failed: {e}")
 
     # EXPLANATION: Time-Windowed Price Fetching (replaces limit(5000))
     # A 90-day rolling window is more predictable than a fixed row count.
