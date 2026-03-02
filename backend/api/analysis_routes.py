@@ -54,6 +54,8 @@ async def get_market_intelligence(
     currency: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    exclude_hotel_ids: Optional[str] = None,
+    search_query: Optional[str] = None,
     db: Client = Depends(get_supabase),
     current_user=Depends(get_current_active_user),
 ):
@@ -79,6 +81,8 @@ async def get_market_intelligence(
             currency=currency,
             start_date=str(start_date) if start_date else None,
             end_date=str(end_date) if end_date else None,
+            exclude_hotel_ids=exclude_hotel_ids,
+            search_query=search_query,
         )
 
         return JSONResponse(content=jsonable_encoder(analysis_data))

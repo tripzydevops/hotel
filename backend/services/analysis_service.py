@@ -1331,6 +1331,8 @@ async def get_market_intelligence_data(
     currency: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    exclude_hotel_ids: Optional[str] = None,
+    search_query: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Orchestrates the data gathering for market intelligence.
@@ -1670,6 +1672,17 @@ async def get_market_intelligence_data(
                 allowed_room_names_map[hid].add(room_type)
     except Exception:
         pass
+
+    # filter exclusions
+    excluded_ids = []
+    if exclude_hotel_ids:
+        excluded_ids = [eid.strip() for eid in exclude_hotel_ids.split(",") if eid.strip()]
+        hotels = [h for h in hotels if str(h["id"]) not in excluded_ids]
+
+    # filter search
+    if search_query:
+        q = search_query.lower().strip()
+        hotels = [h for h in hotels if q in (h.get("name") or "").lower() or q in (h.get("location") or "").lower()]
 
     return await perform_market_analysis(
         user_id=str(user_id),

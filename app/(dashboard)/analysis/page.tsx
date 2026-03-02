@@ -184,12 +184,12 @@ export default function AnalysisPage() {
   }
 
   const spreadPercentage =
-    data?.target_price != null && 
-    data?.market_max > data?.market_min &&
-    data?.market_min != null
+    data?.target_price != null &&
+      data?.market_max > data?.market_min &&
+      data?.market_min != null
       ? ((data?.target_price - data?.market_min) /
-          (data?.market_max - data?.market_min)) *
-        100
+        (data?.market_max - data?.market_min)) *
+      100
       : 0;
 
   return (
@@ -279,8 +279,8 @@ export default function AnalysisPage() {
           <KPICard
             title={t("analysis.marketAverage")}
             value={
-              data?.market_average
-                ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.market_average}`
+              data?.market_average != null
+                ? `${CURRENCY_SYMBOLS[currency] || "$"}${Math.round(data.market_average)}`
                 : "N/A"
             }
             subtitle={t("common.availableNow")}
@@ -321,8 +321,8 @@ export default function AnalysisPage() {
           />
           <KPICard
             title={t("analysis.marketPosition")}
-            value={data?.competitive_rank ? `#${data.competitive_rank}` : "N/A"}
-            subtitle={`of ${data?.total_hotels || 0} hotels`}
+            value={data?.competitive_rank != null ? `#${data.competitive_rank}` : "N/A"}
+            subtitle={`of ${data?.total_hotels ?? 0} hotels`}
             icon={<TrendingUp className="w-5 h-5" />}
             hoverData={{
               type: "ranking",
@@ -336,6 +336,10 @@ export default function AnalysisPage() {
             subtitle="Market Rate Competitiveness"
             icon={<Target className="w-5 h-5" />}
             trend={data?.ari > 100 ? "up" : "down"}
+            hoverData={{
+              type: "info",
+              description: t("reports.ariDesc"),
+            }}
           />
           <KPICard
             title="Sentiment Index"
@@ -343,6 +347,10 @@ export default function AnalysisPage() {
             subtitle="Reputation vs Market"
             icon={<Zap className="w-5 h-5" />}
             trend={data?.sentiment_index > 100 ? "up" : "down"}
+            hoverData={{
+              type: "info",
+              description: t("reports.sentimentDesc"),
+            }}
           />
         </div>
 
@@ -384,10 +392,10 @@ export default function AnalysisPage() {
                 <div className="text-xl font-medium text-white italic leading-relaxed">
                   {data?.advisory_keys && data.advisory_keys.length > 0
                     ? data.advisory_keys.map((key: string, idx: number) => (
-                        <span key={idx}>
-                          {t(`analysis.advisory.${key}` as any)}{" "}
-                        </span>
-                      ))
+                      <span key={idx}>
+                        {t(`analysis.advisory.${key}` as any)}{" "}
+                      </span>
+                    ))
                     : `"${data?.advisory_msg}"`}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
@@ -422,14 +430,13 @@ export default function AnalysisPage() {
             {data?.market_rank && data?.price_rank_list && (
               <div className="mb-6 flex items-center gap-3">
                 <div
-                  className={`px-3 py-1.5 rounded-full text-xs font-black ${
-                    data.market_rank <= 2
-                      ? "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
-                      : data.market_rank <=
-                          Math.ceil(data.price_rank_list.length / 2)
-                        ? "bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]"
-                        : "bg-[var(--alert-red)]/20 text-[var(--alert-red)]"
-                  }`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-black ${data.market_rank <= 2
+                    ? "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
+                    : data.market_rank <=
+                      Math.ceil(data.price_rank_list.length / 2)
+                      ? "bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]"
+                      : "bg-[var(--alert-red)]/20 text-[var(--alert-red)]"
+                    }`}
                 >
                   #{data.market_rank} of {data.price_rank_list.length}
                 </div>
@@ -439,7 +446,7 @@ export default function AnalysisPage() {
                     : data.market_rank <= 2
                       ? "Excellent competitive position"
                       : data.market_rank <=
-                          Math.ceil(data.price_rank_list.length / 2)
+                        Math.ceil(data.price_rank_list.length / 2)
                         ? "Mid-range pricing"
                         : "Premium pricing tier"}
                 </span>
@@ -455,7 +462,7 @@ export default function AnalysisPage() {
                 </span>
                 <span className="text-white/40">
                   {CURRENCY_SYMBOLS[currency]}
-                  {data?.market_min != null && data?.market_max != null 
+                  {data?.market_min != null && data?.market_max != null
                     ? ((data.market_min + data.market_max) / 2)?.toFixed(0)
                     : "N/A"}
                 </span>
@@ -478,8 +485,8 @@ export default function AnalysisPage() {
                     const compSpread =
                       data.market_max > data.market_min
                         ? ((comp.price - data.market_min) /
-                            (data.market_max - data.market_min)) *
-                          100
+                          (data.market_max - data.market_min)) *
+                        100
                         : 0;
 
                     // Stronger coloring logic
@@ -665,7 +672,7 @@ export default function AnalysisPage() {
 }
 
 interface HoverData {
-  type: "ranking" | "average" | "spread";
+  type: "ranking" | "average" | "spread" | "info";
   priceRankList?: {
     id: string;
     name: string;
@@ -678,6 +685,7 @@ interface HoverData {
   currency?: string;
   minHotel?: { name: string; price: number };
   maxHotel?: { name: string; price: number };
+  description?: string;
 }
 
 function KPICard({
@@ -731,10 +739,10 @@ function KPICard({
         {subtitle}
       </div>
 
-      {/* Hover Tooltip */}
+      {/* Hover Tooltip - Robust width for 4-digit prices */}
       {hoverData && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-[200] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100">
-          <div className="mx-4 p-4 bg-[#0a0a14]/95 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-[200] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 min-w-[240px]">
+          <div className="p-4 bg-[#0a0a14]/95 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl">
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
                 <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
@@ -744,11 +752,10 @@ function KPICard({
                   {hoverData.priceRankList.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
-                      className={`flex items-center justify-between py-1.5 px-2 rounded ${
-                        item.is_target
-                          ? "bg-[var(--soft-gold)]/10 border-l-2 border-[var(--soft-gold)]"
-                          : "bg-white/[0.02]"
-                      }`}
+                      className={`flex items-center justify-between py-1.5 px-2 rounded ${item.is_target
+                        ? "bg-[var(--soft-gold)]/10 border-l-2 border-[var(--soft-gold)]"
+                        : "bg-white/[0.02]"
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span
@@ -852,6 +859,16 @@ function KPICard({
                   )}
                 </div>
               </>
+            )}
+            {hoverData.type === "info" && (
+              <div className="space-y-2">
+                <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">
+                  Metric Explanation
+                </div>
+                <div className="text-[11px] text-white/80 leading-relaxed font-medium italic">
+                  "{hoverData.description}"
+                </div>
+              </div>
             )}
           </div>
         </div>

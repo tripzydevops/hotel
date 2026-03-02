@@ -92,10 +92,20 @@ export default function AdvisorQuadrant({
         <div className={`relative flex-1 ${compact ? "h-[320px] lg:h-[380px]" : "h-[240px] lg:h-[280px]"} p-4`}>
           {/* Header */}
           {!compact && (
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 group/help">
               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">
                 Advisor Quadrant
               </h3>
+              <div className="relative">
+                <Zap className="w-3 h-3 text-[var(--soft-gold)] animate-pulse cursor-help" />
+                {/* Hover Explanation (Kaizen) */}
+                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-black/95 border border-white/10 rounded-xl shadow-2xl opacity-0 group-hover/help:opacity-100 transition-opacity pointer-events-none z-[100] backdrop-blur-xl">
+                  <div className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-1">Strategic Logic</div>
+                  <p className="text-[10px] leading-relaxed text-white/70">
+                    This matrix cross-references your <strong>Price Index (ARI)</strong> against your <strong>Value Index (Guest Satisfaction)</strong> to determine your current market territory.
+                  </p>
+                </div>
+              </div>
               <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-white/10 uppercase">
                 Strategic Map
               </span>
