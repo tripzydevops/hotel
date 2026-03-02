@@ -72,6 +72,7 @@ price_logs_dump.json
 stitch_*.log
 
 # AI Agent Metadata
+.agent/
 .adal/
 .agents/
 .augment/
