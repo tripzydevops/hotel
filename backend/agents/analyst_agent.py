@@ -389,9 +389,24 @@ class AnalystAgent:
                 # room-type normalization, and flushes the result. This prevents
                 # duplicate key collisions and ensures all data is session-linked.
                 
-                # [FIX] Zombie Cache: Do NOT insert a news log entry if the source is global_cache.
-                # This ensures the 180-minute window only follows genuine origin scans.
-                if price_data.get("source") != "global_cache":
+                # [FIX] Zombie Cache Intelligence
+                # Goal: Prevent the "180-minute window" from being extended indefinitely by redundant cache hits.
+                # Rule: We only skip insertion if a recent price log (within 3 hours) already exists for THIS specific hotel.
+                # This ensures newly added hotels (which hit the global cache) still get their first log persisted.
+                
+                has_recent_log = False
+                if hotel_id in history_map and history_map[hotel_id]:
+                    latest_log_time = history_map[hotel_id][0].get("recorded_at")
+                    if latest_log_time:
+                        try:
+                            # 180 min window
+                            log_dt = datetime.fromisoformat(latest_log_time.replace("Z", "+00:00"))
+                            if (datetime.now(timezone.utc) - log_dt).total_seconds() < 10800:
+                                has_recent_log = True
+                        except Exception:
+                            pass
+
+                if price_data.get("source") != "global_cache" or not has_recent_log:
                     price_logs_to_insert.append(
                         {
                             "hotel_id": hotel_id,
@@ -414,7 +429,7 @@ class AnalystAgent:
                         }
                     )
                 else:
-                    reasoning_log.append(f"[Cache Intelligence] Skipping price_log insertion for global_cache HIT to prevent window extension.")
+                    reasoning_log.append(f"[Cache Intelligence] Skipping price_log insertion for global_cache HIT to prevent window extension (Recent log exists).")
 
                 # KAİZEN: UI Persistence for successful monitor results
                 # This ensures the hotel appears in the Pulse Intelligence scan summary
