@@ -130,54 +130,35 @@ async def trigger_monitor_logic(
                     errors=[f"SCAN_LOCKED: {reason}"],
                 )
 
-            # Enterprise/trial/pro users with can_scan_hourly have unlimited manual scans.
-            # Only starter users without can_scan_hourly are rate-limited.
+            # EXPLANATION: Unified Daily Manual Scan Limits
+            # Enforces specific daily quotas requested by the user:
+            # Trial (3), Starter (5), Pro (8), Enterprise (10)
+            # This ensures stable SerpApi costs while allowing priority users higher flexibility.
             limits = access.get("limits", {})
-            if not limits.get("can_scan_hourly", False):
-                # Check Monthly Limit from DB
-                monthly_limit = limits.get("monthly_scan_limit", 30)
-                
-                # Count current month usage
-                month_start = date.today().replace(day=1).isoformat()
-                monthly_manual_res = (
-                    db.table("scan_sessions")
-                    .select("id", count="exact")
-                    .eq("user_id", str(user_id))
-                    .eq("session_type", "manual")
-                    .gte("created_at", month_start)
-                    .execute()
+            daily_limit = limits.get("monthly_scan_limit", 3)  # Using column as daily quota
+            
+            today_start = datetime.combine(
+                date.today(), datetime.min.time()
+            ).isoformat()
+            
+            daily_manual_res = (
+                db.table("scan_sessions")
+                .select("id", count="exact")
+                .eq("user_id", str(user_id))
+                .eq("session_type", "manual")
+                .gte("created_at", today_start)
+                .execute()
+            )
+            current_daily_count = daily_manual_res.count or 0
+            
+            if current_daily_count >= daily_limit:
+                logger.warning(f"Manual scan limit reached for {user_id}: {current_daily_count}/{daily_limit}")
+                return MonitorResult(
+                    hotels_checked=0,
+                    prices_updated=0,
+                    alerts_generated=0,
+                    errors=[f"DAILY_LIMIT_REACHED ({daily_limit})"],
                 )
-                current_monthly_manual = monthly_manual_res.count or 0
-                
-                if current_monthly_manual >= monthly_limit:
-                    return MonitorResult(
-                        hotels_checked=0,
-                        prices_updated=0,
-                        alerts_generated=0,
-                        errors=[f"MONTHLY_LIMIT_REACHED ({monthly_limit})"],
-                    )
-
-                # Daily "burst" protection for non-priority tiers
-                today_start = datetime.combine(
-                    date.today(), datetime.min.time()
-                ).isoformat()
-                daily_manual_res = (
-                    db.table("scan_sessions")
-                    .select("id", count="exact")
-                    .eq("user_id", str(user_id))
-                    .eq("session_type", "manual")
-                    .gte("created_at", today_start)
-                    .execute()
-                )
-                current_daily_manual = daily_manual_res.count or 0
-                daily_burst_limit = 5
-                if current_daily_manual >= daily_burst_limit:
-                    return MonitorResult(
-                        hotels_checked=0,
-                        prices_updated=0,
-                        alerts_generated=0,
-                        errors=[f"DAILY_BURST_LIMIT_REACHED ({daily_burst_limit})"],
-                    )
 
     except Exception as e:
         logger.error(f"Limit check exception: {e}")
