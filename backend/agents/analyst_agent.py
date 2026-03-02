@@ -388,27 +388,33 @@ class AnalystAgent:
                 # It receives raw data from the Scraper, performs currency and
                 # room-type normalization, and flushes the result. This prevents
                 # duplicate key collisions and ensures all data is session-linked.
-                price_logs_to_insert.append(
-                    {
-                        "hotel_id": hotel_id,
-                        "price": current_price if current_price else 0.0,
-                        "currency": currency,
-                        "check_in_date": check_in_str,
-                        "source": price_data.get("source", "serpapi"),
-                        "vendor": price_data.get("vendor", "Unknown"),
-                        "search_rank": price_data.get("search_rank"),
-                        "parity_offers": offers,
-                        "room_types": current_room_types,
-                        "is_estimated": is_estimated,
-                        "session_id": str(session_id) if session_id else None,
-                        "serp_api_id": price_data.get("property_token")
-                        or price_data.get("serp_api_id"),
-                        "metadata": {
-                            "is_shallow": is_shallow,
-                            "extraction_depth": len(offers),
-                        },
-                    }
-                )
+                
+                # [FIX] Zombie Cache: Do NOT insert a news log entry if the source is global_cache.
+                # This ensures the 180-minute window only follows genuine origin scans.
+                if price_data.get("source") != "global_cache":
+                    price_logs_to_insert.append(
+                        {
+                            "hotel_id": hotel_id,
+                            "price": current_price if current_price else 0.0,
+                            "currency": currency,
+                            "check_in_date": check_in_str,
+                            "source": price_data.get("source", "serpapi"),
+                            "vendor": price_data.get("vendor", "Unknown"),
+                            "search_rank": price_data.get("search_rank"),
+                            "parity_offers": offers,
+                            "room_types": current_room_types,
+                            "is_estimated": is_estimated,
+                            "session_id": str(session_id) if session_id else None,
+                            "serp_api_id": price_data.get("property_token")
+                            or price_data.get("serp_api_id"),
+                            "metadata": {
+                                "is_shallow": is_shallow,
+                                "extraction_depth": len(offers),
+                            },
+                        }
+                    )
+                else:
+                    reasoning_log.append(f"[Cache Intelligence] Skipping price_log insertion for global_cache HIT to prevent window extension.")
 
                 # KAİZEN: UI Persistence for successful monitor results
                 # This ensures the hotel appears in the Pulse Intelligence scan summary

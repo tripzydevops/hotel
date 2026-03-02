@@ -1,6 +1,6 @@
 export const PLAN_LIMITS: Record<string, number> = {
-  trial: 1,
+  trial: 9999,
   starter: 5,
   pro: 25,
-  enterprise: 999,
+  enterprise: 9999,
 };

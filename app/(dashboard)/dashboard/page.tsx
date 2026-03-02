@@ -132,7 +132,8 @@ export default function Dashboard() {
     () =>
       profile?.role === "admin" ||
       profile?.plan_type?.toLowerCase() === "enterprise" ||
-      profile?.plan_type?.toLowerCase() === "pro",
+      profile?.plan_type?.toLowerCase() === "pro" ||
+      profile?.plan_type?.toLowerCase() === "trial",
     [profile?.plan_type, profile?.role],
   );
 
@@ -357,7 +358,7 @@ export default function Dashboard() {
                       const isUndercut =
                         competitor.price_info &&
                         competitor.price_info.current_price <
-                          effectiveTargetPrice;
+                        effectiveTargetPrice;
 
                       return (
                         <motion.div

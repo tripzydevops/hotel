@@ -246,15 +246,7 @@ export default function Sidebar({
         </Link>
       </nav>
 
-      {/* Footer Section */}
-      <div className="p-6 mt-auto">
-        <button className="w-full flex items-center justify-center gap-3 px-4 py-4 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 text-white rounded-2xl transition-all group active:scale-95 shadow-xl">
-          <Download className="w-4 h-4 text-[#F6C344] group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-black uppercase tracking-widest">
-            Export Data
-          </span>
-        </button>
-      </div>
+
     </aside>
   );
 }
