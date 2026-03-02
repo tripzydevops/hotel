@@ -301,10 +301,32 @@ async def get_dashboard_logic(
                     logger.warning(f"Price processing error: {e}")
 
             # Sentiment Processing
-            # [FIX] Sentiment Fallback (Kaizen)
+            # [FIX] Sentiment Fallback (Global Pulse)
             # If the user's specific hotel record is missing sentiment (e.g. newly re-added),
-            # we fallback to historical sentiment persisted in the global directory.
+            # we try the global directory first, then fallback to ANY history share the same serp_api_id.
             raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown") or []
+            
+            if not raw_breakdown and h.get("serp_api_id"):
+                sid = h["serp_api_id"]
+                logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
+                try:
+                    # Find ANY hotel IDs sharing this SERP ID
+                    g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                    if g_res.data:
+                        g_hids = [str(gh["id"]) for gh in g_res.data]
+                        sh_res = (
+                            db.table("sentiment_history")
+                            .select("sentiment_breakdown")
+                            .in_("hotel_id", g_hids)
+                            .order("recorded_at", desc=True)
+                            .limit(1)
+                            .execute()
+                        )
+                        if sh_res.data:
+                            raw_breakdown = sh_res.data[0].get("sentiment_breakdown") or []
+                            logger.info(f"[GlobalPulse/Dashboard] Recovered {len(raw_breakdown)} items for {sid}")
+                except Exception as e:
+                    logger.error(f"[GlobalPulse/Dashboard] Recovery failed for {sid}: {e}")
             item_sentiment = normalize_sentiment(raw_breakdown)
 
             # [FIX] Resilient Metadata Merging
