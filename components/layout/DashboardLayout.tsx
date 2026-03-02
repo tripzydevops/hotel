@@ -43,7 +43,7 @@ export default function DashboardLayout({
     setMounted(true);
   }, []);
   const { t, locale, setLocale } = useI18n();
-  const { userId } = useAuth();
+  const { userId, loading: authLoading } = useAuth();
   const {
     data,
     userSettings,
@@ -89,7 +89,6 @@ export default function DashboardLayout({
   const isLoginPage = pathname === "/login";
   const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
-  const { userId, loading: authLoading } = useAuth();
 
   if (!mounted || authLoading) {
     if (isLoginPage || isAdminPage) return <>{children}</>;
