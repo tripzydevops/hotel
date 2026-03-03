@@ -2,82 +2,10 @@ import os
 import httpx
 import re
 import threading
+import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import date, timedelta, datetime
 from ..data_provider_interface import HotelDataProvider
-
-
-# --- ApiKeyManager (Moved from original client for reuse) ---
-class ApiKeyManager:
-    """Manages rotating API keys with automatic failover."""
-
-    def __init__(self, keys: List[str]):
-        self._keys = keys or []
-        self._current_index = 0
-        self._lock = threading.Lock()
-        self._exhausted_keys: Dict[str, datetime] = {}
-        self._exhaustion_cooldown = timedelta(hours=24)
-
-    @property
-    def current_key(self) -> str:
-        with self._lock:
-            if not self._keys:
-                raise ValueError("No API keys configured")
-            return self._keys[self._current_index]
-
-    def rotate_key(self, mark_exhausted: bool = True) -> bool:
-        with self._lock:
-            if not self._keys:
-                return False
-
-            if mark_exhausted:
-                current_key = self._keys[self._current_index]
-                self._exhausted_keys[current_key] = datetime.now()
-
-            # Simple rotation to next available (or least recently exhausted if all exhausted)
-            attempts = 0
-            original_index = self._current_index
-            while attempts < len(self._keys):
-                self._current_index = (self._current_index + 1) % len(self._keys)
-                next_key = self._keys[self._current_index]
-
-                if next_key not in self._exhausted_keys:
-                    return True
-
-                # Check cooldown
-                if (
-                    datetime.now() - self._exhausted_keys[next_key]
-                    > self._exhaustion_cooldown
-                ):
-                    del self._exhausted_keys[next_key]
-                    return True
-                attempts += 1
-
-            # If we reached here, all keys are technically exhausted.
-            # If we were told NOT to mark exhaustion, we just wrap around anyway (hope for transient fix)
-            if not mark_exhausted:
-                self._current_index = (original_index + 1) % len(self._keys)
-                return True
-
-            return False
-
-    @property
-    def current_key_index(self) -> int:
-        with self._lock:
-            return self._current_index
-
-
-def load_api_keys() -> List[str]:
-    keys = []
-    primary = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
-    if primary:
-        keys.append(primary)
-    for i in range(2, 11):
-        key = os.getenv(f"SERPAPI_API_KEY_{i}")
-        if key:
-            keys.append(key)
-    return keys
-
 
 # --- Provider Implementation ---
 
