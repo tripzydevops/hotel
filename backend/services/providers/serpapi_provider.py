@@ -158,6 +158,8 @@ class SerpApiProvider(HotelDataProvider):
                                 new_key = self._serp_client.api_key
                                 print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
                                 params["api_key"] = new_key
+                                # [FIX] Add jitter/sleep to allow rate limit bucket to reset
+                                await asyncio.sleep(1.0)
                                 response = await client.get(
                                     self.BASE_URL, params=params
                                 )
@@ -208,13 +210,18 @@ class SerpApiProvider(HotelDataProvider):
         return result
 
     def _is_quota_error(self, response: httpx.Response) -> bool:
+        """Harmonized with SerpApiClient logic."""
         if response.status_code == 429:
             return True
         try:
-            error = response.json().get("error", "").lower()
-            return any(x in error for x in ["quota", "limit", "exceeded"])
+            error_data = response.json().get("error", "").lower()
+            # Standard SerpApi limit phrases
+            limit_phrases = ["quota", "limit", "exceeded", "searches", "insufficient credits"]
+            if any(x in error_data for x in limit_phrases):
+                return True
         except Exception:
-            return False
+            pass
+        return False
 
     def _clean_price_string(self, price: Any, currency: str) -> Optional[float]:
         """Robusly clean price string into a float."""

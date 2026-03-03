@@ -65,7 +65,7 @@ class ApiKeyManager:
         self._renewal_info: Dict[str, str] = {}  # key -> renewal_date
         self._last_quota_check: Dict[str, datetime] = {}  # key -> last check time
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
-        self._rate_limit_cooldown = timedelta(minutes=15)  # Reset after 15m
+        self._rate_limit_cooldown = timedelta(seconds=60)  # [FIX] Reduced from 15m to 60s for high-volume scans
 
     async def _fetch_quota(self, api_key: str):
         """Fetch actual searches left from SerpApi Account API."""
