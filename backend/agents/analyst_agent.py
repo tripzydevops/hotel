@@ -1,6 +1,6 @@
 from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
