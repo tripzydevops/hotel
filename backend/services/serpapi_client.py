@@ -34,9 +34,10 @@ MANUAL_RENEWAL_OVERRIDES = {
     "553546ffdb5cf73e0cbda23edb57f28f7f1ffb4bcb34109679bcc0af0631187e": "2026-03-05",
     # Node 03 (fast earn) - From screenshot
     "2e5f70589a7c3f66064d8e93ab6d105a2552eef1b0d76bb340818dd30d73f3db": "2026-03-04",
+    # Node 04 (tripzydevops) - From screenshot
+    "44c1dc": "2026-03-25",
     # Remaining keys (defaults)
     "c7f222": "Monthly Reset",
-    "44c1dc": "Monthly Reset",
 }
 
 
