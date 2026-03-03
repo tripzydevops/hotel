@@ -26,6 +26,18 @@ load_dotenv(".env.local", override=True)
 
 SERPAPI_BASE_URL = "https://serpapi.com/search"
 
+# EXPLANATION: Manual Renewal Date Overrides (Kaizen 2026)
+# Since SerpApi Free Plans do not expose the reset date via API, 
+# we manually map them here based on screenshots.
+MANUAL_RENEWAL_OVERRIDES = {
+    # Node 03 (fast earn) - From screenshot
+    "2e5f70589a7c3f66064d8e93ab6d105a2552eef1b0d76bb340818dd30d73f3db": "2026-03-04",
+    # Note: These can also be partial keys (last 6 chars) for easier management
+    "31187e": "Monthly Reset",
+    "c7f222": "Monthly Reset",
+    "44c1dc": "Monthly Reset",
+}
+
 
 # Load multiple API keys from environment
 def load_api_keys() -> List[str]:
@@ -78,7 +90,14 @@ class ApiKeyManager:
                     data = response.json()
                     left = data.get("total_searches_left", 0)
                     self._quota_info[api_key] = left
-                    self._renewal_info[api_key] = data.get(
+                    
+                    # APPLY MANUAL OVERRIDE (Kaizen 2026)
+                    # Use full key match first, then check last 6 chars
+                    manual_date = MANUAL_RENEWAL_OVERRIDES.get(api_key)
+                    if not manual_date:
+                        manual_date = MANUAL_RENEWAL_OVERRIDES.get(api_key[-6:])
+                        
+                    self._renewal_info[api_key] = manual_date or data.get(
                         "plan_renewal_date", "Unknown"
                     )
                     self._last_quota_check[api_key] = datetime.now()
