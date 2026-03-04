@@ -11,26 +11,34 @@ load_dotenv()
 
 
 def get_supabase() -> Client:
+    """Returns a Supabase client using the SERVICE_ROLE_KEY for admin access."""
+    return get_supabase_client()
+
+
+def get_supabase_client(jwt: str = None) -> Client:
     """
     Dependency to provide a Supabase client.
-    Uses SERVICE_ROLE_KEY for backend operations to bypass RLS when necessary.
-
-    Reminder Note: The SERVICE_ROLE_KEY should NEVER be exposed to the frontend.
-    It allows full admin access to the database.
+    Optionally accepts a JWT to enable Row-Level Security (RLS).
+    If no JWT is provided, it uses SERVICE_ROLE_KEY (admin access).
     """
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    # Prefer Service Role for backend logic, fallback to Anon for simple reads if necessary
+    
+    if jwt:
+        # Use simple Anon Key + User JWT to enforce RLS
+        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        client = create_client(url, key)
+        client.postgrest.auth(jwt)
+        return client
+
+    # Admin access using Service Role Key
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not key:
-        print("WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Falling back to ANON_KEY. This may cause RLS-related data gaps (e.g., empty scan history).")
+        print("WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Operations may fail.")
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-
 
     try:
         if not url or not key:
-            print(
-                "WARNING: Supabase credentials missing (URL or Key). Check environment variables."
-            )
+            print("WARNING: Supabase credentials missing.")
             return None
         return create_client(url, key)
     except Exception as e:

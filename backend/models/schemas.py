@@ -13,6 +13,7 @@ from enum import Enum
 class AlertType(str, Enum):
     THRESHOLD_BREACH = "threshold_breach"
     COMPETITOR_UNDERCUT = "competitor_undercut"
+    PULSE_ALERT = "pulse_alert"
 
 
 class TrendDirection(str, Enum):

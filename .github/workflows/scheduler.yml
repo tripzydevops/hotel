@@ -34,7 +34,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           # Additional deps needed for in-process scan execution
-          pip install celery redis
 
       - name: Run Scheduler Script
         env:
