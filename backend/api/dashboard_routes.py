@@ -34,7 +34,7 @@ async def get_dashboard(
 
 
 @router.get("/global-pulse")
-async def get_global_pulse(db: Client = Depends(get_supabase_rls)):
+async def get_global_pulse(db: Client = Depends(get_supabase)):
     """
     Fetches recent price drops discovered by the Global Pulse network.
     Anonymized and available to all users to show 'Community Intelligence'.

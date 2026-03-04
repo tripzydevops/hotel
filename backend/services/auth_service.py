@@ -104,13 +104,17 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
-        user_resp = db.auth.get_user(token)
-        if not user_resp or not getattr(user_resp, "user", None):
-            raise HTTPException(
-                status_code=401, detail="Invalid Session or Expired Token"
-            )
+        try:
+            user_resp = db.auth.get_user(token)
+            if not user_resp or not getattr(user_resp, "user", None):
+                raise HTTPException(
+                    status_code=401, detail="Invalid Session or Expired Token (Supabase)"
+                )
+            user = user_resp.user
+        except Exception as auth_e:
+            logger.error(f"Auth Token Verification Failed: {auth_e}")
+            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
 
-        user = user_resp.user
         # Store token on user object for downstream RLS use
         user.jwt = token
         user_id = user.id
@@ -139,9 +143,9 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
                 )
                 if res2.data:
                     status = res2.data.get("subscription_status")
-        except Exception:
+        except Exception as status_e:
             # If DB check fails, we default to pending/safe state but DON'T crash 500
-            logger.warning(f"Could not verify status for {user_id}")
+            logger.warning(f"Could not verify status for {user_id}: {status_e}")
 
         if status in ["suspended", "rejected"]:
             raise HTTPException(status_code=403, detail="Account Suspended/Rejected")
@@ -150,9 +154,9 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
 
     except HTTPException as he:
         raise he
-    except Exception:
+    except Exception as e:
         logger.critical(f"Auth Critical: {traceback.format_exc()}")
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        raise HTTPException(status_code=401, detail=f"Authentication Failed: {str(e)}")
 
 
 def get_supabase_rls(

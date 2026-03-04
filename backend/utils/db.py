@@ -30,8 +30,9 @@ def get_supabase_client(jwt: str = None) -> Client:
     
     if jwt:
         # Use simple Anon Key + User JWT to enforce RLS
+        # Setting headers explicitly to ensure Postgrest picks up the RLS context correctly
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-        client = create_client(url, key)
+        client = create_client(url, key, options={"headers": {"Authorization": f"Bearer {jwt}"}})
         client.postgrest.auth(jwt)
         return client
 
