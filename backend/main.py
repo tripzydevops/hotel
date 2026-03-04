@@ -21,6 +21,9 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -54,6 +57,24 @@ from backend.api import (
 # causes FastAPI to strip "/api" from incoming requests, making them
 # fail to match the registered routes (Double Prefixing Conflict).
 app = FastAPI(title="Hotel Rate Sentinel API", version="2026.02")
+
+# SECURITY MIDDLEWARE: Inject standard protection headers
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; "
+        "connect-src 'self' https://*.supabase.co https://*.vercel.app; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline';"
+    )
+    return response
+
 
 # DIAGNOSTIC MIDDLEWARE: Log every request path to identify Vercel prefix issues
 @app.middleware("http")
@@ -238,7 +259,11 @@ app.include_router(pulse_routes.router)
 @app.get("/api/cron")
 async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
     """External cron entry point."""
-    cron_secret = os.getenv("CRON_SECRET", "super_secret_cron_key_123")
+    cron_secret = os.getenv("CRON_SECRET")
+    if not cron_secret:
+        logger.critical("SECURITY CONFIG ERROR: CRON_SECRET not set in environment.")
+        return JSONResponse(status_code=500, content={"detail": "System configuration error"})
+        
     if key != cron_secret:
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
 

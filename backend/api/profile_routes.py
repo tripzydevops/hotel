@@ -2,8 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from uuid import UUID
 from typing import Optional
 from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import (
     UserProfile,
     UserProfileUpdate,
@@ -23,7 +22,7 @@ router = APIRouter(prefix="/api", tags=["profile"])
 @router.get("/profile/{user_id}", response_model=UserProfile)
 async def get_profile(
     user_id: UUID,
-    db: Optional[Client] = Depends(get_supabase),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Fetch user profile with enriched data."""
@@ -54,7 +53,7 @@ async def get_profile(
 async def update_profile(
     user_id: UUID,
     profile: UserProfileUpdate,
-    db: Optional[Client] = Depends(get_supabase),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Update user profile (upsert)."""
@@ -73,7 +72,7 @@ async def update_profile(
 @router.get("/settings/{user_id}", response_model=Settings)
 async def get_settings(
     user_id: UUID,
-    db: Optional[Client] = Depends(get_supabase),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -126,7 +125,7 @@ async def get_settings(
 async def update_settings(
     user_id: UUID,
     settings: SettingsUpdate,
-    db: Optional[Client] = Depends(get_supabase),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

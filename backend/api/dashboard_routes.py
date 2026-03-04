@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.services.dashboard_service import get_dashboard_logic
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 @router.get("/dashboard/{user_id}")
 async def get_dashboard(
     user_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -34,7 +34,7 @@ async def get_dashboard(
 
 
 @router.get("/global-pulse")
-async def get_global_pulse(db: Client = Depends(get_supabase)):
+async def get_global_pulse(db: Client = Depends(get_supabase_rls)):
     """
     Fetches recent price drops discovered by the Global Pulse network.
     Anonymized and available to all users to show 'Community Intelligence'.

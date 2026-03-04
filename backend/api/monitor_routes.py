@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog
 from backend.services.monitor_service import (
     trigger_monitor_logic,
@@ -19,7 +19,7 @@ async def trigger_monitor(
     user_id: UUID,
     background_tasks: BackgroundTasks,
     options: Optional[ScanOptions] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_active_user=Depends(get_current_active_user),
 ) -> MonitorResult:
     """
@@ -168,7 +168,11 @@ async def check_scheduled_scan(
 # updates. Without this, the Agent Mesh steps and Reasoning Timeline
 # stay stale after the modal opens.
 @router.get("/sessions/{session_id}")
-async def get_session(session_id: UUID, db: Client = Depends(get_supabase)):
+async def get_session(
+    session_id: UUID, 
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user)
+):
     """Fetch a single scan session by ID for live status/reasoning updates."""
     try:
         result = (
@@ -183,7 +187,11 @@ async def get_session(session_id: UUID, db: Client = Depends(get_supabase)):
 
 
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
-async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase)):
+async def get_session_logs(
+    session_id: UUID, 
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user)
+):
     """Fetch all query logs linked to a specific scan session."""
     try:
         result = (
@@ -202,7 +210,7 @@ async def get_session_logs(session_id: UUID, db: Client = Depends(get_supabase))
 @router.delete("/logs/{log_id}")
 async def delete_log(
     log_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

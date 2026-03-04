@@ -4,9 +4,12 @@ Handles role-based access control (RBAC) and user session verification.
 """
 
 import traceback
-from fastapi import Request, HTTPException, Depends
+from fastapi import Depends, HTTPException, Security, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from backend.utils.db import get_supabase_client, get_supabase
 from supabase import Client
-from backend.utils.db import get_supabase
+
+
 from backend.utils.logger import get_logger
 
 # EXPLANATION: Module-level logger replaces raw print() for structured output
@@ -108,6 +111,8 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
             )
 
         user = user_resp.user
+        # Store token on user object for downstream RLS use
+        user.jwt = token
         user_id = user.id
 
         # Check Account Status
@@ -148,3 +153,13 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
     except Exception:
         logger.critical(f"Auth Critical: {traceback.format_exc()}")
         raise HTTPException(status_code=401, detail="Authentication Failed")
+
+
+def get_supabase_rls(
+    current_user=Depends(get_current_active_user),
+) -> Client:
+    """
+    Dependency that returns a Supabase client with RLS enabled.
+    Uses the JWT from the authenticated user.
+    """
+    return get_supabase_client(jwt=getattr(current_user, "jwt", None))

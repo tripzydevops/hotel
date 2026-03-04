@@ -2,8 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from uuid import UUID
 from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
@@ -20,7 +19,7 @@ async def discover_competitors_v1(
     hotel_id: str,
     limit: int = 5,
     current_user=Depends(get_current_active_user),
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
 ):
     """
     Autonomous Rival Discovery.
@@ -56,7 +55,7 @@ async def get_market_intelligence(
     end_date: Optional[date] = None,
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -93,7 +92,7 @@ async def get_market_intelligence(
 @router.post("/analysis/discovery/{hotel_id}")
 async def discover_competitors_trigger(
     hotel_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Trigger Ghost Competitor Discovery."""
@@ -118,7 +117,7 @@ async def discover_competitors_trigger(
 async def get_sentiment_history(
     hotel_id: str,
     days: int = 30,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -168,7 +167,7 @@ async def get_sentiment_history(
 @router.get("/analysis/debug/{user_id}")
 async def debug_analysis_data(
     user_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -319,7 +318,7 @@ async def stream_market_intelligence(
     currency: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

@@ -3,6 +3,7 @@ Shared database utilities and dependencies.
 Provides the Supabase client and consistent auth helpers.
 """
 
+from fastapi import Depends
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -11,7 +12,11 @@ load_dotenv()
 
 
 def get_supabase() -> Client:
-    """Returns a Supabase client using the SERVICE_ROLE_KEY for admin access."""
+    """
+    Default database dependency.
+    By default returns an admin client (Service Role).
+    USE WITH CAUTION: This bypasses RLS.
+    """
     return get_supabase_client()
 
 
