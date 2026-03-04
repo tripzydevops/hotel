@@ -5,7 +5,7 @@ Provides the Supabase client and consistent auth helpers.
 
 from fastapi import Depends
 import os
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,7 +32,8 @@ def get_supabase_client(jwt: str = None) -> Client:
         # Use simple Anon Key + User JWT to enforce RLS
         # Setting headers explicitly to ensure Postgrest picks up the RLS context correctly
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-        client = create_client(url, key, options={"headers": {"Authorization": f"Bearer {jwt}"}})
+        opts = ClientOptions(headers={"Authorization": f"Bearer {jwt}"})
+        client = create_client(url, key, options=opts)
         client.postgrest.auth(jwt)
         return client
 
