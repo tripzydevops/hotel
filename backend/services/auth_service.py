@@ -16,7 +16,22 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-async def get_current_admin_user(request: Request, db: Client = Depends(get_supabase)):
+def get_token(request: Request) -> str:
+    """
+    Extracts the Bearer token from the Authorization header.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Missing Authorization Header")
+
+    token_parts = auth_header.split(" ")
+    if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid Token Format")
+
+    return token_parts[1]
+
+
+async def get_current_admin_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the request is made by an Admin.
     Checks Authorization header (JWT) via Supabase Auth.
@@ -25,18 +40,7 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
     Reminder Note: Admin access is strictly enforced for system-level changes
     and multi-tenant visibility.
     """
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing Authorization Header")
-
     try:
-        # Expected format: "Bearer <token>"
-        token_parts = auth_header.split(" ")
-        if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid Token Format")
-
-        token = token_parts[1]
-
         # Call Supabase to verify token
         try:
             user_resp = db.auth.get_user(token)
@@ -82,7 +86,7 @@ async def get_current_admin_user(request: Request, db: Client = Depends(get_supa
         raise HTTPException(status_code=401, detail=f"Auth Critical Failure: {str(e)}")
 
 
-async def get_current_active_user(request: Request, db: Client = Depends(get_supabase)):
+async def get_current_active_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the user is logged in AND has an active approval status.
     Blocks access if account is 'suspended' or 'rejected'.
@@ -90,17 +94,7 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
     Reminder Note: Even valid JWT holders can be blocked if their subscription
     is not active (Autonomous Cloud Governance).
     """
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing Authorization Header")
-
     try:
-        token_parts = auth_header.split(" ")
-        if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid Token Format")
-
-        token = token_parts[1]
-
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
@@ -115,8 +109,6 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
             logger.error(f"Auth Token Verification Failed: {auth_e}")
             raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
 
-        # Store token on user object for downstream RLS use
-        user.jwt = token
         user_id = user.id
 
         # Check Account Status
@@ -160,10 +152,10 @@ async def get_current_active_user(request: Request, db: Client = Depends(get_sup
 
 
 def get_supabase_rls(
-    current_user=Depends(get_current_active_user),
+    token: str = Depends(get_token),
 ) -> Client:
     """
     Dependency that returns a Supabase client with RLS enabled.
-    Uses the JWT from the authenticated user.
+    Uses the JWT from the Authorization header.
     """
-    return get_supabase_client(jwt=getattr(current_user, "jwt", None))
+    return get_supabase_client(jwt=token)
