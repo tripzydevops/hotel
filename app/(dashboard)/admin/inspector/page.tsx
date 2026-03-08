@@ -31,7 +31,7 @@ export default function DebugDataPage() {
     setError(null);
     try {
       console.log("Fetching dashboard data for:", uid);
-      const data = await api.getDashboard(uid);
+      const data = await api.getDashboard();
       console.log("Dashboard Data Received:", data);
       setDashboardData(data);
       setLastUpdated(new Date().toLocaleTimeString());
@@ -109,12 +109,12 @@ export default function DebugDataPage() {
             value={
               dashboardData
                 ? (dashboardData.competitors?.length || 0) +
-                  (dashboardData.target_hotel ? 1 : 0)
+                (dashboardData.target_hotel ? 1 : 0)
                 : "-"
             }
             status={
               dashboardData?.target_hotel ||
-              dashboardData?.competitors?.length > 0
+                dashboardData?.competitors?.length > 0
                 ? "success"
                 : "warning"
             }
@@ -159,8 +159,8 @@ export default function DebugDataPage() {
                       <td className="px-4 py-3 opacity-70">
                         {dashboardData.target_hotel.price_info?.recorded_at
                           ? new Date(
-                              dashboardData.target_hotel.price_info.recorded_at,
-                            ).toLocaleString()
+                            dashboardData.target_hotel.price_info.recorded_at,
+                          ).toLocaleString()
                           : "-"}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs opacity-50">
