@@ -291,9 +291,8 @@ async def export_saved_briefing_pdf(
     )
 
 
-@router.get("/{user_id}")
+@router.get("/")
 async def get_reports(
-    user_id: UUID,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
@@ -301,12 +300,12 @@ async def get_reports(
     EXPLANATION: User Report Management
     Lists all saved reports in the database.
     """
+    user_id = current_user.id
     return await get_reports_logic(user_id, db)
 
 
-@router.post("/{user_id}/export")
+@router.post("/export")
 async def export_report(
-    user_id: UUID,
     format: str = "csv",
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -314,8 +313,7 @@ async def export_report(
     """
     Triggers a data export (CSV/Excel) for a specific user report.
     """
-    if str(user_id) != str(current_user.id):
-        raise HTTPException(status_code=403, detail="Unauthorized")
+    user_id = current_user.id
     return await export_report_logic(user_id, format, db)
 
 

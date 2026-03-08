@@ -24,6 +24,7 @@ async def search_hotel_directory(
     user_id: Optional[UUID] = Query(None),
     city: Optional[str] = Query(None),
     db: Optional[Client] = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
 ):
     """Search hotel directory (local + live callback)."""
     if not q or len(q.strip()) < 2 or not db:
@@ -37,17 +38,16 @@ async def search_hotel_directory(
     # new smart filtering capability in the Add Hotel modal.
 
 
-@router.get("/hotels/{user_id}", response_model=List[Hotel])
+@router.get("/hotels", response_model=List[Hotel])
 async def list_hotels(
-    user_id: UUID,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
     include_deleted: bool = False,
 ):
     """
-    Retrieves a list of hotels associated with a specific user ID.
-    Requires authentication.
+    Retrieves a list of hotels associated with the current user.
     """
+    user_id = current_user.id
     if not db:
         return []
     # EXPLANATION: User Property List (Soft-Delete Aware)
@@ -103,17 +103,16 @@ async def search_hotel_directory_v2(
     return await search_hotel_directory_logic(query, None, db, city)
 
 
-@router.post("/hotels/{user_id}", response_model=Hotel)
+@router.post("/hotels", response_model=Hotel)
 async def create_hotel(
-    user_id: UUID,
     hotel: HotelCreate,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
     Logic for creating a hotel with plan-based limits and admin bypass.
-    (Keeping local logic here as it depends on complex auth/plan checks in main.py)
     """
+    user_id = current_user.id
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
 

@@ -57,7 +57,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 @router.get("/debug-providers")
-async def debug_providers():
+async def debug_providers(admin=Depends(get_current_admin_user)):
     """
     Diagnostic endpoint to verify data provider status.
     Returns which providers (SerpApi, RapidAPI) are registered and active.

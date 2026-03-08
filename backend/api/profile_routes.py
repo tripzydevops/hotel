@@ -19,13 +19,13 @@ from backend.utils.security import verify_ownership
 router = APIRouter(prefix="/api", tags=["profile"])
 
 
-@router.get("/profile/{user_id}", response_model=UserProfile)
+@router.get("/profile", response_model=UserProfile)
 async def get_profile(
-    user_id: UUID,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Fetch user profile with enriched data."""
+    user_id = current_user.id
     if not db:
         return UserProfile(
             user_id=user_id,
@@ -49,14 +49,14 @@ async def get_profile(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/profile/{user_id}", response_model=UserProfile)
+@router.put("/profile", response_model=UserProfile)
 async def update_profile(
-    user_id: UUID,
     profile: UserProfileUpdate,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Update user profile (upsert)."""
+    user_id = current_user.id
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
 
@@ -69,9 +69,8 @@ async def update_profile(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/settings/{user_id}", response_model=Settings)
+@router.get("/settings", response_model=Settings)
 async def get_settings(
-    user_id: UUID,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
@@ -79,6 +78,7 @@ async def get_settings(
     Retrieves user-specific application settings (alert thresholds, scan frequency).
     If no settings exist, it initializes them with safe defaults.
     """
+    user_id = current_user.id
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
 
@@ -121,9 +121,8 @@ async def get_settings(
         return safe_defaults
 
 
-@router.put("/settings/{user_id}", response_model=Settings)
+@router.put("/settings", response_model=Settings)
 async def update_settings(
-    user_id: UUID,
     settings: SettingsUpdate,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -132,6 +131,7 @@ async def update_settings(
     Persists user settings updates.
     Handles both creation (first-time) and modification.
     """
+    user_id = current_user.id
     if not db:
         # Fallback for local/demo mode
         return {

@@ -9,23 +9,16 @@ from backend.models.schemas import Alert
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 
-@router.get("/{user_id}", response_model=List[Alert])
+@router.get("", response_model=List[Alert])
 async def list_alerts(
-    user_id: UUID,
     unread_only: bool = False,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
-    Fetches the recent price alerts for a specific user.
-    Alerts are generated when competitor prices drop below a threshold.
+    Fetches the recent price alerts for the current user.
     """
-    # EXPLANATION: Alert Service Integration
-    # Provides the time-sensitive price drop and competitor undercut events
-    # that power the notification bell and Alert Center in the UI.
-    if str(user_id) != str(current_user.id):
-        from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Cannot access alerts for other users")
+    user_id = current_user.id
 
     try:
         query = db.table("alerts").select("*").eq("user_id", str(user_id))
@@ -43,26 +36,40 @@ async def mark_alert_read(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    # RLS will handle the ownership check if policies are correct, 
-    # but we add an explicit check for defense-in-depth where possible.
+    # KAIZEN: Ownership Verification for specific resource
+    try:
+        current_res = (
+            db.table("alerts")
+            .select("user_id")
+            .eq("id", str(alert_id))
+            .single()
+            .execute()
+        )
+        if not current_res.data:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Alert not found")
+        
+        from backend.utils.security import verify_ownership
+        verify_ownership(current_res.data["user_id"], current_user)
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Ownership check failed")
+
     db.table("alerts").update({"is_read": True}).eq("id", str(alert_id)).execute()
     return {"status": "marked_read"}
 
 
-@router.delete("/user/{user_id}")
+@router.delete("/user")
 async def clear_all_alerts(
-    user_id: UUID,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
     KAİZEN: Operational Hygiene
-    Bulk removes all alerts for a specific user. This is preferred over
-    soft-deletes (is_read) for performance and storage efficiency.
+    Bulk removes all alerts for the current user.
     """
-    if str(user_id) != str(current_user.id):
-        from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Unauthorized")
+    user_id = current_user.id
 
     try:
         db.table("alerts").delete().eq("user_id", str(user_id)).execute()
@@ -80,5 +87,25 @@ async def delete_alert(
     current_user=Depends(get_current_active_user),
 ):
     """Removes a single alert by ID."""
+    # KAIZEN: Ownership Verification
+    try:
+        current_res = (
+            db.table("alerts")
+            .select("user_id")
+            .eq("id", str(alert_id))
+            .single()
+            .execute()
+        )
+        if not current_res.data:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Alert not found")
+        
+        from backend.utils.security import verify_ownership
+        verify_ownership(current_res.data["user_id"], current_user)
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Ownership check failed")
+
     db.table("alerts").delete().eq("id", str(alert_id)).execute()
     return {"status": "deleted", "alert_id": alert_id}

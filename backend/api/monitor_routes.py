@@ -14,9 +14,8 @@ from datetime import datetime, timezone
 router = APIRouter(prefix="/api", tags=["monitor"])
 
 
-@router.post("/monitor/{user_id}", response_model=MonitorResult)
+@router.post("/monitor", response_model=MonitorResult)
 async def trigger_monitor(
-    user_id: UUID,
     background_tasks: BackgroundTasks,
     options: Optional[ScanOptions] = None,
     db: Client = Depends(get_supabase_rls),
@@ -24,11 +23,8 @@ async def trigger_monitor(
 ) -> MonitorResult:
     """
     Triggers a manual price scan for all hotels in the user's account.
-    Fires the asynchronous Agent-Mesh in the background.
     """
-    # EXPLANATION: Manual Price Scan Trigger
-    # Initiates a full-account parity check across all configured providers.
-    # Results are pushed via WebSocket or polled by the frontend.
+    user_id = current_active_user.id
     return await trigger_monitor_logic(
         user_id=user_id,
         background_tasks=background_tasks,
@@ -39,16 +35,17 @@ async def trigger_monitor(
     )
 
 
-@router.get("/trigger-scan/{user_id}")
-@router.post("/trigger-scan/{user_id}")
+@router.get("/trigger-scan")
+@router.post("/trigger-scan")
 async def check_scheduled_scan(
-    user_id: UUID,
     background_tasks: BackgroundTasks,
     request: Request,
     force: bool = Query(False),
-    db: Optional[Client] = Depends(get_supabase),
+    db: Optional[Client] = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
 ):
     """Lazy cron workaround for Vercel free tier."""
+    user_id = current_user.id
 
     # EXPLANATION: Frontend-Triggered Scheduler
     # This endpoint allows the frontend to 'tick' the scheduler when the user

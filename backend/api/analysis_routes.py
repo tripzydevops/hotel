@@ -44,10 +44,9 @@ async def discover_competitors_v1(
 # route was POST /api/analysis/market/{user_id}. Both path and method were
 # mismatched, causing all analysis pages to show "N/A" / empty data.
 # We register BOTH to maintain backward compatibility.
-@router.post("/analysis/market/{user_id}")
-@router.get("/analysis/{user_id}")
+@router.post("/analysis/market")
+@router.get("/analysis")
 async def get_market_intelligence(
-    user_id: UUID,
     room_type: str = "Standard",
     display_currency: str = "TRY",
     currency: Optional[str] = None,
@@ -60,12 +59,9 @@ async def get_market_intelligence(
 ):
     """
     Generates a deep market analysis for the user's city.
-
-    EXPLANATION: Thin Route Handler (Refactored)
-    All business logic (legacy log merging, pgvector room matching, price aggregation)
-    has been moved to analysis_service.get_market_intelligence_data().
-    This route only handles HTTP concerns: dependency injection, response formatting, errors.
     """
+    # EXPLANATION: Thin Route Handler (Refactored)
+    user_id = current_user.id
     from backend.services.analysis_service import get_market_intelligence_data
 
     try:
@@ -164,22 +160,18 @@ async def get_sentiment_history(
         return []
 
 
-@router.get("/analysis/debug/{user_id}")
+@router.get("/analysis/debug")
 async def debug_analysis_data(
-    user_id: UUID,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
     Diagnostic endpoint for Reports page debugging.
-
-    EXPLANATION: Data Pipeline Inspector
-    Returns a concise summary of what the analysis endpoint would see,
-    without running the full analysis. Helps identify where data drops off.
     """
     from datetime import datetime, timedelta
 
     try:
+        user_id = current_user.id
         if not db:
             raise HTTPException(503, "Database unavailable")
 
@@ -310,9 +302,8 @@ async def debug_analysis_data(
         raise HTTPException(500, f"Debug endpoint error: {str(e)}")
 
 
-@router.get("/v2/analysis/stream/{user_id}")
+@router.get("/v2/analysis/stream")
 async def stream_market_intelligence(
-    user_id: UUID,
     room_type: str = "Standard",
     display_currency: str = "TRY",
     currency: Optional[str] = None,
@@ -332,6 +323,7 @@ async def stream_market_intelligence(
 
     async def event_generator():
         try:
+            user_id = current_user.id
             # 1. Immediate Market Stats
             analysis_data = await get_market_intelligence_data(
                 db=db,

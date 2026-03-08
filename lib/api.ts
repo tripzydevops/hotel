@@ -138,12 +138,11 @@ class ApiClient {
     return response.json();
   }
 
-  async getDashboard(userId: string): Promise<DashboardData> {
-    return this.fetch<DashboardData>(`/api/dashboard/${userId}`);
+  async getDashboard(): Promise<DashboardData> {
+    return this.fetch<DashboardData>(`/api/dashboard`);
   }
 
   async triggerMonitor(
-    userId: string,
     options?: {
       check_in?: string;
       check_out?: string;
@@ -151,15 +150,15 @@ class ApiClient {
       currency?: string;
     },
   ): Promise<MonitorResult> {
-    return this.fetch<MonitorResult>(`/api/monitor/${userId}`, {
+    return this.fetch<MonitorResult>(`/api/monitor`, {
       method: "POST",
       body: options ? JSON.stringify(options) : undefined,
     });
   }
 
-  async getAlerts(userId: string, unreadOnly = false): Promise<Alert[]> {
+  async getAlerts(unreadOnly = false): Promise<Alert[]> {
     return this.fetch<Alert[]>(
-      `/api/alerts/${userId}?unread_only=${unreadOnly}`,
+      `/api/alerts?unread_only=${unreadOnly}`,
     );
   }
 
@@ -169,8 +168,8 @@ class ApiClient {
     });
   }
 
-  async clearAlerts(userId: string): Promise<void> {
-    return this.fetch<void>(`/api/alerts/user/${userId}`, {
+  async clearAlerts(): Promise<void> {
+    return this.fetch<void>(`/api/alerts/user`, {
       method: "DELETE",
     });
   }
@@ -182,14 +181,13 @@ class ApiClient {
   }
 
   async addHotel(
-    userId: string,
     name: string,
     location: string,
     isTarget: boolean,
     currency: string = "TRY",
     serpApiId?: string,
   ): Promise<void> {
-    return this.fetch<void>(`/api/hotels/${userId}`, {
+    return this.fetch<void>(`/api/hotels`, {
       method: "POST",
       body: JSON.stringify({
         name,
@@ -201,19 +199,19 @@ class ApiClient {
     });
   }
 
-  async updateSettings(userId: string, settings: any): Promise<void> {
-    return this.fetch<void>(`/api/settings/${userId}`, {
+  async updateSettings(settings: any): Promise<void> {
+    return this.fetch<void>(`/api/settings`, {
       method: "PUT",
       body: JSON.stringify(settings),
     });
   }
 
-  async getSettings(userId: string): Promise<any> {
-    return this.fetch<any>(`/api/settings/${userId}`);
+  async getSettings(): Promise<any> {
+    return this.fetch<any>(`/api/settings`);
   }
 
-  async getProfile(userId: string): Promise<any> {
-    return this.fetch<any>(`/api/profile/${userId}`);
+  async getProfile(): Promise<any> {
+    return this.fetch<any>(`/api/profile`);
   }
 
   async searchDirectory(query: string, city?: string): Promise<any[]> {
@@ -264,27 +262,23 @@ class ApiClient {
     return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
   }
 
-  async getAnalysis(userId: string, currency?: string): Promise<any> {
+  async getAnalysis(currency?: string): Promise<any> {
     // EXPLANATION: Explicit Path Separation
-    // We separate the base path from query parameters to ensure that
-    // route contract tests can accurately match the endpoint. 
-    // This prevents "No Data" screens caused by malformed URL concatenations.
-    const url = `/api/analysis/${userId}`;
+    const url = `/api/analysis`;
     const params = currency ? `?currency=${currency}` : "";
     return this.fetch<any>(`${url}${params}`);
   }
 
   async getAnalysisWithFilters(
-    userId: string,
     queryParams: string,
   ): Promise<any> {
-    const url = `/api/analysis/${userId}`;
+    const url = `/api/analysis`;
     const params = queryParams ? `?${queryParams}` : "";
     return this.fetch<any>(`${url}${params}`);
   }
 
-  async getReports(userId: string): Promise<any> {
-    return this.fetch<any>(`/api/reports/${userId}`);
+  async getReports(): Promise<any> {
+    return this.fetch<any>(`/api/reports`);
   }
 
   async discoverCompetitors(hotelId: string): Promise<any> {
@@ -295,12 +289,12 @@ class ApiClient {
     return this.fetch<any[]>("/api/locations", { authenticated: false });
   }
 
-  async exportReport(userId: string, format: string = "csv"): Promise<void> {
+  async exportReport(format: string = "csv"): Promise<void> {
     const token = await this.getToken();
     const headers: any = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${API_BASE_URL}/api/reports/${userId}/export?format=${format}`;
+    const url = `${API_BASE_URL}/api/reports/export?format=${format}`;
     const response = await fetch(url, {
       method: "POST",
       headers,
@@ -312,7 +306,8 @@ class ApiClient {
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = downloadUrl;
-    a.download = `report_${userId}_${new Date().toISOString().split("T")[0]}.csv`;
+    const timestamp = new Date().toISOString().split("T")[0];
+    a.download = `report_${timestamp}.csv`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(downloadUrl);
@@ -320,7 +315,6 @@ class ApiClient {
   }
 
   async checkScheduledScan(
-    userId: string,
     force: boolean = false,
   ): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
     const params = force ? "?force=true" : "";
@@ -328,13 +322,12 @@ class ApiClient {
       triggered: boolean;
       session_id?: string;
       reason?: string;
-    }>(`/api/trigger-scan/${userId}${params}`, {
+    }>(`/api/trigger-scan${params}`, {
       method: "POST",
     });
   }
 
   async updateProfile(
-    userId: string,
     profile: {
       display_name?: string;
       company_name?: string;
@@ -344,7 +337,7 @@ class ApiClient {
       timezone?: string;
     },
   ): Promise<any> {
-    return this.fetch<any>(`/api/profile/${userId}`, {
+    return this.fetch<any>(`/api/profile`, {
       method: "PUT",
       body: JSON.stringify(profile),
     });

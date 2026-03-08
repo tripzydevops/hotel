@@ -10,20 +10,15 @@ from fastapi.encoders import jsonable_encoder
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
 
-@router.get("/dashboard/{user_id}")
+@router.get("/dashboard")
 async def get_dashboard(
-    user_id: UUID,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
     Main dashboard data aggregator.
-    Fetches the user's primary hotel, its competitors, and recent price trends.
-    Used to populate the main analytics overview.
     """
-    # EXPLANATION: Dashboard Data Aggregator
-    # Centralized endpoint that provides the current state of a user's parity dashboard,
-    # including historical trends, competitor prices, and recent search logs.
+    user_id = current_user.id
     data = await get_dashboard_logic(
         user_id=str(user_id),
         current_user_id=str(current_user.id),
