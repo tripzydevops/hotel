@@ -86,7 +86,7 @@ export default function AnalysisPage() {
       if (session?.user?.id) {
         setUserId(session.user.id);
         try {
-          const userProfile = await api.getProfile(session.user.id);
+          const userProfile = await api.getProfile();
           // Profile handled by DashboardLayout now
         } catch (e) {
           console.error("Failed to fetch profile", e);
@@ -115,7 +115,6 @@ export default function AnalysisPage() {
       }
 
       const result = await api.getAnalysisWithFilters(
-        userId,
         params.toString(),
       );
       setData(result);

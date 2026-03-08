@@ -39,7 +39,7 @@ export function useDashboard(
   // --- Queries ---
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", userId],
-    queryFn: () => api.getDashboard(userId!),
+    queryFn: () => api.getDashboard(),
     enabled: !!userId,
     // EXPLANATION: Polling Strategy
     // When a scan is manually triggered, we set `isPolling` to true.
@@ -65,7 +65,7 @@ export function useDashboard(
 
   // --- Mutations ---
   const scanMutation = useMutation({
-    mutationFn: (options: ScanOptions) => api.triggerMonitor(userId!, options),
+    mutationFn: (options: ScanOptions) => api.triggerMonitor(options),
     onSuccess: () => {
       // Immediate invalidation to clear/refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
@@ -95,7 +95,6 @@ export function useDashboard(
       serpApiId?: string;
     }) =>
       api.addHotel(
-        userId!,
         variables.name,
         variables.location,
         variables.isTarget,

@@ -9,13 +9,13 @@ export function useSettings(userId: string | null, enabled: boolean = true) {
 
   const settingsQuery = useQuery({
     queryKey: ["settings", userId],
-    queryFn: () => api.getSettings(userId!),
+    queryFn: () => api.getSettings(),
     enabled: !!userId && enabled,
   });
 
   const updateSettingsMutation = useMutation({
     mutationFn: (settings: UserSettings) =>
-      api.updateSettings(userId!, settings),
+      api.updateSettings(settings),
     onSuccess: (data, variables) => {
       queryClient.setQueryData(["settings", userId], variables);
       // Settings might affect dashboard currency/display, so refresh dashboard too

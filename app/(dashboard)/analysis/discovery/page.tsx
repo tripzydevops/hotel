@@ -23,7 +23,7 @@ export default function DiscoveryPage() {
         setUserId(session.user.id);
         // Get hotel ID from analysis endpoint
         try {
-          const result = await api.getAnalysisWithFilters(session.user.id, "");
+          const result = await api.getAnalysisWithFilters("");
           setHotelId(result?.hotel_id || null);
         } catch (e) {
           console.error("Failed to get hotel ID", e);

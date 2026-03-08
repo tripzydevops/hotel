@@ -61,7 +61,7 @@ const ScansPanel = () => {
   const handleTriggerNow = async (userId: string) => {
     toast.success("Triggering scan...");
     try {
-      await api.checkScheduledScan(userId, true);
+      await api.checkScheduledScan(true);
       toast.success("Scan triggered! Check history.");
       // Refresh queue
       loadQueue();

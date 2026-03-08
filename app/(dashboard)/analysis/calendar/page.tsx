@@ -65,7 +65,6 @@ export default function CalendarPage() {
       if (roomType) params.set("room_type", roomType);
 
       const result = await api.getAnalysisWithFilters(
-        userId,
         params.toString(),
       );
       setData(result);
@@ -137,7 +136,7 @@ export default function CalendarPage() {
 
   const getVisiblePrices = () => {
     if (!data?.daily_prices) return [];
-    
+
     const results = [];
     const startTs = new Date(viewDate);
     startTs.setHours(0, 0, 0, 0);
@@ -146,7 +145,7 @@ export default function CalendarPage() {
       const curr = new Date(startTs);
       curr.setDate(curr.getDate() + i);
       const dStr = curr.toISOString().split("T")[0];
-      
+
       const existing = data.daily_prices.find((p: any) => p.date === dStr);
       if (existing) {
         results.push(existing);
@@ -172,8 +171,8 @@ export default function CalendarPage() {
       visiblePrices.flatMap((p: any) => p.competitors.map((c: any) => c.name))
     )
   ).map((name) => {
-      const compData = data?.competitors?.find((c: any) => c.name === name);
-      return { id: compData?.id || name, name };
+    const compData = data?.competitors?.find((c: any) => c.name === name);
+    return { id: compData?.id || name, name };
   });
 
   const visibleRangeLabel =
@@ -202,7 +201,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Top Toolbar Controls */}
-      <CalendarControls 
+      <CalendarControls
         roomType={roomType}
         onRoomTypeChange={setRoomType}
         availableRoomTypes={data?.available_room_types || []}

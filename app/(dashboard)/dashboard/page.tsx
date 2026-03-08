@@ -64,7 +64,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (userId) {
       const timer = setTimeout(() => {
-        api.checkScheduledScan(userId).catch((err) => {
+        api.checkScheduledScan().catch((err) => {
           console.error("[LazyCron] Failed to check scheduled scan:", err);
         });
       }, 3000);

@@ -51,7 +51,7 @@ export default function ProfileModal({
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const data = await api.getProfile(userId);
+      const data = await api.getProfile();
       setProfile({
         display_name: data.display_name || "",
         company_name: data.company_name || "",
@@ -77,7 +77,7 @@ export default function ProfileModal({
     console.log("[ProfileModal] Saving profile for:", userId, profile);
 
     try {
-      const updated = await api.updateProfile(userId, profile);
+      const updated = await api.updateProfile(profile);
       console.log("[ProfileModal] Profile updated successfully:", updated);
 
       if (onUpdate) onUpdate(updated);

@@ -67,15 +67,11 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
 
       // 2. Add to tracked hotels
       await api.addHotel(
-        session.user.id,
         rival.name,
         rival.location,
         false, // isTarget
-        "TRY", // Default currency, could be dynamic
-        undefined, // serpApiId - backend handles discovery/matching if missing, but we should pass if we had it.
-        // The API addHotel doesn't strictly require serpApiId but good to have if possible.
-        // We don't have serpApiId in DiscoveryRival interface explicitly unless we add it.
-        // For now, name/location is enough for the backend to start tracking.
+        "TRY", // Default currency
+        undefined, // serpApiId
       );
 
       // 3. Update local state to show "Tracked"

@@ -35,7 +35,7 @@ export default function AlertsModal({
   const loadAlerts = async () => {
     setLoading(true);
     try {
-      const data = await api.getAlerts(userId);
+      const data = await api.getAlerts();
       setAlerts(data);
     } catch (error) {
       console.error("Failed to load alerts:", error);
@@ -64,10 +64,10 @@ export default function AlertsModal({
     if (originalAlerts.length === 0) return;
 
     setAlerts([]);
-    
+
     try {
       console.log(`[AlertsModal] Clearing all alerts for user ${userId}`);
-      await api.clearAlerts(userId);
+      await api.clearAlerts();
       toast.info(t("common.saveSuccess") || "Alarmlar temizlendi");
       onUpdate();
     } catch (error) {
@@ -137,21 +137,19 @@ export default function AlertsModal({
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-4 rounded-xl border transition-all duration-300 ${
-                  alert.is_read
+                className={`p-4 rounded-xl border transition-all duration-300 ${alert.is_read
                     ? "bg-white/[0.02] border-white/5 opacity-60"
                     : "bg-white/[0.05] border-[var(--soft-gold)]/20 shadow-lg shadow-[var(--soft-gold)]/5"
-                }`}
+                  }`}
               >
                 <div className="flex justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span
-                        className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-[0.2em] ${
-                          alert.alert_type === "competitor_undercut"
+                        className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-[0.2em] ${alert.alert_type === "competitor_undercut"
                             ? "bg-red-500/20 text-red-400"
                             : "bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]"
-                        }`}
+                          }`}
                       >
                         {alert.alert_type === "competitor_undercut"
                           ? t("alerts.undercut")

@@ -925,7 +925,7 @@ export default function ReportsPage() {
       if (!userId) return;
       setLoading(true);
       try {
-        const reportsResult = await api.getReports(userId);
+        const reportsResult = await api.getReports();
         setData(reportsResult);
       } catch (err) {
         console.error("Failed to load reports:", err);
@@ -1077,7 +1077,7 @@ export default function ReportsPage() {
           `executive-report-${currency}-${new Date().toISOString().split("T")[0]}.pdf`
         );
       } else {
-        await api.exportReport(userId, format);
+        await api.exportReport(format);
       }
     } catch (err) {
       console.error("Export failed:", err);

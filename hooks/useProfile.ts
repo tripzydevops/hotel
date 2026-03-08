@@ -9,13 +9,13 @@ export function useProfile(userId: string | null, enabled: boolean = true) {
   
   const profileQuery = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => api.getProfile(userId!),
+    queryFn: () => api.getProfile(),
     enabled: !!userId && enabled,
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: (profile: Partial<AdminUser>) =>
-      api.updateProfile(userId!, profile),
+      api.updateProfile(profile),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
