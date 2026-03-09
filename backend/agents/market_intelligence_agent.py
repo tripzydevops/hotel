@@ -32,8 +32,8 @@ class MarketIntelligenceAgent:
     Falls back to heuristic mode if google-adk is not installed.
     """
 
-    def __init__(self, model: str = "gemini-1.5-flash"):
-        # KAİZEN: Using gemini-1.5-flash for maximum production stability and capacity.
+    def __init__(self, model: str = "gemini-3-flash-preview"):
+        # KAİZEN: Using gemini-3-flash-preview as per newest gemini-api-dev skill.
         self.agent = None
         try:
             from google.adk.agents.llm_agent import Agent
