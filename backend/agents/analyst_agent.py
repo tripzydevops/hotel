@@ -1145,7 +1145,7 @@ class AnalystAgent:
             """
             try:
                 response = client.models.generate_content(
-                    model="gemini-3-flash-preview", contents=prompt
+                    model="gemini-1.5-flash", contents=prompt
                 )
                 if response and response.text:
                     briefing_payload["narrative_raw"] = response.text
