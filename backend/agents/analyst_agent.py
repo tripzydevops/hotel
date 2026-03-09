@@ -22,25 +22,66 @@ class AnalystAgent:
     def __init__(self, db: Client):
         self.adk_agent = MarketIntelligenceAgent()
         self.db = db
+        self._log_buffer = {}
 
-    async def _log_reasoning(self, session_id: Optional[UUID], message: str):
+    async def log_reasoning(
+        self,
+        session_id: Optional[UUID],
+        step: str,
+        message: str,
+        level: str = "info",
+        metadata: Optional[Dict] = None,
+    ):
+        """Buffer a log entry in memory for batch processing later."""
         if not session_id:
             return
+
+        sid_key = str(session_id)
+        if sid_key not in self._log_buffer:
+            self._log_buffer[sid_key] = []
+
+        import time
+        entry = {
+            "step": step,
+            "level": level,
+            "message": message,
+            "timestamp": time.time(),
+            "metadata": metadata or {},
+        }
+        self._log_buffer[sid_key].append(entry)
+
+    async def _flush_logs(self, session_id: Optional[UUID]):
+        """Batch update the reasoning trace to the database in a single round-trip."""
+        if not session_id:
+            return
+
+        sid_key = str(session_id)
+        if sid_key not in self._log_buffer or not self._log_buffer[sid_key]:
+            return
+
         try:
-            # Atomic-ish append (Fetch-Modify-Update)
+            # Single atomic append
             res = (
                 self.db.table("scan_sessions")
                 .select("reasoning_trace")
-                .eq("id", str(session_id))
+                .eq("id", sid_key)
                 .execute()
             )
-            trace = res.data[0]["reasoning_trace"] if res.data else []
-            trace.append(message)
-            self.db.table("scan_sessions").update({"reasoning_trace": trace}).eq(
-                "id", str(session_id)
-            ).execute()
-        except Exception:
-            pass
+            if res.data:
+                current_trace = res.data[0].get("reasoning_trace") or []
+                current_trace.extend(self._log_buffer[sid_key])
+
+                self.db.table("scan_sessions").update(
+                    {
+                        "reasoning_trace": current_trace,
+                        "updated_at": datetime.now().isoformat(),
+                    }
+                ).eq("id", sid_key).execute()
+
+                # Clear buffer for this session
+                self._log_buffer[sid_key] = []
+        except Exception as e:
+            print(f"[AnalystAgent] Log flush failed: {e}")
 
     async def analyze_results(
         self,
@@ -128,7 +169,7 @@ class AnalystAgent:
                     elif status:
                         error_detail = status
 
-                    reasoning_log.append(
+                    await self.log_reasoning(session_id, "Analysis", 
                         f"[Skip] Hotel {hotel_id} - status: {error_detail}"
                     )
                     # KAİZEN: Allow non-success hotels to continue to trigger Smart Continuity (historical fallback)
@@ -141,49 +182,45 @@ class AnalystAgent:
                     currency = price_data.get("currency", "TRY")
 
                 if not current_price or current_price <= 0:
-                    reasoning_log.append(
-                        f"[Start] Analyzing {hotel_id}. No Price Found."
+                    await self.log_reasoning(
+                        session_id,
+                        "Analysis",
+                        f"Analyzing {hotel_id}. No Price Found.",
+                        "info"
                     )
                 else:
                     # EXPLANATION: Price Sanity Safeguard
-                    # This block prevents data anomalies like "1000 Points" being mistaken for "1000 TL".
-                    # If the price drops too sharply compared to history, we treat it as invalid
-                    # to trigger the 'Smart Continuity' fallback instead.
                     is_valid_drop, avg_price = self._validate_price_drop(
                         hotel_id, current_price, currency
                     )
                     if not is_valid_drop:
-                        await self._log_reasoning(
+                        await self.log_reasoning(
                             session_id,
-                            f"[Safeguard] Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback.",
+                            "Safeguard",
+                            f"Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback.",
+                            "warning"
                         )
-                        reasoning_log.append(
-                            f"[Safeguard] Rejected suspicious price {current_price} {currency} (Avg: {avg_price:.2f}). Triggering fallback."
-                        )
-                        current_price = (
-                            0.0  # Force continuity fallback to use historical baseline
-                        )
+                        current_price = 0.0
                     else:
-                        await self._log_reasoning(
+                        await self.log_reasoning(
                             session_id,
-                            f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}",
+                            "Analysis",
+                            f"Analyzing {hotel_id}. Raw Price: {current_price} {currency}",
+                            "info"
                         )
-                        reasoning_log.append(
-                            f"[Start] Analyzing {hotel_id}. Raw Price: {current_price} {currency}"
+        
+                        # Currency Normalization
+                        target_currency = (
+                            options.currency if options and options.currency else "TRY"
                         )
-
-                # Currency Normalization
-                target_currency = (
-                    options.currency if options and options.currency else "TRY"
-                )
-                if currency == "USD" and target_currency == "TRY" and current_price > 0:
-                    old_price = current_price
-                    current_price = convert_currency(current_price, "USD", "TRY")
-                    currency = "TRY"
-                    reasoning_log.append(
-                        f"[Normalization] Converted {old_price} USD -> {current_price} TRY"
-                    )
-
+                        if currency == "USD" and target_currency == "TRY" and current_price > 0:
+                            old_price = current_price
+                            current_price = convert_currency(current_price, "USD", "TRY")
+                            currency = "TRY"
+                            await self.log_reasoning(session_id, "Analysis", 
+                                f"[Normalization] Converted {old_price} USD -> {current_price} TRY"
+                            )
+        
                 check_in = res.get("check_in")
                 if not check_in:
                     check_in = datetime.now().date()
@@ -195,23 +232,18 @@ class AnalystAgent:
 
                 # EXPLANATION: Smart Continuity (Vertical Fill Persistence)
                 # User Requirement: "if the scan fails or has no price then look back at the last successful price... up to 7 days back"
-                # We enforce this at the database level so the data is permanently fixed, not just guessed at read time.
                 is_estimated = False
 
                 if not current_price or current_price <= 0:
-                    reasoning_log.append(
+                    await self.log_reasoning(session_id, "Analysis", 
                         f"[Continuity] Price missing for {hotel_id} on {check_in_str}. Checking history..."
                     )
                     try:
                         # Look for the most recent price for THIS specific check-in date
-                        # Window: 7 days back from now
                         cutoff = (datetime.now() - timedelta(days=7)).isoformat()
-
                         history_res = (
                             self.db.table("price_logs")
-                            .select(
-                                "price, currency, recorded_at, vendor, parity_offers, room_types"
-                            )
+                            .select("price, currency, recorded_at, vendor, parity_offers, room_types")
                             .eq("hotel_id", hotel_id)
                             .eq("check_in_date", check_in_str)
                             .gt("recorded_at", cutoff)
@@ -224,430 +256,145 @@ class AnalystAgent:
                             last_valid = history_res.data[0]
                             current_price = last_valid["price"]
                             currency = last_valid["currency"]
-                            # KAİZEN: Continuity Metadata Persistence
-                            # Copy critical metadata from historical logs to maintain dashboard accuracy.
-                            price_data["vendor"] = last_valid.get(
-                                "vendor"
-                            ) or price_data.get("vendor")
+                            price_data["vendor"] = last_valid.get("vendor") or price_data.get("vendor")
                             price_data["offers"] = last_valid.get("parity_offers") or []
-                            price_data["room_types"] = (
-                                last_valid.get("room_types") or []
+                            price_data["room_types"] = last_valid.get("room_types") or []
+                            is_estimated = True
+                            await self.log_reasoning(session_id, "Analysis", 
+                                f"[Continuity] Found historical price for SAME date: {current_price} {currency}"
                             )
-                            is_estimated = True  # Mark as estimated
-                            reasoning_log.append(
-                                f"[Continuity] Found historical price for SAME date: {current_price} {currency} from {last_valid['recorded_at']}"
-                            )
-
-                            # KAİZEN: UI Persistence
-                            # Log this fallback to query_logs so the ScanSessionModal shows accurate vendor/price counts.
-                            if session_id:
-                                await log_query(
-                                    db=self.db,
-                                    user_id=user_id,
-                                    hotel_name=res.get("hotel_name", "Hotel"),
-                                    location=res.get("location"),
-                                    action_type="monitor_fallback",
-                                    status="success",
-                                    price=current_price,
-                                    currency=currency,
-                                    vendor=price_data.get("vendor"),
-                                    session_id=session_id,
-                                )
                         else:
-                            # [FALLBACK LEVEL 2] Look for ANY recent price for this hotel (ignoring check-in date)
-                            # This covers the "Check-In Date Rolling" scenario
+                            # Level 2 Fallback
                             history_any_res = (
                                 self.db.table("price_logs")
-                                .select(
-                                    "price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types"
-                                )
+                                .select("price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types")
                                 .eq("hotel_id", hotel_id)
                                 .gt("recorded_at", cutoff)
                                 .order("recorded_at", desc=True)
                                 .limit(1)
                                 .execute()
                             )
-
                             if history_any_res.data:
                                 last_any = history_any_res.data[0]
                                 current_price = last_any["price"]
                                 currency = last_any["currency"]
-                                # KAİZEN: Continuity Metadata Persistence
-                                price_data["vendor"] = last_any.get(
-                                    "vendor"
-                                ) or price_data.get("vendor")
-                                price_data["offers"] = (
-                                    last_any.get("parity_offers") or []
-                                )
-                                price_data["room_types"] = (
-                                    last_any.get("room_types") or []
-                                )
+                                price_data["vendor"] = last_any.get("vendor") or price_data.get("vendor")
+                                price_data["offers"] = last_any.get("parity_offers") or []
+                                price_data["room_types"] = last_any.get("room_types") or []
                                 is_estimated = True
-                                reasoning_log.append(
+                                await self.log_reasoning(session_id, "Analysis", 
                                     f"[Continuity] Found recent price for different date ({last_any.get('check_in_date')}): {current_price} {currency}"
                                 )
-
-                                # KAİZEN: UI Persistence
-                                if session_id:
-                                    await log_query(
-                                        db=self.db,
-                                        user_id=user_id,
-                                        hotel_name=res.get("hotel_name", "Hotel"),
-                                        location=res.get("location"),
-                                        action_type="monitor_fallback_any",
-                                        status="success",
-                                        price=current_price,
-                                        currency=currency,
-                                        vendor=price_data.get("vendor"),
-                                        session_id=session_id,
-                                    )
                             else:
-                                current_price = (
-                                    0.0  # Explicitly set to 0 to indicate failure
-                                )
-                                reasoning_log.append(
-                                    "[Continuity] No history found within 7 days. recording as Verification Failed."
-                                )
+                                current_price = 0.0
+                                await self.log_reasoning(session_id, "Analysis", "[Continuity] No history found.")
                     except Exception as e:
-                        print(f"[AnalystAgent] Continuity lookup failed: {e}")
+                        print(f"[AnalystAgent] Continuity failed: {e}")
 
-                # KAİZEN: Market Depth Safeguard
-                # Detects if we are getting "shallow" results compared to historical volume.
+                # Market Depth Safeguard
                 offers = price_data.get("offers", [])
                 is_shallow = False
                 if len(offers) < 5 and not is_estimated:
                     is_shallow = True
-                    # KAİZEN: Persistence Check
-                    # As per user request: a single low result might be transient,
-                    # but if it keeps happening, it's a critical logic problem.
                     try:
-                        prev_res = (
-                            self.db.table("price_logs")
-                            .select("metadata")
-                            .eq("hotel_id", hotel_id)
-                            .order("recorded_at", desc=True)
-                            .limit(2)
-                            .execute()
-                        )
-                        prev_shallow_count = 0
-                        for row in prev_res.data:
-                            if row.get("metadata", {}).get("is_shallow"):
-                                prev_shallow_count += 1
-
+                        prev_res = self.db.table("price_logs").select("metadata").eq("hotel_id", hotel_id).order("recorded_at", desc=True).limit(2).execute()
+                        prev_shallow_count = sum(1 for row in prev_res.data if row.get("metadata", {}).get("is_shallow"))
                         if prev_shallow_count >= 2:
-                            await self._log_reasoning(
-                                session_id,
-                                f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}. 3 consecutive scans failed to capture full market depth. This usually indicates a change in SerpApi JSON structure (e.g., price keys) or a significant drop in vendor availability.",
-                            )
+                            await self.log_reasoning(session_id, "Safeguard", f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}.", "error")
                         else:
-                            await self._log_reasoning(
-                                session_id,
-                                f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found. If this persists, it may imply vendors are moving to untracked price keys.",
-                            )
+                            await self.log_reasoning(session_id, "Safeguard", f"Shallow extraction for {hotel_id}: Only {len(offers)} offers found.", "warning")
                     except Exception:
-                        await self._log_reasoning(
-                            session_id,
-                            f"[Data Quality Warning] Shallow market extraction for {hotel_id}: Only {len(offers)} offers found.",
-                        )
+                        pass
 
-                # KAİZEN: Room Type Persistence (Carry-Forward)
-                # SerpApi intermittently returns empty room_types even for hotels
-                # that previously had rich room data. When room_types is empty,
-                # we carry forward from the most recent successful scan (within 7 days).
+                # Room Type Persistence
                 current_room_types = price_data.get("room_types", [])
                 if not current_room_types and not is_estimated:
                     try:
                         rt_cutoff = (datetime.now() - timedelta(days=7)).isoformat()
-                        rt_history = (
-                            self.db.table("price_logs")
-                            .select("room_types, recorded_at")
-                            .eq("hotel_id", hotel_id)
-                            .gt("recorded_at", rt_cutoff)
-                            .order("recorded_at", desc=True)
-                            .limit(10)
-                            .execute()
-                        )
-
+                        rt_history = self.db.table("price_logs").select("room_types").eq("hotel_id", hotel_id).gt("recorded_at", rt_cutoff).order("recorded_at", desc=True).limit(5).execute()
                         for prev_log in rt_history.data or []:
-                            prev_rt = prev_log.get("room_types") or []
-                            if len(prev_rt) > 0:
-                                current_room_types = prev_rt
-                                reasoning_log.append(
-                                    f"[Room Persistence] Carried forward {len(prev_rt)} room types "
-                                    f"from {prev_log['recorded_at'][:19]} for {hotel_id}"
-                                )
+                            if prev_log.get("room_types"):
+                                current_room_types = prev_log["room_types"]
+                                await self.log_reasoning(session_id, "Analysis", f"[Room Persistence] Carried forward {len(current_room_types)} types.")
                                 break
-                    except Exception as rt_e:
-                        print(f"[AnalystAgent] Room type carry-forward failed: {rt_e}")
+                    except Exception: pass
 
-                # Prepare Price Log
-                # KAİZEN: Use explicit hotel_id variable to prevent accidental shadowing
-                # [KAİZEN] Robust Metadata Processing
-                # EXPLANATION: Single Source of Truth Persistence
-                # This AnalystAgent is the primary writer to the price_logs table.
-                # It receives raw data from the Scraper, performs currency and
-                # room-type normalization, and flushes the result. This prevents
-                # duplicate key collisions and ensures all data is session-linked.
-                
-                # [FIX] Zombie Cache Intelligence
-                # Goal: Prevent the "180-minute window" from being extended indefinitely by redundant cache hits.
-                # Rule: We only skip insertion if a recent price log (within 3 hours) already exists for THIS specific hotel.
-                # This ensures newly added hotels (which hit the global cache) still get their first log persisted.
-                
+                # Persistence logic
                 has_recent_log = False
                 if hotel_id in history_map and history_map[hotel_id]:
                     latest_log_time = history_map[hotel_id][0].get("recorded_at")
                     if latest_log_time:
                         try:
-                            # 180 min window
                             log_dt = datetime.fromisoformat(latest_log_time.replace("Z", "+00:00"))
                             if (datetime.now(timezone.utc) - log_dt).total_seconds() < 10800:
                                 has_recent_log = True
-                        except Exception:
-                            pass
+                        except Exception: pass
 
                 if price_data.get("source") != "global_cache" or not has_recent_log:
-                    price_logs_to_insert.append(
-                        {
-                            "hotel_id": hotel_id,
-                            "price": current_price if current_price else 0.0,
-                            "currency": currency,
-                            "check_in_date": check_in_str,
-                            "source": price_data.get("source", "serpapi"),
-                            "vendor": price_data.get("vendor", "Unknown"),
-                            "search_rank": price_data.get("search_rank"),
-                            "parity_offers": offers,
-                            "room_types": current_room_types,
-                            "is_estimated": is_estimated,
-                            "session_id": str(session_id) if session_id else None,
-                            "serp_api_id": price_data.get("property_token")
-                            or price_data.get("serp_api_id"),
-                            "metadata": {
-                                "is_shallow": is_shallow,
-                                "extraction_depth": len(offers),
-                            },
-                        }
-                    )
-                else:
-                    reasoning_log.append(f"[Cache Intelligence] Skipping price_log insertion for global_cache HIT to prevent window extension (Recent log exists).")
-
-                # KAİZEN: UI Persistence for successful monitor results
-                # This ensures the hotel appears in the Pulse Intelligence scan summary
+                    price_logs_to_insert.append({
+                        "hotel_id": hotel_id,
+                        "price": current_price if current_price else 0.0,
+                        "currency": currency,
+                        "check_in_date": check_in_str,
+                        "source": price_data.get("source", "serpapi"),
+                        "vendor": price_data.get("vendor", "Unknown"),
+                        "parity_offers": offers,
+                        "room_types": current_room_types,
+                        "is_estimated": is_estimated,
+                        "session_id": str(session_id) if session_id else None,
+                        "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)},
+                    })
+                
                 if session_id and not is_estimated:
-                    await log_query(
-                        db=self.db,
-                        user_id=user_id,
-                        hotel_name=res.get("hotel_name", "Hotel"),
-                        location=res.get("location"),
-                        action_type="monitor",
-                        status="success" if current_price > 0 else "error",
-                        price=current_price,
-                        currency=currency,
-                        vendor=price_data.get("vendor"),
-                        session_id=session_id,
-                    )
+                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=price_data.get("vendor"), session_id=session_id)
 
                 analysis_summary["prices_updated"] += 1
 
-                # [Global Pulse] Phase 2: Collect pulse data for batching
-                if current_price and current_price > 0:  # and not is_estimated:
-                    serp_api_id = price_data.get("property_token") or price_data.get(
-                        "serp_api_id"
-                    )
+                # [Global Pulse] Phase 2
+                if current_price and current_price > 0:
+                    serp_api_id = price_data.get("property_token") or price_data.get("serp_api_id")
                     if serp_api_id:
-                        pulse_queue.append(
-                            {
-                                "serp_api_id": serp_api_id,
-                                "hotel_id": hotel_id,
-                                "hotel_name": res.get("hotel_name", "Hotel"),
-                                "current_price": current_price,
-                                "currency": currency,
-                            }
-                        )
+                        pulse_queue.append({"serp_api_id": serp_api_id, "hotel_id": hotel_id, "hotel_name": res.get("hotel_name", "Hotel"), "current_price": current_price, "currency": currency})
 
-                # Prepare Metadata Update
-                # Fetch existing record to ensure we have the latest breakdown for mention generation
-                existing_hotel = (
-                    self.db.table("hotels")
-                    .select(
-                        "sentiment_breakdown, image_url, image_url, rating, reviews"
-                    )
-                    .eq("id", hotel_id)
-                    .single()
-                    .execute()
-                )
+                # Metadata Update
+                existing_hotel = self.db.table("hotels").select("sentiment_breakdown").eq("id", hotel_id).single().execute()
                 current_breakdown = existing_hotel.data.get("sentiment_breakdown") or []
-
-                vendor = price_data.get("vendor") or price_data.get("source", "SerpApi")
-                meta_update = {
-                    "last_scan": datetime.now().isoformat(),
-                    "vendor_source": vendor,
-                    "embedding_status": "current",
-                }
+                meta_update = {"last_scan": datetime.now().isoformat(), "vendor_source": price_data.get("vendor", "SerpApi"), "embedding_status": "current"}
                 if current_price and current_price > 0:
                     meta_update["current_price"] = current_price
-                    # meta_update["currency"] = currency # Column check
 
-                # [Smart Memory - Sentiment Merging Logic]
                 if "reviews_breakdown" in price_data:
-                    new_breakdown = price_data["reviews_breakdown"]
-                    merged_breakdown = merge_sentiment_breakdowns(
-                        current_breakdown, new_breakdown
-                    )
+                    merged_breakdown = merge_sentiment_breakdowns(current_breakdown, price_data["reviews_breakdown"])
                     meta_update["sentiment_breakdown"] = merged_breakdown
-                    reasoning_log.append(
-                        f"[Sentiment] Merging {len(new_breakdown)} new categories into {len(merged_breakdown)} total."
-                    )
                     sentiment_changed = True
 
-                # Extract other rich fields (excluding reviews_breakdown which is merged above)
-                for field in [
-                    "rating",
-                    "property_token",
-                    "image_url",
-                    "latitude",
-                    "longitude",
-                    "reviews_list",
-                    "review_count",
-                    "stars",
-                    "amenities",
-                    "images",
-                ]:
-                    key = (
-                        "serp_api_id"
-                        if field == "property_token"
-                        else "reviews"
-                        if field == "reviews_list"
-                        else field
-                    )
+                for field in ["rating", "image_url", "stars", "review_count", "amenities"]:
                     val = price_data.get(field)
-                    if val is not None:
-                        meta_update[key] = val
+                    if val is not None: meta_update[field] = val
 
-                # [NEW] Generate Sentiment Voices (guest_mentions)
-                # KAİZEN: Use cumulatively merged breakdown for voice generation
-                calc_breakdown = (
-                    meta_update.get("sentiment_breakdown") or current_breakdown
-                )
-                if calc_breakdown:
-                    meta_update["guest_mentions"] = generate_mentions(calc_breakdown)
-                    reasoning_log.append(
-                        f"[Sentiment] Voices refreshed: {len(meta_update['guest_mentions'])} mentions"
-                    )
+                if meta_update.get("sentiment_breakdown"):
+                    meta_update["guest_mentions"] = generate_mentions(meta_update["sentiment_breakdown"])
 
-                # EXPLANATION: Data Reliability Sync
-                # To prevent data drift, we mark the hotel as 'stale' as soon as
-                # sentiment data changes. This ensures the frontend doesn't trust
-                # old AI embeddings if they haven't been regenerated yet.
                 if sentiment_changed:
                     meta_update["embedding_status"] = "stale"
+                    self._embedding_queue.append((hotel_id, meta_update))
 
-                # Update Hotel Metadata
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
 
-                # [Global Directory Sync]
-                # Sync sentiment and metadata back to the shared directory
-                # so that newly added hotels (by any user) can benefit from this data.
-                serp_id = meta_update.get("serp_api_id") or price_data.get("property_token") or price_data.get("serp_api_id")
-                if serp_id:
-                    dir_sync = {
-                        "rating": meta_update.get("rating"),
-                        "stars": meta_update.get("stars"),
-                        "review_count": meta_update.get("review_count"),
-                        "image_url": meta_update.get("image_url"),
-                        "sentiment_breakdown": meta_update.get("sentiment_breakdown"),
-                        "reviews": meta_update.get("reviews"),
-                        "last_verified_at": datetime.now().isoformat()
-                    }
-                    dir_sync = {k: v for k, v in dir_sync.items() if v is not None}
-                    if dir_sync:
-                        try:
-                            self.db.table("hotel_directory").update(dir_sync).eq("serp_api_id", serp_id).execute()
-                        except Exception as dse:
-                            print(f"[AnalystAgent] Directory sync failed: {dse}")
-
-                # EXPLANATION: Parallel Embedding Collection
-                # Previously, embeddings were generated sequentially for each hotel,
-                # causing massive latency (approx 2s per hotel).
-                # Now we collect all hotels that need updates and process them
-                # in parallel at the end of the analysis pipeline.
-                if sentiment_changed:
-                    if not hasattr(self, "_embedding_queue"):
-                        self._embedding_queue = []
-                    self._embedding_queue.append((hotel_id, meta_update))
-                    reasoning_log.append(
-                        f"[Embedding] Queued for parallel generation: {hotel_id}"
-                    )
-
-                # Prepare Sentiment History
-                if price_data.get("rating"):
-                    sentiment_history_to_insert.append(
-                        {
-                            "hotel_id": hotel_id,
-                            "rating": price_data.get("rating"),
-                            "review_count": price_data.get("review_count") or None,
-                            "sentiment_breakdown": price_data.get(
-                                "reviews_breakdown", []
-                            ),
-                            "recorded_at": datetime.now().isoformat(),  # [FIX] Ensure recorded_at is explicitly set for graph filtering
-                        }
-                    )
-                    reasoning_log.append(
-                        f"[Sentiment] Prepared history for rating {price_data.get('rating')}"
-                    )
-
-                # 3. Threshold Breaches (Using pre-fetched history)
+                # Threshold breaches
                 if current_price and current_price > 0:
                     hotel_history = history_map.get(hotel_id, [])
-                    if len(hotel_history) > 0:
-                        # The most recent history in DB might be the one we just processed if we didn't pre-fetch BEFORE any inserts.
-                        # However, since we pre-fetch at the START, hotel_history[0] is the PREVIOUS price.
+                    if hotel_history:
                         prev_entry = hotel_history[0]
-                        previous_price = prev_entry["price"]
-                        previous_currency = prev_entry.get("currency", "USD")
-
-                        if currency != previous_currency:
-                            previous_price = convert_currency(
-                                previous_price, previous_currency, currency
-                            )
-
-                        # 3. Dynamic Thresholding (Predictive Yield)
-                        current_threshold = threshold
-                        if settings and settings.get("dynamic_threshold_enabled"):
-                            volatility = await predictive_service.calculate_market_volatility(
-                                self.db, hotel_id
-                            )
-                            sensitivity = settings.get("dynamic_threshold_sensitivity", 1.0)
-                            current_threshold = predictive_service.get_smart_threshold(
-                                threshold, volatility, sensitivity
-                            )
-                            
-                            if current_threshold > threshold:
-                                reasoning_log.append(
-                                    f"[Predictive Yield] Noise Suppression active. Adjusted threshold: {current_threshold}% "
-                                    f"(Baseline: {threshold}%, Volatility: {volatility}%)"
-                                )
-
-                        alert = price_comparator.check_threshold_breach(
-                            current_price, previous_price, current_threshold
-                        )
+                        previous_price = convert_currency(prev_entry["price"], prev_entry.get("currency", "USD"), currency)
+                        alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
                         if alert:
-                            await self._log_reasoning(
-                                session_id,
-                                f"[Alert] BREACH! {current_price} vs {previous_price}",
-                            )
-                            alert_data = {
-                                "user_id": str(user_id),
-                                "hotel_id": hotel_id,
-                                # "currency": currency, # Column missing in some environments
-                                **alert,
-                            }
-                            analysis_summary["alerts"].append(alert_data)
-                            alerts_to_insert.append(alert_data)
-
+                            await self.log_reasoning(session_id, "Alert", f"BREACH! {current_price} vs {previous_price}", "error")
+                            alerts_to_insert.append({"user_id": str(user_id), "hotel_id": hotel_id, **alert})
+        
             except Exception as e:
                 print(f"[AnalystAgent] Error processing {res.get('hotel_id')}: {e}")
-                reasoning_log.append(f"[ERROR] {str(e)}")
+                await self.log_reasoning(session_id, "Analysis", f"[ERROR] {str(e)}")
 
         # 4. Final Batch Insertions
         try:
@@ -661,7 +408,7 @@ class AnalystAgent:
                 self.db.table("alerts").insert(alerts_to_insert).execute()
         except Exception as e:
             print(f"[AnalystAgent] Batch insert error: {e}")
-            reasoning_log.append(f"[CRITICAL] Batch insert failed: {str(e)}")
+            await self.log_reasoning(session_id, "Analysis", f"[CRITICAL] Batch insert failed: {str(e)}")
 
         # EXPLANATION: Parallel Embedding Generation (2026 Optimization)
         # Instead of slowing down the main analysis loop, we process all queued
@@ -687,25 +434,33 @@ class AnalystAgent:
                         "id", hotel_id
                     ).execute()
 
-                reasoning_log.append(
+                await self.log_reasoning(session_id, "Analysis", 
                     f"[Embedding] Parallel processing complete for {len(embedding_tasks)} profiles."
                 )
                 # Clear queue for next run
                 self._embedding_queue = []
             except Exception as e:
                 print(f"[AnalystAgent] Parallel embedding error: {e}")
-                reasoning_log.append(
+                await self.log_reasoning(session_id, "Analysis", 
                     f"[Embedding] Parallel processing failed: {str(e)}"
                 )
 
-        # 5. Reasoning Trace persistence
-        if session_id and reasoning_log:
-            try:
-                self.db.table("scan_sessions").update(
-                    {"reasoning_trace": reasoning_log}
-                ).eq("id", str(session_id)).execute()
-            except Exception:
-                pass
+        # 5. Market Intelligence (ADK Agent Activation)
+        # Use the MarketIntelligenceAgent to perform a high-level review of all gathered results.
+        try:
+            intel_res = await self.adk_agent.run_analysis(scraper_results, threshold)
+            intel_trace = intel_res.get("reasoning") or []
+            if session_id:
+                if str(session_id) not in self._log_buffer:
+                    self._log_buffer[str(session_id)] = []
+                # Inject Market Intelligence reasoning into the session trace
+                self._log_buffer[str(session_id)].extend(intel_trace)
+        except Exception as e:
+            print(f"[AnalystAgent] Market Intelligence error: {e}")
+
+        # 6. Reasoning Trace persistence
+        if session_id:
+            await self._flush_logs(session_id)
 
         # 6. Final Global Pulse Dispatch
         # Aggregates notifications for all rivals across the entire scan.

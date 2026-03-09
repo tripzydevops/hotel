@@ -14,11 +14,18 @@ class NotifierAgent:
         self.db = db or get_supabase()
         self._log_buffer = []
 
-    async def log_reasoning(self, session_id, message: str):
+    async def log_reasoning(self, session_id, message: str, level: str = "info"):
         """Append a message to the internal buffer instead of immediate DB write."""
         if not session_id:
             return
-        self._log_buffer.append(f"[Notifier] {message}")
+        
+        import time
+        self._log_buffer.append({
+            "step": "Notifier",
+            "level": level,
+            "message": message,
+            "timestamp": time.time()
+        })
 
     async def flush_logs(self, session_id):
         """Perform a single batch update to persist all buffered reasoning traces."""
@@ -54,6 +61,7 @@ class NotifierAgent:
                 await self.log_reasoning(
                     session_id,
                     "No threshold breaches detected. Skipping notifications.",
+                    "success"
                 )
                 await self.flush_logs(session_id)
             return

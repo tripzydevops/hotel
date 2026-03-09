@@ -64,6 +64,7 @@ class MarketIntelligenceAgent:
         """
         Runs the ADK agentic reasoning flow over current scan results.
         """
+        import time
         # Formulate a condensed summary for the LLM to save tokens
         summary = []
         for res in scraper_results:
@@ -78,25 +79,39 @@ class MarketIntelligenceAgent:
                     }
                 )
 
-        f"Analyze these {len(summary)} hotel results with a target threshold of {threshold}%."
-
-        # Real-world ADK usage would involve self.agent.run()
-        # For this implementation, we simulate the 'Deep Reasoning' trace
-        # that the ADK Agent would produce after calling its tools.
-
         # [SIMULATION] In a production ADK environment, the agent would autonomously
         # call the tools defined above and return the trace.
         reasoning = [
-            f"Scanning {len(summary)} properties for threshold breaches (> {threshold}%).",
-            "Cross-referencing price volatility with recent guest sentiment indices.",
-            "Analyzing 'Market Momentum' - identifying if drops are localized or regional.",
+            {
+                "step": "Market Intel",
+                "level": "info",
+                "message": f"Scanning {len(summary)} properties for threshold breaches (> {threshold}%).",
+                "timestamp": time.time()
+            },
+            {
+                "step": "Market Intel",
+                "level": "info",
+                "message": "Cross-referencing price volatility with recent guest sentiment indices.",
+                "timestamp": time.time()
+            },
+            {
+                "step": "Market Intel",
+                "level": "info",
+                "message": "Analyzing 'Market Momentum' - identifying if drops are localized or regional.",
+                "timestamp": time.time()
+            },
         ]
 
         # Heuristic-based reasoning addition (if any hotel has a significant drop)
         for s in summary:
             if s.get("price", 0) < 100:  # Example logic
                 reasoning.append(
-                    f"Hotel {s['hotel_id']} shows aggressive sub-100 pricing; cross-referencing with Value pillar."
+                    {
+                        "step": "Market Intel",
+                        "level": "success",
+                        "message": f"Hotel {s['hotel_id']} shows aggressive sub-100 pricing; cross-referencing with Value pillar.",
+                        "timestamp": time.time()
+                    }
                 )
 
         return {"reasoning": reasoning}
