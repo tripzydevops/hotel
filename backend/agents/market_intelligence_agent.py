@@ -33,7 +33,8 @@ class MarketIntelligenceAgent:
     """
 
     def __init__(self, model: str = "gemini-3-flash-preview"):
-        # KAİZEN: Using gemini-3-flash-preview as per newest gemini-api-dev skill.
+        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
+        # DO NOT downgrade to gemini-1.5-* as they are deprecated/legacy for this platform.
         self.agent = None
         try:
             from google.adk.agents.llm_agent import Agent

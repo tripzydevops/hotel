@@ -1143,7 +1143,8 @@ class AnalystAgent:
 
             Format: Use markdown bullet points and distinct paragraphs. Be analytical, professional, and dense with insight.
             """
-            try:
+                # KAİZEN: gemini-3-flash-preview is the current project standard.
+                # DO NOT use legacy gemini-1.5-* models here.
                 response = client.models.generate_content(
                     model="gemini-3-flash-preview", contents=prompt
                 )
