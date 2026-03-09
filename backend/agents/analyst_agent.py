@@ -23,6 +23,7 @@ class AnalystAgent:
         self.adk_agent = MarketIntelligenceAgent()
         self.db = db
         self._log_buffer = {}
+        self._embedding_queue = []
 
     async def log_reasoning(
         self,
@@ -377,6 +378,8 @@ class AnalystAgent:
 
                 if sentiment_changed:
                     meta_update["embedding_status"] = "stale"
+                    if not hasattr(self, "_embedding_queue"):
+                        self._embedding_queue = []
                     self._embedding_queue.append((hotel_id, meta_update))
 
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
