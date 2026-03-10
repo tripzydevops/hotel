@@ -12,8 +12,16 @@ import {
   Legend,
 } from "recharts";
 
+interface SentimentDataPoint {
+  subject: string;
+  A: number;
+  B: number;
+  C: number;
+  fullMark?: number;
+}
+
 interface SentimentRadarProps {
-  data: any[];
+  data: SentimentDataPoint[];
 }
 
 export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
@@ -41,7 +49,7 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
               color: "#F3F4F6",
             }}
             itemStyle={{ color: "#E5E7EB" }}
-            formatter={(value: any) =>
+            formatter={(value) =>
               typeof value === "number" ? value.toFixed(2) : value
             }
           />
