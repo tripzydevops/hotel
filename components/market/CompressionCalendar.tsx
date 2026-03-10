@@ -38,7 +38,7 @@ export const CompressionCalendar: React.FC<CompressionCalendarProps> = ({ data }
                     <Tooltip
                         key={day.date}
                         content={
-                            <div className="space-y-2 w-64 p-1">
+                            <div className="space-y-2 w-72 p-1">
                                 <div className="flex justify-between items-start">
                                     <span className="text-xs font-bold">{new Date(day.date).toLocaleDateString()}</span>
                                     <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/10">{day.level}</span>

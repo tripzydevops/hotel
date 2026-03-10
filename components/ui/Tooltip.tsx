@@ -33,7 +33,7 @@ export function Tooltip({ children, content, side = "top", className = "" }: Too
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className={`absolute z-50 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 border border-slate-800 rounded-lg shadow-xl pointer-events-none ${sideClasses[side]} ${className}`}
+                        className={`absolute z-50 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 border border-slate-800 rounded-lg shadow-xl pointer-events-none break-words ${sideClasses[side]} ${className}`}
                     >
                         {content}
                     </motion.div>

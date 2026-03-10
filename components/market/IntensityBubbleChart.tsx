@@ -59,11 +59,11 @@ export const IntensityBubbleChart: React.FC<IntensityBubbleChartProps> = ({ data
                     <ZAxis type="number" dataKey="intensity" range={[50, 400]} name="Intensity" />
                     <Tooltip
                         cursor={{ strokeDasharray: '3 3' }}
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff' }}
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff', borderRadius: '8px' }}
                         itemStyle={{ color: '#94a3b8' }}
-                        formatter={(value, name) => {
-                            if (name === "dateNum") {
-                                return [new Date(value as number).toLocaleDateString(), "Date"];
+                        formatter={(value: any, name: any) => {
+                            if (name === "Date" || name === "dateNum") {
+                                return [new Date(value).toLocaleDateString(), "Date"];
                             }
                             return [value, name];
                         }}
