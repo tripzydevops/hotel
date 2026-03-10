@@ -20,11 +20,13 @@ export default function MarketIntelligencePage() {
     useEffect(() => {
         async function fetchCities() {
             try {
-                const res = await fetch("/api/market/cities");
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.length > 0) {
-                        setCities(data);
+                const data = await api.getMarketCities();
+                if (data && data.length > 0) {
+                    setCities(data);
+                    // KAİZEN: If multiple cities exist, but state is Istanbul, don't force change
+                    // unless Istanbul is not in the list.
+                    if (!data.includes(city)) {
+                        setCity(data[0]);
                     }
                 }
             } catch (err) {

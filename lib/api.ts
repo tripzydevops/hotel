@@ -645,6 +645,10 @@ class ApiClient {
   async getMarketForecast(city: string, days: number = 30): Promise<any[]> {
     return this.fetch<any[]>(`/api/market/forecast?city=${encodeURIComponent(city)}&days=${days}`);
   }
+
+  async getMarketCities(): Promise<string[]> {
+    return this.fetch<string[]>("/api/market/cities");
+  }
 }
 
 export const api = new ApiClient();

@@ -1,0 +1,1680 @@
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/dashboard -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/reports -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/dashboard -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/dashboard -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/reports -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/dashboard -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse/stats -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
+GET /api/global-pulse -> 500
+  MSG: could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+could not import "api/index.py":
+Traceback (most recent call last):
+File "/var/task/_vendor/vercel_runtime/vc_init.py", line 588, in <module>
+__vc_spec.loader.exec_module(__vc_module)
+File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+File "/var/task/api/index.py", line 4, in <module>
+from backend.main import app
+File "/var/task/backend/main.py", line 33, in <module>
+from backend.api import (
+File "/var/task/backend/api/market_routes.py", line 4, in <module>
+from backend.utils.db import get_supabase_rls
+ImportError: cannot import name 'get_supabase_rls' from 'backend.utils.db' (/var/task/backend/utils/db.py)
+[INFO    ] serpapi_client | Initialized with 4 API key(s)
+Python process exited with exit status: 1. The logs above can help with debugging the issue.
