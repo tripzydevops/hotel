@@ -41,7 +41,7 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
               color: "#F3F4F6",
             }}
             itemStyle={{ color: "#E5E7EB" }}
-            formatter={(value: number | string | undefined) =>
+            formatter={(value: any) =>
               typeof value === "number" ? value.toFixed(2) : value
             }
           />
