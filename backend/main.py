@@ -165,11 +165,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # Basic Health/Diagnostic Endpoints
-@app.get("/api/ping")
-async def ping():
-    return {"status": "pong"}
-
-
 @app.get("/api/health")
 async def health_check():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -236,12 +231,6 @@ async def system_report(db: Client = Depends(get_supabase)):
         "environment": env_vars,
         "database": db_results,
         "process": process_stats,
-    }
-
-    # EXPLANATION: Redis Decommissioned (2026-02-25)
-    return {
-        "status": "decommissioned",
-        "message": "Redis/Celery infrastructure has been moved to in-process BackgroundTasks.",
     }
 
 
