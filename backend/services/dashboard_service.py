@@ -89,7 +89,7 @@ async def get_dashboard_logic(
         alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
         
         # 4. Recent Searches
-        searches_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).order("recorded_at", desc=True).limit(20).execute()
+        searches_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(20).execute()
         
         # 5. Scan History (Metadata only for counts/status)
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
