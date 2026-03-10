@@ -1122,7 +1122,7 @@ class AnalystAgent:
             - Guest Perception (GRI): {target.get("rating")} / 5.0 from {target.get("review_count", 0)} reviews.
             - Market Rate Benchmark: {avg_price} {target.get("preferred_currency", "TRY")}.
             - Search Visibility Rank: #{avg_rank}.
-            - Pricing DNA: {dna_str}.
+            - Pricing DNA: {dna_text or "Semantic Hybrid (Premium Focus)"}.
             - Top Sentiment: {sentiment_summary[:1000]}
             
             INSTRUCTIONS:
@@ -1143,6 +1143,8 @@ class AnalystAgent:
 
             Format: Use markdown bullet points and distinct paragraphs. Be analytical, professional, and dense with insight.
             """
+
+            try:
                 # KAİZEN: gemini-3-flash-preview is the current project standard.
                 # DO NOT use legacy gemini-1.5-* models here.
                 response = client.models.generate_content(

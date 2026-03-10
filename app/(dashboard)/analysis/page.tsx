@@ -1,3 +1,9 @@
+/**
+ * KAİZEN: AI Architecture Guard
+ * Direct client-side calls to Gemini/AI models are strictly prohibited.
+ * All AI logic, including narrative synthesis and sentiment analysis,
+ * must reside in the backend (backend/agents or backend/services).
+ */
 "use client";
 
 import { useEffect, useState, useCallback } from "react";

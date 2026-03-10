@@ -449,6 +449,8 @@ _genai_client = None
 
 
 def get_genai_client():
+    # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
+    # DO NOT downgrade to gemini-1.5-* as they are legacy/deprecated.
     global _genai_client
     if _genai_client is None:
         try:
@@ -519,8 +521,8 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None)
             yield generate_synthetic_narrative(ari, sent_index, dna_text, hotel_name)
             return
 
-        # EXPLANATION: Modern Streaming with google-genai
-        # We use client.models.generate_content_stream for the 2026 standard.
+        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
+        # DO NOT downgrade to gemini-1.5-* as they are legacy/deprecated.
         response = client.models.generate_content_stream(
             model="gemini-3-flash-preview",
             contents=prompt,

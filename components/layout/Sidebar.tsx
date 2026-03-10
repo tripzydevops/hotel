@@ -50,6 +50,11 @@ const analysisSubItems = [
     href: "/analysis/parity",
     icon: Share2,
   },
+  {
+    label: "Market Intelligence",
+    href: "/dashboard/market-intelligence",
+    icon: BarChart3,
+  },
 ];
 
 export default function Sidebar({

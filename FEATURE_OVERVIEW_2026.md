@@ -61,6 +61,22 @@ The Reports page was transformed from a simple chart view into a comprehensive e
 
 ---
 
+## 5. Market Intelligence Interface & PWA Optimization
+**Status**: Live (Alpha)
+
+We have introduced a localized "Eyes of Turkey" market intelligence layer, providing predictive compression and demand signaling. This feature is paired with PWA optimizations for stable mobile usage.
+
+### Key Components
+- **Predictive Calendar**: Specialized heatmap visualization for high-compression dates in major Turkish markets.
+- **AI Agent-Mesh Integration**:
+    - `DemandAgent`: Analyzes local events and historical pricing to score market intensity.
+    - `PriceExplanatoryAgent`: Provides human-readable strategic rationale for pricing recommendations.
+- **PWA Reliability**:
+    - **Service Worker (v1.2.1)**: Implemented aggressive tab matching to prevent redundant tabs when opening notifications.
+    - **Smart Routing**: Notifications now correctly route users to the `/dashboard/market-intelligence` interface.
+
+---
+
 ## Technical Maintenance
 - **Logs**: Monitor `scheduler.log` for background dispatch success.
 - **Diagnostics**: Use `/api/debug/system-report` to verify DB and AI provider connectivity.

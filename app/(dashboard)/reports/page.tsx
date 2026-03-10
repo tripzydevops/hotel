@@ -1,3 +1,9 @@
+/**
+ * KAİZEN: AI Architecture Guard
+ * Direct client-side calls to Gemini/AI models are strictly prohibited.
+ * All AI logic, including narrative synthesis and sentiment analysis,
+ * must reside in the backend (backend/agents or backend/services).
+ */
 "use client";
 
 /**
@@ -776,6 +782,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
               </span>
             </h2>
             <p className="text-xs text-[var(--text-muted)] font-medium">
+              {/* KAİZEN: Keep in sync with backend AnalystAgent model (gemini-3-flash-preview) */}
               {briefing.context?.timeframe || '30-Day'} Pulse Summary via gemini-3-flash-preview
             </p>
           </div>

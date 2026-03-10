@@ -1,4 +1,4 @@
-const VERSION = 'v1.1.0'; // KAİZEN: Version bump to force update
+const VERSION = 'v1.2.1'; // KAİZEN: Version bump to force update
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -18,11 +18,11 @@ self.addEventListener('push', function (event) {
             vibrate: [100, 50, 100],
             data: {
                 dateOfArrival: Date.now(),
-                primaryKey: '2'
+                url: data.url || '/dashboard/market-intelligence' // KAİZEN: Dynamic URL support
             },
             actions: [
                 {
-                    action: 'explore', title: 'View Report',
+                    action: 'explore', title: 'View Details',
                     icon: '/checkmark.png'
                 },
                 {
@@ -46,43 +46,50 @@ self.addEventListener('notificationclick', function (event) {
     }
 
     const origin = self.location.origin;
+    const targetUrl = new URL(event.notification.data.url || '/dashboard', origin).href;
 
     event.waitUntil(
         clients.matchAll({
             type: 'window',
             includeUncontrolled: true
         }).then((windowClients) => {
-            // EXPLANATION: Robust URL Normalization
-            // Browsers often treat 'site.com' and 'site.com/' as different strings.
-            // We normalize both to ensure we find the existing dashboard tab.
-            const normalize = (url) => url.replace(/\/$/, "");
-            const targetUrl = origin + '/dashboard';
-            const normalizedTarget = normalize(targetUrl);
+            // EXPLANATION: Aggressive Tab Matching
+            // 1. Try to find any tab that is on the EXACT target URL.
+            // 2. If not found, find any tab on the same origin (landing, dashboard, etc).
 
             let matchingClient = null;
+            const normalize = (url) => url.replace(/\/$/, "");
+            const normalizedTarget = normalize(targetUrl);
 
+            // Attempt 1: Exact match
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
-                const normalizedClientUrl = normalize(client.url);
-
-                // Match if same origin (covers landing/login) or exact dashboard match
-                if (new URL(client.url).origin === origin) {
+                if (normalize(client.url) === normalizedTarget) {
                     matchingClient = client;
-                    // If we find an exact match for dashboard, prioritize it
-                    if (normalizedClientUrl === normalizedTarget) {
+                    break;
+                }
+            }
+
+            // Attempt 2: Same origin fallback (avoid opening new tabs if any part of the app is open)
+            if (!matchingClient) {
+                for (let i = 0; i < windowClients.length; i++) {
+                    const client = windowClients[i];
+                    if (new URL(client.url).origin === origin) {
+                        matchingClient = client;
                         break;
                     }
                 }
             }
 
             if (matchingClient) {
-                // If it's already on the right page, just focus.
-                // Otherwise, navigate it to the dashboard.
+                // If it's already there (exact match), just focus.
+                // If it's on the same origin but different page, navigate it.
                 if (normalize(matchingClient.url) !== normalizedTarget) {
-                    return matchingClient.navigate(targetUrl).then(c => c.focus());
+                    return matchingClient.navigate(targetUrl).then(c => c && c.focus());
                 }
                 return matchingClient.focus();
             } else {
+                // No open tabs for this origin found, open a new one.
                 return clients.openWindow(targetUrl);
             }
         })

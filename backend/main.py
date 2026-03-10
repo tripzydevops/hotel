@@ -41,6 +41,8 @@ from backend.api import (
     alerts_routes,
     landing_routes,
     pulse_routes,
+    market_routes,
+    execution_routes,
 )
 
 # EXPLANATION: Vercel Dependency & Import Safety
@@ -48,6 +50,7 @@ from backend.api import (
 # relies on 'google-genai' SDK. If this package is missing in the root 'requirements.txt'
 # (which Vercel uses for builds), the entire backend will crash with a 500 error at startup.
 # We explicitly pinned 'google-genai>=1.0.0' to resolve this.
+# KAİZEN: Always use gemini-3-* models. gemini-1.5-* is legacy.
 
 
 # Initialize FastAPI
@@ -253,6 +256,8 @@ app.include_router(analysis_routes.router)
 app.include_router(alerts_routes.router)
 app.include_router(landing_routes.router)
 app.include_router(pulse_routes.router)
+app.include_router(market_routes.router)
+app.include_router(execution_routes.router)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)

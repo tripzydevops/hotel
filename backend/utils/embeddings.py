@@ -31,7 +31,8 @@ def get_genai_client():
 async def get_embedding(text: str, model: str = "gemini-embedding-001") -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
-    Uses gemini-embedding-001 which is available for embedContent via the Gemini API.
+    KAİZEN: Always use stable embedding models. As per project 'gemini-api-dev' skill, 
+    Gemini 3 models are the standard. DO NOT use legacy gemini-1.5.
     """
     client = get_genai_client()
     if not client:
