@@ -18,7 +18,7 @@ export const CompressionCalendar: React.FC<CompressionCalendarProps> = ({ data }
     };
 
     return (
-        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden backdrop-blur-sm">
+        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white">60-Day Compression Heatmap</h3>
                 <div className="flex gap-2">
