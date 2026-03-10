@@ -641,6 +641,10 @@ class ApiClient {
   async getSavedBriefing(reportId: string): Promise<any> {
     return this.fetch<any>(`/api/reports/briefing/${reportId}`);
   }
+
+  async getMarketForecast(city: string, days: number = 30): Promise<any[]> {
+    return this.fetch<any[]>(`/api/market/forecast?city=${encodeURIComponent(city)}&days=${days}`);
+  }
 }
 
 export const api = new ApiClient();

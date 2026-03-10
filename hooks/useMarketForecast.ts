@@ -28,9 +28,7 @@ export function useMarketForecast(city: string, days: number = 30) {
       if (!city) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/market/forecast?city=${city}&days=${days}`);
-        if (!res.ok) throw new Error("Failed to fetch market forecast");
-        const json = await res.json();
+        const json = await api.getMarketForecast(city, days);
         setData(json);
       } catch (err: any) {
         setError(err.message);
