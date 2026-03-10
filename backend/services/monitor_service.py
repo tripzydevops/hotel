@@ -424,6 +424,64 @@ async def run_scheduler_check_logic():
         now_iso = now_dt.isoformat().replace("+00:00", "Z")
         s_logger.info(f"CRON: Checking for scans due before {now_iso}")
 
+        # 1.0 Daily Market Sync (Eyes of Turkey)
+        # EXPLANATION: We trigger a full market event sync once every 24 hours
+        # to refresh fairs and announcements for all users.
+        try:
+            today_date = date.today().isoformat()
+            # Use scan_sessions or a dedicated sync_logs table to track?
+            # We'll use a specific session_type 'market_sync' for simplicity.
+            last_sync = (
+                supabase.table("scan_sessions")
+                .select("id")
+                .eq("session_type", "market_sync")
+                .gte("created_at", f"{today_date}T00:00:00Z")
+                .limit(1)
+                .execute()
+            )
+
+            if not last_sync.data:
+                s_logger.info("CRON: Triggering global market intelligence sync (Eyes of Turkey)...")
+                
+                # Create a tracking session
+                sync_session = supabase.table("scan_sessions").insert({
+                    "user_id": None, # Global session
+                    "session_type": "market_sync",
+                    "status": "running",
+                    "hotels_count": 0
+                }).execute()
+                
+                sync_id = sync_session.data[0]["id"] if sync_session.data else None
+                
+                # Run scrapers
+                from backend.services.market.tobb_scraper import TOBBScraper
+                from backend.services.market.tga_scraper import TGAScraper
+                
+                tobb = TOBBScraper(supabase)
+                tga = TGAScraper(supabase)
+                
+                # We run them sequentially to avoid Supabase connection pressure
+                tobb_res = await tobb.scrape_to_supabase()
+                tga_res = await tga.scrape_to_supabase()
+                
+                status = "completed" if (tobb_res.get("status") == "success" and tga_res.get("status") == "success") else "partial"
+                
+                if sync_id:
+                    supabase.table("scan_sessions").update({
+                        "status": status,
+                        "completed_at": datetime.now().isoformat(),
+                        "reasoning_trace": [
+                            f"TOBB: {tobb_res}",
+                            f"TGA: {tga_res}"
+                        ]
+                    }).eq("id", sync_id).execute()
+                
+                s_logger.info(f"CRON: Market sync complete. Status: {status}")
+            else:
+                s_logger.info("CRON: Market sync already completed for today.")
+        except Exception as m_e:
+            s_logger.error(f"CRON: Market sync failed: {m_e}")
+
         # 1.1 Fetch all active profiles
         result = (
             supabase.table("profiles")

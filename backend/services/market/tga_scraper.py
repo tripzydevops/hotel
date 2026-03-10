@@ -1,6 +1,7 @@
 import os
+import asyncio
 from typing import List, Dict, Any
-from firecrawl import FirecrawlApp
+from playwright.async_api import async_playwright
 from supabase import Client
 from backend.utils.logger import get_logger
 from backend.services.analysis_service import get_genai_client
@@ -10,7 +11,7 @@ logger = get_logger(__name__)
 class TGAScraper:
     """
     Scrapes Turkish Tourism Promotion and Development Agency (TGA) announcements.
-    Uses Firecrawl for clean content extraction and Gemini 3 for semantic structuring.
+    Uses Playwright for reliable JS rendering and Gemini 3 for semantic structuring.
     Target: https://tga.gov.tr/en/activities/announcements/
     """
 
@@ -18,50 +19,57 @@ class TGAScraper:
 
     def __init__(self, db: Client):
         self.db = db
-        self.firecrawl = FirecrawlApp(api_key=os.getenv("FIRECRAWL_API_KEY"))
 
     async def scrape_to_supabase(self):
         """
         [Stealth Mode] Main orchestration for TGA scraping.
         """
-        logger.info("[TGAScraper] Starting semantic scrape via Firecrawl...")
+        logger.info("[TGAScraper] Starting semantic scrape via Playwright...")
         try:
-            # 1. Scrape content with Firecrawl (supports JS rendering and clean markdown)
-            # We target the specific listing page
-            # Increased wait time for JS rendering of the announcements list
-            scrape_result = self.firecrawl.scrape(url=self.URL, formats=['markdown'], wait_for=2000)
-            
-            if not scrape_result or not hasattr(scrape_result, 'markdown'):
-                logger.warning(f"[TGAScraper] Missing markdown in result: {scrape_result}")
-                return {"status": "error", "message": "Failed to extract content from TGA."}
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                
+                # Navigate to TGA
+                await page.goto(self.URL, timeout=60000)
+                # Wait for the announcements list to render
+                await page.wait_for_timeout(5000)
+                
+                # Extract clean text from the body
+                # We use inner_text to get a readable representation for the LLM
+                content = await page.inner_text("body")
+                await browser.close()
 
-            content = scrape_result.markdown
-            logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
+                if not content or len(content) < 100:
+                    logger.warning(f"[TGAScraper] Content too short: {len(content)} chars.")
+                    return {"status": "error", "message": "Failed to extract meaningful content from TGA."}
 
-            # 2. Extract structured JSON using Gemini 3
-            events = await self._extract_events_with_ai(content)
-            
-            # 3. Store in Supabase
-            processed_count = 0
-            for event in events:
-                try:
-                    # Enrich with compression score (AI suggested or default)
-                    if "compression_score" not in event:
-                        event["compression_score"] = 3 # Default for TGA announcements
-                    
-                    event["type"] = "announcement"
-                    event["metadata"] = event.get("metadata", {})
-                    event["metadata"]["source"] = "TGA"
-                    
-                    self.db.table("market_events").upsert(
-                        event,
-                        on_conflict="name, start_date"
-                    ).execute()
-                    processed_count += 1
-                except Exception as e:
-                    logger.warning(f"[TGAScraper] Upsert failed for {event.get('name')}: {e}")
+                logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
 
-            return {"status": "success", "processed": processed_count}
+                # 2. Extract structured JSON using Gemini 3
+                events = await self._extract_events_with_ai(content)
+                
+                # 3. Store in Supabase
+                processed_count = 0
+                for event in events:
+                    try:
+                        # Enrich with compression score (AI suggested or default)
+                        if "compression_score" not in event:
+                            event["compression_score"] = 3 # Default for TGA announcements
+                        
+                        event["type"] = "announcement"
+                        event["metadata"] = event.get("metadata", {})
+                        event["metadata"]["source"] = "TGA"
+                        
+                        self.db.table("market_events").upsert(
+                            event,
+                            on_conflict="name, start_date"
+                        ).execute()
+                        processed_count += 1
+                    except Exception as e:
+                        logger.warning(f"[TGAScraper] Upsert failed for {event.get('name')}: {e}")
+
+                return {"status": "success", "processed": processed_count}
 
         except Exception as e:
             logger.error(f"[TGAScraper] TGA Scraping failed: {e}")
@@ -71,41 +79,44 @@ class TGAScraper:
         """
         Uses Gemini 3 to parse raw TGA content into structured market events.
         """
-        logger.info(f"[TGAScraper] AI prompt content preview: {content[:500]}...")
+        clean_preview = content[:500].replace('\n', ' ')
+        logger.info(f"[TGAScraper] AI prompt content preview: {clean_preview}...")
+        
         client = get_genai_client()
         if not client:
             logger.error("[TGAScraper] GenAI client not available.")
             return []
 
-        prompt = f"""
-        You are an expert in Turkish Tourism Intelligence. Extract a list of tourism announcements and festivals from the raw markdown content.
+        # Safe prompt construction
+        instructions = [
+            "You are an expert in Turkish Tourism Intelligence. Extract a list of tourism announcements, festivals, and key activities from the raw text content.",
+            "",
+            "INSTRUCTIONS:",
+            "1. Identify the event name, city, start date, and end date.",
+            "2. Date Normalization: If a year isn't specified, assume 2026. If only a month is mentioned (e.g., May 2026), use the 1st of that month.",
+            "3. Assign a 'compression_score' (1-10) based on the likely impact on hotel occupancy.",
+            "4. Focus on major tourism hubs like Istanbul, Antalya, Izmir, Bodrum, or Mugla.",
+            "",
+            "OUTPUT FORMAT: JSON array of objects with keys:",
+            "- name: string",
+            "- city: string (English name, e.g., Istanbul)",
+            "- start_date: string (ISO YYYY-MM-DD)",
+            "- end_date: string (ISO YYYY-MM-DD)",
+            "- description: string (Short summary)",
+            "- compression_score: integer",
+            "",
+            "CONTENT:",
+            content[:15000].replace('"""', ' ') # Extra safety
+        ]
         
-        INSTRUCTIONS:
-        1. Identify the event name, city, start date, and end date.
-        2. If specific dates aren't found, use your best judgment based on the context (e.g., 'May 2026' -> '2026-05-01').
-        3. Assign a 'compression_score' (1-10) based on the likely impact on hotel occupancy (e.g., a massive festival or 100+ person influencer group is higher).
-        4. Focus on cities like Istanbul, Antalya, Izmir, Bodrum, or Mugla.
-        
-        OUTPUT FORMAT: JSON array of objects with keys:
-        - name: string
-        - city: string (English name, e.g., 'Istanbul')
-        - start_date: string (ISO YYYY-MM-DD)
-        - end_date: string (ISO YYYY-MM-DD)
-        - description: string (Short summary)
-        - compression_score: integer
-        
-        CONTENT:
-        {content[:15000]} # Limit tokens
-        """
+        prompt = "\n".join(instructions)
 
-        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
         try:
             response = client.models.generate_content(
                 model="gemini-3-flash-preview", contents=prompt
             )
             
             if response and response.text:
-                # Basic JSON extraction from text
                 import json
                 raw_text = response.text
                 if "```json" in raw_text:
@@ -113,7 +124,8 @@ class TGAScraper:
                 elif "```" in raw_text:
                      raw_text = raw_text.split("```")[1].split("```")[0].strip()
                 
-                return json.loads(raw_text)
+                data = json.loads(raw_text)
+                return data if isinstance(data, list) else [data]
         except Exception as e:
             logger.error(f"[TGAScraper] AI extraction failed: {e}")
             return []

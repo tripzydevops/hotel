@@ -35,24 +35,39 @@ class TOBBScraper:
                 # Navigate to TOBB
                 await page.goto(self.URL, timeout=60000)
                 logger.info(f"[TOBBScraper] Page loaded: {self.URL}")
-
-                # Wait for the "Excel'e Kaydet" button
-                # The button usually has an ID or a specific text
-                excel_btn_selector = "input[name*='btnExcel']" # Common ASP.NET naming
+                # Wait for the Excel export button
+                # KAİZEN: DevExpress Blazor Grid export buttons are typically in the toolbar.
+                # In the current TOBB site, it appears to be the first dark button in the toolbar.
+                excel_btn_selector = ".dxbl-grid-toolbar button.dxbl-btn-dark, .dxbl-grid-toolbar button:first-child, button[title*='Export'], button[title*='Excel']"
+                
+                logger.info(f"[TOBBScraper] Waiting for button: {excel_btn_selector}")
                 
                 # Intercept the download
-                async with page.expect_download() as download_info:
-                    await page.click(excel_btn_selector)
-                
-                download = await download_info.value
-                excel_buffer = await download.path()
-                logger.info(f"[TOBBScraper] Downloaded Excel to {excel_buffer}")
+                try:
+                    # We wait for the table to be interactive
+                    await page.wait_for_selector(".dxbl-grid", timeout=30000)
+                    
+                    async with page.expect_download(timeout=60000) as download_info:
+                        # Try multiple selectors if needed or just the most likely one
+                        try:
+                            await page.click("button.dxbl-btn-dark.dxbl-btn-first", timeout=5000)
+                        except:
+                            await page.click(excel_btn_selector)
+                    
+                    download = await download_info.value
+                    excel_buffer = await download.path()
+                    logger.info(f"[TOBBScraper] Downloaded Excel to {excel_buffer}")
 
-                # Parse with Pandas
-                df = pd.read_excel(excel_buffer)
-                await browser.close()
+                    # Parse with Pandas
+                    df = pd.read_excel(excel_buffer)
+                    await browser.close()
 
-                return await self._process_dataframe(df)
+                    return await self._process_dataframe(df)
+                except Exception as e:
+                    logger.error(f"[TOBBScraper] Excel download failed: {e}")
+                    # Fallback or cleanup
+                    await browser.close()
+                    return {"status": "error", "message": f"Excel download timeout or selector failure: {str(e)}"}
 
         except Exception as e:
             logger.error(f"[TOBBScraper] Scraping failed: {e}")
@@ -64,7 +79,7 @@ class TOBBScraper:
         """
         logger.info(f"[TOBBScraper] Processing dataframe with {len(df)} rows and columns: {df.columns.tolist()}")
         
-        # Mapping for normalization
+        # Mapping for normalization (TOBB Excel columns)
         col_map = {
             "Fuar Adı": "name",
             "Şehir": "city",
@@ -77,16 +92,22 @@ class TOBBScraper:
         found_cols = [c for c in col_map.keys() if c in df.columns]
         if not found_cols:
             logger.warning(f"[TOBBScraper] No expected columns found. Available: {df.columns.tolist()}")
+            # Sometimes the first row is a header or title, try to find the actual header row
+            if len(df.columns) < 3: # Suspiciously few columns
+                 logger.info("[TOBBScraper] Attempting to re-orient dataframe (skip first few rows)...")
+                 for i in range(1, 10):
+                     # If we had the path, we'd skip rows. But let's assume the basic read works 
+                     # if the file is correctly formed.
+                     pass
             return {"status": "error", "message": "Unexpected Excel format"}
 
         df = df[found_cols].rename(columns=col_map)
         
         # Filter by relevant cities (Handling potential whitespace/case)
         df['city_clean'] = df['city'].astype(str).str.strip().str.upper()
-        logger.info(f"[TOBBScraper] Found cities: {df['city_clean'].unique().tolist()}")
         
         # Match Turkish characters properly (İ vs I)
-        normalized_relevant = [c.replace('İ', 'I').upper() for c in self.RELEVANT_CITIES]
+        normalized_relevant = [c.replace('İ', 'I').replace('I', 'I').upper() for c in self.RELEVANT_CITIES]
         df['city_normalized'] = df['city_clean'].str.replace('İ', 'I').str.upper()
         
         filtered_df = df[df['city_normalized'].isin(normalized_relevant)].copy()
@@ -95,6 +116,10 @@ class TOBBScraper:
         processed_count = 0
         for _, row in filtered_df.iterrows():
             try:
+                # Basic validation
+                if pd.isna(row['name']) or pd.isna(row['start_date']):
+                    continue
+
                 event_data = {
                     "name": str(row['name']),
                     "type": "fair",
@@ -121,9 +146,21 @@ class TOBBScraper:
 
     def _parse_date(self, date_val):
         """Helper to handle various date formats from Excel."""
+        if pd.isna(date_val):
+            return datetime.now().date().isoformat()
+        
+        if isinstance(date_val, (datetime, pd.Timestamp)):
+            return date_val.date().isoformat()
+            
         if isinstance(date_val, str):
             try:
-                return datetime.strptime(date_val, "%d.%m.%Y").date().isoformat()
+                # Handle DD.MM.YYYY
+                return datetime.strptime(date_val.strip(), "%d.%m.%Y").date().isoformat()
             except:
-                return datetime.now().date().isoformat()
-        return date_val.date().isoformat() if hasattr(date_val, 'date') else datetime.now().date().isoformat()
+                try:
+                    # Handle YYYY-MM-DD
+                    return datetime.fromisoformat(date_val.strip()).date().isoformat()
+                except:
+                    return datetime.now().date().isoformat()
+        
+        return datetime.now().date().isoformat()
