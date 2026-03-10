@@ -61,7 +61,12 @@ export const IntensityBubbleChart: React.FC<IntensityBubbleChartProps> = ({ data
                         cursor={{ strokeDasharray: '3 3' }}
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff' }}
                         itemStyle={{ color: '#94a3b8' }}
-                        formatter={(value, name) => [value, name === "dateNum" ? "Date" : name]}
+                        formatter={(value, name) => {
+                            if (name === "dateNum") {
+                                return [new Date(value as number).toLocaleDateString(), "Date"];
+                            }
+                            return [value, name];
+                        }}
                     />
                     <Scatter name="Market Events" data={points}>
                         {points.map((entry, index) => (
