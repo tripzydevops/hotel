@@ -19,7 +19,7 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city }) =>
     ];
 
     return (
-        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden backdrop-blur-sm shadow-xl flex flex-col h-full">
+        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-white">Strategic Opportunity Matrix</h3>

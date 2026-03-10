@@ -35,7 +35,7 @@ export const IntensityBubbleChart: React.FC<IntensityBubbleChartProps> = ({ data
     };
 
     return (
-        <div className="h-[300px] w-full p-6 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden backdrop-blur-sm">
+        <div className="h-[300px] w-full p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm">
             <h3 className="text-lg font-semibold text-white mb-6">Market Intensity Signals</h3>
             <ResponsiveContainer width="100%" height="80%">
                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
