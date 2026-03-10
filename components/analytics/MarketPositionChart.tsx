@@ -94,8 +94,8 @@ export default function MarketPositionChart({
             }}
             labelStyle={{ color: "#fff", fontWeight: "bold" }}
             itemStyle={{ color: "#D4AF37" }}
-            formatter={(value: number | undefined) => [
-              formatPrice(value ?? 0),
+            formatter={(value: any) => [
+              formatPrice(typeof value === "number" ? value : 0),
               t("hotelDetails.price"),
             ]}
           />
