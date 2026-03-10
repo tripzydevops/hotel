@@ -75,105 +75,30 @@ async def get_dashboard_logic(
         )
 
     try:
-        # [NEW] Parallel Data Fetching for Initial Load
-        # We fetch all secondary data concurrently while processing hotels.
-        tasks = [
-            # 1. User Profile
-            asyncio.to_thread(
-                lambda: (
-                    db.table("user_profiles")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .single()
-                    .execute()
-                )
-            ),
-            # 2. User Settings
-            asyncio.to_thread(
-                lambda: (
-                    db.table("settings")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .single()
-                    .execute()
-                )
-            ),
-            # 3. Unread Alerts
-            asyncio.to_thread(
-                lambda: (
-                    db.table("alerts")
-                    .select("id", count="exact")
-                    .eq("user_id", str(user_id))
-                    .eq("is_read", False)
-                    .execute()
-                )
-            ),
-            # 4. Recent Searches
-            asyncio.to_thread(
-                lambda: (
-                    db.table("query_logs")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .order("recorded_at", desc=True)
-                    .limit(20)
-                    .execute()
-                )
-            ),
-            # 5. Scan History
-            asyncio.to_thread(
-                lambda: (
-                    db.table("price_logs")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .order("recorded_at", desc=True)
-                    .limit(10)
-                    .execute()
-                )
-            ),
-            # 6. Recent Sessions
-            asyncio.to_thread(
-                lambda: (
-                    db.table("scan_sessions")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .order("created_at", desc=True)
-                    .limit(5)
-                    .execute()
-                )
-            ),
-            # 7. Hotels (Bulk Fetch)
-            asyncio.to_thread(
-                lambda: (
-                    db.table("hotels")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .is_("deleted_at", "null")
-                    .execute()
-                )
-            ),
-            # 8. Core Profile (for next_scan_at)
-            asyncio.to_thread(
-                lambda: (
-                    db.table("profiles")
-                    .select("next_scan_at")
-                    .eq("id", str(user_id))
-                    .single()
-                    .execute()
-                )
-            ),
-        ]
-
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Unpack results safely
-        profile_res = results[0] if not isinstance(results[0], Exception) else None
-        settings_res = results[1] if not isinstance(results[1], Exception) else None
-        alerts_res = results[2] if not isinstance(results[2], Exception) else None
-        searches_res = results[3] if not isinstance(results[3], Exception) else None
-        results[4] if not isinstance(results[4], Exception) else None
-        sessions_res = results[5] if not isinstance(results[5], Exception) else None
-        hotels_res = results[6] if not isinstance(results[6], Exception) else None
-        core_profile_res = results[7] if not isinstance(results[7], Exception) else None
+        # [FIX] Sequential Data Fetching for Stability
+        # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
+        # with the Supabase client, leading to intermittent 500 errors on Vercel.
+        
+        # 1. User Profile
+        profile_res = db.table("user_profiles").select("*").eq("user_id", str(user_id)).single().execute()
+        
+        # 2. User Settings
+        settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).single().execute()
+        
+        # 3. Unread Alerts
+        alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
+        
+        # 4. Recent Searches
+        searches_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).order("recorded_at", desc=True).limit(20).execute()
+        
+        # 5. Scan History (Metadata only for counts/status)
+        sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
+        
+        # 6. Hotels (Bulk Fetch)
+        hotels_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
+        
+        # 7. Core Profile (for next_scan_at)
+        core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).single().execute()
 
         user_profile = (
             profile_res.data if profile_res and hasattr(profile_res, "data") else {}

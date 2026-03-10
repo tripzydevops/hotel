@@ -249,6 +249,8 @@ async def system_report(db: Client = Depends(get_supabase)):
 app.include_router(admin_routes.router)
 app.include_router(hotel_routes.router)
 app.include_router(monitor_routes.router)
+app.include_router(monitor_routes.router_legacy)
+
 app.include_router(dashboard_routes.router)
 app.include_router(reports_routes.router)
 app.include_router(profile_routes.router)

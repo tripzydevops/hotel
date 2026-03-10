@@ -12,6 +12,9 @@ from backend.services.monitor_service import (
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api", tags=["monitor"])
+# Redundant router for Vercel prefix flexibility
+router_legacy = APIRouter(tags=["monitor"])
+
 
 
 @router.post("/monitor", response_model=MonitorResult)
@@ -37,6 +40,8 @@ async def trigger_monitor(
 
 @router.get("/trigger-scan")
 @router.post("/trigger-scan")
+@router_legacy.get("/trigger-scan")
+@router_legacy.post("/trigger-scan")
 async def check_scheduled_scan(
     background_tasks: BackgroundTasks,
     request: Request,

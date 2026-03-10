@@ -40,15 +40,23 @@ def get_supabase_client(jwt: str = None) -> Client:
     # Admin access using Service Role Key
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not key:
-        print("WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Operations may fail.")
+        print("[DATABASE] ERROR: SUPABASE_SERVICE_ROLE_KEY not found in environment.")
+        # Fallback to anon key is dangerous but allowed here for dev consistency
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-    if not url or not key:
-        print(f"CRITICAL: Supabase credentials missing (URL: {bool(url)}, KEY: {bool(key)})")
+    if not url:
+        print("[DATABASE] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!")
+        return None
+        
+    if not key:
+        print("[DATABASE] CRITICAL: SUPABASE_SERVICE_ROLE_KEY and ANON_KEY are both missing!")
         return None
 
     try:
+        if os.getenv("DEBUG_DB") == "1":
+            print(f"[DATABASE] Initializing client for {url} (Key prefix: {key[:10]}...)")
         return create_client(url, key)
     except Exception as e:
-        print(f"CRITICAL: Failed to initialize Supabase client: {e}")
+        print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
         return None
+
