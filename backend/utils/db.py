@@ -43,10 +43,11 @@ def get_supabase_client(jwt: str = None) -> Client:
         print("WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Operations may fail.")
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
+    if not url or not key:
+        print(f"CRITICAL: Supabase credentials missing (URL: {bool(url)}, KEY: {bool(key)})")
+        return None
+
     try:
-        if not url or not key:
-            print("WARNING: Supabase credentials missing.")
-            return None
         return create_client(url, key)
     except Exception as e:
         print(f"CRITICAL: Failed to initialize Supabase client: {e}")

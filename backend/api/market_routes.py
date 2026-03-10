@@ -2,10 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 from supabase import Client
 from backend.utils.db import get_supabase_rls
-from backend.services.market.tobb_scraper import TOBBScraper
-from backend.services.market.tga_scraper import TGAScraper
-from backend.agents.demand_agent import DemandScoringAgent
-from backend.agents.price_explanatory_agent import PriceExplanatoryAgent
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -17,6 +13,7 @@ async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
     """
     [Stealth Mode] Triggers the TOBB Fair Calendar Scraper.
     """
+    from backend.services.market.tobb_scraper import TOBBScraper
     scraper = TOBBScraper(db)
     result = await scraper.scrape_to_supabase()
     
@@ -30,6 +27,7 @@ async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
     """
     [Stealth Mode] Triggers the TGA Activity Scraper.
     """
+    from backend.services.market.tga_scraper import TGAScraper
     scraper = TGAScraper(db)
     result = await scraper.scrape_to_supabase()
     
@@ -43,6 +41,8 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
     """
     Runs both TOBB and TGA scrapers in sequence.
     """
+    from backend.services.market.tobb_scraper import TOBBScraper
+    from backend.services.market.tga_scraper import TGAScraper
     tobb = TOBBScraper(db)
     tga = TGAScraper(db)
     
@@ -75,6 +75,9 @@ async def get_market_forecast(
     """
     Returns a 30-day demand compression forecast with AI-generated rationales.
     """
+    from backend.agents.demand_agent import DemandScoringAgent
+    from backend.agents.price_explanatory_agent import PriceExplanatoryAgent
+    
     demand_agent = DemandScoringAgent(db)
     price_agent = PriceExplanatoryAgent(db)
     
