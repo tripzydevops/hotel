@@ -62,11 +62,9 @@ class TOBBScraper:
         """
         Filters and normalizes the TOBB Excel data for the 'market_events' table.
         """
-        # Note: We need to inspect columns after a real run, but typical TOBB exports have:
-        # 'Fuar Adı', 'Şehir', 'Başlangıç Tarihi', 'Bitiş Tarihi', 'Konu'
+        logger.info(f"[TOBBScraper] Processing dataframe with {len(df)} rows and columns: {df.columns.tolist()}")
         
         # Mapping for normalization
-        # These column names might need adjustment after a test run on the actual site.
         col_map = {
             "Fuar Adı": "name",
             "Şehir": "city",
@@ -77,39 +75,48 @@ class TOBBScraper:
         
         # Rename if columns exist
         found_cols = [c for c in col_map.keys() if c in df.columns]
+        if not found_cols:
+            logger.warning(f"[TOBBScraper] No expected columns found. Available: {df.columns.tolist()}")
+            return {"status": "error", "message": "Unexpected Excel format"}
+
         df = df[found_cols].rename(columns=col_map)
         
-        # Filter by relevant cities
-        df['city_upper'] = df['city'].str.upper()
-        filtered_df = df[df['city_upper'].isin(self.RELEVANT_CITIES)].copy()
+        # Filter by relevant cities (Handling potential whitespace/case)
+        df['city_clean'] = df['city'].astype(str).str.strip().str.upper()
+        logger.info(f"[TOBBScraper] Found cities: {df['city_clean'].unique().tolist()}")
+        
+        # Match Turkish characters properly (İ vs I)
+        normalized_relevant = [c.replace('İ', 'I').upper() for c in self.RELEVANT_CITIES]
+        df['city_normalized'] = df['city_clean'].str.replace('İ', 'I').str.upper()
+        
+        filtered_df = df[df['city_normalized'].isin(normalized_relevant)].copy()
+        logger.info(f"[TOBBScraper] Filtered to {len(filtered_df)} relevant events.")
         
         processed_count = 0
         for _, row in filtered_df.iterrows():
-            event_data = {
-                "name": row['name'],
-                "type": "fair",
-                "city": row['city'].capitalize(),
-                "start_date": self._parse_date(row['start_date']),
-                "end_date": self._parse_date(row['end_date']),
-                "description": f"Konu: {row.get('description', 'N/A')}",
-                "compression_score": 5, # Initial default for fairs
-                "metadata": {
-                    "source": "TOBB",
-                    "original_city": row['city']
-                }
-            }
-            
-            # Upsert logic to avoid duplicates (Name + Start Date uniqueness)
             try:
+                event_data = {
+                    "name": str(row['name']),
+                    "type": "fair",
+                    "city": str(row['city']).strip().capitalize(),
+                    "start_date": self._parse_date(row['start_date']),
+                    "end_date": self._parse_date(row['end_date']),
+                    "description": f"Konu: {row.get('description', 'N/A')}",
+                    "compression_score": 5,
+                    "metadata": {
+                        "source": "TOBB",
+                        "original_city": row['city']
+                    }
+                }
+                
                 self.db.table("market_events").upsert(
                     event_data, 
-                    on_conflict="name, start_date" # We need to ensure we have a unique constraint
+                    on_conflict="name, start_date"
                 ).execute()
                 processed_count += 1
             except Exception as e:
-                logger.warning(f"[TOBBScraper] Upsert failed for {row['name']}: {e}")
+                logger.warning(f"[TOBBScraper] Upsert failed for {row.get('name')}: {e}")
 
-        logger.info(f"[TOBBScraper] Processed {processed_count} relevant fairs.")
         return {"status": "success", "processed": processed_count}
 
     def _parse_date(self, date_val):

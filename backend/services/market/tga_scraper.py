@@ -28,12 +28,14 @@ class TGAScraper:
         try:
             # 1. Scrape content with Firecrawl (supports JS rendering and clean markdown)
             # We target the specific listing page
-            scrape_result = self.firecrawl.scrape_url(self.URL, params={'formats': ['markdown']})
+            # Increased wait time for JS rendering of the announcements list
+            scrape_result = self.firecrawl.scrape(url=self.URL, formats=['markdown'], wait_for=2000)
             
-            if not scrape_result or 'markdown' not in scrape_result:
+            if not scrape_result or not hasattr(scrape_result, 'markdown'):
+                logger.warning(f"[TGAScraper] Missing markdown in result: {scrape_result}")
                 return {"status": "error", "message": "Failed to extract content from TGA."}
 
-            content = scrape_result['markdown']
+            content = scrape_result.markdown
             logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
 
             # 2. Extract structured JSON using Gemini 3
@@ -69,6 +71,7 @@ class TGAScraper:
         """
         Uses Gemini 3 to parse raw TGA content into structured market events.
         """
+        logger.info(f"[TGAScraper] AI prompt content preview: {content[:500]}...")
         client = get_genai_client()
         if not client:
             logger.error("[TGAScraper] GenAI client not available.")
