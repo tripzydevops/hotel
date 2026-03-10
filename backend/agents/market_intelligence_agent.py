@@ -71,12 +71,16 @@ class MarketIntelligenceAgent:
         for res in scraper_results:
             if res.get("status") == "success":
                 pd = res.get("price_data", {})
+                reviews = pd.get("reviews", [])
+                # KAİZEN: Handle both list of reviews and review count (integer)
+                reviews_count = len(reviews) if isinstance(reviews, list) else int(reviews or 0)
+                
                 summary.append(
                     {
                         "hotel_id": res.get("hotel_id"),
                         "price": pd.get("price"),
                         "currency": pd.get("currency"),
-                        "reviews_count": len(pd.get("reviews", [])),
+                        "reviews_count": reviews_count,
                     }
                 )
 

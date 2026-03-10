@@ -18,16 +18,23 @@ class PriceExplanatoryAgent:
         """
         Uses Gemini 3 to generate a sharp, executive-level pulse card rationale.
         """
-        client = get_genai_client()
-        if not client:
-            return "Unable to generate AI rationale."
-
-        city = compression_data.get("city")
-        score = compression_data.get("compression_score")
+        city = compression_data.get("city", "Market")
+        score = compression_data.get("compression_score", 0)
         signals = compression_data.get("signals", [])
         
         signal_str = ", ".join([f"{s['name']} ({s['type']})" for s in signals])
         
+        # Default heuristic fallback if AI is unavailable or fails
+        fallback_msg = f"Demand signals detected in {city}. Intensity level {score}/10 suggests upcoming volume. Review rate structure."
+        if score > 7:
+            fallback_msg = f"Critical compression risk in {city} ({score}/10). High event density detected. Recommend holding ADR floors."
+        elif score < 4:
+            fallback_msg = f"Stable demand in {city} ({score}/10). Focus on occupancy volume and standard seasonal pricing."
+
+        client = get_genai_client()
+        if not client:
+            return fallback_msg
+
         prompt = f"""
         You are a Senior Revenue Strategist for the Turkish market. 
         Analyze the following demand signals and provide a concise, directive 'Strategic Rational'.
@@ -45,12 +52,11 @@ class PriceExplanatoryAgent:
         Format: "Signal Detected: [Brief summary]. Recommendation: [Action]."
         """
 
-        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
         try:
             response = client.models.generate_content(
                 model="gemini-3-flash-preview", contents=prompt
             )
-            return response.text.strip() if response and response.text else "Market signals stable. Monitor daily."
+            return response.text.strip() if response and response.text else fallback_msg
         except Exception as e:
             logger.error(f"[PriceExplanatoryAgent] AI generation failed: {e}")
-            return "Demand signals detected. Review market heatmap."
+            return fallback_msg

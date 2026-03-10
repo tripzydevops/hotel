@@ -54,6 +54,15 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
         "tga": tga_res
     }
 
+@router.get("/cities")
+async def get_market_cities(db: Client = Depends(get_supabase_rls)):
+    """
+    Returns a unique list of cities present in the market_events table.
+    """
+    res = db.table("market_events").select("city").execute()
+    cities = sorted(list(set([d["city"] for d in res.data if d.get("city")])))
+    return cities
+
 @router.get("/events")
 async def get_market_events(city: str = None, db: Client = Depends(get_supabase_rls)):
     """
@@ -61,7 +70,8 @@ async def get_market_events(city: str = None, db: Client = Depends(get_supabase_
     """
     query = db.table("market_events").select("*")
     if city:
-        query = query.eq("city", city.capitalize())
+        # KAİZEN: Case-insensitive match for city
+        query = query.ilike("city", city)
     
     res = query.order("start_date").execute()
     return res.data
