@@ -284,7 +284,7 @@ export default function MarketIntelligencePage() {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-end border-b border-white/5 pb-2">
                                     <span className="text-[10px] text-slate-500 uppercase font-bold">Recommended Action</span>
-                                    <span className="text-sm font-black text-white">{metadata?.market_stats?.avg_tga_intensity > 3 ? 'Aggressive ADR' : 'Hold Rates'}</span>
+                                    <span className="text-sm font-black text-white">{(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}</span>
                                 </div>
                                 <div className="flex justify-between items-end border-b border-white/5 pb-2">
                                     <span className="text-[10px] text-slate-500 uppercase font-bold">System Confidence</span>
