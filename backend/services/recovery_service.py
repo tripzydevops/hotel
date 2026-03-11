@@ -26,10 +26,6 @@ async def generate_dispute_letter(
     currency: str,
     language: str = "tr"
 ) -> str:
-    client = get_genai_client()
-    if not client:
-        return "AI Service Unavailable. Please contact support or check API keys."
-
     gap = round(target_price - current_price, 2)
     
     prompt = f"""
@@ -51,13 +47,38 @@ async def generate_dispute_letter(
     Do not include placeholders like [Market Manager Name], just use a generic professional greeting if name is unknown.
     """
 
+    client = get_genai_client()
+    if client:
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            return response.text
+        except Exception as e:
+            logger.error(f"GenAI SDK failed: {e}")
+            # Fall back to HTTP if genai fails
+            pass
+
+    # Fallback to HTTP API
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return "AI Service Unavailable. Please configure the GOOGLE_API_KEY."
+    
+    import httpx
     try:
-        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-        )
-        return response.text
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(url, json=payload, timeout=15.0)
+            response.raise_for_status()
+            data = response.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        logger.error(f"Dispute generation failed: {e}")
+        logger.error(f"Dispute generation via HTTP failed: {e}")
         return "Failed to generate dispute letter. Please try again later."
+
