@@ -266,9 +266,13 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
 
     from backend.services.monitor_service import run_scheduler_check_logic
+    from backend.services.market.sync_service import run_market_sync_if_needed
+    from backend.utils.db import get_supabase
 
+    db = get_supabase()
     background_tasks.add_task(run_scheduler_check_logic)
-    return {"status": "success", "message": "Scheduler triggered"}
+    background_tasks.add_task(run_market_sync_if_needed, db)
+    return {"status": "success", "message": "Scheduler and Market Sync triggered"}
 
 
 if __name__ == "__main__":
