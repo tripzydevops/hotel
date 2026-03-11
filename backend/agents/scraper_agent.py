@@ -234,6 +234,11 @@ class ScraperAgent:
             hotel_name = hotel["name"]
             try:
                 async with semaphore:
+                    # [Reasoning] Lock entry
+                    await self.log_reasoning(
+                        session_id, "Resource", f"Semaphore lock acquired for {hotel_name}. slot: {semaphore._value}", "info"
+                    )
+                    
                     hotel_id = hotel["id"]
                     location = hotel.get("location")
                     serp_api_id = hotel.get("serp_api_id")
@@ -298,6 +303,9 @@ class ScraperAgent:
                     price_data = None
                     try:
                         # 1. Check Global Pulse Cache first
+                        await self.log_reasoning(
+                            session_id, "Cache", f"Checking shared pulse for {serp_api_id} on {check_in}...", "info"
+                        )
                         price_data = await self._check_global_cache(
                             serp_api_id, check_in
                         )
@@ -342,6 +350,13 @@ class ScraperAgent:
                                     ),
                                     timeout=60.0,
                                 )
+                                if price_data and price_data.get("price"):
+                                    await self.log_reasoning(
+                                        session_id,
+                                        "Ingestion",
+                                        f"Successfully extracted {price_data['price']} {price_data.get('currency')} for {hotel_name}.",
+                                        "success",
+                                    )
                             except asyncio.TimeoutError:
                                 await self.log_reasoning(
                                     session_id,
@@ -379,6 +394,12 @@ class ScraperAgent:
                             normalized_rooms.append(room)
 
                         price_data["room_types"] = normalized_rooms
+                        await self.log_reasoning(
+                            session_id,
+                            "Normalization",
+                            f"Mapped {len(normalized_rooms)} room variants to canonical types for {hotel_name}.",
+                            "info",
+                        )
                         # Also normalize offers/parity_offers if they have room names?
                         # Providers usually put specific room names in 'room_types' array.
 

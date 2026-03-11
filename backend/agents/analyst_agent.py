@@ -141,6 +141,8 @@ class AnalystAgent:
                     history_map[hid] = []
                 if len(history_map[hid]) < 2:
                     history_map[hid].append(entry)
+            
+            await self.log_reasoning(session_id, "Memory", f"Batch history lookup complete for {len(hotel_ids)} properties.", "info")
         except Exception as e:
             print(f"[AnalystAgent] History pre-fetch warning: {e}")
 
@@ -301,9 +303,9 @@ class AnalystAgent:
                         prev_res = self.db.table("price_logs").select("metadata").eq("hotel_id", hotel_id).order("recorded_at", desc=True).limit(2).execute()
                         prev_shallow_count = sum(1 for row in prev_res.data if row.get("metadata", {}).get("is_shallow"))
                         if prev_shallow_count >= 2:
-                            await self.log_reasoning(session_id, "Safeguard", f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}.", "error")
+                            await self.log_reasoning(session_id, "Safeguard", f"[CRITICAL DEGRADATION] PERSISTENT shallow extraction for {hotel_id}. Only {len(offers)} offers available.", "error")
                         else:
-                            await self.log_reasoning(session_id, "Safeguard", f"Shallow extraction for {hotel_id}: Only {len(offers)} offers found.", "warning")
+                            await self.log_reasoning(session_id, "Safeguard", f"Low market depth for {hotel_id} ({len(offers)} offers). Metadata flagged.", "warning")
                     except Exception:
                         pass
 
@@ -382,6 +384,14 @@ class AnalystAgent:
                         self._embedding_queue = []
                     self._embedding_queue.append((hotel_id, meta_update))
 
+                    # KAİZEN: Populate sentiment history for time-series analysis
+                    sentiment_history_to_insert.append({
+                        "hotel_id": hotel_id,
+                        "rating": meta_update.get("rating"),
+                        "review_count": meta_update.get("review_count"),
+                        "sentiment_breakdown": meta_update.get("sentiment_breakdown"),
+                    })
+
                 self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
 
                 # Threshold breaches
@@ -392,8 +402,10 @@ class AnalystAgent:
                         previous_price = convert_currency(prev_entry["price"], prev_entry.get("currency", "USD"), currency)
                         alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
                         if alert:
-                            await self.log_reasoning(session_id, "Alert", f"BREACH! {current_price} vs {previous_price}", "error")
+                            await self.log_reasoning(session_id, "Alert", f"Threshold Breach Verified: {current_price} vs {previous_price} ({alert.get('change_percent')}%).", "error")
                             alerts_to_insert.append({"user_id": str(user_id), "hotel_id": hotel_id, **alert})
+                        else:
+                            await self.log_reasoning(session_id, "Validation", f"Price stable for {hotel_id}. No threshold breach detected.", "info")
         
             except Exception as e:
                 print(f"[AnalystAgent] Error processing {res.get('hotel_id')}: {e}")
@@ -894,10 +906,24 @@ class AnalystAgent:
             )
             rival = rival_res.data
 
-        # 2. HISTORICAL ANALYSIS: Aggregate logs within the lookback window.
-        # We focus on price trends, search ranking visibility, and parity offers.
+        # 2. DATA ACQUISITION: COMPETITORS (Historical & Current)
+        # Fetch all competitors for the user to determine the TRUE market average during the lookback period.
+        rivals_res = (
+            self.db.table("hotels")
+            .select("id, name, rating, current_price, preferred_currency")
+            .eq("user_id", str(user_id))
+            .eq("is_target_hotel", False)
+            .is_("deleted_at", "null")
+            .execute()
+        )
+        all_rivals = rivals_res.data or []
+        rival_ids = [r["id"] for r in all_rivals]
+
+        # 3. HISTORICAL ANALYSIS: Aggregate logs within the lookback window.
         cutoff = (datetime.now() - timedelta(days=days)).isoformat()
-        logs_res = (
+        
+        # Target Logs
+        target_logs_res = (
             self.db.table("price_logs")
             .select("price, currency, recorded_at, search_rank, parity_offers")
             .eq("hotel_id", target_hotel_id)
@@ -905,20 +931,61 @@ class AnalystAgent:
             .order("recorded_at", desc=True)
             .execute()
         )
-        target_logs = logs_res.data or []
+        target_logs = target_logs_res.data or []
 
-        # 3. METRIC CALCULATION: Derive benchmark ADR and Search visibility rank.
-        avg_price = (
+        # Market Logs (Filtered to the same timeframe)
+        market_logs = []
+        if rival_ids:
+            market_logs_res = (
+                self.db.table("price_logs")
+                .select("hotel_id, price, currency, recorded_at")
+                .in_("hotel_id", rival_ids)
+                .gte("recorded_at", cutoff)
+                .execute()
+            )
+            market_logs = market_logs_res.data or []
+
+        # 4. METRIC CALCULATION: Derive true benchmarks
+        target_avg_price = (
             sum(entry["price"] for entry in target_logs) / len(target_logs)
             if target_logs
             else target.get("current_price", 0)
         )
+        
+        # TRUE Market Average (Historical baseline for the selected period)
+        market_historical_avg = (
+            sum(entry["price"] for entry in market_logs) / len(market_logs)
+            if market_logs
+            else sum(r.get("current_price", 0) for r in all_rivals) / len(all_rivals) if all_rivals else target_avg_price
+        )
+
         avg_rank = (
             sum(entry["search_rank"] for entry in target_logs if entry.get("search_rank"))
             / len([entry for entry in target_logs if entry.get("search_rank")])
             if any(entry.get("search_rank") for entry in target_logs)
-            else 1
+            else target.get("search_rank", 1)
         )
+
+        # 5. QUALITY VELOCITY: Analyze sentiment shifts over time
+        sentiment_velocity = "Stable"
+        historical_sentiment = []
+        try:
+            sent_res = (
+                self.db.table("sentiment_history")
+                .select("rating, recorded_at")
+                .eq("hotel_id", target_hotel_id)
+                .gte("recorded_at", cutoff)
+                .order("recorded_at", asc=True)
+                .execute()
+            )
+            historical_sentiment = sent_res.data or []
+            if len(historical_sentiment) >= 2:
+                start_rating = historical_sentiment[0]["rating"]
+                end_rating = historical_sentiment[-1]["rating"]
+                diff = end_rating - start_rating
+                if diff > 0.1: sentiment_velocity = f"Improving (+{diff:.1f})"
+                elif diff < -0.1: sentiment_velocity = f"Declining ({diff:.1f})"
+        except Exception: pass
 
         # 4. FRICTION DETECTION: Identify OTA undercutting events.
         # A 'leak' is defined as any OTA offer price lower than the hotel's direct log price.
@@ -990,32 +1057,21 @@ class AnalystAgent:
                     "change_pct": pct,
                 }
 
-        # C) Competitor Table — fetch all user's competitor hotels with latest prices
+        # C) Competitor Table — benchmarking against ALL rivals
         competitor_table = []
-        try:
-            comp_res = (
-                self.db.table("hotels")
-                .select("id, name, rating, current_price, preferred_currency")
-                .eq("user_id", str(user_id))
-                .eq("is_target_hotel", False)
-                .is_("deleted_at", "null")
-                .execute()
-            )
-            target_price = target.get("current_price") or avg_price or 0
-            for comp in (comp_res.data or []):
-                comp_price = comp.get("current_price") or 0
-                gap_pct = 0.0
-                if target_price > 0 and comp_price > 0:
-                    gap_pct = round(((target_price - comp_price) / target_price) * 100, 1)
-                competitor_table.append({
-                    "name": comp["name"],
-                    "price": comp_price,
-                    "rating": comp.get("rating") or 0,
-                    "currency": comp.get("preferred_currency", "TRY"),
-                    "gap_pct": gap_pct,
-                })
-        except Exception as e:
-            print(f"[AnalystAgent] Competitor table build error: {e}")
+        target_price = target.get("current_price") or target_avg_price or 0
+        for comp in all_rivals:
+            comp_price = comp.get("current_price") or 0
+            gap_pct = 0.0
+            if target_price > 0 and comp_price > 0:
+                gap_pct = round(((target_price - comp_price) / target_price) * 100, 1)
+            competitor_table.append({
+                "name": comp["name"],
+                "price": comp_price,
+                "rating": comp.get("rating") or 0,
+                "currency": comp.get("preferred_currency", "TRY"),
+                "gap_pct": gap_pct,
+            })
 
         # D) Revenue Projection — scale daily parity risk to monthly
         daily_leak_amount = sum(
@@ -1025,14 +1081,14 @@ class AnalystAgent:
         unique_leak_days = len(set(l["date"] for l in parity_leaks)) if parity_leaks else 0
         avg_daily_leak = round(daily_leak_amount / max(unique_leak_days, 1), 2)
 
-        # E) Dynamic Description Text — context-aware, never contradicts the data
+        # E) Dynamic Description Text
         total_competitors = len(competitor_table)
         if len(parity_leaks) > 0:
-            yield_text = f"{len(parity_leaks)} OTA undercutting events detected across {unique_leak_days} day(s). Average daily revenue at risk: {target.get('preferred_currency', 'TRY')} {avg_daily_leak:.0f}."
+            yield_text = f"{len(parity_leaks)} OTA undercutting events detected across {unique_leak_days} day(s). Direct revenue erosion identified."
         else:
             yield_text = "No OTA undercutting detected in this period. Channel parity is healthy."
 
-        battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} tracked properties with a {days}-day benchmark ADR of {target.get('preferred_currency', 'TRY')} {avg_price:,.0f}."
+        battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} assets. Period ADR: {target.get('preferred_currency', 'TRY')} {target_avg_price:,.0f} vs Market Benchmark: {market_historical_avg:,.0f}."
 
         # 6. AI SYNTHESIS: Generate a high-depth executive narrative using Gemini-3-Flash.
         from backend.services.analysis_service import get_genai_client
@@ -1069,14 +1125,15 @@ class AnalystAgent:
                 "scope": f"Analyzing {target['name']} vs {rival['name'] if rival else 'General Market'}",
             },
             "metrics": {
-                "avg_price": round(avg_price, 2),
+                "target_avg_price": round(target_avg_price, 2),
+                "market_avg_price": round(market_historical_avg, 2),
                 "avg_rank": round(avg_rank, 1),
                 "gri": target.get("rating", 0),
+                "sentiment_velocity": sentiment_velocity,
                 "parity_leaks_count": len(parity_leaks),
                 "parity_leaks": parity_leaks[:10],
                 "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
-                "sentiment_snapshot": sentiment_summary[:1000],
-                # NEW: Enriched computed fields for frontend rendering
+                "sentiment_snapshot": sentiment_snapshot,
                 "price_history": price_history,
                 "price_trend": price_trend,
                 "competitor_table": competitor_table,
@@ -1200,11 +1257,13 @@ class AnalystAgent:
             TIMEFRAME: {timeframe}
             
             COMMERCIAL CONTEXT:
-            - Guest Perception (GRI): {target.get("rating")} / 5.0 from {target.get("review_count", 0)} reviews.
-            - Market Rate Benchmark: {avg_price} {target.get("preferred_currency", "TRY")}.
-            - Search Visibility Rank: #{avg_rank}.
-            - Pricing DNA: {dna_str}.
-            - Top Sentiment: {sentiment_summary[:1000]}
+            - Period: {timeframe}
+            - Your Rating: {target.get("rating")} ({sentiment_velocity}).
+            - Your Period Avg Price: {target_avg_price} {target.get("preferred_currency", "TRY")}.
+            - Market Period Benchmark: {market_historical_avg} {target.get("preferred_currency", "TRY")}.
+            - Your Search Rank: #{avg_rank}.
+            - Rival Focal Point: {rival["name"] if rival else "None selected (General Market Mode)"}.
+            - Top Sentiment: {sentiment_snapshot[:1000]}
             
             INSTRUCTIONS:
             - Adopt a Harvard Business Review / McKinsey tone: stark facts, highly actionable, no fluffy or conversational filler.

@@ -25,6 +25,73 @@ interface ScanSessionModalProps {
   session: ScanSession | null;
 }
 
+// KAİZEN: ReasoningTypist
+// This component handles the "ticking" animation for new reasoning items.
+// It ensures that even if logs arrive in batches, they appear to "type in" for better UX.
+function ReasoningItem({ trace, isNew }: { trace: any; isNew: boolean }) {
+  const [displayedMessage, setDisplayedMessage] = useState(isNew ? "" : (typeof trace === "string" ? trace : trace.message));
+  
+  useEffect(() => {
+    if (!isNew) return;
+    
+    const fullMessage = typeof trace === "string" ? trace : trace.message;
+    let currentIdx = 0;
+    const interval = setInterval(() => {
+      setDisplayedMessage(fullMessage.slice(0, currentIdx + 1));
+      currentIdx++;
+      if (currentIdx >= fullMessage.length) clearInterval(interval);
+    }, 15);
+    
+    return () => clearInterval(interval);
+  }, [trace, isNew]);
+
+  // Handle Legacy String Traces
+  if (typeof trace === "string") {
+    return (
+      <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
+        <span className="text-xs">📝</span>
+        <span className="text-[10px] text-white/80 font-mono leading-relaxed">
+          {displayedMessage}
+        </span>
+      </div>
+    );
+  }
+
+  // Handle New Structured ReasoningLog
+  const { step, level, timestamp } = trace;
+  let colorClass = "text-white/80";
+  let iconEmoji = "📝";
+  let bgClass = "bg-white/5";
+  let borderClass = "border-white/10";
+
+  switch (level) {
+    case "info":
+      if (step === "Scraping") { iconEmoji = "🌐"; colorClass = "text-blue-200"; bgClass="bg-blue-500/10"; borderClass="border-blue-500/20"; }
+      if (step === "Resource") { iconEmoji = "🔒"; colorClass = "text-amber-200"; }
+      if (step === "Cache") { iconEmoji = "⚡"; colorClass = "text-[var(--soft-gold)]"; }
+      break;
+    case "success": iconEmoji = "✅"; colorClass = "text-optimal-green"; break;
+    case "error": iconEmoji = "❌"; colorClass = "text-alert-red"; break;
+    case "warning": iconEmoji = "⚠️"; colorClass = "text-amber-400"; break;
+  }
+
+  return (
+    <div className={`flex flex-col gap-1 p-3 rounded-xl border ${bgClass} ${borderClass} animate-in fade-in slide-in-from-left-2 duration-300`}>
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-[8px] font-black uppercase tracking-wider text-white/40">
+          {iconEmoji} {step}
+        </span>
+        <span className="text-[8px] font-mono text-white/20">
+          {timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : ""}
+        </span>
+      </div>
+      <span className={`text-[10px] font-mono leading-relaxed ${colorClass}`}>
+        {displayedMessage}
+      </span>
+    </div>
+  );
+}
+
 export default function ScanSessionModal({
   isOpen,
   onClose,
@@ -310,8 +377,11 @@ export default function ScanSessionModal({
                 <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
               </div>
               <h3 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-6 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                <span className={`w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] ${activeSession.status === "running" ? "animate-pulse" : ""}`} />
                 Agent-Mesh Processing Status
+                {activeSession.status === "running" && (
+                   <span className="ml-auto text-[8px] text-[var(--soft-gold)]/60 animate-pulse">LIVE FEED ACTIVE</span>
+                )}
               </h3>
               <div className="flex items-center justify-between max-w-2xl mx-auto relative px-4">
                 {/* Connection Lines */}
@@ -388,51 +458,15 @@ export default function ScanSessionModal({
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                   Agent Reasoning Timeline
                 </h4>
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                  {activeSession.reasoning_trace.map((trace: any, i: number) => {
-                    // Handle Legacy String Traces
-                    if (typeof trace === "string") {
-                      return (
-                        <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                          <span className="text-xs">📝</span>
-                          <span className="text-[10px] text-white/80 font-mono leading-relaxed">
-                            {trace}
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    // Handle New Structured ReasoningLog
-                    const { step, level, message, timestamp } = trace;
-                    let colorClass = "text-white/80";
-                    let iconEmoji = "📝";
-                    let bgClass = "bg-white/5";
-                    let borderClass = "border-white/10";
-
-                    switch (level) {
-                      case "info":
-                        if (step === "Scraping") { iconEmoji = "🌐"; colorClass = "text-blue-200"; bgClass="bg-blue-500/10"; borderClass="border-blue-500/20"; }
-                        break;
-                      case "success": iconEmoji = "✅"; colorClass = "text-optimal-green"; break;
-                      case "error": iconEmoji = "❌"; colorClass = "text-alert-red"; break;
-                    }
-
-                    return (
-                      <div key={i} className={`flex flex-col gap-1 p-3 rounded-xl border ${bgClass} ${borderClass}`}>
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-[8px] font-black uppercase tracking-wider text-white/40">
-                            {iconEmoji} {step}
-                          </span>
-                          <span className="text-[8px] font-mono text-white/20">
-                            {timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : ""}
-                          </span>
-                        </div>
-                        <span className={`text-[10px] font-mono leading-relaxed ${colorClass}`}>
-                          {message}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar flex flex-col-reverse">
+                  {/* flex-col-reverse ensures new items appear at the bottom but are rendered first for typing logic */}
+                  {[...activeSession.reasoning_trace].reverse().map((trace: any, i: number) => (
+                    <ReasoningItem 
+                      key={activeSession.reasoning_trace.length - i} 
+                      trace={trace} 
+                      isNew={i === 0 && activeSession.status === "running"} 
+                    />
+                  ))}
                 </div>
               </div>
             )}

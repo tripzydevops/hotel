@@ -74,6 +74,9 @@ export default function AnalysisPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  // AI Streaming state
+  const [streamingNarrative, setStreamingNarrative] = useState<string>("");
+
   // Set default date range to current month
   useEffect(() => {
     const today = new Date();
@@ -107,6 +110,8 @@ export default function AnalysisPage() {
   const loadData = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+    setStreamingNarrative(""); // Reset narrative on reload
+
     try {
       // Build query params
       const params = new URLSearchParams();
@@ -120,19 +125,57 @@ export default function AnalysisPage() {
         params.set("search_query", searchQuery);
       }
 
-      const result = await api.getAnalysisWithFilters(
-        params.toString(),
-      );
-      setData(result);
-      if (result.display_currency) {
-        setCurrency(result.display_currency);
-      }
-      if (result.all_hotels && allHotels.length === 0) {
-        setAllHotels(result.all_hotels);
-      }
+      // 1. Get Token for SSE (EventSource doesn't support custom headers easily)
+      const token = await (api as any).getToken();
+      if (token) params.set("token", token);
+
+      // 2. Establish SSE Connection
+      const eventSource = new EventSource(`${api.baseURL}/api/v2/analysis/stream?${params.toString()}`);
+
+      eventSource.addEventListener("data_init", (e) => {
+        try {
+          const result = JSON.parse(e.data);
+          setData(result);
+          if (result.display_currency) setCurrency(result.display_currency);
+          if (result.all_hotels && allHotels.length === 0) setAllHotels(result.all_hotels);
+          
+          // KAİZEN: Immediate UI Feedback
+          // We set loading to false as soon as core market data is received.
+          // The AI narrative will continue to stream into the shard in the background.
+          setLoading(false);
+        } catch (err) {
+          console.error("Failed to parse data_init:", err);
+        }
+      });
+
+      eventSource.addEventListener("narrative_chunk", (e) => {
+        try {
+          const { chunk } = JSON.parse(e.data);
+          setStreamingNarrative(prev => prev + chunk);
+        } catch (err) {
+          console.error("Failed to parse narrative_chunk:", err);
+        }
+      });
+
+      eventSource.addEventListener("complete", () => {
+        console.log("SSE Stream complete");
+        setLoading(false);
+        eventSource.close();
+      });
+
+      eventSource.addEventListener("error", (e) => {
+        console.error("SSE Stream error:", e);
+        setLoading(false);
+        eventSource.close();
+      });
+
+      // Cleanup on re-run
+      return () => {
+        eventSource.close();
+      };
+
     } catch (err) {
-      console.error("Failed to load analysis:", err);
-    } finally {
+      console.error("Failed to initialize analysis stream:", err);
       setLoading(false);
     }
   }, [
@@ -143,6 +186,7 @@ export default function AnalysisPage() {
     excludedHotelIds,
     roomType,
     searchQuery,
+    allHotels.length
   ]);
 
   useEffect(() => {
@@ -369,6 +413,7 @@ export default function AnalysisPage() {
             sentiment={data?.sentiment_index}
             targetRating={data?.target_rating}
             marketRating={data?.market_rating}
+            customInsight={streamingNarrative}
           />
         </div>
 
@@ -394,14 +439,21 @@ export default function AnalysisPage() {
                 <h3 className="text-sm font-black text-[var(--soft-gold)] uppercase tracking-widest mb-2">
                   {t("analysis.advisory.title")}
                 </h3>
-                <div className="text-xl font-medium text-white italic leading-relaxed">
-                  {data?.advisory_keys && data.advisory_keys.length > 0
+                <div className="text-xl font-medium text-white italic leading-relaxed whitespace-pre-wrap">
+                  {streamingNarrative ? (
+                    <div className="animate-in fade-in duration-500">
+                      {streamingNarrative}
+                      {loading && (
+                        <span className="inline-block w-1.5 h-5 ml-1 bg-[var(--soft-gold)] animate-pulse align-middle" />
+                      )}
+                    </div>
+                  ) : data?.advisory_keys && data.advisory_keys.length > 0
                     ? data.advisory_keys.map((key: string, idx: number) => (
                       <span key={idx}>
                         {t(`analysis.advisory.${key}` as any)}{" "}
                       </span>
                     ))
-                    : `"${data?.advisory_msg}"`}
+                    : `"${data?.advisory_msg || "Analyzing market context..."}"`}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex -space-x-2">
