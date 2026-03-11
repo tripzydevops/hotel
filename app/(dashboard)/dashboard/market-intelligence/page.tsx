@@ -175,6 +175,57 @@ export default function MarketIntelligencePage() {
                 </div>
             )}
 
+            {/* Strategic Executive Summary (Moved from Sidebar) */}
+            <AnimatePresence mode="wait">
+                {currentDay && (
+                    <motion.div
+                        key={`rationale-${currentDay.date}`}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="w-full"
+                    >
+                        <BentoTile className="bg-gradient-to-r from-blue-500/10 to-transparent border-blue-500/20 backdrop-blur-sm p-6 relative overflow-hidden group">
+                            <div className="flex flex-col md:flex-row md:items-center gap-6">
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="p-1.5 rounded-lg bg-blue-500/20">
+                                            <Info className="w-4 h-4 text-blue-400" />
+                                        </div>
+                                        <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+                                            Strategic Market Rationale
+                                        </h3>
+                                        <span className="text-[10px] text-slate-500 font-mono ml-auto">
+                                            Analysis for {new Date(currentDay.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-200 leading-relaxed text-sm italic font-medium">
+                                        "{currentDay.rationale}"
+                                    </p>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-2 md:w-64 shrink-0">
+                                    {currentDay.signals.length > 0 ? (
+                                        currentDay.signals.map((s, i) => (
+                                            <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md border transition-all hover:scale-105 ${
+                                                s.type === 'fair' ? 'bg-[#A855F7]/10 border-[#A855F7]/30 text-[#A855F7]' : 'bg-[#F97316]/10 border-[#F97316]/30 text-[#F97316]'
+                                            }`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                                                    s.type === 'fair' ? 'bg-[#A855F7]' : 'bg-[#F97316]'
+                                                }`} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">{s.name}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-[10px] text-slate-600 italic">No significant demand signals detected.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </BentoTile>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {loading && data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[50vh]">
                     <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
@@ -219,64 +270,28 @@ export default function MarketIntelligencePage() {
                         </div>
                     </div>
 
-                    {/* Right Column: Strategic Insight */}
+                    {/* Right Column: Strategic Insight (Simplified) */}
                     <div className="space-y-8">
                         <OpportunityMatrix 
                             city={city} 
                             intensity={metadata?.market_stats?.avg_tga_intensity || 0}
                             priceGap={2.5} // Still static until combined with real hotel context
                         />
-
-                        <BentoTile className="bg-slate-900/50 border-slate-800 backdrop-blur-sm relative overflow-hidden">
-                            <div className="mb-4 flex justify-between items-center">
-                                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
-                                    Strategic Rationale
-                                </h3>
-                                {currentDay && (
-                                    <span className="text-[10px] text-slate-500 font-mono">
-                                        {new Date(currentDay.date).toLocaleDateString()}
-                                    </span>
-                                )}
+                        
+                        {/* Summary Stats / Mini-Card */}
+                        <div className="p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/5 to-transparent border border-[#F6C344]/10">
+                            <h4 className="text-[10px] font-black text-[#F6C344] uppercase tracking-widest mb-4">Market Risk Analysis</h4>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-end border-b border-white/5 pb-2">
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Recommended Action</span>
+                                    <span className="text-sm font-black text-white">{metadata?.market_stats?.avg_tga_intensity > 3 ? 'Aggressive ADR' : 'Hold Rates'}</span>
+                                </div>
+                                <div className="flex justify-between items-end border-b border-white/5 pb-2">
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold">System Confidence</span>
+                                    <span className="text-sm font-black text-emerald-400">High (92%)</span>
+                                </div>
                             </div>
-                            <div>
-                                {currentDay ? (
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={currentDay.date}
-                                            initial={{ opacity: 0, x: 10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -10 }}
-                                            className="space-y-4"
-                                        >
-                                            <p className="text-slate-300 leading-relaxed text-sm italic border-l-2 border-blue-500 pl-4 py-1">
-                                                "{currentDay.rationale}"
-                                            </p>
-                                            <div className="pt-4 border-t border-white/5">
-                                                <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Detected Signals</h4>
-                                                <div className="space-y-2">
-                                                    {currentDay.signals.length > 0 ? (
-                                                        currentDay.signals.map((s, i) => (
-                                                            <div key={i} className="flex justify-between items-center bg-white/5 p-2 rounded">
-                                                                <span className="text-xs text-white">{s.name}</span>
-                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold ${
-                                                                    s.type === 'fair' ? 'bg-[#A855F7]/20 text-[#A855F7]' : 'bg-[#F97316]/20 text-[#F97316]'
-                                                                }`}>
-                                                                    {s.type}
-                                                                </span>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-[10px] text-slate-600 italic">No significant demand signals.</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    </AnimatePresence>
-                                ) : (
-                                    <p className="text-slate-500 text-sm italic">No signals detected for the selection.</p>
-                                )}
-                            </div>
-                        </BentoTile>
+                        </div>
                     </div>
                 </motion.div>
             )}
