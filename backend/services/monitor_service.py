@@ -373,7 +373,10 @@ async def run_monitor_background(
         # Ensure next_scan_at is pushed forward if this was a manual scan that 
         # somehow missed the trigger update, or a scheduled scan that finished.
         try:
+            # FIX: Fetch both profile and settings to ensure frequency consistency
             profile_res = db.table("profiles").select("next_scan_at, scan_frequency_minutes").eq("id", str(user_id)).execute()
+            settings_res = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
+            
             if profile_res.data:
                 prof = profile_res.data[0]
                 nxt = prof.get("next_scan_at")
@@ -390,7 +393,13 @@ async def run_monitor_background(
                         pass
                 
                 if is_due:
-                    freq = prof.get("scan_frequency_minutes") or 1440
+                    # [FIX] Prefer settings.check_frequency_minutes as source of truth
+                    freq = 1440
+                    if settings_res.data and settings_res.data[0].get("check_frequency_minutes"):
+                        freq = settings_res.data[0].get("check_frequency_minutes")
+                    elif prof.get("scan_frequency_minutes"):
+                        freq = prof.get("scan_frequency_minutes")
+                        
                     new_nxt = (now_utc + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
                     db.table("profiles").update({"next_scan_at": new_nxt}).eq("id", str(user_id)).execute()
                     logger.info(f"Background: Force-advanced next_scan_at for {user_id} to {new_nxt}")
