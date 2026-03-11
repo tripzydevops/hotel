@@ -460,9 +460,9 @@ export default function ScanSessionModal({
                 </h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar flex flex-col-reverse">
                   {/* flex-col-reverse ensures new items appear at the bottom but are rendered first for typing logic */}
-                  {[...activeSession.reasoning_trace].reverse().map((trace: any, i: number) => (
+                  {[...(activeSession.reasoning_trace || [])].reverse().map((trace: any, i: number) => (
                     <ReasoningItem 
-                      key={activeSession.reasoning_trace.length - i} 
+                      key={(activeSession.reasoning_trace?.length || 0) - i} 
                       trace={trace} 
                       isNew={i === 0 && activeSession.status === "running"} 
                     />
