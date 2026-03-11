@@ -650,6 +650,11 @@ class ApiClient {
     return this.fetch<string[]>("/api/market/cities");
   }
 
+  async getMarketEvents(city?: string): Promise<any[]> {
+    const query = city ? `?city=${encodeURIComponent(city)}` : "";
+    return this.fetch<any[]>(`/api/market/events${query}`);
+  }
+
   async generateDispute(params: {
     hotel_id: string;
     ota_name: string;
