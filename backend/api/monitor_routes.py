@@ -109,24 +109,22 @@ async def check_scheduled_scan(
         # 4. Due Check (skipped entirely when force=True)
         should_run = force
         if not should_run:
-            last_log = (
-                db.table("price_logs")
-                .select("recorded_at")
-                .eq("user_id", uid)
-                .order("recorded_at", desc=True)
-                .limit(1)
-                .execute()
-            )
-            if not last_log.data:
-                should_run = True
+            # KAİZEN: Use next_scan_at from profiles as source of truth.
+            # This aligns the 'Lazy Cron' with the background GitHub Action scheduler.
+            profile_res = db.table("profiles").select("next_scan_at").eq("id", uid).execute()
+            if profile_res.data:
+                nxt = profile_res.data[0].get("next_scan_at")
+                if not nxt:
+                    should_run = True  # New profile, never scanned
+                else:
+                    try:
+                        nxt_dt = datetime.fromisoformat(nxt.replace("Z", "+00:00"))
+                        if datetime.now(timezone.utc) >= nxt_dt:
+                            should_run = True
+                    except Exception:
+                        should_run = True
             else:
-                last_run = datetime.fromisoformat(
-                    last_log.data[0]["recorded_at"].replace("Z", "+00:00")
-                )
-                if (
-                    datetime.now(timezone.utc) - last_run
-                ).total_seconds() / 60 >= freq_minutes:
-                    should_run = True
+                should_run = True
 
         if should_run:
             session_id = None

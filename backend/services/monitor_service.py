@@ -123,6 +123,17 @@ async def trigger_monitor_logic(
             if access.get("state") == "locked":
                 reason = access.get("reason", "No Active Subscription")
                 logger.warning(f"Manual scan blocked for {user_id}: {reason}")
+                
+                # [KAIZEN] Log lock to session trace if possible
+                try:
+                    if session_id:
+                        db.table("scan_sessions").update({
+                            "status": "failed",
+                            "reasoning_trace": [f"SCAN_LOCKED: {reason}"]
+                        }).eq("id", str(session_id)).execute()
+                except Exception:
+                    pass
+
                 return MonitorResult(
                     hotels_checked=0,
                     prices_updated=0,
@@ -211,6 +222,25 @@ async def trigger_monitor_logic(
     normalized_options = ScanOptions(
         check_in=check_in, check_out=check_out, adults=adults, currency=currency
     )
+
+    # 3.5 [KAIZEN] Sync Scheduler (Anti-Drift)
+    # When a user triggers a manual scan, we advance their 'next_scan_at' 
+    # to avoid a scheduled scan triggering immediately after.
+    try:
+        freq = (
+            (profile_data.get("scan_frequency_minutes") or 1440)
+            if not is_admin else 1440
+        )
+        # If we have settings, they override the profile default
+        settings_check = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
+        if settings_check.data:
+            freq = settings_check.data[0].get("check_frequency_minutes") or freq
+            
+        new_next = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
+        db.table("profiles").update({"next_scan_at": new_next}).eq("id", str(user_id)).execute()
+        logger.info(f"Manual scan: Advanced next_scan_at for {user_id} to {new_next}")
+    except Exception as sync_e:
+        logger.warning(f"Failed to sync next_scan_at during manual trigger: {sync_e}")
 
     # 4. Background Execution (Direct via BackgroundTasks)
     # EXPLANATION: Lean Serverless Execution
@@ -338,6 +368,34 @@ async def run_monitor_background(
             db.table("scan_sessions").update(
                 {"status": final_status, "completed_at": datetime.now().isoformat()}
             ).eq("id", str(session_id)).execute()
+
+        # 7. [KAIZEN] Final Sync Safety
+        # Ensure next_scan_at is pushed forward if this was a manual scan that 
+        # somehow missed the trigger update, or a scheduled scan that finished.
+        try:
+            profile_res = db.table("profiles").select("next_scan_at, scan_frequency_minutes").eq("id", str(user_id)).execute()
+            if profile_res.data:
+                prof = profile_res.data[0]
+                nxt = prof.get("next_scan_at")
+                
+                # If next_scan_at is in the past or missing, force advance it
+                now_utc = datetime.now(timezone.utc)
+                is_due = True
+                if nxt:
+                    try:
+                        nxt_dt = datetime.fromisoformat(nxt.replace("Z", "+00:00"))
+                        if nxt_dt > now_utc:
+                            is_due = False
+                    except Exception:
+                        pass
+                
+                if is_due:
+                    freq = prof.get("scan_frequency_minutes") or 1440
+                    new_nxt = (now_utc + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
+                    db.table("profiles").update({"next_scan_at": new_nxt}).eq("id", str(user_id)).execute()
+                    logger.info(f"Background: Force-advanced next_scan_at for {user_id} to {new_nxt}")
+        except Exception as fe:
+            logger.warning(f"Background: Final sync safety failed: {fe}")
 
     except Exception as e:
         logger.critical(f"SYSTEM FAILURE: {e}")
