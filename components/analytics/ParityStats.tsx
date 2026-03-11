@@ -32,16 +32,16 @@ export default function ParityStats({
         )
       : 100;
 
-  // Revenue Risk: Sum of price differences where we are losing on price
-  const revenueRisk = undercuts.reduce((acc, c) => {
+  // Monthly Revenue Leakage: (Target Price - OTA Price) * 25 nights
+  const monthlyLeakage = undercuts.reduce((acc, c) => {
     const diff = targetPrice - (c.price_info?.current_price || 0);
-    return acc + diff;
+    return acc + (diff * 25);
   }, 0);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
-      currency: "TRY",
+      currency: targetHotel?.price_info?.currency || "TRY",
       maximumFractionDigits: 0,
     }).format(val);
   };
@@ -53,8 +53,8 @@ export default function ParityStats({
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <Gauge className="w-16 h-16 text-[#F6C344]" />
         </div>
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
-          Parity Score
+        <h3 className="text-sm font-bold text-slate-400 font-black uppercase tracking-[0.2em] mb-4">
+          Parity Health
         </h3>
         <div className="flex flex-col items-center">
           <div className="gauge-container mb-2">
@@ -64,13 +64,13 @@ export default function ParityStats({
               style={{ transform: `rotate(${(parityScore / 100) * 180}deg)` }}
             ></div>
             <div className="gauge-value">
-              <span className="text-2xl font-bold text-white">
+              <span className="text-3xl font-black text-white">
                 {parityScore}%
               </span>
             </div>
           </div>
-          <p className="text-[10px] text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded">
-            Live Database Accuracy
+          <p className="text-[10px] text-[#F6C344] font-bold bg-[#F6C344]/10 px-3 py-1 rounded-full">
+            Real-time Sync
           </p>
         </div>
       </div>
@@ -80,16 +80,18 @@ export default function ParityStats({
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <AlertTriangle className="w-16 h-16 text-rose-500" />
         </div>
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">
-          Active Discrepancies
+        <h3 className="text-sm font-bold text-slate-400 font-black uppercase tracking-[0.2em] mb-2">
+          Active Violations
         </h3>
-        <div className="mt-4">
-          <span className="text-4xl font-bold text-white">
+        <div className="mt-4 flex items-baseline gap-2">
+          <span className="text-5xl font-black text-white leading-none">
             {activeDiscrepancies}
           </span>
-          <span className="text-sm text-slate-500 ml-1">instances</span>
+          <span className="text-sm text-slate-500 font-bold uppercase tracking-widest">
+            Channels
+          </span>
         </div>
-        <div className="mt-4 w-full h-1.5 bg-[#142541] rounded-full overflow-hidden">
+        <div className="mt-6 w-full h-2 bg-[#142541] rounded-full overflow-hidden">
           <div
             className="h-full bg-rose-500 transition-all duration-1000"
             style={{
@@ -98,33 +100,34 @@ export default function ParityStats({
           />
         </div>
         <p
-          className={`text-[10px] mt-2 font-bold ${activeDiscrepancies > 0 ? "text-rose-400" : "text-emerald-400"}`}
+          className={`text-[10px] mt-4 font-black uppercase tracking-wider ${activeDiscrepancies > 0 ? "text-rose-400" : "text-emerald-400"}`}
         >
-          {activeDiscrepancies > 0 ? "Requires Attention" : "In Full Parity"}
+          {activeDiscrepancies > 0 ? "⚠️ Immediate Action Required" : "✓ Shield Active: Full Parity"}
         </p>
       </div>
 
-      {/* Est. Revenue Risk */}
-      <div className="card-blur rounded-[2rem] p-6 relative overflow-hidden group">
+      {/* Monthly Revenue Leakage */}
+      <div className="card-blur rounded-[2rem] p-6 relative overflow-hidden group border border-blue-500/20">
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <CircleDollarSign className="w-16 h-16 text-blue-400" />
         </div>
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">
-          Est. Revenue Risk
+        <h3 className="text-sm font-bold text-slate-400 font-black uppercase tracking-[0.2em] mb-2">
+          Monthly Revenue Leakage
         </h3>
         <div className="mt-4">
-          <span className="text-4xl font-bold text-white">
-            {formatCurrency(revenueRisk)}
+          <span className="text-4xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.3)]">
+            {formatCurrency(monthlyLeakage)}
           </span>
         </div>
-        <div className="mt-4 w-full h-1.5 bg-[#142541] rounded-full overflow-hidden">
+        <div className="mt-6 w-full h-2 bg-[#142541] rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-400 transition-all duration-1000"
-            style={{ width: revenueRisk > 0 ? "40%" : "0%" }}
+            className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-1000"
+            style={{ width: monthlyLeakage > 0 ? "100%" : "0%" }}
           />
         </div>
-        <p className="text-[10px] text-slate-400 mt-2">
-          Based on current undercut depth
+        <p className="text-[10px] text-slate-400 font-bold mt-4 flex items-center gap-2 uppercase tracking-widest">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          Quantified Monthly Loss
         </p>
       </div>
     </div>

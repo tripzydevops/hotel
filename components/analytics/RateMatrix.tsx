@@ -443,25 +443,32 @@ function ParityStatus({
   if (!price) return <span className="text-slate-700">—</span>;
 
   const isUndercut = price < target;
+  const gapPercent = target > 0 ? ((target - price) / target) * 100 : 0;
+  const isHighSeverity = gapPercent > 10;
+
   return (
     <div
-      className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border transition-all ${
-        isUndercut
-          ? "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
-          : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
+      className={`inline-flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition-all duration-500 ${
+        isHighSeverity
+          ? "bg-rose-600/20 text-rose-400 border-rose-500/50 shadow-[0_0_20px_rgba(225,29,72,0.4)] animate-pulse"
+          : isUndercut
+            ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+            : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
       }`}
     >
-      <div className="flex items-center gap-1">
-        {isUndercut ? (
-          <AlertTriangle className="w-3 h-3 animate-pulse" />
+      <div className="flex items-center gap-1.5 text-xs font-black">
+        {isHighSeverity ? (
+          <AlertTriangle className="w-3.5 h-3.5" />
+        ) : isUndercut ? (
+          <AlertTriangle className="w-3 h-3 opacity-70" />
         ) : (
           <CheckCircle2 className="w-3 h-3" />
         )}
-        <span className="font-bold tracking-tighter">{formatPrice(price)}</span>
+        <span className="tracking-tighter">{formatPrice(price)}</span>
       </div>
-      {label && (
-        <span className="text-[8px] uppercase font-black opacity-50 tracking-widest">
-          {label}
+      {(label || isHighSeverity) && (
+        <span className={`text-[7px] uppercase font-black tracking-[0.2em] mt-0.5 ${isHighSeverity ? "text-rose-300" : "opacity-50"}`}>
+          {isHighSeverity ? "Critical Gap" : label}
         </span>
       )}
     </div>

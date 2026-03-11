@@ -649,6 +649,20 @@ class ApiClient {
   async getMarketCities(): Promise<string[]> {
     return this.fetch<string[]>("/api/market/cities");
   }
+
+  async generateDispute(params: {
+    hotel_id: string;
+    ota_name: string;
+    current_price: number;
+    target_price: number;
+    currency: string;
+    language?: string;
+  }): Promise<{ letter: string }> {
+    return this.fetch<{ letter: string }>("/api/recovery/generate-dispute", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
 }
 
 export const api = new ApiClient();

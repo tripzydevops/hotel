@@ -43,6 +43,7 @@ from backend.api import (
     pulse_routes,
     market_routes,
     execution_routes,
+    recovery_routes,
 )
 
 # EXPLANATION: Vercel Dependency & Import Safety
@@ -249,6 +250,7 @@ app.include_router(landing_routes.router)
 app.include_router(pulse_routes.router)
 app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
+app.include_router(recovery_routes.router)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
