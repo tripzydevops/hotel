@@ -1115,33 +1115,39 @@ class AnalystAgent:
             """
             else:  # Strategic Market Pulse (Default)
                 prompt = f"""
-            You are a Senior Revenue Strategist. Generate a High-Depth Strategic Market Pulse for {target["name"]}.
+            You are a Senior Revenue Strategist from a top-tier management consulting firm. Generate a Strategic Market Pulse for {target["name"]}.
             TIMEFRAME: {timeframe}
             
             COMMERCIAL CONTEXT:
             - Guest Perception (GRI): {target.get("rating")} / 5.0 from {target.get("review_count", 0)} reviews.
             - Market Rate Benchmark: {avg_price} {target.get("preferred_currency", "TRY")}.
             - Search Visibility Rank: #{avg_rank}.
-            - Pricing DNA: {dna_text or "Semantic Hybrid (Premium Focus)"}.
+            - Pricing DNA: {dna_str}.
             - Top Sentiment: {sentiment_summary[:1000]}
             
             INSTRUCTIONS:
-            - Focus on MARKET POSITIONING and PRICE ELASTICITY.
-            - Analyze the "Health" of the current rate relative to guest satisfaction.
-            - Provide deep insight into how the Pricing DNA aligns with the current market pulse.
-            - Explain the long-term impact of current visibility trends on ADR sustainability.
-            - Use a professional, sharp, and directive tone.
-            - Prioritize high-density analysis and long-form strategic reasoning.
-            - Aim for an executive-level summary that provides both high-level context and specific strategic reasoning.
+            - Adopt a Harvard Business Review / McKinsey tone: stark facts, highly actionable, no fluffy or conversational filler.
+            - Provide forward-looking recommendations explaining exactly what to do tomorrow.
             
-            REPORT SECTIONS:
-            1. [Contextual Frame]: Summary of market stance and strategic intent.
-            2. [Market Battlefield]: Performance analysis against the {timeframe} baseline, including specific price-rank correlations.
-            3. [Visibility Pulse]: Analysis of search rank, visibility health, and its projected revenue impact.
-            4. [The DNA Match]: Evaluation of strategic alignment with guest expectations and current market reality.
-            5. [Executive Pivot]: Comprehensive strategic move for today, including expected outcomes and risk mitigation.
-
-            Format: Use markdown bullet points and distinct paragraphs. Be analytical, professional, and dense with insight.
+            STRICT REPORTING FORMAT:
+            For each of the following 3 sections, format EXACTLY as requested:
+            
+            1. [Commercial Health]
+            - **Current State:** [1 sentence fact based on GRI and Benchmark]
+            - **Vulnerability:** [1 sentence identifying revenue loss or perception risk]
+            - **Action Plan:** [1 sentence specific, immediate directive]
+            
+            2. [Visibility & Positioning]
+            - **Current State:** [1 sentence fact based on Search Rank and Pricing DNA]
+            - **Vulnerability:** [1 sentence identifying demand capture risk or OTA friction]
+            - **Action Plan:** [1 sentence strategic pricing adjustment directive]
+            
+            3. [The Executive Pivot]
+            - **Current State:** [1 sentence summarizing the 30-day outlook]
+            - **Vulnerability:** [1 sentence on the biggest threat]
+            - **Action Plan:** [1 sentence specific forward pricing recommendation (e.g., "Increase standard rate by X%")]
+            
+            Output ONLY the sections in markdown. No introductions, no conclusions.
             """
 
             try:

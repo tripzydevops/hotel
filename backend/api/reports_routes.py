@@ -1,6 +1,16 @@
+import io
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.concurrency import run_in_threadpool
 from typing import Optional
 from uuid import UUID
+from xhtml2pdf import pisa
+
+def generate_pdf_bytes(html_content: str) -> bytes:
+    """Helper to run synchronous PDF generation in a threadpool."""
+    result = io.BytesIO()
+    pisa.CreatePDF(html_content, dest=result)
+    return result.getvalue()
+
 from datetime import datetime
 from supabase import Client
 from backend.utils.db import get_supabase
@@ -11,6 +21,7 @@ from backend.services.auth_service import (
 )
 from backend.services.admin_service import get_reports_logic, export_report_logic
 from backend.models.schemas import BaseModel
+from backend.templates.report_templates import build_deep_ocean_briefing_html, build_admin_report_html
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -84,9 +95,6 @@ async def export_saved_briefing_pdf(
     EXPLANATION: Saved Briefing PDF Export
     Polished 'Deep Ocean' template with standardized metrics and narrative visibility.
     """
-    from xhtml2pdf import pisa
-    import io
-
     res = (
         db.table("reports")
         .select("*")
@@ -209,78 +217,17 @@ async def export_saved_briefing_pdf(
         </table>
         """
 
-    html_content = f"""
-    <html>
-    <head>
-        <style>
-            @page {{ size: A4; margin: 0; }}
-            body {{ 
-                font-family: 'Helvetica', sans-serif; 
-                background-color: #0a192f; 
-                color: #e6f1ff; 
-                margin: 0; 
-                padding: 40px;
-            }}
-            .report-wrapper {{ width: 100%; }}
-            .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
-            h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
-            .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
-            .grid-table {{ width: 100%; border-spacing: 20px 0; }}
-            .card {{ 
-                background-color: #112240; 
-                border: 1px solid #d4af37; 
-                border-radius: 12px; 
-                padding: 20px; 
-                margin-bottom: 20px;
-                vertical-align: top;
-            }}
-            h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
-            .metric-table {{ width: 100%; }}
-            .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
-            .metric-label {{ color: #8892b0; font-size: 12px; }}
-            .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }}
-            .footer {{ 
-                margin-top: 50px; 
-                text-align: center; 
-                color: #8892b0; 
-                font-size: 12px; 
-                border-top: 1px solid #233554;
-                padding-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="report-wrapper">
-            <table class="header-table">
-                <tr>
-                    <td>
-                        <h1>{report_type_clean}</h1>
-                        <div class="cadence">{target_meta.get("name", "Unknown")} | {context.get("timeframe", "Snapshot Pulse")}</div>
-                    </td>
-                    <td style="text-align: right; vertical-align: bottom;">
-                        <div class="cadence">{created_at}</div>
-                    </td>
-                </tr>
-            </table>
+    html_content = build_deep_ocean_briefing_html(
+        report_type_clean=report_type_clean,
+        target_name=target_meta.get("name", "Unknown"),
+        timeframe=context.get("timeframe", "Snapshot Pulse"),
+        date_str=created_at,
+        middle_cards_html=middle_cards_html,
+        narrative=narrative,
+        is_archived=True
+    )
 
-            {middle_cards_html}
-
-            <div class="card" style="background-color: #112240;">
-                <h2 style="color: #d4af37;">Archived Strategic Narrative</h2>
-                <div class="narrative">{narrative}</div>
-            </div>
-
-            <div class="footer">
-                Intelligence archived by Agentic Tripzy Hub | Specialized Multi-Lens Engine
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-
-    result = io.BytesIO()
-    pisa.CreatePDF(html_content, dest=result)
-    pdf_bytes = result.getvalue()
+    pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
 
     return Response(
         content=pdf_bytes,
@@ -336,85 +283,40 @@ async def export_report_pdf(
         data = report.data
         report_data = data.get("report_data", {})
 
-        html_content = f"""
-        <html>
-        <head>
-            <style>
-                body {{ font-family: 'Helvetica', sans-serif; color: #333; padding: 40px; }}
-                h1 {{ color: #047857; border-bottom: 2px solid #047857; padding-bottom: 10px; }}
-                h2 {{ color: #333; margin-top: 30px; }}
-                .meta {{ color: #666; font-size: 0.9em; margin-bottom: 30px; }}
-                .insight {{ background: #ecfdf5; padding: 15px; border-left: 4px solid #047857; margin-bottom: 10px; }}
-                .hotel-card {{ border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; }}
-                .metric {{ font-size: 1.2em; font-weight: bold; }}
-                .label {{ font-size: 0.8em; color: #666; text-transform: uppercase; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #eee; }}
-            </style>
-        </head>
-        <body>
-            <h1>{data.get("title", "Market Analysis Report")}</h1>
-            <div class="meta">
-                Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M")}<br/>
-                Includes: {len(data.get("hotel_ids", []))} hotels | Period: {
-            data.get("period_months")
-        } months
+        ai_insights_html = "".join([f'<div class="insight">{insight}</div>' for insight in report_data.get("ai_insights", [])])
+        hotels_html = "".join([f'''
+            <div class="hotel-card">
+                <h3>{h['hotel'].get('name', 'Unknown Hotel')}</h3>
+                <p>{h['hotel'].get('location', '')}</p>
+                <table style="width:100%">
+                    <tr>
+                        <td>
+                            <div class="metric">${h['metrics']['avg_price']}</div>
+                            <div class="label">Avg Price</div>
+                        </td>
+                        <td>
+                            <div class="metric">${h['metrics']['min_price']} - ${h['metrics']['max_price']}</div>
+                            <div class="label">Price Range</div>
+                        </td>
+                         <td>
+                            <div class="metric">{h['metrics']['data_points']}</div>
+                            <div class="label">Data Points</div>
+                        </td>
+                    </tr>
+                </table>
             </div>
+            ''' for h in report_data.get("hotels", [])])
 
-            <h2>🤖 AI Executive Summary</h2>
-            {
-            "".join(
-                [
-                    f'<div class="insight">{insight}</div>'
-                    for insight in report_data.get("ai_insights", [])
-                ]
-            )
-        }
+        html_content = build_admin_report_html(
+            title=data.get("title", "Market Analysis Report"),
+            date_str=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            hotel_count=len(data.get("hotel_ids", [])),
+            period_months=str(data.get("period_months")),
+            ai_insights_html=ai_insights_html,
+            hotels_html=hotels_html
+        )
 
-            <h2>🏨 Hotel Analysis</h2>
-            {
-            "".join(
-                [
-                    f'''
-                <div class="hotel-card">
-                    <h3>{h['hotel'].get('name', 'Unknown Hotel')}</h3>
-                    <p>{h['hotel'].get('location', '')}</p>
-                    <table style="width:100%">
-                        <tr>
-                            <td>
-                                <div class="metric">${h['metrics']['avg_price']}</div>
-                                <div class="label">Avg Price</div>
-                            </td>
-                            <td>
-                                <div class="metric">${h['metrics']['min_price']} - ${h['metrics']['max_price']}</div>
-                                <div class="label">Price Range</div>
-                            </td>
-                             <td>
-                                <div class="metric">{h['metrics']['data_points']}</div>
-                                <div class="label">Data Points</div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                '''
-                    for h in report_data.get("hotels", [])
-                ]
-            )
-        }
-            
-            <div style="margin-top: 50px; text-align: center; color: #999; font-size: 0.8em;">
-                Generated by Tripzy.travel Intelligence Hub
-            </div>
-        </body>
-        </html>
-        """
-
-        import io
-        from xhtml2pdf import pisa
-
-        result = io.BytesIO()
-        pisa.CreatePDF(html_content, dest=result)
-        pdf_bytes = result.getvalue()
+        pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
 
         return Response(
             content=pdf_bytes,
@@ -441,9 +343,6 @@ async def export_briefing_pdf(
     Regenerates live market pulse with upgraded AI depth and visual styling.
     """
     from backend.agents.analyst_agent import AnalystAgent
-    import io
-    from xhtml2pdf import pisa
-
     agent = AnalystAgent(db)
     briefing = await agent.generate_executive_briefing(
         user_id=current_user.id,
@@ -562,77 +461,17 @@ async def export_briefing_pdf(
         </table>
         """
 
-    html_content = f"""
-            <html>
-            <head>
-                <style>
-                    @page {{ size: A4; margin: 0; }}
-                    body {{ 
-                        font-family: 'Helvetica', sans-serif; 
-                        background-color: #0a192f; 
-                        color: #e6f1ff; 
-                        margin: 0; 
-                        padding: 40px;
-                    }}
-                    .report-wrapper {{ width: 100%; }}
-                    .header-table {{ width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }}
-                    h1 {{ color: #d4af37; margin: 0; font-size: 28px; }}
-                    .cadence {{ color: #8892b0; font-size: 14px; text-transform: uppercase; }}
-                    .grid-table {{ width: 100%; border-spacing: 20px 0; }}
-                    .card {{ 
-                        background-color: #112240; 
-                        border: 1px solid #d4af37; 
-                        border-radius: 12px; 
-                        padding: 20px; 
-                        margin-bottom: 20px;
-                        vertical-align: top;
-                    }}
-                    h2 {{ color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }}
-                    .metric-table {{ width: 100%; }}
-                    .metric-val {{ font-weight: bold; color: #fff; font-size: 20px; }}
-                    .metric-label {{ color: #8892b0; font-size: 12px; }}
-                    .narrative {{ line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }}
-                    .footer {{ 
-                        margin-top: 50px; 
-                        text-align: center; 
-                        color: #8892b0; 
-                        font-size: 12px; 
-                        border-top: 1px solid #233554;
-                        padding-top: 20px;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="report-wrapper">
-                    <table class="header-table">
-                        <tr>
-                            <td>
-                                <h1>{report_type_clean}</h1>
-                                <div class="cadence">{target["name"]} | {briefing.get("context", {}).get("timeframe", "30-Day Market Pulse")}</div>
-                            </td>
-                            <td style="text-align: right; vertical-align: bottom;">
-                                <div class="cadence">{datetime.now().strftime("%B %Y")}</div>
-                            </td>
-                        </tr>
-                    </table>
+    html_content = build_deep_ocean_briefing_html(
+        report_type_clean=report_type_clean,
+        target_name=target["name"],
+        timeframe=briefing.get("context", {}).get("timeframe", "30-Day Market Pulse"),
+        date_str=datetime.now().strftime("%B %Y"),
+        middle_cards_html=middle_cards_html,
+        narrative=narrative,
+        is_archived=False
+    )
 
-                    {middle_cards_html}
-
-                    <div class="card" style="background-color: #112240;">
-                        <h2 style="color: #d4af37;">Agentic AI Strategic Synthesis</h2>
-                        <div class="narrative">{narrative}</div>
-                    </div>
-
-                    <div class="footer">
-                        Intelligence generated by Agentic Tripzy Hub | Specialized Multi-Lens Engine
-                    </div>
-                </div>
-            </body>
-    """
-
-    result = io.BytesIO()
-    pisa.CreatePDF(html_content, dest=result)
-    pdf_bytes = result.getvalue()
+    pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
 
     return Response(
         content=pdf_bytes,
