@@ -73,11 +73,14 @@ export function GlobalEventCalendar() {
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div>
           <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-            <CalendarDays className="w-6 h-6 text-[#F6C344]" />
+            <div className="p-2 rounded-xl bg-[#F6C344]/10 border border-[#F6C344]/20 shadow-[0_0_15px_rgba(246,195,68,0.1)]">
+                <CalendarDays className="w-5 h-5 text-[#F6C344]" />
+            </div>
             Global Market Calendar
           </h2>
-          <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">
-            All Tracked Cities • Upcoming Events
+          <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-[0.2em] font-bold flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Live Market Feed • Cross-City Intelligence
           </p>
         </div>
         
@@ -100,76 +103,74 @@ export function GlobalEventCalendar() {
         </div>
       </div>
 
-      {/* Horizontal Scrolling Timeline */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide snap-x relative z-10"
-        style={{ scrollSnapType: "x mandatory" }}
-      >
-        {Object.entries(groupedEvents).map(([month, monthEvents], monthIdx) => (
-          <div key={month} className="flex-shrink-0 min-w-[320px] max-w-[400px] snap-start">
-            <h3 className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] mb-4 sticky left-0">
-              {month}
+      {/* Compact Monthly Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
+        {Object.entries(groupedEvents).map(([month, monthEvents]) => (
+          <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-white/5">
+            <h3 className="text-[11px] font-black text-[#F6C344] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
+              <span>{month}</span>
+              <span className="text-[9px] text-slate-500 font-bold">{monthEvents.length} Events</span>
             </h3>
-            <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
+            
+            <div className="space-y-2">
               {monthEvents.map((event, idx) => {
                 const isFair = event.type === 'fair';
-                const typeColor = isFair ? "text-[#A855F7]" : "text-[#F97316]";
-                const typeBg = isFair ? "bg-[#A855F7]/10" : "bg-[#F97316]/10";
-                const typeBorder = isFair ? "border-[#A855F7]/30" : "border-[#F97316]/30";
+                const accentColor = isFair ? "#A855F7" : "#F97316";
                 
                 const startDateStr = format(parseISO(event.start_date), "MMM d");
                 const endDateStr = event.end_date ? format(parseISO(event.end_date), "MMM d") : null;
                 const dateDisplay = endDateStr && startDateStr !== endDateStr 
-                  ? `${startDateStr} - ${endDateStr}`
+                  ? `${startDateStr}-${endDateStr}`
                   : startDateStr;
 
                 return (
-                  <div key={event.id || idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group/item is-active">
-                    {/* Timeline Node */}
-                    <div className={`flex items-center justify-center w-5 h-5 rounded-full border-4 border-[#050B18] ${isFair ? 'bg-[#A855F7]' : 'bg-[#F97316]'} shadow shrink-0 md:order-1 md:group-odd/item:-ml-2.5 md:group-even/item:-mr-2.5 z-10`} />
-                    
-                    {/* Event Card */}
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)]">
-                      <div className={`p-4 rounded-2xl bg-[#050B18]/80 backdrop-blur border shadow-xl transition-all hover:-translate-y-1 ${typeBorder}`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <span className={`${typeBg} ${typeColor} text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border ${typeBorder}`}>
-                            {event.type}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded">
-                            {dateDisplay}
-                          </span>
+                  <div 
+                    key={event.id || idx} 
+                    className="group/item p-2.5 rounded-xl bg-[#050B18]/40 hover:bg-[#050B18]/60 border border-white/5 hover:border-white/10 transition-all duration-200"
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Date Indicator Block */}
+                      <div className="flex flex-col items-center justify-center min-w-[40px] py-1 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-[10px] font-black text-white leading-none">
+                            {format(parseISO(event.start_date), "dd")}
+                        </span>
+                        <span className="text-[7px] font-bold text-slate-500 uppercase">
+                            {format(parseISO(event.start_date), "MMM")}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span 
+                                className="w-1.5 h-1.5 rounded-full" 
+                                style={{ backgroundColor: accentColor }}
+                            />
+                            <h4 className="font-bold text-white text-[11px] leading-tight truncate group-hover/item:text-[#F6C344] transition-colors">
+                                {event.name}
+                            </h4>
                         </div>
                         
-                        <h4 className="font-bold text-white text-sm tracking-tight mb-2 line-clamp-2">
-                          {event.name}
-                        </h4>
-                        
-                        {event.venue && (
-                          <p className="text-xs text-slate-400 mb-3 line-clamp-1 italic">
-                            {event.venue}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
-                            <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                            {event.city}
-                          </div>
-                          
-                          {event.intensity_score && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[9px] text-slate-500 uppercase font-black">Impact:</span>
-                              <div className="flex">
-                                {[...Array(3)].map((_, i) => (
-                                  <div 
-                                    key={i} 
-                                    className={`w-1.5 h-3 ml-0.5 rounded-sm ${i < Math.ceil((event.intensity_score || 0) / 3.3) ? typeColor.replace('text-', 'bg-') : 'bg-white/10'}`}
-                                  />
-                                ))}
-                              </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
+                                <MapPin className="w-2.5 h-2.5" />
+                                <span className="truncate max-w-[80px]">{event.city}</span>
                             </div>
-                          )}
+                            
+                            {event.intensity_score && (
+                                <div className="flex gap-0.5 items-center">
+                                    <div 
+                                        className="h-1 rounded-full overflow-hidden bg-white/5 w-8"
+                                    >
+                                        <div 
+                                            className="h-full transition-all duration-500"
+                                            style={{ 
+                                                width: `${(event.intensity_score / 10) * 100}%`,
+                                                backgroundColor: accentColor
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -179,8 +180,6 @@ export function GlobalEventCalendar() {
             </div>
           </div>
         ))}
-        {/* Spacer for final scroll padding */}
-        <div className="flex-shrink-0 w-8"></div>
       </div>
     </div>
   );
