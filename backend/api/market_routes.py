@@ -140,6 +140,15 @@ async def get_market_forecast(
         
     avg_score = round(total_score / len(raw_forecast), 1) if raw_forecast else 0
     
+    # 4. Get Last Sync Time
+    last_sync = None
+    try:
+        sync_res = db.table("market_events").select("created_at").order("created_at", desc=True).limit(1).execute()
+        if sync_res.data:
+            last_sync = sync_res.data[0]["created_at"]
+    except Exception:
+        pass
+
     return {
         "forecast": enriched_forecast,
         "metadata": {
@@ -148,6 +157,7 @@ async def get_market_forecast(
             "peak_score": peak_score,
             "critical_days_count": critical_days,
             "total_signals": signal_count,
+            "last_synced": last_sync,
             "market_stats": {
                 "avg_fair_intensity": round(total_fair_intensity / days, 2),
                 "avg_tga_intensity": round(total_tga_intensity / days, 2)

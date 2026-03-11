@@ -24,6 +24,7 @@ export interface MarketMetadata {
   peak_score: number;
   critical_days_count: number;
   total_signals: number;
+  last_synced?: string;
   market_stats: {
     avg_fair_intensity: number;
     avg_tga_intensity: number;

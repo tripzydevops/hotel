@@ -115,6 +115,21 @@ async def export_saved_briefing_pdf(
     )
     created_at = data.get("created_at", "N/A")[:10]
 
+    # CACHE CHECK: Attempt to serve from Supabase Storage
+    storage_path = f"briefings/{report_id}.pdf"
+    try:
+        cached_pdf = db.storage.from_("reports").download(storage_path)
+        if cached_pdf:
+            return Response(
+                content=cached_pdf,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f"attachment; filename=briefing_saved_{report_id}.pdf"
+                },
+            )
+    except Exception:
+        pass
+
     # PHASE 12: Multi-Lens Dynamic Layouts for Saved Briefings
     context = report_data.get("context", {})
     report_type_clean = context.get("report_type", "Strategic Market Pulse")
@@ -229,6 +244,16 @@ async def export_saved_briefing_pdf(
 
     pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
 
+    # PERSIST TO CACHE
+    try:
+        db.storage.from_("reports").upload(
+            storage_path, 
+            pdf_bytes, 
+            file_options={"content-type": "application/pdf"}
+        )
+    except Exception:
+        pass
+
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -283,6 +308,21 @@ async def export_report_pdf(
         data = report.data
         report_data = data.get("report_data", {})
 
+        # CACHE CHECK: Attempt to serve from Supabase Storage
+        storage_path = f"admin_reports/{report_id}.pdf"
+        try:
+            cached_pdf = db.storage.from_("reports").download(storage_path)
+            if cached_pdf:
+                return Response(
+                    content=cached_pdf,
+                    media_type="application/pdf",
+                    headers={
+                        "Content-Disposition": f"attachment; filename=report_{report_id}.pdf"
+                    },
+                )
+        except Exception:
+            pass
+
         ai_insights_html = "".join([f'<div class="insight">{insight}</div>' for insight in report_data.get("ai_insights", [])])
         hotels_html = "".join([f'''
             <div class="hotel-card">
@@ -317,6 +357,16 @@ async def export_report_pdf(
         )
 
         pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
+
+        # PERSIST TO CACHE
+        try:
+            db.storage.from_("reports").upload(
+                storage_path, 
+                pdf_bytes, 
+                file_options={"content-type": "application/pdf"}
+            )
+        except Exception:
+            pass
 
         return Response(
             content=pdf_bytes,

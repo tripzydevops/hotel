@@ -1,0 +1,66 @@
+<html>
+<head>
+    <style>
+        @page { size: A4; margin: 0; }
+        body { 
+            font-family: 'Helvetica', sans-serif; 
+            background-color: #0a192f; 
+            color: #e6f1ff; 
+            margin: 0; 
+            padding: 40px;
+        }
+        .report-wrapper { width: 100%; }
+        .header-table { width: 100%; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 40px; }
+        h1 { color: #d4af37; margin: 0; font-size: 28px; }
+        .cadence { color: #8892b0; font-size: 14px; text-transform: uppercase; }
+        .grid-table { width: 100%; border-spacing: 20px 0; }
+        .card { 
+            background-color: #112240; 
+            border: 1px solid #d4af37; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px;
+            vertical-align: top;
+        }
+        h2 { color: #d4af37; font-size: 18px; margin-top: 0; border-left: 3px solid #d4af37; padding-left: 10px; }
+        .metric-table { width: 100%; }
+        .metric-val { font-weight: bold; color: #fff; font-size: 20px; }
+        .metric-label { color: #8892b0; font-size: 12px; }
+        .narrative { line-height: 1.6; font-size: 14px; color: #ccd6f6; white-space: pre-line; }
+        .footer { 
+            margin-top: 50px; 
+            text-align: center; 
+            color: #8892b0; 
+            font-size: 12px; 
+            border-top: 1px solid #233554;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-wrapper">
+        <table class="header-table">
+            <tr>
+                <td>
+                    <h1>{{ report_type_clean }}</h1>
+                    <div class="cadence">{{ target_name }} | {{ timeframe }}</div>
+                </td>
+                <td style="text-align: right; vertical-align: bottom;">
+                    <div class="cadence">{{ date_str }}</div>
+                </td>
+            </tr>
+        </table>
+
+        {{ middle_cards_html | safe }}
+
+        <div class="card" style="background-color: #112240;">
+            <h2 style="color: #d4af37;">{{ narrative_title }}</h2>
+            <div class="narrative">{{ narrative }}</div>
+        </div>
+
+        <div class="footer">
+            {{ footer_text }} | Specialized Multi-Lens Engine
+        </div>
+    </div>
+</body>
+</html>

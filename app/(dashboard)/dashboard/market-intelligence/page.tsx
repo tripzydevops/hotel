@@ -97,6 +97,17 @@ export default function MarketIntelligencePage() {
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">Market Intelligence</h1>
                     <p className="text-slate-400">Localized demand signals & predictive compression.</p>
+                    {!loading && metadata?.last_synced && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                            <RefreshCw className="w-2.5 h-2.5" />
+                            <span>Last Synced: {new Date(metadata.last_synced).toLocaleString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-4">
