@@ -18,17 +18,21 @@ logger = get_logger(__name__)
 
 def get_token(request: Request) -> str:
     """
-    Extracts the Bearer token from the Authorization header.
+    Extracts the Bearer token from the Authorization header or query parameter.
+    Query parameter 'token' is used as a fallback for SSE (EventSource).
     """
     auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    if auth_header:
+        token_parts = auth_header.split(" ")
+        if len(token_parts) == 2 and token_parts[0].lower() == "bearer":
+            return token_parts[1]
 
-    token_parts = auth_header.split(" ")
-    if len(token_parts) != 2 or token_parts[0].lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Invalid Token Format")
+    # Fallback for SSE / Query Params
+    query_token = request.query_params.get("token")
+    if query_token:
+        return query_token
 
-    return token_parts[1]
+    raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
 
 
 async def get_current_admin_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):

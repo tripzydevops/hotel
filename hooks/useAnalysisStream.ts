@@ -20,45 +20,74 @@ export function useAnalysisStream(userId: string | undefined, roomType: string =
   const startStream = useCallback(() => {
     if (!userId) return;
 
-    setIsStreaming(true);
-    setError(null);
-    setNarrative('');
+    let eventSource: EventSource | null = null;
+    let isMounted = true;
 
-    const url = `${api.baseURL}/api/v2/analysis/stream?room_type=${roomType}`;
-    const eventSource = new EventSource(url);
-
-    eventSource.addEventListener('data_init', (event) => {
+    const setup = async () => {
       try {
-        const payload = JSON.parse(event.data);
-        setData(payload);
-      } catch (err) {
-        console.error('Failed to parse data_init:', err);
+        setIsStreaming(true);
+        setError(null);
+        setNarrative('');
+
+        const { createClient } = await import('@/utils/supabase/client');
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        if (!isMounted) return;
+
+        const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+        const url = `${api.baseURL}/api/v2/analysis/stream?room_type=${roomType}${tokenParam}`;
+        
+        eventSource = new EventSource(url);
+
+        eventSource.addEventListener('data_init', (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            setData(payload);
+          } catch (err) {
+            console.error('Failed to parse data_init:', err);
+          }
+        });
+
+        eventSource.addEventListener('narrative_chunk', (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            setNarrative((prev) => prev + payload.chunk);
+          } catch (err) {
+            console.error('Failed to parse narrative_chunk:', err);
+          }
+        });
+
+        eventSource.addEventListener('complete', () => {
+          setIsStreaming(false);
+          eventSource?.close();
+        });
+
+        eventSource.addEventListener('error', (event) => {
+          console.error('SSE Error:', event);
+          if (isMounted) {
+            setError('Stream connection failed');
+            setIsStreaming(false);
+          }
+          eventSource?.close();
+        });
+      } catch (err: any) {
+        console.error('SSE Setup Error:', err);
+        if (isMounted) {
+          setError(err.message || 'Failed to initialize stream');
+          setIsStreaming(false);
+        }
       }
-    });
+    };
 
-    eventSource.addEventListener('narrative_chunk', (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        setNarrative((prev) => prev + payload.chunk);
-      } catch (err) {
-        console.error('Failed to parse narrative_chunk:', err);
-      }
-    });
-
-    eventSource.addEventListener('complete', () => {
-      setIsStreaming(false);
-      eventSource.close();
-    });
-
-    eventSource.addEventListener('error', (event) => {
-      console.error('SSE Error:', event);
-      setError('Stream connection failed');
-      setIsStreaming(false);
-      eventSource.close();
-    });
+    setup();
 
     return () => {
-      eventSource.close();
+      isMounted = false;
+      if (eventSource) {
+        eventSource.close();
+      }
     };
   }, [userId, roomType]);
 

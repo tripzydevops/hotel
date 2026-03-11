@@ -263,7 +263,7 @@ async def export_saved_briefing_pdf(
     )
 
 
-@router.get("/")
+@router.get("")
 async def get_reports(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
