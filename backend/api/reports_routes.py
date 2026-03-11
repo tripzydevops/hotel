@@ -30,7 +30,7 @@ class BriefingRequest(BaseModel):
     target_hotel_id: str
     rival_hotel_id: Optional[str] = None
     days: int = 30
-    report_type: Optional[str] = "Standard Comparison"
+    report_type: Optional[str] = "Strategic Market Pulse"
 
 
 @router.post("/briefing")
@@ -167,7 +167,7 @@ async def export_saved_briefing_pdf(
                 <td width="50%">
                     <div class="card" style="background-color: #112240;">
                         <h2 style="color: #d4af37;">Pricing Discipline</h2>
-                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("avg_price", 0)}</div>
+                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("market_avg_price", 0)}</div>
                         <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
                     </div>
                 </td>
@@ -210,7 +210,7 @@ async def export_saved_briefing_pdf(
                         <table class="metric-table" style="background-color: #112240;">
                             <tr>
                                 <td style="padding: 10px;">
-                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("avg_price", 0)}</div>
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("market_avg_price", 0)}</div>
                                     <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
                                 </td>
                                 <td style="text-align: right; padding: 10px;">
@@ -384,7 +384,7 @@ async def export_briefing_pdf(
     target_hotel_id: str,
     rival_hotel_id: Optional[str] = None,
     days: int = 30,
-    report_type: Optional[str] = "Standard Comparison",
+    report_type: Optional[str] = "Strategic Market Pulse",
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
@@ -447,7 +447,7 @@ async def export_briefing_pdf(
                 <td width="50%">
                     <div class="card" style="background-color: #112240;">
                         <h2 style="color: #d4af37;">Pricing Discipline</h2>
-                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("avg_price", 0)} {target.get("preferred_currency", "TRY")}</div>
+                        <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("market_avg_price", 0)} {target.get("preferred_currency", "TRY")}</div>
                         <div class="metric-label" style="color: #8892b0;">Market Baseline ADR</div>
                     </div>
                 </td>
@@ -489,7 +489,7 @@ async def export_briefing_pdf(
                         <table class="metric-table" style="background-color: #112240;">
                             <tr>
                                 <td style="padding: 10px;">
-                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("avg_price", 0)} {target.get("preferred_currency", "TRY")}</div>
+                                    <div class="metric-val" style="color: #ffffff; font-size: 22px;">{metrics.get("market_avg_price", 0)} {target.get("preferred_currency", "TRY")}</div>
                                     <div class="metric-label" style="color: #8892b0;">Avg Rate Index (ARI)</div>
                                 </td>
                                 <td style="text-align: right; padding: 10px;">

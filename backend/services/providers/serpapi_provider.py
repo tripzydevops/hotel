@@ -6,6 +6,9 @@ import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import date, timedelta, datetime
 from ..data_provider_interface import HotelDataProvider
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # --- Provider Implementation ---
 
@@ -44,7 +47,7 @@ class SerpApiProvider(HotelDataProvider):
         """
         try:
             result = await self._serp_client.fetch_hotel_price(
-                target_hotel=hotel_name,
+                hotel_name=hotel_name,
                 location=location,
                 check_in=check_in,
                 check_out=check_out,

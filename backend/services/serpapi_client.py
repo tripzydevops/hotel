@@ -140,6 +140,8 @@ class ApiKeyManager:
             if not self._keys:
                 raise ValueError("No API keys configured")
 
+            current_key = self._keys[self._current_index]
+
             # PROACTIVE HEALING: Check if renewal date has passed
             # If the user says "all keys are active", we should be lenient.
             renewal_str = MANUAL_RENEWAL_OVERRIDES.get(current_key[-5:])
@@ -161,8 +163,9 @@ class ApiKeyManager:
                     f"Key {self._current_index + 1} known to be limited. Proactively rotating..."
                 )
                 self._rotate_key_locked("proactive_skip")
+                current_key = self._keys[self._current_index] # Update after rotation
 
-            key = self._keys[self._current_index]
+            key = current_key
             self._usage_counts[key] = self._usage_counts.get(key, 0) + 1
             return key
 

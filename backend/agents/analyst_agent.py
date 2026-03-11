@@ -1133,7 +1133,7 @@ class AnalystAgent:
                 "parity_leaks_count": len(parity_leaks),
                 "parity_leaks": parity_leaks[:10],
                 "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
-                "sentiment_snapshot": sentiment_snapshot,
+                "sentiment_snapshot": sentiment_summary,
                 "price_history": price_history,
                 "price_trend": price_trend,
                 "competitor_table": competitor_table,
@@ -1171,13 +1171,13 @@ class AnalystAgent:
             - Real Review Snippets: {str(reviews[:3])}
             
             MARKET CONTEXT:
-            - Benchmark Pricing: {avg_price} {target.get("preferred_currency", "TRY")}
+            - Benchmark Pricing: {market_historical_avg:,.0f} {target.get("preferred_currency", "TRY")}
             - Search Visibility: #{avg_rank}
             
             INSTRUCTIONS:
             - Focus on GUEST PERCEPTION and OPERATIONAL EXCELLENCE.
             - Identify "Silent Killers" (negative trends) and "Brand Champions" (competitive strengths).
-            - Analyze the 'Value' pillar in relation to the {avg_price} benchmark.
+            - Analyze the 'Value' pillar in relation to the {market_historical_avg:,.0f} benchmark.
             - Provide in-depth explanations of WHY guests feel a certain way based on keywords.
             - Focus on long-form reasoning and high-density strategic insights.
             - Use a sharp, consultative, and highly analytical tone.
@@ -1199,7 +1199,7 @@ class AnalystAgent:
             TIMEFRAME: {timeframe}
             
             FINANCIAL CONTEXT:
-            - Market Rate Benchmark: {avg_price} {target.get("preferred_currency", "TRY")}
+            - Market Rate Benchmark: {market_historical_avg:,.0f} {target.get("preferred_currency", "TRY")}
             - Your Search Rank: #{avg_rank}
             - Parity Health: {len(parity_leaks)} leakage events detected.
             - Current Pricing DNA: {dna_str}.
@@ -1263,7 +1263,7 @@ class AnalystAgent:
             - Market Period Benchmark: {market_historical_avg} {target.get("preferred_currency", "TRY")}.
             - Your Search Rank: #{avg_rank}.
             - Rival Focal Point: {rival["name"] if rival else "None selected (General Market Mode)"}.
-            - Top Sentiment: {sentiment_snapshot[:1000]}
+            - Top Sentiment: {sentiment_summary[:1000]}
             
             INSTRUCTIONS:
             - Adopt a Harvard Business Review / McKinsey tone: stark facts, highly actionable, no fluffy or conversational filler.
