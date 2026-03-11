@@ -93,13 +93,56 @@ async def get_market_forecast(
     
     raw_forecast = await demand_agent.get_forecast(city, days)
     
-    # Enrich with rationales
+    # 2. Aggregated Metadata
+    total_score = 0
+    peak_score = -1
+    peak_date = None
+    critical_days = 0
+    
+    total_fair_intensity = 0
+    total_tga_intensity = 0
+    signal_count = 0
+    
+    # 3. Enrich with rationales and compute stats
     enriched_forecast = []
     for day in raw_forecast:
+        score = day.get("compression_score", 0)
+        total_score += score
+        
+        if score > peak_score:
+            peak_score = score
+            peak_date = day.get("date")
+        
+        if score >= 8:
+            critical_days += 1
+            
+        day_signals = day.get("signals", [])
+        for s in day_signals:
+            signal_count += 1
+            if s.get("type") == "fair":
+                total_fair_intensity += s.get("score", 0)
+            elif s.get("type") == "announcement":
+                total_tga_intensity += s.get("score", 0)
+
         if day.get("signals"):
             day["rationale"] = await price_agent.generate_rationale(day)
         else:
             day["rationale"] = "Market stable. Standard seasonal occupancy expected."
         enriched_forecast.append(day)
         
-    return enriched_forecast
+    avg_score = round(total_score / len(raw_forecast), 1) if raw_forecast else 0
+    
+    return {
+        "forecast": enriched_forecast,
+        "metadata": {
+            "avg_compression_score": avg_score,
+            "peak_date": peak_date,
+            "peak_score": peak_score,
+            "critical_days_count": critical_days,
+            "total_signals": signal_count,
+            "market_stats": {
+                "avg_fair_intensity": round(total_fair_intensity / days, 2),
+                "avg_tga_intensity": round(total_tga_intensity / days, 2)
+            }
+        }
+    }

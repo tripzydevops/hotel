@@ -7,19 +7,26 @@ import { Info } from "lucide-react";
 
 interface OpportunityMatrixProps {
     city: string;
+    intensity: number; // 0 to 5+
+    priceGap: number;  // % difference
 }
 
-export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city }) => {
-    // Static demonstration data for the "Premium King" zone logic
+export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, intensity, priceGap }) => {
+    // Logic to determine dot position:
+    // Intensity (Y): TGA average for the city. Normalizing 0-5 to 0-100%
+    // Price Gap (X): User vs. Comp. Normalizing -10% to +10% to 0-100%
+    const yPos = Math.min(Math.max((intensity / 5) * 100, 5), 95);
+    const xPos = Math.min(Math.max(((priceGap + 10) / 20) * 100, 5), 95);
+
     const quadrants = [
-        { name: "Volume Play", pos: "top-left", color: "bg-blue-500/10", border: "border-blue-500/20", desc: "High Promo + Low Gap. Maintain ADR." },
+        { name: "Volume Play", pos: "top-left", color: "bg-blue-500/10", border: "border-blue-500/20", desc: "High Promo + Competitive Price. Maintain ADR." },
         { name: "Premium King", pos: "top-right", color: "bg-emerald-500/20", border: "border-emerald-500/50", desc: "High Promo + High Gap. Push Rates!" },
-        { name: "Risk Zone", pos: "bottom-left", color: "bg-red-500/10", border: "border-red-500/20", desc: "Low Promo + Low Gap. High Churn Risk." },
+        { name: "Risk Zone", pos: "bottom-left", color: "bg-red-500/10", border: "border-red-500/20", desc: "Low Promo + Competitive Price. Churn Risk." },
         { name: "Niche Value", pos: "bottom-right", color: "bg-amber-500/10", border: "border-amber-500/20", desc: "Low Promo + High Gap. Targeted Offers." },
     ];
 
     return (
-        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full">
+        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full ring-1 ring-white/5">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-white">Strategic Opportunity Matrix</h3>
@@ -32,7 +39,7 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city }) =>
                                     <li><span className="text-emerald-400">Vertical:</span> regional promotion intensity (from TGA).</li>
                                     <li><span className="text-blue-400">Horizontal:</span> your price gap vs competitors.</li>
                                 </ul>
-                                <p className="pt-1 italic">Use this to decide whether to yield ADR or push for occupancy.</p>
+                                <p className="pt-1 italic text-xs text-slate-400">Current position: {intensity.toFixed(1)} intensity / {priceGap > 0 ? '+' : ''}{priceGap}% gap</p>
                             </div>
                         }
                         side="bottom"
@@ -67,16 +74,25 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city }) =>
                         <p className="text-[9px] text-slate-400 leading-tight px-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             {q.desc}
                         </p>
-                        {/* Pulsing indicator for current market stance */}
-                        {q.name === "Premium King" && city === "Istanbul" && (
-                            <motion.div
-                                animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="absolute w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-                            />
-                        )}
                     </motion.div>
                 ))}
+
+                {/* Pulsing indicator for current market stance */}
+                <motion.div
+                    className="absolute z-20"
+                    initial={{ left: "50%", bottom: "50%" }}
+                    animate={{ left: `${xPos}%`, bottom: `${yPos}%` }}
+                    transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                >
+                    <div className="relative">
+                        <motion.div
+                            animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute -inset-2 bg-emerald-400 rounded-full"
+                        />
+                        <div className="w-3 h-3 bg-emerald-400 rounded-full border-2 border-white shadow-[0_0_15px_rgba(52,211,153,0.8)]" />
+                    </div>
+                </motion.div>
             </div>
         </div>
     );
