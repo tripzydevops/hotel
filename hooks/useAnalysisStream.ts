@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { api } from '@/lib/api';
 
 interface AnalysisData {
   hotel_name: string;
@@ -23,7 +24,7 @@ export function useAnalysisStream(userId: string | undefined, roomType: string =
     setError(null);
     setNarrative('');
 
-    const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v2/analysis/stream/${userId}?room_type=${roomType}`;
+    const url = `${api.baseURL}/api/v2/analysis/stream?room_type=${roomType}`;
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener('data_init', (event) => {

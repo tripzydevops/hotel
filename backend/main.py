@@ -111,8 +111,16 @@ async def api_ping():
 # CORS configuration
 # KAIZEN: Restrict CORS to authorized origins only
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-if not any(allowed_origins):
-    allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+if not any(allowed_origins) or allowed_origins == [""]:
+    allowed_origins = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://hotel-plus-official.vercel.app",
+        "https://hotel-rate-sentinel.vercel.app"
+    ]
+# KAİZEN: Dynamic Vercel Preview Support
+# We explicitly allow all *.vercel.app subdomains for preview deployments
+# while maintaining strict security for non-Vercel origins.
 
 app.add_middleware(
     CORSMiddleware,
