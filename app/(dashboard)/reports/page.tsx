@@ -763,12 +763,17 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
   const metrics = briefing.metrics;
   const narrative = briefing.narrative_raw || "";
 
+  // Helper to format currency
+  const curr = metrics?.revenue_projection?.currency || target?.preferred_currency || "TRY";
+  const fmt = (val: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: curr, maximumFractionDigits: 0 }).format(val);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       className="mb-12"
     >
+      {/* Header Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-[var(--soft-gold)]/20 flex items-center justify-center border border-[var(--soft-gold)]/30">
@@ -782,7 +787,6 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
               </span>
             </h2>
             <p className="text-xs text-[var(--text-muted)] font-medium">
-              {/* KAİZEN: Keep in sync with backend AnalystAgent model (gemini-3-flash-preview) */}
               {briefing.context?.timeframe || '30-Day'} Pulse Summary via gemini-3-flash-preview
             </p>
           </div>
@@ -796,8 +800,9 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Battlefield Card */}
+      {/* ── ROW 1: Battlefield + Yield Friction (2 cols) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Battlefield Card — DYNAMIC text from backend */}
         <div className="glass-card p-6 border-l-4 border-l-blue-500 bg-blue-500/5">
           <div className="flex items-center gap-2 mb-4">
             <Swords className="w-4 h-4 text-blue-400" />
@@ -810,15 +815,16 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             </div>
             <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
               <span className="text-xs font-bold text-slate-400">Bench ADR</span>
-              <span className="text-lg font-black text-white">{metrics.avg_price?.toLocaleString()}</span>
+              <span className="text-lg font-black text-white">{fmt(metrics.avg_price || 0)}</span>
             </div>
+            {/* DYNAMIC: Uses backend-generated context text instead of hardcoded text */}
             <p className="text-xs text-white/70 italic leading-relaxed">
-              Analyzing market share vs. search visibility for {target.name}.
+              {metrics.battlefield_text || `Analyzing market position for ${target.name}.`}
             </p>
           </div>
         </div>
 
-        {/* Friction Card */}
+        {/* Friction Card — DYNAMIC text from backend */}
         <div className="glass-card p-6 border-l-4 border-l-rose-500 bg-rose-500/5">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-4 h-4 text-rose-400" />
@@ -827,28 +833,146 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
           <div className="space-y-4">
             <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
               <span className="text-xs font-bold text-slate-400">Parity Leaks</span>
-              <span className="text-lg font-black text-rose-400">{metrics.parity_leaks || 0}</span>
+              <span className={`text-lg font-black ${(metrics.parity_leaks_count || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{metrics.parity_leaks_count || 0}</span>
             </div>
+            {/* Revenue Projection inline */}
+            {metrics.revenue_projection && (
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                <span className="text-xs font-bold text-slate-400">Monthly Risk</span>
+                <span className={`text-lg font-black ${(metrics.revenue_projection.monthly_risk || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {fmt(metrics.revenue_projection.monthly_risk || 0)}
+                </span>
+              </div>
+            )}
+            {/* DYNAMIC: Uses backend-generated context text */}
             <p className="text-xs text-white/70 leading-relaxed">
-              Revenue leakage detected via OTA undercutting in the last 30 days.
+              {metrics.yield_text || "Analyzing channel parity integrity."}
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Narrative Box */}
-        <div className="lg:col-span-1 glass-card p-6 bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 relative overflow-hidden">
-          <div className="absolute -right-4 -bottom-4 opacity-5">
-            <Brain className="w-24 h-24 text-[var(--soft-gold)]" />
-          </div>
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">AI Synthesis</span>
-          </div>
-          <div className="min-h-[160px] max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            <p className="text-xs text-white/90 font-medium leading-relaxed whitespace-pre-line">
+      {/* ── ROW 2: AI SYNTHESIS — FULL WIDTH ── */}
+      <div className="glass-card p-6 bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 relative overflow-hidden mb-6">
+        <div className="absolute -right-4 -bottom-4 opacity-5">
+          <Brain className="w-24 h-24 text-[var(--soft-gold)]" />
+        </div>
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--soft-gold)]">AI Strategic Synthesis</span>
+        </div>
+        <div className="min-h-[120px] max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          {narrative ? (
+            <div className="text-sm text-white/90 font-medium leading-relaxed whitespace-pre-line">
               {narrative}
-            </p>
+            </div>
+          ) : (
+            <p className="text-sm text-white/50 italic">AI narrative is being generated... Click &quot;Run Intelligence Agent&quot; to analyze.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ── ROW 3: Price Trend + Competitor Table (2 cols) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Price Trend Sparkline */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+                {briefing.context?.timeframe || "30-Day"} Price Trend
+              </span>
+            </div>
+            {metrics.price_trend && (
+              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                metrics.price_trend.direction === "up" ? "bg-emerald-500/10 text-emerald-400" :
+                metrics.price_trend.direction === "down" ? "bg-rose-500/10 text-rose-400" :
+                "bg-white/5 text-slate-400"
+              }`}>
+                {metrics.price_trend.direction === "up" ? "▲" : metrics.price_trend.direction === "down" ? "▼" : "—"}{" "}
+                {Math.abs(metrics.price_trend.change_pct || 0)}%
+              </span>
+            )}
           </div>
+          {metrics.price_history && metrics.price_history.length > 1 ? (
+            <div className="space-y-2">
+              {/* Mini bar chart using div bars */}
+              <div className="flex items-end gap-[2px] h-24">
+                {metrics.price_history.map((entry: any, i: number) => {
+                  const prices = metrics.price_history.map((e: any) => e.price);
+                  const max = Math.max(...prices);
+                  const min = Math.min(...prices) * 0.9;
+                  const height = max > min ? ((entry.price - min) / (max - min)) * 100 : 50;
+                  const isLast = i === metrics.price_history.length - 1;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-t transition-all ${isLast ? "bg-[var(--soft-gold)]" : "bg-blue-500/40"}`}
+                      style={{ height: `${Math.max(height, 4)}%` }}
+                      title={`${entry.date}: ${fmt(entry.price)}`}
+                    />
+                  );
+                })}
+              </div>
+              <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                <span>{metrics.price_history[0]?.date}</span>
+                <span>{metrics.price_history[metrics.price_history.length - 1]?.date}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">Insufficient price data for trend analysis.</p>
+          )}
+        </div>
+
+        {/* Competitor Comparison Table */}
+        <div className="glass-card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Swords className="w-4 h-4 text-rose-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">Competitor Snapshot</span>
+          </div>
+          {metrics.competitor_table && metrics.competitor_table.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06]">
+                    <th className="pb-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">Hotel</th>
+                    <th className="pb-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Rate</th>
+                    <th className="pb-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Rating</th>
+                    <th className="pb-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Gap</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {/* Your hotel row */}
+                  <tr className="bg-[var(--soft-gold)]/5">
+                    <td className="py-2 text-xs font-black text-[var(--soft-gold)] truncate max-w-[180px]">{target.name} (You)</td>
+                    <td className="py-2 text-xs font-black text-white text-right">{fmt(metrics.avg_price || 0)}</td>
+                    <td className="py-2 text-xs font-bold text-white text-right">{(metrics.gri || 0).toFixed(1)}</td>
+                    <td className="py-2 text-xs font-bold text-slate-500 text-right">—</td>
+                  </tr>
+                  {metrics.competitor_table.map((comp: any, i: number) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-2 text-xs font-bold text-white/80 truncate max-w-[180px]">{comp.name}</td>
+                      <td className="py-2 text-xs font-bold text-white/80 text-right">{comp.price > 0 ? fmt(comp.price) : "N/A"}</td>
+                      <td className="py-2 text-xs font-bold text-white/80 text-right">{(comp.rating || 0).toFixed(1)}</td>
+                      <td className="py-2 text-right">
+                        {comp.gap_pct !== 0 ? (
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                            comp.gap_pct > 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                          }`}>
+                            {comp.gap_pct > 0 ? "+" : ""}{comp.gap_pct}%
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">Add competitor hotels to enable comparison analysis.</p>
+          )}
         </div>
       </div>
     </motion.div>

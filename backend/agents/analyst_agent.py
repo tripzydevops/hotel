@@ -966,6 +966,74 @@ class AnalystAgent:
             if v1.any() and v2.any():
                 similarity = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
+        # 5.5 ENRICHMENT: Compute derived fields for the frontend.
+        # These power the price trend sparkline, competitor comparison table,
+        # revenue projection cards, and dynamic context-aware descriptions.
+
+        # A) Price History — chronological array for sparkline rendering
+        price_history = []
+        for entry in reversed(target_logs):
+            price_history.append({
+                "date": entry["recorded_at"][:10],
+                "price": entry["price"],
+            })
+
+        # B) Price Trend — direction and magnitude over the lookback window
+        price_trend = {"direction": "stable", "change_pct": 0.0}
+        if len(target_logs) >= 2:
+            newest = target_logs[0]["price"]
+            oldest = target_logs[-1]["price"]
+            if oldest > 0:
+                pct = round(((newest - oldest) / oldest) * 100, 1)
+                price_trend = {
+                    "direction": "up" if pct > 1 else ("down" if pct < -1 else "stable"),
+                    "change_pct": pct,
+                }
+
+        # C) Competitor Table — fetch all user's competitor hotels with latest prices
+        competitor_table = []
+        try:
+            comp_res = (
+                self.db.table("hotels")
+                .select("id, name, rating, current_price, preferred_currency")
+                .eq("user_id", str(user_id))
+                .eq("is_target_hotel", False)
+                .is_("deleted_at", "null")
+                .execute()
+            )
+            target_price = target.get("current_price") or avg_price or 0
+            for comp in (comp_res.data or []):
+                comp_price = comp.get("current_price") or 0
+                gap_pct = 0.0
+                if target_price > 0 and comp_price > 0:
+                    gap_pct = round(((target_price - comp_price) / target_price) * 100, 1)
+                competitor_table.append({
+                    "name": comp["name"],
+                    "price": comp_price,
+                    "rating": comp.get("rating") or 0,
+                    "currency": comp.get("preferred_currency", "TRY"),
+                    "gap_pct": gap_pct,
+                })
+        except Exception as e:
+            print(f"[AnalystAgent] Competitor table build error: {e}")
+
+        # D) Revenue Projection — scale daily parity risk to monthly
+        daily_leak_amount = sum(
+            (leak["direct_price"] - leak["leak_price"]) for leak in parity_leaks
+        ) if parity_leaks else 0
+        # Normalize by number of days with leaks
+        unique_leak_days = len(set(l["date"] for l in parity_leaks)) if parity_leaks else 0
+        avg_daily_leak = round(daily_leak_amount / max(unique_leak_days, 1), 2)
+
+        # E) Dynamic Description Text — context-aware, never contradicts the data
+        total_competitors = len(competitor_table)
+        if len(parity_leaks) > 0:
+            yield_text = f"{len(parity_leaks)} OTA undercutting events detected across {unique_leak_days} day(s). Average daily revenue at risk: {target.get('preferred_currency', 'TRY')} {avg_daily_leak:.0f}."
+        else:
+            yield_text = "No OTA undercutting detected in this period. Channel parity is healthy."
+
+        battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} tracked properties with a {days}-day benchmark ADR of {target.get('preferred_currency', 'TRY')} {avg_price:,.0f}."
+
         # 6. AI SYNTHESIS: Generate a high-depth executive narrative using Gemini-3-Flash.
         from backend.services.analysis_service import get_genai_client
 
@@ -1005,8 +1073,21 @@ class AnalystAgent:
                 "avg_rank": round(avg_rank, 1),
                 "gri": target.get("rating", 0),
                 "parity_leaks_count": len(parity_leaks),
+                "parity_leaks": parity_leaks[:10],
                 "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
                 "sentiment_snapshot": sentiment_summary[:1000],
+                # NEW: Enriched computed fields for frontend rendering
+                "price_history": price_history,
+                "price_trend": price_trend,
+                "competitor_table": competitor_table,
+                "revenue_projection": {
+                    "daily_risk": round(avg_daily_leak, 0),
+                    "monthly_risk": round(avg_daily_leak * 30, 0),
+                    "leak_events": len(parity_leaks),
+                    "currency": target.get("preferred_currency", "TRY"),
+                },
+                "battlefield_text": battlefield_text,
+                "yield_text": yield_text,
             },
             "narrative_raw": "",
         }
