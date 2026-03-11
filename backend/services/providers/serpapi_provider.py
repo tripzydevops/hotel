@@ -39,103 +39,35 @@ class SerpApiProvider(HotelDataProvider):
         currency: str = "USD",
         serp_api_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
-
-        async def do_fetch(
-            q_str: str, token: Optional[str] = None
-        ) -> Optional[Dict[str, Any]]:
-            params = {
-                "engine": "google_hotels",
-                "q": q_str,
-                "check_in_date": check_in.isoformat(),
-                "check_out_date": check_out.isoformat(),
-                "adults": adults,
-                "currency": currency,
-                "gl": "tr" if currency == "TRY" else "us",
-                "hl": "tr" if currency == "TRY" else "en",
-                "api_key": self._serp_client.api_key,
-            }
-
-            if token:
-                # KAİZEN: Robust ID Resolution
-                # Detect if token is a numeric Google Hotel ID (hotel_id) or a SerpApi Property Token (property_token)
-                if str(token).isdigit():
-                    params["hotel_id"] = token
-                else:
-                    params["property_token"] = token
-
-            try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.get(self.BASE_URL, params=params)
-                    current_key_suffix = self._serp_client.api_key[-5:]
-
-                    if self._is_quota_error(response):
-                        # BATCH ROTATION: Try all available keys until success or exhaustion
-                        while self._is_quota_error(response):
-                            is_rate_limit = response.status_code == 429
-                            current_suffix = self._serp_client.api_key[-5:]
-                            print(
-                                f"[SerpApi] {'Rate limit' if is_rate_limit else 'Quota error'} on Key ...{current_suffix}"
-                            )
-
-                            if self._serp_client._key_manager.rotate_key(
-                                reason="quota_exhausted"
-                                if not is_rate_limit
-                                else "rate_limit",
-                                is_permanent=not is_rate_limit,
-                            ):
-                                new_key = self._serp_client.api_key
-                                print(f"[SerpApi] Rotating to Key ...{new_key[-5:]}")
-                                params["api_key"] = new_key
-                                # [FIX] Add jitter/sleep to allow rate limit bucket to reset
-                                await asyncio.sleep(1.0)
-                                response = await client.get(
-                                    self.BASE_URL, params=params
-                                )
-                            else:
-                                print("[SerpApi] All configured keys exhausted.")
-                                return {"status": "error", "error": "quota_exhausted"}
-
-                if response.status_code == 200:
-                    data = response.json()
-                    if "error" in data:
-                        print(
-                            f"[SerpApi] API Error: {data['error']} (Key: ...{current_key_suffix})"
-                        )
-                        return {"status": "error", "error": data["error"]}
-                    return self._parse_hotel_result(
-                        data, hotel_name, currency, target_serp_id=token
-                    )
-                else:
-                    return {"status": "error", "error": f"HTTP {response.status_code}"}
-            except Exception as e:
-                print(f"[SerpApi] Fetch Error: {e}")
-                return {"status": "error", "error": str(e)}
-
-        # 1. Primary Attempt (with ID if available)
-        # Optimized Query: Prevent redundant "City City" patterns which can confuse Google.
-        search_query = hotel_name
-        if location:
-            # Only append location if not already part of the name
-            if location.lower() not in hotel_name.lower():
-                search_query = f"{hotel_name} {location}"
-
-        result = await do_fetch(search_query, serp_api_id)
-
-        # 2. Fallback Attempt (without ID if ID failed or returned NOT_FOUND)
-        if not result and serp_api_id:
-            print(
-                f"[SerpApi] NOT_FOUND with token. Retrying with fuzzy search: {search_query}"
+        """
+        Delegates fetching and rotation to the unified SerpApiClient.
+        """
+        try:
+            result = await self._serp_client.fetch_hotel_price(
+                target_hotel=hotel_name,
+                location=location,
+                check_in=check_in,
+                check_out=check_out,
+                adults=adults,
+                currency=currency,
+                serp_api_id=serp_api_id
             )
-            result = await do_fetch(search_query, None)
+            
+            # Inject current key suffix for logging transparency
+            if result and isinstance(result, dict):
+                result["api_key_suffix"] = self._serp_client.api_key[-5:]
+            
+            # Harmonize status for provider interface expectations
+            if result and "error" in result:
+                if result["error"] == "quota_exhausted":
+                    return {"status": "error", "error": "quota_exhausted", "message": "All API keys exhausted"}
+                return {"status": "error", "error": result["error"]}
+            
+            return result
+        except Exception as e:
+            logger.error(f"SerpApiProvider delegation error: {e}")
+            return {"status": "error", "error": str(e)}
 
-        # 3. Last Resort: Broader search (just name)
-        if not result and location:
-            print(
-                f"[SerpApi] NOT_FOUND with location. Retrying with name only: {hotel_name}"
-            )
-            result = await do_fetch(hotel_name, None)
-
-        return result
 
     def _is_quota_error(self, response: httpx.Response) -> bool:
         """Harmonized with SerpApiClient logic."""

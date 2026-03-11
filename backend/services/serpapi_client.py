@@ -30,14 +30,23 @@ SERPAPI_BASE_URL = "https://serpapi.com/search"
 # Since SerpApi Free Plans do not expose the reset date via API, 
 # we manually map them here based on screenshots.
 MANUAL_RENEWAL_OVERRIDES = {
-    # Node 01 (selcuk ozkan) - From screenshot
-    "553546ffdb5cf73e0cbda23edb57f28f7f1ffb4bcb34109679bcc0af0631187e": "2026-03-05",
-    # Node 03 (fast earn) - From screenshot
-    "2e5f70589a7c3f66064d8e93ab6d105a2552eef1b0d76bb340818dd30d73f3db": "2026-03-04",
-    # Node 04 (tripzydevops) - From screenshot
-    "44c1dc": "2026-03-25",
-    # Remaining keys (defaults)
-    "c7f222": "Monthly Reset",
+    # Node 01 (successofmentors@gmail.com)
+    "1187e": "2026-04-05",  # Suffix corrected from screenshot, next renew April 5
+    # Node 02 (asknsezen@gmail.com)
+    "7f222": "Monthly Reset", 
+    # Node 03 (fastearn21@gmail.com)
+    "5f3db": "2026-04-04",  # Suffix corrected to 5f3db per screenshot
+    # Node 04 (tripzydevops@gmail.com)
+    "4c1dc": "2026-03-25",
+}
+
+# EXPLANATION: Credit Limits (Kaizen 2026)
+# Maps key suffixes to their total monthly search credits.
+CREDIT_LIMITS = {
+    "1187e": 250,
+    "7f222": 250,
+    "5f3db": 250,
+    "4c1dc": 250,
 }
 
 
@@ -102,6 +111,11 @@ class ApiKeyManager:
                     self._renewal_info[api_key] = manual_date or data.get(
                         "plan_renewal_date", "Unknown"
                     )
+                    self._quota_info[api_key] = left
+                    
+                    # Store limit info
+                    limit = CREDIT_LIMITS.get(api_key[-5:]) or 100
+                    
                     self._last_quota_check[api_key] = datetime.now()
 
                     # Also update exhaustion status based on real data (PROACTIVE HEALING)
@@ -126,9 +140,22 @@ class ApiKeyManager:
             if not self._keys:
                 raise ValueError("No API keys configured")
 
-            # PROACTIVE ROTATION (Kaizen 2026)
-            # If the current key is known to be exhausted or rate-limited, skip it immediately.
-            current_key = self._keys[self._current_index]
+            # PROACTIVE HEALING: Check if renewal date has passed
+            # If the user says "all keys are active", we should be lenient.
+            renewal_str = MANUAL_RENEWAL_OVERRIDES.get(current_key[-5:])
+            if renewal_str and renewal_str not in ["Unknown", "Monthly Reset"]:
+                try:
+                    # [FIX] Handle YYYY-MM-DD vs ISO format
+                    r_date = datetime.strptime(renewal_str[:10], "%Y-%m-%d")
+                    # If current time is strictly AFTER the renewal date (at midnight), clear it.
+                    # We use a 1-day buffer for safety.
+                    if datetime.now().date() >= r_date.date():
+                        if current_key in self._exhausted_keys:
+                            logger.info(f"Key {current_key[-5:]} renewal date {renewal_str} reached. Clearing exhaustion.")
+                            del self._exhausted_keys[current_key]
+                except Exception as e:
+                    logger.warning(f"Healing parse error for {renewal_str}: {e}")
+
             if current_key in self._exhausted_keys or current_key in self._rate_limited_keys:
                 logger.info(
                     f"Key {self._current_index + 1} known to be limited. Proactively rotating..."

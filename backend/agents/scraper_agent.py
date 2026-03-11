@@ -65,7 +65,7 @@ class ScraperAgent:
     ) -> Optional[Dict[str, Any]]:
         """
         [Global Pulse] Checks if ANY user has scanned this hotel for this date
-        in the last 3 hours. If a cached result exists and the user requested
+        in the last 12 hours. If a cached result exists and the user requested
         a specific room type, we attempt to extract that room's price from
         the cached room_types array instead of returning just the base price.
         """
@@ -73,8 +73,11 @@ class ScraperAgent:
             return None
 
         try:
-            # Look for a fresh pulse (recorded in last 180 mins / 3 hours)
-            cutoff = (datetime.now() - timedelta(minutes=180)).isoformat()
+            # Look for a fresh pulse (recorded in last 720 mins / 12 hours)
+            # KAİZEN: 12-Hour Pulse Strategy
+            # Since scans reflect 12h intervals, a 12h cache allows User B 
+            # to reuse User A's result even if they are offset by several hours.
+            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=720)).isoformat()
 
             res = (
                 self.db.table("price_logs")

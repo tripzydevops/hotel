@@ -1,7 +1,6 @@
 import os
 import asyncio
 from typing import List, Dict, Any
-from playwright.async_api import async_playwright
 from supabase import Client
 from backend.utils.logger import get_logger
 from backend.services.analysis_service import get_genai_client

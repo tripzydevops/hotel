@@ -267,6 +267,7 @@ class QueryLog(BaseModel):
     check_in_date: Optional[date] = None
     adults: Optional[int] = 2
     serp_api_id: Optional[str] = None
+    api_key_suffix: Optional[str] = None
 
     class Config:
         from_attributes = True

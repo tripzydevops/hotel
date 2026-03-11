@@ -24,7 +24,7 @@ from backend.models.schemas import (
     PlanCreate,
     PlanUpdate,
 )
-from backend.services.serpapi_client import serpapi_client
+from backend.services.serpapi_client import serpapi_client, MANUAL_RENEWAL_OVERRIDES, CREDIT_LIMITS
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 import csv
@@ -169,37 +169,51 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         status["quota_period"] = "monthly"
         status["monthly_usage"] = monthly_usage
 
-        detailed = await serpapi_client.get_detailed_status()
-        keys_list = detailed.get("keys_status", [])
+        # EXPLANATION: Persistent Usage Tracking (Kaizen 2026)
+        # Instead of in-memory counters, we derive usage from query_logs.
+        # This survives restarts and correctly maps to the last renewal cycle.
+        keys_list = status.get("keys_status", [])
+        for entry in keys_list:
+            suffix = entry["key_suffix"].replace("...", "")
+            renew_str = MANUAL_RENEWAL_OVERRIDES.get(suffix)
+            now = datetime.now()
+            
+            # Determine cycle start (standard Logic: day of renewal)
+            if renew_str and renew_str not in ["Unknown", "Monthly Reset"]:
+                try:
+                    renew_day = int(renew_str.split("-")[2])
+                    if now.day >= renew_day:
+                        cycle_start = now.replace(day=renew_day, hour=0, minute=0, second=0)
+                    else:
+                        last_month = (now.replace(day=1) - timedelta(days=1))
+                        cycle_start = last_month.replace(day=min(renew_day, 28), hour=0, minute=0, second=0)
+                except:
+                    cycle_start = now.replace(day=1, hour=0, minute=0, second=0)
+            else:
+                cycle_start = now.replace(day=1, hour=0, minute=0, second=0)
 
-        # EXPLANATION: Metadata Injection (Kaizen 2026)
-        # We merge hardcoded metadata (renewal dates, limits) from ProviderFactory
-        # into the dynamic usage data from serpapi_client.
-        from backend.services.provider_factory import ProviderFactory
-
-        factory_report = ProviderFactory.get_status_report()
-
-        for i, key_entry in enumerate(keys_list):
-            match_name = f"SerpApi Key {i + 1}"
-            meta = next((r for r in factory_report if match_name in r["name"]), None)
-
-            # Use real data from serpapi_client if available, fallback to mock
-            key_entry["refresh_date"] = key_entry.get("renewal_date") or (
-                meta.get("refresh") if meta else "Unknown"
-            )
-            key_entry["limit"] = meta.get("limit") if meta else "250/mo"
+            try:
+                # Query DB for logs tagged with this specific key
+                usage_res = db.table("query_logs").select("id", count="exact")\
+                    .eq("api_key_suffix", suffix)\
+                    .gte("created_at", cycle_start.isoformat())\
+                    .execute()
+                
+                db_usage = usage_res.count or 0
+                entry["usage"] = db_usage
+                
+                # Update limits and calculations
+                limit = CREDIT_LIMITS.get(suffix, 250)
+                entry["limit"] = f"{limit}/mo"
+                entry["searches_left"] = max(0, limit - db_usage)
+                entry["refresh_date"] = renew_str or "Unknown"
+            except Exception as e:
+                print(f"Admin: Failed to aggregate logs for {suffix}: {e}")
 
         status["keys_status"] = keys_list
-        status["env_debug"] = {
-            "SERPAPI_API_KEY": "Set" if os.getenv("SERPAPI_API_KEY") else "Missing",
-            "SERPAPI_KEY": "Set" if os.getenv("SERPAPI_KEY") else "Missing",
-            "NEXT_PUBLIC_SERPAPI_API_KEY": "Set"
-            if os.getenv("NEXT_PUBLIC_SERPAPI_API_KEY")
-            else "Missing",
-            "SERPAPI_API_KEY_2": "Set" if os.getenv("SERPAPI_API_KEY_2") else "Missing",
-            "SERPAPI_API_KEY_3": "Set" if os.getenv("SERPAPI_API_KEY_3") else "Missing",
-            "SERPAPI_API_KEY_4": "Set" if os.getenv("SERPAPI_API_KEY_4") else "Missing",
-        }
+        status["quota_per_key"] = 250
+        status["quota_period"] = "monthly"
+        status["monthly_usage"] = sum(k.get("usage", 0) for k in keys_list)
         return status
     except Exception as e:
         print(f"API Key Status Error: {e}")

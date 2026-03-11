@@ -37,6 +37,7 @@ async def log_query(
     session_id: Optional[UUID] = None,
     check_in: Optional[date] = None,
     adults: Optional[int] = 2,
+    api_key_suffix: Optional[str] = None,
 ):
     """Log a search or monitor query for future reporting/analysis."""
     try:
@@ -52,6 +53,7 @@ async def log_query(
             "session_id": str(session_id) if session_id else None,
             "check_in_date": check_in.isoformat() if check_in else None,
             "adults": adults,
+            "api_key_suffix": api_key_suffix,
         }
 
         db.table("query_logs").insert(log_data).execute()
