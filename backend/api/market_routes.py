@@ -54,6 +54,14 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
         "tga": tga_res
     }
 
+@router.post("/scrape/clear")
+async def clear_market_events(db: Client = Depends(get_supabase_rls)):
+    """
+    [Dev Tools] Clears all market events from the database.
+    """
+    res = db.table("market_events").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+    return {"status": "success", "cleared": len(res.data)}
+
 @router.get("/cities")
 async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     """

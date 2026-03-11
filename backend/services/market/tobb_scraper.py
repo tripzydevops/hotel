@@ -26,141 +26,120 @@ class TOBBScraper:
         """
         [Stealth Mode] Main orchestration for TOBB scraping.
         """
-        logger.info("[TOBBScraper] Initiating headless browser...")
+        logger.info("[TOBBScraper] Starting scrape via Firecrawl CLI...")
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+            import subprocess
+            
+            # Since the TOBB table is heavily JS-rendered, we use scrape with a wait-for
+            # Alternatively, we could use 'agent' but 'scrape' is faster if it works.
+            process = subprocess.run(
+                [
+                    "npx", "-y", "firecrawl-cli@1.8.0", "scrape", 
+                    self.URL, 
+                    "--wait-for", "5000", 
+                    "-f", "markdown"
+                ],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            if process.returncode != 0:
+                logger.error(f"[TOBBScraper] Firecrawl CLI failed: {process.stderr}")
+                return {"status": "error", "message": f"Firecrawl failed: {process.stderr}"}
                 
-                # Navigate to TOBB
-                await page.goto(self.URL, timeout=60000)
-                logger.info(f"[TOBBScraper] Page loaded: {self.URL}")
-                # Wait for the Excel export button
-                # KAİZEN: DevExpress Blazor Grid export buttons are typically in the toolbar.
-                # In the current TOBB site, it appears to be the first dark button in the toolbar.
-                excel_btn_selector = ".dxbl-grid-toolbar button.dxbl-btn-dark, .dxbl-grid-toolbar button:first-child, button[title*='Export'], button[title*='Excel']"
-                
-                logger.info(f"[TOBBScraper] Waiting for button: {excel_btn_selector}")
-                
-                # Intercept the download
+            content = process.stdout
+            
+            if not content or len(content) < 500:
+                logger.warning(f"[TOBBScraper] Content too short: {len(content)} chars.")
+                return {"status": "error", "message": "Failed to extract meaningful content from TOBB."}
+
+            logger.info(f"[TOBBScraper] Extracted {len(content)} characters. Using AI to parse markdown table...")
+
+            # 2. Extract structured JSON using Gemini 3
+            # We reuse the logic from TGA but with a TOBB-specific focus
+            events = await self._extract_events_with_ai(content)
+            
+            # 3. Store in Supabase
+            processed_count = 0
+            for event in events:
                 try:
-                    # We wait for the table to be interactive
-                    await page.wait_for_selector(".dxbl-grid", timeout=30000)
+                    # Enrich with compression score (AI suggested or default)
+                    if "compression_score" not in event:
+                        event["compression_score"] = 5 # Default for Fairs
                     
-                    async with page.expect_download(timeout=60000) as download_info:
-                        # Try multiple selectors if needed or just the most likely one
-                        try:
-                            await page.click("button.dxbl-btn-dark.dxbl-btn-first", timeout=5000)
-                        except:
-                            await page.click(excel_btn_selector)
+                    event["type"] = "fair"
+                    event["metadata"] = event.get("metadata", {})
+                    event["metadata"]["source"] = "TOBB"
                     
-                    download = await download_info.value
-                    excel_buffer = await download.path()
-                    logger.info(f"[TOBBScraper] Downloaded Excel to {excel_buffer}")
+                    # Ensure city normalization (Safety check)
+                    raw_city = event.get("city", "Unknown")
+                    event["city"] = raw_city.replace('İ', 'I').replace('ı', 'i').capitalize()
 
-                    # Parse with Pandas
-                    df = pd.read_excel(excel_buffer)
-                    await browser.close()
-
-                    return await self._process_dataframe(df)
+                    self.db.table("market_events").upsert(
+                        event,
+                        on_conflict="name, start_date"
+                    ).execute()
+                    processed_count += 1
                 except Exception as e:
-                    logger.error(f"[TOBBScraper] Excel download failed: {e}")
-                    # Fallback or cleanup
-                    await browser.close()
-                    return {"status": "error", "message": f"Excel download timeout or selector failure: {str(e)}"}
+                    logger.warning(f"[TOBBScraper] Upsert failed for {event.get('name')}: {e}")
+
+            return {"status": "success", "processed": processed_count}
 
         except Exception as e:
-            logger.error(f"[TOBBScraper] Scraping failed: {e}")
+            logger.error(f"[TOBBScraper] TOBB Scraping failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def _process_dataframe(self, df: pd.DataFrame):
+    async def _extract_events_with_ai(self, content: str) -> List[Dict[str, Any]]:
         """
-        Filters and normalizes the TOBB Excel data for the 'market_events' table.
+        Uses Gemini 3 to parse raw TOBB markdown/table content into structured market events.
         """
-        logger.info(f"[TOBBScraper] Processing dataframe with {len(df)} rows and columns: {df.columns.tolist()}")
-        
-        # Mapping for normalization (TOBB Excel columns)
-        col_map = {
-            "Fuar Adı": "name",
-            "Şehir": "city",
-            "Başlangıç Tarihi": "start_date",
-            "Bitiş Tarihi": "end_date",
-            "Konu": "description"
-        }
-        
-        # Rename if columns exist
-        found_cols = [c for c in col_map.keys() if c in df.columns]
-        if not found_cols:
-            logger.warning(f"[TOBBScraper] No expected columns found. Available: {df.columns.tolist()}")
-            # Sometimes the first row is a header or title, try to find the actual header row
-            if len(df.columns) < 3: # Suspiciously few columns
-                 logger.info("[TOBBScraper] Attempting to re-orient dataframe (skip first few rows)...")
-                 for i in range(1, 10):
-                     # If we had the path, we'd skip rows. But let's assume the basic read works 
-                     # if the file is correctly formed.
-                     pass
-            return {"status": "error", "message": "Unexpected Excel format"}
+        from backend.services.analysis_service import get_genai_client
+        client = get_genai_client()
+        if not client:
+            logger.error("[TOBBScraper] GenAI client not available.")
+            return []
 
-        df = df[found_cols].rename(columns=col_map)
+        instructions = [
+            "You are an expert in Turkish Trade Intelligence. Extract a list of upcoming trade fairs from the provided markdown content (which contains a rendered table).",
+            "",
+            "INSTRUCTIONS:",
+            "1. Identify: Fuar Adı (Event Name), Şehir (City), Başlangıç Tarihi (Start), Bitiş Tarihi (End).",
+            "2. Date Normalization: Convert DD.MM.YYYY to ISO YYYY-MM-DD.",
+            "3. Focus on major cities: Istanbul, Antalya, Izmir, Bodrum, Mugla, Ankara.",
+            "4. Assign a 'compression_score' (1-10) based on the likely impact on hotel occupancy (large international fairs = 8-10, local ones = 4-6).",
+            "",
+            "OUTPUT FORMAT: JSON array of objects with keys:",
+            "- name: string",
+            "- city: string (MUST BE English Title Case, e.g., 'Istanbul', 'Antalya'. Do NOT use all caps or Turkish characters like 'İ')",
+            "- start_date: string (ISO YYYY-MM-DD)",
+            "- end_date: string (ISO YYYY-MM-DD)",
+            "- description: string (Subject of the fair)",
+            "- compression_score: integer",
+            "",
+            "CONTENT:",
+            content[:15000] 
+        ]
         
-        # Filter by relevant cities (Handling potential whitespace/case)
-        df['city_clean'] = df['city'].astype(str).str.strip().str.upper()
-        
-        # Match Turkish characters properly (İ vs I)
-        normalized_relevant = [c.replace('İ', 'I').replace('I', 'I').upper() for c in self.RELEVANT_CITIES]
-        df['city_normalized'] = df['city_clean'].str.replace('İ', 'I').str.upper()
-        
-        filtered_df = df[df['city_normalized'].isin(normalized_relevant)].copy()
-        logger.info(f"[TOBBScraper] Filtered to {len(filtered_df)} relevant events.")
-        
-        processed_count = 0
-        for _, row in filtered_df.iterrows():
-            try:
-                # Basic validation
-                if pd.isna(row['name']) or pd.isna(row['start_date']):
-                    continue
+        prompt = "\n".join(instructions)
 
-                event_data = {
-                    "name": str(row['name']),
-                    "type": "fair",
-                    "city": str(row['city']).strip().capitalize(),
-                    "start_date": self._parse_date(row['start_date']),
-                    "end_date": self._parse_date(row['end_date']),
-                    "description": f"Konu: {row.get('description', 'N/A')}",
-                    "compression_score": 5,
-                    "metadata": {
-                        "source": "TOBB",
-                        "original_city": row['city']
-                    }
-                }
-                
-                self.db.table("market_events").upsert(
-                    event_data, 
-                    on_conflict="name, start_date"
-                ).execute()
-                processed_count += 1
-            except Exception as e:
-                logger.warning(f"[TOBBScraper] Upsert failed for {row.get('name')}: {e}")
-
-        return {"status": "success", "processed": processed_count}
-
-    def _parse_date(self, date_val):
-        """Helper to handle various date formats from Excel."""
-        if pd.isna(date_val):
-            return datetime.now().date().isoformat()
-        
-        if isinstance(date_val, (datetime, pd.Timestamp)):
-            return date_val.date().isoformat()
+        try:
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview", contents=prompt
+            )
             
-        if isinstance(date_val, str):
-            try:
-                # Handle DD.MM.YYYY
-                return datetime.strptime(date_val.strip(), "%d.%m.%Y").date().isoformat()
-            except:
-                try:
-                    # Handle YYYY-MM-DD
-                    return datetime.fromisoformat(date_val.strip()).date().isoformat()
-                except:
-                    return datetime.now().date().isoformat()
-        
-        return datetime.now().date().isoformat()
+            if response and response.text:
+                import json
+                raw_text = response.text
+                if "```json" in raw_text:
+                    raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in raw_text:
+                    raw_text = raw_text.split("```")[1].split("```")[0].strip()
+                
+                data = json.loads(raw_text)
+                return data if isinstance(data, list) else [data]
+        except Exception as e:
+            logger.error(f"[TOBBScraper] AI extraction failed: {e}")
+            return []
+
+        return []

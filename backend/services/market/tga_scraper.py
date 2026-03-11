@@ -24,52 +24,55 @@ class TGAScraper:
         """
         [Stealth Mode] Main orchestration for TGA scraping.
         """
-        logger.info("[TGAScraper] Starting semantic scrape via Playwright...")
+        logger.info("[TGAScraper] Starting semantic scrape via Firecrawl CLI...")
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+            # Use firecrawl CLI to scrape the page content as markdown
+            import subprocess
+            
+            # npx -y firecrawl-cli@1.8.0 scrape <url> --only-main-content -f markdown
+            process = subprocess.run(
+                ["npx", "-y", "firecrawl-cli@1.8.0", "scrape", self.URL, "--only-main-content", "-f", "markdown"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            if process.returncode != 0:
+                logger.error(f"[TGAScraper] Firecrawl CLI failed: {process.stderr}")
+                return {"status": "error", "message": f"Firecrawl failed: {process.stderr}"}
                 
-                # Navigate to TGA
-                await page.goto(self.URL, timeout=60000)
-                # Wait for the announcements list to render
-                await page.wait_for_timeout(5000)
-                
-                # Extract clean text from the body
-                # We use inner_text to get a readable representation for the LLM
-                content = await page.inner_text("body")
-                await browser.close()
+            content = process.stdout
+            
+            if not content or len(content) < 100:
+                logger.warning(f"[TGAScraper] Content too short: {len(content)} chars.")
+                return {"status": "error", "message": "Failed to extract meaningful content from TGA."}
 
-                if not content or len(content) < 100:
-                    logger.warning(f"[TGAScraper] Content too short: {len(content)} chars.")
-                    return {"status": "error", "message": "Failed to extract meaningful content from TGA."}
+            logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
 
-                logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
+            # 2. Extract structured JSON using Gemini 3
+            events = await self._extract_events_with_ai(content)
+            
+            # 3. Store in Supabase
+            processed_count = 0
+            for event in events:
+                try:
+                    # Enrich with compression score (AI suggested or default)
+                    if "compression_score" not in event:
+                        event["compression_score"] = 3 # Default for TGA announcements
+                    
+                    event["type"] = "announcement"
+                    event["metadata"] = event.get("metadata", {})
+                    event["metadata"]["source"] = "TGA"
+                    
+                    self.db.table("market_events").upsert(
+                        event,
+                        on_conflict="name, start_date"
+                    ).execute()
+                    processed_count += 1
+                except Exception as e:
+                    logger.warning(f"[TGAScraper] Upsert failed for {event.get('name')}: {e}")
 
-                # 2. Extract structured JSON using Gemini 3
-                events = await self._extract_events_with_ai(content)
-                
-                # 3. Store in Supabase
-                processed_count = 0
-                for event in events:
-                    try:
-                        # Enrich with compression score (AI suggested or default)
-                        if "compression_score" not in event:
-                            event["compression_score"] = 3 # Default for TGA announcements
-                        
-                        event["type"] = "announcement"
-                        event["metadata"] = event.get("metadata", {})
-                        event["metadata"]["source"] = "TGA"
-                        
-                        self.db.table("market_events").upsert(
-                            event,
-                            on_conflict="name, start_date"
-                        ).execute()
-                        processed_count += 1
-                    except Exception as e:
-                        logger.warning(f"[TGAScraper] Upsert failed for {event.get('name')}: {e}")
-
-                return {"status": "success", "processed": processed_count}
+            return {"status": "success", "processed": processed_count}
 
         except Exception as e:
             logger.error(f"[TGAScraper] TGA Scraping failed: {e}")
@@ -99,7 +102,7 @@ class TGAScraper:
             "",
             "OUTPUT FORMAT: JSON array of objects with keys:",
             "- name: string",
-            "- city: string (English name, e.g., Istanbul)",
+            "- city: string (MUST BE English Title Case, e.g., 'Istanbul', 'Antalya', 'Izmir'. Do NOT use all caps or Turkish characters like 'İ')",
             "- start_date: string (ISO YYYY-MM-DD)",
             "- end_date: string (ISO YYYY-MM-DD)",
             "- description: string (Short summary)",
