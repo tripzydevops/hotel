@@ -384,7 +384,6 @@ def generate_synthetic_narrative(
             f"Note: Some market benchmarks ({', '.join(missing)}) are currently unavailable to generate long-form reasoning. "
             "Broadening your tracking list may improve this insight. Currently analyzing based on available pricing metrics."
         )
-
     # Status buckets
     price_status = "premium" if ari >= 105 else "aligned" if ari >= 95 else "aggressive"
     sent_status = (
@@ -397,51 +396,45 @@ def generate_synthetic_narrative(
 
     dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
 
-    # Narrative creation (Expanded High-Depth Strategic Fallbacks)
+    # Narrative creation (Expanded High-Depth Strategic Fallback)
     if price_status == "premium" and sent_status == "superior":
         return (
-            f"STRATEGIC VERDICT: {hotel_name} is currently a 'Premium King'.{dna_blurb} you are successfully justifying higher rates "
-            "through superior guest experiences and brand prestige. Your pricing index (ARI: {ari:.1f}) is well-supported "
-            "by high guest satisfaction (SentIndex: {sent_index:.1f}). \n\n"
-            "Opportunities: \n"
-            "1. Yield Management: Explore 2-4% ADR upside during peak demand weekends where competitive sell-out is predicted.\n"
-            "2. Loyalty Retention: Invest in high-touch amenities for repeat guests to sustain this premium positioning against new market entrants."
+            f"### [Commercial Health]\n"
+            f"* **Current State:** {hotel_name} is currently a 'Premium King'. {dna_blurb} you are successfully justifying higher rates through superior guest experiences.\n"
+            f"* **Vulnerability:** Maintaining this ceiling requires constant operational excellence.\n"
+            f"* **Action Plan:** Explore 2-4% ADR upside during peak demand weekends."
         )
     elif price_status == "aggressive" and sent_status == "superior":
         return (
-            f"STRATEGIC VERDICT: Growth Potential Detected. Guests are providing '{sent_status}' feedback despite your '{price_status}' pricing.{dna_blurb} "
-            f"With a pricing index of {ari:.1f} and sentiment at {sent_index:.1f}, you are currently 'leaving money on the table'. "
-            "The market perceives significantly higher value than what you are currently charging.\n\n"
-            "Action Plan:\n"
-            "1. Rate Correction: Implement a structured rate increase of 5-8% across standard room types to capture fair market value.\n"
-            "2. Upsell Optimization: Promote premium room types more aggressively as guest willingness-to-pay is currently undervalued."
+            f"### [Commercial Health]\n"
+            f"* **Current State:** Growth Potential Detected. {dna_blurb} guests are providing superior feedback despite your aggressive pricing.\n"
+            f"* **Vulnerability:** You are currently 'leaving money on the table' relative to market value.\n"
+            f"* **Action Plan:** Implement a structured rate increase of 5-8% to capture fair market value."
         )
     elif price_status == "premium" and sent_status == "at-risk":
         return (
-            f"STRATEGIC VERDICT: Critical Position Warning. Your pricing is in the 'Danger Zone'.{dna_blurb} your rates are {int(ari - 100)}% above "
-            f"market average, but guest sentiment ({sent_index:.1f}) is significantly lagging. You are highly vulnerable to "
-            "negative substitution as guests compare your premium price against subpar experiences.\n\n"
-            "Immediate Risks:\n"
-            "1. Review Deterioration: Sustained high prices with low sentiment will accelerate negative public feedback.\n"
-            "2. Volume Loss: Competitors with similar or better sentiment at lower prices will likely siphon your market share. Audit operational 'value leaks' immediately."
+            f"### [Commercial Health]\n"
+            f"* **Current State:** Critical Position Warning. {dna_blurb} your pricing is in the 'Danger Zone'—rates are high but sentiment is lagging.\n"
+            f"* **Vulnerability:** Sustained high prices with low sentiment will accelerate negative feedback loops.\n"
+            f"* **Action Plan:** Audit operational 'value leaks' immediately to protect premium ADR."
         )
     elif price_status == "aggressive" and sent_status == "at-risk":
         return (
-            f"STRATEGIC VERDICT: Volume Over Brand risk. {hotel_name} is currently trapped in a budget-volume cycle. With {price_status} rates and '{sent_status}' "
-            "sentiment, you risk a permanent brand perception shift toward the 'economy' segment, making future recovery difficult.\n\n"
-            "Strategic Stabilization:\n"
-            "1. Quality Lockdown: Prioritize cleanliness and service speed over advanced marketing. Sentiment must stabilize before price can scale.\n"
-            "2. Targeted Promotion: Run limited-time 'experience' bundles to attract more diverse guests and dilute the impact of negative operational data."
+            f"### [Commercial Health]\n"
+            f"* **Current State:** {hotel_name} is currently in a 'Budget Volume' cycle. {dna_blurb} with aggressive pricing and at-risk sentiment, you are competing on price alone.\n"
+            f"* **Vulnerability:** Thin margins and poor perception create high churn risk.\n"
+            f"* **Action Plan:** Audit cleanliness and service standards before attempting rate recovery."
         )
-
-    # Fallback (Balanced)
+    
+    # Default/Aligned case
     return (
-        f"STRATEGIC VERDICT: Market Anchor. {hotel_name} is maintaining a balanced market position with rates and sentiment closely aligned to averages ({ari:.1f} ARI / {sent_index:.1f} GRI). "
-        f"{dna_blurb} your strategy ensures stability in a volatile market. \n\n"
-        "Tactical Guidance:\n"
-        "1. Parity Surveillance: Monitor 'Value' pillar shifts weekly; your position as an anchor makes you sensitive to competitor price drops.\n"
-        "2. Efficiency Gains: Focus on incremental ADR improvements (+1-2%) without disrupting the current guest satisfaction equilibrium."
+        f"### [Commercial Health]\n"
+        f"* **Current State:** {hotel_name} is market-aligned. {dna_blurb} your rates (ARI: {ari:.1f}) are in sync with guest expectations (SentIndex: {sent_index:.1f}).\n"
+        f"* **Vulnerability:** Low differentiation makes you susceptible to rival promotions.\n"
+        f"* **Action Plan:** Focus on ancillary revenue (F&B, Spa) to drive TotRevPAR."
     )
+
+
 
 
 # EXPLANATION: Vercel-Safe Lazy Loader
