@@ -377,13 +377,12 @@ def generate_synthetic_narrative(
     """
     if ari is None or sent_index is None:
         missing = []
-        if ari is None: missing.append("Average Rate Index (ARI)")
+        if ari is None: missing.append("Average Rate Index")
         if sent_index is None: missing.append("Sentiment Index")
         
         return (
-            f"Insufficient market data ({', '.join(missing)}) to generate a strategic narrative. "
-            "This usually happens when there are no active competitors identified for the specific room type searched. "
-            "Please ensure your tracking list is populated and your target hotel is correctly identified."
+            f"Note: Some market benchmarks ({', '.join(missing)}) are currently unavailable to generate long-form reasoning. "
+            "Broadening your tracking list may improve this insight. Currently analyzing based on available pricing metrics."
         )
 
     # Status buckets
@@ -1293,9 +1292,8 @@ async def perform_market_analysis(
         if target_price is not None
         else None,
         "ari": round(float(ari), 1) if ari is not None else None,
-        "sentiment_index": round(float(sent_index), 1)
-        if sent_index is not None
-        else None,
+        "sent_index": round(float(sent_index), 1) if sent_index is not None else None,
+        "sentiment_index": round(float(sent_index), 1) if sent_index is not None else None, # Legacy alias
         "advisory_msg": advisory,
         "quadrant_x": round(float(q_x), 1),
         "quadrant_y": round(float(q_y), 1),

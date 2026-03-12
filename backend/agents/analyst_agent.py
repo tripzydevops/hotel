@@ -1160,7 +1160,7 @@ class AnalystAgent:
                 mentions = target.get("guest_mentions", [])
                 reviews = target.get("reviews", [])
 
-                battlefield_text = f"Experience Leader: Ranked #{round(avg_rank)} with a rating of {target.get('rating')}. Guests value the brand heavily."
+                battlefield_text = f"Experience Leader: Search Rank #{round(avg_rank)} with a rating of {target.get('rating')}. Guests value the brand heavily."
                 yield_text = f"Sentiment impact on value: Guests are perceiving {target.get('rating')} quality vs {target['preferred_currency']} {target_avg_price:,.0f} price point."
 
                 prompt = f"""
@@ -1198,7 +1198,7 @@ class AnalystAgent:
             elif report_type == "Yield Audit":
                 # KAİZEN: Specialized Revenue Leakage Prompt
                 yield_text = f"Audit Alert: {len(parity_leaks)} leaks detected. Monthly risk estimated at {target['preferred_currency']} {avg_daily_leak * 30:,.0f}."
-                battlefield_text = f"Visibility Risk: Ranked #{round(avg_rank)}. Correlation between search rank and parity leakage detected."
+                battlefield_text = f"Visibility Risk: Search Rank #{round(avg_rank)}. Correlation between search rank and parity leakage detected."
 
                 prompt = f"""
             You are a Forensic Revenue Auditor. Generate a High-Depth Yield Audit for {target["name"]}.
@@ -1261,7 +1261,7 @@ class AnalystAgent:
             Format: Use markdown bullet points. Be punchy and professional.
             """
             else:  # Strategic Market Pulse (Default)
-                battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} assets. Period ADR: {target.get('preferred_currency', 'TRY')} {target_avg_price:,.0f}."
+                battlefield_text = f"Search Rank #{round(avg_rank)} across {total_competitors + 1} assets. Period ADR: {target.get('preferred_currency', 'TRY')} {target_avg_price:,.0f}."
                 if len(parity_leaks) > 0:
                     yield_text = f"{len(parity_leaks)} OTA undercutting events detected. Identifying revenue leaks."
                 else:

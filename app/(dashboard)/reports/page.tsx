@@ -833,11 +833,11 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Market Rank</span>
+                <span className="text-xs font-bold text-slate-400">Search Visibility</span>
                 <span className="text-lg font-black text-white">#{metrics.avg_rank || '—'}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Bench ADR</span>
+                <span className="text-xs font-bold text-slate-400">Market Benchmark</span>
                 <span className="text-lg font-black text-white">{fmt(metrics.market_avg_price || 0)}</span>
               </div>
               <p className="text-xs text-white/70 italic leading-relaxed">
