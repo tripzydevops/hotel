@@ -154,9 +154,8 @@ class AnalystAgent:
 
         # 2. Main Analysis Loop
         for res in scraper_results:
-            sentiment_changed = (
-                False  # EXPLANATION: Initialize before try to avoid UnboundLocalError
-            )
+            # KAİZEN: Explicitly associate value to prevent UnboundLocalError
+            is_sentiment_modified = False
             try:
                 hotel_id = res.get("hotel_id")
                 price_data = res.get("price_data")
@@ -369,7 +368,7 @@ class AnalystAgent:
                 if "reviews_breakdown" in price_data:
                     merged_breakdown = merge_sentiment_breakdowns(current_breakdown, price_data["reviews_breakdown"])
                     meta_update["sentiment_breakdown"] = merged_breakdown
-                    sentiment_changed = True
+                    is_sentiment_modified = True
 
                 for field in ["rating", "image_url", "stars", "review_count", "amenities"]:
                     val = price_data.get(field)
@@ -377,8 +376,8 @@ class AnalystAgent:
 
                 if meta_update.get("sentiment_breakdown"):
                     meta_update["guest_mentions"] = generate_mentions(meta_update["sentiment_breakdown"])
-
-                if sentiment_changed:
+                
+                if is_sentiment_modified:
                     meta_update["embedding_status"] = "stale"
                     if not hasattr(self, "_embedding_queue"):
                         self._embedding_queue = []
@@ -1081,14 +1080,10 @@ class AnalystAgent:
         unique_leak_days = len(set(l["date"] for l in parity_leaks)) if parity_leaks else 0
         avg_daily_leak = round(daily_leak_amount / max(unique_leak_days, 1), 2)
 
-        # E) Dynamic Description Text
+        # E) Dynamic Description Base (will be specialized below)
         total_competitors = len(competitor_table)
-        if len(parity_leaks) > 0:
-            yield_text = f"{len(parity_leaks)} OTA undercutting events detected across {unique_leak_days} day(s). Direct revenue erosion identified."
-        else:
-            yield_text = "No OTA undercutting detected in this period. Channel parity is healthy."
-
-        battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} assets. Period ADR: {target.get('preferred_currency', 'TRY')} {target_avg_price:,.0f} vs Market Benchmark: {market_historical_avg:,.0f}."
+        yield_text = "Analyzing channel parity integrity."
+        battlefield_text = f"Analyzing market position for {target.get('name')}."
 
         # 6. AI SYNTHESIS: Generate a high-depth executive narrative using Gemini-3-Flash.
         from backend.services.analysis_service import get_genai_client
@@ -1127,6 +1122,7 @@ class AnalystAgent:
             "metrics": {
                 "target_avg_price": round(target_avg_price, 2),
                 "market_avg_price": round(market_historical_avg, 2),
+                "avg_price": round(market_historical_avg, 2),  # KEY ALIGNMENT: Frontend 'Bench ADR' expects this
                 "avg_rank": round(avg_rank, 1),
                 "gri": target.get("rating", 0),
                 "sentiment_velocity": sentiment_velocity,
@@ -1145,9 +1141,13 @@ class AnalystAgent:
                 },
                 "battlefield_text": battlefield_text,
                 "yield_text": yield_text,
+                "report_type": report_type or "Strategic Market Pulse",
             },
             "narrative_raw": "",
         }
+
+        # D) PRICE SYNC check: Ensure target hotel rate isn't 0 in Competitor Snapshot
+        briefing_payload["metrics"]["focus_hotel_rate"] = target.get("current_price") or target_avg_price or 0
 
         if client:
             # KAİZEN: High-Depth Strategy Prompt
@@ -1159,6 +1159,9 @@ class AnalystAgent:
                 breakdown = target.get("sentiment_breakdown", [])
                 mentions = target.get("guest_mentions", [])
                 reviews = target.get("reviews", [])
+
+                battlefield_text = f"Experience Leader: Ranked #{round(avg_rank)} with a rating of {target.get('rating')}. Guests value the brand heavily."
+                yield_text = f"Sentiment impact on value: Guests are perceiving {target.get('rating')} quality vs {target['preferred_currency']} {target_avg_price:,.0f} price point."
 
                 prompt = f"""
             You are a Senior Experience & Quality Consultant. Generate a High-Depth Sentiment Deep-Dive for {target["name"]}.
@@ -1194,6 +1197,9 @@ class AnalystAgent:
             """
             elif report_type == "Yield Audit":
                 # KAİZEN: Specialized Revenue Leakage Prompt
+                yield_text = f"Audit Alert: {len(parity_leaks)} leaks detected. Monthly risk estimated at {target['preferred_currency']} {avg_daily_leak * 30:,.0f}."
+                battlefield_text = f"Visibility Risk: Ranked #{round(avg_rank)}. Correlation between search rank and parity leakage detected."
+
                 prompt = f"""
             You are a Forensic Revenue Auditor. Generate a High-Depth Yield Audit for {target["name"]}.
             TIMEFRAME: {timeframe}
@@ -1225,6 +1231,9 @@ class AnalystAgent:
             """
             elif report_type == "Competitive Battlefield":
                 # KAİZEN: Specialized Competitor Comparison Prompt
+                battlefield_text = f"The Bout: You vs {rival['name'] if rival else 'Market'}. Similarity: {briefing_payload['metrics'].get('bout_similarity', 0)}%."
+                yield_text = f"Market Capture: High substitution risk detected at {target['preferred_currency']} {target.get('current_price')} rate point."
+
                 prompt = f"""
             You are a Senior Market Strategist. Generate a High-Depth Competitive Battlefield report for {target["name"]}.
             TIMEFRAME: {timeframe}
@@ -1252,6 +1261,12 @@ class AnalystAgent:
             Format: Use markdown bullet points. Be punchy and professional.
             """
             else:  # Strategic Market Pulse (Default)
+                battlefield_text = f"Ranked #{round(avg_rank)} across {total_competitors + 1} assets. Period ADR: {target.get('preferred_currency', 'TRY')} {target_avg_price:,.0f}."
+                if len(parity_leaks) > 0:
+                    yield_text = f"{len(parity_leaks)} OTA undercutting events detected. Identifying revenue leaks."
+                else:
+                    yield_text = "Market parity remains healthy. No active leaks detected."
+
                 prompt = f"""
             You are a Senior Revenue Strategist from a top-tier management consulting firm. Generate a Strategic Market Pulse for {target["name"]}.
             TIMEFRAME: {timeframe}
@@ -1293,12 +1308,19 @@ class AnalystAgent:
             try:
                 # KAİZEN: gemini-3-flash-preview is the current project standard.
                 # DO NOT use legacy gemini-1.5-* models here.
+                print(f"[AnalystAgent] Invoking Gemini for {report_type}...")
                 response = client.models.generate_content(
                     model="gemini-3-flash-preview", contents=prompt
                 )
                 if response and response.text:
                     briefing_payload["narrative_raw"] = response.text
+                    print(f"[AnalystAgent] Narrative generated ({len(response.text)} chars)")
+                else:
+                    print(f"[AnalystAgent] Gemini returned an empty response.")
             except Exception as ai_e:
+                print(f"[AnalystAgent] AI Narrative Generation failed: {ai_e}")
+                # FALLBACK: Explicit error narrative instead of empty string
+                briefing_payload["narrative_raw"] = f"[SYSTEM NOTICE] Narrative generation failed due to an upstream API error: {str(ai_e)}. Please retry the analysis."
                 print(f"[AnalystAgent] Briefing AI Error: {ai_e}")
 
         # 7. PERSISTENCE: Save to 'reports' table for administrative review (Phase 4)

@@ -376,9 +376,13 @@ def generate_synthetic_narrative(
     guest sentiment (GRI/SentIndex), and the hotel's DNA.
     """
     if ari is None or sent_index is None:
+        missing = []
+        if ari is None: missing.append("Average Rate Index (ARI)")
+        if sent_index is None: missing.append("Sentiment Index")
+        
         return (
-            "Insufficient market data to generate a strategic narrative. "
-            "Analysis requires at least one active competitor and a valid target price. "
+            f"Insufficient market data ({', '.join(missing)}) to generate a strategic narrative. "
+            "This usually happens when there are no active competitors identified for the specific room type searched. "
             "Please ensure your tracking list is populated and your target hotel is correctly identified."
         )
 
