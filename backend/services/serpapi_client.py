@@ -35,7 +35,7 @@ MANUAL_RENEWAL_OVERRIDES = {
     # Node 02 (asknsezen@gmail.com)
     "7f222": "Monthly Reset", 
     # Node 03 (fastearn21@gmail.com)
-    "5f3db": "2026-04-04",  # Suffix corrected to 5f3db per screenshot
+    "73f3db": "2026-04-04",  # Updated suffix to 73f3db per user screenshot
     # Node 04 (tripzydevops@gmail.com)
     "4c1dc": "2026-03-25",
 }
@@ -45,7 +45,7 @@ MANUAL_RENEWAL_OVERRIDES = {
 CREDIT_LIMITS = {
     "1187e": 250,
     "7f222": 250,
-    "5f3db": 250,
+    "73f3db": 250,
     "4c1dc": 250,
 }
 

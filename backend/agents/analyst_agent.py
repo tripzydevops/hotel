@@ -347,8 +347,8 @@ class AnalystAgent:
                         "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)},
                     })
                 
-                if session_id and not is_estimated:
-                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=price_data.get("vendor"), session_id=session_id)
+                if session_id:
+                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=price_data.get("vendor") if not is_estimated else f"Estimated ({price_data.get('vendor', 'History')})", session_id=session_id)
 
                 analysis_summary["prices_updated"] += 1
 
