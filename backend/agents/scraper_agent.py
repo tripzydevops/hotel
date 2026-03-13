@@ -1,5 +1,5 @@
 import asyncio
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from supabase import Client
