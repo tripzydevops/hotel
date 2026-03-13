@@ -204,10 +204,21 @@ class ApiKeyManager:
             return self._current_index + 1 if self._keys else 0
 
     def rotate_key(
-        self, reason: str = "quota_exhausted", is_permanent: bool = True
+        self, failed_key: Optional[str] = None, reason: str = "quota_exhausted", is_permanent: bool = True
     ) -> bool:
-        """Mark current key as exhausted and rotate to next available key."""
+        """
+        Mark current key as exhausted and rotate to next available key.
+        FAILED_KEY: Passing the key that actually failed allows us to prevent race conditions
+        where concurrent requests trigger multiple rotations for the same error.
+        """
         with self._lock:
+            # Race Condition Check: 
+            # If a specific key failed, but it's not the current key anymore (someone else rotated),
+            # we don't need to rotate again.
+            if failed_key and failed_key != self._keys[self._current_index]:
+                logger.info(f"Skipping redundant rotation. Failed key {failed_key[-6:]} != current key {self._keys[self._current_index][-6:]}")
+                return True # Treat as success since the system already rotated
+
             return self._rotate_key_locked(reason, is_permanent)
 
     def _rotate_key_locked(
@@ -564,10 +575,11 @@ class SerpApiClient:
                     # Robust Rotation Loop: Continue trying other keys until success or exhaustion
                     is_err, is_perm = self._is_quota_error(response)
                     while is_err:
+                        failed_key = params.get("api_key")
                         logger.warning(
                             f"Key {self._key_manager.current_key_index} encountered {'PERMANENT' if is_perm else 'TEMPORARY'} limit. Rotating..."
                         )
-                        if self._key_manager.rotate_key(is_permanent=is_perm):
+                        if self._key_manager.rotate_key(failed_key=failed_key, is_permanent=is_perm):
                             params["api_key"] = self.api_key
                             response = await client.get(SERPAPI_BASE_URL, params=params)
                             is_err, is_perm = self._is_quota_error(response)
@@ -662,10 +674,11 @@ class SerpApiClient:
                 # Robust Rotation Loop: Continue trying other keys until success or exhaustion
                 is_err, is_perm = self._is_quota_error(response)
                 while is_err:
+                    failed_key = params.get("api_key")
                     logger.warning(
                         f"Key {self._key_manager.current_key_index} encountered {'PERMANENT' if is_perm else 'TEMPORARY'} limit. Rotating..."
                     )
-                    if self._key_manager.rotate_key(is_permanent=is_perm):
+                    if self._key_manager.rotate_key(failed_key=failed_key, is_permanent=is_perm):
                         params["api_key"] = self.api_key
                         response = await client.get(SERPAPI_BASE_URL, params=params)
                         is_err, is_perm = self._is_quota_error(response)
