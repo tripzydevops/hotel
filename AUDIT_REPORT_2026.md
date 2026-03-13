@@ -27,7 +27,7 @@ The **Hotel Rate Sentinel** project is in a **Healthy** state with a highly modu
 ### 🏥 Database Health
 - **[HEALTHY] Indexing:** High-performance HNSW indices for vectors and B-Tree indices for core search fields (`user_id`, `hotel_id`).
 - **[HEALTHY] Maintenance:** Automated session pruning and zombie session cleanup are active in the scheduler.
-- **[KAIZEN] Optimization:** Recommendation to add an index on `hotels(deleted_at)` to optimize soft-delete filtering.
+- [HEALTHY] Optimization: Presence of index on `hotels(deleted_at)` confirmed for optimized soft-delete filtering.
 
 ### ⚠️ Areas for Improvement
 - **Frontend Dependencies:** 7 vulnerabilities (6 High) found in `package.json`. Recommended action: `npm audit fix`.
