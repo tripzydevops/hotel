@@ -123,10 +123,8 @@ class ApiKeyManager:
                         self._exhausted_keys[api_key] = datetime.now()
                     else:
                         # If left > 0, it's healthy. Clear all lockout statuses immediately.
-                        if api_key in self._exhausted_keys:
-                            del self._exhausted_keys[api_key]
-                        if api_key in self._rate_limited_keys:
-                            del self._rate_limited_keys[api_key]
+                        self._exhausted_keys.pop(api_key, None)
+                        self._rate_limited_keys.pop(api_key, None)
 
                     return left
         except Exception as e:
@@ -154,7 +152,7 @@ class ApiKeyManager:
                     if datetime.now().date() >= r_date.date():
                         if current_key in self._exhausted_keys:
                             logger.info(f"Key {current_key[-5:]} renewal date {renewal_str} reached. Clearing exhaustion.")
-                            del self._exhausted_keys[current_key]
+                            self._exhausted_keys.pop(current_key, None)
                 except Exception as e:
                     logger.warning(f"Healing parse error for {renewal_str}: {e}")
 
@@ -185,13 +183,13 @@ class ApiKeyManager:
                 if now - self._exhausted_keys[key] <= self._exhaustion_cooldown:
                     is_valid = False
                 else:
-                    del self._exhausted_keys[key]  # Cleanup
+                    self._exhausted_keys.pop(key, None)  # Cleanup
             
             if is_valid and key in self._rate_limited_keys:
                 if now - self._rate_limited_keys[key] <= self._rate_limit_cooldown:
                     is_valid = False
                 else:
-                    del self._rate_limited_keys[key]  # Cleanup
+                    self._rate_limited_keys.pop(key, None)  # Cleanup
 
             if is_valid:
                 active += 1
@@ -252,13 +250,13 @@ class ApiKeyManager:
             is_limited = False
             if next_key in self._exhausted_keys:
                 if datetime.now() - self._exhausted_keys[next_key] > self._exhaustion_cooldown:
-                    del self._exhausted_keys[next_key]
+                    self._exhausted_keys.pop(next_key, None)
                 else:
                     is_limited = True
 
             if not is_limited and next_key in self._rate_limited_keys:
                 if datetime.now() - self._rate_limited_keys[next_key] > self._rate_limit_cooldown:
-                    del self._rate_limited_keys[next_key]
+                    self._rate_limited_keys.pop(next_key, None)
                 else:
                     is_limited = True
 
@@ -575,7 +573,7 @@ class SerpApiClient:
                     # Robust Rotation Loop: Continue trying other keys until success or exhaustion
                     is_err, is_perm = self._is_quota_error(response)
                     while is_err:
-                        failed_key = params.get("api_key")
+                        failed_key = str(params.get("api_key", ""))
                         logger.warning(
                             f"Key {self._key_manager.current_key_index} encountered {'PERMANENT' if is_perm else 'TEMPORARY'} limit. Rotating..."
                         )
@@ -674,7 +672,7 @@ class SerpApiClient:
                 # Robust Rotation Loop: Continue trying other keys until success or exhaustion
                 is_err, is_perm = self._is_quota_error(response)
                 while is_err:
-                    failed_key = params.get("api_key")
+                    failed_key = str(params.get("api_key", ""))
                     logger.warning(
                         f"Key {self._key_manager.current_key_index} encountered {'PERMANENT' if is_perm else 'TEMPORARY'} limit. Rotating..."
                     )
@@ -779,7 +777,7 @@ class SerpApiClient:
                 target_token = best_match.get("property_token") or best_match.get(
                     "hotel_id"
                 )
-                target_name = best_match.get("name", "").lower()
+                target_name = str(best_match.get("name", "")).lower()
 
                 for idx, prop in enumerate(properties):
                     prop_token = prop.get("property_token") or prop.get("hotel_id")
@@ -830,8 +828,8 @@ class SerpApiClient:
             ),
             "reviews": best_match.get("reviews", []),
             "search_rank": rank,
-            "latitude": best_match.get("gps_coordinates", {}).get("latitude"),
-            "longitude": best_match.get("gps_coordinates", {}).get("longitude"),
+            "latitude": (best_match.get("gps_coordinates") or {}).get("latitude"),
+            "longitude": (best_match.get("gps_coordinates") or {}).get("longitude"),
             "raw_data": best_match,
         }
 
@@ -885,11 +883,12 @@ class SerpApiClient:
                 )
             else:
                 # Fallback: If we have an overall rating, use it (minus penalty to be conservative), else 0
-                fallback = (overall_rating - 0.5) if overall_rating else 0
+                fallback_rating = float(overall_rating) if overall_rating is not None else 0.0
+                fallback = max(0, fallback_rating - 0.5)
                 final_breakdown.append(
                     {
                         "name": cat,
-                        "rating": max(0, fallback),
+                        "rating": fallback,
                         "sentiment": "neutral",
                         "is_inferred": True,
                     }

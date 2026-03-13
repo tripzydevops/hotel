@@ -401,7 +401,8 @@ class AnalystAgent:
                         previous_price = convert_currency(prev_entry["price"], prev_entry.get("currency", "USD"), currency)
                         alert = price_comparator.check_threshold_breach(current_price, previous_price, threshold)
                         if alert:
-                            await self.log_reasoning(session_id, "Alert", f"Threshold Breach Verified: {current_price} vs {previous_price} ({alert.get('change_percent')}%).", "error")
+                            change_pct = abs((current_price - previous_price) / previous_price) * 100 if previous_price else 0
+                            await self.log_reasoning(session_id, "Alert", f"Threshold Breach Verified: {current_price} vs {previous_price} ({change_pct:.1f}%).", "error")
                             alerts_to_insert.append({"user_id": str(user_id), "hotel_id": hotel_id, **alert})
                         else:
                             await self.log_reasoning(session_id, "Validation", f"Price stable for {hotel_id}. No threshold breach detected.", "info")

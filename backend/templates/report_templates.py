@@ -1,9 +1,12 @@
 import os
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # Get the path to the templates directory
 TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__))
-jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
+jinja_env = Environment(
+    loader=FileSystemLoader(TEMPLATES_DIR),
+    autoescape=select_autoescape(['html', 'xml'])
+)
 
 def build_deep_ocean_briefing_html(
     report_type_clean: str,
