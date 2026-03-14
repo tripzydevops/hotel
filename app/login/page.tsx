@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -26,6 +28,14 @@ export default function LoginPage() {
       const result = isLogin 
         ? await signIn(email, password)
         : await signUp(email, password);
+
+      setDebugInfo({
+        baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+        isLogin,
+        email,
+        result
+      });
 
       if ('error' in result && result.error) {
         setError(typeof result.error === 'string' ? result.error : (result.error as any).message || "Auth failed");
@@ -152,6 +162,25 @@ export default function LoginPage() {
         <div className="mt-8 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-bold opacity-50">
           {t("auth.protectedText")}
         </div>
+
+        <button 
+          onClick={() => setShowDebug(!showDebug)}
+          className="mt-4 block mx-auto text-[10px] text-white/20 hover:text-white/50"
+        >
+          {showDebug ? "Hide Debug" : "Show Debug"}
+        </button>
+
+        {showDebug && (
+          <div className="mt-4 p-4 bg-black/80 rounded-xl border border-white/10 text-[10px] font-mono text-green-400 overflow-auto max-h-48">
+            <pre>{JSON.stringify({
+              config: {
+                baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+                anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'missing'
+              },
+              lastResult: debugInfo
+            }, null, 2)}</pre>
+          </div>
+        )}
       </div>
     </div>
   );
