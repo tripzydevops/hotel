@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/p-api/:path*",
-      "destination": "/backend-api/index.py"
+      "destination": "/api/index.py"
     }
   ]
 }
