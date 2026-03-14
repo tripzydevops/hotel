@@ -4,7 +4,7 @@ export default InsforgeMiddleware({
   baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app',
   signInUrl: '/login',
   useBuiltInAuth: false,
-  publicRoutes: ['/((?!dashboard|admin|profile|settings).*)'], // Protect dashboard, admin, etc.
+  publicRoutes: ['/', '/login', '/api/auth', '/auth/callback'],
 });
 
 export const config = {
