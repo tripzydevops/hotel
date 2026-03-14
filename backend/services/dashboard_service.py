@@ -18,7 +18,10 @@ from backend.utils.sentiment_utils import (
     translate_breakdown,
     synthesize_value_score,
 )
-from backend.services.analysis_service import generate_synthetic_narrative
+from backend.services.analysis_service import (
+    generate_synthetic_narrative,
+    calculate_rate_recommendation,
+)
 
 logger = get_logger(__name__)
 
@@ -35,7 +38,7 @@ async def get_dashboard_logic(
     """
 
     # 0. Core Fallback
-    fallback_data = {
+    fallback_data: Dict[str, Any] = {
         "target_hotel": None,
         "competitors": [],
         "recent_searches": [],
@@ -80,10 +83,10 @@ async def get_dashboard_logic(
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
         # 1. User Profile
-        profile_res = db.table("user_profiles").select("*").eq("user_id", str(user_id)).single().execute()
+        profile_res = db.table("user_profiles").select("*").eq("user_id", str(user_id)).maybe_single().execute()
         
         # 2. User Settings
-        settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).single().execute()
+        settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).maybe_single().execute()
         
         # 3. Unread Alerts
         alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
@@ -95,10 +98,11 @@ async def get_dashboard_logic(
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
         
         # 6. Hotels (Bulk Fetch)
+        # KAİZEN: Using .is_("deleted_at", "null") is standard but we'll add extra safety
         hotels_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
         
         # 7. Core Profile (for next_scan_at)
-        core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).single().execute()
+        core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).maybe_single().execute()
 
         user_profile = (
             profile_res.data if profile_res and hasattr(profile_res, "data") else {}
@@ -135,14 +139,18 @@ async def get_dashboard_logic(
             )
             scan_history = hist_res.data or []
 
+        # [KAIZEN] Resilient Fallback
+        # If no hotels are found, we still return sessions, searches, and profile
+        # to ensure the UI tiles don't look broken/desynchronized.
         if not all_hotels:
-            fallback_data.update(
-                {
-                    "profile": user_profile,
-                    "user_settings": user_settings,
-                    "unread_alerts_count": unread_count,
-                }
-            )
+            logger.info(f"Dashboard: No hotels found for {user_id}, returning metadata only.")
+            # [KAIZEN] Direct field assignment avoids typing.MutableMapping.update errors in strict linters
+            fallback_data["profile"] = user_profile
+            fallback_data["user_settings"] = user_settings
+            fallback_data["unread_alerts_count"] = unread_count
+            fallback_data["recent_searches"] = []
+            fallback_data["recent_sessions"] = recent_sessions
+            fallback_data["scan_history"] = []
             return fallback_data
 
         # 2. Enrich Hotels with Master Directory data
@@ -332,7 +340,7 @@ async def get_dashboard_logic(
             )
 
         # 5. Value Synthesis
-        market_avg = sum(active_prices) / len(active_prices) if active_prices else 0
+        market_avg: float = sum(active_prices) / len(active_prices) if active_prices else 0.0
         market_avg_rating = (
             sum(float(h.get("rating") or 0) for h in enriched_hotels)
             / len(enriched_hotels)
@@ -344,7 +352,7 @@ async def get_dashboard_logic(
             value_pillar = next((p for p in sentiment if p["name"] == "Value"), None)
             if value_pillar and value_pillar.get("total_mentioned", 0) == 0:
                 price_info = hotel_data["price_info"]
-                if price_info and market_avg > 0:
+                if price_info and isinstance(market_avg, (int, float)) and market_avg > 0:
                     ari = (price_info["current_price"] / market_avg) * 100
                     value_pillar.update(synthesize_value_score(ari))
 
@@ -389,19 +397,19 @@ async def get_dashboard_logic(
                         ts = h["price_history"][0]["recorded_at"]
                         if latest is None or ts > latest:
                             latest = ts
-                if latest:
-                    last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
-                    next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
+                if latest and isinstance(latest, str):
+                    try:
+                        last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
+                        next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(f"Failed to parse latest scan date '{latest}': {e}")
 
         # 8. Dynamic Market Insight (Sentiment Page bridging)
         synthetic_narrative = "No strategic narrative available yet. Run a scan to generate AI insights."
         comp_limit = 5  # Default comparison limit for dashboard UI
         if target_hotel and market_avg > 0:
             try:
-                from backend.services.analysis_service import (
-                    generate_synthetic_narrative,
-                    calculate_rate_recommendation,
-                )
+                # [KAIZEN] Standardized top-level imports used here
 
                 target_price = target_hotel.get("price_info", {}).get("current_price")
                 if target_price and market_avg > 0 and market_avg_rating > 0:

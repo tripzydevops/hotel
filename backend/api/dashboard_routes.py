@@ -3,7 +3,7 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
-from backend.services.dashboard_service import get_dashboard_logic
+from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -34,7 +34,7 @@ async def get_global_pulse(db: Client = Depends(get_supabase)):
     Fetches recent price drops discovered by the Global Pulse network.
     Anonymized and available to all users to show 'Community Intelligence'.
     """
-    from backend.services.dashboard_service import get_recent_wins
+    # [KAIZEN] Standardized top-level import used here
 
     wins = await get_recent_wins(db)
     return JSONResponse(content=jsonable_encoder(wins))
