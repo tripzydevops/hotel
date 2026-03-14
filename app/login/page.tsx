@@ -165,9 +165,9 @@ export default function LoginPage() {
 
         <button 
           onClick={() => setShowDebug(!showDebug)}
-          className="mt-4 block mx-auto text-[10px] text-white/20 hover:text-white/50"
+          className="mt-6 block mx-auto text-[11px] px-4 py-1.5 rounded-full border border-white/10 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all"
         >
-          {showDebug ? "Hide Debug" : "Show Debug"}
+          {showDebug ? "Hide Debug System" : "Show Debug System"}
         </button>
 
         {showDebug && (
