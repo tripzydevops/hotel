@@ -143,12 +143,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
+    from fastapi import HTTPException
     if isinstance(exc, HTTPException):
-        # Cast to HTTPException for type safety in some linters
-        h_exc: HTTPException = exc 
         return JSONResponse(
-            status_code=h_exc.status_code,
-            content={"detail": h_exc.detail},
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
         )
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
