@@ -158,8 +158,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     traceback.print_exc()
 
     # EXPLANATION: Debug-Friendly Error Response
-    # We include the exception message in the response to help debug cloud-specific issues.
-    # In a strict production environment, this should be logged to Sentry/Datadog and masked.
     return JSONResponse(
         status_code=500,
         content={"detail": f"Internal Server Error: {str(exc)}"},
@@ -207,7 +205,7 @@ async def system_report(db: Client = Depends(get_supabase)):
     }
 
     # 2. Database Connectivity & Table Check
-    db_results = {}
+    db_results: dict[str, Any] = {}
     tables_to_check = ["hotels", "settings", "price_logs", "scan_sessions", "alerts"]
 
     if not db:
@@ -222,7 +220,7 @@ async def system_report(db: Client = Depends(get_supabase)):
                 db_results[table] = {"status": "FAILED", "error": str(e)}
 
     # 3. Memory & Health (Optional Diagnostic)
-    process_stats = {"status": "psutil_not_installed"}
+    process_stats: dict[str, Any] = {"status": "psutil_not_installed"}
     try:
         import psutil
 
