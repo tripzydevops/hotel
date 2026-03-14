@@ -11,9 +11,10 @@ from datetime import datetime, timezone
 # Ensure backend module is resolvable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request, Depends, BackgroundTasks
+from fastapi import FastAPI, Request, Depends, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
+import traceback
 
 # GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
@@ -137,17 +138,17 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # "Implement centralized error handling". Traces are logged server-side only.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    import traceback
-    from fastapi import HTTPException
-
+    """
+    Global exception handler for all unhandled errors.
+    Ensures internal tracing is logged but not exposed to client.
+    """
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
-    from fastapi import HTTPException
     if isinstance(exc, HTTPException):
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": exc.detail},
+            content={"detail": str(exc.detail)}
         )
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")

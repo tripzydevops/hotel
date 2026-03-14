@@ -14,10 +14,18 @@ import {
   Report,
 } from "@/types";
 
-const isProduction = process.env.NODE_ENV === "production";
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (isProduction ? "/p-api" : "http://localhost:8000");
+// EXPLANATION: Environment-aware API Configuration
+//
+// Dynamically resolves the API base URL. Use localhost in development
+// and a relative proxy path (/p-api) in production to avoid CORS blocks
+// across varying Vercel deployment URLs and preview environments.
+
+const isProduction = process.env.NODE_ENV === 'production' ||
+                    (typeof window !== 'undefined' && !window.location.hostname.includes('localhost'));
+
+export const API_BASE_URL = isProduction
+  ? '/p-api'
+  : 'http://localhost:8000';
 
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
