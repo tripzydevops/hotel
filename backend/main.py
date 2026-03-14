@@ -116,7 +116,9 @@ if not any(allowed_origins) or allowed_origins == [""]:
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
         "https://hotel-plus-official.vercel.app",
-        "https://hotel-rate-sentinel.vercel.app"
+        "https://hotel-rate-sentinel.vercel.app",
+        "https://hotel-jyikqr1lh-gulsah-alvers-projects.vercel.app",
+        "https://hotel-gulsah-alvers-projects.vercel.app"
     ]
 # KAİZEN: Dynamic Vercel Preview Support
 # We explicitly allow all *.vercel.app subdomains for preview deployments
