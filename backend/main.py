@@ -65,7 +65,8 @@ from backend.api import (
 app = FastAPI(
     title="Hotel Rate Sentinel API", 
     version="2026.02",
-    redirect_slashes=False
+    redirect_slashes=False,
+    root_path="/p-api"
 )
 
 # SECURITY MIDDLEWARE: Inject standard protection headers
