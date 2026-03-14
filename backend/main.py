@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Dict, Any
 
 # GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
