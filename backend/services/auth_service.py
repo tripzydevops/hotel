@@ -11,6 +11,8 @@ from supabase import Client
 
 
 from backend.utils.logger import get_logger
+import httpx
+from types import SimpleNamespace
 
 # EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
@@ -45,15 +47,40 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
     and multi-tenant visibility.
     """
     try:
-        # Call Supabase to verify token
+        # Call InsForge to verify token
         try:
-            user_resp = db.auth.get_user(token)
-            if not user_resp or not user_resp.user:
-                raise HTTPException(status_code=401, detail="Supabase: Invalid Token")
-            user_obj = user_resp.user
+            auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "apikey": str(db.supabase_key)
+            }
+            
+            with httpx.Client() as client:
+                response = client.get(auth_url, headers=headers)
+                
+            if response.status_code == 200:
+                user_data = response.json().get("user")
+                if not user_data:
+                    raise HTTPException(status_code=401, detail="Invalid Admin Session Payload")
+                
+                # Mock a user object structure similar to Supabase User for compatibility
+                user_obj = SimpleNamespace(
+                    id=user_data.get("id"),
+                    email=user_data.get("email"),
+                    role=user_data.get("role", "authenticated"),
+                    app_metadata=user_data.get("app_metadata", {}),
+                    user_metadata=user_data.get("user_metadata", {})
+                )
+            else:
+                logger.error(f"InsForge Admin Auth Failed ({response.status_code}): {response.text[:200]}")
+                # Fallback
+                user_resp = db.auth.get_user(token)
+                if not user_resp or not user_resp.user:
+                    raise HTTPException(status_code=401, detail="InsForge: Invalid Token")
+                user_obj = user_resp.user
         except Exception as auth_e:
             raise HTTPException(
-                status_code=401, detail=f"Supabase Auth Error: {str(auth_e)}"
+                status_code=401, detail=f"InsForge Auth Error: {str(auth_e)}"
             )
 
         user_id = user_obj.id
@@ -103,12 +130,37 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
         try:
-            user_resp = db.auth.get_user(token)
-            if not user_resp or not getattr(user_resp, "user", None):
-                raise HTTPException(
-                    status_code=401, detail="Invalid Session or Expired Token (Supabase)"
+            # KAIZEN: Direct call to InsForge session endpoint to avoid SDK path mismatches
+            auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "apikey": str(db.supabase_key)
+            }
+            
+            with httpx.Client() as client:
+                response = client.get(auth_url, headers=headers)
+                
+            if response.status_code == 200:
+                user_data = response.json().get("user")
+                if not user_data:
+                    raise HTTPException(status_code=401, detail="Invalid Session Payload")
+                
+                # Mock a user object structure similar to Supabase User for compatibility
+                user = SimpleNamespace(
+                    id=user_data.get("id"),
+                    email=user_data.get("email"),
+                    role=user_data.get("role", "authenticated"),
+                    app_metadata=user_data.get("app_metadata", {}),
+                    user_metadata=user_data.get("user_metadata", {})
                 )
-            user = user_resp.user
+            else:
+                logger.error(f"InsForge Auth Failed ({response.status_code}): {response.text[:200]}")
+                # Fallback to Supabase SDK just in case
+                user_resp = db.auth.get_user(token)
+                if not user_resp or not getattr(user_resp, "user", None):
+                    raise HTTPException(status_code=401, detail=f"Authentication Failed: {response.text[:100]}")
+                user = user_resp.user
+                
         except Exception as auth_e:
             logger.error(f"Auth Token Verification Failed: {auth_e}")
             raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
