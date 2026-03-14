@@ -7,6 +7,7 @@ from fastapi import Depends
 import os
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
+from yarl import URL
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ def get_supabase() -> Client:
     return get_supabase_client()
 
 
-def get_supabase_client(jwt: str = None) -> Client:
+def get_supabase_client(jwt: str | None = None) -> Client | None:
     """
     Dependency to provide a Supabase client.
     Optionally accepts a JWT to enable Row-Level Security (RLS).
@@ -35,6 +36,8 @@ def get_supabase_client(jwt: str = None) -> Client:
         opts = ClientOptions(headers={"Authorization": f"Bearer {jwt}"})
         client = create_client(url, key, options=opts)
         client.postgrest.auth(jwt)
+        # Fix InsForge path issue: supabase-py appends /rest/v1 by default
+        client.postgrest.base_url = URL(f"{url}/")
         return client
 
     # Admin access using Service Role Key
@@ -54,8 +57,11 @@ def get_supabase_client(jwt: str = None) -> Client:
 
     try:
         if os.getenv("DEBUG_DB") == "1":
-            print(f"[DATABASE] Initializing client for {url} (Key prefix: {key[:10]}...)")
-        return create_client(url, key)
+            print(f"[DATABASE] Initializing client for {url}")
+        client = create_client(url, key)
+        # Fix InsForge path issue: supabase-py appends /rest/v1 by default
+        client.postgrest.base_url = URL(f"{url}/")
+        return client
     except Exception as e:
         print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
         return None

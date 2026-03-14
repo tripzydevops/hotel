@@ -27,12 +27,28 @@ export function createClient() {
     if (!browserService) {
       const instanceId = Math.random().toString(36).substring(7);
       console.log(`[SupabaseClient] Initializing singleton instance: ${instanceId}`);
-      browserService = createBrowserClient(url!, key!);
+      browserService = createBrowserClient(url!, key!, {
+        global: {
+          fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === "string" ? input : "url" in input ? input.url : input.toString();
+            const fixedUrl = url.replace("/rest/v1", "");
+            return fetch(fixedUrl, init);
+          },
+        },
+      });
       (browserService as any).__instanceId = instanceId;
     }
     return browserService;
   }
 
-  return createBrowserClient(url, key);
+  return createBrowserClient(url, key, {
+    global: {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : "url" in input ? input.url : input.toString();
+        const fixedUrl = url.replace("/rest/v1", "");
+        return fetch(fixedUrl, init);
+      },
+    },
+  });
 }
 
