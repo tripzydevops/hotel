@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { login, signup } from "./actions";
 import { useI18n } from "@/lib/i18n";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
+import { insforge } from "@/lib/insforge";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -16,11 +16,33 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const result = isLogin ? await login(formData) : await signup(formData);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
-    if (result?.error) {
-      setError(result.error);
+    const { data: signInData, error: signInError } = isLogin
+      ? await insforge.auth.signInWithPassword({ email, password })
+      : { data: null, error: null };
+      
+    const { data: signUpData, error: signUpError } = !isLogin
+      ? await insforge.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+          }
+        })
+      : { data: null, error: null };
+
+    const authError = isLogin ? signInError : signUpError;
+
+    if (authError) {
+      setError(authError.message);
       setIsLoading(false);
+    } else {
+      if (!isLogin && signUpData?.requireEmailVerification) {
+         setError("Please check your email to verify your account.");
+         setIsLoading(false);
+      }
     }
   };
 

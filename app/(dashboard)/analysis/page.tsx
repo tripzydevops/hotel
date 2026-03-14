@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
+import { insforge } from "@/lib/insforge";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
 import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
@@ -38,6 +38,8 @@ import SubscriptionModal from "@/components/modals/SubscriptionModal";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import { useModalContext } from "@/components/ui/ModalContext";
 
+import { useAuth } from "@/hooks/useAuth";
+
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",
@@ -48,7 +50,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 export default function AnalysisPage() {
   const { t, locale } = useI18n();
-  const supabase = createClient();
+  const { userId } = useAuth();
   /* Modal Context */
   const {
     setIsProfileOpen,
@@ -57,7 +59,6 @@ export default function AnalysisPage() {
     setIsBillingOpen,
   } = useModalContext();
 
-  const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<string>("TRY");
@@ -85,26 +86,6 @@ export default function AnalysisPage() {
 
     setStartDate(firstDay.toISOString().split("T")[0]);
     setEndDate(lastDay.toISOString().split("T")[0]);
-  }, []);
-
-  useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-        try {
-          const userProfile = await api.getProfile();
-          // Profile handled by DashboardLayout now
-        } catch (e) {
-          console.error("Failed to fetch profile", e);
-        }
-      } else {
-        window.location.href = "/login";
-      }
-    };
-    getSession();
   }, []);
 
   const loadData = useCallback(async () => {

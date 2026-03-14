@@ -1,9 +1,10 @@
 "use client";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { createClient } from "@/utils/supabase/client";
+import { insforge } from "@/lib/insforge";
 import { Calendar, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
@@ -11,9 +12,8 @@ import CalendarControls from "@/components/features/analysis/CalendarControls";
 
 export default function CalendarPage() {
   const { t } = useI18n();
-  const supabase = createClient();
+  const { userId } = useAuth();
 
-  const [userId, setUserId] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<string>("TRY");
@@ -31,20 +31,6 @@ export default function CalendarPage() {
     d.setDate(d.getDate() - 4);
     return d;
   });
-
-  useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-      } else {
-        window.location.href = "/login";
-      }
-    };
-    getSession();
-  }, []);
 
   const loadData = useCallback(async () => {
     if (!userId) return;

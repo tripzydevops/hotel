@@ -29,10 +29,9 @@ export function useAnalysisStream(userId: string | undefined, roomType: string =
         setError(null);
         setNarrative('');
 
-        const { createClient } = await import('@/utils/supabase/client');
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+        const { insforge } = await import('@/lib/insforge');
+        const { data: { session } } = await insforge.auth.getCurrentSession();
+        const token = session?.accessToken;
 
         if (!isMounted) return;
 

@@ -1,21 +1,14 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/utils/supabase/middleware";
+import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
-}
+export const proxy = InsforgeMiddleware({
+  baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app',
+  publicRoutes: ['/', '/login', '/signup', '/api(.*)', '/pricing', '/contact', '/about'],
+});
 
 export default proxy;
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - Public assets (svg, png, jpg, etc)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

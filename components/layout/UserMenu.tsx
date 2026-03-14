@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { User, LogOut, Settings, CreditCard, ChevronDown } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import { api } from "@/lib/api";
+import { insforge } from "@/lib/insforge";
 
 interface UserMenuProps {
   profile?: any;
@@ -25,7 +25,6 @@ export default function UserMenu({
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<any>(initialProfile);
   const [prevInitialProfile, setPrevInitialProfile] = useState<any>(initialProfile);
-  const supabase = createClient();
 
   if (initialProfile !== prevInitialProfile) {
     setProfile(initialProfile);
@@ -33,7 +32,7 @@ export default function UserMenu({
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await insforge.auth.signOut();
     window.location.href = "/login";
   };
 

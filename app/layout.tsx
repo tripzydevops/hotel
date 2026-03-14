@@ -15,6 +15,7 @@ import { ModalProvider } from "@/components/ui/ModalContext";
 import QueryProvider from "@/components/providers/QueryProvider";
 
 import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
+import { InsforgeProvider } from "./providers";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -40,19 +41,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${montserrat.variable} ${inter.variable} antialiased`}>
-        <I18nProvider>
-          <ThemeProvider>
-            <QueryProvider>
-              <ToastProvider>
-                <ModalProvider>
-                  <ServiceWorkerProvider>
-                    {children}
-                  </ServiceWorkerProvider>
-                </ModalProvider>
-              </ToastProvider>
-            </QueryProvider>
-          </ThemeProvider>
-        </I18nProvider>
+        <InsforgeProvider>
+          <I18nProvider>
+            <ThemeProvider>
+              <QueryProvider>
+                <ToastProvider>
+                  <ModalProvider>
+                    <ServiceWorkerProvider>
+                      {children}
+                    </ServiceWorkerProvider>
+                  </ModalProvider>
+                </ToastProvider>
+              </QueryProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </InsforgeProvider>
       </body>
     </html>
   );

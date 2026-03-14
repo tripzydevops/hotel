@@ -22,7 +22,6 @@ import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { getCurrencySymbol } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
-import { createClient } from "@/utils/supabase/client";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";

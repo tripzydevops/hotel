@@ -10,7 +10,6 @@ import TargetHotelTile from "@/components/tiles/TargetHotelTile";
 import CompetitorTile from "@/components/tiles/CompetitorTile";
 import { RefreshCw, Plus, Zap, Cpu, Info } from "lucide-react";
 import { api } from "@/lib/api";
-import { createClient } from "@/utils/supabase/client";
 import {
   DashboardData,
   UserSettings,

@@ -1,30 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { api } from "@/lib/api";
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DebugDataPage() {
-  const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-        fetchData(session.user.id);
-      }
-    };
-    getSession();
-  }, []);
+    if (userId) {
+      fetchData(userId);
+    }
+  }, [userId]);
 
   const fetchData = async (uid: string) => {
     setLoading(true);

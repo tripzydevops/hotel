@@ -1,26 +1,21 @@
 "use client";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { insforge } from "@/lib/insforge";
 import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import { Radar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
 export default function DiscoveryPage() {
-  const supabase = createClient();
-
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId, loading: authLoading } = useAuth();
   const [hotelId, setHotelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        setUserId(session.user.id);
+    if (!userId) return;
+    const fetchHotel = async () => {
         // Get hotel ID from analysis endpoint
         try {
           const result = await api.getAnalysisWithFilters("");
@@ -28,13 +23,10 @@ export default function DiscoveryPage() {
         } catch (e) {
           console.error("Failed to get hotel ID", e);
         }
-      } else {
-        window.location.href = "/login";
-      }
-      setLoading(false);
+        setLoading(false);
     };
-    getSession();
-  }, [supabase]);
+    fetchHotel();
+  }, [userId]);
 
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] p-8">

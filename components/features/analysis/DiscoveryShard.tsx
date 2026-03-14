@@ -57,11 +57,8 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
     setTrackingId(rival.id);
     try {
       // 1. Get current user
-      const { createClient } = await import("@/utils/supabase/client");
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { insforge } = await import("@/lib/insforge");
+      const { data: { session } } = await insforge.auth.getCurrentSession();
 
       if (!session?.user?.id) throw new Error("No user session");
 

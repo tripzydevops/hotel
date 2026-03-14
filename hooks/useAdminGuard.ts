@@ -2,35 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@insforge/nextjs";
+import { insforge } from "@/lib/insforge";
 
 export function useAdminGuard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const supabase = createClient();
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     const checkAdmin = async () => {
+      if (!isLoaded) return;
+      
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
+        if (!user) {
           router.push("/login"); // Or admin login
           return;
         }
 
-        // Check profile for admin role or email whitelist
-        // For MVP, checking specific email or metadata
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+        // Determine role from SDK profile metadata if present, or just use email checks
+        const role = (user.profile as any)?.role?.toLowerCase() || "";
 
         // Hardcoded admin email for safety if role missing
-        const userEmail = session.user.email?.toLowerCase() || "";
+        const userEmail = user.email?.toLowerCase() || "";
         const isAdminEmail =
           userEmail === "admin@hotel.plus" ||
           userEmail.endsWith("@tripzy.travel") ||
@@ -39,7 +34,6 @@ export function useAdminGuard() {
           userEmail === "askinsezen@gmail.com";
 
         // This is Client-Side UI Guard only. Backend must enforce real security.
-        const role = profile?.role?.toLowerCase();
         const isRoleAdmin =
           role === "admin" ||
           role === "market_admin" ||
@@ -52,7 +46,7 @@ export function useAdminGuard() {
         ) {
           setAuthorized(true);
         } else {
-          console.warn("Unauthorized Admin Access Attempt", session.user.id);
+          console.warn("Unauthorized Admin Access Attempt", user.id);
           router.push("/");
         }
       } catch (e) {
@@ -64,7 +58,7 @@ export function useAdminGuard() {
     };
 
     checkAdmin();
-  }, [router, supabase]);
+  }, [router, user, isLoaded]);
 
-  return { loading, authorized };
+  return { loading: loading || !isLoaded, authorized };
 }

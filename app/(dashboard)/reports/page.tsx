@@ -60,7 +60,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { ScanSession, MarketAnalysis } from "@/types";
-import { createClient } from "@/utils/supabase/client";
+import { insforge } from "@/lib/insforge";
 import dynamic from "next/dynamic";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 import { motion } from "framer-motion";
@@ -1029,7 +1029,6 @@ export default function ReportsPage() {
   const { t, locale } = useI18n();
   const { userId } = useAuth();
   const { toast } = useToast();
-  const supabase = createClient();
   const { data: dashboardData, loading: dashLoading } = useDashboard(userId, t);
 
   const [currency, setCurrency] = useState("TRY");

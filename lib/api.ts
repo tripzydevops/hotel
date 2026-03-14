@@ -21,7 +21,6 @@ const API_BASE_URL =
 
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
-  private supabase: any = null;
 
   public async getHeaders(): Promise<HeadersInit> {
     const token = await this.getToken();
@@ -36,48 +35,9 @@ class ApiClient {
 
   private async getToken(): Promise<string | null> {
     try {
-      if (!this.supabase) {
-        const { createClient } = await import("@/utils/supabase/client");
-        this.supabase = createClient();
-      }
-      
-      let { data: { session }, error } = await this.supabase.auth.getSession();
-      
-      if (error) {
-        console.warn("[ApiClient] Auth session error:", error);
-        return null;
-      }
-      
-      let token = session?.access_token || null;
-      
-      // EXPLANATION: Aggressive Hydration Guard
-      // If we have no token, check if a user exists. If user exists but no session,
-      // it might be a hydration lag. We retry up to 3 times with backoff.
-      if (!token) {
-        const { data: { user } } = await this.supabase.auth.getUser();
-        if (user) {
-          const timestamp = new Date().toISOString();
-          console.log(`[${timestamp}] [ApiClient] User detected (${user.id}) but NO session. Starting recovery...`);
-          const retries = [500, 1000, 2000];
-          for (let i = 0; i < retries.length; i++) {
-            console.log(`[ApiClient] Recovery attempt ${i + 1}/${retries.length} (waiting ${retries[i]}ms)...`);
-            await new Promise(resolve => setTimeout(resolve, retries[i]));
-            const retry = await this.supabase.auth.getSession();
-            token = retry.data.session?.access_token || null;
-            if (token) {
-              console.log("[ApiClient] Session RECOVERED successfully.");
-              break;
-            }
-          }
-          if (!token) {
-            console.error("[ApiClient] CRITICAL: Session still missing after multiple retries for user:", user.id);
-          }
-        } else {
-          console.log("[ApiClient] No user and no session found.");
-        }
-      }
-      
-      return token;
+      const { insforge } = await import("@/lib/insforge");
+      const { data: { session } } = await insforge.auth.getCurrentSession();
+      return session?.accessToken || null;
     } catch (e) {
       console.error("[ApiClient] Unexpected error getting token:", e);
       return null;
