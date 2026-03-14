@@ -20,8 +20,11 @@ import {
 // and a relative proxy path (/p-api) in production to avoid CORS blocks
 // across varying Vercel deployment URLs and preview environments.
 
-const isProduction = process.env.NODE_ENV === 'production' ||
-                    (typeof window !== 'undefined' && !window.location.hostname.includes('localhost'));
+const isProduction = process.env.NODE_ENV === 'production' || 
+                    process.env.VERCEL_ENV === 'production' ||
+                    (typeof window !== 'undefined' && 
+                     !window.location.hostname.includes('localhost') && 
+                     !window.location.hostname.includes('127.0.0.1'));
 
 export const API_BASE_URL = isProduction
   ? '/p-api'
