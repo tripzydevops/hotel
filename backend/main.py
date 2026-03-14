@@ -61,7 +61,12 @@ from backend.api import (
 # because our routers already include the "/api" prefix. Setting it
 # causes FastAPI to strip "/api" from incoming requests, making them
 # fail to match the registered routes (Double Prefixing Conflict).
-app = FastAPI(title="Hotel Rate Sentinel API", version="2026.02")
+# KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
+app = FastAPI(
+    title="Hotel Rate Sentinel API", 
+    version="2026.02",
+    redirect_slashes=False
+)
 
 # SECURITY MIDDLEWARE: Inject standard protection headers
 @app.middleware("http")
@@ -150,9 +155,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
     if isinstance(exc, HTTPException):
+        # Cast to HTTPException for type safety in some linters
+        h_exc: HTTPException = exc 
         return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": exc.detail},
+            status_code=h_exc.status_code,
+            content={"detail": h_exc.detail},
         )
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
