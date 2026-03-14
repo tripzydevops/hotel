@@ -103,6 +103,7 @@ export default function DashboardLayout({
   const getPageTitle = () => {
     switch (pathname) {
       case "/":
+      case "/dashboard":
         return "Rate Intelligence Grid";
       case "/parity-monitor":
         return "Inventory Control";

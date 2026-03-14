@@ -71,7 +71,7 @@ export default function Sidebar({
   const navItems = [
     {
       label: "Market Price Search",
-      href: "/",
+      href: "/dashboard",
       icon: LayoutGrid,
     },
     {
@@ -100,13 +100,13 @@ export default function Sidebar({
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {/* Market Price Search */}
         <Link
-          href="/"
-          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/"
+          href="/dashboard"
+          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/dashboard"
             ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
             : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
         >
-          {pathname === "/" && (
+          {pathname === "/dashboard" && (
             <motion.div
               layoutId="activeTab"
               className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
@@ -116,7 +116,7 @@ export default function Sidebar({
           <span className="text-sm font-bold tracking-tight">
             Market Price Search
           </span>
-          {pathname === "/" && (
+          {pathname === "/dashboard" && (
             <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
           )}
         </Link>

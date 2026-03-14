@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, TrendingDown, Clock, Zap, Users, Building2, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { API_BASE_URL } from '@/lib/api';
 
 interface pulseWin {
   hotel_name: string;
@@ -30,7 +31,7 @@ export const GlobalPulseFeed: React.FC = () => {
 
   const fetchPulse = async () => {
     try {
-      const res = await fetch('/api/global-pulse');
+      const res = await fetch(`${API_BASE_URL}/api/global-pulse`);
       if (res.ok) {
         const data = await res.json();
         setWins(data);
@@ -47,7 +48,7 @@ export const GlobalPulseFeed: React.FC = () => {
   // on the client gives a good balance of freshness vs network usage.
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/global-pulse/stats');
+      const res = await fetch(`${API_BASE_URL}/api/global-pulse/stats`);
       if (res.ok) {
         const data = await res.json();
         setStats(data);
