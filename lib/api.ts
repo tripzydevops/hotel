@@ -17,7 +17,7 @@ import {
 const isProduction = process.env.NODE_ENV === "production";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  (isProduction ? "" : "http://localhost:8000");
+  (isProduction ? "https://hotel-delta-green.vercel.app" : "http://localhost:8000");
 
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
