@@ -4,10 +4,13 @@ import Image from "next/image";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
-import { insforge } from "@/lib/insforge";
+import { useAuth } from "@insforge/nextjs";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { t } = useI18n();
+  const { signIn, signUp } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,30 +22,26 @@ export default function LoginPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const { data: signInData, error: signInError } = isLogin
-      ? await insforge.auth.signInWithPassword({ email, password })
-      : { data: null, error: null };
-      
-    const { data: signUpData, error: signUpError } = !isLogin
-      ? await insforge.auth.signUp({ 
-          email, 
-          password,
-          options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
-          }
-        })
-      : { data: null, error: null };
+    try {
+      const result = isLogin 
+        ? await signIn(email, password)
+        : await signUp(email, password);
 
-    const authError = isLogin ? signInError : signUpError;
-
-    if (authError) {
-      setError(authError.message);
-      setIsLoading(false);
-    } else {
-      if (!isLogin && signUpData?.requireEmailVerification) {
-         setError("Please check your email to verify your account.");
-         setIsLoading(false);
+      if ('error' in result && result.error) {
+        setError(typeof result.error === 'string' ? result.error : (result.error as any).message || "Auth failed");
+        setIsLoading(false);
+      } else {
+        // Success
+        if (!isLogin && (result as any).requireEmailVerification) {
+          setError("Please check your email to verify your account.");
+          setIsLoading(false);
+        } else {
+          router.push("/dashboard");
+        }
       }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+      setIsLoading(false);
     }
   };
 
@@ -76,7 +75,13 @@ export default function LoginPage() {
         )}
 
         {/* Form Section */}
-        <form action={handleSubmit} className="space-y-5 relative z-10">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(new FormData(e.currentTarget));
+          }} 
+          className="space-y-5 relative z-10"
+        >
           <div className="space-y-1">
             <label
               htmlFor="email"

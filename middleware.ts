@@ -2,6 +2,7 @@ import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
 
 export default InsforgeMiddleware({
   baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app',
+  signInUrl: '/login',
   publicRoutes: ['/((?!dashboard|admin|profile|settings).*)'], // Protect dashboard, admin, etc.
 });
 
