@@ -17,6 +17,7 @@ class ScraperAgent:
 
     def __init__(self, db: Client):
         self.db = db
+        self._log_buffer = {}
 
     # EXPLANATION: [Global Pulse Phase 2] — Feature C: Room Type Normalization Map
     # Turkish hotel systems often use localized room names. This map allows
@@ -61,7 +62,7 @@ class ScraperAgent:
         return lowered  # Return original lowered if no match
 
     async def _check_global_cache(
-        self, serp_api_id: str, check_in_date: date, requested_room_type: str = None
+        self, serp_api_id: str, check_in_date: date, requested_room_type: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         [Global Pulse] Checks if ANY user has scanned this hotel for this date
@@ -143,7 +144,7 @@ class ScraperAgent:
 
     async def log_reasoning(
         self,
-        session_id: UUID,
+        session_id: Optional[UUID],
         step: str,
         message: str,
         level: str = "info",
@@ -179,6 +180,7 @@ class ScraperAgent:
             return
 
         try:
+            import json
             # HYPERSPEED KAIZEN: Single atomic append instead of n+1 reads
             res = (
                 self.db.table("scan_sessions")
@@ -186,19 +188,29 @@ class ScraperAgent:
                 .eq("id", sid_key)
                 .execute()
             )
+            
+            raw_trace = []
             if res.data:
-                current_trace = res.data[0].get("reasoning_trace") or []
-                current_trace.extend(self._log_buffer[sid_key])
+                db_trace = res.data[0].get("reasoning_trace")
+                if isinstance(db_trace, str) and db_trace:
+                    try:
+                        raw_trace = json.loads(db_trace)
+                    except Exception:
+                        raw_trace = []
+                elif isinstance(db_trace, list):
+                    raw_trace = db_trace
+            
+            raw_trace.extend(self._log_buffer[sid_key])
 
-                self.db.table("scan_sessions").update(
-                    {
-                        "reasoning_trace": current_trace,
-                        "updated_at": datetime.now().isoformat(),
-                    }
-                ).eq("id", sid_key).execute()
+            self.db.table("scan_sessions").update(
+                {
+                    "reasoning_trace": json.dumps(raw_trace),
+                    "updated_at": datetime.now().isoformat(),
+                }
+            ).eq("id", sid_key).execute()
 
-                # Clear buffer for this session
-                self._log_buffer[sid_key] = []
+            # Clear buffer for this session
+            self._log_buffer[sid_key] = []
         except Exception as e:
             print(f"[ScraperAgent] Log flush failed: {e}")
 
@@ -306,9 +318,12 @@ class ScraperAgent:
                         await self.log_reasoning(
                             session_id, "Cache", f"Checking shared pulse for {serp_api_id} on {check_in}...", "info"
                         )
-                        price_data = await self._check_global_cache(
-                            serp_api_id, check_in
-                        )
+                        if isinstance(check_in, date):
+                            price_data = await self._check_global_cache(
+                                str(serp_api_id), check_in
+                            )
+                        else:
+                            price_data = None
 
                         if price_data:
                             # KAİZEN: ID Sanitization
@@ -381,25 +396,29 @@ class ScraperAgent:
                         status = "error"  # Ensure status is set for Analyst
 
                     # [NEW] Normalize Room Types if present
-                    if price_data and price_data.get("room_types"):
+                    if isinstance(price_data, dict) and price_data.get("room_types"):
                         normalized_rooms = []
-                        for room in price_data["room_types"]:
-                            # Expected format from provider: {"name": "...", "price": ..., "currency": ...}
-                            raw_name = room.get("name") or "Unknown"
-                            norm_res = RoomTypeNormalizer.normalize(raw_name)
+                        # Type narrowing for Pyright
+                        room_list = price_data["room_types"]
+                        if isinstance(room_list, list):
+                            for room in room_list:
+                                # Expected format from provider: {"name": "...", "price": ..., "currency": ...}
+                                if isinstance(room, dict):
+                                    raw_name = str(room.get("name") or "Unknown")
+                                    norm_res = RoomTypeNormalizer.normalize(raw_name)
 
-                            # Enriched room object
-                            room["canonical_code"] = norm_res["canonical_code"]
-                            room["canonical_name"] = norm_res["canonical_name"]
-                            normalized_rooms.append(room)
+                                    if norm_res:
+                                        room["canonical_code"] = norm_res.get("canonical_code", "unknown")
+                                        room["canonical_name"] = norm_res.get("canonical_name", "Unknown")
+                                    normalized_rooms.append(room)
 
-                        price_data["room_types"] = normalized_rooms
-                        await self.log_reasoning(
-                            session_id,
-                            "Normalization",
-                            f"Mapped {len(normalized_rooms)} room variants to canonical types for {hotel_name}.",
-                            "info",
-                        )
+                            price_data["room_types"] = normalized_rooms
+                            await self.log_reasoning(
+                                session_id,
+                                "Normalization",
+                                f"Mapped {len(normalized_rooms)} room variants to canonical types for {hotel_name}.",
+                                "info",
+                            )
                         # Also normalize offers/parity_offers if they have room names?
                         # Providers usually put specific room names in 'room_types' array.
 

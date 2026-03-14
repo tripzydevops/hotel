@@ -14,10 +14,11 @@
     "venv": "venv",
     "executionEnvironments": [
         {
-            "root": "backend",
+            "root": ".",
             "pythonVersion": "3.11",
             "extraPaths": [
-                ".."
+                ".",
+                "/home/tripzydevops/hotel"
             ]
         }
     ]

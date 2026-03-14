@@ -61,6 +61,7 @@ class AnalystAgent:
             return
 
         try:
+            import json
             # Single atomic append
             res = (
                 self.db.table("scan_sessions")
@@ -68,19 +69,29 @@ class AnalystAgent:
                 .eq("id", sid_key)
                 .execute()
             )
+            
+            raw_trace = []
             if res.data:
-                current_trace = res.data[0].get("reasoning_trace") or []
-                current_trace.extend(self._log_buffer[sid_key])
+                db_trace = res.data[0].get("reasoning_trace")
+                if isinstance(db_trace, str) and db_trace:
+                    try:
+                        raw_trace = json.loads(db_trace)
+                    except Exception:
+                        raw_trace = []
+                elif isinstance(db_trace, list):
+                    raw_trace = db_trace
+            
+            raw_trace.extend(self._log_buffer[sid_key])
 
-                self.db.table("scan_sessions").update(
-                    {
-                        "reasoning_trace": current_trace,
-                        "updated_at": datetime.now().isoformat(),
-                    }
-                ).eq("id", sid_key).execute()
+            self.db.table("scan_sessions").update(
+                {
+                    "reasoning_trace": json.dumps(raw_trace),
+                    "updated_at": datetime.now().isoformat(),
+                }
+            ).eq("id", sid_key).execute()
 
-                # Clear buffer for this session
-                self._log_buffer[sid_key] = []
+            # Clear buffer for this session
+            self._log_buffer[sid_key] = []
         except Exception as e:
             print(f"[AnalystAgent] Log flush failed: {e}")
 
@@ -164,7 +175,10 @@ class AnalystAgent:
                 if not hotel_id:
                     continue
 
-                if status != "success" or not price_data:
+                if status == "success" and isinstance(price_data, dict):
+                    current_price = price_data.get("price", 0.0)
+                    currency = price_data.get("currency", "TRY")
+                else:
                     error_detail = "Unknown Error"
                     if isinstance(price_data, dict) and price_data.get("error"):
                         error_detail = price_data.get("error")
@@ -175,13 +189,20 @@ class AnalystAgent:
                         f"[Skip] Hotel {hotel_id} - status: {error_detail}"
                     )
                     # KAİZEN: Allow non-success hotels to continue to trigger Smart Continuity (historical fallback)
-                    # Instead of 'continue', we proceed so that current_price = 0 triggers lookback
                     current_price = 0.0
                     currency = "TRY"
-                    price_data = price_data or {}
-                else:
+                    if price_data is None: price_data = {}
+
+                # EXPLANATION: Price Sanity Safeguard
+                is_valid_drop = True
+                avg_price = 0.0
+
+                if price_data:
                     current_price = price_data.get("price", 0.0)
                     currency = price_data.get("currency", "TRY")
+                else:
+                    current_price = 0.0
+                    currency = "TRY"
 
                 if not current_price or current_price <= 0:
                     await self.log_reasoning(
@@ -191,10 +212,10 @@ class AnalystAgent:
                         "info"
                     )
                 else:
-                    # EXPLANATION: Price Sanity Safeguard
                     is_valid_drop, avg_price = self._validate_price_drop(
                         hotel_id, current_price, currency
                     )
+                    
                     if not is_valid_drop:
                         await self.log_reasoning(
                             session_id,
@@ -258,6 +279,8 @@ class AnalystAgent:
                             last_valid = history_res.data[0]
                             current_price = last_valid["price"]
                             currency = last_valid["currency"]
+                            # Ensure price_data is a dict for assignment
+                            if price_data is None: price_data = {}
                             price_data["vendor"] = last_valid.get("vendor") or price_data.get("vendor")
                             price_data["offers"] = last_valid.get("parity_offers") or []
                             price_data["room_types"] = last_valid.get("room_types") or []
@@ -280,6 +303,7 @@ class AnalystAgent:
                                 last_any = history_any_res.data[0]
                                 current_price = last_any["price"]
                                 currency = last_any["currency"]
+                                if price_data is None: price_data = {}
                                 price_data["vendor"] = last_any.get("vendor") or price_data.get("vendor")
                                 price_data["offers"] = last_any.get("parity_offers") or []
                                 price_data["room_types"] = last_any.get("room_types") or []
@@ -294,7 +318,7 @@ class AnalystAgent:
                         print(f"[AnalystAgent] Continuity failed: {e}")
 
                 # Market Depth Safeguard
-                offers = price_data.get("offers", [])
+                offers = price_data.get("offers", []) if price_data else []
                 is_shallow = False
                 if len(offers) < 5 and not is_estimated:
                     is_shallow = True
@@ -309,7 +333,7 @@ class AnalystAgent:
                         pass
 
                 # Room Type Persistence
-                current_room_types = price_data.get("room_types", [])
+                current_room_types = price_data.get("room_types", []) if price_data else []
                 if not current_room_types and not is_estimated:
                     try:
                         rt_cutoff = (datetime.now() - timedelta(days=7)).isoformat()
@@ -321,58 +345,69 @@ class AnalystAgent:
                                 break
                     except Exception: pass
 
-                # Persistence logic
-                has_recent_log = False
-                if hotel_id in history_map and history_map[hotel_id]:
-                    latest_log_time = history_map[hotel_id][0].get("recorded_at")
-                    if latest_log_time:
-                        try:
-                            log_dt = datetime.fromisoformat(latest_log_time.replace("Z", "+00:00"))
-                            if (datetime.now(timezone.utc) - log_dt).total_seconds() < 10800:
-                                has_recent_log = True
-                        except Exception: pass
+                # EXPLANATION: Session-Aware Persistence
+                # Previously, we would skip logging if the result was a 'global_cache' hit
+                # and a recent log existed. This caused "Ghost Updates" where your hotel card
+                # looked fresh but had no history. 
+                # FIX: If we have an active session_id, we ALWAYS log the result to ensure
+                # the user can see their scan in history.
+                should_log = True
+                if not session_id:
+                    # If background monitoring without a session, we still avoid duplicates
+                    has_recent_log = False
+                    if hotel_id in history_map and history_map[hotel_id]:
+                        latest_log_time = history_map[hotel_id][0].get("recorded_at")
+                        if latest_log_time:
+                            try:
+                                log_dt = datetime.fromisoformat(latest_log_time.replace("Z", "+00:00"))
+                                if (datetime.now(timezone.utc) - log_dt).total_seconds() < 10800:
+                                    has_recent_log = True
+                            except Exception: pass
+                    
+                    if price_data and price_data.get("source") == "global_cache" and has_recent_log:
+                        should_log = False
 
-                if price_data.get("source") != "global_cache" or not has_recent_log:
+                if should_log:
                     price_logs_to_insert.append({
                         "hotel_id": hotel_id,
                         "price": current_price if current_price else 0.0,
                         "currency": currency,
                         "check_in_date": check_in_str,
-                        "source": price_data.get("source", "serpapi"),
-                        "vendor": price_data.get("vendor", "Unknown"),
+                        "source": price_data.get("source", "serpapi") if price_data else "serpapi",
+                        "vendor": price_data.get("vendor", "Unknown") if price_data else "Unknown",
                         "parity_offers": offers,
                         "room_types": current_room_types,
                         "is_estimated": is_estimated,
                         "session_id": str(session_id) if session_id else None,
-                        "serp_api_id": price_data.get("property_token") or price_data.get("serp_api_id"),
+                        "serp_api_id": (price_data.get("property_token") or price_data.get("serp_api_id")) if price_data else None,
                         "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)},
                     })
                 
                 if session_id:
-                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=price_data.get("vendor") if not is_estimated else f"Estimated ({price_data.get('vendor', 'History')})", session_id=session_id)
+                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=(price_data.get("vendor") if price_data else "Unknown") if not is_estimated else (f"Estimated ({price_data.get('vendor', 'History')})" if price_data else "Estimated"), session_id=session_id)
 
                 analysis_summary["prices_updated"] += 1
 
                 # [Global Pulse] Phase 2
-                if current_price and current_price > 0:
+                if current_price and current_price > 0 and price_data:
                     serp_api_id = price_data.get("property_token") or price_data.get("serp_api_id")
                     if serp_api_id:
                         pulse_queue.append({"serp_api_id": serp_api_id, "hotel_id": hotel_id, "hotel_name": res.get("hotel_name", "Hotel"), "current_price": current_price, "currency": currency})
 
                 # Metadata Update
-                existing_hotel = self.db.table("hotels").select("sentiment_breakdown").eq("id", hotel_id).single().execute()
-                current_breakdown = existing_hotel.data.get("sentiment_breakdown") or []
-                meta_update = {"last_scan": datetime.now().isoformat(), "vendor_source": price_data.get("vendor", "SerpApi"), "embedding_status": "current"}
+                existing_hotel = self.db.table("hotels").select("sentiment_breakdown").eq("id", hotel_id).maybe_single().execute()
+                current_breakdown = (existing_hotel.data.get("sentiment_breakdown") if existing_hotel.data else []) or []
+                meta_update = {"last_scan": datetime.now().isoformat(), "vendor_source": (price_data.get("vendor", "SerpApi") if price_data else "SerpApi"), "embedding_status": "current"}
                 if current_price and current_price > 0:
                     meta_update["current_price"] = current_price
 
-                if "reviews_breakdown" in price_data:
+                if price_data and "reviews_breakdown" in price_data:
                     merged_breakdown = merge_sentiment_breakdowns(current_breakdown, price_data["reviews_breakdown"])
                     meta_update["sentiment_breakdown"] = merged_breakdown
                     is_sentiment_modified = True
 
                 for field in ["rating", "image_url", "stars", "review_count", "amenities"]:
-                    val = price_data.get(field)
+                    val = price_data.get(field) if price_data else None
                     if val is not None: meta_update[field] = val
 
                 if meta_update.get("sentiment_breakdown"):
@@ -479,7 +514,7 @@ class AnalystAgent:
                     )
                 else:
                     await self.log_reasoning(session_id, "Market Intel", 
-                        f"AI analysis bypassed due to temporary service issue: {error_msg[:50]}...", "warning"
+                        f"AI analysis bypassed due to temporary service issue: {str(error_msg)[:50]}...", "warning"
                     )
                 
                 # Heuristic Fallback reasoning
@@ -758,9 +793,9 @@ class AnalystAgent:
 
                 # Try coordinate-based distance first
                 if target_lat and target_lng and rival_lat and rival_lng:
-                    dist_km: float = float(
+                    dist_km = float(
                         self._haversine_distance(
-                            target_lat, target_lng, rival_lat, rival_lng
+                            float(target_lat), float(target_lng), float(rival_lat), float(rival_lng)
                         )
                     )
                     rival["distance_km"] = round(dist_km, 1)
@@ -798,7 +833,8 @@ class AnalystAgent:
             filtered_results.sort(key=sort_key)
 
             # Ensure similarity values are valid numbers
-            rivals_subset: List[Dict[str, Any]] = filtered_results[:limit]
+            # Type narrowing for Pyright
+            rivals_subset = list(filtered_results)[:limit]
             for rival in rivals_subset:
                 if rival.get("similarity") is None:
                     rival["similarity"] = 0.0
@@ -998,7 +1034,7 @@ class AnalystAgent:
                 if o_price > 0 and o_price < entry["price"]:
                     parity_leaks.append(
                         {
-                            "date": entry["recorded_at"][:10],
+                            "date": str(entry["recorded_at"])[:10],
                             "vendor": o.get("vendor", "OTA"),
                             "leak_price": o_price,
                             "direct_price": entry["price"],
@@ -1065,7 +1101,7 @@ class AnalystAgent:
             comp_price = comp.get("current_price") or 0
             gap_pct = 0.0
             if target_price > 0 and comp_price > 0:
-                gap_pct = round(((target_price - comp_price) / target_price) * 100, 1)
+                gap_pct = float(round(((target_price - comp_price) / target_price) * 100, 1))
             competitor_table.append({
                 "name": comp["name"],
                 "price": comp_price,
@@ -1129,7 +1165,7 @@ class AnalystAgent:
                 "gri": target.get("rating", 0),
                 "sentiment_velocity": sentiment_velocity,
                 "parity_leaks_count": len(parity_leaks),
-                "parity_leaks": parity_leaks[:10],
+                "parity_leaks": list(parity_leaks)[:10],
                 "bout_similarity": round(float(similarity) * 100, 1) if rival else None,
                 "sentiment_snapshot": sentiment_summary,
                 "price_history": price_history,
@@ -1217,7 +1253,7 @@ class AnalystAgent:
             - Current Pricing DNA: {dna_str}.
             
             PARITY LEAKS DATA:
-            {str(parity_leaks[:10])}
+            {str(list(parity_leaks)[:10])}
             
             INSTRUCTIONS:
             - Focus on REVENUE LEAKAGE and CHANNEL INTEGRITY.
@@ -1331,7 +1367,7 @@ class AnalystAgent:
 
         # 7. PERSISTENCE: Save to 'reports' table for administrative review (Phase 4)
         try:
-            report_id = self._save_briefing_to_db(user_id, briefing_payload)
+            report_id = self._save_briefing_to_db(str(user_id), briefing_payload)
             briefing_payload["report_id"] = report_id
         except Exception as db_e:
             print(f"[AnalystAgent] Briefing Save Error: {db_e}")
@@ -1467,7 +1503,7 @@ class AnalystAgent:
             stats_text = ""
             if isinstance(breakdown, list):
                 parts = []
-                for item in breakdown[:10]:  # Top 10 categories
+                for item in list(breakdown)[:10]:  # Top 10 categories
                     name = item.get("name") or item.get("display_name")
                     pos = item.get("positive", 0)
                     neg = item.get("negative", 0)

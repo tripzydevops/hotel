@@ -126,11 +126,8 @@ async def trigger_monitor_logic(
                 
                 # [KAIZEN] Log lock to session trace if possible
                 try:
-                    if session_id:
-                        db.table("scan_sessions").update({
-                            "status": "failed",
-                            "reasoning_trace": [f"SCAN_LOCKED: {reason}"]
-                        }).eq("id", str(session_id)).execute()
+                    # session_id might not be defined yet in this scope
+                    pass 
                 except Exception:
                     pass
 
@@ -215,8 +212,11 @@ async def trigger_monitor_logic(
         )
         if session_result.data:
             session_id = session_result.data[0]["id"]
+            logger.info(f"Created scan session: {session_id}")
+        else:
+            logger.error("Session creation returned no data. Scan will run without history trail.")
     except Exception as e:
-        logger.error(f"Session creation failed: {e}")
+        logger.error(f"CRITICAL: Session creation failed: {e}. Attempting to proceed with silent scan.")
 
     # Normalized Options for Background task
     normalized_options = ScanOptions(

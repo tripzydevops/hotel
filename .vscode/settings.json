@@ -1,13 +1,10 @@
 {
-    "python.defaultInterpreterPath": "/home/tripzydevops/hotel/venv/bin/python",
-    "python.venvPath": "/home/tripzydevops/hotel",
+    "python.defaultInterpreterPath": "venv/bin/python",
+    "python.venvPath": ".",
     "python.analysis.extraPaths": [
-        "/home/tripzydevops/hotel",
-        "/home/tripzydevops/hotel/backend",
-        "/home/tripzydevops/hotel/venv/lib/python3.11/site-packages"
+        ".",
+        "/home/tripzydevops/hotel"
     ],
-    "python.analysis.venvPath": "/home/tripzydevops/hotel",
-    "python.analysis.venv": "venv",
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.useLibraryCodeForTypes": true,
