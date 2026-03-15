@@ -55,6 +55,16 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
     setProfile,
   } = useDashboard(userId, t, initialData);
 
+  useEffect(() => {
+    if (data) {
+      console.log("[DashboardDebug] Data loaded encountered:", {
+        target: data.target_hotel?.name,
+        competitors: data.competitors?.length,
+        hasPulse: !!data.global_pulse
+      });
+    }
+  }, [data]);
+
   // Trigger lazy scan check on dashboard load (Delayed to prioritize render)
   useEffect(() => {
     if (userId) {
@@ -195,7 +205,7 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
         </div>
 
         <ErrorBoundary>
-          <BentoGrid className="lg:grid-cols-4 lg:auto-rows-fr">
+          <BentoGrid className="lg:grid-cols-4">
             {!data && loading ? (
               <>
                 {[...Array(3)].map((_, i) => (

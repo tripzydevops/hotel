@@ -23,6 +23,7 @@ export default function BentoGrid({
         grid-cols-1
         sm:grid-cols-2
         lg:grid-cols-4
+        auto-rows-[minmax(180px,auto)]
         ${className}
       `}
     >
