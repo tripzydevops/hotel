@@ -255,46 +255,26 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
 
 
 
-# --- FINAL CATCH-ALL: UNIVERSAL PROXY BRIDGE ---
-# Registered LAST so that modular routers (admin, hotel, etc.) take priority.
-# This terminal handles any unmapped path, mainly SDK traffic (/p-api/*) hitting the origin.
-# KAIZEN: Modular routers take priority over the catch-all bridge below.
-# Each router handles its own /api/... prefixed routes locally.
-@app.api_route("/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
-async def universal_proxy_bridge(request: Request, sub_path: str):
-    """
-    Transparent tunnel to InsForge origin.
-    """
-    origin_base = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
-    path_str = str(sub_path)
-    
-    # Normalize Path for Origin
-    path_val = path_str
-    if path_val.startswith("p-api/"):
-        path_val = path_val[6:]
-    elif path_val.startswith("/p-api/"):
-        path_val = path_val[7:]
-    elif path_val == "p-api" or path_val == "/p-api":
-        path_val = ""
-        
-    # Standardize /api prefix
-    if not path_val.startswith("api/") and not path_val.startswith("/api/") and path_val:
-        target_path = f"api/{path_val.lstrip('/')}"
-    else:
-        target_path = path_val.lstrip("/")
-        
-    target_url = f"{origin_base}/{target_path}"
+# --- EXPLICIT PROXY GATEWAY ---
+# Handles traffic to InsForge remote services via specific endpoints.
+# This prevents shadowing of local /api/... routes.
+
+PHASE_21_ORIGIN = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
+
+async def proxy_to_origin(request: Request, sub_path: str, prefix: str):
+    """Core proxy logic for explicit routes."""
+    # Standardize path: Origin + /api/ + prefix/ + sub_path
+    target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{sub_path.lstrip('/')}"
     if request.query_params:
         target_url = f"{target_url}?{request.query_params}"
 
     try:
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-            # Strip Host and Content-Length
+            # Strip Host and Content-Length to prevent forwarding errors
             headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
-            
             body = await request.body()
             
-            logger.info(f"BRIDGE: {request.method} {path_str} -> {target_url}")
+            logger.info(f"GATEWAY [{prefix}]: {request.method} /{sub_path} -> {target_url}")
 
             resp = await client.request(
                 method=request.method,
@@ -304,21 +284,51 @@ async def universal_proxy_bridge(request: Request, sub_path: str):
             )
             
             if resp.status_code >= 400:
-                logger.error(f"BRIDGE ORIGIN ERROR {resp.status_code} for {target_path}: {resp.text[:200]}")
+                logger.error(f"ORIGIN ERROR [{prefix}] {resp.status_code}: {resp.text[:200]}")
 
-            # Forward response with original status and headers
+            # Forward response headers while stripping encoding-related ones
             forward_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ["content-encoding", "transfer-encoding"]}
-            forward_headers["X-Bridge-Service"] = "insforge-gateway"
+            forward_headers["X-Gateway-Phase"] = "21-explicit"
             
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
                 headers=forward_headers
             )
-            
     except Exception as e:
-        logger.error(f"BRIDGE CRITICAL FAILURE for {target_path}: {str(e)}")
-        return JSONResponse(status_code=502, content={"detail": f"Bridge Critical Failure: {str(e)}"})
+        logger.error(f"GATEWAY CRITICAL FAILURE [{prefix}]: {str(e)}")
+        return JSONResponse(status_code=502, content={"detail": f"Gateway Critical Failure: {str(e)}"})
+
+# 1. Auth Gateway
+@app.api_route("/p-api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def auth_gateway(request: Request, sub_path: str):
+    return await proxy_to_origin(request, sub_path, "auth")
+
+# 2. REST (Database) Gateway
+@app.api_route("/p-api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def rest_gateway(request: Request, sub_path: str):
+    return await proxy_to_origin(request, sub_path, "rest")
+
+# 3. Storage Gateway
+@app.api_route("/p-api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def storage_gateway(request: Request, sub_path: str):
+    return await proxy_to_origin(request, sub_path, "storage")
+
+# 4. Catch-all p-api for other InsForge services (deprecated fallback)
+@app.api_route("/p-api/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def p_api_fallback(request: Request, sub_path: str):
+    # This acts as a safe-landing for paths not explicitly caught above
+    target_url = f"{PHASE_21_ORIGIN}/api/{sub_path.lstrip('/')}"
+    if request.query_params:
+        target_url = f"{target_url}?{request.query_params}"
+    
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
+            resp = await client.request(method=request.method, url=target_url, headers=headers, content=await request.body())
+            return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"detail": str(e)})
 
 
 if __name__ == "__main__":

@@ -26,17 +26,20 @@ const isProduction = process.env.NODE_ENV === 'production' ||
                      !window.location.hostname.includes('localhost') && 
                      !window.location.hostname.includes('127.0.0.1'));
 
-export const API_BASE_URL = isProduction
+// Local API routes (handled by the Next.js/Vercel Backend)
+export const LOCAL_API_URL = ''; // Relative path starts with /api
+
+// InsForge Remote services (handled by the Bridge)
+export const REMOTE_API_URL = isProduction
   ? '/p-api'
   : 'http://localhost:8000';
 
 if (typeof window !== 'undefined') {
   console.log(`[ApiClient] Mode: ${isProduction ? 'Production' : 'Development'}`);
-  console.log(`[ApiClient] Base URL: ${API_BASE_URL}`);
 }
 
 class ApiClient {
-  public readonly baseURL = API_BASE_URL;
+  public readonly baseURL = LOCAL_API_URL;
 
   public async getHeaders(): Promise<HeadersInit> {
     const token = await this.getToken();
@@ -77,14 +80,12 @@ class ApiClient {
 
     if (token) {
       (headers as any)["Authorization"] = `Bearer ${token}`;
-    } else if (shouldAuthenticate) {
-      console.warn(`[ApiClient] [AUTH_MISSING] ${endpoint}`);
     }
 
-    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    const url = `${LOCAL_API_URL}${endpoint}`;
     console.log(`[ApiClient] Requesting ${endpoint}...`);
 
-    const response = await fetch(fullUrl, {
+    const response = await fetch(url, {
       ...options,
       cache: "no-store",
       headers,
@@ -256,7 +257,7 @@ class ApiClient {
     const headers: any = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${API_BASE_URL}/api/sessions/${sessionId}/export/csv`;
+    const url = `${LOCAL_API_URL}/api/sessions/${sessionId}/export/csv`;
     const response = await fetch(url, {
       method: "GET",
       headers,
@@ -308,7 +309,7 @@ class ApiClient {
     const headers: any = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${API_BASE_URL}/api/reports/export?format=${format}`;
+    const url = `${LOCAL_API_URL}/api/reports/export?format=${format}`;
     const response = await fetch(url, {
       method: "POST",
       headers,
@@ -609,7 +610,7 @@ class ApiClient {
     });
     if (rival_hotel_id) params.append("rival_hotel_id", rival_hotel_id);
 
-    const url = `${API_BASE_URL}/api/reports/briefing/${target_hotel_id}/pdf?${params.toString()}`;
+    const url = `${LOCAL_API_URL}/api/reports/briefing/${target_hotel_id}/pdf?${params.toString()}`;
     const response = await fetch(url, {
       method: "GET",
       headers,
@@ -633,7 +634,7 @@ class ApiClient {
     const headers: any = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${API_BASE_URL}/api/reports/briefing/saved/${reportId}/pdf`;
+    const url = `${LOCAL_API_URL}/api/reports/briefing/saved/${reportId}/pdf`;
     const response = await fetch(url, {
       method: "GET",
       headers,
