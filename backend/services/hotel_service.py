@@ -50,16 +50,21 @@ async def search_hotel_directory_logic(
     q_words = q_normalized.split()
 
     # 1. Local Lookup (Primary)
+    # KAİZEN: GIN-Backed Fuzzy Search (Phase 6)
+    # Migrated from O(N) sequential ilike to O(log N) GIN-trgm index lookups.
+    # This allows fast 'search-as-you-type' even with partial matches.
     query = db.table("hotel_directory").select("*")
 
-    # Simple OR matching for multi-word search, plus a catch-all for the full string
-    conditions = [f"name.ilike.%{q_normalized}%", f"location.ilike.%{q_normalized}%"]
+    # We use a single 'or' with the indexed columns. 
+    # pg_trgm GIN indexes work automatically with 'ilike %term%'.
+    search_filter = f"name.ilike.%{q_normalized}%,location.ilike.%{q_normalized}%"
+    
+    # Also include word-based lookups for multi-word queries
     for w in q_words:
         if len(w) >= 3:
-            conditions.append(f"name.ilike.%{w}%")
-            conditions.append(f"location.ilike.%{w}%")
+            search_filter += f",name.ilike.%{w}%,location.ilike.%{w}%"
 
-    result = query.or_(",".join(conditions)).limit(100).execute()
+    result = query.or_(search_filter).limit(100).execute()
 
     local_results = []
     for h in result.data or []:

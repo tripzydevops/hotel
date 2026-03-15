@@ -62,3 +62,34 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
     except Exception as e:
         print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
         return None
+
+
+async def get_async_supabase_client(jwt: str | None = None) -> Client | None:
+    """
+    Async dependency to provide a Supabase client.
+    Enables true non-blocking concurrent queries (asyncio.gather).
+    """
+    from supabase import acreate_client, AsyncClient
+    
+    raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not raw_url:
+        return None
+        
+    url = raw_url.split("/api/")[0].rstrip("/")
+
+    if jwt:
+        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        client: AsyncClient = await acreate_client(url, key, options=ClientOptions(headers={"Authorization": f"Bearer {jwt}"}))
+        client.postgrest.base_url = URL(f"{url}/api/database/records/")
+        client.auth._url = f"{url}/api/auth"
+        return client
+
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    try:
+        client: AsyncClient = await acreate_client(url, key)
+        client.postgrest.base_url = URL(f"{url}/api/database/records/")
+        client.auth._url = f"{url}/api/auth"
+        return client
+    except Exception as e:
+        print(f"[DATABASE] Async Initialization failed: {str(e)}")
+        return None

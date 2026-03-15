@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import get_current_active_user, get_async_supabase_rls
 from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 
 @router.get("/dashboard")
 async def get_dashboard(
-    db: Client = Depends(get_supabase_rls),
+    db: Client = Depends(get_async_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

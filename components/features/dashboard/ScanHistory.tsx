@@ -7,8 +7,15 @@ import {
   Clock,
   Database,
   ChevronRight,
+  Download,
+  FileText,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { exportSessionPdf } from "@/lib/export_utils";
 
 interface ScanHistoryProps {
   sessions: ScanSession[];
@@ -22,7 +29,51 @@ export default function ScanHistory({
   title,
 }: ScanHistoryProps) {
   const { t, locale } = useI18n();
+  const { toast } = useToast();
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [exportType, setExportType] = useState<"csv" | "pdf" | null>(null);
+
   if (sessions.length === 0) return null;
+
+  const handleExportCsv = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    if (exportingId) return;
+
+    setExportingId(sessionId);
+    setExportType("csv");
+    try {
+      toast.info("Generating CSV... Flattening market data.");
+      await api.exportSessionCsv(sessionId);
+      toast.success("CSV report downloaded.");
+    } catch (error: any) {
+      toast.error(error.message || "Unable to generate CSV.");
+    } finally {
+      setExportingId(null);
+      setExportType(null);
+    }
+  };
+
+  const handleExportPdf = async (e: React.MouseEvent, session: ScanSession) => {
+    e.stopPropagation();
+    if (exportingId) return;
+
+    setExportingId(session.id);
+    setExportType("pdf");
+    try {
+      toast.info("Compiling Intelligence... Generating PDF.");
+      let logs = session.logs;
+      if (!logs || logs.length === 0) {
+        logs = await api.getSessionLogs(session.id);
+      }
+      await exportSessionPdf({ ...session, logs });
+      toast.success("PDF report generated.");
+    } catch (error: any) {
+      toast.error(error.message || "Unable to generate PDF.");
+    } finally {
+      setExportingId(null);
+      setExportType(null);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(
@@ -54,10 +105,10 @@ export default function ScanHistory({
 
       <div className="grid grid-cols-1 gap-3">
         {sessions.map((session) => (
-          <button
+          <div
             key={session.id}
+            className="group card-blur rounded-[1.5rem] px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-all border border-white/5 hover:border-[#F6C344]/30 cursor-pointer"
             onClick={() => onOpenSession(session)}
-            className="group card-blur rounded-[1.5rem] px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-all border border-white/5 hover:border-[#F6C344]/30 text-left"
           >
             <div className="flex items-center gap-6">
               <div
@@ -104,8 +155,34 @@ export default function ScanHistory({
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => handleExportCsv(e, session.id)}
+                disabled={exportingId === session.id}
+                className={`p-2 rounded-xl border border-white/5 text-[var(--text-muted)] hover:text-white transition-colors ${
+                  exportingId === session.id && exportType === "csv" ? "animate-pulse opacity-50" : ""
+                }`}
+                title="Export to CSV"
+              >
+                <Download className={`w-4 h-4 ${exportingId === session.id && exportType === "csv" ? "animate-bounce" : ""}`} />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => handleExportPdf(e, session)}
+                disabled={exportingId === session.id}
+                className={`p-2 rounded-xl border border-white/5 text-[var(--text-muted)] hover:text-white transition-colors ${
+                  exportingId === session.id && exportType === "pdf" ? "animate-pulse opacity-50" : ""
+                }`}
+                title="Export to PDF"
+              >
+                <FileText className={`w-4 h-4 ${exportingId === session.id && exportType === "pdf" ? "animate-bounce" : ""}`} />
+              </motion.button>
+              
+              <div className="text-right hidden sm:block ml-2">
                 <span
                   className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
                     session.status === "completed"
@@ -118,7 +195,7 @@ export default function ScanHistory({
               </div>
               <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-white group-hover:translate-x-1 transition-all" />
             </div>
-          </button>
+          </div>
         ))}
       </div>
     </div>

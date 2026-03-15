@@ -11,6 +11,7 @@ import { useProfile } from "@/hooks/useProfile";
 export function useDashboard(
   userId: string | null,
   t: (key: string, params?: Record<string, string | number>) => string,
+  initialData: any = null,
 ) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,6 +42,7 @@ export function useDashboard(
     queryKey: ["dashboard", userId],
     queryFn: () => api.getDashboard(),
     enabled: !!userId,
+    initialData: initialData,
     // EXPLANATION: Polling Strategy
     // When a scan is manually triggered, we set `isPolling` to true.
     // This enables `refetchInterval` to auto-fetch data every 3 seconds.
@@ -62,6 +64,60 @@ export function useDashboard(
       }
     }
   }, [dashboardQuery.data, queryClient, userId]);
+
+  // EXPLANATION: Phase 9 — Real-time Alert Sync
+  // We subscribe to a dedicated alerts channel for THIS user.
+  // The backend uses a Postgres trigger to broadcast a 'new_alert' event 
+  // via InsForge Realtime whenever a row is inserted into the 'alerts' table.
+  useEffect(() => {
+    if (!userId) return;
+
+    let isSubscribed = false;
+
+    const setupRealtime = async () => {
+      try {
+        const { insforge } = await import("@/lib/insforge");
+        
+        // 1. Connect if not already
+        await insforge.realtime.connect();
+        
+        // 2. Subscribe to user-specific channel
+        const channelName = `alerts:${userId}`;
+        const response = await insforge.realtime.subscribe(channelName);
+        
+        if (response.ok) {
+          isSubscribed = true;
+          
+          // 3. Listen for the 'new_alert' event (broadcast by PG Trigger)
+          insforge.realtime.on('new_alert', (payload: any) => {
+            console.log("[Realtime] New alert received:", payload);
+            
+            // Invalidate dashboard to update unread counts and global pulse feed
+            queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+            
+            // Show toast to the user
+            toast.info(t("dashboard.newAlert") || "New market movement detected!");
+          });
+        }
+      } catch (err) {
+        console.error("[Realtime] Initialization failure:", err);
+      }
+    };
+
+    setupRealtime();
+
+    return () => {
+      const cleanup = async () => {
+        try {
+          const { insforge } = await import("@/lib/insforge");
+          if (isSubscribed) {
+            insforge.realtime.unsubscribe(`alerts:${userId}`);
+          }
+        } catch (e) {}
+      };
+      cleanup();
+    };
+  }, [userId, queryClient, toast, t]);
 
   // --- Mutations ---
   const scanMutation = useMutation({

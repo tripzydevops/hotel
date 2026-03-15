@@ -38,27 +38,27 @@ async def search_hotel_directory(
     # new smart filtering capability in the Add Hotel modal.
 
 
-@router.get("/hotels", response_model=List[Hotel])
-async def list_hotels(
+@router.get("/hotels/{hotel_id}", response_model=Hotel)
+async def get_hotel(
+    hotel_id: UUID,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
-    include_deleted: bool = False,
 ):
     """
-    Retrieves a list of hotels associated with the current user.
+    Retrieves full details for a single hotel.
+    Used for lazy loading heavy metadata on the frontend.
     """
-    user_id = current_user.id
     if not db:
-        return []
-    # EXPLANATION: User Property List (Soft-Delete Aware)
-    # Powers the sidebar and dashboard selector. By default, it hides
-    # archived hotels to prevent cluttering the UI.
-    query = db.table("hotels").select("*").eq("user_id", str(user_id))
-    if not include_deleted:
-        query = query.is_("deleted_at", "null")
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
-    result = query.execute()
-    return result.data or []
+    result = db.table("hotels").select("*").eq("id", str(hotel_id)).single().execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+
+    # Ownership Check
+    verify_ownership(result.data["user_id"], current_user)
+
+    return result.data
 
 
 @router.get("/locations", response_model=List[LocationRegistry])

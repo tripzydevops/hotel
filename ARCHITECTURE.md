@@ -1,4 +1,4 @@
-# Tripzy.travel Backend Architecture (Speed-Optimized)
+# Hotel Rate Sentinel Backend Architecture (Speed-Optimized)
 
 The Tripzy backend is built with FastAPI and follows a 3-Layer Modular Architecture designed for scalability, AI navigability, and performance.
 

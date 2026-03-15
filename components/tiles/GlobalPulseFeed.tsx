@@ -24,10 +24,18 @@ interface PulseStats {
   estimated_savings_credits: number;
 }
 
-export const GlobalPulseFeed: React.FC = () => {
-  const [wins, setWins] = useState<pulseWin[]>([]);
-  const [stats, setStats] = useState<PulseStats | null>(null);
-  const [loading, setLoading] = useState(true);
+interface GlobalPulseFeedProps {
+  initialWins?: pulseWin[];
+  initialStats?: PulseStats | null;
+}
+
+export const GlobalPulseFeed: React.FC<GlobalPulseFeedProps> = ({ 
+  initialWins, 
+  initialStats 
+}) => {
+  const [wins, setWins] = useState<pulseWin[]>(initialWins || []);
+  const [stats, setStats] = useState<PulseStats | null>(initialStats || null);
+  const [loading, setLoading] = useState(!initialWins);
 
   const fetchPulse = async () => {
     try {
@@ -43,9 +51,6 @@ export const GlobalPulseFeed: React.FC = () => {
     }
   };
 
-  // EXPLANATION: Fetch live network stats from the new Phase 2 endpoint.
-  // Stats are cached server-side for 5 minutes, so polling every 2 mins
-  // on the client gives a good balance of freshness vs network usage.
   const fetchStats = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/global-pulse/stats`);
@@ -59,15 +64,17 @@ export const GlobalPulseFeed: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchPulse();
-    fetchStats();
+    // If we have initial data, we skip the immediate fetch but keep the interval
+    if (!initialWins) fetchPulse();
+    if (!initialStats) fetchStats();
+
     const pulseInterval = setInterval(fetchPulse, 60000);
     const statsInterval = setInterval(fetchStats, 120000);
     return () => {
       clearInterval(pulseInterval);
       clearInterval(statsInterval);
     };
-  }, []);
+  }, [initialWins, initialStats]);
 
   if (loading && wins.length === 0) {
     return (

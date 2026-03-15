@@ -156,6 +156,8 @@ export interface DashboardData {
   profile?: any;
   user_settings?: UserSettings;
   market_insight?: string;
+  global_pulse?: any[];
+  pulse_stats?: any;
 }
 
 export interface ScanOptions {

@@ -78,31 +78,27 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const [reSearchName, setReSearchName] = useState("");
   const [reSearchLocation, setReSearchLocation] = useState("");
 
-  const handleOpenDetails = (hotel: Hotel, data: DashboardData | null) => {
-    const fullHotel =
-      data?.competitors.find((h) => h.id === hotel.id) ||
-      (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
+  const handleOpenDetails = async (hotel: Hotel, data: DashboardData | null) => {
+    // Determine if we already have the "heavy" fields (Payload Shaving check)
+    const hasHeavyData = (hotel as any).amenities && (hotel as any).amenities.length > 0;
 
-    // [FIX] The tile passes amenities/images in the hotel arg, but the cache
-    // lookup (fullHotel) may not have those fields (or may have empty arrays).
-    // Use || to fall back to the tile's values when cache has empty/undefined.
-    const cacheAmenities = (fullHotel as any)?.amenities;
-    const cacheImages = (fullHotel as any)?.images;
+    let targetHotel = hotel;
 
-    console.log("[HotelDetails] tile hotel.amenities:", hotel.amenities?.length, "| cache amenities:", cacheAmenities?.length);
-    console.log("[HotelDetails] tile hotel.images:", hotel.images?.length, "| cache images:", cacheImages?.length);
-
-    const mergedHotel = fullHotel
-      ? {
-        ...fullHotel,
-        amenities: (cacheAmenities && cacheAmenities.length > 0) ? cacheAmenities : hotel.amenities,
-        images: (cacheImages && cacheImages.length > 0) ? cacheImages : hotel.images,
+    if (!hasHeavyData) {
+      console.log(`[LazyLoad] Fetching heavy metadata for hotel: ${hotel.id}`);
+      try {
+        const { api } = await import("@/lib/api");
+        const fullData = await api.getHotel(hotel.id);
+        if (fullData) {
+          targetHotel = { ...hotel, ...fullData };
+        }
+      } catch (err) {
+        console.error("[LazyLoad] Failed to fetch hotel details:", err);
+        // Fallback to what we have
       }
-      : hotel;
+    }
 
-    console.log("[HotelDetails] merged amenities:", (mergedHotel as any).amenities?.length, "images:", (mergedHotel as any).images?.length);
-
-    setSelectedHotelForDetails(mergedHotel);
+    setSelectedHotelForDetails(targetHotel);
     setIsDetailsModalOpen(true);
   };
 

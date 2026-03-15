@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request, HTTPException
+from fastapi.responses import StreamingResponse
+import csv
+import io
 from typing import List, Optional
 from uuid import UUID
 from supabase import Client
@@ -10,6 +13,7 @@ from backend.services.monitor_service import (
     run_monitor_background,
 )
 from datetime import datetime, timezone
+import typing
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
@@ -205,6 +209,108 @@ async def get_session_logs(
     except Exception as e:
         print(f"Error fetching session logs: {e}")
         return []
+
+
+@router.get("/sessions/{session_id}/export/csv")
+async def export_session_csv(
+    session_id: UUID,
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Export all price data from a specific scan session as a CSV.
+    Flattens room types into individual rows for granular analysis.
+    """
+    try:
+        # 1. Fetch Price Logs joined with Hotel Names
+        # We use a join trick with 'hotels' to get the name
+        logs_res = (
+            db.table("price_logs")
+            .select("*, hotels(name)")
+            .eq("session_id", str(session_id))
+            .execute()
+        )
+        
+        if not logs_res.data:
+            # Fallback check: if no price logs, check if any query logs exist
+            # but usually we want the rich price log data.
+            raise HTTPException(status_code=404, detail="No price data found for this session.")
+
+        # 2. Generator for CSV streaming
+        def generate():
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Explicit type cast for linter inference
+            buffered_output = typing.cast(io.StringIO, output)
+            
+            # Header
+            writer.writerow([
+                "Hotel Name", "Check-in", "Price", "Currency", 
+                "Vendor", "Room Type", "Canonical Room", 
+                "Status", "Recorded At", "Session ID"
+            ])
+            yield buffered_output.getvalue()
+            buffered_output.seek(0)
+            buffered_output.truncate(0)
+
+            for log in logs_res.data:
+                hotel_name = log.get("hotels", {}).get("name") if log.get("hotels") else "Unknown Hotel"
+                room_types = log.get("room_types") or []
+                
+                # If room types exist, explode into rows
+                if room_types:
+                    for room in room_types:
+                        writer.writerow([
+                            hotel_name,
+                            log.get("check_in_date"),
+                            room.get("price") or log.get("price"),
+                            room.get("currency") or log.get("currency"),
+                            log.get("vendor"),
+                            room.get("name"),
+                            room.get("canonical_name", "N/A"),
+                            "Estimated" if log.get("is_estimated") else "Actual",
+                            log.get("recorded_at"),
+                            log.get("session_id")
+                        ])
+                        line = buffered_output.getvalue()
+                        yield line
+                        buffered_output.seek(0)
+                        buffered_output.truncate(0)
+                else:
+                    # Single row for the main result
+                    writer.writerow([
+                        hotel_name,
+                        log.get("check_in_date"),
+                        log.get("price"),
+                        log.get("currency"),
+                        log.get("vendor"),
+                        "General/Lowest",
+                        "N/A",
+                        "Estimated" if log.get("is_estimated") else "Actual",
+                        log.get("recorded_at"),
+                        log.get("session_id")
+                    ])
+                    line = buffered_output.getvalue()
+                    yield line
+                    buffered_output.seek(0)
+                    buffered_output.truncate(0)
+
+        raw_id = str(session_id)
+        # Use split to get the first segment of UUID, safer against pedantic slice linters
+        short_id = raw_id.split("-")[0]
+        filename = f"scan_report_{short_id}.csv"
+        return StreamingResponse(
+            generate(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Export Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/logs/{log_id}")

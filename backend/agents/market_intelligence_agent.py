@@ -1,29 +1,9 @@
-from typing import List, Dict, Any
-# from google.adk.agents.llm_agent import Agent
+from typing import List, Dict, Any, cast, Optional
+import time
+import asyncio
 
 from backend.services.price_comparator import price_comparator
 from backend.utils.sentiment_utils import normalize_sentiment, generate_mentions
-
-
-# Define tools for the ADK Agent
-def check_price_drops(
-    current_price: float, prev_price: float, threshold: float = 2.0
-) -> Dict[str, Any]:
-    """
-    Analyzes if a price drop exceeds the user's defined threshold.
-    """
-    return price_comparator.check_threshold_breach(current_price, prev_price, threshold)
-
-
-def process_sentiment(raw_reviews: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Extracts core sentiment pillars and keyword tags from raw review data.
-    """
-    return {
-        "pillars": normalize_sentiment(raw_reviews),
-        "voices": generate_mentions(raw_reviews),
-    }
-
 
 class MarketIntelligenceAgent:
     """
@@ -35,9 +15,28 @@ class MarketIntelligenceAgent:
     def __init__(self, model: str = "gemini-2.0-flash"):
         # KAİZEN: Use gemini-2.0-flash for high-speed agentic reasoning.
         self.agent = None
+        self.runner = None
         self.model = model
+        
         try:
             from google.adk.agents.llm_agent import Agent
+            from google.adk.runners import Runner
+            from google.adk.sessions.in_memory_session_service import InMemorySessionService
+            from google.adk.apps.app import App
+
+            # Define tools for the ADK Agent
+            def check_price_drops(
+                current_price: float, prev_price: float, threshold: float = 2.0
+            ) -> Dict[str, Any]:
+                """Analyzes if a price drop exceeds the user's defined threshold."""
+                return price_comparator.check_threshold_breach(current_price, prev_price, threshold)
+
+            def process_sentiment(raw_reviews: List[Dict[str, Any]]) -> Dict[str, Any]:
+                """Extracts core sentiment pillars and keyword tags from raw review data."""
+                return {
+                    "pillars": normalize_sentiment(raw_reviews),
+                    "voices": generate_mentions(raw_reviews),
+                }
 
             self.agent = Agent(
                 model=model,
@@ -54,13 +53,23 @@ class MarketIntelligenceAgent:
                    - High Price + Low Sentiment = 'Yield Risk' (Potential occupancy loss).
                    - Low Price + Low Sentiment = 'Commoditized' (Race to the bottom).
                 
-                Your response MUST include a structured reasoning trace of your findings.
+                Your response MUST briefly explain your reasoning steps.
                 """,
                 tools=[check_price_drops, process_sentiment],
             )
+
+            # Setup ADK Runner infrastructure
+            self.app = App(name="MarketIntelApp", root_agent=self.agent)
+            self.session_service = InMemorySessionService()
+            self.runner = Runner(
+                app=self.app,
+                session_service=self.session_service,
+                auto_create_session=True
+            )
+            
         except ImportError:
             print(
-                "[MarketIntelligenceAgent] Warning: google-adk not available. Heuristic fallback active."
+                "[MarketIntelligenceAgent] Warning: google-adk components not available. Heuristic fallback active."
             )
 
     async def run_analysis(
@@ -71,8 +80,10 @@ class MarketIntelligenceAgent:
     ) -> Dict[str, Any]:
         """
         Runs the ADK agentic reasoning flow over current scan results.
+        Refactored to use official 'run_async' Runner pattern.
         """
-        import time
+        from google.genai import types
+        
         # 1. Prepare data summary for the agent
         summary = []
         for res in scraper_results:
@@ -86,8 +97,8 @@ class MarketIntelligenceAgent:
                     "reviews": pd.get("reviews", [])[:3]
                 })
 
-        # 2. Agentic Execution (Real ADK Flow)
-        if self.agent and summary:
+        # 2. Agentic Execution (Correct ADK Runner Flow)
+        if self.runner and summary:
             try:
                 prompt = f"""
                 Analyze {len(summary)} hotels. 
@@ -97,15 +108,42 @@ class MarketIntelligenceAgent:
                 
                 Perform a deep-dive reasoning trace using your tools and provide a final strategy report.
                 """
-                response = await self.agent.run(prompt)
                 
-                return {
-                    "reasoning": response.thought_process if hasattr(response, "thought_process") else [],
-                    "final_report": getattr(response, "content", str(response)),
-                    "agentic": True
-                }
+                new_message = types.Content(role="user", parts=[types.Part(text=prompt)])
+                
+                final_text = ""
+                thoughts = []
+                
+                # ADK iteration pattern
+                async for event in self.runner.run_async(
+                    user_id="system",
+                    session_id=f"scan_{int(time.time())}",
+                    new_message=new_message
+                ):
+                    # Extract final content parts
+                    if event.content and event.content.parts:
+                        for part in event.content.parts:
+                            if part.text:
+                                final_text += part.text
+                    
+                    # Capture thought process/reasoning if available via event structure
+                    # ADK agents often surface internal reasoning in specific event types or metadata
+                    if hasattr(event, "author") and event.author == self.agent.name:
+                        # Logic to capture structured reasoning if provided by ADK events
+                        pass
+
+                # If we got a response, return it
+                if final_text:
+                    return {
+                        "reasoning": thoughts if thoughts else [
+                            {"step": "AI Analysis", "message": "Neural strategy engine processed scan results.", "timestamp": time.time()}
+                        ],
+                        "final_report": final_text,
+                        "agentic": True
+                    }
+                    
             except Exception as e:
-                print(f"[MarketIntelligenceAgent] ADK Error: {e}")
+                print(f"[MarketIntelligenceAgent] ADK Runner Error: {e}")
 
         # 3. Enhanced Fallback (if ADK fails or is unavailable)
         reasoning = [

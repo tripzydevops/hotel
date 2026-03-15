@@ -6,6 +6,7 @@ Aggregates hotel data, pricing history, alerts, and scan status for the user coc
 import asyncio
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
+from types import SimpleNamespace
 from fastapi import HTTPException
 from supabase import Client
 
@@ -82,54 +83,29 @@ async def get_dashboard_logic(
         # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
-        # 1. User Profile
-        profile_res = db.table("user_profiles").select("*").eq("user_id", str(user_id)).maybe_single().execute()
+        # [FIX] Optimized Multi-Query Consolidation (Phase 8: Aggregate RPCs)
+        rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
         
-        # 2. User Settings
-        settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).maybe_single().execute()
-        
-        # 3. Unread Alerts
-        alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
-        
-        # 4. Recent Searches
-        searches_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(20).execute()
-        
-        # 5. Scan History (Metadata only for counts/status)
-        sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
-        
-        # 6. Hotels (Bulk Fetch)
-        # KAİZEN: Using .is_("deleted_at", "null") is standard but we'll add extra safety
-        hotels_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
-        
-        # 7. Core Profile (for next_scan_at)
-        core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).maybe_single().execute()
+        # Ensure we have a valid response object with data
+        rpc_data = {}
+        if hasattr(rpc_res, "data") and rpc_res.data:
+            rpc_data = rpc_res.data
 
-        user_profile = (
-            profile_res.data if profile_res and hasattr(profile_res, "data") else {}
-        )
-        user_settings = (
-            settings_res.data if settings_res and hasattr(settings_res, "data") else {}
-        )
-        unread_count = (
-            alerts_res.count if alerts_res and hasattr(alerts_res, "count") else 0
-        )
-        recent_searches_raw = (
-            searches_res.data if searches_res and hasattr(searches_res, "data") else []
-        )
-        recent_sessions = (
-            sessions_res.data if sessions_res and hasattr(sessions_res, "data") else []
-        )
-        all_hotels = (
-            hotels_res.data if hotels_res and hasattr(hotels_res, "data") else []
-        )
+        user_profile = rpc_data.get("profile") or {}
+        user_settings = rpc_data.get("settings") or {}
+        unread_count = rpc_data.get("unread_alerts_count") or 0
+        recent_searches_raw = rpc_data.get("recent_searches") or []
+        recent_sessions = rpc_data.get("recent_sessions") or []
+        all_hotels = rpc_data.get("hotels") or []
+        core_profile_data = rpc_data.get("core_profile") or {}
+        global_pulse = rpc_data.get("global_pulse") or []
 
         # [FIX] Scan History Query (Mapping via Hotel IDs)
-        # The price_logs table does not contain a user_id column.
         # We fetch the latest 10 logs across all the user's active hotels.
         scan_history = []
         if all_hotels:
             hids = [str(h["id"]) for h in all_hotels]
-            hist_res = (
+            hist_res = await (
                 db.table("price_logs")
                 .select("*")
                 .in_("hotel_id", hids)
@@ -153,39 +129,31 @@ async def get_dashboard_logic(
             fallback_data["scan_history"] = []
             return fallback_data
 
-        # 2. Enrich Hotels with Master Directory data
+        # 2. Enrich Hotels with Master Directory data & Batch Fetch Price Logs
+        # We parallelize these two heavy data-layer operations
         serp_ids = list(
             set(h.get("serp_api_id") for h in all_hotels if h.get("serp_api_id"))
         )
+        hotel_ids = [str(h["id"]) for h in all_hotels]
+
+        dir_task = db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute() if serp_ids else asyncio.sleep(0, result=SimpleNamespace(data=[]))
+        prices_task = db.table("price_logs").select("*").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(200).execute()
+
+        dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)
+
         directory_map = {}
-        if serp_ids:
-            dir_res = (
-                db.table("hotel_directory")
-                .select("*")
-                .in_("serp_api_id", serp_ids)
-                .execute()
-            )
-            for drecord in dir_res.data or []:
+        if not isinstance(dir_res, Exception) and hasattr(dir_res, "data") and dir_res.data:
+            for drecord in dir_res.data:
                 directory_map[drecord["serp_api_id"]] = drecord
 
-        # 3. Batch Fetch Price Logs for all hotels
-        hotel_ids = [str(h["id"]) for h in all_hotels]
         hotel_prices_map = {}
-        all_prices_res = (
-            db.table("price_logs")
-            .select("*")
-            .in_("hotel_id", hotel_ids)
-            .order("recorded_at", desc=True)
-            .limit(200)
-            .execute()
-        )
-
-        for p in all_prices_res.data or []:
-            hid = str(p["hotel_id"])
-            if hid not in hotel_prices_map:
-                hotel_prices_map[hid] = []
-            if len(hotel_prices_map[hid]) < 10:
-                hotel_prices_map[hid].append(p)
+        if not isinstance(all_prices_res, Exception) and hasattr(all_prices_res, "data") and all_prices_res.data:
+            for p in all_prices_res.data:
+                hid = str(p["hotel_id"])
+                if hid not in hotel_prices_map:
+                    hotel_prices_map[hid] = []
+                if len(hotel_prices_map[hid]) < 10:
+                    hotel_prices_map[hid].append(p)
 
         # 4. Process Hotel Data
         enriched_hotels = []
@@ -244,10 +212,10 @@ async def get_dashboard_logic(
                 logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
                 try:
                     # Find ANY hotel IDs sharing this SERP ID
-                    g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                    g_res = await db.table("hotels").select("id").eq("serp_api_id", sid).execute()
                     if g_res.data:
                         g_hids = [str(gh["id"]) for gh in g_res.data]
-                        sh_res = (
+                        sh_res = await (
                             db.table("sentiment_history")
                             .select("sentiment_breakdown")
                             .in_("hotel_id", g_hids)
@@ -280,7 +248,7 @@ async def get_dashboard_logic(
             if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
                 try:
-                    g_res = db.table("hotels").select("id, rating, review_count").eq("serp_api_id", sid).execute()
+                    g_res = await db.table("hotels").select("id, rating, review_count").eq("serp_api_id", sid).execute()
                     if g_res.data:
                         # First: try to get review_count directly from any hotel record
                         for gh in g_res.data:
@@ -296,7 +264,7 @@ async def get_dashboard_logic(
                         # If review_count still missing, check sentiment_history
                         if not review_count or review_count == 0:
                             g_hids = [str(gh["id"]) for gh in g_res.data]
-                            gh_res = db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
+                            gh_res = await db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
                             if gh_res.data:
                                 sh_rating = gh_res.data[0].get("rating")
                                 sh_rc = gh_res.data[0].get("review_count")
@@ -377,14 +345,11 @@ async def get_dashboard_logic(
 
         # [KAIZEN] Use profile next_scan_at as source of truth
         # This aligns the Dashboard UI with the actual backend scheduler.
-        next_scan_at = (
-            core_profile_res.data.get("next_scan_at")
-            if core_profile_res and hasattr(core_profile_res, "data")
-            else None
-        )
+        next_scan_at = core_profile_data.get("next_scan_at")
 
         # Fallback to calculated if next_scan_at is missing from profile
         if not next_scan_at:
+            # ... (calculation logic remains same)
             freq = (
                 (user_settings.get("check_frequency_minutes") or 0)
                 if user_settings
@@ -393,7 +358,7 @@ async def get_dashboard_logic(
             if freq > 0:
                 latest = None
                 for h in enriched_hotels:
-                    if h["price_history"]:
+                    if h.get("price_history"):
                         ts = h["price_history"][0]["recorded_at"]
                         if latest is None or ts > latest:
                             latest = ts
@@ -427,14 +392,9 @@ async def get_dashboard_logic(
             except Exception as e:
                 logger.warning(f"Narrative generation failed: {e}")
 
-        marketplace_data = {
-            "target_hotel": target_hotel,
-            "competitors": competitors,
-            "market_average": market_avg,
-            "synthetic_narrative": synthetic_narrative,
-            "last_updated": datetime.now().isoformat(),
-            "next_scan_at": next_scan_at,
-        }
+        # [NEW] Include Pulse Stats to eliminate separate frontend calls
+        from backend.services.pulse_service import get_pulse_network_stats
+        pulse_stats = await get_pulse_network_stats(db)
 
         return {
             "target_hotel": target_hotel,
@@ -448,7 +408,9 @@ async def get_dashboard_logic(
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "profile": user_profile,
             "user_settings": user_settings,
-            "market_insight": synthetic_narrative, # Changed from market_insight to synthetic_narrative
+            "market_insight": synthetic_narrative,
+            "global_pulse": global_pulse,
+            "pulse_stats": pulse_stats,
         }
 
     except Exception as e:

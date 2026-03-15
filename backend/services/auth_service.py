@@ -215,3 +215,13 @@ def get_supabase_rls(
     Uses the JWT from the Authorization header.
     """
     return get_supabase_client(jwt=token)
+
+
+async def get_async_supabase_rls(
+    token: str = Depends(get_token),
+) -> Client:
+    """
+    Async dependency that returns a Supabase AsyncClient with RLS enabled.
+    """
+    from backend.utils.db import get_async_supabase_client
+    return await get_async_supabase_client(jwt=token)

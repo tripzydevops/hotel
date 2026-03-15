@@ -539,11 +539,9 @@ class AnalystAgent:
                     await self.log_reasoning(session_id, "Market Intel", 
                         "AI Strategy Server is currently at capacity. Falling back to heuristic mode.", "warning"
                     )
-                    err_str = str(error_msg or "")
-                    # Explicit slice to satisfy strict linter
-                    safe_msg = err_str[0:50]
+                else:
                     await self.log_reasoning(session_id, "Market Intel", 
-                        f"AI analysis bypassed due to temporary service issue: {safe_msg}...", "warning"
+                        f"AI Strategy failed: {error_msg[:100]}. Falling back to heuristics.", "warning"
                     )
                 
                 # Heuristic Fallback reasoning

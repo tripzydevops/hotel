@@ -1228,7 +1228,7 @@ export default function ReportsPage() {
           ["Market Average", analysis?.market_average ? `${getCurrencySymbol(currency)}${analysis.market_average.toLocaleString()}` : "N/A"],
           ["ARI (Avg Rate Index)", analysis?.ari?.toFixed(1) || "N/A"],
           ["GRI (Guest Rating Index)", analysis?.sentiment_index?.toFixed(1) || "N/A"],
-          ["Parity Score", targetHotel ? `${Math.round(((competitors.length - competitors.filter(c => c.price_info?.current_price && c.price_info.current_price < (targetHotel.price_info?.current_price || 0)).length) / (competitors.length || 1)) * 100)}%` : "N/A"],
+          ["Parity Score", targetHotel ? `${Math.round(((competitors.length - competitors.filter((c: any) => c.price_info?.current_price && c.price_info.current_price < (targetHotel.price_info?.current_price || 0)).length) / (competitors.length || 1)) * 100)}%` : "N/A"],
           ["Competitive Rank", analysis?.competitive_rank ? `#${analysis.competitive_rank} of ${(analysis.competitors?.length || 0) + 1}` : "N/A"],
           ["Strategic Personality", analysis?.pricing_dna_text || "Standard Positioning"],
         ];

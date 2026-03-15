@@ -19,20 +19,27 @@ export default function FallbackImage({
   ...props
 }: FallbackImageProps) {
   const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [prevSrc, setPrevSrc] = useState(src);
 
   if (src !== prevSrc) {
     setPrevSrc(src);
     setError(false);
+    setIsLoading(true);
   }
 
   const handleError = () => {
     setError(true);
+    setIsLoading(false);
+  };
+
+  const handleLoad = () => {
+    setIsLoading(false);
   };
 
   if (error || !src) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[var(--soft-gold)]/5">
+      <div className="w-full h-full flex items-center justify-center bg-[var(--deep-ocean-accent)]">
         {fallbackType === "hotel" ? (
           <Hotel className={iconClassName} />
         ) : (
@@ -42,5 +49,19 @@ export default function FallbackImage({
     );
   }
 
-  return <Image {...props} src={src} alt={alt} onError={handleError} />;
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 skeleton" />
+      )}
+      <Image 
+        {...props} 
+        src={src} 
+        alt={alt} 
+        onError={handleError} 
+        onLoad={handleLoad}
+        className={`${props.className || ""} ${isLoading ? "opacity-0" : "opacity-100 transition-opacity duration-500"}`}
+      />
+    </div>
+  );
 }

@@ -109,6 +109,10 @@ class ApiClient {
     return response.json();
   }
 
+  public async getHotel(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/hotels/${hotelId}`);
+  }
+
   async getDashboard(): Promise<DashboardData> {
     return this.fetch<DashboardData>(`/api/dashboard`);
   }
@@ -231,6 +235,31 @@ class ApiClient {
 
   async getSessionLogs(sessionId: string): Promise<QueryLog[]> {
     return this.fetch<QueryLog[]>(`/api/sessions/${sessionId}/logs`);
+  }
+
+  async exportSessionCsv(sessionId: string): Promise<void> {
+    const token = await this.getToken();
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const url = `${API_BASE_URL}/api/sessions/${sessionId}/export/csv`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("CSV Export failed");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    const timestamp = new Date().toISOString().split("T")[0];
+    a.download = `scan_session_${sessionId.slice(0, 8)}_${timestamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
   }
 
   async getAnalysis(currency?: string): Promise<any> {
