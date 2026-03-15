@@ -205,146 +205,145 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
         </div>
 
         <ErrorBoundary>
-          <BentoGrid className="lg:grid-cols-4">
-            {!data && loading ? (
-              <>
-                {[...Array(3)].map((_, i) => (
-                  <SkeletonTile key={i} />
-                ))}
-              </>
-            ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8 items-stretch">
+        {/* HERO AREA: Target Asset & Health Index */}
+        {!data && loading ? (
+          <div className="lg:col-span-12">
+            <BentoGrid className="lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <SkeletonTile key={i} />
+              ))}
+            </BentoGrid>
+          </div>
+        ) : (
+          <>
+            <div className="lg:col-span-8 h-full">
               <AnimatePresence mode="popLayout">
-                {data?.target_hotel && (
+                {data?.target_hotel ? (
                   <motion.div
                     key={data.target_hotel.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="sm:col-span-2 lg:col-span-2 lg:row-span-2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="h-full"
                   >
                     <TargetHotelTile
                       id={data.target_hotel.id}
                       name={data.target_hotel.name}
                       location={data.target_hotel.location}
                       currentPrice={effectiveTargetPrice}
-                      previousPrice={
-                        data.target_hotel.price_info?.previous_price
-                      }
-                      currency={
-                        data.target_hotel.price_info?.currency ||
-                        data.competitors?.[0]?.price_info?.currency ||
-                        userSettings?.currency ||
-                        "TRY"
-                      }
+                      previousPrice={data.target_hotel.price_info?.previous_price}
+                      currency={data.target_hotel.price_info?.currency || "TRY"}
                       trend={data.target_hotel.price_info?.trend || "stable"}
-                      changePercent={
-                        data.target_hotel.price_info?.change_percent || 0
-                      }
-                      lastUpdated={
-                        data.target_hotel.price_info
-                          ? t("common.justNow")
-                          : t("dashboard.pendingInitial")
-                      }
+                      changePercent={data.target_hotel.price_info?.change_percent || 0}
+                      lastUpdated={data.target_hotel.price_info ? t("common.justNow") : t("dashboard.pendingInitial")}
                       onDelete={handleDeleteHotel}
                       rating={data.target_hotel.rating}
                       stars={data.target_hotel.stars}
                       imageUrl={data.target_hotel.image_url}
                       vendor={data.target_hotel.price_info?.vendor}
                       priceHistory={data.target_hotel.price_history}
-                      checkIn={data.target_hotel.price_info?.check_in}
-                      adults={data.target_hotel.price_info?.adults}
                       onEdit={(id) => handleEditHotel(id, data)}
                       onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
                       isEnterprise={isEnterprise}
-                      amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
-                      offers={data.target_hotel.price_info?.offers}
                       isEstimated={data.target_hotel.price_info?.is_estimated}
                     />
                   </motion.div>
+                ) : (
+                  <div className="card-blur p-12 h-full rounded-[2rem] border border-white/5 flex flex-col items-center justify-center text-center">
+                    <Building2 className="w-16 h-16 text-slate-700 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">{t("dashboard.noTargetTitle") || "Primary Asset Missing"}</h3>
+                    <p className="text-slate-400 max-w-md mb-8">{t("dashboard.noTargetDesc") || "Set your property as the 'Target' to enable advanced rate intelligence and portfolio health indexing."}</p>
+                    <button 
+                      onClick={() => setIsAddHotelOpen(true)}
+                      className="btn-optimal px-8 py-4 rounded-2xl flex items-center gap-2 group"
+                    >
+                      <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                      {t("dashboard.addMyHotel") || "Benchmark My Hotel"}
+                    </button>
+                  </div>
                 )}
+              </AnimatePresence>
+            </div>
 
-                {data?.target_hotel && data.competitors && data.competitors.length > 0 && (
+            <div className="lg:col-span-4 h-full">
+              {data?.target_hotel && data.competitors && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="h-full"
+                >
+                  <PortfolioHealthTile
+                    targetPrice={effectiveTargetPrice}
+                    competitors={data.competitors}
+                  />
+                </motion.div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* COMPETITOR COCKPIT */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black text-white uppercase tracking-tighter">
+              {t("dashboard.competitorCockpit") || "Competitor Cockpit"}
+            </h3>
+            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-slate-500 uppercase">
+              {data?.competitors?.length || 0} {t("common.monitored") || "Monitored"}
+            </span>
+          </div>
+        </div>
+
+        <BentoGrid className="lg:grid-cols-4">
+          <AnimatePresence mode="popLayout">
+            {data?.competitors &&
+              [...data.competitors]
+                .sort((a, b) => (a.price_info?.current_price || 0) - (b.price_info?.current_price || 0))
+                .map((competitor, index) => (
                   <motion.div
-                    key="portfolio-health"
+                    key={competitor.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="col-span-1 lg:row-span-1"
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    <PortfolioHealthTile
-                      targetPrice={effectiveTargetPrice}
-                      competitors={data.competitors}
+                    <CompetitorTile
+                      {...competitor}
+                      currentPrice={competitor.price_info?.current_price || 0}
+                      previousPrice={competitor.price_info?.previous_price}
+                      currency={competitor.price_info?.currency || "TRY"}
+                      trend={competitor.price_info?.trend || "stable"}
+                      changePercent={competitor.price_info?.change_percent || 0}
+                      isUndercut={competitor.price_info && competitor.price_info.current_price < effectiveTargetPrice}
+                      rank={index + 1}
+                      onDelete={handleDeleteHotel}
+                      onEdit={(id) => handleEditHotel(id, data)}
+                      onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
+                      isEnterprise={isEnterprise}
                     />
                   </motion.div>
-                )}
-
-                {data?.competitors &&
-                  [...data.competitors]
-                    .sort(
-                      (a, b) =>
-                        (a.price_info?.current_price || 0) -
-                        (b.price_info?.current_price || 0),
-                    )
-                    .map((competitor, index) => {
-                      const isUndercut =
-                        competitor.price_info &&
-                        competitor.price_info.current_price <
-                        effectiveTargetPrice;
-
-                      return (
-                        <motion.div
-                          key={competitor.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                          transition={{
-                            duration: 0.4,
-                            ease: [0.16, 1, 0.3, 1],
-                            delay: 0.02 * (index + 1),
-                          }}
-                          className="col-span-1"
-                        >
-                          <CompetitorTile
-                            id={competitor.id}
-                            name={competitor.name}
-                            currentPrice={
-                              competitor.price_info?.current_price || 0
-                            }
-                            previousPrice={
-                              competitor.price_info?.previous_price
-                            }
-                            currency={competitor.price_info?.currency || "TRY"}
-                            trend={competitor.price_info?.trend || "stable"}
-                            changePercent={
-                              competitor.price_info?.change_percent || 0
-                            }
-                            isUndercut={isUndercut}
-                            rank={index + 1}
-                            onDelete={handleDeleteHotel}
-                            rating={competitor.rating}
-                            stars={competitor.stars}
-                            imageUrl={competitor.image_url}
-                            vendor={competitor.price_info?.vendor}
-                            priceHistory={competitor.price_history}
-                            checkIn={competitor.price_info?.check_in}
-                            adults={competitor.price_info?.adults}
-                            isEstimated={competitor.price_info?.is_estimated}
-                            onEdit={(id) => handleEditHotel(id, data)}
-                            onViewDetails={(hotel) =>
-                              handleOpenDetails(hotel, data)
-                            }
-                            isEnterprise={isEnterprise}
-                            amenities={competitor.amenities}
-                            images={competitor.images}
-                            offers={competitor.price_info?.offers}
-                          />
-                        </motion.div>
-                      );
-                    })}
-              </AnimatePresence>
-            )}
-          </BentoGrid>
+                ))}
+            
+            {/* Add Competitor Slot */}
+            <motion.button
+              onClick={() => setIsAddHotelOpen(true)}
+              whileHover={{ scale: 1.02 }}
+              className="card-blur rounded-[2rem] border border-dashed border-white/10 p-8 flex flex-col items-center justify-center gap-3 hover:border-[#F6C344]/30 transition-all min-h-[200px]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-[#F6C344]/10 transition-colors">
+                <Plus className="w-6 h-6 text-slate-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-white tracking-tight">{t("dashboard.addCompetitor") || "Track Rival"}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Add to cockpit</p>
+              </div>
+            </motion.button>
+          </AnimatePresence>
+        </BentoGrid>
+      </div>
         </ErrorBoundary>
 
         <motion.div

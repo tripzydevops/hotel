@@ -161,13 +161,16 @@ async def get_dashboard_logic(
         dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)
 
         directory_map = {}
-        if not isinstance(dir_res, Exception) and hasattr(dir_res, "data") and dir_res.data:
-            for drecord in dir_res.data:
+        directory_map = {}
+        dir_records = getattr(dir_res, "data", []) if not isinstance(dir_res, Exception) else []
+        if dir_records:
+            for drecord in dir_records:
                 directory_map[drecord["serp_api_id"]] = drecord
 
         hotel_prices_map = {}
-        if not isinstance(all_prices_res, Exception) and hasattr(all_prices_res, "data") and all_prices_res.data:
-            for p in all_prices_res.data:
+        prices_data = getattr(all_prices_res, "data", []) if not isinstance(all_prices_res, Exception) else []
+        if prices_data:
+            for p in prices_data:
                 hid = str(p["hotel_id"])
                 if hid not in hotel_prices_map:
                     hotel_prices_map[hid] = []
@@ -252,15 +255,17 @@ async def get_dashboard_logic(
             # [FIX] Resilient Metadata Merging
             # Ensure static metadata (rating, reviews, stars) falls back to master directory
             # if the user's specific hotel record is incomplete.
-            review_count = h.get("review_count") or dir_data.get("review_count")
-            rating = h.get("rating") or dir_data.get("rating")
-            stars = h.get("stars") or dir_data.get("stars")
-            image_url = h.get("image_url") or dir_data.get("image_url")
-            latitude = h.get("latitude") or dir_data.get("latitude")
-            longitude = h.get("longitude") or dir_data.get("longitude")
-            amenities = h.get("amenities") or dir_data.get("amenities") or []
-            images = h.get("images") or dir_data.get("images") or []
-            reviews = h.get("reviews") or dir_data.get("reviews") or []
+            # Ensure static metadata (rating, reviews, stars) falls back to master directory
+            # if the user's specific hotel record is incomplete.
+            review_count = h.get("review_count") or (dir_data.get("review_count") if isinstance(dir_data, dict) else 0)
+            rating = h.get("rating") or (dir_data.get("rating") if isinstance(dir_data, dict) else 0)
+            stars = h.get("stars") or (dir_data.get("stars") if isinstance(dir_data, dict) else 0)
+            image_url = h.get("image_url") or (dir_data.get("image_url") if isinstance(dir_data, dict) else "")
+            latitude = h.get("latitude") or (dir_data.get("latitude") if isinstance(dir_data, dict) else None)
+            longitude = h.get("longitude") or (dir_data.get("longitude") if isinstance(dir_data, dict) else None)
+            amenities = h.get("amenities") or (dir_data.get("amenities") if isinstance(dir_data, dict) else []) or []
+            images = h.get("images") or (dir_data.get("images") if isinstance(dir_data, dict) else []) or []
+            reviews = h.get("reviews") or (dir_data.get("reviews") if isinstance(dir_data, dict) else []) or []
 
             # [PRO-FALLBACK] Cross-User Recovery for Rating & Review Count
             # If still missing after directory check, we search global data.
