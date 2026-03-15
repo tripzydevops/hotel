@@ -23,6 +23,7 @@ from backend.services.analysis_service import (
     generate_synthetic_narrative,
     calculate_rate_recommendation,
 )
+from backend.services.pulse_service import get_pulse_network_stats
 
 logger = get_logger(__name__)
 
@@ -91,11 +92,13 @@ async def get_dashboard_logic(
         # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
-        # [FIX] Optimized Multi-Query Consolidation (Phase 8: Aggregate RPCs)
-        # [FIX] Robust RPC Unwrapping
+        # [DEBUG] Track execution path
+        debug_info: Dict[str, Any] = {"step": "start", "user_id": user_id}
+        
         try:
             rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
             rpc_data: Dict[str, Any] = rpc_res.data
+            debug_info["rpc_data_type"] = str(type(rpc_data))
             
             # PostgREST unwrap: sometimes it's [{...}] or just {...} or contains the RPC name as a key
             if isinstance(rpc_data, list) and len(rpc_data) > 0:
@@ -114,13 +117,14 @@ async def get_dashboard_logic(
             logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")
             rpc_data = {}
 
-        user_profile = rpc_data.get("profile") or {}
-        user_settings = rpc_data.get("settings") or {}
+        # [FIX] Resilient Key Mapping
+        # Handle cases where the RPC might return keys with different names
+        user_profile = rpc_data.get("profile") or rpc_data.get("core_profile") or {}
+        user_settings = rpc_data.get("settings") or rpc_data.get("user_settings") or {}
         unread_count = rpc_data.get("unread_alerts_count") or 0
         recent_searches_raw = rpc_data.get("recent_searches") or []
         recent_sessions = rpc_data.get("recent_sessions") or []
         all_hotels = rpc_data.get("hotels") or []
-        core_profile_data: Dict[str, Any] = rpc_data.get("core_profile") or {}
         global_pulse = rpc_data.get("global_pulse") or []
 
         # [NEW] Hydrate fallback data immediately to ensure UI context
@@ -130,6 +134,11 @@ async def get_dashboard_logic(
         fallback_data["global_pulse"] = global_pulse
         
         logger.info(f"Dashboard: Found {len(all_hotels)} hotels for user {user_id}")
+        debug_info["all_hotels_count"] = len(all_hotels)
+        debug_info["rpc_keys"] = list(rpc_data.keys()) if isinstance(rpc_data, dict) else []
+        
+        enriched_hotels = []
+        active_prices = []
 
         # [FIX] Scan History Query (Mapping via Hotel IDs)
         # We fetch the latest 10 logs across all the user's active hotels.
@@ -172,7 +181,6 @@ async def get_dashboard_logic(
 
         dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)
 
-        directory_map = {}
         directory_map = {}
         dir_records = getattr(dir_res, "data", []) if not isinstance(dir_res, Exception) else []
         if dir_records:
@@ -380,7 +388,7 @@ async def get_dashboard_logic(
                 break
 
         # [KAIZEN] Use profile next_scan_at as source of truth
-        next_scan_at = core_profile_data.get("next_scan_at") if isinstance(core_profile_data, dict) else None
+        next_scan_at = user_profile.get("next_scan_at") if isinstance(user_profile, dict) else None
 
         # Fallback to calculated if next_scan_at is missing from profile
         if not next_scan_at:
@@ -430,7 +438,6 @@ async def get_dashboard_logic(
         # [NEW] Include Pulse Stats to eliminate separate frontend calls
         pulse_stats = None
         try:
-            from backend.services.pulse_service import get_pulse_network_stats
             pulse_stats = await get_pulse_network_stats(db)
         except Exception as pulse_e:
             logger.warning(f"Dashboard: Pulse stats retrieval failed: {pulse_e}")
@@ -440,6 +447,7 @@ async def get_dashboard_logic(
         return {
             "target_hotel": target_hotel,
             "competitors": competitors,
+            "hotels": enriched_hotels,
             "recent_searches": recent_searches,
             "scan_history": scan_history,
             "recent_sessions": recent_sessions,
@@ -452,6 +460,7 @@ async def get_dashboard_logic(
             "market_insight": synthetic_narrative,
             "global_pulse": global_pulse,
             "pulse_stats": pulse_stats,
+            "debug_info": debug_info,
         }
 
     except Exception as e:
