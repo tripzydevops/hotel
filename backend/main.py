@@ -189,6 +189,11 @@ async def proxy_supabase_rest(request: Request, path: str):
 async def proxy_supabase_storage(request: Request, path: str):
     return await _handle_proxy_request(request, f"storage/v1/{path}")
 
+@app.api_route("/api/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_nextjs_auth(request: Request, path: str):
+    # InsForge Auth usually uses /api/auth at the origin
+    return await _handle_proxy_request(request, f"api/auth/{path}")
+
 async def _handle_proxy_request(request: Request, sub_path: str):
     supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     if not supabase_url:
