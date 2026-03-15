@@ -178,16 +178,12 @@ export default function DashboardLayout({
               <div className="h-8 w-[1px] bg-white/5 mx-1" />
 
               <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end items-end hidden sm:flex">
+                <div className="flex flex-col items-end hidden sm:flex min-w-[120px]">
                   <span className="text-xs font-bold text-white">
-                    {/* EXPLANATION: Profile Name Sync
-                        Changed from full_name to display_name to match backend and profile modal storage. */}
-                    {profile?.display_name || "Enterprise User"}
+                    {profile ? profile.display_name : ""}
                   </span>
                   <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                    {profile?.role === "admin"
-                      ? "Administrator"
-                      : "Revenue Director"}
+                    {profile ? (profile.role === "admin" ? "Administrator" : "Revenue Director") : ""}
                   </span>
                 </div>
                 <UserMenu

@@ -25,10 +25,9 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import ModalLoading from "@/components/ui/ModalLoading";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
+import PortfolioHealthTile from "@/components/tiles/PortfolioHealthTile";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { GlobalPulseFeed } from "@/components/tiles/GlobalPulseFeed";
-
-import PortfolioHealthTile from "@/components/tiles/PortfolioHealthTile";
 
 interface DashboardClientProps {
   userId: string | null;
@@ -196,7 +195,7 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
         </div>
 
         <ErrorBoundary>
-          <BentoGrid>
+          <BentoGrid className="lg:grid-cols-4 lg:auto-rows-fr">
             {!data && loading ? (
               <>
                 {[...Array(3)].map((_, i) => (
@@ -205,19 +204,6 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
               </>
             ) : (
               <AnimatePresence mode="popLayout">
-                {data?.target_hotel && data.competitors && data.competitors.length > 0 && (
-                  <motion.div
-                    key="portfolio-health"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="col-span-1 lg:row-span-1"
-                  >
-                    <PortfolioHealthTile
-                      targetPrice={effectiveTargetPrice}
-                      competitors={data.competitors}
-                    />
-                  </motion.div>
-                )}
                 {data?.target_hotel && (
                   <motion.div
                     key={data.target_hotel.id}
@@ -266,6 +252,20 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
                       images={data.target_hotel.images}
                       offers={data.target_hotel.price_info?.offers}
                       isEstimated={data.target_hotel.price_info?.is_estimated}
+                    />
+                  </motion.div>
+                )}
+
+                {data?.target_hotel && data.competitors && data.competitors.length > 0 && (
+                  <motion.div
+                    key="portfolio-health"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="col-span-1 lg:row-span-1"
+                  >
+                    <PortfolioHealthTile
+                      targetPrice={effectiveTargetPrice}
+                      competitors={data.competitors}
                     />
                   </motion.div>
                 )}
