@@ -92,7 +92,7 @@ async def get_dashboard_logic(
         # [FIX] Robust RPC Unwrapping
         try:
             rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
-            rpc_data = rpc_res.data
+            rpc_data: Dict[str, Any] = rpc_res.data
             
             # PostgREST unwrap: sometimes it's [{...}] or just {...} or contains the RPC name as a key
             if isinstance(rpc_data, list) and len(rpc_data) > 0:
@@ -117,7 +117,7 @@ async def get_dashboard_logic(
         recent_searches_raw = rpc_data.get("recent_searches") or []
         recent_sessions = rpc_data.get("recent_sessions") or []
         all_hotels = rpc_data.get("hotels") or []
-        core_profile_data = rpc_data.get("core_profile") or {}
+        core_profile_data: Dict[str, Any] = rpc_data.get("core_profile") or {}
         global_pulse = rpc_data.get("global_pulse") or []
 
         # [NEW] Hydrate fallback data immediately to ensure UI context
@@ -377,15 +377,14 @@ async def get_dashboard_logic(
                 break
 
         # [KAIZEN] Use profile next_scan_at as source of truth
-        # This aligns the Dashboard UI with the actual backend scheduler.
-        next_scan_at = core_profile_data.get("next_scan_at")
+        next_scan_at = core_profile_data.get("next_scan_at") if isinstance(core_profile_data, dict) else None
 
         # Fallback to calculated if next_scan_at is missing from profile
         if not next_scan_at:
             # ... (calculation logic remains same)
             freq = (
-                (user_settings.get("check_frequency_minutes") or 0)
-                if user_settings
+                user_settings.get("check_frequency_minutes", 0) or 0
+                if isinstance(user_settings, dict)
                 else 0
             )
             if freq > 0:

@@ -3,12 +3,10 @@
     "."
   ],
   "search_path": [
-    ".",
     "venv/lib/python3.11/site-packages"
   ],
   "exclude": [
-    "**/node_modules/.*",
-    "**/__pycache__/.*",
-    "venv/.*"
+    ".*/venv/.*",
+    ".*/node_modules/.*"
   ]
 }
