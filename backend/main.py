@@ -227,14 +227,20 @@ async def _handle_proxy_request(request: Request, sub_path: str):
                 follow_redirects=True
             )
             
+            # KAIZEN: If we get an error from origin, wrap it for transparency
             if resp.status_code >= 400:
-                logger.error(f"Origin Error {resp.status_code} for {sub_path}: {resp.text[:200]}")
+                logger.error(f"Origin Error {resp.status_code} for {sub_path}: {resp.text[:500]}")
+                return Response(
+                    content=resp.content,
+                    status_code=resp.status_code,
+                    headers={"X-Bridge-Error": "true", **dict(resp.headers)}
+                )
             
-        return Response(
-            content=resp.content,
-            status_code=resp.status_code,
-            headers=dict(resp.headers)
-        )
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                headers=dict(resp.headers)
+            )
     except Exception as e:
         logger.error(f"Proxy Failure for {sub_path}: {str(e)}")
         return JSONResponse(status_code=502, content={"detail": f"Proxy Bridge Failure: {str(e)}"})
