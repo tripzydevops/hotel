@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import BentoGrid from "@/components/ui/BentoGrid";
 import TargetHotelTile from "@/components/tiles/TargetHotelTile";
 import CompetitorTile from "@/components/tiles/CompetitorTile";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, Building2 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
   DashboardData,
