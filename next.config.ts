@@ -13,10 +13,18 @@ const nextConfig: NextConfig = {
             source: "/api/:path*",
             destination: "http://127.0.0.1:8000/api/:path*",
           }
-        : {
-            source: "/p-api/:path*",
-            destination: "/api/index.py",
-          },
+        : [
+            {
+              source: "/p-api/:path*",
+              destination: "/api/index.py",
+            },
+            {
+              // Fallback catch-all for any missed /api calls in prod 
+              // to ensure they hit the backend too if specifically prefixed
+              source: "/api-gateway/:path*",
+              destination: "/api/index.py",
+            }
+          ],
     ].flat();
   },
   // Enable built-in asset compression (Gzip/Brotli) for static files

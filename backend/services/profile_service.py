@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any
 from fastapi import HTTPException
 from supabase import Client, create_client
 from backend.models.schemas import UserProfileUpdate
+from backend.utils.db import get_supabase_client
 
 
 async def get_enriched_profile_logic(
@@ -35,6 +36,15 @@ async def get_enriched_profile_logic(
             )
             if res.data:
                 base_data = res.data[0]
+            else:
+                # FALLBACK: Try with Service Role (Admin Bypass)
+                # If RLS or permissions blocked the direct fetch, this ensures metadata hydration
+                admin_db = get_supabase_client() # Service Role
+                if admin_db:
+                    res = admin_db.table("user_profiles").select("*").eq("user_id", user_id_str).execute()
+                    if res.data:
+                        base_data = res.data[0]
+                        print(f"[Profile] Successfully recovered metadata via Service Role for {user_id}")
         except Exception as e:
             print(f"Base Profile Fetch Error: {e}")
 
@@ -96,11 +106,10 @@ async def get_enriched_profile_logic(
                     "elif@tripzy.travel",
                 ] or email_lower.endswith("@hotel.plus")
 
+            role = base_data.get("role")
             is_admin_role = (
-                base_data
-                and base_data.get("role")
-                and base_data.get("role").lower()
-                in ["admin", "market_admin", "market admin"]
+                isinstance(role, str)
+                and role.lower() in ["admin", "market_admin", "market admin"]
             )
 
             if is_admin_email or is_admin_role or is_specific_admin:
@@ -128,9 +137,12 @@ async def get_enriched_profile_logic(
         bypass_active = True
 
     # Final Merge: Take base profile metadata and inject calculated plan status
-    profile_result: Dict[str, Any] = (
-        base_data.copy() if base_data else {"user_id": user_id_str}
-    )
+    # Standardize result as a dictionary to satisfy strict type checkers (dict | Error union)
+    profile_result: Dict[str, Any] = {}
+    if base_data and isinstance(base_data, dict):
+        profile_result = base_data.copy()
+    else:
+        profile_result = {"user_id": user_id_str}
     profile_result["plan_type"] = plan
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active

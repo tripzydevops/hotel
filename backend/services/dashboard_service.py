@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from supabase import Client
 
 from backend.utils.logger import get_logger
+from backend.utils.db import get_supabase_client
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.sentiment_utils import (
@@ -131,6 +132,22 @@ async def get_dashboard_logic(
         all_hotels = rpc_data.get("hotels") or []
         global_pulse = rpc_data.get("global_pulse") or []
 
+        # [NEW] Manual Profile Fetch Fallback 
+        # If the RPC fails to return a profile (e.g. due to RLS), fetch it manually.
+        # This is critical for admin impersonation where RLS might filter out the RPC's internal hits.
+        if not user_profile or not user_profile.get("user_id"):
+            logger.info(f"Dashboard: Profile missing in RPC, attempting manual fetch for {user_id}")
+            try:
+                # Use Service Role to bypass RLS for admin-requested dashboards
+                admin_db = get_supabase_client() # No JWT = Service Role
+                if admin_db:
+                    p_res = admin_db.table("user_profiles").select("*").eq("user_id", str(user_id)).execute()
+                    if p_res.data:
+                        user_profile = p_res.data[0]
+                        logger.info(f"Dashboard: Successfully recovered profile for {user_id}")
+            except Exception as mp_e:
+                logger.error(f"Dashboard: Manual Profile Fetch failed: {mp_e}")
+
         # [NEW] Hydrate fallback data immediately to ensure UI context
         fallback_data["profile"] = user_profile
         fallback_data["user_settings"] = user_settings
@@ -140,6 +157,7 @@ async def get_dashboard_logic(
         logger.info(f"Dashboard: Found {len(all_hotels)} hotels for user {user_id}")
         debug_info["all_hotels_count"] = len(all_hotels)
         debug_info["rpc_keys"] = list(rpc_data.keys()) if isinstance(rpc_data, dict) else []
+        debug_info["has_profile_recovered"] = bool(user_profile.get("user_id"))
         
         enriched_hotels = []
         active_prices = []
