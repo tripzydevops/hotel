@@ -159,6 +159,13 @@ export interface DashboardData {
   global_pulse?: any[];
   pulse_stats?: any;
   hotels?: HotelWithPrice[];
+  debug_info?: {
+    step: string;
+    user_id: string;
+    rpc_data_type?: string;
+    all_hotels_count?: number;
+    rpc_keys?: string[];
+  };
 }
 
 export interface ScanOptions {

@@ -508,6 +508,13 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
             <p><span className="text-slate-500">LOADING:</span> {loading ? "TRUE" : "FALSE"}</p>
             <p><span className="text-slate-500">ERRORS:</span> <span className={error ? "text-rose-500" : "text-emerald-500"}>{error || "NONE"}</span></p>
             <p><span className="text-slate-500">INITIAL_DATA:</span> {initialData ? "PRESENT" : "MISSING"}</p>
+            {data?.debug_info && (
+              <>
+                <p><span className="text-slate-500">RPC_STEP:</span> {data.debug_info.step}</p>
+                <p><span className="text-slate-500">RPC_KEYS:</span> {data.debug_info.rpc_keys?.join(", ")}</p>
+                <p><span className="text-slate-500">HOTELS_COUNT:</span> {data.debug_info.all_hotels_count}</p>
+              </>
+            )}
           </div>
           <div className="mt-4 pt-4 border-t border-white/5 opacity-50">
             <p className="text-[8px uppercase tracking-widest">Agent Status: Awaiting Verification...</p>

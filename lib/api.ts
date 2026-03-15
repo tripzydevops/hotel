@@ -118,8 +118,10 @@ class ApiClient {
     const data = await this.fetch<DashboardData>(`/api/dashboard${params}`);
     console.log(`[DashboardDebug] Received data for user ${userId || 'Self'}:`, {
       hasProfile: !!data.profile,
+      profileKeys: data.profile ? Object.keys(data.profile) : [],
       hotelCount: data.hotels?.length || data.competitors?.length,
-      hasTarget: !!data.target_hotel
+      hasTarget: !!data.target_hotel,
+      debugInfo: data.debug_info
     });
     return data;
   }
@@ -191,8 +193,9 @@ class ApiClient {
     return this.fetch<any>(`/api/settings`);
   }
 
-  async getProfile(): Promise<any> {
-    return this.fetch<any>(`/api/profile`);
+  async getProfile(userId?: string): Promise<any> {
+    const params = userId ? `?user_id=${userId}` : "";
+    return this.fetch<any>(`/api/profile${params}`);
   }
 
   async searchDirectory(query: string, city?: string): Promise<any[]> {

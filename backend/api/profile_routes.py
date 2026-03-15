@@ -21,30 +21,24 @@ router = APIRouter(prefix="/api", tags=["profile"])
 
 @router.get("/profile", response_model=UserProfile)
 async def get_profile(
+    user_id: Optional[str] = None,
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    """Fetch user profile with enriched data."""
-    user_id = current_user.id
-    if not db:
-        return UserProfile(
-            user_id=user_id,
-            display_name="Demo User",
-            plan_type="enterprise",
-            subscription_status="active",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-        raise HTTPException(status_code=503, detail="Database unavailable")
-
-    # KAIZEN: Enforce ownership to prevent ID harvesting
-    verify_ownership(user_id, current_user)
+    effective_user_id = user_id if user_id else current_user.id
+    
+    # KAIZEN: Enforce ownership, but allow admins to bypass if user_id is provided
+    is_admin = getattr(current_user, "role", "").lower() in ["admin", "market_admin", "market admin"]
+    if user_id and not is_admin:
+         raise HTTPException(status_code=403, detail="Impersonation restricted to admins")
+         
+    if not user_id:
+        verify_ownership(effective_user_id, current_user)
 
     try:
-        # Assuming get_profile_logic is a new or renamed function that encapsulates the enrichment logic
         return await get_enriched_profile_logic(
-            user_id, None, db
-        )  # Pass None for base_data as get_enriched_profile_logic will fetch it
+            effective_user_id, None, db
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

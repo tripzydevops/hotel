@@ -9,7 +9,7 @@ export function useProfile(userId: string | null, enabled: boolean = true) {
   
   const profileQuery = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => api.getProfile(),
+    queryFn: () => api.getProfile(userId || undefined),
     enabled: !!userId && enabled,
   });
 

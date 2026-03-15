@@ -112,6 +112,10 @@ async def get_dashboard_logic(
                 rpc_data = {}
             else:
                 logger.info(f"Dashboard RPC: Extraction successful for user {user_id}. Keys found: {list(rpc_data.keys())}")
+                if "profile" in rpc_data:
+                    logger.info(f"Dashboard RPC: Found 'profile' key for user {user_id}")
+                if "core_profile" in rpc_data:
+                    logger.info(f"Dashboard RPC: Found 'core_profile' key for user {user_id}")
                 
         except Exception as rpc_e:
             logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")
