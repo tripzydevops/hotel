@@ -34,11 +34,7 @@ export default async function DashboardPage({
   
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
-    const apiPath = '/api/dashboard';
-    
-    // EXPLANATION: Reliable Server-to-Server Routing
-    // In production, we MUST hit the local deployment to ensure cookies/auth and rewrites resolve.
-    // If VERCEL_URL is missing, we fallback to the known InsForge base.
+    const apiPath = isProduction ? '/p-api/api/dashboard' : '/api/dashboard';
     const effectiveBaseUrl = (isProduction && process.env.VERCEL_URL) 
       ? `https://${process.env.VERCEL_URL}`
       : baseUrl;
