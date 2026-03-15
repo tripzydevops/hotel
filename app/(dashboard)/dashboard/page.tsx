@@ -34,13 +34,8 @@ export default async function DashboardPage({
   
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
-    const apiPath = isProduction ? '/p-api/api/dashboard' : '/api/dashboard';
-    const effectiveBaseUrl = (isProduction && process.env.VERCEL_URL) 
-      ? `https://${process.env.VERCEL_URL}`
-      : baseUrl;
-
     const allCookies = (await cookies()).toString();
-    const res = await fetch(`${effectiveBaseUrl}${apiPath}${params}`, {
+    const res = await fetch(`${baseUrl}/api/dashboard${params}`, {
        headers: {
          "Authorization": `Bearer ${token}`,
          "Cookie": allCookies,

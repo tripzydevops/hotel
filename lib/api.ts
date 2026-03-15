@@ -30,6 +30,11 @@ export const API_BASE_URL = isProduction
   ? '/p-api'
   : 'http://localhost:8000';
 
+if (typeof window !== 'undefined') {
+  console.log(`[ApiClient] Mode: ${isProduction ? 'Production' : 'Development'}`);
+  console.log(`[ApiClient] Base URL: ${API_BASE_URL}`);
+}
+
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
 

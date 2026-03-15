@@ -17,12 +17,6 @@ const nextConfig: NextConfig = {
             {
               source: "/p-api/:path*",
               destination: "/api/index.py",
-            },
-            {
-              // Fallback catch-all for any missed /api calls in prod 
-              // to ensure they hit the backend too if specifically prefixed
-              source: "/api-gateway/:path*",
-              destination: "/api/index.py",
             }
           ],
     ].flat();
