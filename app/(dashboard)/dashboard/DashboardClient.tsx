@@ -217,7 +217,6 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
                 {data?.target_hotel && (
                   <motion.div
                     key={data.target_hotel.id}
-                    layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -296,7 +295,6 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
                       return (
                         <motion.div
                           key={competitor.id}
-                          layout
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
@@ -495,6 +493,27 @@ export default function DashboardClient({ userId: authUserId, initialData, imper
             </a>
           </div>
         </footer>
+
+        {/* DEBUG OVERLAY */}
+        <div className="mt-8 p-6 bg-black/80 rounded-[2rem] border border-white/10 text-[10px] font-mono text-emerald-400 space-y-2 backdrop-blur-xl">
+          <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+            <span className="font-bold uppercase tracking-widest text-[#F6C344]">System Debug Panel</span>
+            <button onClick={() => window.location.reload()} className="bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white transition-colors">Force Refresh</button>
+          </div>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+            <p><span className="text-slate-500">USER_ID:</span> {userId || "NOT_LOGGED_IN"}</p>
+            <p><span className="text-slate-500">PROFILE:</span> {profile ? `${profile.display_name} (${profile.role})` : "NULL"}</p>
+            <p><span className="text-slate-500">TARGET:</span> {data?.target_hotel ? `${data.target_hotel.name} [ID: ${data.target_hotel.id.slice(0,8)}]` : "MISSING"}</p>
+            <p><span className="text-slate-500">COMPS:</span> {data?.competitors?.length || 0}</p>
+            <p><span className="text-slate-500">PULSE:</span> {data?.global_pulse?.length || 0} wins</p>
+            <p><span className="text-slate-500">LOADING:</span> {loading ? "TRUE" : "FALSE"}</p>
+            <p><span className="text-slate-500">ERRORS:</span> <span className={error ? "text-rose-500" : "text-emerald-500"}>{error || "NONE"}</span></p>
+            <p><span className="text-slate-500">INITIAL_DATA:</span> {initialData ? "PRESENT" : "MISSING"}</p>
+          </div>
+          <div className="mt-4 pt-4 border-t border-white/5 opacity-50">
+            <p className="text-[8px uppercase tracking-widest">Agent Status: Awaiting Verification...</p>
+          </div>
+        </div>
       </main>
     </div>
   );
