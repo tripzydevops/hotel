@@ -158,6 +158,7 @@ export interface DashboardData {
   market_insight?: string;
   global_pulse?: any[];
   pulse_stats?: any;
+  hotels?: HotelWithPrice[];
 }
 
 export interface ScanOptions {
