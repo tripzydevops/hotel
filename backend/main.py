@@ -173,77 +173,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# --- PROXY BRIDGE (Phase 10) ---
-# This proxies SDK traffic (Auth, Rest, Storage) to the Supabase/InsForge origin
-# to bypass CORS/WAF blocks and provide a unified API entry point (/p-api).
 
-@app.api_route("/auth/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-@app.api_route("/auth/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_auth_v1(request: Request, path: str = ""):
-    return await _handle_proxy_request(request, f"auth/v1/{path}")
-
-@app.api_route("/rest/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-@app.api_route("/rest/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_rest(request: Request, path: str = ""):
-    return await _handle_proxy_request(request, f"rest/v1/{path}")
-
-@app.api_route("/storage/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-@app.api_route("/storage/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_storage(request: Request, path: str = ""):
-    return await _handle_proxy_request(request, f"storage/v1/{path}")
-
-async def _handle_proxy_request(request: Request, sub_path: str):
-    supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    if not supabase_url:
-         return JSONResponse(status_code=500, content={"detail": "Supabase URL not configured"})
-    
-    # We must ensure we hit the origin domain, not the /api/ path if present in URL
-    origin_base = supabase_url.split("/api/")[0].rstrip("/")
-    target_url = f"{origin_base}/{sub_path}"
-    
-    # Forward query params
-    if request.query_params:
-        target_url = f"{target_url}?{request.query_params}"
-
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            # Prepare headers
-            # KAIZEN: Strip Content-Length to let httpx recalculate it for the forwarded payload,
-            # avoiding mismatches that cause 400 Bad Request on auth/sessions.
-            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
-            
-            # Forward body for non-GET/HEAD
-            body = await request.body()
-            
-            # Debug log for auth/rest calls
-            if "/auth/" in target_url or "/rest/" in target_url:
-                logger.info(f"Bridge Forwarding: {request.method} {target_url} | Headers: {list(headers.keys())}")
-
-            resp = await client.request(
-                method=request.method,
-                url=target_url,
-                headers=headers,
-                content=body,
-                follow_redirects=True
-            )
-            
-            # KAIZEN: If we get an error from origin, wrap it for transparency
-            if resp.status_code >= 400:
-                logger.error(f"Origin Error {resp.status_code} for {sub_path}: {resp.text[:500]}")
-                return Response(
-                    content=resp.content,
-                    status_code=resp.status_code,
-                    headers={"X-Bridge-Error": "true", **dict(resp.headers)}
-                )
-            
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=dict(resp.headers)
-            )
-    except Exception as e:
-        logger.error(f"Proxy Failure for {sub_path}: {str(e)}")
-        return JSONResponse(status_code=502, content={"detail": f"Proxy Bridge Failure: {str(e)}"})
+# KAIZEN: Modular routers take priority over the catch-all bridge below.
+# This ensures local /api/... routes work while unknown /p-api/... hits the origin.
 
 
 # Basic Health/Diagnostic Endpoints
@@ -354,6 +286,69 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
     background_tasks.add_task(run_scheduler_check_logic)
     background_tasks.add_task(run_market_sync_if_needed, db)
     return {"status": "success", "message": "Scheduler and Market Sync triggered"}
+
+
+
+# --- FINAL CATCH-ALL: UNIVERSAL PROXY BRIDGE ---
+# Registered LAST so that modular routers (admin, hotel, etc.) take priority.
+# This terminal handles any unmapped path, mainly SDK traffic (/p-api/*) hitting the origin.
+# KAIZEN: Modular routers take priority over the catch-all bridge below.
+# Each router handles its own /api/... prefixed routes locally.
+@app.api_route("/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
+async def universal_proxy_bridge(request: Request, sub_path: str):
+    """
+    Transparent tunnel to InsForge origin.
+    1. Normalizes /p-api/... and direct hits.
+    # KAIZEN: InsForge origin MANDATES the /api prefix for Auth and DB services.
+    # If the sub_path is e.g. 'auth/v1/token', we must hit 'origin/api/auth/v1/token'.
+    path_str = str(sub_path)
+    
+    # Normalize Path for Origin
+    path_val = path_str
+    if path_val.startswith("p-api/"):
+        path_val = path_val[6:]
+    elif path_val == "p-api":
+        path_val = ""
+        
+    # Standardize /api prefix
+    if not path_val.startswith("api/") and path_val:
+        target_path = f"api/{path_val}"
+    else:
+        target_path = path_val
+        
+    target_url = f"{origin_base}/{target_path}"
+    if request.query_params:
+        from urllib.parse import urlencode
+        target_url = f"{target_url}?{urlencode(dict(request.query_params))}"
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
+            body = await request.body()
+            
+            # Detailed logging for visibility
+            logger.info(f"BRIDGE: {request.method} {path_str} -> {target_url}")
+
+            resp = await client.request(
+                method=request.method,
+                url=target_url,
+                headers=headers,
+                content=body
+            )
+            
+            if resp.status_code >= 400:
+                logger.error(f"BRIDGE ORIGIN ERROR {resp.status_code}: {resp.text[:200]}")
+
+            # Forward response with original status and essential headers
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                headers={**dict(resp.headers), "X-Bridge-Service": "insforge-gateway"}
+            )
+            
+    except Exception as e:
+        logger.error(f"BRIDGE CRITICAL FAILURE: {str(e)}")
+        return JSONResponse(status_code=502, content={"detail": f"Bridge Critical Failure: {str(e)}"})
 
 
 if __name__ == "__main__":
