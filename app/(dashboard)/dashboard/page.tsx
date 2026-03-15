@@ -1,7 +1,7 @@
 import { auth } from "@insforge/nextjs/server";
 import DashboardClient from "./DashboardClient";
 import { DashboardData } from "@/types";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 
 // EXPLANATION: Server Component Optimization (Phase 7)
 // This page now fetches data on the server, eliminating the initial loading flicker 
