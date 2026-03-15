@@ -10,7 +10,6 @@ import { useModalContext } from "@/components/ui/ModalContext";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import ModalLoading from "@/components/ui/ModalLoading";
-import { KaizenDebugWindow } from "@/components/ui/KaizenDebugWindow";
 
 // Modals
 import AddHotelModal from "@/components/modals/AddHotelModal";
@@ -313,7 +312,6 @@ export default function DashboardLayout({
           }}
         />
       </Suspense>
-      <KaizenDebugWindow />
     </div>
   );
 }
