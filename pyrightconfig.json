@@ -7,8 +7,12 @@
         "**/__pycache__",
         "venv"
     ],
-    "venvPath": ".",
+    "venvPath": "/home/tripzydevops/hotel",
     "venv": "venv",
+    "extraPaths": [
+        ".",
+        "./backend"
+    ],
     "reportMissingTypeStubs": false,
     "pythonVersion": "3.11",
     "typeCheckingMode": "basic"

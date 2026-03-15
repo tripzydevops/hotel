@@ -35,8 +35,8 @@ async def get_dashboard_logic(
     Performes security checks, fetches hotel data, prices, and scan history.
 
     Optimized: Uses asyncio.gather for parallel database fetching.
-    Bundled: Includes user profile and settings for "Fast Load" performance.
     """
+    logger.info(f"Dashboard: Starting data assembly for user_id={user_id} (requested by current_user_id={current_user_id})")
 
     # 0. Core Fallback
     fallback_data: Dict[str, Any] = {
@@ -78,7 +78,10 @@ async def get_dashboard_logic(
         ]:
             is_authorized = True
 
+    logger.info(f"Dashboard: Authorization status for {user_id}: {is_authorized}")
+
     if not is_authorized:
+        logger.warning(f"Dashboard: Access DENIED for {current_user_id} to {user_id}")
         raise HTTPException(
             status_code=403, detail="Unauthorized access to this dashboard"
         )
@@ -102,10 +105,10 @@ async def get_dashboard_logic(
                 rpc_data = rpc_data["get_dashboard_init_data"]
             
             if not isinstance(rpc_data, dict):
-                logger.error(f"Dashboard RPC: Invalid data format for user {user_id}: {type(rpc_data)}")
+                logger.error(f"Dashboard RPC: Invalid data format for user {user_id}: {type(rpc_data)}. Data: {rpc_data}")
                 rpc_data = {}
             else:
-                logger.debug(f"Dashboard RPC: Success. Keys found: {list(rpc_data.keys())}")
+                logger.info(f"Dashboard RPC: Extraction successful for user {user_id}. Keys found: {list(rpc_data.keys())}")
                 
         except Exception as rpc_e:
             logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")

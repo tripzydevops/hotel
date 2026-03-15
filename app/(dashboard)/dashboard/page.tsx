@@ -34,7 +34,7 @@ export default async function DashboardPage({
   
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
-    const apiPath = isProduction ? '/p-api/api/dashboard' : '/api/dashboard';
+    const apiPath = '/api/dashboard';
     
     // EXPLANATION: Reliable Server-to-Server Routing
     // In production, we MUST hit the local deployment to ensure cookies/auth and rewrites resolve.
