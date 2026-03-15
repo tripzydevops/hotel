@@ -1,7 +1,11 @@
 import { createClient } from '@insforge/sdk';
 
 const isBrowser = typeof window !== 'undefined';
-const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+const isProd = process.env.NODE_ENV === 'production' || 
+               process.env.VERCEL_ENV === 'production' ||
+               (isBrowser && 
+                !window.location.hostname.includes('localhost') && 
+                !window.location.hostname.includes('127.0.0.1'));
 
 export const insforge = createClient({
   baseUrl: (isBrowser && isProd) 

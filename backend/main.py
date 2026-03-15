@@ -16,10 +16,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Union
 import traceback
 
-# GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+import httpx
 from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
@@ -171,6 +171,63 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=422,
         content={"detail": exc.errors(), "body": exc.body},
     )
+
+
+# --- PROXY BRIDGE (Phase 10) ---
+# This proxies SDK traffic (Auth, Rest, Storage) to the Supabase/InsForge origin
+# to bypass CORS/WAF blocks and provide a unified API entry point (/p-api).
+
+@app.api_route("/auth/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_supabase_auth(request: Request, path: str):
+    return await _handle_proxy_request(request, f"auth/v1/{path}")
+
+@app.api_route("/rest/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_supabase_rest(request: Request, path: str):
+    return await _handle_proxy_request(request, f"rest/v1/{path}")
+
+@app.api_route("/storage/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def proxy_supabase_storage(request: Request, path: str):
+    return await _handle_proxy_request(request, f"storage/v1/{path}")
+
+async def _handle_proxy_request(request: Request, sub_path: str):
+    supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not supabase_url:
+         return JSONResponse(status_code=500, content={"detail": "Supabase URL not configured"})
+    
+    # We must ensure we hit the origin domain, not the /api/ path if present in URL
+    origin_base = supabase_url.split("/api/")[0].rstrip("/")
+    target_url = f"{origin_base}/{sub_path}"
+    
+    # Forward query params
+    if request.query_params:
+        target_url = f"{target_url}?{request.query_params}"
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Prepare headers
+            headers = dict(request.headers)
+            # Remove Host to allow destination to handle its own SNI/Routing
+            headers.pop("host", None)
+            
+            # Forward body for non-GET/HEAD
+            body = await request.body()
+            
+            resp = await client.request(
+                method=request.method,
+                url=target_url,
+                headers=headers,
+                content=body,
+                follow_redirects=True
+            )
+            
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            headers=dict(resp.headers)
+        )
+    except Exception as e:
+        logger.error(f"Proxy Failure for {sub_path}: {str(e)}")
+        return JSONResponse(status_code=502, content={"detail": f"Proxy Bridge Failure: {str(e)}"})
 
 
 # Basic Health/Diagnostic Endpoints
