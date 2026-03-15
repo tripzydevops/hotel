@@ -7,11 +7,11 @@ const isProd = process.env.NODE_ENV === 'production' ||
                 !window.location.hostname.includes('localhost') && 
                 !window.location.hostname.includes('127.0.0.1'));
 
-export const GATEWAY_URL = 'https://pa5riyqv-flask.eu-central.insforge.app/api';
+const ORIGIN_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app';
 
 export const insforge = createClient({
   baseUrl: (isBrowser && isProd) 
     ? (window.location.origin + '/p-api') 
-    : GATEWAY_URL,
+    : ORIGIN_URL,
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
