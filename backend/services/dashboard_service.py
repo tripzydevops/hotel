@@ -47,6 +47,11 @@ async def get_dashboard_logic(
         "recent_sessions": [],
         "unread_alerts_count": 0,
         "last_updated": datetime.now(timezone.utc).isoformat(),
+        "profile": None,
+        "user_settings": None,
+        "market_insight": "Dashboard loading...",
+        "global_pulse": [],
+        "pulse_stats": None,
         "error": None,
     }
 
@@ -114,6 +119,12 @@ async def get_dashboard_logic(
         all_hotels = rpc_data.get("hotels") or []
         core_profile_data = rpc_data.get("core_profile") or {}
         global_pulse = rpc_data.get("global_pulse") or []
+
+        # [NEW] Hydrate fallback data immediately to ensure UI context
+        fallback_data["profile"] = user_profile
+        fallback_data["user_settings"] = user_settings
+        fallback_data["unread_alerts_count"] = unread_count
+        fallback_data["global_pulse"] = global_pulse
         
         logger.info(f"Dashboard: Found {len(all_hotels)} hotels for user {user_id}")
 
@@ -355,7 +366,7 @@ async def get_dashboard_logic(
         # Recent Searches Deduplication
         seen_searches = set()
         recent_searches = []
-        active_names = {h["name"].lower().strip() for h in all_hotels}
+        active_names = {h.get("name", "Unknown").lower().strip() for h in all_hotels if h.get("name")}
         for s in recent_searches_raw:
             name = s.get("hotel_name")
             name_low = (name or "").lower().strip()
@@ -415,8 +426,14 @@ async def get_dashboard_logic(
                 logger.warning(f"Narrative generation failed: {e}")
 
         # [NEW] Include Pulse Stats to eliminate separate frontend calls
-        from backend.services.pulse_service import get_pulse_network_stats
-        pulse_stats = await get_pulse_network_stats(db)
+        pulse_stats = None
+        try:
+            from backend.services.pulse_service import get_pulse_network_stats
+            pulse_stats = await get_pulse_network_stats(db)
+        except Exception as pulse_e:
+            logger.warning(f"Dashboard: Pulse stats retrieval failed: {pulse_e}")
+
+        logger.info(f"Dashboard: Successfully assembled data for {user_id} ({len(enriched_hotels)} hotels)")
 
         return {
             "target_hotel": target_hotel,
