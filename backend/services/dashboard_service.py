@@ -84,26 +84,24 @@ async def get_dashboard_logic(
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
         # [FIX] Optimized Multi-Query Consolidation (Phase 8: Aggregate RPCs)
+        # [FIX] Robust RPC Unwrapping
         try:
             rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
+            rpc_data = rpc_res.data
             
-            # Ensure we have a valid response object with data
-            rpc_data = {}
-            if hasattr(rpc_res, "data") and rpc_res.data:
-                # PostgREST sometimes returns a single-row list for JSON-returning functions
-                if isinstance(rpc_res.data, list) and len(rpc_res.data) > 0:
-                    rpc_data = rpc_res.data[0]
-                elif isinstance(rpc_res.data, dict):
-                    rpc_data = rpc_res.data
-                else:
-                    logger.warning(f"Dashboard RPC: Unexpected data format: {type(rpc_res.data)}")
-
-                # Always attempt to unwrap if the function name is a key (both list[0] and direct dict)
-                if isinstance(rpc_data, dict) and "get_dashboard_init_data" in rpc_data:
-                    rpc_data = rpc_data["get_dashboard_init_data"]
+            # PostgREST unwrap: sometimes it's [{...}] or just {...} or contains the RPC name as a key
+            if isinstance(rpc_data, list) and len(rpc_data) > 0:
+                rpc_data = rpc_data[0]
             
-            if not rpc_data:
-                logger.error(f"Dashboard RPC: No data returned for user {user_id}")
+            if isinstance(rpc_data, dict) and "get_dashboard_init_data" in rpc_data:
+                rpc_data = rpc_data["get_dashboard_init_data"]
+            
+            if not isinstance(rpc_data, dict):
+                logger.error(f"Dashboard RPC: Invalid data format for user {user_id}: {type(rpc_data)}")
+                rpc_data = {}
+            else:
+                logger.debug(f"Dashboard RPC: Success. Keys found: {list(rpc_data.keys())}")
+                
         except Exception as rpc_e:
             logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")
             rpc_data = {}

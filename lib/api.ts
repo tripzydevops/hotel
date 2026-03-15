@@ -115,7 +115,13 @@ class ApiClient {
 
   async getDashboard(userId?: string): Promise<DashboardData> {
     const params = userId ? `?user_id=${userId}` : "";
-    return this.fetch<DashboardData>(`/api/dashboard${params}`);
+    const data = await this.fetch<DashboardData>(`/api/dashboard${params}`);
+    console.log(`[DashboardDebug] Received data for user ${userId || 'Self'}:`, {
+      hasProfile: !!data.profile,
+      hotelCount: data.hotels?.length || data.competitors?.length,
+      hasTarget: !!data.target_hotel
+    });
+    return data;
   }
 
   async triggerMonitor(
