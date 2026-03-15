@@ -95,6 +95,11 @@ export const tr = {
     healthOptimal: "Optimal fiyatlama pozisyonu. Parite korunuyor.",
     healthAggressive: "Agresif büyüme stratejisi devrede.",
     healthRisk: "Fiyatlarınız rakiplerin çok üzerinde. Yield riski mevcut.",
+    noTargetTitle: "Birincil Varlık Eksik",
+    noTargetDesc: "Gelişmiş fiyat istihbaratını ve portföy sağlığı endeksini etkinleştirmek için mülkünüzü 'Hedef' olarak ayarlayın.",
+    addMyHotel: "Birincil Varlığınızı Ayarlayın",
+    competitorCockpit: "RAKİP KOKPİTİ",
+    addCompetitor: "Rakibi Takip Et",
   },
   hotelDetails: {
     overview: "Genel Bakış",

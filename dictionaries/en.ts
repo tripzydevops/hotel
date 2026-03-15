@@ -95,6 +95,11 @@ export const en = {
     healthOptimal: "Optimal pricing position. Parity maintained.",
     healthAggressive: "Aggressive growth strategy active.",
     healthRisk: "Prices are significantly above rivals. Yield risk detected.",
+    noTargetTitle: "Primary Asset Missing",
+    noTargetDesc: "Set your property as the 'Target' to enable advanced rate intelligence and portfolio health indexing.",
+    addMyHotel: "Set Your Primary Asset",
+    competitorCockpit: "COMPETITOR COCKPIT",
+    addCompetitor: "Track Rival",
   },
   hotelDetails: {
     overview: "Overview",
