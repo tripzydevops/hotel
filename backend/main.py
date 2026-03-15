@@ -66,63 +66,14 @@ from backend.api import (
 app = FastAPI(
     title="Hotel Rate Sentinel API", 
     version="2026.02",
-    redirect_slashes=False,
-    root_path="/p-api"
+    redirect_slashes=False
 )
 
-# SECURITY MIDDLEWARE: Inject standard protection headers
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; "
-        "connect-src 'self' https://*.supabase.co https://*.vercel.app; "
-        "img-src 'self' data: https:; "
-        "style-src 'self' 'unsafe-inline';"
-    )
-    return response
-
-
-# DIAGNOSTIC MIDDLEWARE: Log every request path to identify Vercel prefix issues
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    path = request.url.path
-    method = request.method
-    print(f"DEBUG: Request {method} {path}")
-    response = await call_next(request)
-    print(f"DEBUG: Response {response.status_code} for {path}")
-    return response
-
-
-# DIAGNOSTIC: Root Ping
-@app.get("/ping")
-async def root_ping():
-    return {
-        "status": "ok",
-        "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)",
-    }
-
-
-@app.get("/api/ping")
-async def api_ping():
-    return {
-        "status": "ok",
-        "message": "Pong from /api/ping (FastAPI matched full path)",
-    }
-
-
 # CORS configuration
-# KAİZEN: Dynamic origin matching for Vercel preview deployments.
-# Every Vercel deploy gets a unique URL, so we use a regex pattern
-# instead of a hardcoded list which goes stale on each deploy.
+# KAİZEN: Allow all for bridge stability, but handle credentials correctly.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.insforge\.app|http://localhost:\d+|http://127\.0\.0\.1:\d+",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

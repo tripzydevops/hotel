@@ -10,6 +10,8 @@ const isProd = process.env.NODE_ENV === 'production' ||
 export const GATEWAY_URL = 'https://pa5riyqv-flask.eu-central.insforge.app/api';
 
 export const insforge = createClient({
-  baseUrl: GATEWAY_URL,
+  baseUrl: (isBrowser && isProd) 
+    ? '/p-api' 
+    : GATEWAY_URL,
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
