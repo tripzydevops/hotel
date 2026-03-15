@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
+import json
 
 logger = get_logger(__name__)
 
@@ -68,6 +69,20 @@ app = FastAPI(
     version="2026.02",
     redirect_slashes=False
 )
+
+# DIAGNOSTIC MIDDLEWARE: Log every request path to identify prefix issues
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    path = request.url.path
+    method = request.method
+    logger.info(f"DEBUG: Request {method} {path}")
+    try:
+        response = await call_next(request)
+        logger.info(f"DEBUG: Response {response.status_code} for {path}")
+        return response
+    except Exception as e:
+        logger.error(f"DEBUG: Exception for {path}: {str(e)}")
+        raise e
 
 # CORS configuration
 # KAİZEN: Allow all for bridge stability, but handle credentials correctly.
@@ -249,35 +264,36 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
 async def universal_proxy_bridge(request: Request, sub_path: str):
     """
     Transparent tunnel to InsForge origin.
-    1. Normalizes /p-api/... and direct hits.
-    # KAIZEN: InsForge origin MANDATES the /api prefix for Auth and DB services.
-    # If the sub_path is e.g. 'auth/v1/token', we must hit 'origin/api/auth/v1/token'.
+    """
+    origin_base = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
     path_str = str(sub_path)
     
     # Normalize Path for Origin
     path_val = path_str
     if path_val.startswith("p-api/"):
         path_val = path_val[6:]
-    elif path_val == "p-api":
+    elif path_val.startswith("/p-api/"):
+        path_val = path_val[7:]
+    elif path_val == "p-api" or path_val == "/p-api":
         path_val = ""
         
     # Standardize /api prefix
-    if not path_val.startswith("api/") and path_val:
-        target_path = f"api/{path_val}"
+    if not path_val.startswith("api/") and not path_val.startswith("/api/") and path_val:
+        target_path = f"api/{path_val.lstrip('/')}"
     else:
-        target_path = path_val
+        target_path = path_val.lstrip("/")
         
     target_url = f"{origin_base}/{target_path}"
     if request.query_params:
-        from urllib.parse import urlencode
-        target_url = f"{target_url}?{urlencode(dict(request.query_params))}"
+        target_url = f"{target_url}?{request.query_params}"
 
     try:
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            # Strip Host and Content-Length
             headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
+            
             body = await request.body()
             
-            # Detailed logging for visibility
             logger.info(f"BRIDGE: {request.method} {path_str} -> {target_url}")
 
             resp = await client.request(
@@ -288,17 +304,20 @@ async def universal_proxy_bridge(request: Request, sub_path: str):
             )
             
             if resp.status_code >= 400:
-                logger.error(f"BRIDGE ORIGIN ERROR {resp.status_code}: {resp.text[:200]}")
+                logger.error(f"BRIDGE ORIGIN ERROR {resp.status_code} for {target_path}: {resp.text[:200]}")
 
-            # Forward response with original status and essential headers
+            # Forward response with original status and headers
+            forward_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ["content-encoding", "transfer-encoding"]}
+            forward_headers["X-Bridge-Service"] = "insforge-gateway"
+            
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
-                headers={**dict(resp.headers), "X-Bridge-Service": "insforge-gateway"}
+                headers=forward_headers
             )
             
     except Exception as e:
-        logger.error(f"BRIDGE CRITICAL FAILURE: {str(e)}")
+        logger.error(f"BRIDGE CRITICAL FAILURE for {target_path}: {str(e)}")
         return JSONResponse(status_code=502, content={"detail": f"Bridge Critical Failure: {str(e)}"})
 
 
