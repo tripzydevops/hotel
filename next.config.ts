@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
           source: "/p-api/:path*",
           destination: "/api/index.py",
         },
-        {
-          source: "/api/auth/:path*",
-          destination: "/api/index.py",
-        },
       ],
       fallback: [
         process.env.NODE_ENV === "development"

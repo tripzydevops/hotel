@@ -1,7 +1,9 @@
 import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
 
 export default InsforgeMiddleware({
-  baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app',
+  baseUrl: (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production')
+    ? 'https://pa5riyqv-flask.eu-central.insforge.app/api'
+    : (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app'),
   signInUrl: '/login',
   useBuiltInAuth: false,
   publicRoutes: ['/', '/login', '/api/auth*', '/auth/callback', '/p-api*'],
