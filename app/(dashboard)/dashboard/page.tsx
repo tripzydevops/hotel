@@ -23,11 +23,14 @@ export default async function DashboardPage({
   // Determine effective User ID
   const effectiveUserId = impersonateId || userId;
 
-  // Resolve API Base URL for server-to-server call
-  // We use localhost in local dev and the full InsForge URL in production
+  // Resolve API Base URL for server-to-server call.
+  // We use the application's own host and the /p-api proxy path to ensure
+  // consistent routing and bypass direct origin 403 blocks.
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  const host = (await headers()).get("host") || "";
+  const protocol = host.includes("localhost") ? "http" : "https";
   const baseUrl = isProduction 
-    ? (process.env.NEXT_PUBLIC_INSFORGE_BASE_URL || 'https://pa5riyqv.eu-central.insforge.app')
+    ? `${protocol}://${host}/p-api`
     : 'http://localhost:8000';
 
   let initialData: DashboardData | null = null;
@@ -35,9 +38,10 @@ export default async function DashboardPage({
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
     const allCookies = (await cookies()).toString();
-    console.log(`[ServerFetch] Routing to: ${baseUrl}/api/dashboard${params}`);
+    const fetchUrl = `${baseUrl}/api/dashboard${params}`;
+    console.log(`[ServerFetch] Routing via Proxy: ${fetchUrl}`);
     
-    const res = await fetch(`${baseUrl}/api/dashboard${params}`, {
+    const res = await fetch(fetchUrl, {
        headers: {
          "Authorization": `Bearer ${token}`,
          "Cookie": allCookies,
