@@ -11,15 +11,15 @@ from datetime import datetime, timezone
 # Ensure backend module is resolvable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request, Depends, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Request, Depends, BackgroundTasks, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Union
 import traceback
+import httpx
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
-import httpx
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
@@ -177,22 +177,29 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # This proxies SDK traffic (Auth, Rest, Storage) to the Supabase/InsForge origin
 # to bypass CORS/WAF blocks and provide a unified API entry point (/p-api).
 
+@app.api_route("/auth/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 @app.api_route("/auth/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_auth(request: Request, path: str):
+async def proxy_supabase_auth_v1(request: Request, path: str = ""):
     return await _handle_proxy_request(request, f"auth/v1/{path}")
 
+@app.api_route("/rest/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 @app.api_route("/rest/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_rest(request: Request, path: str):
+async def proxy_supabase_rest(request: Request, path: str = ""):
     return await _handle_proxy_request(request, f"rest/v1/{path}")
 
+@app.api_route("/storage/v1", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 @app.api_route("/storage/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_supabase_storage(request: Request, path: str):
+async def proxy_supabase_storage(request: Request, path: str = ""):
     return await _handle_proxy_request(request, f"storage/v1/{path}")
 
+@app.api_route("/api/auth", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 @app.api_route("/api/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-async def proxy_nextjs_auth(request: Request, path: str):
-    # InsForge Auth usually uses /api/auth at the origin
-    return await _handle_proxy_request(request, f"api/auth/{path}")
+async def proxy_nextjs_auth(request: Request, path: str = ""):
+    # Handle the case where path might be empty or start with a slash
+    target_subpath = f"api/auth/{path}".rstrip("/")
+    if not target_subpath:
+        target_subpath = "api/auth"
+    return await _handle_proxy_request(request, target_subpath)
 
 async def _handle_proxy_request(request: Request, sub_path: str):
     supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
