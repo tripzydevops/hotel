@@ -1,6 +1,6 @@
 import asyncio
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, cast
 from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
@@ -99,23 +99,32 @@ class ScraperAgent:
                 # If the user requested a specific room type (e.g., "Deluxe"),
                 # we search the cached room_types array for a matching entry.
                 # This avoids a fresh API call when the data already exists.
-                final_price = cache["price"]
-                final_currency = cache["currency"]
+                price_val = cache.get("price")
+                final_price = float(price_val) if price_val is not None else 0.0
+                final_currency = str(cache.get("currency") or "TRY")
                 matched_room = None
 
-                cached_rooms = cache.get("room_types") or []
+                cached_rooms_raw = cache.get("room_types")
+                cached_rooms = list(cast(list, cached_rooms_raw)) if isinstance(cached_rooms_raw, (list, tuple)) else []
                 if requested_room_type and cached_rooms:
                     normalized_request = self._normalize_room_type(requested_room_type)
                     for room in cached_rooms:
-                        room_name = room.get("name", "")
+                        if not isinstance(room, dict): continue
+                        room_name = str(room.get("name") or "")
                         normalized_cached = self._normalize_room_type(room_name)
                         if (
                             normalized_request == normalized_cached
                             or normalized_request in normalized_cached
                         ):
                             matched_room = room
-                            final_price = room.get("price", final_price)
-                            final_currency = room.get("currency", final_currency)
+                            room_price = room.get("price")
+                            if room_price is not None:
+                                final_price = float(room_price)
+                            
+                            room_curr = room.get("currency")
+                            if room_curr is not None:
+                                final_currency = str(room_curr)
+
                             print(
                                 f"[GlobalPulse] Room match: '{requested_room_type}' → '{room_name}' @ {final_price}"
                             )
@@ -125,7 +134,7 @@ class ScraperAgent:
                 return {
                     "price": final_price,
                     "currency": final_currency,
-                    "vendor": cache["vendor"],
+                    "vendor": str(cache.get("vendor") or "Unknown"),
                     "source": "global_cache",
                     "offers": cache.get("parity_offers") or cache.get("offers") or [],
                     "room_types": cached_rooms,
@@ -133,8 +142,8 @@ class ScraperAgent:
                     "property_token": serp_api_id,
                     "status": "success",
                     "is_cached": True,
-                    "matched_room_type": matched_room.get("name")
-                    if matched_room
+                    "matched_room_type": str(matched_room.get("name") or "Unknown")
+                    if isinstance(matched_room, dict)
                     else None,
                 }
         except Exception as e:
@@ -180,7 +189,6 @@ class ScraperAgent:
             return
 
         try:
-            import json
             # HYPERSPEED KAIZEN: Single atomic append instead of n+1 reads
             res = (
                 self.db.table("scan_sessions")
@@ -192,19 +200,14 @@ class ScraperAgent:
             raw_trace = []
             if res.data:
                 db_trace = res.data[0].get("reasoning_trace")
-                if isinstance(db_trace, str) and db_trace:
-                    try:
-                        raw_trace = json.loads(db_trace)
-                    except Exception:
-                        raw_trace = []
-                elif isinstance(db_trace, list):
+                if isinstance(db_trace, list):
                     raw_trace = db_trace
             
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": json.dumps(raw_trace),
+                    "reasoning_trace": raw_trace,
                     "updated_at": datetime.now().isoformat(),
                 }
             ).eq("id", sid_key).execute()
@@ -242,8 +245,10 @@ class ScraperAgent:
             except Exception as e:
                 print(f"[ScraperAgent] Error updating session: {e}")
 
-        async def fetch_hotel(hotel):
-            hotel_name = hotel["name"]
+        async def fetch_hotel(hotel_raw: Any):
+            if not isinstance(hotel_raw, dict): return
+            hotel = cast(Dict[str, Any], hotel_raw)
+            hotel_name = str(hotel.get("name") or "Unknown Hotel")
             try:
                 async with semaphore:
                     # [Reasoning] Lock entry
@@ -261,41 +266,51 @@ class ScraperAgent:
                     )
 
                     # Determine search parameters
-                    check_in_raw = (
-                        options.check_in
-                        if options and options.check_in
-                        else hotel.get("fixed_check_in")
-                    )
-                    check_out_raw = (
-                        options.check_out
-                        if options and options.check_out
-                        else hotel.get("fixed_check_out")
-                    )
+                    check_in_raw = None
+                    if options and options.check_in:
+                        check_in_raw = options.check_in
+                    else:
+                        check_in_raw = hotel.get("fixed_check_in")
+
+                    check_out_raw = None
+                    if options and options.check_out:
+                        check_out_raw = options.check_out
+                    else:
+                        check_out_raw = hotel.get("fixed_check_out")
 
                     # Normalize Dates
-                    check_in = check_in_raw
-                    if isinstance(check_in_raw, str):
+                    check_in = None
+                    if isinstance(check_in_raw, str) and check_in_raw:
                         try:
                             check_in = datetime.strptime(
                                 check_in_raw, "%Y-%m-%d"
                             ).date()
                         except ValueError:
                             check_in = None
+                    elif isinstance(check_in_raw, date):
+                        check_in = check_in_raw
 
-                    check_out = check_out_raw
-                    if isinstance(check_out_raw, str):
+                    check_out = None
+                    if isinstance(check_out_raw, str) and check_out_raw:
                         try:
                             check_out = datetime.strptime(
                                 check_out_raw, "%Y-%m-%d"
                             ).date()
                         except ValueError:
                             check_out = None
+                    elif isinstance(check_out_raw, date):
+                        check_out = check_out_raw
+                    
+                    # Ensure they aren't unassociated even if all checks fail
+                    if check_in is None: check_in = None
+                    if check_out is None: check_out = None
 
-                    adults = (
-                        options.adults
-                        if options and options.adults
-                        else (hotel.get("default_adults") or 2)
-                    )
+                    adults = 2
+                    if options and options.adults:
+                        adults = options.adults
+                    else:
+                        adults = hotel.get("default_adults") or 2
+                
 
                     # Fallback: Auto-generate dates if not provided
                     if not check_in or not check_out:
@@ -405,11 +420,15 @@ class ScraperAgent:
                                 # Expected format from provider: {"name": "...", "price": ..., "currency": ...}
                                 if isinstance(room, dict):
                                     raw_name = str(room.get("name") or "Unknown")
-                                    norm_res = RoomTypeNormalizer.normalize(raw_name)
+                                    # [Safety] Robust check for normalizer response
+                                    try:
+                                        norm_res = RoomTypeNormalizer.normalize(raw_name)
 
-                                    if norm_res:
-                                        room["canonical_code"] = norm_res.get("canonical_code", "unknown")
-                                        room["canonical_name"] = norm_res.get("canonical_name", "Unknown")
+                                        if isinstance(norm_res, dict):
+                                            room["canonical_code"] = norm_res.get("canonical_code", "unknown")
+                                            room["canonical_name"] = norm_res.get("canonical_name", "Unknown")
+                                    except Exception:
+                                        pass
                                     normalized_rooms.append(room)
 
                             price_data["room_types"] = normalized_rooms

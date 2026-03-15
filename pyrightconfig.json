@@ -3,23 +3,24 @@
         "backend",
         "api",
         "scripts",
-        "utils"
+        "utils",
+        "."
     ],
     "exclude": [
         "**/node_modules",
         "**/__pycache__",
         "venv"
     ],
-    "venvPath": "/home/tripzydevops/hotel",
+    "venvPath": ".",
     "venv": "venv",
     "executionEnvironments": [
         {
             "root": ".",
             "pythonVersion": "3.11",
             "extraPaths": [
-                ".",
-                "/home/tripzydevops/hotel"
+                "."
             ]
         }
-    ]
+    ],
+    "reportMissingTypeStubs": false
 }

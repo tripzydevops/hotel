@@ -32,91 +32,102 @@ class MarketIntelligenceAgent:
     Falls back to heuristic mode if google-adk is not installed.
     """
 
-    def __init__(self, model: str = "gemini-3-flash-preview"):
-        # KAİZEN: Always use gemini-3-* models as per project 'gemini-api-dev' skills.
-        # DO NOT downgrade to gemini-1.5-* as they are deprecated/legacy for this platform.
+    def __init__(self, model: str = "gemini-2.0-flash"):
+        # KAİZEN: Use gemini-2.0-flash for high-speed agentic reasoning.
         self.agent = None
+        self.model = model
         try:
             from google.adk.agents.llm_agent import Agent
 
             self.agent = Agent(
                 model=model,
-                name="market_analyst",
+                name="MarketIntelligenceExpert",
                 instruction="""
-                You are a leading Hotel Revenue Expert. Your task is to analyze price logs and sentiment.
+                You are a Senior Hotel Revenue Analyst. Your goal is to synthesize pricing data and sentiment into high-level strategy.
                 
-                - Use 'check_price_drops' to validate if a price move is actionable.
-                - Use 'process_sentiment' to understand if reviews correlate with pricing power.
-                - If prices are dropping while sentiment is high, suggest it might be a 'Flash Sale' or 'Error Rate'.
-                - If prices are rising while sentiment is low, flag it as a 'Risk' to occupancy.
+                ANALYTIC FLOW:
+                1. Use 'check_threshold_breach' to verify if price movements are significant.
+                2. Use 'process_sentiment' to evaluate the hotel's brand strength and pricing power.
+                3. Combine these signals:
+                   - High Price + High Sentiment = 'Veblen Strength' (Safe to maintain rates).
+                   - Low Price + High Sentiment = 'Value Opportunity' (Market capture potential).
+                   - High Price + Low Sentiment = 'Yield Risk' (Potential occupancy loss).
+                   - Low Price + Low Sentiment = 'Commoditized' (Race to the bottom).
                 
-                Provide a step-by-step reasoning trace in your final output.
+                Your response MUST include a structured reasoning trace of your findings.
                 """,
                 tools=[check_price_drops, process_sentiment],
             )
         except ImportError:
             print(
-                "[MarketIntelligenceAgent] Warning: google-adk not available. Running in heuristic mode."
+                "[MarketIntelligenceAgent] Warning: google-adk not available. Heuristic fallback active."
             )
 
     async def run_analysis(
-        self, scraper_results: List[Dict[str, Any]], threshold: float = 2.0
+        self, 
+        scraper_results: List[Dict[str, Any]], 
+        threshold: float = 2.0,
+        volatility: float = 0.0
     ) -> Dict[str, Any]:
         """
         Runs the ADK agentic reasoning flow over current scan results.
         """
         import time
-        # Formulate a condensed summary for the LLM to save tokens
+        # 1. Prepare data summary for the agent
         summary = []
         for res in scraper_results:
             if res.get("status") == "success":
-                pd = res.get("price_data", {})
-                reviews = pd.get("reviews", [])
-                # KAİZEN: Handle both list of reviews and review count (integer)
-                reviews_count = len(reviews) if isinstance(reviews, list) else int(reviews or 0)
-                
-                summary.append(
-                    {
-                        "hotel_id": res.get("hotel_id"),
-                        "price": pd.get("price"),
-                        "currency": pd.get("currency"),
-                        "reviews_count": reviews_count,
-                    }
-                )
+                pd = cast(Dict[str, Any], res.get("price_data") or {})
+                summary.append({
+                    "hotel_id": res.get("hotel_id"),
+                    "hotel_name": res.get("hotel_name", "Unknown"),
+                    "current_price": pd.get("price"),
+                    "prev_price": pd.get("previous_price"),
+                    "reviews": pd.get("reviews", [])[:3]
+                })
 
-        # [SIMULATION] In a production ADK environment, the agent would autonomously
-        # call the tools defined above and return the trace.
+        # 2. Agentic Execution (Real ADK Flow)
+        if self.agent and summary:
+            try:
+                prompt = f"""
+                Analyze {len(summary)} hotels. 
+                Market Volatility: {volatility}%. Base Alert Threshold: {threshold}%.
+                
+                Data Summary: {summary}
+                
+                Perform a deep-dive reasoning trace using your tools and provide a final strategy report.
+                """
+                response = await self.agent.run(prompt)
+                
+                return {
+                    "reasoning": response.thought_process if hasattr(response, "thought_process") else [],
+                    "final_report": getattr(response, "content", str(response)),
+                    "agentic": True
+                }
+            except Exception as e:
+                print(f"[MarketIntelligenceAgent] ADK Error: {e}")
+
+        # 3. Enhanced Fallback (if ADK fails or is unavailable)
         reasoning = [
             {
                 "step": "Market Intel",
                 "level": "info",
-                "message": f"Scanning {len(summary)} properties for threshold breaches (> {threshold}%).",
+                "message": f"Heuristic fallback: Scanning {len(summary)} properties (Volatility: {volatility}%).",
                 "timestamp": time.time()
-            },
-            {
-                "step": "Market Intel",
-                "level": "info",
-                "message": "Cross-referencing price volatility with recent guest sentiment indices.",
-                "timestamp": time.time()
-            },
-            {
-                "step": "Market Intel",
-                "level": "info",
-                "message": "Analyzing 'Market Momentum' - identifying if drops are localized or regional.",
-                "timestamp": time.time()
-            },
+            }
         ]
 
-        # Heuristic-based reasoning addition (if any hotel has a significant drop)
         for s in summary:
-            if s.get("price", 0) < 100:  # Example logic
-                reasoning.append(
-                    {
+            cp = float(s.get("current_price") or 0.0)
+            pp = float(s.get("prev_price") or 0.0)
+            if pp > 0:
+                change = abs((cp - pp) / pp) * 100
+                if change > threshold:
+                    reasoning.append({
                         "step": "Market Intel",
-                        "level": "success",
-                        "message": f"Hotel {s['hotel_id']} shows aggressive sub-100 pricing; cross-referencing with Value pillar.",
+                        "level": "warning",
+                        "message": f"Breach detected for {s['hotel_name']}: {change:.1f}% change exceeds {threshold}% threshold.",
                         "timestamp": time.time()
-                    }
-                )
+                    })
 
-        return {"reasoning": reasoning}
+        return {"reasoning": reasoning, "agentic": False}

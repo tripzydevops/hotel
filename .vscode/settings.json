@@ -1,8 +1,7 @@
 {
-    "python.defaultInterpreterPath": "venv/bin/python",
-    "python.venvPath": ".",
+    "python.defaultInterpreterPath": "/home/tripzydevops/hotel/venv/bin/python",
+    "python.venvPath": "/home/tripzydevops/hotel",
     "python.analysis.extraPaths": [
-        ".",
         "/home/tripzydevops/hotel"
     ],
     "python.analysis.typeCheckingMode": "basic",
