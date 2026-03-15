@@ -35,6 +35,8 @@ export default async function DashboardPage({
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
     const allCookies = (await cookies()).toString();
+    console.log(`[ServerFetch] Routing to: ${baseUrl}/api/dashboard${params}`);
+    
     const res = await fetch(`${baseUrl}/api/dashboard${params}`, {
        headers: {
          "Authorization": `Bearer ${token}`,
@@ -45,10 +47,13 @@ export default async function DashboardPage({
        next: { revalidate: 0 }
     });
 
+    console.log(`[ServerFetch] Status: ${res.status} (${res.ok ? 'OK' : 'FAIL'})`);
+
     if (res.ok) {
        initialData = await res.json();
     } else {
-       console.error("[ServerComponent] Failed to fetch dashboard data:", await res.text());
+       const text = await res.text();
+       console.error("[ServerComponent] Failed to fetch dashboard data:", text.slice(0, 200));
     }
   } catch (err) {
     console.error("[ServerComponent] Error fetching dashboard data:", err);

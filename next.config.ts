@@ -7,19 +7,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   async rewrites() {
-    return [
-      process.env.NODE_ENV === "development"
-        ? {
-            source: "/api/:path*",
-            destination: "http://127.0.0.1:8000/api/:path*",
-          }
-        : [
-            {
-              source: "/p-api/:path*",
-              destination: "/api/index.py",
-            }
-          ],
-    ].flat();
+    if (process.env.NODE_ENV === "development") {
+      return [
+        {
+          source: "/api/:path*",
+          destination: "http://127.0.0.1:8000/api/:path*",
+        },
+      ];
+    }
+    return [];
   },
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
