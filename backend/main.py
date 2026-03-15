@@ -206,15 +206,19 @@ async def _handle_proxy_request(request: Request, sub_path: str):
         target_url = f"{target_url}?{request.query_params}"
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=45.0) as client:
             # Prepare headers
-            headers = dict(request.headers)
-            # Remove Host to allow destination to handle its own SNI/Routing
-            headers.pop("host", None)
+            # KAIZEN: Strip Content-Length to let httpx recalculate it for the forwarded payload,
+            # avoiding mismatches that cause 400 Bad Request on auth/sessions.
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
             
             # Forward body for non-GET/HEAD
             body = await request.body()
             
+            # Debug log for auth/rest calls
+            if "/auth/" in target_url or "/rest/" in target_url:
+                logger.info(f"Bridge Forwarding: {request.method} {target_url} | Headers: {list(headers.keys())}")
+
             resp = await client.request(
                 method=request.method,
                 url=target_url,
@@ -222,6 +226,9 @@ async def _handle_proxy_request(request: Request, sub_path: str):
                 content=body,
                 follow_redirects=True
             )
+            
+            if resp.status_code >= 400:
+                logger.error(f"Origin Error {resp.status_code} for {sub_path}: {resp.text[:200]}")
             
         return Response(
             content=resp.content,
