@@ -7,13 +7,14 @@
         "**/__pycache__",
         "venv"
     ],
-    "venvPath": "/home/tripzydevops/hotel",
+    "venvPath": ".",
     "venv": "venv",
     "executionEnvironments": [
         {
             "root": ".",
             "extraPaths": [
-                "."
+                ".",
+                "venv/lib/python3.11/site-packages"
             ]
         }
     ],

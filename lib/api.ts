@@ -156,6 +156,10 @@ class ApiClient {
     });
   }
 
+  async getKaizenLogs(): Promise<{ logs: string[] }> {
+    return this.fetch<{ logs: string[] }>("/api/admin/kaizen-logs");
+  }
+
   async addHotel(
     name: string,
     location: string,

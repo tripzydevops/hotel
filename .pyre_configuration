@@ -3,8 +3,8 @@
     "."
   ],
   "search_path": [
-    "/home/tripzydevops/hotel",
-    "/home/tripzydevops/hotel/venv/lib/python3.11/site-packages"
+    ".",
+    "venv/lib/python3.11/site-packages"
   ],
   "exclude": [
     "**/node_modules/.*",

@@ -46,6 +46,7 @@ from backend.api import (
     market_routes,
     execution_routes,
     recovery_routes,
+    kaizen_logs,
 )
 
 # EXPLANATION: Vercel Dependency & Import Safety
@@ -146,9 +147,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
     if isinstance(exc, HTTPException):
+        # Explicit cast or direct access for type safety
+        status_code = getattr(exc, "status_code", 500)
+        detail = getattr(exc, "detail", str(exc))
         return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": str(exc.detail)}
+            status_code=status_code,
+            content={"detail": detail}
         )
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
@@ -256,6 +260,7 @@ app.include_router(pulse_routes.router)
 app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
 app.include_router(recovery_routes.router)
+app.include_router(kaizen_logs.router)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
