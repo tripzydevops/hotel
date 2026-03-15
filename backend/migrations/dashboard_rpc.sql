@@ -3,7 +3,7 @@
 -- This drastically reduces latency between the API and Database,
 -- and ensures atomic data consistency for the dashboard render.
 
-CREATE OR REPLACE FUNCTION get_dashboard_init_data(p_user_id UUID)
+CREATE OR REPLACE FUNCTION get_dashboard_init_data(p_user_id TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
