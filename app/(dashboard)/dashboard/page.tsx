@@ -34,7 +34,8 @@ export default async function DashboardPage({
   
   try {
     const params = effectiveUserId ? `?user_id=${effectiveUserId}` : "";
-    const res = await fetch(`${baseUrl}/api/dashboard${params}`, {
+    const apiPath = isProduction ? '/p-api/api/dashboard' : '/api/dashboard';
+    const res = await fetch(`${baseUrl}${apiPath}${params}`, {
        headers: {
          "Authorization": `Bearer ${token}`,
          "Content-Type": "application/json"

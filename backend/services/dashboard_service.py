@@ -93,13 +93,14 @@ async def get_dashboard_logic(
                 # PostgREST sometimes returns a single-row list for JSON-returning functions
                 if isinstance(rpc_res.data, list) and len(rpc_res.data) > 0:
                     rpc_data = rpc_res.data[0]
-                    # If it's a list from SELECT func(), it might have the function name as key
-                    if "get_dashboard_init_data" in rpc_data:
-                        rpc_data = rpc_data["get_dashboard_init_data"]
                 elif isinstance(rpc_res.data, dict):
                     rpc_data = rpc_res.data
                 else:
                     logger.warning(f"Dashboard RPC: Unexpected data format: {type(rpc_res.data)}")
+
+                # Always attempt to unwrap if the function name is a key (both list[0] and direct dict)
+                if isinstance(rpc_data, dict) and "get_dashboard_init_data" in rpc_data:
+                    rpc_data = rpc_data["get_dashboard_init_data"]
             
             if not rpc_data:
                 logger.error(f"Dashboard RPC: No data returned for user {user_id}")
