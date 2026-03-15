@@ -113,8 +113,9 @@ class ApiClient {
     return this.fetch<any>(`/api/hotels/${hotelId}`);
   }
 
-  async getDashboard(): Promise<DashboardData> {
-    return this.fetch<DashboardData>(`/api/dashboard`);
+  async getDashboard(userId?: string): Promise<DashboardData> {
+    const params = userId ? `?user_id=${userId}` : "";
+    return this.fetch<DashboardData>(`/api/dashboard${params}`);
   }
 
   async triggerMonitor(

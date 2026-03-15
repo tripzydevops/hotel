@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Optional
 from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
@@ -12,15 +13,17 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 
 @router.get("/dashboard")
 async def get_dashboard(
+    user_id: Optional[str] = None,
     db: Client = Depends(get_async_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
     Main dashboard data aggregator.
+    Supports optional user_id query parameter for admin impersonation.
     """
-    user_id = current_user.id
+    effective_user_id = user_id if user_id else current_user.id
     data = await get_dashboard_logic(
-        user_id=str(user_id),
+        user_id=str(effective_user_id),
         current_user_id=str(current_user.id),
         current_user_email=getattr(current_user, "email", None),
         db=db,

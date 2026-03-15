@@ -84,12 +84,28 @@ async def get_dashboard_logic(
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
         # [FIX] Optimized Multi-Query Consolidation (Phase 8: Aggregate RPCs)
-        rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
-        
-        # Ensure we have a valid response object with data
-        rpc_data = {}
-        if hasattr(rpc_res, "data") and rpc_res.data:
-            rpc_data = rpc_res.data
+        try:
+            rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
+            
+            # Ensure we have a valid response object with data
+            rpc_data = {}
+            if hasattr(rpc_res, "data") and rpc_res.data:
+                # PostgREST sometimes returns a single-row list for JSON-returning functions
+                if isinstance(rpc_res.data, list) and len(rpc_res.data) > 0:
+                    rpc_data = rpc_res.data[0]
+                    # If it's a list from SELECT func(), it might have the function name as key
+                    if "get_dashboard_init_data" in rpc_data:
+                        rpc_data = rpc_data["get_dashboard_init_data"]
+                elif isinstance(rpc_res.data, dict):
+                    rpc_data = rpc_res.data
+                else:
+                    logger.warning(f"Dashboard RPC: Unexpected data format: {type(rpc_res.data)}")
+            
+            if not rpc_data:
+                logger.error(f"Dashboard RPC: No data returned for user {user_id}")
+        except Exception as rpc_e:
+            logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")
+            rpc_data = {}
 
         user_profile = rpc_data.get("profile") or {}
         user_settings = rpc_data.get("settings") or {}
@@ -99,6 +115,8 @@ async def get_dashboard_logic(
         all_hotels = rpc_data.get("hotels") or []
         core_profile_data = rpc_data.get("core_profile") or {}
         global_pulse = rpc_data.get("global_pulse") or []
+        
+        logger.info(f"Dashboard: Found {len(all_hotels)} hotels for user {user_id}")
 
         # [FIX] Scan History Query (Mapping via Hotel IDs)
         # We fetch the latest 10 logs across all the user's active hotels.

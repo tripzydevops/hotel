@@ -57,7 +57,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 1. Active users: users who have at least 1 hotel
         active_users_count = 0
         try:
-            users_res = db.table("hotels").select("user_id").execute()
+            users_res = await db.table("hotels").select("user_id").execute()
             unique_users = set(h["user_id"] for h in (users_res.data or []))
             active_users_count = len(unique_users)
         except Exception as e:
@@ -66,7 +66,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 2. Monitored hotels: distinct serp_api_ids across all users
         hotels_monitored = 0
         try:
-            hotels_res = (
+            hotels_res = await (
                 db.table("hotels")
                 .select("serp_api_id")
                 .not_.is_("serp_api_id", "null")
@@ -83,7 +83,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # Total scans in 24h
         total_scans_24h = 0
         try:
-            scans_res = (
+            scans_res = await (
                 db.table("price_logs")
                 .select("id", count="exact")
                 .gte("recorded_at", cutoff_24h)
@@ -98,7 +98,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # we estimate cache hits from Global Pulse alerts (conservative estimate).
         cache_hits_24h = 0
         try:
-            pulse_alerts_res = (
+            pulse_alerts_res = await (
                 db.table("alerts")
                 .select("id", count="exact")
                 .ilike("message", "%Global Pulse%")
@@ -111,7 +111,10 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
             pass
 
         # 4. Calculate cache hit rate and savings
-        cache_hit_rate = round((cache_hits_24h / max(total_scans_24h, 1)) * 100, 1)
+        current_scans = max(total_scans_24h, 1)
+        raw_hit_rate = (float(cache_hits_24h) / float(current_scans)) * 100.0
+        # Manual rounding to 1 decimal place to satisfy strict type checkers
+        cache_hit_rate = float(int(raw_hit_rate * 10 + 0.5) / 10.0)
         # Each cache hit saves ~$0.01 per SerpApi credit
         estimated_savings = cache_hits_24h  # In API credits
 

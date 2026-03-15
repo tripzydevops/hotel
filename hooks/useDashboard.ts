@@ -40,7 +40,7 @@ export function useDashboard(
   // --- Queries ---
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", userId],
-    queryFn: () => api.getDashboard(),
+    queryFn: () => api.getDashboard(userId || undefined),
     enabled: !!userId,
     initialData: initialData,
     // EXPLANATION: Polling Strategy
