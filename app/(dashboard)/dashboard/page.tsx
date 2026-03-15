@@ -43,12 +43,15 @@ export default async function DashboardPage({
       ? `https://${process.env.VERCEL_URL}`
       : baseUrl;
 
+    const allCookies = (await cookies()).toString();
     const res = await fetch(`${effectiveBaseUrl}${apiPath}${params}`, {
        headers: {
          "Authorization": `Bearer ${token}`,
-         "Content-Type": "application/json"
+         "Cookie": allCookies,
+         "Content-Type": "application/json",
+         "x-debug-source": "server-fetch"
        },
-       next: { revalidate: 0 } // Ensure fresh data on server-side render
+       next: { revalidate: 0 }
     });
 
     if (res.ok) {
