@@ -27,12 +27,13 @@ const isProduction = process.env.NODE_ENV === 'production' ||
                      !window.location.hostname.includes('127.0.0.1'));
 
 // Local API routes (handled by the Next.js/Vercel Backend)
-export const LOCAL_API_URL = ''; // Relative path starts with /api
+export const LOCAL_API_URL = ''; 
+export const API_BASE_URL = LOCAL_API_URL; // Alias for backward compatibility
 
 // InsForge Remote services (handled by the Bridge)
 export const REMOTE_API_URL = isProduction
   ? '/p-api'
-  : 'http://localhost:8000';
+  : 'http://localhost:8000/p-api';
 
 if (typeof window !== 'undefined') {
   console.log(`[ApiClient] Mode: ${isProduction ? 'Production' : 'Development'}`);

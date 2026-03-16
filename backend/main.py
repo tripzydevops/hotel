@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Request, Depends, BackgroundTasks, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 import traceback
 import httpx
 
@@ -261,21 +261,36 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
 
 PHASE_21_ORIGIN = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
 
-async def proxy_to_origin(request: Request, sub_path: str, prefix: str):
-    """Core proxy logic for explicit routes."""
-    # Standardize path: Origin + /api/ + prefix/ + sub_path
-    target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{sub_path.lstrip('/')}"
+async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str] = None):
+    """
+    Robust proxy logic for InsForge services.
+    Handles cookie forwarding, content-length recalculation, and error logging.
+    """
+    # Build target URL
+    # If prefix is "rest", we need to map /p-api/rest/v1/... to Origin/rest/v1/...
+    # But usually InsForge paths are Origin/api/prefix/sub_path
+    if prefix:
+        target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{sub_path.lstrip('/')}"
+    else:
+        target_url = f"{PHASE_21_ORIGIN}/api/{sub_path.lstrip('/')}"
+        
     if request.query_params:
         target_url = f"{target_url}?{request.query_params}"
 
     try:
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-            # Strip Host and Content-Length to prevent forwarding errors
-            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
-            body = await request.body()
+            # 1. Prepare Headers
+            # We must forward Authorization and Cookie for session persistence.
+            # We MUST strip Host and Content-Length to avoid '400 Bad Request' on some proxies.
+            headers = {
+                k: v for k, v in request.headers.items() 
+                if k.lower() not in ["host", "content-length", "connection"]
+            }
             
-            logger.info(f"GATEWAY [{prefix}]: {request.method} /{sub_path} -> {target_url}")
+            body = await request.body()
+            logger.info(f"GATEWAY [{prefix or 'FB'}]: {request.method} /{sub_path} -> {target_url}")
 
+            # 2. Execute Request
             resp = await client.request(
                 method=request.method,
                 url=target_url,
@@ -284,11 +299,19 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: str):
             )
             
             if resp.status_code >= 400:
-                logger.error(f"ORIGIN ERROR [{prefix}] {resp.status_code}: {resp.text[:200]}")
+                logger.warning(f"ORIGIN [{prefix or 'FB'}] {resp.status_code}: {resp.text[:150]}")
 
-            # Forward response headers while stripping encoding-related ones
-            forward_headers = {k: v for k, v in resp.headers.items() if k.lower() not in ["content-encoding", "transfer-encoding"]}
-            forward_headers["X-Gateway-Phase"] = "21-explicit"
+            # 3. Prepare Response Headers
+            # We MUST forward 'set-cookie' for successful authentication flows.
+            # We strip encoding headers to let FastAPI/Vercel handle compression.
+            forward_headers = {}
+            for k, v in resp.headers.items():
+                k_lower = k.lower()
+                if k_lower in ["content-encoding", "transfer-encoding", "connection"]:
+                    continue
+                forward_headers[k] = v
+                
+            forward_headers["X-Gateway-Phase"] = "21-hardened"
             
             return Response(
                 content=resp.content,
@@ -296,8 +319,11 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: str):
                 headers=forward_headers
             )
     except Exception as e:
-        logger.error(f"GATEWAY CRITICAL FAILURE [{prefix}]: {str(e)}")
-        return JSONResponse(status_code=502, content={"detail": f"Gateway Critical Failure: {str(e)}"})
+        logger.error(f"GATEWAY CRITICAL [{prefix or 'FB'}]: {str(e)}")
+        return JSONResponse(
+            status_code=502, 
+            content={"detail": f"Gateway Critical Failure: {str(e)}"}
+        )
 
 # 1. Auth Gateway
 @app.api_route("/p-api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
@@ -314,21 +340,10 @@ async def rest_gateway(request: Request, sub_path: str):
 async def storage_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "storage")
 
-# 4. Catch-all p-api for other InsForge services (deprecated fallback)
+# 4. Catch-all fallback
 @app.api_route("/p-api/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-async def p_api_fallback(request: Request, sub_path: str):
-    # This acts as a safe-landing for paths not explicitly caught above
-    target_url = f"{PHASE_21_ORIGIN}/api/{sub_path.lstrip('/')}"
-    if request.query_params:
-        target_url = f"{target_url}?{request.query_params}"
-    
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            headers = {k: v for k, v in request.headers.items() if k.lower() not in ["host", "content-length"]}
-            resp = await client.request(method=request.method, url=target_url, headers=headers, content=await request.body())
-            return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
-    except Exception as e:
-        return JSONResponse(status_code=502, content={"detail": str(e)})
+async def p_api_catchall(request: Request, sub_path: str):
+    return await proxy_to_origin(request, sub_path)
 
 
 if __name__ == "__main__":
