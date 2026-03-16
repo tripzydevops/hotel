@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from supabase import Client
 
 from backend.utils.logger import get_logger
-from backend.utils.db import get_supabase_client
+from backend.utils.db import get_supabase_client, execute_resilient
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency
 from backend.utils.sentiment_utils import (
@@ -97,8 +97,8 @@ async def get_dashboard_logic(
         debug_info: Dict[str, Any] = {"step": "start", "user_id": user_id}
         
         try:
-            rpc_res = await db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute()
-            rpc_data: Dict[str, Any] = rpc_res.data
+            rpc_data_res = await execute_resilient(db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute())
+            rpc_data: Dict[str, Any] = rpc_data_res.data
             debug_info["rpc_data_type"] = str(type(rpc_data))
             
             # PostgREST unwrap: sometimes it's [{...}] or just {...} or contains the RPC name as a key
@@ -131,6 +131,17 @@ async def get_dashboard_logic(
         recent_sessions = rpc_data.get("recent_sessions") or []
         all_hotels = rpc_data.get("hotels") or []
         global_pulse = rpc_data.get("global_pulse") or []
+
+        # [NEW] Manual Hotel Fetch Fallback 
+        # Crucial for account separation and data restoration.
+        if not all_hotels:
+            logger.info(f"Dashboard: Hotels missing in RPC, attempting manual fetch for {user_id}")
+            try:
+                hotel_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").order("is_target_hotel", desc=True).execute()
+                all_hotels = hotel_res.data or []
+                logger.info(f"Dashboard: Manual hotel fetch recovered {len(all_hotels)} hotels for {user_id}")
+            except Exception as h_e:
+                logger.error(f"Dashboard: Manual hotel fetch failed: {h_e}")
 
         # [NEW] Manual Profile Fetch Fallback 
         # If the RPC fails to return a profile (e.g. due to RLS), fetch it manually.
@@ -167,7 +178,7 @@ async def get_dashboard_logic(
         scan_history = []
         if all_hotels:
             hids = [str(h["id"]) for h in all_hotels]
-            hist_res = await (
+            hist_res = await execute_resilient(
                 db.table("price_logs")
                 .select("*")
                 .in_("hotel_id", hids)
@@ -198,8 +209,8 @@ async def get_dashboard_logic(
         )
         hotel_ids = [str(h["id"]) for h in all_hotels]
 
-        dir_task = db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute() if serp_ids else asyncio.sleep(0, result=type('Response', (), {'data': []}))
-        prices_task = db.table("price_logs").select("*").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(200).execute()
+        dir_task = execute_resilient(db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()) if serp_ids else asyncio.sleep(0, result=type('Response', (), {'data': []}))
+        prices_task = execute_resilient(db.table("price_logs").select("*").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(200).execute())
 
         dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)
 
@@ -276,7 +287,7 @@ async def get_dashboard_logic(
                 logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
                 try:
                     # Find ANY hotel IDs sharing this SERP ID
-                    g_res = await db.table("hotels").select("id").eq("serp_api_id", sid).execute()
+                    g_res = await execute_resilient(db.table("hotels").select("id").eq("serp_api_id", sid).execute())
                     if g_res.data:
                         g_hids = [str(gh["id"]) for gh in g_res.data]
                         sh_res = await (

@@ -16,6 +16,7 @@ from typing import Dict, Any
 from supabase import Client
 
 from backend.utils.logger import get_logger
+from backend.utils.db import execute_resilient
 
 logger = get_logger(__name__)
 
@@ -57,7 +58,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 1. Active users: users who have at least 1 hotel
         active_users_count = 0
         try:
-            users_res = await db.table("hotels").select("user_id").execute()
+            users_res = await execute_resilient(db.table("hotels").select("user_id").execute())
             unique_users = set(h["user_id"] for h in (users_res.data or []))
             active_users_count = len(unique_users)
         except Exception as e:
@@ -66,7 +67,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # 2. Monitored hotels: distinct serp_api_ids across all users
         hotels_monitored = 0
         try:
-            hotels_res = await (
+            hotels_res = await execute_resilient(
                 db.table("hotels")
                 .select("serp_api_id")
                 .not_.is_("serp_api_id", "null")
@@ -83,7 +84,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # Total scans in 24h
         total_scans_24h = 0
         try:
-            scans_res = await (
+            scans_res = await execute_resilient(
                 db.table("price_logs")
                 .select("id", count="exact")
                 .gte("recorded_at", cutoff_24h)
@@ -98,7 +99,7 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
         # we estimate cache hits from Global Pulse alerts (conservative estimate).
         cache_hits_24h = 0
         try:
-            pulse_alerts_res = await (
+            pulse_alerts_res = await execute_resilient(
                 db.table("alerts")
                 .select("id", count="exact")
                 .ilike("message", "%Global Pulse%")

@@ -22,6 +22,10 @@ async def get_dashboard(
     Supports optional user_id query parameter for admin impersonation.
     """
     effective_user_id = user_id if user_id else current_user.id
+    from backend.utils.logger import get_logger
+    _logger = get_logger("dashboard_debug")
+    _logger.info(f"DASHBOARD_REQUEST: effective_id={effective_user_id} current_id={current_user.id} email={getattr(current_user, 'email', 'UNKNOWN')}")
+    
     data = await get_dashboard_logic(
         user_id=str(effective_user_id),
         current_user_id=str(current_user.id),

@@ -5,6 +5,7 @@ Provides the Supabase client and consistent auth helpers.
 
 from fastapi import Depends
 import os
+import asyncio
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from yarl import URL
@@ -93,3 +94,14 @@ async def get_async_supabase_client(jwt: str | None = None) -> Client | None:
     except Exception as e:
         print(f"[DATABASE] Async Initialization failed: {str(e)}")
         return None
+
+
+async def execute_resilient(query_or_coro):
+    """
+    Helper to handle both sync and async Supabase client results.
+    Prevents 'SingleAPIResponse is not awaitable' errors.
+    """
+    if asyncio.iscoroutine(query_or_coro) or hasattr(query_or_coro, "__await__"):
+        return await query_or_coro
+    # It's already the result (sync)
+    return query_or_coro
