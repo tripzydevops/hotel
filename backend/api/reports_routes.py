@@ -1,15 +1,26 @@
 import io
+import logging
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from typing import Optional
 from uuid import UUID
-from xhtml2pdf import pisa
+
+# xhtml2pdf is heavy (200MB+ dependencies) and is moved inside functions to allow
+# the core API to boot even if it is missing in the serverless environment.
 
 def generate_pdf_bytes(html_content: str) -> bytes:
     """Helper to run synchronous PDF generation in a threadpool."""
-    result = io.BytesIO()
-    pisa.CreatePDF(html_content, dest=result)
-    return result.getvalue()
+    try:
+        from xhtml2pdf import pisa
+        result = io.BytesIO()
+        pisa.CreatePDF(html_content, dest=result)
+        return result.getvalue()
+    except ImportError:
+        logger.error("xhtml2pdf is not installed. PDF generation unavailable.")
+        raise HTTPException(status_code=501, detail="PDF Generation utility is not installed on this server instance.")
 
 from datetime import datetime
 from supabase import Client

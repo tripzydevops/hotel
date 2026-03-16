@@ -4,7 +4,7 @@
     "backend"
   ],
   "search_path": [
-    "venv/lib/python3.11/site-packages"
+    "/home/tripzydevops/hotel/venv/lib/python3.11/site-packages"
   ],
   "exclude": [
     ".*/venv/.*",

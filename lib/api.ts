@@ -31,7 +31,7 @@ export const LOCAL_API_URL = '';
 export const API_BASE_URL = LOCAL_API_URL; // Alias for backward compatibility
 
 // InsForge Remote services (Direct to Origin)
-export const REMOTE_API_URL = 'https://pa5riyqv.eu-central.insforge.app';
+export const REMOTE_API_URL = 'https://pa5riyqv.insforge.site';
 
 if (typeof window !== 'undefined') {
   console.log(`[ApiClient] Mode: ${isProduction ? 'Production' : 'Development'}`);

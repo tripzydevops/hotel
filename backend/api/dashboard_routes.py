@@ -1,35 +1,46 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from typing import Optional
 from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user, get_async_supabase_rls
-from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
+from backend.services.auth_service import get_current_active_user, UserIdentity
+from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins, DashboardData
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
-
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=DashboardData)
 async def get_dashboard(
+    request: Request,
     user_id: Optional[str] = None,
-    db: Client = Depends(get_async_supabase_rls),
-    current_user=Depends(get_current_active_user),
+    current_user: UserIdentity = Depends(get_current_active_user),
+    db: Client = Depends(get_supabase)
 ):
     """
-    Main dashboard data aggregator.
-    Supports optional user_id query parameter for admin impersonation.
+    Dashboard entry point with deep diagnostics.
     """
-    effective_user_id = user_id if user_id else current_user.id
+    auth_header = request.headers.get("Authorization")
+    masked_token = f"{auth_header[:15]}...{auth_header[-5:]}" if auth_header else "MISSING"
     
-    data = await get_dashboard_logic(
-        user_id=str(effective_user_id),
-        current_user_id=str(current_user.id),
-        current_user_email=getattr(current_user, "email", None),
-        db=db,
-    )
-    return JSONResponse(content=jsonable_encoder(data))
+    logger.info(f"DASHBOARD_AUDIT: User={current_user.email} (ID={current_user.id}) RequestID={user_id} Token={masked_token}")
+    
+    # Force the dash to fetch for the ACTUAL authenticated user if no specific ID requested
+    target_id = user_id or str(current_user.id)
+    
+    try:
+        return await get_dashboard_logic(
+            user_id=target_id,
+            current_user_id=str(current_user.id),
+            current_user_email=current_user.email,
+            db=db
+        )
+    except Exception as e:
+        logger.error(f"DASHBOARD_ERROR for {target_id}: {str(e)}")
+        raise e
 
 
 @router.get("/global-pulse")

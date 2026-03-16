@@ -97,9 +97,9 @@ async def get_dashboard_logic(
         debug_info: Dict[str, Any] = {"step": "start", "user_id": user_id}
         
         try:
+            logger.info(f"DASHBOARD_RPC: Calling get_dashboard_init_data for {user_id}")
             rpc_data_res = await execute_resilient(db.rpc("get_dashboard_init_data", {"p_user_id": str(user_id)}).execute())
             rpc_data: Dict[str, Any] = rpc_data_res.data
-            debug_info["rpc_data_type"] = str(type(rpc_data))
             
             # PostgREST unwrap: sometimes it's [{...}] or just {...} or contains the RPC name as a key
             if isinstance(rpc_data, list) and len(rpc_data) > 0:
@@ -109,21 +109,18 @@ async def get_dashboard_logic(
                 rpc_data = rpc_data["get_dashboard_init_data"]
             
             if not isinstance(rpc_data, dict):
-                logger.error(f"Dashboard RPC: Invalid data format for user {user_id}: {type(rpc_data)}. Data: {rpc_data}")
+                logger.error(f"Dashboard RPC: Invalid data format for user {user_id}: {type(rpc_data)}")
                 rpc_data = {}
             else:
-                logger.info(f"Dashboard RPC: Extraction successful for user {user_id}. Keys found: {list(rpc_data.keys())}")
-                if "profile" in rpc_data:
-                    logger.info(f"Dashboard RPC: Found 'profile' key for user {user_id}")
-                if "core_profile" in rpc_data:
-                    logger.info(f"Dashboard RPC: Found 'core_profile' key for user {user_id}")
+                logger.info(f"Dashboard RPC: Keys found: {list(rpc_data.keys())}")
+                if rpc_data.get("hotels"):
+                    logger.info(f"Dashboard RPC: SUCCESS! Found {len(rpc_data['hotels'])} hotels in RPC for {user_id}")
                 
         except Exception as rpc_e:
             logger.error(f"Dashboard RPC: Error calling get_dashboard_init_data: {rpc_e}")
             rpc_data = {}
 
         # [FIX] Resilient Key Mapping
-        # Handle cases where the RPC might return keys with different names
         user_profile = rpc_data.get("profile") or rpc_data.get("core_profile") or {}
         user_settings = rpc_data.get("settings") or rpc_data.get("user_settings") or {}
         unread_count = rpc_data.get("unread_alerts_count") or 0
@@ -133,15 +130,14 @@ async def get_dashboard_logic(
         global_pulse = rpc_data.get("global_pulse") or []
 
         # [NEW] Manual Hotel Fetch Fallback 
-        # Crucial for account separation and data restoration.
         if not all_hotels:
-            logger.info(f"Dashboard: Hotels missing in RPC, attempting manual fetch for {user_id}")
+            logger.warning(f"DASHBOARD_HOTELS: RPC returned 0 hotels for {user_id}. Attempting manual table fetch...")
             try:
                 hotel_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").order("is_target_hotel", desc=True).execute()
                 all_hotels = hotel_res.data or []
-                logger.info(f"Dashboard: Manual hotel fetch recovered {len(all_hotels)} hotels for {user_id}")
+                logger.info(f"DASHBOARD_HOTELS: Manual fetch recovered {len(all_hotels)} hotels for {user_id}")
             except Exception as h_e:
-                logger.error(f"Dashboard: Manual hotel fetch failed: {h_e}")
+                logger.error(f"DASHBOARD_HOTELS: Manual fetch failed: {h_e}")
 
         # [NEW] Manual Profile Fetch Fallback 
         # If the RPC fails to return a profile (e.g. due to RLS), fetch it manually.
@@ -209,7 +205,7 @@ async def get_dashboard_logic(
         )
         hotel_ids = [str(h["id"]) for h in all_hotels]
 
-        dir_task = execute_resilient(db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()) if serp_ids else asyncio.sleep(0, result=type('Response', (), {'data': []}))
+        dir_task = execute_resilient(db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()) if serp_ids else asyncio.sleep(0, result=SimpleNamespace(data=[]))
         prices_task = execute_resilient(db.table("price_logs").select("*").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(200).execute())
 
         dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)

@@ -1,7 +1,7 @@
 import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
 
 export default InsforgeMiddleware({
-  baseUrl: 'https://pa5riyqv.eu-central.insforge.app',
+  baseUrl: 'https://pa5riyqv.insforge.site',
   signInUrl: '/login',
   useBuiltInAuth: false,
   publicRoutes: [

@@ -10,7 +10,7 @@ from backend.utils.embeddings import get_embedding, format_hotel_for_embedding
 from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.helpers import convert_currency, log_query, convert_currency as _cc
 from backend.utils.sentiment_utils import generate_mentions, merge_sentiment_breakdowns
-from backend.services.predictive_service import predictive_service
+# from backend.services.predictive_service import predictive_service
 
 
 class AnalystAgent:
@@ -451,9 +451,15 @@ class AnalystAgent:
                             previous_price = 0.0
                         # Phase 2.1: Predictive Intensity Suppression
                         # Use volatility-aware thresholds to reduce noise in high-volatility markets.
-                        volatility = await predictive_service.calculate_market_volatility(self.db, hotel_id)
+                        try:
+                            from backend.services.predictive_service import predictive_service
+                            volatility = await predictive_service.calculate_market_volatility(self.db, hotel_id)
+                            active_threshold = predictive_service.get_smart_threshold(threshold, volatility)
+                        except ImportError:
+                            volatility = 0.0
+                            active_threshold = threshold
+                        
                         volatilities.append(volatility)
-                        active_threshold = predictive_service.get_smart_threshold(threshold, volatility)
                         
                         if active_threshold > threshold:
                             await self.log_reasoning(session_id, "Yield Intel", 
