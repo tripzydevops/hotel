@@ -32,7 +32,7 @@ export const API_BASE_URL = LOCAL_API_URL; // Alias for backward compatibility
 
 // InsForge Remote services (handled by the Bridge)
 export const REMOTE_API_URL = isProduction
-  ? '/p-api'
+  ? (typeof window !== 'undefined' ? window.location.origin + '/p-api' : '/p-api')
   : 'http://localhost:8000/p-api';
 
 if (typeof window !== 'undefined') {
