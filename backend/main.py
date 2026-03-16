@@ -270,9 +270,9 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
     # If prefix is "rest", we need to map /p-api/rest/v1/... to Origin/rest/v1/...
     # But usually InsForge paths are Origin/api/prefix/sub_path
     if prefix:
-        target_url = f"{PHASE_21_ORIGIN}/{prefix}/{sub_path.lstrip('/')}"
+        target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{sub_path.lstrip('/')}"
     else:
-        target_url = f"{PHASE_21_ORIGIN}/{sub_path.lstrip('/')}"
+        target_url = f"{PHASE_21_ORIGIN}/api/{sub_path.lstrip('/')}"
         
     if request.query_params:
         target_url = f"{target_url}?{request.query_params}"
