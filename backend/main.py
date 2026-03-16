@@ -267,12 +267,15 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
     Handles cookie forwarding, content-length recalculation, and error logging.
     """
     # Build target URL
-    # If prefix is "rest", we need to map /p-api/rest/v1/... to Origin/rest/v1/...
-    # But usually InsForge paths are Origin/api/prefix/sub_path
+    # Normalize sub_path to prevent double /api/api
+    clean_path = sub_path.lstrip('/')
+    if clean_path.startswith("api/"):
+        clean_path = clean_path[4:]
+        
     if prefix:
-        target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{sub_path.lstrip('/')}"
+        target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{clean_path}"
     else:
-        target_url = f"{PHASE_21_ORIGIN}/api/{sub_path.lstrip('/')}"
+        target_url = f"{PHASE_21_ORIGIN}/api/{clean_path}"
         
     if request.query_params:
         target_url = f"{target_url}?{request.query_params}"
