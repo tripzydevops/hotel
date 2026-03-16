@@ -30,10 +30,8 @@ const isProduction = process.env.NODE_ENV === 'production' ||
 export const LOCAL_API_URL = ''; 
 export const API_BASE_URL = LOCAL_API_URL; // Alias for backward compatibility
 
-// InsForge Remote services (handled by the Bridge)
-export const REMOTE_API_URL = isProduction
-  ? (typeof window !== 'undefined' ? window.location.origin + '/p-api' : '/p-api')
-  : 'http://localhost:8000/p-api';
+// InsForge Remote services (Direct to Origin)
+export const REMOTE_API_URL = 'https://pa5riyqv.eu-central.insforge.app';
 
 if (typeof window !== 'undefined') {
   console.log(`[ApiClient] Mode: ${isProduction ? 'Production' : 'Development'}`);
@@ -83,7 +81,7 @@ class ApiClient {
       (headers as any)["Authorization"] = `Bearer ${token}`;
     }
 
-    const url = `${LOCAL_API_URL}${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${LOCAL_API_URL}${endpoint}`;
     console.log(`[ApiClient] Requesting ${endpoint}...`);
 
     const response = await fetch(url, {

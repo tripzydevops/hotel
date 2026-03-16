@@ -130,7 +130,9 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
         try:
-            # RESTORING STABLE BASELINE (af7e411): Direct call to sessions/current
+            # IDENTITY VERIFICATION (STABLE Baseline: af7e411)
+            # We call /sessions/current specifically because this origin
+            # does NOT support the generic /user endpoint (returning 404).
             auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
             headers = {
                 "Authorization": f"Bearer {token}",
@@ -155,11 +157,7 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                 )
             else:
                 logger.error(f"InsForge Auth Failed ({response.status_code}): {response.text[:200]}")
-                # Fallback to Supabase SDK
-                user_resp = db.auth.get_user(token)
-                if not user_resp or not getattr(user_resp, "user", None):
-                    raise HTTPException(status_code=401, detail=f"Authentication Failed: {response.text[:100]}")
-                user = user_resp.user
+                raise HTTPException(status_code=401, detail=f"Authentication Failed: Invalid or expired session")
                 
         except Exception as auth_e:
             logger.error(f"Auth Token Verification Failed: {auth_e}")
