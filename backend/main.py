@@ -259,7 +259,7 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
 # Handles traffic to InsForge remote services via specific endpoints.
 # This prevents shadowing of local /api/... routes.
 
-PHASE_21_ORIGIN = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
+PHASE_21_ORIGIN = "https://pa5riyqv.eu-central.insforge.app"
 
 async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str] = None):
     """
