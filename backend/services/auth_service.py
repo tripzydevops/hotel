@@ -130,36 +130,11 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
         try:
-            # KAIZEN: Direct call to InsForge session endpoint to avoid SDK path mismatches
-            auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "apikey": str(db.supabase_key)
-            }
-            
-            with httpx.Client() as client:
-                response = client.get(auth_url, headers=headers)
-                
-            if response.status_code == 200:
-                user_data = response.json().get("user")
-                if not user_data:
-                    raise HTTPException(status_code=401, detail="Invalid Session Payload")
-                
-                # Mock a user object structure similar to Supabase User for compatibility
-                user = SimpleNamespace(
-                    id=user_data.get("id"),
-                    email=user_data.get("email"),
-                    role=user_data.get("role", "authenticated"),
-                    app_metadata=user_data.get("app_metadata", {}),
-                    user_metadata=user_data.get("user_metadata", {})
-                )
-            else:
-                logger.error(f"InsForge Auth Failed ({response.status_code}): {response.text[:200]}")
-                # Fallback to Supabase SDK just in case
-                user_resp = db.auth.get_user(token)
-                if not user_resp or not getattr(user_resp, "user", None):
-                    raise HTTPException(status_code=401, detail=f"Authentication Failed: {response.text[:100]}")
-                user = user_resp.user
+            # Reverting to stable af7e411 logic: use the SDK's built-in get_user
+            user_resp = db.auth.get_user(token)
+            if not user_resp or not getattr(user_resp, "user", None):
+                raise HTTPException(status_code=401, detail="Authentication Failed: Invalid or expired token")
+            user = user_resp.user
                 
         except Exception as auth_e:
             logger.error(f"Auth Token Verification Failed: {auth_e}")
