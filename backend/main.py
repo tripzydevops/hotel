@@ -32,6 +32,13 @@ logger = get_logger(__name__)
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
+
+@app.get("/api/ping")
+async def ping():
+    """Super-simple health check that bypasses all dependencies."""
+    return {"status": "pong", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
 # from backend.api import ...
 from backend.api import (
     admin_routes,
