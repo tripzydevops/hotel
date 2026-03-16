@@ -1,7 +1,7 @@
 import { createAuthRouteHandlers } from '@insforge/nextjs/api';
 
 const handlers = createAuthRouteHandlers({
-  baseUrl: 'https://pa5riyqv-flask.eu-central.insforge.app/api',
+  baseUrl: 'https://pa5riyqv-flask.eu-central.insforge.app/p-api',
 });
 
 export const POST = handlers.POST;

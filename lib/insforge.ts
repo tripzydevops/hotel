@@ -6,7 +6,7 @@ const REMOTE_BASE = isBrowser
   ? (isProd 
       ? window.location.origin + '/p-api' 
       : 'http://localhost:8000/p-api')
-  : 'https://pa5riyqv-flask.eu-central.insforge.app/api';
+  : 'https://pa5riyqv-flask.eu-central.insforge.app/p-api';
 
 export const insforge = createClient({
   baseUrl: REMOTE_BASE,
