@@ -1,1 +1,1 @@
-fastapi>=0.109.0
+# Empty requirements for native test
