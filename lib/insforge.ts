@@ -3,9 +3,7 @@ import { createClient } from '@insforge/sdk';
 const isBrowser = typeof window !== 'undefined';
 const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
 const REMOTE_BASE = isBrowser 
-  ? (isProd 
-      ? 'https://pa5riyqv.eu-central.insforge.app' 
-      : 'http://localhost:8000/p-api')
+  ? '/p-api'
   : 'https://pa5riyqv.eu-central.insforge.app';
 
 export const insforge = createClient({
