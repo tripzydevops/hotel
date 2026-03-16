@@ -1,19 +1,10 @@
 {
+  "framework": "nextjs",
   "functions": {
-    "python_bridge/index.py": {
+    "api/index.py": {
       "runtime": "@vercel/python",
       "memory": 1024,
       "maxDuration": 60
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/python_bridge/index.py"
-    },
-    {
-      "source": "/p-api/:path*",
-      "destination": "/python_bridge/index.py"
-    }
-  ]
+  }
 }
