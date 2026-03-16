@@ -4,7 +4,15 @@ export default InsforgeMiddleware({
   baseUrl: 'https://pa5riyqv-flask.eu-central.insforge.app/api',
   signInUrl: '/login',
   useBuiltInAuth: false,
-  publicRoutes: ['/', '/login', '/api/auth*', '/auth/callback', '/p-api*'],
+  publicRoutes: [
+    '/', 
+    '/login', 
+    '/api/auth*', 
+    '/auth/callback', 
+    '/p-api*',
+    '/api/landing*', // Public CMS content
+    '/api/health'    // Health checks
+  ],
 });
 
 export const config = {
