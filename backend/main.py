@@ -291,6 +291,7 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
             logger.info(f"GATEWAY [{prefix or 'FB'}]: {request.method} /{sub_path} -> {target_url}")
 
             # 2. Execute Request
+            logger.debug(f"PROXY HEADERS: {headers}")
             resp = await client.request(
                 method=request.method,
                 url=target_url,
@@ -304,20 +305,24 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
             # 3. Prepare Response Headers
             # We MUST forward 'set-cookie' for successful authentication flows.
             # We strip encoding headers to let FastAPI/Vercel handle compression.
-            forward_headers = {}
+            response = Response(
+                content=resp.content,
+                status_code=resp.status_code
+            )
+            
             for k, v in resp.headers.items():
                 k_lower = k.lower()
-                if k_lower in ["content-encoding", "transfer-encoding", "connection"]:
+                if k_lower in ["content-encoding", "transfer-encoding", "connection", "content-length"]:
                     continue
-                forward_headers[k] = v
+                # For set-cookie, we might have multiples. Starlette handles this if we add them one by one.
+                if k_lower == "set-cookie":
+                    # Use raw headers or set_cookie to avoid overwriting
+                    response.raw_headers.append((b"set-cookie", v.encode("latin-1")))
+                else:
+                    response.headers[k] = v
                 
-            forward_headers["X-Gateway-Phase"] = "21-hardened"
-            
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=forward_headers
-            )
+            response.headers["X-Gateway-Phase"] = "21-hardened-cookies"
+            return response
     except Exception as e:
         logger.error(f"GATEWAY CRITICAL [{prefix or 'FB'}]: {str(e)}")
         return JSONResponse(
