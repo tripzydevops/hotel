@@ -6,14 +6,14 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, UserIdentity
-from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins, DashboardData
+from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
-@router.get("/dashboard", response_model=DashboardData)
+@router.get("/dashboard")
 async def get_dashboard(
     request: Request,
     user_id: Optional[str] = None,
