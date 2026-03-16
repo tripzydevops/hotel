@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
         // EXPLANATION: Unified API Routing
         // We route /api requests to the Python bridge at the end of the routing 
         // process (fallback). This ensures that Next.js internal routes, 
-        // like /api/auth handlers, are matched first.
+        // like /api/auth handlers, are matched FIRST and speak directly to origin.
         {
           source: "/api/:path*",
           destination: process.env.NODE_ENV === "development"
