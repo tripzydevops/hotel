@@ -13,21 +13,18 @@ const nextConfig: NextConfig = {
           source: "/p-api/:path*",
           destination: "/api/index.py",
         },
-        // EXPLANATION: Production Routing Fix
-        // Explicitly route /api requests to the FastAPI bridge in production.
-        // In dev, Next.js handles this via the 'fallback' block.
-        {
-          source: "/api/:path*",
-          destination: "/api/index.py",
-        },
       ],
       fallback: [
-        process.env.NODE_ENV === "development"
-          ? {
-              source: "/api/:path*",
-              destination: "http://127.0.0.1:8000/api/:path*",
-            }
-          : null,
+        // EXPLANATION: Unified API Routing
+        // We route /api requests to the Python bridge at the end of the routing 
+        // process (fallback). This ensures that Next.js internal routes, 
+        // like /api/auth handlers, are matched first.
+        {
+          source: "/api/:path*",
+          destination: process.env.NODE_ENV === "development"
+            ? "http://127.0.0.1:8000/api/:path*"
+            : "/api/index.py",
+        },
       ].filter(Boolean),
     } as any;
   },
