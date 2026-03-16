@@ -12,10 +12,27 @@ from supabase import Client
 
 from backend.utils.logger import get_logger
 import httpx
-from types import SimpleNamespace
-
 # EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
+
+
+class UserIdentity:
+    """
+    Robust User Identity object to replace brittle SimpleNamespace.
+    Ensures .id, .email, and metadata are ALWAYS accessible to prevent attribute crashes.
+    Architecture Alignment: Mirrors Supabase Auth User object for downstream compatibility.
+    """
+    def __init__(self, id, email, role="authenticated", app_metadata=None, user_metadata=None, aud="authenticated", created_at=None):
+        self.id = id
+        self.email = email
+        self.role = role
+        self.app_metadata = app_metadata or {}
+        self.user_metadata = user_metadata or {}
+        self.aud = aud
+        self.created_at = created_at
+
+    def __repr__(self):
+        return f"<UserIdentity id={self.id} email={self.email}>"
 
 
 def get_token(request: Request) -> str:
@@ -64,7 +81,7 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
                     raise HTTPException(status_code=401, detail="Invalid Admin Session Payload")
                 
                 # Mock a user object structure similar to Supabase User for compatibility
-                user_obj = SimpleNamespace(
+                user_obj = UserIdentity(
                     id=user_data.get("id"),
                     email=user_data.get("email"),
                     role=user_data.get("role", "authenticated"),
@@ -148,9 +165,8 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                     raise HTTPException(status_code=401, detail="Invalid Session Payload")
                 
                 # IDENTITY MAPPING (STABLE Baseline: af7e411)
-                # We mock a Supabase-compatible User object so downstream services
-                # can access .id, .email, and .app_metadata without crashing.
-                user = SimpleNamespace(
+                # We use UserIdentity so downstream services can access .id, .email, etc safely.
+                user = UserIdentity(
                     id=user_data.get("id"),
                     email=user_data.get("email"),
                     role=user_data.get("role", "authenticated"),

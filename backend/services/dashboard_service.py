@@ -198,7 +198,7 @@ async def get_dashboard_logic(
         )
         hotel_ids = [str(h["id"]) for h in all_hotels]
 
-        dir_task = db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute() if serp_ids else asyncio.sleep(0, result=SimpleNamespace(data=[]))
+        dir_task = db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute() if serp_ids else asyncio.sleep(0, result=type('Response', (), {'data': []}))
         prices_task = db.table("price_logs").select("*").in_("hotel_id", hotel_ids).order("recorded_at", desc=True).limit(200).execute()
 
         dir_res, all_prices_res = await asyncio.gather(dir_task, prices_task, return_exceptions=True)
