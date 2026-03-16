@@ -333,17 +333,25 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
             content={"detail": f"Gateway Critical Failure: {str(e)}"}
         )
 
+# EXPLANATION: Unified Gateway Recovery (Phase 43)
+# To bypass browser-level CORS, the frontend now uses relative paths (/api).
+# These gateways intercept those requests and proxy them to the InsForge origin
+# while preserving cookies and CSRF tokens.
+
 # 1. Auth Gateway
+@app.api_route("/api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def auth_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "auth")
 
 # 2. REST (Database) Gateway
+@app.api_route("/api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def rest_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "rest")
 
 # 3. Storage Gateway
+@app.api_route("/api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def storage_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "storage")

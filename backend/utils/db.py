@@ -33,6 +33,14 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
         print("[DATABASE] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!")
         return None
         
+    # EXPLANATION: Self-Healing Origin (Phase 43)
+    # If the environment variable is stale (pointing to the dead .app domain),
+    # we automatically switch to the stable .site origin. This resolves 500 errors
+    # caused by DNS resolution failures without requiring a manual Vercel dashboard update.
+    if "pa5riyqv.eu-central.insforge.app" in raw_url:
+        print("[DATABASE] DEBUG: Auto-repairing stale .app origin to .site origin")
+        raw_url = "https://pa5riyqv.insforge.site"
+
     # Clean up URL: InsForge often appends paths to this in .env which breaks the SDK
     url = raw_url.split("/api/")[0].rstrip("/")
 
