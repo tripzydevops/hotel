@@ -147,13 +147,17 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                 if not user_data:
                     raise HTTPException(status_code=401, detail="Invalid Session Payload")
                 
-                # Mock a user object structure similar to Supabase User for compatibility
+                # IDENTITY MAPPING (STABLE Baseline: af7e411)
+                # We mock a Supabase-compatible User object so downstream services
+                # can access .id, .email, and .app_metadata without crashing.
                 user = SimpleNamespace(
                     id=user_data.get("id"),
                     email=user_data.get("email"),
                     role=user_data.get("role", "authenticated"),
                     app_metadata=user_data.get("app_metadata", {}),
-                    user_metadata=user_data.get("user_metadata", {})
+                    user_metadata=user_data.get("user_metadata", {}),
+                    aud="authenticated",
+                    created_at=user_data.get("created_at")
                 )
             else:
                 logger.error(f"InsForge Auth Failed ({response.status_code}): {response.text[:200]}")
