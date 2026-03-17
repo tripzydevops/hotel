@@ -11,7 +11,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(tags=["dashboard"])
+router = APIRouter(prefix="/api", tags=["dashboard"])
 
 @router.get("/dashboard")
 async def get_dashboard(

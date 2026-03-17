@@ -53,7 +53,7 @@ from backend.services.admin_service import (
 from backend.services.provider_factory import ProviderFactory
 import os
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 @router.get("/debug-providers")

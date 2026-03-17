@@ -1,5 +1,9 @@
 {
     "include": [
+        "backend",
+        "api",
+        "scripts",
+        "utils",
         "."
     ],
     "exclude": [
@@ -10,8 +14,7 @@
     "venvPath": "/home/tripzydevops/hotel",
     "venv": "venv",
     "extraPaths": [
-        ".",
-        "./backend"
+        "/home/tripzydevops/hotel"
     ],
     "reportMissingTypeStubs": false,
     "pythonVersion": "3.11",

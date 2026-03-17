@@ -15,7 +15,7 @@ from backend.services.monitor_service import (
 from datetime import datetime, timezone
 import typing
 
-router = APIRouter(tags=["monitor"])
+router = APIRouter(prefix="/api/monitor", tags=["monitor"])
 
 
 

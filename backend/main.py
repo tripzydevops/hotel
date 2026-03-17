@@ -34,20 +34,36 @@ load_dotenv(".env.local", override=True)
 
 
 # Initialize FastAPI
-# EXPLANATION: Vercel Routing Normalization
-# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api"
-# because our routers already include the "/api" prefix. Setting it
-# causes FastAPI to strip "/api" from incoming requests, making them
-# fail to match the registered routes (Double Prefixing Conflict).
-# KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
+# EXPLANATION: Vercel Bridge Normalization (Attempt 8 Restoration)
+# Per commit af7e411a: We MUST set root_path="/p-api" to align with
+# the Vercel/Next.js bridge. This allows FastAPI to correctly resolve
+# sub-paths when requests are proxied via /p-api.
 app = FastAPI(
     title="Hotel Rate Sentinel API", 
     version="2026.03",
-    redirect_slashes=False
+    redirect_slashes=False,
+    root_path="/p-api"
 )
 
+# SECURITY MIDDLEWARE: Inject standard protection headers
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Adds essential security headers to every response."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; "
+        "connect-src 'self' https://*.supabase.co https://*.vercel.app; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline';"
+    )
+    return response
+
 @app.get("/api/ping")
-@app.get("/ping")
 async def ping(request: Request):
     """Super-simple health check that bypasses all dependencies."""
     logger.info(f"Ping received. Path: {request.url.path}, Scope Path: {request.scope.get('path')}")
@@ -238,27 +254,22 @@ async def system_report(db: Client = Depends(get_supabase)):
 # FastAPI will still match the route. This "Prefix Agnosticism" is the 
 # most robust way to handle environment-specific path handling.
 
-ROUTERS = [
-    admin_routes.router,
-    hotel_routes.router,
-    monitor_routes.router,
-    dashboard_routes.router,
-    reports_routes.router,
-    profile_routes.router,
-    analysis_routes.router,
-    alerts_routes.router,
-    landing_routes.router,
-    pulse_routes.router,
-    market_routes.router,
-    execution_routes.router,
-    recovery_routes.router,
-]
+# Include Modular Routers
+# EXPLANATION: Routers include hardcoded /api prefixes (see Attempt 8 modules).
+app.include_router(admin_routes.router)
+app.include_router(hotel_routes.router)
+app.include_router(monitor_routes.router)
 
-for r in ROUTERS:
-    # 1. Mount with /api (standard local/development path)
-    app.include_router(r, prefix="/api")
-    # 2. Mount without prefix (backup for Vercel prefix-stripping)
-    app.include_router(r)
+app.include_router(dashboard_routes.router)
+app.include_router(reports_routes.router)
+app.include_router(profile_routes.router)
+app.include_router(analysis_routes.router)
+app.include_router(alerts_routes.router)
+app.include_router(landing_routes.router)
+app.include_router(pulse_routes.router)
+app.include_router(market_routes.router)
+app.include_router(execution_routes.router)
+app.include_router(recovery_routes.router)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
@@ -298,8 +309,7 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
     # Build target URL
     # Normalize sub_path to prevent double /api/api
     clean_path = sub_path.lstrip('/')
-    if clean_path.startswith("api/"):
-        clean_path = clean_path[4:]
+    clean_path = clean_path.removeprefix("api/")
         
     if prefix:
         target_url = f"{PHASE_21_ORIGIN}/api/{prefix}/{clean_path}"
@@ -368,22 +378,16 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
 # while preserving cookies and CSRF tokens.
 
 # 1. Auth Gateway
-@app.api_route("/api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-@app.api_route("/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def auth_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "auth")
 
 # 2. REST (Database) Gateway
-@app.api_route("/api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-@app.api_route("/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def rest_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "rest")
 
 # 3. Storage Gateway
-@app.api_route("/api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-@app.api_route("/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def storage_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "storage")

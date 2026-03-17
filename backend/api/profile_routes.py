@@ -17,7 +17,7 @@ from backend.services.profile_service import (
 from datetime import datetime, timezone, timedelta
 from backend.utils.security import verify_ownership
 
-router = APIRouter(tags=["profile"])
+router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 
 @router.get("/profile", response_model=UserProfile)

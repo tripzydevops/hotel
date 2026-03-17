@@ -42,15 +42,6 @@ def get_supabase_rls(
     return get_supabase_client(jwt=token)
 
 
-async def get_async_supabase_rls(
-    token: str = Depends(get_token),
-) -> Client:
-    """
-    Async dependency that returns a Supabase AsyncClient with RLS enabled.
-    """
-    return await get_async_supabase_client(jwt=token)
-
-
 def get_supabase() -> Client:
     """
     Default database dependency.
@@ -60,7 +51,7 @@ def get_supabase() -> Client:
     return get_supabase_client()
 
 
-def get_supabase_client(jwt: str | None = None) -> Client | None:
+def get_supabase_client(jwt: str | None = None) -> Client:
     """
     Dependency to provide a Supabase client.
     Optionally accepts a JWT to enable Row-Level Security (RLS).
@@ -68,8 +59,7 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
     """
     raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     if not raw_url:
-        print("[DATABASE] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!")
-        return None
+        raise RuntimeError("[DATABASE] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!")
         
     # EXPLANATION: Self-Healing Origin (Phase 43)
     # If the environment variable is stale (pointing to the dead .app domain),
@@ -84,9 +74,11 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
 
     if jwt:
         # Use simple Anon Key + User JWT to enforce RLS
-        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        anon_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        if not anon_key:
+            raise RuntimeError("NEXT_PUBLIC_SUPABASE_ANON_KEY is missing")
         opts = ClientOptions(headers={"Authorization": f"Bearer {jwt}"})
-        client = create_client(url, key, options=opts)
+        client = create_client(url, anon_key, options=opts)
         client.postgrest.auth(jwt)
         # Fix InsForge path issue: supabase-py appends /rest/v1 by default
         client.postgrest.base_url = URL(f"{url}/api/database/records/")
@@ -95,59 +87,23 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
         return client
 
     # Admin access using Service Role Key
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not key:
-        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if not service_key:
+        service_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    
+    if not service_key:
+         raise RuntimeError("No Supabase key found (SERVICE_ROLE or ANON)")
 
     try:
         if os.getenv("DEBUG_DB") == "1":
             print(f"[DATABASE] Initializing client for {url}")
-        client = create_client(url, key)
+        client = create_client(url, service_key)
         client.postgrest.base_url = URL(f"{url}/api/database/records/")
         client.auth._url = f"{url}/api/auth"
         return client
     except Exception as e:
         print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
-        return None
+        raise e
 
 
-async def get_async_supabase_client(jwt: str | None = None) -> Client | None:
-    """
-    Async dependency to provide a Supabase client.
-    Enables true non-blocking concurrent queries (asyncio.gather).
-    """
-    from supabase import acreate_client, AsyncClient
-    
-    raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    if not raw_url:
-        return None
-        
-    url = raw_url.split("/api/")[0].rstrip("/")
 
-    if jwt:
-        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-        client: AsyncClient = await acreate_client(url, key, options=ClientOptions(headers={"Authorization": f"Bearer {jwt}"}))
-        client.postgrest.base_url = URL(f"{url}/api/database/records/")
-        client.auth._url = f"{url}/api/auth"
-        return client
-
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    try:
-        client: AsyncClient = await acreate_client(url, key)
-        client.postgrest.base_url = URL(f"{url}/api/database/records/")
-        client.auth._url = f"{url}/api/auth"
-        return client
-    except Exception as e:
-        print(f"[DATABASE] Async Initialization failed: {str(e)}")
-        return None
-
-
-async def execute_resilient(query_or_coro):
-    """
-    Helper to handle both sync and async Supabase client results.
-    Prevents 'SingleAPIResponse is not awaitable' errors.
-    """
-    if asyncio.iscoroutine(query_or_coro) or hasattr(query_or_coro, "__await__"):
-        return await query_or_coro
-    # It's already the result (sync)
-    return query_or_coro

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Any
+from typing import List, Optional, Any, cast, Dict
 from supabase import Client
 from backend.utils.db import get_supabase_rls
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/market", tags=["Market Intelligence"])
+router = APIRouter(prefix="/api/market", tags=["Market Intelligence"])
 
 @router.post("/scrape/tobb")
 async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
@@ -68,11 +68,12 @@ async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     Returns a unique list of cities present in the market_events table.
     """
     res = db.table("market_events").select("city").execute()
-    cities = sorted(list(set([d["city"] for d in res.data if d.get("city")])))
+    data = cast(List[Dict[str, Any]], res.data or [])
+    cities = sorted(list(set([str(d["city"]) for d in data if d.get("city")])))
     return cities
 
 @router.get("/events")
-async def get_market_events(city: str = None, db: Client = Depends(get_supabase_rls)):
+async def get_market_events(city: Optional[str] = None, db: Client = Depends(get_supabase_rls)):
     """
     Retrieves market events for the dashboard.
     """
@@ -102,50 +103,60 @@ async def get_market_forecast(
     raw_forecast = await demand_agent.get_forecast(city, days)
     
     # 2. Aggregated Metadata
-    total_score = 0
-    peak_score = -1
-    peak_date = None
-    critical_days = 0
+    f_total_score: float = 0.0
+    peak_score: float = -1.0
+    peak_date: Optional[str] = None
+    critical_days: int = 0
     
-    total_fair_intensity = 0
-    total_tga_intensity = 0
-    signal_count = 0
+    total_fair_intensity: float = 0.0
+    total_tga_intensity: float = 0.0
+    signal_count: int = 0
     
     # 3. Enrich with rationales and compute stats
     enriched_forecast = []
     for day in raw_forecast:
-        score = day.get("compression_score", 0)
-        total_score += score
+        # Cast to dict since day is a JSON object
+        d_dict = cast(Dict[str, Any], day)
+        s_val = d_dict.get("compression_score", 0)
+        score = float(s_val)
+        f_total_score += score
         
         if score > peak_score:
             peak_score = score
-            peak_date = day.get("date")
+            p_date = d_dict.get("date")
+            peak_date = cast(Optional[str], str(p_date) if p_date else None)
         
         if score >= 8:
             critical_days += 1
             
-        day_signals = day.get("signals", [])
+        day_signals = cast(List[Any], d_dict.get("signals", []))
         for s in day_signals:
+            s_dict = cast(Dict[str, Any], s)
             signal_count += 1
-            if s.get("type") == "fair":
-                total_fair_intensity += s.get("score", 0)
-            elif s.get("type") == "announcement":
-                total_tga_intensity += s.get("score", 0)
+            s_score_val = s_dict.get("score", 0)
+            f_score = float(s_score_val)
+            if s_dict.get("type") == "fair":
+                total_fair_intensity += f_score
+            elif s_dict.get("type") == "announcement":
+                total_tga_intensity += f_score
 
-        if day.get("signals"):
+        if d_dict.get("signals"):
             day["rationale"] = await price_agent.generate_rationale(day)
         else:
             day["rationale"] = "Market stable. Standard seasonal occupancy expected."
         enriched_forecast.append(day)
         
-    avg_score = round(total_score / len(raw_forecast), 1) if raw_forecast else 0
+    avg_score: float = 0.0
+    if raw_forecast:
+        avg_score = round(cast(float, f_total_score / float(len(raw_forecast))), 1)
     
     # 4. Get Last Sync Time
-    last_sync = None
+    last_sync: Optional[str] = None
     try:
         sync_res = db.table("market_events").select("created_at").order("created_at", desc=True).limit(1).execute()
-        if sync_res.data:
-            last_sync = sync_res.data[0]["created_at"]
+        if sync_res.data and len(sync_res.data) > 0:
+            row = cast(Dict[str, Any], sync_res.data[0])
+            last_sync = cast(str, str(row.get("created_at", "")))
     except Exception:
         pass
 
@@ -159,8 +170,8 @@ async def get_market_forecast(
             "total_signals": signal_count,
             "last_synced": last_sync,
             "market_stats": {
-                "avg_fair_intensity": round(total_fair_intensity / days, 2),
-                "avg_tga_intensity": round(total_tga_intensity / days, 2)
+                "avg_fair_intensity": round(cast(float, total_fair_intensity / float(days)), 2),
+                "avg_tga_intensity": round(cast(float, total_tga_intensity / float(days)), 2)
             }
         }
     }

@@ -1,5 +1,6 @@
+
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List, cast
 from uuid import UUID
 from supabase import Client
 from backend.services.auth_service import get_current_active_user
@@ -12,7 +13,7 @@ from fastapi.encoders import jsonable_encoder
 import json
 from sse_starlette.sse import EventSourceResponse
 
-router = APIRouter(tags=["analysis"])
+router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
 
 @router.get("/v1/discovery/{hotel_id}")
@@ -187,23 +188,55 @@ async def debug_analysis_data(
         )
         hotels = hotels_res.data or []
         diag["hotel_count"] = len(hotels)
-        diag["hotels"] = [
-            {
-                "id": str(h["id"])[:8],
-                "name": h.get("name", "?")[:30],
-                "is_target": h.get("is_target_hotel"),
-                "has_serp_id": bool(h.get("serp_api_id")),
-            }
-            for h in hotels
-        ]
+        diag["hotels"] = []
+        for h in hotels:
+            h_dict = cast(Dict[str, Any], h)
+            h_id = str(h_dict.get("id", ""))
+            h_name = str(h_dict.get("name", "?"))
+            diag["hotels"].append({
+                "id": cast(Any, h_id)[:8],
+                "name": cast(Any, h_name)[:30],
+                "is_target": bool(h_dict.get("is_target_hotel")),
+                "has_serp_id": bool(h_dict.get("serp_api_id")),
+            })
 
         if not hotels:
-            diag["issue"] = "NO_HOTELS - User has no hotels configured"
             return JSONResponse(content=jsonable_encoder(diag))
+
+        # 2. Market Events
+        events_res = db.table("market_events").select("*").order("created_at", desc=True).limit(5).execute()
+        events = events_res.data or []
+        diag["event_count"] = len(events)
+        diag["events"] = []
+        for e in events:
+            e_dict = cast(Dict[str, Any], e)
+            e_id = str(e_dict.get("id", ""))
+            e_title = str(e_dict.get("title", "Event"))
+            e_date = str(e_dict.get("created_at", ""))
+            diag["events"].append({
+                "id": cast(Any, e_id)[:8],
+                "title": cast(Any, e_title)[:40],
+                "date": cast(Any, e_date)[:10],
+            })
+
+        # 3. Recent Scans
+        scans_res = db.table("price_scans").select("*").order("created_at", desc=True).limit(3).execute()
+        scans = scans_res.data or []
+        diag["scan_count"] = len(scans)
+        diag["scans"] = []
+        for s in scans:
+            s_dict = cast(Dict[str, Any], s)
+            s_id = str(s_dict.get("id", ""))
+            s_hotel = str(s_dict.get("hotel_id", ""))
+            diag["scans"].append({
+                "id": cast(Any, s_id)[:8],
+                "hotel": cast(Any, s_hotel)[:8],
+                "status": "Success" if s.get("success") else "Failed",
+            })
 
         hotel_ids = [str(h["id"]) for h in hotels]
 
-        # 2. Price logs count (all time)
+        # 4. Price logs count (all time)
         all_time = (
             db.table("price_logs")
             .select("id", count="exact")
@@ -212,7 +245,7 @@ async def debug_analysis_data(
         )
         diag["price_logs_all_time"] = all_time.count
 
-        # 3. Price logs count (90 day window - what analysis actually uses)
+        # 5. Price logs count (90 day window - what analysis actually uses)
         cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
         windowed = (
             db.table("price_logs")
@@ -223,7 +256,7 @@ async def debug_analysis_data(
         )
         diag["price_logs_90_days"] = windowed.count
 
-        # 4. Recent price logs (last 5)
+        # 6. Recent price logs (last 5)
         recent = (
             db.table("price_logs")
             .select("hotel_id, price, currency, recorded_at, source, is_estimated")
@@ -234,18 +267,22 @@ async def debug_analysis_data(
         )
         diag["recent_logs"] = []
         for r in recent.data or []:
-            rt = r.get("room_types") or []
+            r_dict = cast(Dict[str, Any], r)
+            rt = r_dict.get("room_types") or []
+            r_hotel_id = str(r_dict.get("hotel_id", "?"))
+            r_recorded_at = str(r_dict.get("recorded_at", "?"))
             diag["recent_logs"].append(
                 {
-                    "hotel_id": str(r.get("hotel_id", "?"))[:8],
-                    "price": r.get("price"),
-                    "currency": r.get("currency"),
-                    "recorded_at": str(r.get("recorded_at", "?"))[:19],
-                    "source": r.get("source"),
-                    "is_estimated": r.get("is_estimated"),
-                    "room_types_in_log": len(rt) if isinstance(rt, list) else "N/A",
+                    "hotel_id": cast(Any, r_hotel_id)[:8],
+                    "name": r_dict.get("hotel_name"),
+                    "price": r_dict.get("price"),
+                    "currency": r_dict.get("currency"),
+                    "recorded_at": cast(Any, r_recorded_at)[:19],
+                    "source": r_dict.get("source"),
+                    "is_estimated": r_dict.get("is_estimated"),
+                    "room_types_in_log": len(rt) if isinstance(rt, list) else 0,
                     "room_names": [
-                        room.get("name") for room in rt if isinstance(room, dict)
+                        str(room.get("name")) for room in rt if isinstance(room, dict)
                     ]
                     if isinstance(rt, list)
                     else [],
@@ -264,17 +301,20 @@ async def debug_analysis_data(
             )
             diag["recent_scans"] = []
             for s in sessions.data or []:
-                trace = s.get("reasoning_trace") or []
+                s_dict = cast(Dict[str, Any], s)
+                trace = cast(List[Any], s_dict.get("reasoning_trace") or [])
+                s_created = str(s_dict.get("created_at", "?"))
+                s_completed = cast(Optional[str], s_dict.get("completed_at"))
                 diag["recent_scans"].append(
                     {
-                        "status": s.get("status"),
-                        "created_at": str(s.get("created_at", "?"))[:19],
-                        "completed_at": str(s.get("completed_at", "?"))[:19]
-                        if s.get("completed_at")
+                        "status": s_dict.get("status"),
+                        "created_at": cast(Any, s_created)[:19],
+                        "completed_at": cast(Any, s_completed)[:19]
+                        if s_completed
                         else None,
-                        "trace_summary": trace[-3:]
+                        "trace_summary": cast(Any, trace)[-3:]
                         if isinstance(trace, list)
-                        else str(trace)[:200],
+                        else cast(Any, str(trace))[:200],
                     }
                 )
         except Exception:
@@ -289,7 +329,7 @@ async def debug_analysis_data(
             diag["likely_issue"] = (
                 "STALE_DATA - Price logs exist but none within the 90-day analysis window"
             )
-        elif all(r.get("price", 0) <= 0 for r in (recent.data or [])):
+        elif all(cast(Dict[str, Any], r).get("price", 0) <= 0 for r in (recent.data or [])):
             diag["likely_issue"] = (
                 "ALL_SELLOUT - All recent price logs have price=0 (key exhaustion / no prices found)"
             )

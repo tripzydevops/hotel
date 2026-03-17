@@ -7,26 +7,17 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   async rewrites() {
-    return {
-      beforeFiles: [
-        {
-          source: "/p-api/:path*",
-          destination: "/api/index.py",
-        },
-      ],
-      fallback: [
-        // EXPLANATION: Unified API Routing
-        // We route /api requests to the Python bridge at the end of the routing 
-        // process (fallback). This ensures that Next.js internal routes, 
-        // like /api/auth handlers, are matched FIRST and speak directly to origin.
-        {
-          source: "/api/:path*",
-          destination: process.env.NODE_ENV === "development"
-            ? "http://127.0.0.1:8000/api/:path*"
-            : "/api/index.py",
-        },
-      ].filter(Boolean),
-    } as any;
+    return [
+      process.env.NODE_ENV === "development"
+        ? {
+            source: "/api/:path*",
+            destination: "http://127.0.0.1:8000/api/:path*",
+          }
+        : {
+            source: "/p-api/:path*",
+            destination: "/api/index.py",
+          },
+    ].flat();
   },
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
