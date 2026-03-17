@@ -1,6 +1,7 @@
 """
 Hotel Rate Monitor - FastAPI Backend
 Main entry point using modular routers.
+Redeploy trigger: 2026-03-17T11:52:00Z
 """
 
 # ruff: noqa
