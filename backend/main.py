@@ -47,6 +47,7 @@ app = FastAPI(
 )
 
 @app.get("/api/ping")
+@app.get("/ping")
 async def ping(request: Request):
     """Super-simple health check that bypasses all dependencies."""
     logger.info(f"Ping received. Path: {request.url.path}, Scope Path: {request.scope.get('path')}")
@@ -159,19 +160,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # This ensures local /api/... routes work while unknown /p-api/... hits the origin.
 
 
-# Basic Health/Diagnostic Endpoints
+# Health/Diagnostic Endpoints (DUAL PREFIX)
 @app.get("/api/health")
+@app.get("/health")
 async def health_check():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     return {
         "status": "healthy",
         "supabase_configured": bool(url),
         "timestamp": datetime.now().isoformat(),
-        "version": "1.1.0-modular",
+        "version": "1.2.0-dual-prefix",
     }
 
 
 @app.get("/api/debug/system-report")
+@app.get("/debug/system-report")
 async def system_report(db: Client = Depends(get_supabase)):
     """Deep diagnostics for environment and database connectivity."""
 
@@ -229,22 +232,33 @@ async def system_report(db: Client = Depends(get_supabase)):
     }
 
 
-# Include Modular Routers
-app.include_router(admin_routes.router)
-app.include_router(hotel_routes.router)
-app.include_router(monitor_routes.router)
-app.include_router(monitor_routes.router_legacy)
+# EXPLANATION: Routing Normalization (Attempt 7)
+# We mount every router TWICE: once with the "/api" prefix and once without.
+# This ensures that even if Vercel strips the "/api" prefix at the gateway,
+# FastAPI will still match the route. This "Prefix Agnosticism" is the 
+# most robust way to handle environment-specific path handling.
 
-app.include_router(dashboard_routes.router)
-app.include_router(reports_routes.router)
-app.include_router(profile_routes.router)
-app.include_router(analysis_routes.router)
-app.include_router(alerts_routes.router)
-app.include_router(landing_routes.router)
-app.include_router(pulse_routes.router)
-app.include_router(market_routes.router)
-app.include_router(execution_routes.router)
-app.include_router(recovery_routes.router)
+ROUTERS = [
+    admin_routes.router,
+    hotel_routes.router,
+    monitor_routes.router,
+    dashboard_routes.router,
+    reports_routes.router,
+    profile_routes.router,
+    analysis_routes.router,
+    alerts_routes.router,
+    landing_routes.router,
+    pulse_routes.router,
+    market_routes.router,
+    execution_routes.router,
+    recovery_routes.router,
+]
+
+for r in ROUTERS:
+    # 1. Mount with /api (standard local/development path)
+    app.include_router(r, prefix="/api")
+    # 2. Mount without prefix (backup for Vercel prefix-stripping)
+    app.include_router(r)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
@@ -355,18 +369,21 @@ async def proxy_to_origin(request: Request, sub_path: str, prefix: Optional[str]
 
 # 1. Auth Gateway
 @app.api_route("/api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/auth/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def auth_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "auth")
 
 # 2. REST (Database) Gateway
 @app.api_route("/api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/rest/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def rest_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "rest")
 
 # 3. Storage Gateway
 @app.api_route("/api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 @app.api_route("/p-api/storage/{sub_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def storage_gateway(request: Request, sub_path: str):
     return await proxy_to_origin(request, sub_path, "storage")

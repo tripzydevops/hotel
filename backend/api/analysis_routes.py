@@ -12,7 +12,7 @@ from fastapi.encoders import jsonable_encoder
 import json
 from sse_starlette.sse import EventSourceResponse
 
-router = APIRouter(prefix="/api", tags=["analysis"])
+router = APIRouter(tags=["analysis"])
 
 
 @router.get("/v1/discovery/{hotel_id}")

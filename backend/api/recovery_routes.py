@@ -8,7 +8,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/recovery", tags=["Revenue Recovery"])
+router = APIRouter(prefix="/recovery", tags=["Revenue Recovery"])
 
 class DisputeRequest(BaseModel):
     hotel_id: str

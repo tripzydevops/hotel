@@ -7,7 +7,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/execution", tags=["Execution Bridge"])
+router = APIRouter(prefix="/execution", tags=["Execution Bridge"])
 
 class ExecutionRequest(BaseModel):
     event_id: str

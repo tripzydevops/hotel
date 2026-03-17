@@ -15,9 +15,7 @@ from backend.services.monitor_service import (
 from datetime import datetime, timezone
 import typing
 
-router = APIRouter(prefix="/api", tags=["monitor"])
-# Redundant router for Vercel prefix flexibility
-router_legacy = APIRouter(tags=["monitor"])
+router = APIRouter(tags=["monitor"])
 
 
 

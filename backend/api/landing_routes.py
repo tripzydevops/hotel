@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api", tags=["landing"])
+router = APIRouter(tags=["landing"])
 
 
 class ConfigUpdate(BaseModel):

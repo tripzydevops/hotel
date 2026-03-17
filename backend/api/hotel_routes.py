@@ -16,7 +16,7 @@ from backend.utils.helpers import log_query
 from backend.utils.security import verify_ownership
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/api", tags=["hotels"])
+router = APIRouter(tags=["hotels"])
 
 
 @router.get("/v1/directory/search")

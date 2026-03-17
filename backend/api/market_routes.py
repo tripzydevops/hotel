@@ -6,7 +6,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/market", tags=["Market Intelligence"])
+router = APIRouter(prefix="/market", tags=["Market Intelligence"])
 
 @router.post("/scrape/tobb")
 async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
