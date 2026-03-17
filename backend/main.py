@@ -33,10 +33,29 @@ load_dotenv()
 load_dotenv(".env.local", override=True)
 
 
+# Initialize FastAPI
+# EXPLANATION: Vercel Routing Normalization
+# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api"
+# because our routers already include the "/api" prefix. Setting it
+# causes FastAPI to strip "/api" from incoming requests, making them
+# fail to match the registered routes (Double Prefixing Conflict).
+# KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
+app = FastAPI(
+    title="Hotel Rate Sentinel API", 
+    version="2026.03",
+    redirect_slashes=False
+)
+
 @app.get("/api/ping")
-async def ping():
+async def ping(request: Request):
     """Super-simple health check that bypasses all dependencies."""
-    return {"status": "pong", "timestamp": datetime.now(timezone.utc).isoformat()}
+    logger.info(f"Ping received. Path: {request.url.path}, Scope Path: {request.scope.get('path')}")
+    return {
+        "status": "pong", 
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "seen_path": request.url.path,
+        "scope_path": request.scope.get('path')
+    }
 
 
 # from backend.api import ...
@@ -64,18 +83,7 @@ from backend.api import (
 # KAİZEN: Always use gemini-3-* models. gemini-1.5-* is legacy.
 
 
-# Initialize FastAPI
-# EXPLANATION: Vercel Routing Normalization
-# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api"
-# because our routers already include the "/api" prefix. Setting it
-# causes FastAPI to strip "/api" from incoming requests, making them
-# fail to match the registered routes (Double Prefixing Conflict).
-# KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
-app = FastAPI(
-    title="Hotel Rate Sentinel API", 
-    version="2026.02",
-    redirect_slashes=False
-)
+# Router initialization moved up
 
 # DIAGNOSTIC MIDDLEWARE: Log every request path to identify prefix issues
 @app.middleware("http")

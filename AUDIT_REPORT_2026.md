@@ -45,13 +45,12 @@ The **Hotel Rate Sentinel** project is in a **Healthy** state with a highly modu
 ## Deployment & Infrastructure Status
 
 ### [FAILURE] Vercel Serverless Bridge (March 17, 2026)
-- **Attempt 1:** Unified `api/index.py` (shadowed by Next.js).
-- **Attempt 2:** Renamed directory to `api_py/` (pattern mismatch).
-- **Attempt 3:** standard `api/index.py` with `functions` config (pattern mismatch).
-- **Attempt 4 (Current):** Reverting to Zero Config (Empty `vercel.json`).
+- **Attempt 1-3:** Pattern mismatch and site package issues.
+- **Attempt 4:** Zero Config + api/ folder (Build success, but runtime 500/404).
+- **Attempt 5 (Current):** Fixed `backend/main.py` out-of-order `app` definition + Removed shadowing `app/api/auth` Next.js route + Added Path Diagnostics.
 - **Result:** Pending Verification.
-- **Analysis:** The explicit `functions` block in `vercel.json` seems to be the source of the "unmatched pattern" error. Moving to an empty config to trigger Vercel's default filesystem-based discovery.
-- **Current Status:** Regression. Deployment blocked.
+- **Analysis:** A `NameError` in the backend was causing import-time crashes (500), and Next.js was shadowing the Python auth gateway (shadowing 404/500).
+- **Current Status:** Regression (Improving). Deployment blocked by runtime errors.
 
 ## Recommendations
 
