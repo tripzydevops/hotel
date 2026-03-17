@@ -42,7 +42,18 @@ The **Hotel Rate Sentinel** project is in a **Healthy** state with a highly modu
 | **Frontend UI** | ✅ Healthy | 8.5/10 | Clean structure; minor linting cleanup recommended. |
 | **Scalability** | ✅ Ready | 9.0/10 | Serverless-ready and decoupled service layer. |
 
+## Deployment & Infrastructure Status
+
+### [FAILURE] Vercel Serverless Bridge (March 17, 2026)
+- **Attempt 1:** Unified `api/index.py` (shadowed by Next.js).
+- **Attempt 2:** Renamed directory to `api_py/` (pattern mismatch).
+- **Result:** Build Failure.
+- **Error:** `The pattern "api_py/index.py" defined in functions doesn't match any Serverless Functions.`
+- **Analysis:** Vercel's automated discovery for Next.js projects prioritizes `api/` at the root. Renaming it requires explicit `builds` configuration or moving it to a path Vercel natively expects.
+- **Current Status:** Regression. Deployment blocked.
+
 ## Recommendations
+
 1. **Resolve Notification TODO:** Implement the Twilio/Meta integration to complete the alerting feature.
 2. **Linting Cleanup:** Run a dedicated "Refactor Day" to resolve the remaining ESLint warnings.
 3. **AI Scaling:** If AI narrative usage increases, consider migrating Gemini processing to a background worker to avoid Vercel timeout constraints on long-form generations.

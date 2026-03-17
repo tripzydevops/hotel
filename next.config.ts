@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: "/p-api/:path*",
-          destination: "/api_py/index.py",
+          destination: "/api/index.py",
         },
       ],
       fallback: [
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
           source: "/api/:path*",
           destination: process.env.NODE_ENV === "development"
             ? "http://127.0.0.1:8000/api/:path*"
-            : "/api_py/index.py",
+            : "/api/index.py",
         },
       ].filter(Boolean),
     } as any;
