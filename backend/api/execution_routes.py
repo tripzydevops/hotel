@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 from pydantic import BaseModel
 from supabase import Client
-from backend.services.auth_service import get_supabase_rls
+from backend.utils.db import get_supabase_rls
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)

@@ -24,12 +24,11 @@ def generate_pdf_bytes(html_content: str) -> bytes:
 
 from datetime import datetime
 from supabase import Client
-from backend.utils.db import get_supabase
 from backend.services.auth_service import (
     get_current_active_user,
     get_current_admin_user,
-    get_supabase_rls,
 )
+from backend.utils.db import get_supabase, get_supabase_rls
 from backend.services.admin_service import get_reports_logic, export_report_logic
 from backend.models.schemas import BaseModel
 from backend.templates.report_templates import build_deep_ocean_briefing_html, build_admin_report_html

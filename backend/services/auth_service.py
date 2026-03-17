@@ -6,7 +6,7 @@ Handles role-based access control (RBAC) and user session verification.
 import traceback
 from fastapi import Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from backend.utils.db import get_supabase_client, get_supabase
+from backend.utils.db import get_supabase_client, get_supabase, get_token, get_supabase_rls
 from supabase import Client
 
 
@@ -35,23 +35,8 @@ class UserIdentity:
         return f"<UserIdentity id={self.id} email={self.email}>"
 
 
-def get_token(request: Request) -> str:
-    """
-    Extracts the Bearer token from the Authorization header or query parameter.
-    Query parameter 'token' is used as a fallback for SSE (EventSource).
-    """
-    auth_header = request.headers.get("Authorization")
-    if auth_header:
-        token_parts = auth_header.split(" ")
-        if len(token_parts) == 2 and token_parts[0].lower() == "bearer":
-            return token_parts[1]
-
-    # Fallback for SSE / Query Params
-    query_token = request.query_params.get("token")
-    if query_token:
-        return query_token
-
-    raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
+# EXPLANATION: get_token and get_supabase_rls have been moved to backend.utils.db 
+# to resolve circular dependencies and provide a single source of truth for the RLS client.
 
 
 async def get_current_admin_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):
@@ -225,21 +210,4 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
         raise HTTPException(status_code=401, detail=f"Authentication Failed: {str(e)}")
 
 
-def get_supabase_rls(
-    token: str = Depends(get_token),
-) -> Client:
-    """
-    Dependency that returns a Supabase client with RLS enabled.
-    Uses the JWT from the Authorization header.
-    """
-    return get_supabase_client(jwt=token)
-
-
-async def get_async_supabase_rls(
-    token: str = Depends(get_token),
-) -> Client:
-    """
-    Async dependency that returns a Supabase AsyncClient with RLS enabled.
-    """
-    from backend.utils.db import get_async_supabase_client
-    return await get_async_supabase_client(jwt=token)
+# Consolidated get_supabase_rls in backend.utils.db

@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
 from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import get_current_active_user
+from backend.utils.db import get_supabase_rls
 from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegistry
 from backend.services.hotel_service import (
     search_hotel_directory_logic,

@@ -1,7 +1,6 @@
 {
   "source_directories": [
-    ".",
-    "backend"
+    "."
   ],
   "search_path": [
     "/home/tripzydevops/hotel/venv/lib/python3.11/site-packages"

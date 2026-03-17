@@ -3,7 +3,7 @@ Shared database utilities and dependencies.
 Provides the Supabase client and consistent auth helpers.
 """
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, Request
 import os
 import asyncio
 from supabase import create_client, Client, ClientOptions
@@ -11,6 +11,44 @@ from dotenv import load_dotenv
 from yarl import URL
 
 load_dotenv()
+
+
+def get_token(request: Request) -> str:
+    """
+    Extracts the Bearer token from the Authorization header or query parameter.
+    Query parameter 'token' is used as a fallback for SSE (EventSource).
+    """
+    auth_header = request.headers.get("Authorization")
+    if auth_header:
+        token_parts = auth_header.split(" ")
+        if len(token_parts) == 2 and token_parts[0].lower() == "bearer":
+            return token_parts[1]
+
+    # Fallback for SSE / Query Params
+    query_token = request.query_params.get("token")
+    if query_token:
+        return query_token
+
+    raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
+
+
+def get_supabase_rls(
+    token: str = Depends(get_token),
+) -> Client:
+    """
+    Dependency that returns a Supabase client with RLS enabled.
+    Uses the JWT from the Authorization header.
+    """
+    return get_supabase_client(jwt=token)
+
+
+async def get_async_supabase_rls(
+    token: str = Depends(get_token),
+) -> Client:
+    """
+    Async dependency that returns a Supabase AsyncClient with RLS enabled.
+    """
+    return await get_async_supabase_client(jwt=token)
 
 
 def get_supabase() -> Client:

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
+from typing import Optional, Any, Dict
 from uuid import UUID
 from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import get_current_active_user
+from backend.utils.db import get_supabase_rls
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
@@ -175,7 +176,7 @@ async def debug_analysis_data(
         if not db:
             raise HTTPException(503, "Database unavailable")
 
-        diag = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
+        diag: Dict[str, Any] = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
 
         # 1. Hotels for this user
         hotels_res = (
