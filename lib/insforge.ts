@@ -11,7 +11,6 @@ const REMOTE_BASE = typeof window !== "undefined"
 
 export const insforge = createClient({
   baseUrl: REMOTE_BASE,
-  projectId: "pa5riyqv",
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
 
