@@ -40,6 +40,13 @@ interface TargetHotelTileProps {
   images?: { thumbnail?: string; original?: string }[];
   offers?: { vendor?: string; price?: number }[];
   isEstimated?: boolean;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  description?: string;
+  cid?: string;
+  placeId?: string;
 }
 
 /**

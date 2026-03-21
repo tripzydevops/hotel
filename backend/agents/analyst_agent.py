@@ -415,7 +415,11 @@ class AnalystAgent:
                     meta_update["sentiment_breakdown"] = merged_breakdown
                     is_sentiment_modified = True
 
-                for field in ["rating", "image_url", "stars", "review_count", "amenities"]:
+                for field in [
+                    "rating", "image_url", "stars", "review_count", 
+                    "amenities", "images", "phone", "email", "website", 
+                    "address", "description", "cid", "place_id"
+                ]:
                     val = price_data.get(field) if isinstance(price_data, dict) else None
                     if val is not None: meta_update[field] = val
 

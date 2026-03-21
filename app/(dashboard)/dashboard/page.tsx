@@ -342,6 +342,13 @@ export default function Dashboard() {
                       images={data.target_hotel.images}
                       offers={data.target_hotel.price_info?.offers}
                       isEstimated={data.target_hotel.price_info?.is_estimated}
+                      phone={data.target_hotel.phone}
+                      email={data.target_hotel.email}
+                      website={data.target_hotel.website}
+                      address={data.target_hotel.address}
+                      description={data.target_hotel.description}
+                      cid={data.target_hotel.cid}
+                      placeId={data.target_hotel.place_id}
                     />
                   </motion.div>
                 )}
@@ -403,6 +410,13 @@ export default function Dashboard() {
                             amenities={competitor.amenities}
                             images={competitor.images}
                             offers={competitor.price_info?.offers}
+                            phone={competitor.phone}
+                            email={competitor.email}
+                            website={competitor.website}
+                            address={competitor.address}
+                            description={competitor.description}
+                            cid={competitor.cid}
+                            placeId={competitor.place_id}
                           />
                         </motion.div>
                       );

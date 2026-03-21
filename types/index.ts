@@ -56,6 +56,13 @@ export interface Hotel {
   }>;
   reviews?: Array<{ text: string; sentiment?: string; date?: string }>;
   pricing_dna_text?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  description?: string;
+  cid?: string;
+  place_id?: string;
 }
 
 export interface PriceInfo {

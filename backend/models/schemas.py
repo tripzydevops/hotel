@@ -48,6 +48,15 @@ class HotelBase(BaseModel):
     sentiment_embedding: Optional[List[float]] = None
     embedding_status: Optional[str] = "current"
     reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    
+    # New Metadata Fields
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    description: Optional[str] = None
+    cid: Optional[str] = None
+    place_id: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -66,6 +75,13 @@ class HotelUpdate(BaseModel):
     fixed_check_in: Optional[date] = None
     fixed_check_out: Optional[date] = None
     default_adults: Optional[int] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    description: Optional[str] = None
+    cid: Optional[str] = None
+    place_id: Optional[str] = None
 
 
 class Hotel(HotelBase):

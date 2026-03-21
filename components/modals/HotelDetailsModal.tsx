@@ -10,6 +10,11 @@ import {
   Tag,
   Lock,
   Check,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  Info,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
@@ -151,37 +156,73 @@ export default function HotelDetailsModal({
                   </div>
                 </div>
 
-                <div className="glass-card p-6">
-                  <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">
-                    {t("hotelDetails.intelSummary")}
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">
-                        {t("hotelDetails.amenitiesCount")}
-                      </span>
-                      <span className="text-white font-bold">
-                        {hotel.amenities?.length || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">
-                        {t("hotelDetails.offersCount")}
-                      </span>
-                      <span className="text-white font-bold">
-                        {hotel.price_info?.offers?.length || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-secondary)]">
-                        {t("hotelDetails.imagesCount")}
-                      </span>
-                      <span className="text-white font-bold">
-                        {hotel.images?.length || 0}
-                      </span>
+                </div>
+              </div>
+
+              {/* New Contact & Description Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(hotel.phone || hotel.email || hotel.website || hotel.address) && (
+                  <div className="glass-card p-6">
+                    <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                       <Phone className="w-4 h-4" />
+                       {t("hotelDetails.contactInfo") || "Contact Details"}
+                    </h3>
+                    <div className="space-y-4">
+                      {hotel.address && (
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-4 h-4 text-[var(--soft-gold)] mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight">Address</p>
+                            <p className="text-sm text-white">{hotel.address}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-4">
+                        {hotel.phone && (
+                          <div className="flex items-start gap-3">
+                            <Phone className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight text-nowrap">Phone</p>
+                              <a href={`tel:${hotel.phone}`} className="text-sm text-white hover:text-[var(--soft-gold)] transition-colors">{hotel.phone}</a>
+                            </div>
+                          </div>
+                        )}
+                        {hotel.email && (
+                          <div className="flex items-start gap-3">
+                            <Mail className="w-4 h-4 text-sky-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight text-nowrap">Email</p>
+                              <a href={`mailto:${hotel.email}`} className="text-sm text-white hover:text-[var(--soft-gold)] transition-colors">{hotel.email}</a>
+                            </div>
+                          </div>
+                        )}
+                        {hotel.website && (
+                          <div className="flex items-start gap-3">
+                            <Globe className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight text-nowrap">Website</p>
+                              <a href={hotel.website} target="_blank" rel="noopener noreferrer" className="text-sm text-white hover:text-[var(--soft-gold)] transition-colors truncate max-w-[150px] inline-block">Visit</a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {hotel.description && (
+                  <div className="glass-card p-6">
+                    <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                       <Info className="w-4 h-4" />
+                       {t("hotelDetails.description") || "About this Property"}
+                    </h3>
+                    <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                         {hotel.description}
+                       </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

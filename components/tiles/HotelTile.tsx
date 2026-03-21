@@ -10,6 +10,11 @@ import {
   Hotel as HotelIcon,
   Tag,
   AlertTriangle,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  Info,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
@@ -54,6 +59,13 @@ export interface HotelTileProps {
   footerStats?: boolean;
   priority?: boolean;
   isEstimated?: boolean;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  description?: string;
+  cid?: string;
+  placeId?: string;
 }
 
 export default function HotelTile(props: HotelTileProps) {
@@ -88,6 +100,13 @@ export default function HotelTile(props: HotelTileProps) {
     headerBadges,
     footerStats = false,
     priority = false,
+    phone,
+    email,
+    website,
+    address,
+    description,
+    cid,
+    placeId,
   } = props;
 
   const formatPrice = (price: number) => {
@@ -258,6 +277,65 @@ export default function HotelTile(props: HotelTileProps) {
               <p className="text-sm text-[var(--text-muted)] mt-0.5 truncate">
                 {location}
               </p>
+            )}
+
+            {/* Premium Metadata Display */}
+            {(address || phone || email || website) && (
+              <div className="mt-2 space-y-1.5">
+                {address && (
+                  <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <MapPin className="w-3 h-3 text-[var(--soft-gold)]" />
+                    <span className="truncate">{address}</span>
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {phone && (
+                    <a
+                      href={`tel:${phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      title={phone}
+                    >
+                      <Phone className="w-3 h-3 text-emerald-400" />
+                      <span className="hidden sm:inline">Call</span>
+                    </a>
+                  )}
+                  {email && (
+                    <a
+                      href={`mailto:${email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      title={email}
+                    >
+                      <Mail className="w-3 h-3 text-sky-400" />
+                      <span className="hidden sm:inline">Email</span>
+                    </a>
+                  )}
+                  {website && (
+                    <a
+                      href={website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      title={website}
+                    >
+                      <Globe className="w-3 h-3 text-amber-400" />
+                      <span className="hidden sm:inline">Website</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Description Tooltip Influence */}
+            {description && (
+              <div className="mt-2 flex items-start gap-1 p-2 rounded-lg bg-white/5 border border-white/5 group/desc overflow-hidden">
+                <Info className="w-3 h-3 text-[var(--soft-gold)] mt-0.5 flex-shrink-0" />
+                <p className="text-[9px] text-[var(--text-muted)] line-clamp-2 leading-relaxed italic">
+                  {description}
+                </p>
+              </div>
             )}
 
             {/* Removed amenities and offers badges as requested */}

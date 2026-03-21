@@ -196,15 +196,22 @@ async def add_hotel_to_account_logic(
         rating = hotel_data.get("rating")
         review_count = hotel_data.get("review_count")
         image_url = hotel_data.get("image_url")
+        phone = hotel_data.get("phone")
+        email = hotel_data.get("email")
+        website = hotel_data.get("website")
+        address = hotel_data.get("address")
+        description = hotel_data.get("description")
+        cid = hotel_data.get("cid")
+        place_id = hotel_data.get("place_id")
 
-        if not serp_api_id or not rating:
+        if not serp_api_id or not phone:
             name = hotel_data.get("name")
             location = hotel_data.get("location")
             if name:
-                # KAİZEN: Use available columns (hotel_directory lacks review_count)
+                # 1. First check local directory
                 dir_res = (
                     db.table("hotel_directory")
-                    .select("serp_api_id, rating, review_count, image_url, sentiment_breakdown, reviews")
+                    .select("*")
                     .eq("name", name)
                     .eq("location", location)
                     .execute()
@@ -215,10 +222,32 @@ async def add_hotel_to_account_logic(
                     rating = rating or d.get("rating")
                     review_count = review_count or d.get("review_count")
                     image_url = image_url or d.get("image_url")
-                    # Fallback for historical sentiment
-                    sentiment_breakdown = hotel_data.get("sentiment_breakdown") or d.get("sentiment_breakdown")
-                    reviews = hotel_data.get("reviews") or d.get("reviews")
-                    print(f"Service: Auto-discovered metadata for {name}")
+                    phone = phone or d.get("phone")
+                    email = email or d.get("email")
+                    website = website or d.get("website")
+                    address = address or d.get("address")
+                    description = description or d.get("description")
+                    cid = cid or d.get("cid")
+                    place_id = place_id or d.get("place_id")
+                    
+                # 2. [PRO-METADATA] Use DataForSEO for deep metadata if still missing
+                if not phone or not email:
+                    try:
+                        from backend.services.providers.dataforseo_provider import dataforseo_provider
+                        print(f"Service: Fetching Pro metadata for {name}")
+                        pro_meta = await dataforseo_provider.get_hotel_metadata(name, location)
+                        if pro_meta:
+                            phone = phone or pro_meta.get("phone")
+                            email = email or pro_meta.get("email")
+                            website = website or pro_meta.get("website")
+                            address = address or pro_meta.get("address")
+                            description = description or pro_meta.get("description")
+                            cid = cid or pro_meta.get("cid")
+                            place_id = place_id or pro_meta.get("place_id")
+                            # If we found a CID/Place ID, it might help SerpApi later
+                            serp_api_id = serp_api_id or place_id or cid
+                    except Exception as e:
+                        print(f"DataForSEO Enrichment Error: {e}")
 
         # Prepare data for insertion
         data = {
@@ -231,6 +260,13 @@ async def add_hotel_to_account_logic(
             "rating": rating,
             "review_count": review_count,
             "image_url": image_url,
+            "phone": phone,
+            "email": email,
+            "website": website,
+            "address": address,
+            "description": description,
+            "cid": cid,
+            "place_id": place_id,
             "sentiment_breakdown": hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None),
             "reviews": hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None),
         }
@@ -258,12 +294,19 @@ async def add_hotel_to_account_logic(
                         "serp_api_id": data.get("serp_api_id"),
                         "latitude": hotel_data.get("latitude"),
                         "longitude": hotel_data.get("longitude"),
-                        "rating": hotel_data.get("rating"),
+                        "rating": data.get("rating"),
                         "stars": hotel_data.get("stars"),
-                        "review_count": hotel_data.get("review_count"),
-                        "image_url": hotel_data.get("image_url"),
-                        "sentiment_breakdown": hotel_data.get("sentiment_breakdown"),
-                        "reviews": hotel_data.get("reviews"),
+                        "review_count": data.get("review_count"),
+                        "image_url": data.get("image_url"),
+                        "phone": data.get("phone"),
+                        "email": data.get("email"),
+                        "website": data.get("website"),
+                        "address": data.get("address"),
+                        "description": data.get("description"),
+                        "cid": data.get("cid"),
+                        "place_id": data.get("place_id"),
+                        "sentiment_breakdown": data.get("sentiment_breakdown"),
+                        "reviews": data.get("reviews"),
                         "last_verified_at": datetime.now().isoformat(),
                     },
                     on_conflict="serp_api_id",

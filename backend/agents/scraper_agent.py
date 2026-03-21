@@ -5,6 +5,7 @@ from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
 from backend.services.provider_factory import ProviderFactory
+from backend.services.dataforseo_provider import DataForSEOProvider
 
 from backend.utils.room_normalizer import RoomTypeNormalizer
 
@@ -409,6 +410,54 @@ class ScraperAgent:
                         )
                         price_data = {"status": "error", "error": err_msg}
                         status = "error"  # Ensure status is set for Analyst
+
+                    # [NEW] [Global Pulse Phase 2] — Hotel Info Enrichment
+                    # If this is a DataForSEO provider and we have a property_token, 
+                    # we check if the hotel needs a metadata refresh.
+                    if (
+                        isinstance(price_data, dict) 
+                        and price_data.get("status") == "success"
+                        and price_data.get("property_token")
+                        and isinstance(ProviderFactory.get_provider(), DataForSEOProvider)
+                    ):
+                        # Determine if we need enrichment (missing key fields)
+                        needs_enrichment = False
+                        if not hotel.get("amenities") or not hotel.get("image_url") or not hotel.get("stars"):
+                            needs_enrichment = True
+                        
+                        if needs_enrichment:
+                            try:
+                                await self.log_reasoning(
+                                    session_id,
+                                    "Enrichment",
+                                    f"Fetching rich metadata (amenities, images) for {hotel_name}...",
+                                    "info"
+                                )
+                                df_provider = cast(DataForSEOProvider, ProviderFactory.get_provider())
+                                rich_data = await df_provider.fetch_hotel_info(
+                                    property_token=price_data["property_token"],
+                                    language_code="tr" # Default to TR for Turkish hotels
+                                )
+                                
+                                # Merge rich data into price_data for AnalystAgent to pick up
+                                if rich_data:
+                                    for key in ["amenities", "image_url", "stars", "review_count", "rating", "description"]:
+                                        if rich_data.get(key):
+                                            price_data[key] = rich_data[key]
+                                            
+                                    await self.log_reasoning(
+                                        session_id,
+                                        "Enrichment",
+                                        f"Successfully enriched {hotel_name} with {len(rich_data.get('amenities', []))} amenities.",
+                                        "success"
+                                    )
+                            except Exception as enrich_e:
+                                await self.log_reasoning(
+                                    session_id,
+                                    "Enrichment",
+                                    f"Enrichment failed for {hotel_name}: {enrich_e}",
+                                    "warning"
+                                )
 
                     # [NEW] Normalize Room Types if present
                     if isinstance(price_data, dict) and price_data.get("room_types"):

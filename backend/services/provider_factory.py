@@ -2,6 +2,7 @@ import os
 from typing import List
 from .data_provider_interface import HotelDataProvider
 from .providers.serpapi_provider import SerpApiProvider
+from .providers.dataforseo_provider import DataForSEOProvider
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -49,6 +50,12 @@ class ProviderFactory:
 
         if serp_keys:
             cls._providers.append(SerpApiProvider())
+
+        # 2. DataForSEO (Secondary - Extended Data)
+        df_login = os.getenv("DATAFORSEO_LOGIN")
+        df_pass = os.getenv("DATAFORSEO_PASSWORD")
+        if df_login and df_pass:
+            cls._providers.append(DataForSEOProvider())
 
         # Alternative providers (RapidAPI, Serper, Decodo) are decommissioned
         # as per user request to restore original SerpApi fidelity.
@@ -130,5 +137,23 @@ class ProviderFactory:
                         "health": "Ready",
                     }
                 )
+
+        # 2. DataForSEO status
+        df_provider = next(
+            (p for p in cls._providers if isinstance(p, DataForSEOProvider)), None
+        )
+        if df_provider:
+            report.append(
+                {
+                    "name": "DataForSEO (Standard Queue)",
+                    "type": "Hotel Records",
+                    "enabled": True,
+                    "priority": len(report) + 1,
+                    "limit": "Unlimited (Credit-based)",
+                    "refresh": "N/A",
+                    "latency": "Standard (Task-based)",
+                    "health": "Active" if df_provider.login else "Error",
+                }
+            )
 
         return report
