@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, patch, AsyncMock
 # Add root to path
 sys.path.append(os.getcwd())
 
-from backend.main import create_hotel, trigger_monitor
+from backend.api.hotel_routes import create_hotel
+from backend.api.monitor_routes import trigger_monitor
 from backend.models.schemas import HotelCreate
 
 import pytest
@@ -104,7 +105,9 @@ async def test_hotel_currency_flow():
 
 
     print("--- Test 1: Creating hotel with EUR ---")
-    await create_hotel(user_id, hotel_data, mock_db)
+    mock_user = MagicMock()
+    mock_user.id = user_id
+    await create_hotel(hotel=hotel_data, db=mock_db, current_user=mock_user)
     
     # Verify insert call included preferred_currency
     # Access via the generic table mock since we know it's used for inserting
@@ -125,7 +128,12 @@ async def test_hotel_currency_flow():
             "vendor": "Booking.com"
         }
         
-        await trigger_monitor(user_id, None, mock_db)
+        await trigger_monitor(
+            background_tasks=MagicMock(),
+            options=None,
+            db=mock_db,
+            current_active_user=mock_user
+        )
         
         # Verify SerpApi was called
         if mock_fetch.called:
