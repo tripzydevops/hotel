@@ -72,7 +72,7 @@ async def search_hotel_directory_logic(
         # - Starts with: 50
         # - Contains full string: 30
         # - Contains words: 10 per word
-        score = 0
+        score: int = 0
         if h_name_norm == q_normalized:
             score += 100
         elif h_name_norm.startswith(q_normalized):

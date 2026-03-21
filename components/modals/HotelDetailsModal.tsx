@@ -154,12 +154,10 @@ export default function HotelDetailsModal({
                     {t("hotelDetails.foundVia")}{" "}
                     {hotel.price_info?.vendor || "SerpApi"}
                   </div>
+                  </div>
                 </div>
 
-                </div>
-              </div>
-
-              {/* New Contact & Description Section */}
+                {/* New Contact & Description Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(hotel.phone || hotel.email || hotel.website || hotel.address) && (
                   <div className="glass-card p-6">
