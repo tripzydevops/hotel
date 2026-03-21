@@ -146,10 +146,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
-    if isinstance(exc, HTTPException):
+    if hasattr(exc, "status_code"):
+        status_code = getattr(exc, "status_code")
+        detail = getattr(exc, "detail", str(exc))
         return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": str(exc.detail)}
+            status_code=status_code,
+            content={"detail": str(detail)}
         )
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")

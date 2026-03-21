@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from supabase import Client
 from backend.services.auth_service import get_supabase_rls
 from backend.utils.logger import get_logger
@@ -72,7 +72,7 @@ async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     return cities
 
 @router.get("/events")
-async def get_market_events(city: str = None, db: Client = Depends(get_supabase_rls)):
+async def get_market_events(city: Optional[str] = None, db: Client = Depends(get_supabase_rls)):
     """
     Retrieves market events for the dashboard.
     """
@@ -138,7 +138,7 @@ async def get_market_forecast(
             day["rationale"] = "Market stable. Standard seasonal occupancy expected."
         enriched_forecast.append(day)
         
-    avg_score = round(total_score / len(raw_forecast), 1) if raw_forecast else 0
+    avg_score = round(float(total_score / len(raw_forecast)), 1) if raw_forecast else 0.0
     
     # 4. Get Last Sync Time
     last_sync = None
@@ -159,8 +159,8 @@ async def get_market_forecast(
             "total_signals": signal_count,
             "last_synced": last_sync,
             "market_stats": {
-                "avg_fair_intensity": round(total_fair_intensity / days, 2),
-                "avg_tga_intensity": round(total_tga_intensity / days, 2)
+                "avg_fair_intensity": round(float(total_fair_intensity / days), 2),
+                "avg_tga_intensity": round(float(total_tga_intensity / days), 2)
             }
         }
     }

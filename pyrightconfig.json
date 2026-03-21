@@ -1,15 +1,12 @@
 {
     "include": [
-        "backend",
-        "api",
-        "scripts",
-        "utils",
         "."
     ],
     "exclude": [
         "**/node_modules",
         "**/__pycache__",
-        "venv"
+        "venv",
+        ".git"
     ],
     "venvPath": ".",
     "venv": "venv",
@@ -22,5 +19,6 @@
             ]
         }
     ],
+    "typeCheckingMode": "basic",
     "reportMissingTypeStubs": false
 }

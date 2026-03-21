@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from uuid import UUID
 from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
@@ -175,7 +175,7 @@ async def debug_analysis_data(
         if not db:
             raise HTTPException(503, "Database unavailable")
 
-        diag = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
+        diag: Dict[str, Any] = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
 
         # 1. Hotels for this user
         hotels_res = (
@@ -231,10 +231,10 @@ async def debug_analysis_data(
             .limit(5)
             .execute()
         )
-        diag["recent_logs"] = []
+        recent_logs: List[Dict[str, Any]] = []
         for r in recent.data or []:
             rt = r.get("room_types") or []
-            diag["recent_logs"].append(
+            recent_logs.append(
                 {
                     "hotel_id": str(r.get("hotel_id", "?"))[:8],
                     "price": r.get("price"),
@@ -251,6 +251,7 @@ async def debug_analysis_data(
                 }
             )
 
+
         # 5. Scan sessions (last 3)
         try:
             sessions = (
@@ -261,10 +262,10 @@ async def debug_analysis_data(
                 .limit(3)
                 .execute()
             )
-            diag["recent_scans"] = []
+            recent_scans: List[Dict[str, Any]] = []
             for s in sessions.data or []:
                 trace = s.get("reasoning_trace") or []
-                diag["recent_scans"].append(
+                recent_scans.append(
                     {
                         "status": s.get("status"),
                         "created_at": str(s.get("created_at", "?"))[:19],
@@ -276,6 +277,7 @@ async def debug_analysis_data(
                         else str(trace)[:200],
                     }
                 )
+            diag["recent_scans"] = recent_scans
         except Exception:
             diag["recent_scans"] = "Error fetching scan sessions"
 

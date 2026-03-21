@@ -1,13 +1,16 @@
 {
-    "python.defaultInterpreterPath": "/home/tripzydevops/hotel/venv/bin/python",
-    "python.venvPath": "/home/tripzydevops/hotel",
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.venvPath": ".",
     "python.analysis.extraPaths": [
-        "/home/tripzydevops/hotel"
+        "./"
     ],
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.useLibraryCodeForTypes": true,
     "python.languageServer": "Pylance",
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.indexing": true
+    "python.analysis.indexing": true,
+    "python.analysis.include": [
+        "./"
+    ]
 }

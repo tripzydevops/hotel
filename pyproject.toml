@@ -26,14 +26,4 @@ dependencies = [
     "jinja2>=3.1.0",
 ]
 
-[tool.pyright]
-include = ["backend", "api", "scripts", "utils", "."]
-exclude = ["**/node_modules", "**/__pycache__", "venv"]
-venvPath = "."
-venv = "venv"
-reportMissingTypeStubs = false
 
-[tool.pyright.executionEnvironments]
-root = "."
-pythonVersion = "3.11"
-extraPaths = ["."]

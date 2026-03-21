@@ -37,10 +37,13 @@ CRITICAL_FILES=(
 
 for f in "${CRITICAL_FILES[@]}"; do
     if [ -f "$f" ]; then
-        # python -m py_compile returns non-zero on syntax errors
-        if ! "$VENV_PYTHON" -m py_compile "$f" 2>/dev/null; then
+        # KAİZEN: Use ast.parse for syntax check (non-writing).
+        # Previous version used py_compile, which fails if the cron user
+        # lacks write access to __pycache__ (even if syntax is perfect).
+        CHECK_OUT=$("$VENV_PYTHON" -c "import ast; ast.parse(open('$f').read())" 2>&1)
+        if [ $? -ne 0 ]; then
             echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] FATAL: Syntax error in $f — scheduler BLOCKED" >> "$ERROR_LOG"
-            # Don't run the scheduler if the import chain is broken
+            echo "Details: $CHECK_OUT" >> "$ERROR_LOG"
             exit 1
         fi
     fi
