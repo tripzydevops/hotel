@@ -31,7 +31,8 @@ export function useAdminGuard() {
           userEmail.endsWith("@tripzy.travel") ||
           userEmail.endsWith("@hotel.plus") ||
           userEmail === "asknsezen@gmail.com" ||
-          userEmail === "askinsezen@gmail.com";
+          userEmail === "askinsezen@gmail.com" ||
+          userEmail === "tripzydevops@gmail.com";
 
         // This is Client-Side UI Guard only. Backend must enforce real security.
         const isRoleAdmin =
