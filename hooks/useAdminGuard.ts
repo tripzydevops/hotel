@@ -27,9 +27,6 @@ export function useAdminGuard() {
         // Hardcoded admin email for safety if role missing
         const userEmail = user.email?.toLowerCase() || "";
         const isAdminEmail =
-          userEmail === "admin@hotel.plus" ||
-          userEmail.endsWith("@tripzy.travel") ||
-          userEmail.endsWith("@hotel.plus") ||
           userEmail === "asknsezen@gmail.com" ||
           userEmail === "askinsezen@gmail.com" ||
           userEmail === "tripzydevops@gmail.com";
@@ -42,8 +39,7 @@ export function useAdminGuard() {
 
         if (
           isRoleAdmin ||
-          isAdminEmail ||
-          userEmail === "elif@tripzy.travel"
+          isAdminEmail
         ) {
           setAuthorized(true);
         } else {
