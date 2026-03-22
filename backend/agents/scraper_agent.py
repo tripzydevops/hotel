@@ -441,8 +441,16 @@ class ScraperAgent:
                                 
                                 # Merge rich data into price_data for AnalystAgent to pick up
                                 if rich_data:
-                                    # Handle Pydantic v1/v2 compatibility
-                                    rich_dict = rich_data.model_dump() if hasattr(rich_data, "model_dump") else rich_data.dict()
+                                    # Handle Pydantic v1/v2 compatibility and basic dicts without triggering IDE type warnings
+                                    if isinstance(rich_data, dict):
+                                        rich_dict = rich_data
+                                    elif hasattr(rich_data, "model_dump"):
+                                        rich_dict = rich_data.model_dump() # type: ignore
+                                    elif hasattr(rich_data, "dict"):
+                                        rich_dict = rich_data.dict() # type: ignore
+                                    else:
+                                        rich_dict = {}
+                                        
                                     for key in ["amenities", "image_url", "stars", "review_count", "rating", "description"]:
                                         if rich_dict.get(key):
                                             price_data[key] = rich_dict[key]
