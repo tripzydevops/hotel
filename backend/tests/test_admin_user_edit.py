@@ -8,7 +8,9 @@ import os
 # Add root to sys.path
 sys.path.append(os.getcwd())
 
-from backend.main import app, get_supabase, get_current_admin_user
+from backend.main import app
+from backend.utils.db import get_supabase
+from backend.services.auth_service import get_current_admin_user
 
 client = TestClient(app)
 
@@ -23,10 +25,7 @@ mock_db.table.return_value.upsert.return_value.execute.return_value.data = [{"id
 # Mock Auth Admin
 mock_db.auth.admin.update_user_by_id.return_value = MagicMock()
 
-# Patch create_client in main to return mock_db
-from unittest.mock import patch
-patcher = patch("backend.main.create_client", return_value=mock_db)
-patcher.start()
+# Use dependency overrides instead of patching module imports
 
 def override_get_supabase():
     return mock_db

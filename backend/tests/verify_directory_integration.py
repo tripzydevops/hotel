@@ -8,7 +8,8 @@ from unittest.mock import MagicMock
 os.environ["NEXT_PUBLIC_SUPABASE_URL"] = "https://mock.supabase.co"
 os.environ["SUPABASE_SERVICE_ROLE_KEY"] = "mock_key"
 
-from backend.main import app, get_supabase
+from backend.main import app
+from backend.utils.db import get_supabase
 
 client = TestClient(app)
 

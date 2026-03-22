@@ -353,63 +353,84 @@ class ScraperAgent:
                                 "info",
                             )
                         else:
-                            # 2. Fetch fresh price with SerpApi
-                            primary_provider = ProviderFactory.get_provider()
-                            await self.log_reasoning(
-                                session_id,
-                                "API Call",
-                                f"Fetching price for {hotel_name} via {primary_provider.get_provider_name()}...",
-                                "info",
-                                {"provider": primary_provider.get_provider_name()},
-                            )
-
-                            # KAİZEN: Per-Request Timeout
-                            # We wrap the provider call in a timeout to ensure a single stalling
-                            # request doesn't block the entire background process.
-                            try:
-                                price_data = await asyncio.wait_for(
-                                    primary_provider.fetch_price(
-                                        hotel_name=hotel_name,
-                                        location=location,
-                                        check_in=check_in,
-                                        check_out=check_out,
-                                        adults=adults,
-                                        currency=options.currency
-                                        if options and options.currency
-                                        else "TRY",
-                                        serp_api_id=serp_api_id,
-                                    ),
-                                    timeout=60.0,
-                                )
-                                if price_data and price_data.get("price"):
+                            # 2. Fetch fresh price with Provider Failover Loop
+                            # KAİZEN: High Availability Failover
+                            # We iterate through all active providers (e.g. SerpApi -> DataForSEO)
+                            # to guarantee a result even if one provider is exhausted.
+                            providers = ProviderFactory.get_active_providers()
+                            
+                            for provider in providers:
+                                try:
                                     await self.log_reasoning(
                                         session_id,
-                                        "Ingestion",
-                                        f"Successfully extracted {price_data['price']} {price_data.get('currency')} for {hotel_name}.",
-                                        "success",
+                                        "API Call",
+                                        f"Attempting {hotel_name} via {provider.get_provider_name()}...",
+                                        "info",
+                                        {"provider": provider.get_provider_name()},
                                     )
-                            except asyncio.TimeoutError:
-                                await self.log_reasoning(
-                                    session_id,
-                                    "Timeout",
-                                    f"Request for {hotel_name} timed out after 60s.",
-                                    "warning",
-                                )
-                                price_data = {
-                                    "status": "error",
-                                    "error": "request_timeout",
-                                }
+
+                                    # Per-Request Timeout
+                                    price_data = await asyncio.wait_for(
+                                        provider.fetch_price(
+                                            hotel_name=hotel_name,
+                                            location=location,
+                                            check_in=check_in,
+                                            check_out=check_out,
+                                            adults=adults,
+                                            currency=getattr(options, "currency", "TRY")
+                                            if options
+                                            else "TRY",
+                                            serp_api_id=serp_api_id,
+                                        ),
+                                        timeout=60.0,
+                                    )
+
+                                    if price_data and price_data.get("status") == "success" and price_data.get("price"):
+                                        await self.log_reasoning(
+                                            session_id,
+                                            "Ingestion",
+                                            f"Successfully extracted {price_data['price']} via {provider.get_provider_name()}.",
+                                            "success",
+                                        )
+                                        break # Success! Exit loop.
+                                    else:
+                                        reason = price_data.get("error") if price_data else "No data"
+                                        await self.log_reasoning(
+                                            session_id,
+                                            "Failover",
+                                            f"{provider.get_provider_name()} returned no price ({reason}). Trying backup...",
+                                            "warning"
+                                        )
+                                except asyncio.TimeoutError:
+                                    await self.log_reasoning(
+                                        session_id,
+                                        "Timeout",
+                                        f"{provider.get_provider_name()} timed out. Checking failover...",
+                                        "warning",
+                                    )
+                                    continue
+                                except Exception as inner_e:
+                                    await self.log_reasoning(
+                                        session_id,
+                                        "Backoff",
+                                        f"{provider.get_provider_name()} failed: {str(inner_e)}. Switching...",
+                                        "error"
+                                    )
+                                    continue
+                                    
+                            if not isinstance(price_data, dict) or price_data.get("status") != "success":
+                                # If all providers failed
+                                price_data = {"status": "error", "error": "all_providers_failed"}
+
                     except Exception as e:
                         err_msg = str(e)
                         await self.log_reasoning(
                             session_id,
-                            "API Error",
-                            f"Primary Provider Error for {hotel_name}: {err_msg}",
-                            "error",
-                            {"error_message": err_msg},
+                            "System Error",
+                            f"Unexpected error in live scan loop: {err_msg}",
+                            "error"
                         )
                         price_data = {"status": "error", "error": err_msg}
-                        status = "error"  # Ensure status is set for Analyst
 
                     # [NEW] [Global Pulse Phase 2] — Hotel Info Enrichment
                     # If this is a DataForSEO provider and we have a property_token, 
@@ -451,14 +472,18 @@ class ScraperAgent:
                                     else:
                                         rich_dict = {}
                                         
+                                    # Explicitly cast to dict for static analysis
+                                    rd_dict = rich_dict if isinstance(rich_dict, dict) else {}
+                                    
                                     for key in ["amenities", "image_url", "stars", "review_count", "rating", "description"]:
-                                        if rich_dict.get(key):
-                                            price_data[key] = rich_dict[key]
+                                        val = rd_dict.get(key)
+                                        if val and isinstance(price_data, dict):
+                                            price_data[key] = val
                                             
                                     await self.log_reasoning(
                                         session_id,
                                         "Enrichment",
-                                        f"Successfully enriched {hotel_name} with {len(rich_dict.get('amenities', []))} amenities.",
+                                        f"Successfully enriched {hotel_name} with {len(rd_dict.get('amenities', []))} amenities.",
                                         "success"
                                     )
                             except Exception as enrich_e:

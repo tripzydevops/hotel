@@ -41,7 +41,7 @@ async def debug_dashboard():
         print(f"Found {len(user_ids)} users to test.")
         
         # --- REPLICATE GET_DASHBOARD LOGIC ---
-        from backend.main import get_dashboard
+        from backend.api.dashboard_routes import get_dashboard
         
         for i, uid_str in enumerate(user_ids):
             print(f"[{i+1}/{len(user_ids)}] Testing User: {uid_str}")

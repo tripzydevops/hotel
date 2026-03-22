@@ -9,7 +9,8 @@ os.environ["NEXT_PUBLIC_SUPABASE_URL"] = "https://mock.supabase.co"
 os.environ["SUPABASE_SERVICE_ROLE_KEY"] = "mock_key"
 os.environ["SERPAPI_API_KEY"] = "mock_key"
 
-from backend.main import app, get_supabase
+from backend.main import app
+from backend.utils.db import get_supabase
 from backend.services.serpapi_client import serpapi_client
 
 client = TestClient(app)
