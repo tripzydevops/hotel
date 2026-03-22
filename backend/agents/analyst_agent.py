@@ -243,13 +243,13 @@ class AnalystAgent:
                             if opt_curr:
                                 target_currency = str(opt_curr)
                             
-                        if currency == "USD" and target_currency == "TRY" and current_price > 0:
+                        if currency != target_currency and current_price > 0:
                             old_price = current_price
-                            current_price = convert_currency(current_price, "USD", "TRY")
-                            currency = "TRY"
+                            current_price = convert_currency(current_price, currency, target_currency)
                             await self.log_reasoning(session_id, "Analysis", 
-                                f"[Normalization] Converted {old_price} USD -> {current_price} TRY"
+                                f"[Normalization] Converted {old_price} {currency} -> {current_price} {target_currency}"
                             )
+                            currency = target_currency
         
                 check_in = res.get("check_in")
                 if not check_in:
@@ -293,7 +293,8 @@ class AnalystAgent:
                             pd_dict["room_types"] = list(cast(list, last_valid.get("room_types") or []))
                             is_estimated = True
                             await self.log_reasoning(session_id, "Analysis", 
-                                f"[Continuity] Found historical price for SAME date: {current_price} {currency}"
+                                f"[FALLBACK] Price missing. Using historical price for SAME date: {current_price} {currency} (Recorded: {last_valid.get('recorded_at')})",
+                                "warning"
                             )
                         else:
                             # Level 2 Fallback
@@ -317,7 +318,8 @@ class AnalystAgent:
                                 pd_dict["room_types"] = list(cast(list, last_any.get("room_types") or []))
                                 is_estimated = True
                                 await self.log_reasoning(session_id, "Analysis", 
-                                    f"[Continuity] Found recent price for different date ({last_any.get('check_in_date')}): {current_price} {currency}"
+                                    f"[FALLBACK] No data for {check_in_str}. Using most recent price ({last_any.get('check_in_date')}): {current_price} {currency}",
+                                    "warning"
                                 )
                             else:
                                 current_price = 0.0
@@ -393,7 +395,7 @@ class AnalystAgent:
                     })
                 
                 if session_id:
-                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=(price_data.get("vendor") if price_data else "Unknown") if not is_estimated else (f"Estimated ({price_data.get('vendor', 'History')})" if price_data else "Estimated"), session_id=session_id)
+                    await log_query(db=self.db, user_id=user_id, hotel_name=res.get("hotel_name", "Hotel"), location=res.get("location"), action_type="monitor", status="success" if current_price > 0 else "error", price=current_price, currency=currency, vendor=(price_data.get("vendor") if price_data else "Unknown") if not is_estimated else (f"Estimated ({price_data.get('vendor', 'History')})" if price_data else "Estimated"), session_id=session_id, check_in=check_in, api_key_suffix=res.get("api_key_suffix"))
 
                 analysis_summary["prices_updated"] += 1
 
@@ -544,8 +546,8 @@ class AnalystAgent:
                         "AI Strategy Server is currently at capacity. Falling back to heuristic mode.", "warning"
                     )
                     err_str = str(error_msg or "")
-                    # Explicit slice to satisfy strict linter
-                    safe_msg = err_str[0:50]
+                    # KAİZEN: Use a safer way to slice for the linter
+                    safe_msg = str(err_str)[:50]
                     await self.log_reasoning(session_id, "Market Intel", 
                         f"AI analysis bypassed due to temporary service issue: {safe_msg}...", "warning"
                     )
@@ -688,7 +690,7 @@ class AnalystAgent:
                         prev_price = convert_currency(prev_price, prev_curr, currency)
 
                     threshold = 2.0
-                    if user_settings is not None:
+                    if user_settings is not None and isinstance(user_settings, dict):
                         # Use .get() with a default, but if the value itself is None in the DB, 
                         # handle it gracefully.
                         val = user_settings.get("threshold_percent")
@@ -837,7 +839,7 @@ class AnalystAgent:
                 rival_lng = rival.get("longitude")
 
                 # Try coordinate-based distance first
-                if target_lat and target_lng and rival_lat and rival_lng:
+                if target_lat is not None and target_lng is not None and rival_lat is not None and rival_lng is not None:
                     dist_km = float(
                         self._haversine_distance(
                             float(target_lat), float(target_lng), float(rival_lat), float(rival_lng)
@@ -879,12 +881,10 @@ class AnalystAgent:
             filtered_results.sort(key=sort_key)
 
             # Ensure similarity values are valid numbers
-            # Type narrowing for Pyright
-            final_list = list(filtered_results)
-            # Use extremely explicit type narrowing for slicing
-            final_list_typed = cast(list, final_list)
+            final_list_typed = list(filtered_results)
             if limit > 0:
-                rivals_subset = list(final_list_typed[:limit])
+                # KAİZEN: Standard slicing
+                rivals_subset = final_list_typed[0:limit]
             else:
                 rivals_subset = list(final_list_typed)
             
@@ -1095,7 +1095,7 @@ class AnalystAgent:
                 if o_price > 0 and o_price < entry_price:
                     parity_leaks.append(
                         {
-                            "date": str(entry.get("recorded_at") or "")[0:10],
+                            "date": str(entry.get("recorded_at") or "")[:10],
                             "vendor": str(o.get("vendor", "OTA")),
                             "leak_price": o_price,
                             "direct_price": entry["price"],
@@ -1111,25 +1111,32 @@ class AnalystAgent:
             and target.get("sentiment_embedding")
             and rival.get("sentiment_embedding")
         ):
-            import numpy as np
             import json
-
-            # EXPLANATION: Unicode Serialization Fix
-            # Supabase/Postgres may return the vector as a serialized JSON string
-            # instead of a Python list. We force-decode it to prevent 'ufunc multiply'
-            # errors on Unicode types.
             v1_raw = target.get("sentiment_embedding")
             v2_raw = rival.get("sentiment_embedding")
-
             v1_list = json.loads(v1_raw) if isinstance(v1_raw, str) else v1_raw
             v2_list = json.loads(v2_raw) if isinstance(v2_raw, str) else v2_raw
 
-            v1 = np.array(v1_list, dtype=np.float32)
-            v2 = np.array(v2_list, dtype=np.float32)
-
-            # Ensure vectors are non-zero before calculation to avoid NaN
-            if v1.any() and v2.any():
-                similarity = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+            try:
+                import numpy as np
+                v1 = np.array(v1_list, dtype=np.float32)
+                v2 = np.array(v2_list, dtype=np.float32)
+                if v1.any() and v2.any():
+                    similarity = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+            except (ImportError, Exception):
+                # KAİZEN: Pure Python Cosine Similarity Fallback
+                # Since numpy is missing in the production environment, we use math.sqrt
+                # to perform the calculation manually.
+                import math
+                try:
+                    dot_product = sum(a * b for a, b in zip(v1_list, v2_list))
+                    magnitude_v1 = math.sqrt(sum(a * a for a in v1_list))
+                    magnitude_v2 = math.sqrt(sum(b * b for b in v2_list))
+                    if magnitude_v1 > 0 and magnitude_v2 > 0:
+                        similarity = dot_product / (magnitude_v1 * magnitude_v2)
+                except Exception as fallback_e:
+                    print(f"[AnalystAgent] Cosine Similarity fallback failed: {fallback_e}")
+                    similarity = 0.0
 
         # 5.5 ENRICHMENT: Compute derived fields for the frontend.
         # These power the price trend sparkline, competitor comparison table,
@@ -1141,7 +1148,7 @@ class AnalystAgent:
             if not isinstance(entry, dict): continue
             recorded_at_str = str(entry.get("recorded_at") or "")
             price_history.append({
-                "date": str(recorded_at_str)[0:10],
+                "date": str(recorded_at_str)[:10],
                 "price": float(entry.get("price") or 0.0),
             })
 
@@ -1209,8 +1216,8 @@ class AnalystAgent:
                 sb_raw = target.get("sentiment_breakdown")
                 if isinstance(sb_raw, list):
                     sb_list = cast(List[Dict[str, Any]], sb_raw)
-                    # Use explicit slicing on typed list
-                    sliced_sb = sb_list[:15]
+                    # KAİZEN: Standard slicing to satisfy linter
+                    sliced_sb = sb_list[0:15]
                     sentiment_summary = ", ".join(
                         [
                             f"{str(s.get('name') or 'General')}: {s.get('score', s.get('positive', 0))}"
@@ -1242,8 +1249,8 @@ class AnalystAgent:
             "price_trend": dict(cast(dict, price_trend)),
             "competitor_table": list(cast(list, competitor_table)),
             "revenue_projection": {
-                "daily_risk": float(round(float(avg_daily_leak), 0)),
-                "monthly_risk": float(round(float(avg_daily_leak) * 30, 0)),
+                "daily_risk": float(round(float(avg_daily_leak))),
+                "monthly_risk": float(round(float(avg_daily_leak) * 30)),
                 "leak_events": len(parity_leaks),
                 "currency": str(target.get("preferred_currency", "TRY")),
             },
@@ -1359,9 +1366,8 @@ class AnalystAgent:
             You are a Senior Market Strategist. Generate a High-Depth Competitive Battlefield report for {target["name"]}.
             TIMEFRAME: {timeframe}
             
-            COMPETITIVE CONTEXT (The Bout):
             - Rival: {rival["name"] if rival else "General Market"}
-            - Similarity Score: {briefing_payload["metrics"].get("bout_similarity", 0)}%
+            - Similarity Score: {briefing_payload.get("metrics", {}).get("bout_similarity", 0)}%
             - Your Rating: {target.get("rating")} vs Rival: {rival.get("rating") if rival else "N/A"}
             - Your Price: {target.get("current_price")} vs Rival: {rival.get("current_price") if rival else "N/A"}
             
@@ -1399,7 +1405,7 @@ class AnalystAgent:
             - Market Period Benchmark: {market_historical_avg} {target.get("preferred_currency", "TRY")}.
             - Your Search Rank: #{avg_rank}.
             - Rival Focal Point: {rival["name"] if rival else "None selected (General Market Mode)"}.
-            - Top Sentiment: {sentiment_summary[:1000]}
+            - Top Sentiment: {str(sentiment_summary)[:1000]}
             
             INSTRUCTIONS:
             - Adopt a Harvard Business Review / McKinsey tone: stark facts, highly actionable, no fluffy or conversational filler.
@@ -1583,6 +1589,7 @@ class AnalystAgent:
             if isinstance(breakdown, list):
                 parts: List[str] = []
                 breakdown_list = list(breakdown)
+                # KAİZEN: Slicing fix
                 for item in breakdown_list[0:10]:  # Top 10 categories
                     if not isinstance(item, dict): continue
                     item_dict = cast(Dict, item)
@@ -1604,7 +1611,8 @@ class AnalystAgent:
             reviews_text = ""
             if isinstance(reviews, list):
                 snippets: List[str] = []
-                for r in reviews[:3]:
+                # KAİZEN: Slicing fix
+                for r in reviews[0:3]:
                     if isinstance(r, dict):
                         text = r.get("title") or r.get("snippet") or r.get("text")
                         if isinstance(text, str):

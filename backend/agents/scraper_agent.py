@@ -382,7 +382,7 @@ class ScraperAgent:
                                             else "TRY",
                                             serp_api_id=serp_api_id,
                                         ),
-                                        timeout=60.0,
+                                        timeout=120.0,
                                     )
 
                                     if price_data and price_data.get("status") == "success" and price_data.get("price"):

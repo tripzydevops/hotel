@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+import time
+from typing import List, Dict, Any, cast
 # from google.adk.agents.llm_agent import Agent
 
 from backend.services.price_comparator import price_comparator
@@ -78,12 +79,15 @@ class MarketIntelligenceAgent:
         for res in scraper_results:
             if res.get("status") == "success":
                 pd = cast(Dict[str, Any], res.get("price_data") or {})
+                # KAİZEN: Robust slicing and casting
+                reviews_list = cast(List[Dict[str, Any]], pd.get("reviews", []))
+                reviews_to_add = reviews_list[0:3]
                 summary.append({
                     "hotel_id": res.get("hotel_id"),
                     "hotel_name": res.get("hotel_name", "Unknown"),
                     "current_price": pd.get("price"),
                     "prev_price": pd.get("previous_price"),
-                    "reviews": pd.get("reviews", [])[:3]
+                    "reviews": reviews_to_add
                 })
 
         # 2. Agentic Execution (Real ADK Flow)
@@ -96,11 +100,20 @@ class MarketIntelligenceAgent:
                 Data Summary: {summary}
                 
                 Perform a deep-dive reasoning trace using your tools and provide a final strategy report.
+                
+                Guidelines:
+                - Use PLAIN TEXT only. DO NOT use markdown symbols like hashtags (###), asterisks (**), or bullet points (*).
+                - Use ALL CAPS for headers.
                 """
-                response = await self.agent.run(prompt)
+                # KAİZEN: Guarded execution and proper await with local agent variable for type safety
+                agent_instance = self.agent
+                if agent_instance is not None:
+                    response = await agent_instance.run(prompt)
+                else:
+                    raise ValueError("Agent instance is unexpectedly None")
                 
                 return {
-                    "reasoning": response.thought_process if hasattr(response, "thought_process") else [],
+                    "reasoning": getattr(response, "thought_process", []),
                     "final_report": getattr(response, "content", str(response)),
                     "agentic": True
                 }
@@ -118,8 +131,14 @@ class MarketIntelligenceAgent:
         ]
 
         for s in summary:
-            cp = float(s.get("current_price") or 0.0)
-            pp = float(s.get("prev_price") or 0.0)
+            try:
+                cp_val = s.get("current_price")
+                pp_val = s.get("prev_price")
+                cp = float(cast(Any, cp_val) if cp_val is not None else 0.0)
+                pp = float(cast(Any, pp_val) if pp_val is not None else 0.0)
+            except (ValueError, TypeError):
+                continue
+
             if pp > 0:
                 change = abs((cp - pp) / pp) * 100
                 if change > threshold:

@@ -47,7 +47,6 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             # 1. Create Task (POST)
             # KAİZEN: Standard Search Strategy
-            # We use the generic search to find the hotel and its price.
             post_data = [{
                 "location_name": location,
                 "keyword": hotel_name,
@@ -72,14 +71,12 @@ class DataForSEOProvider(HotelDataProvider):
                     return {"status": "error", "error": res_json.get("status_message")}
 
                 task_id = res_json["tasks"][0]["id"]
-                logger.info(f"DataForSEO Task Created (Standard Queue): {task_id} for {hotel_name}. Turnaround can be up to 45m.")
+                logger.info(f"DataForSEO Task Created: {task_id} for {hotel_name}")
 
                 # 2. Polling for Results
-                # KAİZEN: Standard Queue Resilience
-                # Standard queue can take minutes. We'll poll for a while, but for
-                # a background worker, it's best to check and move on.
-                max_attempts = 60  # Increased to 5+ minutes for sync wait
-                delay = 10.0      # Poll every 10 seconds
+                # KAİZEN: Resilience for Standard Queue
+                max_attempts = 12  # Poll for ~2 minutes (10s intervals)
+                delay = 10.0      
                 
                 for attempt in range(max_attempts):
                     await asyncio.sleep(delay)
@@ -90,21 +87,15 @@ class DataForSEOProvider(HotelDataProvider):
                     get_json = get_res.json()
                     
                     if get_json.get("status_code") == 20000:
-                        # Task Finished
                         task_data = get_json["tasks"][0]
                         if not task_data.get("result"):
                             return {"status": "empty", "message": "No results found"}
                         
-                        # Find the target hotel in the results
-                        # Since we used the hotel name as keyword, it should be top result
                         items = task_data["result"][0].get("items", [])
                         if not items:
                             return {"status": "empty", "message": "No items in result"}
                         
-                        # Match by name or ID if possible
-                        target = items[0] # Simplest: take the top match
-                        
-                        # KAİZEN: Extract property token (hotel_identifier)
+                        target = items[0]
                         property_token = target.get("hotel_identifier")
                         
                         return {
@@ -112,23 +103,20 @@ class DataForSEOProvider(HotelDataProvider):
                             "currency": currency,
                             "source": "DataForSEO",
                             "vendor": target.get("vendor", "Direct"),
-                            "url": f"https://www.google.com/search?q={hotel_name}", # Fallback
+                            "url": f"https://www.google.com/search?q={hotel_name}",
                             "rating": target.get("rating", {}).get("value", 0.0),
                             "reviews": target.get("rating", {}).get("votes_count", 0),
                             "property_token": property_token,
-                            "status": "success",
-                            "task_id": task_id
+                            "status": "success"
                         }
                     
                     elif get_json.get("status_code") == 40400:
-                        # Task still processing
-                        logger.info(f"DataForSEO Task {task_id} still processing (Attempt {attempt+1})")
+                        logger.info(f"DataForSEO Task {task_id} processing...")
                         continue
                     else:
-                        logger.error(f"DataForSEO Task Get Error: {get_json.get('status_message')}")
-                        return {"status": "error", "error": get_json.get("status_message")}
+                        break
 
-                return {"status": "timeout", "error": "DataForSEO task timed out"}
+                return {"status": "timeout", "error": "DataForSEO standard queue still processing"}
 
         except Exception as e:
             logger.error(f"DataForSEO Provider Error: {e}")

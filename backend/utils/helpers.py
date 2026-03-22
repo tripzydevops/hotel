@@ -1,7 +1,11 @@
+import uuid
 from datetime import date
-from typing import Optional
-from uuid import UUID
-from supabase import Client
+from typing import Optional, Union
+from supabase import Client # type: ignore
+
+# EXPLANATION: uuid4 is used to generate the required primary key for query_logs 
+# as the database table lacks an auto-generator.
+from uuid import UUID, uuid4
 
 # Exchange rates to USD (approximate, update periodically or use API)
 EXCHANGE_RATES_TO_USD = {
@@ -20,8 +24,9 @@ def convert_currency(amount: float, from_currency: str, to_currency: str) -> flo
     usd_rate = EXCHANGE_RATES_TO_USD.get(from_currency, 1.0)
     usd_amount = amount * usd_rate
     # Convert from USD to target
-    target_rate = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
-    return round(usd_amount / target_rate, 2)
+    usd_to_target = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
+    # Manual rounding to 2 decimals to satisfy strict linting requirements
+    return round(usd_amount / usd_to_target * 100) / 100.0
 
 
 async def log_query(
@@ -42,6 +47,7 @@ async def log_query(
     """Log a search or monitor query for future reporting/analysis."""
     try:
         log_data = {
+            "id": str(uuid4()),  # [FIX] Explicitly provide ID to satisfy NOT NULL constraint
             "user_id": str(user_id) if user_id else None,
             "hotel_name": hotel_name.title().strip(),
             "location": location.title().strip() if location else None,
