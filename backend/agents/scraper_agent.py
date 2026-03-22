@@ -441,14 +441,16 @@ class ScraperAgent:
                                 
                                 # Merge rich data into price_data for AnalystAgent to pick up
                                 if rich_data:
+                                    # Handle Pydantic v1/v2 compatibility
+                                    rich_dict = rich_data.model_dump() if hasattr(rich_data, "model_dump") else rich_data.dict()
                                     for key in ["amenities", "image_url", "stars", "review_count", "rating", "description"]:
-                                        if rich_data.get(key):
-                                            price_data[key] = rich_data[key]
+                                        if rich_dict.get(key):
+                                            price_data[key] = rich_dict[key]
                                             
                                     await self.log_reasoning(
                                         session_id,
                                         "Enrichment",
-                                        f"Successfully enriched {hotel_name} with {len(rich_data.get('amenities', []))} amenities.",
+                                        f"Successfully enriched {hotel_name} with {len(rich_dict.get('amenities', []))} amenities.",
                                         "success"
                                     )
                             except Exception as enrich_e:
