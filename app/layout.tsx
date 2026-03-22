@@ -34,11 +34,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hotel Rate Sentinel",
     description: "Track your competitors, monitor live pricing across global vendors, and receive instant market intelligence.",
-    url: "https://tripzy.dev",
+    url: "https://hotelplustr.com",
     siteName: "Hotel Rate Sentinel",
     images: [
       {
-        url: "https://tripzy.dev/og-image.png",
+        url: "https://hotelplustr.com/og-image.png",
         width: 1200,
         height: 630,
         alt: "Hotel Rate Sentinel OpenGraph image",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Hotel Rate Sentinel",
     description: "Monitor live hotel prices and competitor intelligence.",
-    images: ["https://tripzy.dev/twitter-image.png"],
+    images: ["https://hotelplustr.com/twitter-image.png"],
   },
   robots: {
     index: true,

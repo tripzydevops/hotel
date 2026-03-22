@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       // Prevent crawlers and AI bots from scraping private/dashboard routes and API boundaries
       disallow: ['/dashboard/', '/api/'],
     },
-    sitemap: 'https://tripzy.dev/sitemap.xml',
+    sitemap: 'https://hotelplustr.com/sitemap.xml',
   }
 }
