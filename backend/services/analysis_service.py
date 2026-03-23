@@ -50,12 +50,12 @@ async def get_sentiment_trends(
 
         # Momentum: Change between start and end of window
         calc_momentum: float = float(ratings[-1] - ratings[0])
-        momentum = float(round(calc_momentum, 2))
+        momentum = float(round(calc_momentum, 2)) if calc_momentum is not None else 0.0
 
         # Stability: Standard deviation (using utility)
         volatility: float = calculate_stability(ratings)
         raw_stability = float(max(0.0, 1.0 - volatility))
-        stability: float = float(round(raw_stability, 2))  # 1.0 is perfectly stable
+        stability: float = float(round(raw_stability, 2)) if raw_stability is not None else 1.0  # 1.0 is perfectly stable
 
         trend = "stable"
         if momentum >= 0.2:
@@ -274,8 +274,8 @@ def generate_synthetic_narrative(
             "Broadening your tracking list may improve this insight."
         )
 
-    f_ari = float(ari)
-    f_sent = float(sent_index)
+    f_ari: float = float(ari) if ari is not None else 100.0
+    f_sent: float = float(sent_index) if sent_index is not None else 100.0
     price_status = "premium" if f_ari >= 105 else "aligned" if f_ari >= 95 else "aggressive"
     sent_status = "superior" if f_sent >= 105 else "standard" if f_sent >= 95 else "at-risk"
     dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
@@ -350,9 +350,9 @@ def calculate_rate_recommendation(ari: Optional[float], sent_index: Optional[flo
     if not ari or not sent_index or not current_price:
         return {"action": "no_data", "impact": 0, "reason": "Insufficient benchmarks."}
 
-    f_ari = float(ari)
-    f_sent = float(sent_index)
-    curr_p = float(current_price)
+    f_ari: float = float(ari) if ari is not None else 0.0
+    f_sent: float = float(sent_index) if sent_index is not None else 0.0
+    curr_p: float = float(current_price) if current_price is not None else 0.0
 
     if f_sent >= 105 and f_ari < 95:
         return {"action": "increase", "impact": 5.0, "reason": f"Strong brand strength. Target {curr_p * 1.05:.0f} rate."}
@@ -454,11 +454,14 @@ async def perform_market_analysis(
 
     # Advisory
     q_label = "Neutral"
-    if ari is None or sent_index is None: q_label = "Insufficient Data"
-    elif ari >= 100 and sent_index >= 100: q_label = "Premium King"
-    elif ari < 100 and sent_index >= 100: q_label = "Value Leader"
-    elif ari >= 100 and sent_index < 100: q_label = "Danger Zone"
-    else: q_label = "Economy"
+    if ari is None or sent_index is None: 
+        q_label = "Insufficient Data"
+    else:
+        # Safe comparisons since ari and sent_index are guaranteed not None here
+        if ari >= 100 and sent_index >= 100: q_label = "Premium King"
+        elif ari < 100 and sent_index >= 100: q_label = "Value Leader"
+        elif ari >= 100 and sent_index < 100: q_label = "Danger Zone"
+        else: q_label = "Economy"
 
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
     
@@ -470,8 +473,8 @@ async def perform_market_analysis(
         "target_price": round(target_price, 2) if target_price else 0.0,
         "total_hotels": len(hotels),
         "total_competitors": len(hotels) - 1 if len(hotels) > 0 else 0,
-        "ari": round(ari, 1) if ari else 100.0, 
-        "sent_index": round(sent_index, 1) if sent_index else 100.0,
+        "ari": round(ari, 1) if ari is not None else 100.0, 
+        "sent_index": round(sent_index, 1) if sent_index is not None else 100.0,
         "quadrant_label": q_label,
         "price_rank_list": price_rank_list,
         "price_history": target_history,
