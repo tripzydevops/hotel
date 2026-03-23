@@ -455,15 +455,86 @@ async def perform_market_analysis(
                 })
                 if is_target:
                     target_price = conv
-                    # [FIX] Explicit cast to any for slice-blind linters
-                    logs_slice = cast(Any, prices_for_h)[:30]
-                    for prev_p_log in logs_slice:
-                        pv, _, _ = get_price_for_room(prev_p_log, room_type, allowed_room_names_map)
-                        if pv:
-                            target_history.append({
-                                "price": convert_currency(pv, prev_p_log.get("currency") or "USD", display_currency),
-                                "recorded_at": prev_p_log.get("recorded_at")
-                            })
+    # [FIX] Comprehensive Pivot for Daily Prices (Rate Spread Chart)
+    # Using explicit typing to assist IDE inference
+    daily_snapshot_map: Dict[str, Dict[str, Any]] = {}
+    
+    for h in hotels:
+        hid = str(h["id"])
+        is_target = (hid == target_hotel_id)
+        p_logs = hotel_prices_map.get(hid, [])
+        
+        # Limit to last 30 logs for performance
+        logs_slice: List[Dict[str, Any]] = cast(List[Dict[str, Any]], p_logs)[:30]
+        
+        for p_log in logs_slice:
+            raw_date = p_log.get("recorded_at")
+            if not raw_date or not isinstance(raw_date, str): continue
+            
+            # [FIX] Strict date cleaning to avoid "Invalid Date" in frontend
+            clean_date = raw_date.strip()
+            if not clean_date: continue
+            
+            # Attempt to extract YYYY-MM-DD
+            try:
+                # Handle ISO "T" separator or space separator
+                date_key = clean_date.split("T")[0] if "T" in clean_date else clean_date.split(" ")[0]
+                # Validate length and format (YYYY-MM-DD)
+                if len(date_key) != 10 or "-" not in date_key:
+                    continue 
+            except Exception:
+                continue
+            
+            p_val, _, _ = get_price_for_room(p_log, room_type, allowed_room_names_map)
+            if p_val is not None:
+                conv_p = convert_currency(float(p_val), p_log.get("currency") or "USD", display_currency)
+                
+                if date_key not in daily_snapshot_map:
+                    daily_snapshot_map[date_key] = {
+                        "date": date_key, 
+                        "target_price": 0.0,
+                        "comp_prices": []
+                    }
+                
+                if is_target:
+                    daily_snapshot_map[date_key]["target_price"] = float(conv_p)
+                else:
+                    daily_snapshot_map[date_key]["comp_prices"].append({
+                        "name": h.get("name", "Competitor"),
+                        "price": float(conv_p)
+                    })
+
+    # Convert map to ordered list for frontend (asc order for timeline)
+    daily_prices: List[Dict[str, Any]] = []
+    sorted_dates = sorted(daily_snapshot_map.keys())
+    for d_key in sorted_dates:
+        snap = daily_snapshot_map[d_key]
+        tp: float = float(snap.get("target_price") or 0.0)
+        c_details: List[Dict[str, Any]] = snap.get("comp_prices") or []
+        c_vals = [float(cp["price"]) for cp in c_details]
+        
+        # Calculate daily market average
+        d_avg = sum(c_vals) / len(c_vals) if c_vals else market_average
+        
+        daily_prices.append({
+            "date": snap["date"],
+            "price": tp if tp > 0 else d_avg,
+            "comp_avg": d_avg,
+            "vs_comp": float(int(((tp - d_avg) / d_avg * 100) * 10) / 10.0) if tp > 0 and d_avg > 0 else 0.0,
+            "competitors": c_details
+        })
+
+    # target_history is used for the trend card (desc order usually)
+    target_history = sorted(
+        [{"price": d["price"], "recorded_at": d["date"]} for d in daily_prices],
+        key=lambda x: str(x["recorded_at"]),
+        reverse=True
+    )
+
+    if daily_prices:
+        logger.info(f"[Analysis] daily_prices range: {daily_prices[0]['date']} to {daily_prices[-1]['date']} (count: {len(daily_prices)})")
+    else:
+        logger.info(f"[Analysis] daily_prices is EMPTY")
 
     price_rank_list.sort(key=lambda x: x["price"])
     for i, item in enumerate(price_rank_list): item["rank"] = i+1
@@ -544,7 +615,7 @@ async def perform_market_analysis(
         "quadrant_y": sent_val,
         "price_rank_list": price_rank_list,
         "price_history": target_history,
-        "daily_prices": target_history, # Alias for the chart component
+        "daily_prices": daily_prices, # Pivoted market-wide data
         "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
         "advisory_keys": advisory_keys,
         "synthetic_narrative": generate_synthetic_narrative(ari_val, sent_val, target_h.get("pricing_dna_text") if target_h else None, target_hotel_name)

@@ -50,16 +50,23 @@ export default function RateSpreadChart({
 
   // Group by month for navigation
   const [currentMonth, setCurrentMonth] = useState(() => {
-    if (dailyPrices.length === 0) return new Date();
+    if (!dailyPrices || dailyPrices.length === 0) return new Date();
+    
     // Default to current month of the last data point
-    const latestDate = new Date(dailyPrices[dailyPrices.length - 1].date);
+    // Using .replace(/-/g, '/') for cross-browser stability (some Safari/IE versions struggle with YYYY-MM-DD)
+    const rawDateStr = dailyPrices[dailyPrices.length - 1].date;
+    const latestDate = new Date(rawDateStr.replace(/-/g, '/'));
+    
+    if (isNaN(latestDate.getTime())) return new Date();
     return new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
   });
 
-  const monthLabel = currentMonth.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthLabel = isNaN(currentMonth.getTime()) 
+    ? "Current Period" 
+    : currentMonth.toLocaleDateString("en-GB", { // Changed to en-GB for Day-Month order preference
+        month: "long",
+        year: "numeric",
+      });
 
   // Filter data for current month
   const filteredData = useMemo(() => {
@@ -111,10 +118,11 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
-  const dateStr = data.fullDate.toLocaleDateString("en-US", {
-    weekday: "short",
+  // Format as "Day Month Year" per user preference
+  const dateStr = data.fullDate.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
+    year: "numeric"
   });
 
   // Sort competitors by price for the tooltip table

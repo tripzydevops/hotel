@@ -682,8 +682,8 @@ export default function AnalysisPage() {
                       <div className="flex items-center gap-3">
                         <div className="text-[10px] font-black text-[var(--text-muted)]">
                           {new Date(point.recorded_at).toLocaleDateString(
-                            locale === "en" ? "en-US" : "tr-TR",
-                            { month: "short", day: "numeric" },
+                            "en-GB",
+                            { day: "numeric", month: "short", year: "numeric" }
                           )}
                         </div>
                       </div>
