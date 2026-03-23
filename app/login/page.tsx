@@ -74,7 +74,7 @@ export default function LoginPage() {
     const otp = formData.get("otp") as string;
 
     try {
-      const result = await verifyEmail({ email: emailForVerification, otp });
+      const result = await verifyEmail(otp, emailForVerification);
       
       setDebugInfo({
         action: "verify",
@@ -82,8 +82,8 @@ export default function LoginPage() {
         result
       });
 
-      if (result.error) {
-        setError(result.error.message || "Verification failed");
+      if ('error' in result) {
+        setError(result.error || "Verification failed");
         setIsLoading(false);
       } else {
         router.push("/dashboard");
@@ -98,9 +98,9 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await resendVerificationEmail({ email: emailForVerification });
-      if (result.error) {
-        setError(result.error.message || "Failed to resend code");
+      const result = await resendVerificationEmail(emailForVerification);
+      if (!result || !result.success) {
+        setError(result?.message || "Failed to resend code");
       } else {
         // Show success briefly or just clear error
         setError(null);
