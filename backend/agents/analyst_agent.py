@@ -289,7 +289,7 @@ class AnalystAgent:
                             # Type narrowing for assignment
                             pd_dict = cast(Dict[str, Any], price_data)
                             pd_dict["vendor"] = str(last_valid.get("vendor") or pd_dict.get("vendor", "Unknown"))
-                            pd_dict["offers"] = list(cast(list, last_valid.get("parity_offers") or []))
+                            pd_dict["offers"] = [] # OTA pricing does not fall back to history
                             pd_dict["room_types"] = list(cast(list, last_valid.get("room_types") or []))
                             is_estimated = True
                             await self.log_reasoning(session_id, "Analysis", 

@@ -27,7 +27,7 @@ async def trigger_scan():
     #     return
     
     # user_id = users.data[0]['user_id']
-    user_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"  # tripzydevops
+    user_id = "6f44982b-1d95-48da-9040-97c6a36fe631"  # Adjusted for current user
     print(f"Using User ID: {user_id}")
 
     # 2. Get hotels for this user

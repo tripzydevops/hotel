@@ -685,6 +685,31 @@ class SerpApiClient:
                     logger.error(f"SerpApi Request Error: {e}")
                     return None, "request_error"
 
+        async def pivot_if_necessary(result, current_params):
+            """If result has price but no offers, try one direct lookup via ID/Token."""
+            if result and result.get("price") and not result.get("offers"):
+                token = result.get("serp_api_id")
+                if token:
+                    logger.info(f"[SerpApi] Result for {hotel_name} has price but NO OFFERS. Pivoting to deep detail for token: {token}...")
+                    pivot_params = current_params.copy()
+                    pivot_params.pop("q", None) # Force Detail page
+                    if str(token).isdigit():
+                        pivot_params["hotel_id"] = token
+                        pivot_params.pop("property_token", None)
+                    else:
+                        pivot_params["property_token"] = token
+                        pivot_params.pop("hotel_id", None)
+                    
+                    p_resp, p_err = await make_request(pivot_params)
+                    if p_resp:
+                        p_result = self._parse_hotel_result(
+                            p_resp.json(), hotel_name, currency, token
+                        )
+                        if p_result and p_result.get("offers"):
+                            logger.info(f"[SerpApi] Pivot SUCCESS for {hotel_name}. Found {len(p_result['offers'])} offers.")
+                            return p_result
+            return result
+
         # 1. Primary Attempt (Specific ID if provided)
         response, err = await make_request(params)
         if err == "quota_exhausted":
@@ -694,21 +719,26 @@ class SerpApiClient:
             result = self._parse_hotel_result(
                 response.json(), hotel_name, currency, serp_api_id
             )
+            result = await pivot_if_necessary(result, params)
             if result and result.get("price"):
                 return result
 
         # 2. KAİZEN: Keyword Fallback (If ID failed or returned no price)
-        if serp_api_id:
-            logger.info(f"[SerpApi] Stale ID {serp_api_id} or no price found for {hotel_name}. Retrying with keyword search...")
-            params.pop("property_token", None)
-            params.pop("hotel_id", None)
-            params["q"] = f"{hotel_name} {location}"
-            
-            response, err = await make_request(params)
-            if response:
-                return self._parse_hotel_result(
-                    response.json(), hotel_name, currency, None
-                )
+        # Even if we have an ID, if it returns no price, we search by keyword to find the NEW ID.
+        logger.info(f"[SerpApi] Stale ID/No data for {hotel_name}. Retrying with keyword search...")
+        fallback_params = params.copy()
+        fallback_params.pop("property_token", None)
+        fallback_params.pop("hotel_id", None)
+        fallback_params["q"] = f"{hotel_name} {location}"
+        
+        response, err = await make_request(fallback_params)
+        if response:
+            result = self._parse_hotel_result(
+                response.json(), hotel_name, currency, None
+            )
+            # Pivot if keyword found the hotel but no deep OTA data
+            result = await pivot_if_necessary(result, fallback_params)
+            return result
         
         return None
 
