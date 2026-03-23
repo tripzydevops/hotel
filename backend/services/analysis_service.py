@@ -451,7 +451,8 @@ async def perform_market_analysis(
                 price_rank_list.append({
                     "id": hid, "name": h.get("name"), "price": conv, "rank": 0, "is_target": is_target,
                     "rating": h.get("rating"), "review_count": h.get("review_count"),
-                    "matched_room_name": match_name, "match_score": match_score
+                    "matched_room_name": match_name, "match_score": match_score,
+                    "offers": p_log.get("parity_offers") or [],
                 })
                 if is_target:
                     target_price = conv
