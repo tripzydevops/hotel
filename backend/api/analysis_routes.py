@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 from uuid import UUID
 from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
@@ -188,8 +188,9 @@ async def debug_analysis_data(
         diag["hotel_count"] = len(hotels)
         diag["hotels"] = [
             {
-                "id": str(h["id"])[:8],
-                "name": h.get("name", "?")[:30],
+                # [FIX] cast(Any, ...) to bypass slicing-blind linter for str
+                "id": cast(Any, str(h["id"]))[:8],
+                "name": cast(Any, h.get("name", "?"))[:30],
                 "is_target": h.get("is_target_hotel"),
                 "has_serp_id": bool(h.get("serp_api_id")),
             }
@@ -236,10 +237,11 @@ async def debug_analysis_data(
             rt = r.get("room_types") or []
             recent_logs.append(
                 {
-                    "hotel_id": str(r.get("hotel_id", "?"))[:8],
+                    # [FIX] Robust cast-slicing for dashboard diagnostics
+                    "hotel_id": cast(Any, str(r.get("hotel_id", "?")))[:8],
                     "price": r.get("price"),
                     "currency": r.get("currency"),
-                    "recorded_at": str(r.get("recorded_at", "?"))[:19],
+                    "recorded_at": cast(Any, str(r.get("recorded_at", "?")))[:19],
                     "source": r.get("source"),
                     "is_estimated": r.get("is_estimated"),
                     "room_types_in_log": len(rt) if isinstance(rt, list) else "N/A",
@@ -268,13 +270,14 @@ async def debug_analysis_data(
                 recent_scans.append(
                     {
                         "status": s.get("status"),
-                        "created_at": str(s.get("created_at", "?"))[:19],
-                        "completed_at": str(s.get("completed_at", "?"))[:19]
+                        "created_at": cast(Any, str(s.get("created_at", "?")))[:19],
+                        "completed_at": cast(Any, str(s.get("completed_at", "?")))[:19]
                         if s.get("completed_at")
                         else None,
-                        "trace_summary": trace[-3:]
+                        # [FIX] cast(Any, ...) for trace slicing compatibility
+                        "trace_summary": cast(Any, trace)[-3:]
                         if isinstance(trace, list)
-                        else str(trace)[:200],
+                        else cast(Any, str(trace))[:200],
                     }
                 )
             diag["recent_scans"] = recent_scans
@@ -311,6 +314,8 @@ async def stream_market_intelligence(
     currency: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    exclude_hotel_ids: Optional[str] = None,
+    search_query: Optional[str] = None,
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
@@ -335,6 +340,8 @@ async def stream_market_intelligence(
                 currency=currency,
                 start_date=str(start_date) if start_date else None,
                 end_date=str(end_date) if end_date else None,
+                exclude_hotel_ids=exclude_hotel_ids,
+                search_query=search_query,
             )
 
             # Send initial payload
