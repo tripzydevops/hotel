@@ -174,37 +174,39 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
 
         try:
             # Check 'profiles' table first (legacy consistency)
+            # NOTE: 'is_verified' is NOT in 'profiles', but 'role' IS.
             res = (
                 db.table("profiles")
-                .select("subscription_status, is_verified, role")
+                .select("subscription_status, role")
                 .eq("id", str(user_id))
                 .maybe_single()
                 .execute()
             )
             if res.data:
                 status = res.data.get("subscription_status")
-                is_verified = res.data.get("is_verified", False)
                 user_role = res.data.get("role", "authenticated")
-            else:
-                # Fallback to 'user_profiles'
-                res2 = (
-                    db.table("user_profiles")
-                    .select("subscription_status, is_verified, role")
-                    .eq("user_id", str(user_id))
-                    .maybe_single()
-                    .execute()
-                )
-                if res2.data:
-                    status = res2.data.get("subscription_status")
-                    is_verified = res2.data.get("is_verified", False)
-                    user_role = res2.data.get("role", "authenticated")
+            
+            # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
+            res2 = (
+                db.table("user_profiles")
+                .select("subscription_status, is_verified, role")
+                .eq("user_id", str(user_id))
+                .maybe_single()
+                .execute()
+            )
+            if res2.data:
+                # user_profiles takes precedence for these security fields
+                status = res2.data.get("subscription_status") or status
+                is_verified = res2.data.get("is_verified", False)
+                user_role = res2.data.get("role") or user_role
+
         except Exception as status_e:
             # If DB check fails, we default to pending/safe state but DON'T crash 500
             logger.warning(f"Could not verify status for {user_id}: {status_e}")
 
         # [POLICY] Enforce Admin Verification
         # EXCEPTION: Users with 'admin' roles bypass the is_verified check
-        is_admin = user_role in ["admin", "market_admin", "market admin"]
+        is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"]
         
         if not is_verified and not is_admin:
             logger.warning(f"Blocked unverified user {getattr(user, 'email', 'Unknown')} ({user_id})")
