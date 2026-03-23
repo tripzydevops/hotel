@@ -493,16 +493,21 @@ async def perform_market_analysis(
                     daily_snapshot_map[date_key] = {
                         "date": date_key, 
                         "target_price": 0.0,
-                        "comp_prices": []
+                        "comp_prices": [],
+                        "seen_ids": set()
                     }
                 
-                if is_target:
-                    daily_snapshot_map[date_key]["target_price"] = float(conv_p)
-                else:
-                    daily_snapshot_map[date_key]["comp_prices"].append({
-                        "name": h.get("name", "Competitor"),
-                        "price": float(conv_p)
-                    })
+                # [FIX] Aggregation Logic: Logs are already sorted DESC by recorded_at. 
+                # To ensure newest-log precedence, we only record the FIRST log encountered per hotel per date.
+                if hid not in daily_snapshot_map[date_key]["seen_ids"]:
+                    if is_target:
+                        daily_snapshot_map[date_key]["target_price"] = float(conv_p)
+                    else:
+                        daily_snapshot_map[date_key]["comp_prices"].append({
+                            "name": h.get("name", "Competitor"),
+                            "price": float(conv_p)
+                        })
+                    daily_snapshot_map[date_key]["seen_ids"].add(hid)
 
     # Convert map to ordered list for frontend (asc order for timeline)
     daily_prices: List[Dict[str, Any]] = []
