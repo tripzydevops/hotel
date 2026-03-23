@@ -461,13 +461,20 @@ async def perform_market_analysis(
     else: q_label = "Economy"
 
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
-    market_avg_scores = {}
     
+    # [FIX] Enhanced Response Model for Frontend compatibility
     return {
-        "hotel_id": target_hotel_id, "hotel_name": target_hotel_name,
-        "market_avg": round(market_avg, 2), "target_price": round(target_price, 2) if target_price else None,
-        "ari": round(ari, 1) if ari else None, "sent_index": round(sent_index, 1) if sent_index else None,
-        "quadrant_label": q_label, "price_rank_list": price_rank_list, "price_history": target_history,
+        "hotel_id": target_hotel_id,
+        "hotel_name": target_hotel_name,
+        "market_avg": round(market_avg, 2) if market_avg > 0 else 0.0, 
+        "target_price": round(target_price, 2) if target_price else 0.0,
+        "total_hotels": len(hotels),
+        "total_competitors": len(hotels) - 1 if len(hotels) > 0 else 0,
+        "ari": round(ari, 1) if ari else 100.0, 
+        "sent_index": round(sent_index, 1) if sent_index else 100.0,
+        "quadrant_label": q_label,
+        "price_rank_list": price_rank_list,
+        "price_history": target_history,
         "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
         "synthetic_narrative": generate_synthetic_narrative(ari, sent_index, target_h.get("pricing_dna_text") if target_h else None, target_hotel_name)
     }
