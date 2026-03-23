@@ -484,9 +484,25 @@ async def get_market_intelligence_data(
     db: Client, user_id: str, room_type: str = "Standard", display_currency: str = "TRY",
     start_date: Optional[str] = None, end_date: Optional[str] = None
 ) -> Dict[str, Any]:
-    res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
-    hotels = res.data or []
-    if not hotels: return {"hotels": []}
+    # [ROBUST] Programaatic filtering to avoid Supabase client version ambiguity with .is_("null")
+    res = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    all_hotels = res.data or []
+    hotels = [h for h in all_hotels if not h.get("deleted_at")]
+    
+    if not hotels: 
+        return {
+            "hotels": [], 
+            "total_hotels": 0, 
+            "total_competitors": 0, 
+            "market_avg": 0.0, 
+            "target_price": 0.0,
+            "ari": 100.0,
+            "sent_index": 100.0,
+            "quadrant_label": "No Data",
+            "price_rank_list": [],
+            "price_history": [],
+            "recommendation": "Add hotels to start monitoring market rates."
+        }
 
     h_ids = [str(h["id"]) for h in hotels]
     p_res = db.table("price_logs").select("*").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
