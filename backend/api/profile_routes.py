@@ -97,6 +97,8 @@ async def get_settings(
         "notifications_enabled": True,
         "push_enabled": False,
         "currency": "USD",
+        "dynamic_threshold_enabled": False,
+        "dynamic_threshold_sensitivity": 1.0,
         "created_at": now.isoformat(),
         "updated_at": now.isoformat(),
     }
@@ -112,10 +114,21 @@ async def get_settings(
                 "notifications_enabled": True,
                 "push_enabled": False,
                 "currency": "USD",
+                "dynamic_threshold_enabled": False,
+                "dynamic_threshold_sensitivity": 1.0,
             }
             result = db.table("settings").insert(insert_data).execute()
+            # Return fresh data
             return result.data[0]
-        return result.data[0]
+        
+        # KAİZEN: Handle missing or None fields for Pydantic validation safety
+        # Merge database results with safe defaults to ensure required fields aren't None
+        settings_data = result.data[0]
+        for key, val in safe_defaults.items():
+            if settings_data.get(key) is None:
+                settings_data[key] = val
+        
+        return settings_data
     except Exception as e:
         print(f"Error in get_settings: {e}")
         return safe_defaults
@@ -147,6 +160,12 @@ async def update_settings(
             if settings.push_enabled is not None
             else False,
             "currency": settings.currency or "USD",
+            "dynamic_threshold_enabled": settings.dynamic_threshold_enabled
+            if settings.dynamic_threshold_enabled is not None
+            else False,
+            "dynamic_threshold_sensitivity": settings.dynamic_threshold_sensitivity
+            if settings.dynamic_threshold_sensitivity is not None
+            else 1.0,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
         }

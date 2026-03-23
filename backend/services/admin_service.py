@@ -235,7 +235,6 @@ async def get_admin_providers_logic() -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Admin Providers Error: {e}")
         return []
-        return {"error": str(e), "total_keys": 0, "active_keys": 0}
 
 
 async def force_rotate_api_key_logic() -> Dict[str, Any]:
@@ -337,14 +336,19 @@ async def admin_update_user_logic(
         admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
         if admin_key and url:
-            admin_db = create_client(url, admin_key)
-            auth_updates = {}
-            if updates.email:
-                auth_updates["email"] = updates.email
-            if updates.password:
-                auth_updates["password"] = updates.password
-            if auth_updates:
-                admin_db.auth.admin.update_user_by_id(user_id_str, auth_updates)
+            try:
+                admin_db = create_client(url, admin_key)
+                auth_updates = {}
+                if updates.email:
+                    auth_updates["email"] = updates.email
+                if updates.password:
+                    auth_updates["password"] = updates.password
+                if auth_updates:
+                    # KAİZEN: Handle cases where user might not exist in Auth but exists in profiles
+                    admin_db.auth.admin.update_user_by_id(user_id_str, auth_updates)
+            except Exception as auth_err:
+                print(f"[Admin] Auth-side update skipped or failed for {user_id_str}: {auth_err}")
+                # We don't raise here because profile/settings might have succeeded
 
         return {"status": "success", "message": "User updated successfully"}
     except Exception as e:
@@ -496,8 +500,13 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
         admin_db.table("settings").insert(
             {
                 "user_id": str(new_user.id),
+                "threshold_percent": 2.0,
                 "check_frequency_minutes": 1440,  # Daily default
+                "notifications_enabled": True,
+                "push_enabled": False,
                 "currency": "TRY",
+                "dynamic_threshold_enabled": False,
+                "dynamic_threshold_sensitivity": 1.0,
             }
         ).execute()
 
@@ -1265,9 +1274,9 @@ async def get_admin_market_intelligence_logic(
                     dt_str = entry["recorded_at"].split("T")[0]
                     if dt_str not in daily_aggregates:
                         daily_aggregates[dt_str] = {
-                            "sum_rank": 0,
+                            "sum_rank": 0.0,
                             "count": 0,
-                            "sum_price": 0,
+                            "sum_price": 0.0,
                         }
 
                     daily_aggregates[dt_str]["sum_rank"] += float(val_rank)
