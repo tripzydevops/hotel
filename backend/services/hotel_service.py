@@ -5,7 +5,7 @@ Handles business logic for hotel management and directory searching.
 
 from datetime import datetime
 from uuid import UUID
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 from supabase import Client
 from fastapi import HTTPException
 from backend.services.serpapi_client import serpapi_client

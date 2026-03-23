@@ -62,7 +62,7 @@ async def list_hotels(
 
 
 @router.get("/locations", response_model=List[LocationRegistry])
-async def list_locations(db: Client = Depends(get_supabase_rls)):
+async def list_locations(db: Client = Depends(get_supabase)):
     """Fetch all discovered locations for the dropdowns."""
     if not db:
         return []
