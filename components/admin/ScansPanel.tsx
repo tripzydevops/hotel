@@ -297,11 +297,11 @@ const ScansPanel = () => {
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
                   <tr>
-                    <th className="p-5">Temporal Index</th>
-                    <th className="p-5">Operator</th>
-                    <th className="p-5">Session Matrix</th>
-                    <th className="p-5">Neural Status</th>
-                    <th className="p-5 text-right">Entity Volume</th>
+                    <th className="p-5">Scan Date</th>
+                    <th className="p-5">User</th>
+                    <th className="p-5">Scan Type</th>
+                    <th className="p-5">Status</th>
+                    <th className="p-5 text-right">Hotel Count</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.03]">
@@ -456,7 +456,7 @@ const ScansPanel = () => {
                       <div className="mt-6">
                         <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse" />
-                          Agent Reasoning Timeline
+                          Scan Activity Timeline
                         </h4>
                         <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                           {scanDetails.session.reasoning_trace.map(

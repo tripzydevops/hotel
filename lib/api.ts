@@ -639,6 +639,16 @@ class ApiClient {
       body: JSON.stringify(params),
     });
   }
+
+  async getAllApiKeys(): Promise<any[]> {
+    return this.fetch<any[]>("/api/admin/keys");
+  }
+
+  async deleteApiKey(keyId: string): Promise<void> {
+    return this.fetch<void>(`/api/admin/keys/${keyId}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const api = new ApiClient();

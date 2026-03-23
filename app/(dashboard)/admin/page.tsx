@@ -34,7 +34,7 @@ import ScansPanel from "@/components/admin/ScansPanel";
 import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
 import LandingPageEditor from "@/components/admin/LandingPageEditor";
 
-import NeuralFeed from "@/components/admin/NeuralFeed";
+import ActivityFeed from "@/components/admin/ActivityFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 import ReportGeneratorPanel from "@/components/admin/ReportGeneratorPanel";
 import { FileText } from "lucide-react";
@@ -103,7 +103,7 @@ export default function AdminPage() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mb-4" />
         <p className="text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest animate-pulse">
-          Establishing Neural Link...
+          Connecting to Admin Services...
         </p>
       </div>
     );
@@ -134,7 +134,7 @@ export default function AdminPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <Shield className="w-5 h-5 text-[var(--soft-gold)]" />
-              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">System Vital Matrices</h2>
+              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">System Health Metrics</h2>
             </div>
             <SystemHealthPanel stats={stats} />
           </section>
@@ -147,9 +147,9 @@ export default function AdminPage() {
             <div className="lg:col-span-9 min-w-0 space-y-6">
               <div className="flex items-center gap-3">
                 <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
-                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Neural Signal Intelligence</h2>
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Live Activity Stream</h2>
               </div>
-              <NeuralFeed />
+              <ActivityFeed />
             </div>
 
             {/* Vertical Stat Column */}
@@ -159,19 +159,19 @@ export default function AdminPage() {
                 <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Core Metrics</h2>
               </div>
               <StatCard
-                label="Intelligence nodes"
+                label="Total Users"
                 value={stats?.total_users || 0}
                 icon={Users}
                 trend="up"
               />
               <StatCard
-                label="Monitored Entities"
+                label="Total Hotels"
                 value={stats?.total_hotels || 0}
                 icon={Building2}
                 trend="neutral"
               />
               <StatCard
-                label="Network Cycles"
+                label="Total Scans"
                 value={stats?.total_scans || 0}
                 icon={Activity}
                 trend="up"
@@ -191,7 +191,7 @@ export default function AdminPage() {
               </div>
               <div className="text-left">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">
-                  Personnel Manager
+                  User Management
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">
                   Review Quotas & Access
@@ -213,7 +213,7 @@ export default function AdminPage() {
                   System Diagnostics
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">
-                  Trace Kernel Operations
+                  View System Logs
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-[var(--text-muted)] ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
@@ -229,10 +229,10 @@ export default function AdminPage() {
               </div>
               <div className="text-left">
                 <h3 className="text-sm font-black uppercase tracking-widest text-white">
-                  Access Gateway
+                  API Management
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">
-                  Rotate Protocol Keys
+                  Manage API Keys
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-[var(--text-muted)] ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />

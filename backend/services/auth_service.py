@@ -83,8 +83,8 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
                 status_code=401, detail=f"InsForge Auth Error: {str(auth_e)}"
             )
 
-        user_id = user_obj.id
-        email = user_obj.email
+        user_id = getattr(user_obj, "id", None)
+        email = getattr(user_obj, "email", None)
 
         # Verify admin role in database
         try:
@@ -165,35 +165,46 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
             logger.error(f"Auth Token Verification Failed: {auth_e}")
             raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
 
-        user_id = user.id
+        user_id = getattr(user, "id", None)
 
         # Check Account Status
         status = "pending_approval"
+        is_verified = False # Default to False: All users must be verified by admin
         try:
             # Check 'profiles' table first (legacy consistency)
             res = (
                 db.table("profiles")
-                .select("subscription_status")
+                .select("subscription_status, is_verified")
                 .eq("id", str(user_id))
                 .maybe_single()
                 .execute()
             )
             if res.data:
                 status = res.data.get("subscription_status")
+                is_verified = res.data.get("is_verified", False)
             else:
                 # Fallback to 'user_profiles'
                 res2 = (
                     db.table("user_profiles")
-                    .select("subscription_status")
+                    .select("subscription_status, is_verified")
                     .eq("user_id", str(user_id))
                     .maybe_single()
                     .execute()
                 )
                 if res2.data:
                     status = res2.data.get("subscription_status")
+                    is_verified = res2.data.get("is_verified", False)
         except Exception as status_e:
             # If DB check fails, we default to pending/safe state but DON'T crash 500
             logger.warning(f"Could not verify status for {user_id}: {status_e}")
+
+        # [POLICY] Enforce Admin Verification
+        if not is_verified:
+            logger.warning(f"Blocked unverified user {getattr(user, 'email', 'Unknown')} ({user_id})")
+            raise HTTPException(
+                status_code=403, 
+                detail="Account pending administrator approval. Please contact support."
+            )
 
         if status in ["suspended", "rejected"]:
             raise HTTPException(status_code=403, detail="Account Suspended/Rejected")

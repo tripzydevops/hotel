@@ -196,6 +196,7 @@ class UserProfile(UserProfileBase):
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
     role: Optional[str] = "user"
+    is_verified: bool = False
     is_admin_bypass: bool = False
 
 
@@ -367,6 +368,7 @@ class AdminUserCreate(BaseModel):
     display_name: Optional[str] = None
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
+    is_verified: Optional[bool] = True
 
 
 class AdminUserUpdate(BaseModel):
@@ -380,6 +382,7 @@ class AdminUserUpdate(BaseModel):
     plan_type: Optional[str] = None
     subscription_status: Optional[str] = None
     check_frequency_minutes: Optional[int] = None
+    is_verified: Optional[bool] = None
 
 
 class AdminUser(BaseModel):
@@ -399,6 +402,7 @@ class AdminUser(BaseModel):
     scan_frequency_minutes: Optional[int] = 0
     max_hotels: int = 5  # Derived from plan
     next_scan_at: Optional[datetime] = None
+    is_verified: bool = False
 
 
 class AdminDirectoryEntry(BaseModel):

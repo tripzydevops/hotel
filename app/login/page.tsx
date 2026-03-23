@@ -13,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [emailForVerification, setEmailForVerification] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,22 +42,27 @@ export default function LoginPage() {
 
       if ('error' in result && result.error) {
         const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any).message || "Auth failed";
-        setError(errorMsg);
         
-        // If user already exists during signup, they might be unverified
-        if (!isLogin && errorMsg.includes("already exists")) {
-            setEmailForVerification(email);
+        if (errorMsg.includes("pending administrator approval") || errorMsg.includes("403")) {
+          setIsPendingApproval(true);
+        } else {
+          setError(errorMsg);
         }
         
         setIsLoading(false);
       } else {
-        // Success
-        if (!isLogin && (result as any).requireEmailVerification) {
-          setEmailForVerification(email);
-          setIsVerifying(true);
-          setIsLoading(false);
-        } else {
+        // [KAİZEN] Perform Profile Sanity Check
+        try {
+          const { api } = await import("@/lib/api");
+          await api.getProfile();
           router.push("/dashboard");
+        } catch (profileErr: any) {
+          if (profileErr.message.includes("pending administrator approval") || profileErr.message.includes("403")) {
+            setIsPendingApproval(true);
+          } else {
+            setError(profileErr.message);
+          }
+          setIsLoading(false);
         }
       }
     } catch (err: any) {
@@ -152,7 +158,29 @@ export default function LoginPage() {
         )}
 
         {/* Form Section */}
-        {isVerifying ? (
+        {isPendingApproval ? (
+          <div className="space-y-6 relative z-10 text-center animate-in fade-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-[var(--soft-gold)]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[var(--soft-gold)]/20">
+               <span className="text-4xl">⏳</span>
+            </div>
+            <h2 className="text-2xl font-black text-white italic">
+               {t("auth.pendingTitle") || "Approval Pending"}
+            </h2>
+            <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
+               {t("auth.pendingMessage") || "Your account has been created successfully. For security reasons, a system administrator must manually verify your identity before you can access the dashboard. Please check back soon or contact support if this takes longer than 24 hours."}
+            </p>
+            <button
+               onClick={() => {
+                 setIsPendingApproval(false);
+                 setIsLogin(true);
+                 setError(null);
+               }}
+               className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-[var(--soft-gold)] font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs"
+            >
+               {t("auth.backToLogin") || "Back to Login"}
+            </button>
+          </div>
+        ) : isVerifying ? (
           <form onSubmit={handleVerify} className="space-y-6 relative z-10 text-center">
             <div className="space-y-2">
               <label
@@ -271,7 +299,7 @@ export default function LoginPage() {
         )}
 
         {/* Toggle Section */}
-        {!isVerifying && (
+        {!isVerifying && !isPendingApproval && (
           <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
             <p className="text-[var(--text-muted)] text-sm mb-4">
               {isLogin ? t("auth.newToPlatform") : t("auth.alreadyHaveAccount")}

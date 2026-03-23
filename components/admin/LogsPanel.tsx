@@ -38,7 +38,7 @@ const LogsPanel = () => {
               System Audit Logs
             </h3>
             <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-tighter opacity-50">
-              Immutable Execution Journal
+              Historical system activity
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ const LogsPanel = () => {
           onClick={loadLogs}
           className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-white/5 transition-all active:scale-95"
         >
-          Refresh Stream
+          Refresh Logs
         </button>
       </div>
 
@@ -60,10 +60,10 @@ const LogsPanel = () => {
             <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
                 <tr>
-                  <th className="p-5">Temporal Stamp</th>
-                  <th className="p-5">Security Level</th>
-                  <th className="p-5">Action Descriptor</th>
-                  <th className="p-5">Matrix Details</th>
+                  <th className="p-5">Timestamp</th>
+                  <th className="p-5">Log Level</th>
+                  <th className="p-5">Action</th>
+                  <th className="p-5">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -110,7 +110,7 @@ const LogsPanel = () => {
                       className="p-20 text-center text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest opacity-40"
                     >
                       <Terminal className="w-10 h-10 mx-auto mb-4 opacity-20" />
-                      Journal Empty
+                      No logs found
                     </td>
                   </tr>
                 )}

@@ -23,7 +23,7 @@ interface FeedItem {
   currency?: string;
 }
 
-const NeuralFeed = () => {
+const ActivityFeed = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [logs, setLogs] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ const NeuralFeed = () => {
       setStats(statData);
       setLastUpdate(new Date());
     } catch (err) {
-      console.error("Neural Feed Error", err);
+      console.error("Activity Feed Error", err);
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ const NeuralFeed = () => {
           </div>
           <div>
             <h3 className="text-[10px] font-black text-white flex items-center gap-3 uppercase tracking-[0.3em]">
-              Primary Signal Stream
+              Live Activity Stream
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--optimal-green)] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--optimal-green)]"></span>
@@ -87,12 +87,12 @@ const NeuralFeed = () => {
             </h3>
             <div className="flex items-center gap-3 mt-1.5">
               <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-widest flex items-center gap-2">
-                <Globe className="w-3 h-3 text-blue-400/50" /> Network Sync:
+                <Globe className="w-3 h-3 text-blue-400/50" /> System Status:
                 ACTIVE
               </span>
               <span className="w-1 h-1 rounded-full bg-white/10" />
               <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase tracking-widest">
-                Nodes: [03/09] Online
+                Nodes: [Online]
               </span>
             </div>
           </div>
@@ -101,7 +101,7 @@ const NeuralFeed = () => {
         <div className="flex items-center gap-6">
           <div className="hidden lg:flex flex-col items-end">
             <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-              Load Matrix
+              System Load
             </span>
             <div className="flex gap-1">
               {[...Array(8)].map((_, i) => (
@@ -113,7 +113,7 @@ const NeuralFeed = () => {
             </div>
           </div>
           <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[var(--soft-gold)] font-mono text-[10px] flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5" /> Encrypted Channel
+            <Lock className="w-3.5 h-3.5" /> Secure Channel
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ const NeuralFeed = () => {
             <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-40">
               <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)]" />
               <span className="text-[9px] uppercase tracking-[0.4em]">
-                Establishing Neural Gate...
+                Connecting to Stream...
               </span>
             </div>
           ) : (
@@ -162,8 +162,8 @@ const NeuralFeed = () => {
                             : "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.05)]"
                       }`}
                     >
-                      {log.action_type || "SIGNAL"}
-                    </span>
+                    {log.action_type || "EVENT"}
+                  </span>
                     {/* 
                 EXPLANATION: Hotel Name Truncation
                 We use `truncate` and `max-w-[120px]` here to ensure that long hotel 
@@ -184,11 +184,11 @@ const NeuralFeed = () => {
                   </div>
                   <div className="flex items-center gap-4 text-[9px] font-bold text-[var(--text-muted)] opacity-50 group-hover:opacity-100 transition-opacity uppercase tracking-widest">
                     <span className="flex items-center gap-1.5">
-                      <Cpu className="w-3 h-3" /> Core_Link_{idx % 4}
+                      <Cpu className="w-3 h-3" /> Thread_{idx % 4}
                     </span>
                     <span className="w-1 h-1 rounded-full bg-white/20" />
                     <span className="flex items-center gap-1.5">
-                      <Shield className="w-3 h-3" /> Integrity_Verified
+                      <Shield className="w-3 h-3" /> Verified
                     </span>
                   </div>
                 </div>
@@ -210,7 +210,7 @@ const NeuralFeed = () => {
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
             <span className="uppercase tracking-[0.2em]">
-              GATE_UPTIME: {stats?.scraper_health || 100}%
+              SYSTEM_UPTIME: {stats?.scraper_health || 100}%
             </span>
           </div>
         </div>
@@ -244,4 +244,4 @@ const NeuralFeed = () => {
   );
 };
 
-export default NeuralFeed;
+export default ActivityFeed;

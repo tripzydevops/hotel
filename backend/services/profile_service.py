@@ -57,6 +57,7 @@ async def get_enriched_profile_logic(
                                 "role": "user",
                                 "plan_type": "trial",
                                 "subscription_status": "trial",
+                                "is_verified": False,
                                 "created_at": datetime.now(timezone.utc).isoformat(),
                                 "updated_at": datetime.now(timezone.utc).isoformat(),
                             }
@@ -84,6 +85,7 @@ async def get_enriched_profile_logic(
     plan = "trial"
     status = "trial"
     bypass_active = False
+    is_verified_by_bypass = False
     sub_data = []
 
     try:
@@ -144,6 +146,7 @@ async def get_enriched_profile_logic(
                 plan = "enterprise"
                 status = "active"
                 bypass_active = True
+                is_verified_by_bypass = True
 
         elif is_specific_admin:
             plan = "enterprise"
@@ -163,6 +166,7 @@ async def get_enriched_profile_logic(
         plan = "enterprise"
         status = "active"
         bypass_active = True
+        is_verified_by_bypass = True
 
     # Final Merge: Take base profile metadata and inject calculated plan status
     profile_result: Dict[str, Any] = {}
@@ -174,6 +178,12 @@ async def get_enriched_profile_logic(
     profile_result["plan_type"] = plan
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active
+    
+    # Finalize is_verified if not already set by bypass
+    if is_verified_by_bypass:
+        profile_result["is_verified"] = True
+    elif "is_verified" not in profile_result:
+        profile_result["is_verified"] = base_data.get("is_verified", False) if base_data else False
 
     # Ensure timestamps exist for model validation
     if "created_at" not in profile_result:

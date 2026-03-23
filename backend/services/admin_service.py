@@ -297,6 +297,8 @@ async def admin_update_user_logic(
             profile_fields["plan_type"] = updates.plan_type
         if updates.subscription_status is not None:
             profile_fields["subscription_status"] = updates.subscription_status
+        if updates.is_verified is not None:
+            profile_fields["is_verified"] = updates.is_verified
 
         if profile_fields:
             db.table("user_profiles").update(profile_fields).eq(
@@ -385,6 +387,7 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
                     "job_title": p.get("job_title"),
                     "phone": p.get("phone"),
                     "timezone": p.get("timezone"),
+                    "is_verified": p.get("is_verified", False),
                     "created_at": p.get("created_at") or datetime.now().isoformat(),
                 }
 
@@ -469,6 +472,7 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
                 "email": user.email,
                 "plan_type": user.plan_type,
                 "subscription_status": user.subscription_status,
+                "is_verified": user.is_verified if user.is_verified is not None else True,
             }
         ).execute()
 

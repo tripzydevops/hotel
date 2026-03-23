@@ -88,8 +88,8 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-black text-white uppercase tracking-widest">Critical Signal Degredation</h4>
-              <p className="text-[10px] text-red-400/80 uppercase mt-1 tracking-tight">System-wide error rate exceeds 10% threshold. Verify API Keys and connectivity nodes.</p>
+              <h4 className="text-sm font-black text-white uppercase tracking-widest">System Performance Alert</h4>
+              <p className="text-[10px] text-red-400/80 uppercase mt-1 tracking-tight">System-wide error rate exceeds 10% threshold. Verify API Keys and network connectivity.</p>
             </div>
           </div>
           <button className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-8 py-3 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
@@ -108,11 +108,11 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div>
               <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
-                Neural Latency Matrix
+                System Response Latency
                 <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_10px_var(--soft-gold)]" />
               </h3>
               <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-1">
-                Real-time response tracking (24h nodes)
+                Real-time response tracking (Last 24h)
               </p>
             </div>
             <div className="text-right">
@@ -189,7 +189,7 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
           />
           
           <MetricCard 
-            label="Error Gradient"
+            label="Error Rate"
             value={`${stats?.error_rate_24h || 0}%`}
             subValue="Incidents 24h"
             icon={AlertTriangle}

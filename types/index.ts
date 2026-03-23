@@ -239,6 +239,7 @@ export interface AdminUser {
   current_period_end?: string;
   scan_frequency_minutes?: number;
   next_scan_at?: string;
+  is_verified?: boolean;
 }
 
 export interface AdminUserCreate {
@@ -247,6 +248,7 @@ export interface AdminUserCreate {
   display_name?: string;
   plan_type?: "trial" | "starter" | "pro" | "enterprise";
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
+  is_verified?: boolean;
 }
 
 export interface AdminUserUpdate {
@@ -260,6 +262,7 @@ export interface AdminUserUpdate {
   plan_type?: "trial" | "starter" | "pro" | "enterprise";
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
   check_frequency_minutes?: number;
+  is_verified?: boolean;
 }
 
 export interface DirectoryEntry {

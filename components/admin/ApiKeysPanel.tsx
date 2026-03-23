@@ -16,6 +16,7 @@ import { KeyStatus } from "@/types";
 
 const ApiKeysPanel = () => {
   const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null);
+  const [allKeys, setAllKeys] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -27,16 +28,32 @@ const ApiKeysPanel = () => {
   const loadKeyStatus = async () => {
     setLoading(true);
     try {
-      const [kData, pData] = await Promise.all([
+      const [kData, pData, keysData] = await Promise.all([
         api.getAdminKeyStatus(),
         api.getAdminProviders(),
+        api.getAllApiKeys(),
       ]);
       setKeyStatus(kData);
       setProviders(pData);
+      setAllKeys(keysData);
     } catch (err: any) {
       console.error("Failed to load key status:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDestroyKey = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this key?")) return;
+    setActionLoading(true);
+    try {
+      await api.deleteApiKey(id);
+      setAllKeys((prev) => prev.filter((k) => k.id !== id));
+      alert("Key deleted successfully.");
+    } catch (err: any) {
+      alert("Delete Failed: " + err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -107,10 +124,10 @@ const ApiKeysPanel = () => {
           </div>
           <div>
             <span className="text-white text-base font-bold tracking-tight">
-              API Gateway Control
+              API Management
             </span>
             <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-widest mt-0.5">
-              Automated key rotation and quota management
+              Key rotation and quota management
             </p>
           </div>
         </div>
@@ -125,7 +142,7 @@ const ApiKeysPanel = () => {
             ) : (
               <RefreshCw className="w-3 h-3" />
             )}
-            Sync Registry
+            Sync Keys
           </button>
         </div>
       </div>
@@ -137,7 +154,7 @@ const ApiKeysPanel = () => {
             <Activity className="w-12 h-12 text-[var(--soft-gold)]" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
-            Global Throughput
+            Total Usage
           </p>
           <p className="text-3xl font-black text-white tabular-nums">
             {keyStatus?.monthly_usage || 0}
@@ -159,7 +176,7 @@ const ApiKeysPanel = () => {
             <CheckCircle2 className="w-12 h-12 text-[var(--optimal-green)]" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
-            Operational Keys
+            Active Keys
           </p>
           <p className="text-3xl font-black text-[var(--optimal-green)] tabular-nums">
             {keyStatus?.active_keys || 0}
@@ -174,7 +191,7 @@ const ApiKeysPanel = () => {
             <AlertCircle className="w-12 h-12 text-red-400" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
-            Exhausted Nodes
+            Exhausted Keys
           </p>
           <p className="text-3xl font-black text-red-500 tabular-nums">
             {(keyStatus?.total_keys || 0) - (keyStatus?.active_keys || 0)}
@@ -188,7 +205,7 @@ const ApiKeysPanel = () => {
       {/* Network Providers */}
       <div className="space-y-4">
         <h3 className="text-xs font-black uppercase tracking-widest text-white px-1">
-          Network Providers
+          Data Providers
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
           {providers?.map((p) => (
@@ -221,7 +238,7 @@ const ApiKeysPanel = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-black uppercase tracking-widest text-white">
-            Active Key Clusters
+            Managed API Keys
           </h3>
           <div className="flex gap-3">
             <button
@@ -250,83 +267,87 @@ const ApiKeysPanel = () => {
           <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
               <tr>
-                <th className="p-5">Cluster Node</th>
-                <th className="p-5">Credential Fragment</th>
-                <th className="p-5">Health Status</th>
-                <th className="p-5 text-right">Temporal Usage</th>
+                <th className="p-5">Key ID</th>
+                <th className="p-5">Key Suffix</th>
+                <th className="p-5">Status</th>
+                <th className="p-5">Current Usage</th>
+                <th className="p-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
-              {keyStatus?.keys_status?.map((key) => (
-                <tr
-                  key={key.index}
-                  className={`hover:bg-white/[0.02] transition-colors group ${key.is_current ? "bg-[var(--soft-gold)]/5" : ""}`}
-                >
-                  <td className="p-5 text-white font-black tabular-nums">
-                    NODE_{String(key.index).padStart(2, "0")}
-                    {key.is_current && (
-                      <span className="ml-2 text-[8px] bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-1 rounded">
-                        ACTIVE
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-5">
-                    <code className="text-[10px] font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-[var(--soft-gold)] transition-colors">
-                      {key.key_suffix}
-                    </code>
-                  </td>
-                  <td className="p-5">
-                    <div className="flex flex-col gap-1.5 items-start">
-                      <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted && (key.searches_left === undefined || key.searches_left > 0)
-                          ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
-                          : "bg-red-500/10 text-red-500 border border-red-500/20"
-                          }`}
-                      >
-                        {key.is_exhausted || (key.searches_left !== undefined && key.searches_left <= 0) ? "Exhausted" : "Active"}
-                      </span>
+              {keyStatus?.keys_status?.map((key) => {
+                const dbKey = allKeys.find((ak) => ak.index === key.index);
+                return (
+                  <tr
+                    key={key.index}
+                    className={`hover:bg-white/[0.02] transition-colors group ${key.is_current ? "bg-[var(--soft-gold)]/5" : ""}`}
+                  >
+                    <td className="p-5 text-white font-black tabular-nums">
+                      KEY_{String(key.index).padStart(2, "0")}
                       {key.is_current && (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                          <span className="text-[8px] font-black uppercase tracking-tighter">Scanning Key</span>
-                        </div>
+                        <span className="ml-2 text-[8px] bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-1 rounded">
+                          ACTIVE
+                        </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="p-5 text-right">
-                    <div className="flex flex-col items-end gap-1.5">
-                      {/* Live Data Block */}
-                      {key.searches_left !== undefined && (
-                        <div className="flex flex-col items-end px-3 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xl font-black tabular-nums tracking-tighter ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-500'}`}>
-                              {key.searches_left}
-                            </span>
-                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Scans Left</span>
-                          </div>
-                          <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-60 mt-0.5">
-                            of {key.limit || `${keyStatus?.quota_per_key || 250}`} limit
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col items-end gap-1 opacity-90">
-                        {key.refresh_date && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-tighter">Renew Date:</span>
-                            <span className="text-[10px] font-black text-[var(--soft-gold)] tabular-nums px-2 py-0.5 bg-[var(--soft-gold)]/5 rounded border border-[var(--soft-gold)]/10">
-                              {key.refresh_date}
-                            </span>
+                    </td>
+                    <td className="p-5">
+                      <code className="text-[10px] font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-[var(--soft-gold)] transition-colors">
+                        {key.key_suffix}
+                      </code>
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${!key.is_exhausted && (key.searches_left === undefined || key.searches_left > 0)
+                            ? "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"
+                            : "bg-red-500/10 text-red-500 border border-red-500/20"
+                            }`}
+                        >
+                          {key.is_exhausted || (key.searches_left !== undefined && key.searches_left <= 0) ? "Exhausted" : "Active"}
+                        </span>
+                        {key.is_current && (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                            <span className="text-[8px] font-black uppercase tracking-tighter">Active for Scanning</span>
                           </div>
                         )}
-                        <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-1">
-                          Requests: {key.usage || 0}
-                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col items-start gap-1.5">
+                        {/* Live Data Block */}
+                        {key.searches_left !== undefined && (
+                          <div className="flex flex-col items-start px-3 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xl font-black tabular-nums tracking-tighter ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-500'}`}>
+                                {key.searches_left}
+                              </span>
+                              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Scans Left</span>
+                            </div>
+                            <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-60 mt-0.5">
+                              of {key.limit || `${keyStatus?.quota_per_key || 250}`} limit
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-5 text-right">
+                      <div className="flex justify-end gap-2">
+                        {dbKey && (
+                          <button
+                            onClick={() => handleDestroyKey(dbKey.id)}
+                            disabled={actionLoading}
+                            className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                            title="Delete Key"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

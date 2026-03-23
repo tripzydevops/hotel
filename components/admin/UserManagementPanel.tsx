@@ -13,6 +13,8 @@ import {
   UserPlus,
   Mail,
   Lock,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { AdminUser, AdminUserUpdate } from "@/types";
@@ -45,6 +47,7 @@ const UserManagementPanel = () => {
     check_frequency_minutes: 0,
     plan_type: "trial" as AdminUser["plan_type"],
     subscription_status: "trial" as AdminUser["subscription_status"],
+    is_verified: false,
   });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
@@ -80,6 +83,7 @@ const UserManagementPanel = () => {
         check_frequency_minutes: userToEdit.scan_frequency_minutes || 0,
         plan_type: userToEdit.plan_type || "trial",
         subscription_status: userToEdit.subscription_status || "trial",
+        is_verified: !!userToEdit.is_verified,
       });
     }
   }, [userToEdit]);
@@ -93,6 +97,7 @@ const UserManagementPanel = () => {
         display_name: newUserName || undefined,
         plan_type: newUserPlan,
         subscription_status: newUserStatus,
+        is_verified: true,
       });
       setUserSuccess(true);
       setNewUserEmail("");
@@ -123,6 +128,7 @@ const UserManagementPanel = () => {
         subscription_status:
           editUserForm.subscription_status as AdminUserUpdate["subscription_status"],
         check_frequency_minutes: editUserForm.check_frequency_minutes,
+        is_verified: editUserForm.is_verified,
       });
       setUserToEdit(null);
       loadUsers();
@@ -134,6 +140,21 @@ const UserManagementPanel = () => {
       );
     } finally {
       setUserSaveLoading(false);
+    }
+  };
+
+  const handleToggleVerification = async (user: AdminUser) => {
+    try {
+      await api.updateAdminUser(user.id, {
+        is_verified: !user.is_verified,
+      });
+      loadUsers();
+      toast.success(user.is_verified ? "User de-verified" : "User verified");
+    } catch (err: unknown) {
+      toast.error(
+        "Verification toggle failed: " +
+        (err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
@@ -167,7 +188,7 @@ const UserManagementPanel = () => {
               <UserPlus className="w-5 h-5 text-[var(--soft-gold)]" />
             </div>
             <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">
-              Provision New User
+              Create New User
             </h3>
           </div>
           <AnimatePresence>
@@ -178,8 +199,8 @@ const UserManagementPanel = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="text-[var(--optimal-green)] text-[10px] font-black uppercase tracking-widest flex items-center bg-[var(--optimal-green)]/10 px-3 py-1.5 rounded-lg border border-[var(--optimal-green)]/20 shadow-lg shadow-[var(--optimal-green)]/10"
               >
-                <CheckCircle2 className="w-3 h-3 mr-2" /> Vector Link
-                Established
+                <CheckCircle2 className="w-3 h-3 mr-2" /> User Account 
+                Created
               </motion.span>
             )}
           </AnimatePresence>
@@ -215,7 +236,7 @@ const UserManagementPanel = () => {
           </div>
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
-              <Lock className="w-3 h-3" /> Initial Secret
+              <Lock className="w-3 h-3" /> Initial Password
             </label>
             <input
               type="password"
@@ -246,7 +267,7 @@ const UserManagementPanel = () => {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1 flex items-center gap-1.5">
-              Neural Link Status
+              Initial Status
             </label>
             <select
               value={newUserStatus}
@@ -282,12 +303,13 @@ const UserManagementPanel = () => {
             <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
                 <tr>
-                  <th className="p-5">Operator Profile</th>
-                  <th className="p-5">Tier / Integrity</th>
-                  <th className="p-5">Entity Resource Allocation</th>
-                  <th className="p-5 text-center">Sync Matrix</th>
-                  <th className="p-5">Temporal Index</th>
-                  <th className="p-5 text-right">Matrix Ops</th>
+                  <th className="p-5">User Profile</th>
+                  <th className="p-5">Tier / Status</th>
+                  <th className="p-5">Verification</th>
+                  <th className="p-5">Resource Usage (Hotels)</th>
+                  <th className="p-5 text-center">Sync Schedule</th>
+                  <th className="p-5">Registration Date</th>
+                  <th className="p-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -338,6 +360,27 @@ const UserManagementPanel = () => {
                       </div>
                     </td>
                     <td className="p-5">
+                      <button
+                        onClick={() => handleToggleVerification(u)}
+                        className={`group/verify flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${u.is_verified
+                          ? "bg-[var(--optimal-green)]/10 border-[var(--optimal-green)]/20 text-[var(--optimal-green)]"
+                          : "bg-red-500/10 border-red-500/20 text-red-400"
+                          }`}
+                      >
+                        {u.is_verified ? (
+                          <>
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldAlert className="w-3.5 h-3.5 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+                    <td className="p-5">
                       <div className="flex flex-col gap-2 min-w-[150px]">
                         <div className="flex justify-between items-baseline mb-1">
                           <span className="text-[11px] font-black text-white tabular-nums">
@@ -370,7 +413,7 @@ const UserManagementPanel = () => {
                             {Math.round(u.scan_frequency_minutes / 60)}H
                           </div>
                           <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
-                            Next Scan Trace
+                            Cloud Sync Active
                           </span>
                         </div>
                       ) : (
@@ -387,7 +430,7 @@ const UserManagementPanel = () => {
                             : "-"}
                         </span>
                         <span className="text-[9px] uppercase tracking-tighter opacity-40 mt-0.5">
-                          Registration Epoch
+                          Account Created
                         </span>
                       </div>
                     </td>
@@ -398,21 +441,21 @@ const UserManagementPanel = () => {
                             window.open(`/?impersonate=${u.id}`, "_blank")
                           }
                           className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
-                          title="Impersonate Matrix"
+                          title="Impersonate User"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setUserToEdit(u)}
                           className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
-                          title="Recode Profile"
+                          title="Edit Profile"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(u.id)}
                           className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-95"
-                          title="Purge Identity"
+                          title="Delete User"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -438,7 +481,7 @@ const UserManagementPanel = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white uppercase tracking-widest">
-                    Recode Identity
+                    Edit User Account
                   </h3>
                   <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 opacity-50 lowercase">
                     {userToEdit.email}
@@ -456,7 +499,7 @@ const UserManagementPanel = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                  Email Terminal
+                  Email Address
                 </label>
                 <input
                   value={editUserForm.email}
@@ -468,7 +511,7 @@ const UserManagementPanel = () => {
               </div>
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                  Display Alias
+                  Display Name
                 </label>
                 <input
                   value={editUserForm.display_name}
@@ -505,7 +548,7 @@ const UserManagementPanel = () => {
               </div>
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                  Vector Link Status
+                  Subscription Status
                 </label>
                 <select
                   value={editUserForm.subscription_status}
@@ -517,16 +560,16 @@ const UserManagementPanel = () => {
                   }
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
                 >
-                  <option value="active">ACTIVE (Neural Link Est.)</option>
-                  <option value="trial">TRIALING (Temporal)</option>
-                  <option value="past_due">PAST_DUE (Warning)</option>
-                  <option value="canceled">CANCELED (Cold Storage)</option>
+                  <option value="active">ACTIVE</option>
+                  <option value="trial">TRIALING</option>
+                  <option value="past_due">PAST_DUE (Notice)</option>
+                  <option value="canceled">CANCELED</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                  Frequency Matrix
+                  Sync Frequency
                 </label>
                 <select
                   value={editUserForm.check_frequency_minutes}
@@ -562,6 +605,18 @@ const UserManagementPanel = () => {
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
+              <div className="col-span-1 md:col-span-2 p-4 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Access Verification</h4>
+                  <p className="text-[9px] text-[var(--text-muted)] mt-1">When disabled, the user is blocked from logging in.</p>
+                </div>
+                <button
+                  onClick={() => setEditUserForm({ ...editUserForm, is_verified: !editUserForm.is_verified })}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${editUserForm.is_verified ? 'bg-[var(--optimal-green)]' : 'bg-red-500/40'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${editUserForm.is_verified ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-4">
@@ -579,7 +634,7 @@ const UserManagementPanel = () => {
                 {userSaveLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
-                  "Overwrite Identity"
+                  "Save User Changes"
                 )}
               </button>
             </div>
