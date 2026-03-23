@@ -57,6 +57,13 @@ export const tr = {
     protectedText: "Otomatik Pazar İstihbaratı • Kurumsal Güvenlik Katmanı",
     errorTitle: "Kimlik Doğrulama Hatası",
     emailPlaceholder: "isim@sirket.com",
+    verifyTitle: "Hesabınızı doğrulayın",
+    verifySubtitle: "{email} adresine gönderilen 6 haneli kodu girin",
+    otpLabel: "Doğrulama Kodu",
+    verifyButton: "Doğrula ve Panele Git",
+    resendButton: "Kodu Tekrar Gönder",
+    wrongEmail: "Yanlış e-posta mı girdiniz?",
+    alreadyHaveCode: "Zaten kodunuz mu var?",
   },
   dashboard: {
     title: "Fiyat İstihbarat Matrisi",

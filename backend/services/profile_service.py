@@ -24,7 +24,11 @@ async def get_enriched_profile_logic(
     user_id_str = str(user_id)
     is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
 
-    # 0. Fetch base metadata if not provided
+    # 0. Prepare admin access for truth checking and self-healing
+    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+
+    # 1. Fetch base metadata if not provided
     if base_data is None:
         try:
             res = (
@@ -35,14 +39,47 @@ async def get_enriched_profile_logic(
             )
             if res.data:
                 base_data = res.data[0]
+            else:
+                # KAİZEN: Self-Healing Logic
+                # If the user is authenticated but missing a record in user_profiles,
+                # we create a fallback record from Auth metadata. This prevents
+                # users from being 'invisible' in the admin dashboard.
+                if admin_key and url:
+                    try:
+                        admin_db = create_client(url, admin_key)
+                        auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
+                        if auth_user and auth_user.user:
+                            email = auth_user.user.email
+                            new_profile = {
+                                "user_id": user_id_str,
+                                "email": email,
+                                "display_name": email.split("@")[0] if email else "User",
+                                "role": "user",
+                                "plan_type": "trial",
+                                "subscription_status": "trial",
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                            admin_db.table("user_profiles").insert(new_profile).execute()
+                            base_data = new_profile
+                            print(f"[Profile] Self-healed missing profile for {user_id_str}")
+                            
+                            # Initialize default settings
+                            admin_db.table("settings").upsert({
+                                "user_id": user_id_str,
+                                "threshold_percent": 1.0,
+                                "check_frequency_minutes": 1440,
+                                "notifications_enabled": True,
+                                "currency": "TRY",
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                            }).execute()
+                    except Exception as he:
+                        print(f"[Profile] Self-healing attempt failed: {he}")
         except Exception as e:
             print(f"Base Profile Fetch Error: {e}")
 
-    # 1. Fetch subscription info (truth source) from the auth profiles table
-    # We use the Service Role key here because standard RLS might block
-    # cross-user lookups even for enrichment logic.
-    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    # 2. Fetch subscription info (truth source) from the auth profiles table
 
     plan = "trial"
     status = "trial"
@@ -99,7 +136,7 @@ async def get_enriched_profile_logic(
             is_admin_role = (
                 base_data
                 and base_data.get("role")
-                and base_data.get("role").lower()
+                and str(base_data.get("role")).lower()
                 in ["admin", "market_admin", "market admin"]
             )
 
@@ -128,9 +165,12 @@ async def get_enriched_profile_logic(
         bypass_active = True
 
     # Final Merge: Take base profile metadata and inject calculated plan status
-    profile_result: Dict[str, Any] = (
-        base_data.copy() if base_data else {"user_id": user_id_str}
-    )
+    profile_result: Dict[str, Any] = {}
+    if base_data:
+        profile_result.update(base_data)
+    else:
+        profile_result["user_id"] = user_id_str
+    
     profile_result["plan_type"] = plan
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active

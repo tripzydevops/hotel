@@ -57,6 +57,13 @@ export const en = {
     protectedText: "Automated Market Intel • Enterprise Security Layer",
     errorTitle: "Authentication Error",
     emailPlaceholder: "name@company.com",
+    verifyTitle: "Verify your account",
+    verifySubtitle: "Enter the 6-digit code sent to {email}",
+    otpLabel: "Verification Code",
+    verifyButton: "Verify & Dashboard",
+    resendButton: "Resend Code",
+    wrongEmail: "Entered wrong email?",
+    alreadyHaveCode: "Already have a code?",
   },
   dashboard: {
     title: "Rate Intelligence Grid",
