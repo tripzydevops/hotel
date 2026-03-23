@@ -4,12 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
-import { useAuth } from "@insforge/nextjs";
+import { useInsforge } from "@insforge/nextjs";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { t } = useI18n();
-  const { signIn, signUp, verifyEmail, resendVerificationEmail } = useAuth();
+  const { signIn, signUp, verifyEmail, resendVerificationEmail } = useInsforge();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
