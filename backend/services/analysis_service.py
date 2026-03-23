@@ -468,44 +468,86 @@ async def perform_market_analysis(
     price_rank_list.sort(key=lambda x: x["price"])
     for i, item in enumerate(price_rank_list): item["rank"] = i+1
 
-    market_avg = sum(current_prices) / len(current_prices) if current_prices else 0.0
-    ari = (target_price / market_avg) * 100 if target_price and market_avg > 0 else None
+    market_average = sum(current_prices) / len(current_prices) if current_prices else 0.0
+    market_min = min(current_prices) if current_prices else 0.0
+    market_max = max(current_prices) if current_prices else 0.0
+    
+    # Finding min/max hotel objects for tooltips
+    min_h_obj = next((h for h in price_rank_list if h["price"] == market_min), {"name": "N/A"})
+    max_h_obj = next((h for h in price_rank_list if h["price"] == market_max), {"name": "N/A"})
+    
+    # [NEW] Collect all available room types in the market logs for the dropdown
+    all_room_names = set()
+    for p_logs in hotel_prices_map.values():
+        if p_logs:
+            rt_list = p_logs[0].get("room_types") or []
+            for rt in rt_list:
+                if isinstance(rt, dict) and rt.get("name"):
+                    all_room_names.add(rt["name"])
+    
+    # [NEW] Pre-map hotels to the frontend's interface
+    transformed_hotels = [
+        {"id": str(h["id"]), "name": h.get("name", "Unknown"), "is_target": str(h["id"]) == target_hotel_id}
+        for h in hotels
+    ]
+    
+    # Ranking
+    comp_rank = next((h["rank"] for h in price_rank_list if h["is_target"]), 1)
+    
+    ari = (target_price / market_average) * 100 if target_price and market_average > 0 else None
     sent_index = (target_sentiment / avg_sent_val) * 100 if target_sentiment and avg_sent_val > 0 else None
 
-    # Advisory
+    # Advisory logic mapping to localized keys in the frontend
+    advisory_keys = []
+    if ari and ari < 90: advisory_keys.append("underpriced")
+    if ari and ari > 110: advisory_keys.append("overpriced")
+    if sent_index and sent_index > 105: advisory_keys.append("strong_sentiment")
+    
+    # [FIX] Type stability for final return
+    ari_val: float = float(ari or 100.0)
+    sent_val: float = float(sent_index or 100.0)
+
+    # Advisory Labels for the quadrant
     q_label = "Neutral"
     if ari is None or sent_index is None: 
         q_label = "Insufficient Data"
     else:
-        # Narrowing types for the linter with explicit shadowing and type checking
-        # This prevents the IDE from flagging potential None comparisons
-        _ari_val: float = float(ari or 100.0)
-        _sent_val: float = float(sent_index or 100.0)
-        if _ari_val >= 100.0 and _sent_val >= 100.0: q_label = "Premium King"
-        elif _ari_val < 100.0 and _sent_val >= 100.0: q_label = "Value Leader"
-        elif _ari_val >= 100.0 and _sent_val < 100.0: q_label = "Danger Zone"
+        if ari_val >= 100.0 and sent_val >= 100.0: q_label = "Premium King"
+        elif ari_val < 100.0 and sent_val >= 100.0: q_label = "Value Leader"
+        elif ari_val >= 100.0 and sent_val < 100.0: q_label = "Danger Zone"
         else: q_label = "Economy"
 
+    # Find the target hotel object for narrative context
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
-    
-    # [FIX] Final numeric stability before return
-    ari_val: float = float(ari or 100.0)
-    sent_val: float = float(sent_index or 100.0)
 
+    # Building a consistent response object that follows the KAİZEN frontend contract
     return {
         "hotel_id": target_hotel_id,
         "hotel_name": target_hotel_name,
-        "market_avg": float(int(float(market_avg) * 100) / 100.0) if market_avg > 0 else 0.0, 
-        "target_price": float(int(float(target_price) * 100) / 100.0) if target_price else 0.0,
+        "market_average": float(int(market_average * 100) / 100.0) if market_average > 0 else 0.0,
+        "market_avg": float(int(market_average * 100) / 100.0) if market_average > 0 else 0.0,  # Legacy alias
+        "target_price": float(int((target_price or 0.0) * 100) / 100.0),
+        "market_min": market_min,
+        "market_max": market_max,
+        "min_hotel": {"name": min_h_obj.get("name"), "price": market_min},
+        "max_hotel": {"name": max_h_obj.get("name"), "price": market_max},
+        "all_hotels": transformed_hotels,  # Cleaned for AnalysisFilters
         "total_hotels": len(hotels),
         "total_competitors": len(hotels) - 1 if len(hotels) > 0 else 0,
+        "available_room_types": sorted(list(all_room_names)),
+        "competitive_rank": comp_rank,
+        "market_rank": comp_rank,
         "ari": float(int(ari_val * 10) / 10.0), 
         "sent_index": float(int(sent_val * 10) / 10.0),
         "quadrant_label": q_label,
+        "quadrant_x": ari_val,
+        "quadrant_y": sent_val,
         "price_rank_list": price_rank_list,
         "price_history": target_history,
+        "daily_prices": target_history, # Alias for the chart component
         "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
-        "synthetic_narrative": generate_synthetic_narrative(ari, sent_index, target_h.get("pricing_dna_text") if target_h else None, target_hotel_name)
+        "advisory_keys": advisory_keys,
+        "synthetic_narrative": generate_synthetic_narrative(ari_val, sent_val, target_h.get("pricing_dna_text") if target_h else None, target_hotel_name)
     }
 
 
@@ -542,15 +584,23 @@ async def get_market_intelligence_data(
         logger.warning(f"[Analysis] Zero hotels found for user_id {user_id}. Potential mapping issue.")
         return {
             "hotels": [], 
+            "all_hotels": [],
             "total_hotels": 0, 
             "total_competitors": 0, 
+            "market_average": 0.0,
             "market_avg": 0.0, 
+            "market_min": 0.0,
+            "market_max": 0.0,
             "target_price": 0.0,
             "ari": 100.0,
             "sent_index": 100.0,
             "quadrant_label": "No Data Found",
+            "quadrant_x": 100.0,
+            "quadrant_y": 100.0,
             "price_rank_list": [],
             "price_history": [],
+            "daily_prices": [],
+            "advisory_keys": [],
             "recommendation": f"DEBUG: user_id={user_id} | raw={len(all_hotels)} | check hotels_table mapping"
         }
 
