@@ -3,6 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.utils.db import get_supabase
 from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegistry
 from backend.services.hotel_service import (
     search_hotel_directory_logic,
@@ -23,15 +24,14 @@ async def search_hotel_directory(
     q: str,
     user_id: Optional[UUID] = Query(None),
     city: Optional[str] = Query(None),
-    db: Optional[Client] = Depends(get_supabase_rls),
-    current_user=Depends(get_current_active_user),
+    db: Client = Depends(get_supabase),
 ):
-    """Search hotel directory (local + live callback)."""
-    if not q or len(q.strip()) < 2 or not db:
+    """Search hotel directory (local + live callback). No auth required."""
+    if not q or len(q.strip()) < 2:
         return []
-    # EXPLANATION: Unified Hotel Search
-    # Combines local directory lookups with a live SerpApi fallback for
-    # maximum discoverability during the "Add Hotel" flow.
+    # EXPLANATION: Unified Hotel Search (Public Access)
+    # This endpoint is public to support the "Add Hotel" discovery flow
+    # without requiring a session for initial searching.
     return await search_hotel_directory_logic(q, user_id, db, city)
     # EXPLANATION: Search Route Enhancement
     # Added 'city' parameter to endpoints to support the frontend's

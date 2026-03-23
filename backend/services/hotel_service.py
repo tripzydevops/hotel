@@ -51,6 +51,12 @@ async def search_hotel_directory_logic(
 
     # 1. Local Lookup (Primary)
     query = db.table("hotel_directory").select("*")
+    
+    # EXPLANATION: Smart Location Filtering
+    # If a city is selected in the UI, we prioritize results from that location.
+    # We use 'ilike' with wildcards to handle "City, Country" formats in the DB.
+    if city:
+        query = query.ilike("location", f"%{city}%")
 
     # Simple OR matching for multi-word search, plus a catch-all for the full string
     conditions = [f"name.ilike.%{q_normalized}%", f"location.ilike.%{q_normalized}%"]
@@ -78,7 +84,7 @@ async def search_hotel_directory_logic(
 
         for w in q_words:
             if w in h_combined:
-                hotel_score = hotel_score + 10
+                hotel_score = cast(int, hotel_score) + 10
 
         h["_search_score"] = float(hotel_score)
         local_results.append(h)
@@ -127,8 +133,9 @@ async def search_hotel_directory_logic(
             action_type="search",
         )
 
-    # Return top matches with explicit list conversion for linter
-    return list(merged_results[:40])
+    # Return top matches with explicit casting to satisfy linter
+    final_output = cast(List[Dict[str, Any]], list(merged_results[:40]))
+    return final_output
 
 
 async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
