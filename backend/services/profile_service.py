@@ -179,6 +179,8 @@ async def get_enriched_profile_logic(
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active
     
+    profile_result["timezone"] = profile_result.get("timezone") or "UTC"
+    
     # Finalize is_verified if not already set by bypass
     if is_verified_by_bypass:
         profile_result["is_verified"] = True

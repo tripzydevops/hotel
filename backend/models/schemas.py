@@ -174,7 +174,7 @@ class UserProfileBase(BaseModel):
     job_title: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
-    timezone: str = Field(default="UTC")
+    timezone: Optional[str] = "UTC"
 
     class Config:
         from_attributes = True
