@@ -111,7 +111,6 @@ class ApiKeyManager:
                     self._renewal_info[api_key] = manual_date or data.get(
                         "plan_renewal_date", "Unknown"
                     )
-                    self._quota_info[api_key] = left
                     
                     # Store limit info
                     limit = CREDIT_LIMITS.get(api_key[-5:]) or 100
@@ -665,34 +664,53 @@ class SerpApiClient:
             params["gl"] = "uk"
         elif currency == "EUR":
             params["gl"] = "fr"
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(SERPAPI_BASE_URL, params=params)
+        async def make_request(current_params):
+            async with httpx.AsyncClient(timeout=35.0) as client:
+                try:
+                    resp = await client.get(SERPAPI_BASE_URL, params=current_params)
+                    is_err, is_perm = self._is_quota_error(resp)
+                    while is_err:
+                        failed_key = str(current_params.get("api_key", ""))
+                        logger.warning(f"SerpApi Key Rotation: {failed_key[:10]}... is {'PERMANENTLY' if is_perm else 'TEMPORARILY'} exhausted.")
+                        if self._key_manager.rotate_key(failed_key=failed_key, is_permanent=is_perm):
+                            current_params["api_key"] = self.api_key
+                            resp = await client.get(SERPAPI_BASE_URL, params=current_params)
+                            is_err, is_perm = self._is_quota_error(resp)
+                        else:
+                            return None, "quota_exhausted"
+                    
+                    resp.raise_for_status()
+                    return resp, None
+                except Exception as e:
+                    logger.error(f"SerpApi Request Error: {e}")
+                    return None, "request_error"
 
-                # Robust Rotation Loop: Continue trying other keys until success or exhaustion
-                is_err, is_perm = self._is_quota_error(response)
-                while is_err:
-                    failed_key = str(params.get("api_key", ""))
-                    logger.warning(
-                        f"Key {self._key_manager.current_key_index} encountered {'PERMANENT' if is_perm else 'TEMPORARY'} limit. Rotating..."
-                    )
-                    if self._key_manager.rotate_key(failed_key=failed_key, is_permanent=is_perm):
-                        params["api_key"] = self.api_key
-                        response = await client.get(SERPAPI_BASE_URL, params=params)
-                        is_err, is_perm = self._is_quota_error(response)
-                    else:
-                        logger.critical(
-                            "All SerpApi keys exhausted for fetch_hotel_price"
-                        )
-                        return {"error": "quota_exhausted", "status": "error"}
+        # 1. Primary Attempt (Specific ID if provided)
+        response, err = await make_request(params)
+        if err == "quota_exhausted":
+             return {"error": "quota_exhausted", "status": "error"}
+        
+        if response:
+            result = self._parse_hotel_result(
+                response.json(), hotel_name, currency, serp_api_id
+            )
+            if result and result.get("price"):
+                return result
 
-                response.raise_for_status()
+        # 2. KAİZEN: Keyword Fallback (If ID failed or returned no price)
+        if serp_api_id:
+            logger.info(f"[SerpApi] Stale ID {serp_api_id} or no price found for {hotel_name}. Retrying with keyword search...")
+            params.pop("property_token", None)
+            params.pop("hotel_id", None)
+            params["q"] = f"{hotel_name} {location}"
+            
+            response, err = await make_request(params)
+            if response:
                 return self._parse_hotel_result(
-                    response.json(), hotel_name, currency, serp_api_id
+                    response.json(), hotel_name, currency, None
                 )
-        except Exception as e:
-            logger.error(f"Error fetching {hotel_name}: {e}")
-            return None
+        
+        return None
 
     def _parse_hotel_result(
         self,

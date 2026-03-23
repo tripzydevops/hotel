@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Add project root to path
 sys.path.append(os.getcwd())
 
-load_dotenv(".env.local", override=True)
+load_dotenv(".env", override=True)
 
 from backend.utils.db import get_supabase
 from backend.agents.scraper_agent import ScraperAgent
