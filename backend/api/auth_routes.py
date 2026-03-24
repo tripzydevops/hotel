@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import Any
 from backend.services.auth_service import get_current_active_user
+from backend.utils.db import get_supabase
+from supabase import Client
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -8,36 +10,44 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.get("/user")
-async def get_user_info(current_user: Any = Depends(get_current_active_user)):
+async def get_user_info(request: Request, db: Client = Depends(get_supabase)):
     """
     Returns the current authenticated user's profile information.
-    This endpoint is used by the frontend SDK/middleware for session validation.
+    Direct implementation to avoid recursion loops.
     """
+    from backend.services.auth_service import get_token, get_current_active_user
     try:
-        # Note: current_user is already verified by get_current_active_user dependency
-        return {"user": current_user}
+        token = get_token(request)
+        # Use a non-recursive path or direct SDK call
+        user = await get_current_active_user(token, db)
+        return {"user": user}
     except Exception as e:
         logger.error(f"Error in /api/auth/user: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during user retrieval")
+        raise HTTPException(status_code=401, detail=str(e))
 
 @router.get("/sessions/current")
-async def get_current_session(current_user: Any = Depends(get_current_active_user)):
-    """
-    Returns the current active session information.
-    Matches the 'sessions/current' path pattern expected by internal service calls.
-    """
+async def get_current_session(request: Request, db: Client = Depends(get_supabase)):
+    from backend.services.auth_service import get_token, get_current_active_user
     try:
-        return {"user": current_user}
+        token = get_token(request)
+        user = await get_current_active_user(token, db)
+        return {"user": user}
     except Exception as e:
         logger.error(f"Error in /api/auth/sessions/current: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during session retrieval")
+        raise HTTPException(status_code=401, detail=str(e))
 
 v1_router = APIRouter(prefix="/auth/v1", tags=["Authentication-V1"])
 
 @v1_router.get("/sessions/current", include_in_schema=False)
-async def get_current_session_v1(current_user: Any = Depends(get_current_active_user)):
-    return {"user": current_user}
+async def get_current_session_v1(request: Request, db: Client = Depends(get_supabase)):
+    from backend.services.auth_service import get_token, get_current_active_user
+    token = get_token(request)
+    user = await get_current_active_user(token, db)
+    return {"user": user}
 
 @v1_router.get("/user", include_in_schema=False)
-async def get_user_info_v1(current_user: Any = Depends(get_current_active_user)):
-    return {"user": current_user}
+async def get_user_info_v1(request: Request, db: Client = Depends(get_supabase)):
+    from backend.services.auth_service import get_token, get_current_active_user
+    token = get_token(request)
+    user = await get_current_active_user(token, db)
+    return {"user": user}

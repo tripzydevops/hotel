@@ -39,7 +39,7 @@ def get_token(request: Request) -> str:
     raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
 
 
-async def get_current_admin_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):
+async def get_current_admin_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the request is made by an Admin.
     Checks Authorization header (JWT) via Supabase Auth.
@@ -51,16 +51,23 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
     try:
         # Call InsForge to verify token
         try:
-            base_url = str(db.auth._url).rstrip('/')
-            auth_url = f"{base_url}/sessions/current"
-            
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "apikey": str(db.supabase_key)
-            }
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.get(auth_url, headers=headers, timeout=10.0)
+            # ADD LOOP DETECTION
+            if request.headers.get("X-Internal-Auth-Request") == "true":
+                logger.warning("Admin Auth Loop Detected: Falling back to direct SDK.")
+                user_resp = db.auth.get_user(token)
+                if user_resp and getattr(user_resp, "user", None):
+                    user_obj = user_resp.user
+                else:
+                    raise HTTPException(status_code=401, detail="Internal Admin Auth Loop - SDK Failed")
+            else:
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "apikey": str(db.supabase_key),
+                    "X-Internal-Auth-Request": "true"
+                }
+                
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(auth_url, headers=headers, timeout=10.0)
                 
             if response.status_code == 200 and response.text.strip():
                 try:
@@ -136,7 +143,7 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
         raise HTTPException(status_code=401, detail=f"Auth Critical Failure: {str(e)}")
 
 
-async def get_current_active_user(token: str = Depends(get_token), db: Client = Depends(get_supabase)):
+async def get_current_active_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the user is logged in AND has an active approval status.
     Blocks access if account is 'suspended' or 'rejected'.
@@ -155,9 +162,18 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
             auth_url = f"{base_url}/sessions/current"
             
             logger.info(f"Verifying token against: {auth_url}")
+            # CHECK FOR LOOP PREVENT
+            if request.headers.get("X-Internal-Auth-Request") == "true":
+                logger.warning("SKIP RECURSIVE AUTH CALL: Falling back to SDK/Direct verification.")
+                user_resp = db.auth.get_user(token)
+                if user_resp and getattr(user_resp, "user", None):
+                    return user_resp.user
+                raise HTTPException(status_code=401, detail="Internal Auth Loop Detected - SDK Failed")
+
             headers = {
                 "Authorization": f"Bearer {token}",
-                "apikey": str(db.supabase_key)
+                "apikey": str(db.supabase_key),
+                "X-Internal-Auth-Request": "true"
             }
             
             async with httpx.AsyncClient() as client:
@@ -179,10 +195,18 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                         logger.warning("Empty user object in 200 response")
                         raise ValueError("Empty user")
                 except Exception as json_e:
-                    logger.warning(f"JSON Parse Failed for auth response: {json_e}")
+                    logger.warning(f"JSON Parse Failed for auth response! Status: {response.status_code}")
+                    logger.warning(f"Response Body (first 500 chars): {response.text[:500]}")
                     raise json_e
             else:
-                logger.error(f"InsForge Auth Proxy Failed or Empty (Status: {response.status_code}, Length: {len(response.text)})")
+                # If we hit our own proxy and it returned 404 or something, don't loop
+                if response.status_code == 404 and "X-Internal-Auth-Request" in headers:
+                     logger.error("Internal Auth Loop Detected (404 on proxy). Aborting recursive call.")
+                     raise HTTPException(status_code=401, detail="Auth configuration error: Loop detected")
+
+                logger.error(f"InsForge Auth Proxy Failed (Status: {response.status_code}, Length: {len(response.text)})")
+                if response.status_code == 401:
+                    raise HTTPException(status_code=401, detail="Invalid or expired token")
                 # Fallback to Supabase SDK just in case
                 user_resp = db.auth.get_user(token)
                 if not user_resp or not getattr(user_resp, "user", None):
