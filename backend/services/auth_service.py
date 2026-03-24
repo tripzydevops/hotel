@@ -17,6 +17,8 @@ from types import SimpleNamespace
 # EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
+print("!!! AUTH SERVICE MODULE LOADING !!!")
+
 
 def get_token(request: Request) -> str:
     """
@@ -174,16 +176,15 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
 
         try:
             # Check 'profiles' table first (legacy consistency)
-            # NOTE: 'is_verified' is NOT in 'profiles', but 'role' IS.
             res = (
                 db.table("profiles")
-                .select("subscription_status, role")
+                .select("role")
                 .eq("id", str(user_id))
                 .maybe_single()
                 .execute()
             )
+            logger.info(f"DB PROFILE CHECK for {user_id}: {res.data}")
             if res.data:
-                status = res.data.get("subscription_status")
                 user_role = res.data.get("role", "authenticated")
             
             # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
@@ -194,6 +195,7 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                 .maybe_single()
                 .execute()
             )
+            logger.info(f"DB USER_PROFILE CHECK for {user_id}: {res2.data}")
             if res2.data:
                 # user_profiles takes precedence for these security fields
                 status = res2.data.get("subscription_status") or status
@@ -201,12 +203,11 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
                 user_role = res2.data.get("role") or user_role
 
         except Exception as status_e:
-            # If DB check fails, we default to pending/safe state but DON'T crash 500
             logger.warning(f"Could not verify status for {user_id}: {status_e}")
 
         # [POLICY] Enforce Admin Verification
-        # EXCEPTION: Users with 'admin' roles bypass the is_verified check
         is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"]
+        logger.info(f"AUTH GATE RESULT: is_verified={is_verified}, is_admin={is_admin}, role={user_role}")
         
         if not is_verified and not is_admin:
             logger.warning(f"Blocked unverified user {getattr(user, 'email', 'Unknown')} ({user_id})")
