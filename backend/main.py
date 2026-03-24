@@ -100,6 +100,23 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# ROUTE NORMALIZATION MIDDLEWARE
+@app.middleware("http")
+async def strip_p_api_prefix(request: Request, call_next):
+    """
+    Strips the '/p-api' prefix from incoming requests.
+    This ensures that requests from the Next.js frontend (proxied via /p-api)
+    match the internal FastAPI routes which are typically prefixed with /api.
+    """
+    if request.scope["path"].startswith("/p-api"):
+        request.scope["path"] = request.scope["path"].replace("/p-api", "", 1)
+        # Ensure it doesn't leave an empty string if path was exactly /p-api
+        if not request.scope["path"]:
+            request.scope["path"] = "/"
+            
+    return await call_next(request)
+
+
 # DIAGNOSTIC: Root Ping
 @app.get("/ping")
 async def root_ping():
