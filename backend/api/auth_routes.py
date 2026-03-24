@@ -32,11 +32,12 @@ async def get_current_session(current_user: Any = Depends(get_current_active_use
         logger.error(f"Error in /api/auth/sessions/current: {e}")
         raise HTTPException(status_code=500, detail="Internal server error during session retrieval")
 
-# COMPATIBILITY ALIASES: Some SDKs call /auth/v1 instead of /api/auth
-@router.get("/auth/v1/sessions/current", include_in_schema=False)
+v1_router = APIRouter(prefix="/auth/v1", tags=["Authentication-V1"])
+
+@v1_router.get("/sessions/current", include_in_schema=False)
 async def get_current_session_v1(current_user: Any = Depends(get_current_active_user)):
     return {"user": current_user}
 
-@router.get("/auth/v1/user", include_in_schema=False)
+@v1_router.get("/user", include_in_schema=False)
 async def get_user_info_v1(current_user: Any = Depends(get_current_active_user)):
     return {"user": current_user}

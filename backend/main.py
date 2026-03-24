@@ -261,6 +261,7 @@ app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
 app.include_router(recovery_routes.router)
 app.include_router(auth_routes.router)
+app.include_router(auth_routes.v1_router)
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
