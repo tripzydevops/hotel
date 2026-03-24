@@ -43,8 +43,6 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
         client.postgrest.auth(jwt)
         # Fix InsForge path issue: supabase-py appends /rest/v1 by default
         client.postgrest.base_url = URL(f"{url}/api/database/records/")
-        # Ensure Auth client also uses the correct base path
-        client.auth._url = f"{url}/api/auth"
         return client
 
     # Admin access using Service Role Key
@@ -57,7 +55,6 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
             print(f"[DATABASE] Initializing client for {url}")
         client = create_client(url, key)
         client.postgrest.base_url = URL(f"{url}/api/database/records/")
-        client.auth._url = f"{url}/api/auth"
         return client
     except Exception as e:
         print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
