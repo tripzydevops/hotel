@@ -51,39 +51,56 @@ async def get_current_admin_user(token: str = Depends(get_token), db: Client = D
     try:
         # Call InsForge to verify token
         try:
-            auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
+            base_url = str(db.auth._url).rstrip('/')
+            auth_url = f"{base_url}/sessions/current"
+            
             headers = {
                 "Authorization": f"Bearer {token}",
                 "apikey": str(db.supabase_key)
             }
             
-            with httpx.Client() as client:
-                response = client.get(auth_url, headers=headers)
+            async with httpx.AsyncClient() as client:
+                response = await client.get(auth_url, headers=headers, timeout=10.0)
                 
-            if response.status_code == 200:
-                user_data = response.json().get("user")
-                if not user_data:
-                    raise HTTPException(status_code=401, detail="Invalid Admin Session Payload")
-                
-                # Mock a user object structure similar to Supabase User for compatibility
-                user_obj = SimpleNamespace(
-                    id=user_data.get("id"),
-                    email=user_data.get("email"),
-                    role=user_data.get("role", "authenticated"),
-                    app_metadata=user_data.get("app_metadata", {}),
-                    user_metadata=user_data.get("user_metadata", {})
-                )
+            if response.status_code == 200 and response.text.strip():
+                try:
+                    user_data = response.json().get("user")
+                    if user_data:
+                        # Mock a user object structure similar to Supabase User for compatibility
+                        user_obj = SimpleNamespace(
+                            id=user_data.get("id"),
+                            email=user_data.get("email"),
+                            role=user_data.get("role", "authenticated"),
+                            app_metadata=user_data.get("app_metadata", {}),
+                            user_metadata=user_data.get("user_metadata", {})
+                        )
+                    else:
+                        raise ValueError("Empty user")
+                except Exception:
+                    # Fallback to SDK
+                    user_resp = db.auth.get_user(token)
+                    if not user_resp or not getattr(user_resp, "user", None):
+                        raise HTTPException(status_code=401, detail="Invalid Session Payload")
+                    user_obj = user_resp.user
             else:
-                logger.error(f"InsForge Admin Auth Failed ({response.status_code}): {response.text[:200]}")
+                logger.error(f"InsForge Admin Auth Failed or Empty ({response.status_code}): {response.text[:200]}")
                 # Fallback
                 user_resp = db.auth.get_user(token)
-                if not user_resp or not user_resp.user:
+                if not user_resp or not getattr(user_resp, "user", None):
                     raise HTTPException(status_code=401, detail="InsForge: Invalid Token")
                 user_obj = user_resp.user
         except Exception as auth_e:
-            raise HTTPException(
-                status_code=401, detail=f"InsForge Auth Error: {str(auth_e)}"
-            )
+            # Final fallback
+            try:
+                user_resp = db.auth.get_user(token)
+                if user_resp and getattr(user_resp, "user", None):
+                    user_obj = user_resp.user
+                else:
+                    raise auth_e
+            except Exception:
+                raise HTTPException(
+                    status_code=401, detail=f"InsForge Auth Error: {str(auth_e)}"
+                )
 
         user_id = getattr(user_obj, "id", None)
         email = getattr(user_obj, "email", None)
@@ -133,39 +150,56 @@ async def get_current_active_user(token: str = Depends(get_token), db: Client = 
 
         try:
             # KAIZEN: Direct call to InsForge session endpoint to avoid SDK path mismatches
-            auth_url = f"{str(db.auth._url).rstrip('/')}/sessions/current"
+            # We use the internal .app URL if available, otherwise fallback to the SDK's configured URL
+            base_url = str(db.auth._url).rstrip('/')
+            auth_url = f"{base_url}/sessions/current"
+            
+            logger.info(f"Verifying token against: {auth_url}")
             headers = {
                 "Authorization": f"Bearer {token}",
                 "apikey": str(db.supabase_key)
             }
             
-            with httpx.Client() as client:
-                response = client.get(auth_url, headers=headers)
+            async with httpx.AsyncClient() as client:
+                response = await client.get(auth_url, headers=headers, timeout=10.0)
                 
-            if response.status_code == 200:
-                user_data = response.json().get("user")
-                if not user_data:
-                    raise HTTPException(status_code=401, detail="Invalid Session Payload")
-                
-                # Mock a user object structure similar to Supabase User for compatibility
-                user = SimpleNamespace(
-                    id=user_data.get("id"),
-                    email=user_data.get("email"),
-                    role=user_data.get("role", "authenticated"),
-                    app_metadata=user_data.get("app_metadata", {}),
-                    user_metadata=user_data.get("user_metadata", {})
-                )
+            if response.status_code == 200 and response.text.strip():
+                try:
+                    user_data = response.json().get("user")
+                    if user_data:
+                        # Mock a user object structure similar to Supabase User for compatibility
+                        user = SimpleNamespace(
+                            id=user_data.get("id"),
+                            email=user_data.get("email"),
+                            role=user_data.get("role", "authenticated"),
+                            app_metadata=user_data.get("app_metadata", {}),
+                            user_metadata=user_data.get("user_metadata", {})
+                        )
+                    else:
+                        logger.warning("Empty user object in 200 response")
+                        raise ValueError("Empty user")
+                except Exception as json_e:
+                    logger.warning(f"JSON Parse Failed for auth response: {json_e}")
+                    raise json_e
             else:
-                logger.error(f"InsForge Auth Failed ({response.status_code}): {response.text[:200]}")
+                logger.error(f"InsForge Auth Proxy Failed or Empty (Status: {response.status_code}, Length: {len(response.text)})")
                 # Fallback to Supabase SDK just in case
                 user_resp = db.auth.get_user(token)
                 if not user_resp or not getattr(user_resp, "user", None):
-                    raise HTTPException(status_code=401, detail=f"Authentication Failed: {response.text[:100]}")
+                    raise HTTPException(status_code=401, detail=f"Authentication Failed (Proxy+SDK)")
                 user = user_resp.user
                 
         except Exception as auth_e:
             logger.error(f"Auth Token Verification Failed: {auth_e}")
-            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
+            # Final fallback: try the SDK directly if everything else failed
+            try:
+                user_resp = db.auth.get_user(token)
+                if user_resp and getattr(user_resp, "user", None):
+                    user = user_resp.user
+                else:
+                    raise auth_e
+            except Exception:
+                raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
 
         user_id = getattr(user, "id", None)
 
