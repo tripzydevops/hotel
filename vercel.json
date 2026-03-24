@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/p-api/:path*",
+      "destination": "/backend/main.py"
+    }
+  ]
+}

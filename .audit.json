@@ -1,0 +1,16 @@
+{
+  "frontend_api": "lib/api.ts",
+  "backend_api_dir": "backend/api/",
+  "api_prefix": "/api",
+  "base_url": "https://hotel-delta-green.vercel.app",
+  "i18n_components": [
+    "components/",
+    "app/"
+  ],
+  "i18n_dicts": [
+    "dictionaries/en.ts",
+    "dictionaries/tr.ts"
+  ],
+  "i18n_function": "t",
+  "smoke_test_timeout": 15
+}

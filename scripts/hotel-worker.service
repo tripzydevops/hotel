@@ -1,0 +1,15 @@
+[Unit]
+Description=Hotel Rate Sentinel Worker
+After=network.target
+
+[Service]
+User=successofmentors
+Group=successofmentors
+WorkingDirectory=/home/tripzydevops/hotel
+ExecStart=/home/tripzydevops/hotel/venv/bin/celery -A backend.celery_app worker --loglevel=info -Q celery --pool=solo -n worker_turbo@%h
+Restart=always
+Environment=PYTHONPATH=/home/tripzydevops/hotel
+EnvironmentFile=/home/tripzydevops/hotel/.env
+
+[Install]
+WantedBy=multi-user.target

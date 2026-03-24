@@ -1,0 +1,29 @@
+[project]
+name = "hotel"
+version = "0.1.0"
+description = "Hotel Rate Monitor"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "supabase>=2.3.0",
+    "httpx>=0.26.0",
+    "yarl>=1.9.0",
+    "pywebpush>=1.14.0",
+    "beautifulsoup4>=4.12.0",
+    "psycopg2-binary>=2.9.0",
+    "numpy>=1.26.0",
+    "psutil>=5.9.0",
+    "requests>=2.31.0",
+    "py-vapid>=1.9.0",
+    "sse-starlette>=2.0.0",
+    "xhtml2pdf>=0.2.16",
+    "reportlab>=4.1.0",
+    "html5lib>=1.1",
+    "svglib<1.6.0",
+    "jinja2>=3.1.0",
+]
+
+
