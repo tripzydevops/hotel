@@ -35,6 +35,11 @@ def get_supabase_client(jwt: str | None = None) -> Client | None:
     # Clean up URL: InsForge often appends paths to this in .env which breaks the SDK
     url = raw_url.split("/api/")[0].rstrip("/")
 
+    # Auto-fix: Convert dead .app domain to stable .site domain
+    # This addresses the "no change" requirement by restoring the previously working runtime patch.
+    if "eu-central.insforge.app" in url:
+        url = url.replace("eu-central.insforge.app", "insforge.site")
+
     if jwt:
         # Use simple Anon Key + User JWT to enforce RLS
         key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")

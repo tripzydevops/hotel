@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from typing import Any
 from backend.services.auth_service import get_current_active_user
 from backend.utils.db import get_supabase
@@ -9,21 +10,29 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-@router.get("/user")
+@router.get("/user", include_in_schema=True)
 async def get_user_info(request: Request, db: Client = Depends(get_supabase)):
-    """
-    Returns the current authenticated user's profile information.
-    Direct implementation to avoid recursion loops.
-    """
+    """Returns current user info."""
     from backend.services.auth_service import get_token, get_current_active_user
     try:
         token = get_token(request)
-        # Use a non-recursive path or direct SDK call
         user = await get_current_active_user(token, db)
         return {"user": user}
     except Exception as e:
         logger.error(f"Error in /api/auth/user: {e}")
         raise HTTPException(status_code=401, detail=str(e))
+
+@router.api_route("/sync-token", methods=["GET", "POST", "HEAD"])
+async def sync_token(request: Request, db: Client = Depends(get_supabase)):
+    """Internal SDK endpoint for session synchronization."""
+    from backend.services.auth_service import get_token, get_current_active_user
+    try:
+        token = get_token(request)
+        user = await get_current_active_user(token, db)
+        return {"user": user, "status": "synced"}
+    except Exception as e:
+        # Return structured JSON even on failure to prevent frontend 'Invalid JSON' crashes
+        return JSONResponse(status_code=401, content={"detail": str(e), "status": "unsynced"})
 
 @router.get("/sessions/current")
 async def get_current_session(request: Request, db: Client = Depends(get_supabase)):

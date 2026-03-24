@@ -5,7 +5,7 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app';
+const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.insforge.site';
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 console.log('Testing InsForge Client initialization...');
