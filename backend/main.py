@@ -146,7 +146,7 @@ async def manual_cors_middleware(request: Request, call_next):
         response = await call_next(request)
     
     origin = request.headers.get("origin")
-    if origin and (".vercel.app" in origin or ".insforge.site" in origin or "localhost" in origin):
+    if origin and response and (".vercel.app" in origin or ".insforge.site" in origin or "localhost" in origin):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"

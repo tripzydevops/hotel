@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
             source: "/p-api/:path*",
             destination: "/api/index.py",
           },
+          {
+            source: "/auth/v1/:path*",
+            destination: "/api/index.py",
+          },
         ],
     ].flat();
   },
