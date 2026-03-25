@@ -15,25 +15,15 @@ def get_supabase_client() -> Optional[Client]:
     
     import traceback
     try:
-        from supabase import create_client, ClientOptions
-        # SDK manual overrides MUST include the API version suffixes
-        opts = ClientOptions(
-            postgrest_url=f"{rest_url}/rest/v1",
-            gotrue_url=f"{auth_url}/auth/v1"
-        )
-        client = create_client(rest_url, key, options=opts)
-        
-        # Verify connectivity for REST specifically
-        try:
-            # We don't execute, just check if the property is initialized
-            print(f"[V27] Client Ready. REST: {client.postgrest.url}, Auth: {client.auth.url}")
-        except Exception:
-            pass
-            
+        from supabase import create_client
+        # Standard initialization (SDK appends /rest/v1 and /auth/v1 automatically)
+        client = create_client(rest_url, key)
         return client
     except Exception as e:
-        print(f"[V27] CRITICAL ALLOCATION FAILURE: {e}")
-        print(traceback.format_exc())
+        import traceback
+        with open("/tmp/backend_error.log", "a") as f:
+            f.write(f"CRITICAL ALLOCATION FAILURE: {str(e)}\n")
+            f.write(traceback.format_exc())
         return None
 
 def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
