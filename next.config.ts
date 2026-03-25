@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL = "https://pa5riyqv.eu-central.insforge.app";
-
 const nextConfig: NextConfig = {
   typescript: {
     // KAIZEN: Enforce type safety for production stability
@@ -58,6 +56,14 @@ const nextConfig: NextConfig = {
         hostname: "*.hotels.com",
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "/api/index.py",
+      },
+    ];
   },
 };
 

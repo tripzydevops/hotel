@@ -331,7 +331,8 @@ export default function LoginPage() {
           <div className="mt-4 p-4 bg-black/80 rounded-xl border border-white/10 text-[10px] font-mono text-green-400 overflow-auto max-h-48">
             <pre>{JSON.stringify({
               config: {
-                baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+                // KAİZEN: Show actual client baseUrl instead of potentially stale env var
+                baseUrl: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SUPABASE_URL,
                 anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'missing'
               },
               lastResult: debugInfo,
