@@ -14,10 +14,23 @@ def get_supabase_client() -> Optional[Client]:
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     
     import traceback
+    # V28_LEGACY_IP_BRIDGE
+    ip_address = "52.29.21.196"
+    host_header = "pa5riyqv.eu-central.insforge.app"
+    
     try:
-        from supabase import create_client
-        # Standard initialization (SDK appends /rest/v1 and /auth/v1 automatically)
-        client = create_client(rest_url, key)
+        import httpx
+        from supabase import create_client, ClientOptions
+        
+        # Bypass Vercel Lambda DNS failure by using direct IP + Host Header
+        # Note: verify=False is required as the SSL cert SNI won't match the IP
+        http_client = httpx.Client(verify=False)
+        opts = ClientOptions(
+            http_client=http_client,
+            headers={"Host": host_header}
+        )
+        
+        client = create_client(f"https://{ip_address}", key, options=opts)
         return client
     except Exception as e:
         import traceback
