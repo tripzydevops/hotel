@@ -1,4 +1,4 @@
-# V28_TRANSPORT_BRIDGE_STABLE: 2026-03-25T21:12:00Z
+# V28_HOOK_BRIDGE_FINAL: 2026-03-25T21:15:00Z
 import os
 from typing import Optional
 from supabase import create_client, Client, ClientOptions
@@ -9,30 +9,32 @@ import traceback
 
 load_dotenv()
 
+def dns_bypass_hook(request):
+    # TRANSPARENT DNS BYPASS
+    # We catch the 'api.insforge.dev' request and point it to the global ingress IP
+    # while keeping the host header intact for the AWS ALB.
+    if request.url.host == "api.insforge.dev":
+        request.url = request.url.copy_with(host="3.13.63.83")
+        request.headers["Host"] = "api.insforge.dev"
+
 def get_supabase_client(jwt: Optional[str] = None) -> Optional[Client]:
-    # V28: GLOBAL TRANSPORT BRIDGE (SNI-AWARE)
-    target_ip = "3.13.63.83" # api.insforge.dev Ingress
-    domain = "api.insforge.dev"
-    url = f"https://{domain}"
+    url = "https://api.insforge.dev"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163" 
     
     try:
-        # SNI-AWARE PROXY: We tell httpx to connect to the IP 
-        # but keep the Host header and SNI identification as the domain.
-        # This is the industry-standard way to bypass DNS partitions.
+        # We hook every request to force the IP mapping
         http_client = httpx.Client(
-            base_url=f"https://{target_ip}", # Connect to IP
-            headers={"Host": domain},        # Route to Domain
             verify=False,
-            timeout=20.0
+            timeout=30.0,
+            event_hooks={'request': [dns_bypass_hook]}
         )
         
         supabase: Client = create_client(
-            url, # Use the REAL domain here so SDK paths are correct
+            url, 
             key, 
             options=ClientOptions(
-                postgrest_client_timeout=20,
-                storage_client_timeout=20,
+                postgrest_client_timeout=30,
+                storage_client_timeout=30,
                 http_client=http_client
             )
         )
@@ -42,9 +44,8 @@ def get_supabase_client(jwt: Optional[str] = None) -> Optional[Client]:
             
         return supabase
     except Exception as e:
-        # Log to stderr so it shows up in Vercel/Terminal logs
         import sys
-        print(f"[V28] BRIDGE FAIL: {e}", file=sys.stderr)
+        print(f"[V28.6] HOOK FAIL: {e}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         return None
 
@@ -53,6 +54,6 @@ def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
         from fastapi import HTTPException
         raise HTTPException(
             status_code=500, 
-            detail="Database client failed to initialize. (V28: Transport Bridge Seizure)"
+            detail="Database client failed to initialize. (V28.6: Hook Bridge Failure)"
         )
     return client
