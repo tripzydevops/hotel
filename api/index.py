@@ -1,8 +1,4 @@
-"""
-EXPLANATION: Serverless Entry Point for Vercel/InsForge
-Consolidates the modular FastAPI app into a single function endpoint.
-By importing 'app' from backend.main, we preserve all route definitions and middleware.
-V17_FORCE_SYNC: 2026-03-25T17:55:00Z
+# V18_FORCE_SYNC: 2026-03-25T18:18:00Z
 """
 
 import os

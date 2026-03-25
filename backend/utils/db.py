@@ -1,7 +1,4 @@
-"""
-Shared database utilities and dependencies.
-Provides the Supabase client and consistent auth helpers.
-REDEPLOY TRIGGER: 2026-03-25T14:26:00Z
+# V18_FORCE_SYNC: 2026-03-25T18:18:00Z
 """
 
 import os
