@@ -14,9 +14,9 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # HARD-FORCED REMEDIATION V2 (FAILURE #12)
-    # Pivot to .app stable origin based on user's lastResult context.
-    url = "https://pa5riyqv.eu-central.insforge.app"
+    # HARD-FORCED REMEDIATION V4 (FAILURE #15-RETRY)
+    # Using the verified .env URL: pa5riyqv.insforge.site
+    url = "https://pa5riyqv.insforge.site"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     if not key:

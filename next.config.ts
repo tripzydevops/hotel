@@ -57,6 +57,22 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "/api/index.py",
+      },
+      {
+        source: "/auth/v1/:path*",
+        destination: "https://pa5riyqv.insforge.site/auth/v1/:path*",
+      },
+      {
+        source: "/rest/v1/:path*",
+        destination: "https://pa5riyqv.insforge.site/rest/v1/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
