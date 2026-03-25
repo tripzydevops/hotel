@@ -9,16 +9,13 @@ import traceback
 
 load_dotenv()
 
-def get_supabase_client() -> Optional[Client]:
-    # V28: REGIONAL POD ROUTING
+def get_supabase_client(jwt: Optional[str] = None) -> Optional[Client]:
+    # V28: REGIONAL POD ROUTING + RLS COMPATIBILITY
     auth_url = "https://pa5riyqv.eu-central.insforge.app"
     rest_url = "https://pa5riyqv.eu-central.insforge.app"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163" 
     
     try:
-        # We use a custom httpx client to allow regional pod routing
-        # The SDK sometimes rejects the pod-level domains if SNI mismatches, 
-        # so we ensure verify is set to False for the regional bridge.
         http_client = httpx.Client(verify=False)
         
         supabase: Client = create_client(
@@ -30,10 +27,14 @@ def get_supabase_client() -> Optional[Client]:
                 http_client=http_client
             )
         )
+        
+        # If a JWT is provided, we Must attach it to the client for RLS to work on the pod
+        if jwt:
+            supabase.postgrest.auth(jwt)
+            
         return supabase
     except Exception as e:
         print(f"[V28] FAIL: {e}")
-        print(traceback.format_exc())
         return None
 
 def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
