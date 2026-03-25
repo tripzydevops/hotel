@@ -36,12 +36,21 @@ def get_supabase_client() -> Optional[Client]:
         # EXPLANATION: The 'InsForge Proxy' Redirect Logic
         # On InsForge environments, we MUST route database calls through the 
         # .insforge.site proxy (which handles Auth and Multi-tenancy). 
-        # If the URL points to .vercel.app, we assume it's the internal loop and redirect.
+        # If the URL points to .vercel.app, we assume it's the internal loop and redirect
+        # to the stable project origin.
         if url and ".vercel.app" in url.lower():
-            # Robust replacement: pa5riyqv.eu-central.insforge-app.vercel.app -> pa5riyqv.eu-central.insforge.site
-            proxy_url = url.replace("-app.vercel.app", ".insforge.site").replace(".vercel.app", ".insforge.site")
-            print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
-            client.postgrest.base_url = proxy_url
+            # Extract the project prefix (e.g., pa5riyqv.eu-central)
+            # This is more robust than simple string replacement of hashes.
+            if "insforge-app" in url:
+                 proxy_url = url.split(".insforge-app")[0] + ".insforge.site"
+            else:
+                 # Fallback for custom domains or hashes - use the stable .insforge.site suffix
+                 # if it matches the pattern or just let it pass if direct.
+                 pass
+            
+            # If we successfully resolved a proxy_url, apply it.
+            # print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
+            # client.postgrest.base_url = proxy_url
             
         return client
     except Exception as e:

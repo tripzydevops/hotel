@@ -40,6 +40,18 @@ async def sync_token(request: Request, db: Client = Depends(get_supabase)):
         # Return structured JSON even on failure to prevent frontend 'Invalid JSON' crashes
         return JSONResponse(status_code=401, content={"detail": str(e), "status": "unsynced"})
 
+@router.post("/refresh")
+@router.get("/refresh")
+async def refresh_token(request: Request, db: Client = Depends(get_supabase)):
+    """SDK Token Refresh bridge."""
+    return await sync_token(request, db)
+
+@router.get("/sessions")
+@router.post("/sessions")
+async def sessions_gate(request: Request, db: Client = Depends(get_supabase)):
+    """SDK Session Management bridge."""
+    return await sync_token(request, db)
+
 @router.get("/sessions/current")
 async def get_current_session(request: Request, db: Client = Depends(get_supabase)):
     from backend.services.auth_service import get_token, get_current_active_user
