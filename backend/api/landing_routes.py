@@ -1,10 +1,3 @@
-"""
-EXPLANATION: Landing Page API Routes
-
-Handles public and admin endpoints for the Landing Page CMS.
-Supports multi-language content fetching and upserting via the 'locale' dimension.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
@@ -15,11 +8,9 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["landing"])
 
-
 class ConfigUpdate(BaseModel):
     locale: str = "tr"
-    configs: List[Dict[str, Any]]  # List of {"key": "...", "content": {...}}
-
+    configs: List[Dict[str, Any]]
 
 @router.get("/landing/config")
 async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
@@ -31,18 +22,18 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
             .eq("locale", locale)
             .execute()
         )
-        # Convert list of {key, content} to dict {key: content} for easier frontend use
         config_dict = {item["key"]: item["content"] for item in res.data}
         return config_dict
     except Exception as e:
         import traceback
+        # V19: Added active_url visibility to debug Split-Gateway failover
         return JSONResponse(status_code=500, content={
-            "message": "Landing config failed (V15 Diagnostic - FORCE SYNC)", 
+            "message": "Landing config failed (V19 Diagnostic - FORCE SYNC)", 
+            "active_url": str(db.supabase_url) if hasattr(db, 'supabase_url') else "unknown",
             "error_type": str(type(e).__name__),
             "details": str(e),
             "trace": traceback.format_exc()
         })
-
 
 @router.get("/admin/landing/config")
 async def get_admin_landing_config(
@@ -50,7 +41,6 @@ async def get_admin_landing_config(
     current_user: dict = Depends(get_current_admin_user),
     db: Client = Depends(get_supabase),
 ):
-    """Admin endpoint to fetch raw configuration for editing."""
     try:
         res = (
             db.table("landing_page_config")
@@ -63,22 +53,18 @@ async def get_admin_landing_config(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.put("/admin/landing/config")
 async def update_landing_config(
     data: ConfigUpdate,
     current_user: dict = Depends(get_current_admin_user),
     db: Client = Depends(get_supabase),
 ):
-    """Admin endpoint to update multiple configuration keys at once."""
     try:
-        # Perform upserts for each config item
         for item in data.configs:
             db.table("landing_page_config").upsert(
                 {"key": item["key"], "locale": data.locale, "content": item["content"]},
                 on_conflict="key,locale",
             ).execute()
-
         return {
             "status": "success",
             "message": f"Updated {len(data.configs)} sections ({data.locale})",
