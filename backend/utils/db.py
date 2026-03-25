@@ -41,16 +41,18 @@ def get_supabase_client() -> Optional[Client]:
         if url and ".vercel.app" in url.lower():
             # Extract the project prefix (e.g., pa5riyqv.eu-central)
             # This is more robust than simple string replacement of hashes.
+            project_prefix = None
             if "insforge-app" in url:
-                 proxy_url = url.split(".insforge-app")[0] + ".insforge.site"
+                project_prefix = url.split(".insforge-app")[0]
             else:
-                 # Fallback for custom domains or hashes - use the stable .insforge.site suffix
-                 # if it matches the pattern or just let it pass if direct.
-                 pass
+                 # KAİZEN: Fallback to the known stable prefix for this project.
+                 # Avoids 404s on 'Cannot GET /rest/v1/...' by skipping the Vercel same-origin loop.
+                 project_prefix = "pa5riyqv.eu-central"
             
-            # If we successfully resolved a proxy_url, apply it.
-            # print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
-            # client.postgrest.base_url = proxy_url
+            if project_prefix:
+                proxy_url = f"https://{project_prefix}.insforge.site"
+                print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
+                client.postgrest.base_url = proxy_url
             
         return client
     except Exception as e:
