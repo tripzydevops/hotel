@@ -37,7 +37,7 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
     except Exception as e:
         import traceback
         return JSONResponse(status_code=500, content={
-            "message": "Landing config failed (V11 Diagnostic)", 
+            "message": "Landing config failed (V15 Diagnostic - FORCE SYNC)", 
             "error_type": str(type(e).__name__),
             "details": str(e),
             "trace": traceback.format_exc()
