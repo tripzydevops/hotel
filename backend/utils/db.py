@@ -8,10 +8,9 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # V19: DUAL-SERVICE PROBE
+    # V23: PRODUCTION LOCK (.site)
     gateways = [
-        "https://pa5riyqv.eu-central.insforge.app",
-        "https://c6db35ac-d7e6-43a4-956d-ad71853f0b3b.eu-central.insforge.app"
+        "https://pa5riyqv.insforge.site"
     ]
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     

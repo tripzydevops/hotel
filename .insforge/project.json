@@ -4,5 +4,6 @@
   "org_id": "9703085f-6c6c-43aa-940e-4fcb5974e972",
   "appkey": "pa5riyqv",
   "region": "eu-central",
-  "api_key": "ik_4697b4a8df7380fb98a348d2d8c6d163"
+  "api_key": "ik_4697b4a8df7380fb98a348d2d8c6d163",
+  "oss_host": "https://pa5riyqv.insforge.site"
 }
