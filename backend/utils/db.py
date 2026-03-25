@@ -14,9 +14,10 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # HARD-FORCED REMEDIATION V6 (ABSOLUTE HARDCODE)
-    # Bypassing os.getenv to ensure the build environment doesn't mangle keys.
-    url = "https://pa5riyqv.insforge.site"
+    # HARD-FORCED REMEDIATION V8 (DASHBOARD ALIGNMENT)
+    # The .site domain was verified as a redirect. We use the Dashboard's .app URL.
+    # Reverting to the canonical key 'H4Unbw...' which matches the user's settings.
+    url = "https://pa5riyqv.eu-central.insforge.app"
     key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODIwNDB9.H4Unbw_QgpvcAV-qytM9WUkk0s74So1Dnj318lt_2ZQ"
     
     if not key:

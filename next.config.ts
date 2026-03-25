@@ -65,11 +65,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/auth/v1/:path*",
-        destination: "https://pa5riyqv.insforge.site/auth/v1/:path*",
+        destination: "https://pa5riyqv.eu-central.insforge.app/auth/v1/:path*",
       },
       {
         source: "/rest/v1/:path*",
-        destination: "https://pa5riyqv.insforge.site/rest/v1/:path*",
+        destination: "https://pa5riyqv.eu-central.insforge.app/rest/v1/:path*",
       },
     ];
   },
