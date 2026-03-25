@@ -14,19 +14,39 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # HARD-FORCED REMEDIATION V9 (SERVICE ROLE ELEVATION)
-    # The Python backend acts as an administrator and MUST use the Service Role Key
-    # to bypass RLS on system tables like 'landing_config'.
-    url = "https://pa5riyqv.eu-central.insforge.app"
+    # V14: SMART GATEWAY PROBE
+    # We probe multiple known gateways to find the healthy one.
+    gateways = [
+        "https://pa5riyqv.eu-central.insforge.app",
+        "https://c6db35ac-d7e6-43a4-956d-ad71853f0b3b.eu-central.insforge.app",
+        "https://pa5riyqv.insforge.site"
+    ]
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     
-    if not key:
-        print("[DB] CRITICAL: Supabase Key missing.")
-        return None
+    import httpx
+    import time
+    
+    winner = gateways[0] # Default
+    for gw in gateways:
+        try:
+            # We check the auth health first as it's the most stable endpoint
+            resp = httpx.get(f"{gw}/auth/v1/health", timeout=2.0)
+            if resp.status_code == 200:
+                print(f"[DB] Winner Gateway Found: {gw}")
+                winner = gw
+                break
+            if resp.status_code == 503:
+                # Cold start?
+                time.sleep(1)
+                resp = httpx.get(f"{gw}/auth/v1/health", timeout=5.0)
+                if resp.status_code == 200:
+                    winner = gw
+                    break
+        except Exception:
+            continue
 
     try:
-        # Standard initialization with the hard-coded stable proxy
-        client = create_client(url, key)
+        client = create_client(winner, key)
         return client
     except Exception as e:
         print(f"[DB] Client Initialization Failed: {e}")
