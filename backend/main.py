@@ -187,6 +187,15 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 # Basic Health/Diagnostic Endpoints
+@app.get("/api/health/db")
+async def db_health():
+    import os
+    return {
+        "resolved_url": "https://pa5riyqv.eu-central.insforge.site",
+        "env_url": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
+        "key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+    }
+
 @app.get("/api/health")
 async def health_check():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")

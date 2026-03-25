@@ -1,7 +1,7 @@
 """
 Shared database utilities and dependencies.
 Provides the Supabase client and consistent auth helpers.
-REDEPLOY TRIGGER: 2026-03-17T11:58:00Z
+REDEPLOY TRIGGER: 2026-03-25T14:26:00Z
 """
 
 import os
@@ -14,36 +14,18 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    """
-    EXPLANATION: Supabase Client Factory with Vercel/InsForge Patching
-    
-    1. Direct Supabase: Uses NEXT_PUBLIC_SUPABASE_URL (e.g., xyz.supabase.co)
-    2. Vercel Loop Protection: If URL is the Vercel app itself, it force-patches 
-       to the .insforge.site proxy to avoid infinite request loops.
-    """
-    raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    url = raw_url
+    # HARD-FORCED REMEDIATION (FAILURE #12)
+    # To fix the "3-day login outage", we are bypassing environment variable detection
+    # for the URL to ensure it is PHYSICALLY IMPOSSIBLE for the backend to hit the Vercel loop.
+    url = "https://pa5riyqv.eu-central.insforge.site"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
-    if not url or not key:
-        print("[DB] CRITICAL: Supabase environment variables missing.")
+    if not key:
+        print("[DB] CRITICAL: Supabase Key missing.")
         return None
 
-    # EXPLANATION: The 'Vercel Loop' Nuclear Option
-    # If the URL is set to the same origin (Vercel), database calls will loop back 
-    # to Vercel and 404. We hard-patch to the stable InsForge proxy to bridge this.
-    if url and (".vercel.app" in url.lower() or "localhost" in url.lower()):
-        # Hardcoded project ID discovered from 'lastResult.baseUrl'
-        project_id = "pa5riyqv"
-        region = "eu-central"
-        url = f"https://{project_id}.{region}.insforge.site"
-        print(f"[DB] Loop Protection triggered: {raw_url} -> {url}")
-
     try:
-        # KAİZEN: Standard String Manipulation vs fragile 'yarl' dependency
-        # Vercel builds often fail on native C-extensions like yarl if not pinned correctly.
-        client = create_client(url, key)
-        
+        # Standard initialization with the hard-coded stable proxy
         client = create_client(url, key)
         return client
     except Exception as e:
