@@ -21,39 +21,30 @@ def get_supabase_client() -> Optional[Client]:
     2. Vercel Loop Protection: If URL is the Vercel app itself, it force-patches 
        to the .insforge.site proxy to avoid infinite request loops.
     """
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    url = raw_url
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     if not url or not key:
         print("[DB] CRITICAL: Supabase environment variables missing.")
         return None
 
+    # EXPLANATION: The 'Vercel Loop' Nuclear Option
+    # If the URL is set to the same origin (Vercel), database calls will loop back 
+    # to Vercel and 404. We hard-patch to the stable InsForge proxy to bridge this.
+    if url and (".vercel.app" in url.lower() or "localhost" in url.lower()):
+        # Hardcoded project ID discovered from 'lastResult.baseUrl'
+        project_id = "pa5riyqv"
+        region = "eu-central"
+        url = f"https://{project_id}.{region}.insforge.site"
+        print(f"[DB] Loop Protection triggered: {raw_url} -> {url}")
+
     try:
         # KAİZEN: Standard String Manipulation vs fragile 'yarl' dependency
         # Vercel builds often fail on native C-extensions like yarl if not pinned correctly.
         client = create_client(url, key)
         
-        # EXPLANATION: The 'InsForge Proxy' Redirect Logic
-        # On InsForge environments, we MUST route database calls through the 
-        # .insforge.site proxy (which handles Auth and Multi-tenancy). 
-        # If the URL points to .vercel.app, we assume it's the internal loop and redirect
-        # to the stable project origin.
-        if url and ".vercel.app" in url.lower():
-            # Extract the project prefix (e.g., pa5riyqv.eu-central)
-            # This is more robust than simple string replacement of hashes.
-            project_prefix = None
-            if "insforge-app" in url:
-                project_prefix = url.split(".insforge-app")[0]
-            else:
-                 # KAİZEN: Fallback to the known stable prefix for this project.
-                 # Avoids 404s on 'Cannot GET /rest/v1/...' by skipping the Vercel same-origin loop.
-                 project_prefix = "pa5riyqv.eu-central"
-            
-            if project_prefix:
-                proxy_url = f"https://{project_prefix}.insforge.site"
-                print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
-                client.postgrest.base_url = proxy_url
-            
+        client = create_client(url, key)
         return client
     except Exception as e:
         print(f"[DB] Client Initialization Failed: {e}")
