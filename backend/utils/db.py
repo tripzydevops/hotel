@@ -14,10 +14,9 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # HARD-FORCED REMEDIATION (FAILURE #12)
-    # To fix the "3-day login outage", we are bypassing environment variable detection
-    # for the URL to ensure it is PHYSICALLY IMPOSSIBLE for the backend to hit the Vercel loop.
-    url = "https://pa5riyqv.eu-central.insforge.site"
+    # HARD-FORCED REMEDIATION V2 (FAILURE #12)
+    # Pivot to .app stable origin based on user's lastResult context.
+    url = "https://pa5riyqv.eu-central.insforge.app"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     if not key:

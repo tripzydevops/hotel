@@ -5,7 +5,8 @@ Handles public and admin endpoints for the Landing Page CMS.
 Supports multi-language content fetching and upserting via the 'locale' dimension.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
 from supabase import Client
 from backend.utils.db import get_supabase
@@ -34,7 +35,12 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
         config_dict = {item["key"]: item["content"] for item in res.data}
         return config_dict
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # KAİZEN DEBUG: Return actual URL to track the loop source
+        return JSONResponse(status_code=500, content={
+            "message": "Landing config failed", 
+            "internal_url": str(getattr(db.postgrest, 'base_url', 'UNKNOWN')),
+            "details": str(e)
+        })
 
 
 @router.get("/admin/landing/config")
