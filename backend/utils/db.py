@@ -8,33 +8,24 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # V23: PRODUCTION LOCK (.site)
-    gateways = [
-        "https://pa5riyqv.insforge.site"
-    ]
+    # V25: DUAL-GATEWAY RECOVERY
+    # Auth @ api.insforge.dev (Verified JSON)
+    # Data @ pa5riyqv.insforge.site (Verified REST)
+    auth_url = "https://api.insforge.dev"
+    rest_url = "https://pa5riyqv.insforge.site"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     
-    import httpx
-    import time
-    
-    winner = gateways[0] 
-    for gw in gateways:
-        try:
-            # We must probe BOTH Auth and REST
-            auth_resp = httpx.get(f"{gw}/auth/v1/health", timeout=2.0)
-            rest_resp = httpx.get(f"{gw}/rest/v1/", timeout=2.0)
-            
-            if auth_resp.status_code == 200 and rest_resp.status_code in [200, 301, 302, 401]:
-                print(f"[DB] FULL SERVICE Winner Found: {gw}")
-                winner = gw
-                break
-        except Exception as e:
-            continue
-
     try:
-        client = create_client(winner, key)
+        from supabase import create_client, ClientOptions
+        opts = ClientOptions(
+            postgrest_url=f"{rest_url}/rest/v1",
+            gotrue_url=f"{auth_url}/auth/v1"
+        )
+        # The base URL is required but overridden by options
+        client = create_client(rest_url, key, options=opts)
         return client
-    except Exception:
+    except Exception as e:
+        print(f"[DB] Allocation Failure: {e}")
         return None
 
 def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):

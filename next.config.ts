@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/auth/v1/:path*",
-        destination: "https://pa5riyqv.insforge.site/auth/v1/:path*",
+        destination: "https://api.insforge.dev/auth/v1/:path*",
       },
       {
         source: "/rest/v1/:path*",
