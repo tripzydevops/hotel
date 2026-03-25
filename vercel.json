@@ -1,17 +1,17 @@
 {
   "framework": "nextjs",
   "rewrites": [
-    { 
-      "source": "/api/(.*)", 
-      "destination": "/api/index.py" 
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
-    { 
-      "source": "/auth/v1/(.*)", 
-      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1" 
+    {
+      "source": "/auth/v1/(.*)",
+      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
     },
-    { 
-      "source": "/rest/v1/(.*)", 
-      "destination": "https://pa5riyqv.eu-central.insforge.app/rest/v1/$1" 
+    {
+      "source": "/rest/v1/(.*)",
+      "destination": "https://pa5riyqv.eu-central.insforge.app/rest/v1/$1"
     }
   ]
 }

@@ -9,8 +9,8 @@ load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
     # V27: ABSOLUTE PATH RESTORATION
-    auth_url = "https://api.insforge.dev"
-    rest_url = "https://pa5riyqv.insforge.site"
+    auth_url = "https://pa5riyqv.eu-central.insforge.app"
+    rest_url = "https://pa5riyqv.eu-central.insforge.app"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     
     import traceback
