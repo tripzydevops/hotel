@@ -22,6 +22,12 @@ async def get_user_info(request: Request, db: Client = Depends(get_supabase)):
         logger.error(f"Error in /api/auth/user: {e}")
         raise HTTPException(status_code=401, detail=str(e))
 
+@router.api_route("", methods=["GET", "POST", "HEAD"])
+@router.api_route("/", methods=["GET", "POST", "HEAD"])
+async def auth_root_sync(request: Request, db: Client = Depends(get_supabase)):
+    """Unified endpoint for base /api/auth calls (SDK compatibility)."""
+    return await sync_token(request, db)
+
 @router.api_route("/sync-token", methods=["GET", "POST", "HEAD"])
 async def sync_token(request: Request, db: Client = Depends(get_supabase)):
     """Internal SDK endpoint for session synchronization."""

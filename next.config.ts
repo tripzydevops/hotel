@@ -7,18 +7,7 @@ const nextConfig: NextConfig = {
     // KAIZEN: Enforce type safety for production stability
     ignoreBuildErrors: false,
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${BACKEND_URL}/api/:path*`,
-      },
-      {
-        source: "/auth/:path*",
-        destination: `${BACKEND_URL}/auth/:path*`,
-      },
-    ];
-  },
+  // [REMOVED] Legacy External Proxy. API now handled by local Python backend at api/index.py
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
   experimental: {

@@ -6,6 +6,6 @@ export const insforge = createClient({
   // Server calls use direct backend URL to bypass Vercel loop limits.
   baseUrl: typeof window !== 'undefined' 
     ? window.location.origin 
-    : (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app'),
+    : (process.env.NEXT_PUBLIC_SUPABASE_URL || ''),
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
