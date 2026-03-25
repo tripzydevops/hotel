@@ -35,11 +35,12 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
         config_dict = {item["key"]: item["content"] for item in res.data}
         return config_dict
     except Exception as e:
-        # KAİZEN DEBUG: Return actual URL to track the loop source
+        import traceback
         return JSONResponse(status_code=500, content={
-            "message": "Landing config failed", 
-            "internal_url": str(getattr(db.postgrest, 'base_url', 'UNKNOWN')),
-            "details": str(e)
+            "message": "Landing config failed (V10 Diagnostic)", 
+            "error_type": str(type(e).__name__),
+            "details": str(e),
+            "trace": traceback.format_exc()
         })
 
 

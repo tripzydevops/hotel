@@ -4,7 +4,15 @@ export default InsforgeMiddleware({
   baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   signInUrl: '/login',
   useBuiltInAuth: false,
-  publicRoutes: ['/', '/login', '/api/auth*', '/auth/callback', '/api/landing/config'],
+  publicRoutes: [
+    '/', 
+    '/login', 
+    '/api/auth*', 
+    '/auth/v1*', 
+    '/rest/v1*', 
+    '/auth/callback', 
+    '/api/landing/config'
+  ],
 });
 
 export const config = {
