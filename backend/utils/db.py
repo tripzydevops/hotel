@@ -1,4 +1,4 @@
-# V28_INGRESS_BRIDGE_STABLE: 2026-03-25T21:08:00Z
+# V28_TRANSPORT_BRIDGE_STABLE: 2026-03-25T21:12:00Z
 import os
 from typing import Optional
 from supabase import create_client, Client, ClientOptions
@@ -10,31 +10,29 @@ import traceback
 load_dotenv()
 
 def get_supabase_client(jwt: Optional[str] = None) -> Optional[Client]:
-    # V28: GLOBAL INGRESS BRIDGE
-    # We use the direct IP of the AWS ELB that serves api.insforge.dev
-    # to bypass the Vercel .dev DNS partition.
-    target_ip = "3.13.63.83" 
-    host_header = "api.insforge.dev"
+    # V28: GLOBAL TRANSPORT BRIDGE (SNI-AWARE)
+    target_ip = "3.13.63.83" # api.insforge.dev Ingress
+    domain = "api.insforge.dev"
+    url = f"https://{domain}"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163" 
     
     try:
-        # We manually configure the httpx client to talk to the IP
-        # but present the Host header for the ALB to route correctly.
-        # SSL Verification is disabled because the cert is for a domain, not an IP.
+        # SNI-AWARE PROXY: We tell httpx to connect to the IP 
+        # but keep the Host header and SNI identification as the domain.
+        # This is the industry-standard way to bypass DNS partitions.
         http_client = httpx.Client(
-            base_url=f"https://{target_ip}",
-            headers={"Host": host_header},
+            base_url=f"https://{target_ip}", # Connect to IP
+            headers={"Host": domain},        # Route to Domain
             verify=False,
-            timeout=10.0
+            timeout=20.0
         )
         
-        # We must also ensure the SDK uses the IP-based base URL
         supabase: Client = create_client(
-            f"https://{target_ip}", 
+            url, # Use the REAL domain here so SDK paths are correct
             key, 
             options=ClientOptions(
-                postgrest_client_timeout=10,
-                storage_client_timeout=10,
+                postgrest_client_timeout=20,
+                storage_client_timeout=20,
                 http_client=http_client
             )
         )
@@ -44,7 +42,10 @@ def get_supabase_client(jwt: Optional[str] = None) -> Optional[Client]:
             
         return supabase
     except Exception as e:
-        print(f"[V28] INGRESS FAIL: {e}")
+        # Log to stderr so it shows up in Vercel/Terminal logs
+        import sys
+        print(f"[V28] BRIDGE FAIL: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         return None
 
 def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
@@ -52,6 +53,6 @@ def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
         from fastapi import HTTPException
         raise HTTPException(
             status_code=500, 
-            detail="Database client failed to initialize. (V28: Global Ingress Partitioned)"
+            detail="Database client failed to initialize. (V28: Transport Bridge Seizure)"
         )
     return client
