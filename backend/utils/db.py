@@ -1,66 +1,55 @@
 """
 Shared database utilities and dependencies.
 Provides the Supabase client and consistent auth helpers.
+REDEPLOY TRIGGER: 2026-03-17T11:58:00Z
 """
 
-from fastapi import Depends
 import os
+from typing import Optional
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
-from yarl import URL
+from fastapi import Depends
 
+# load_dotenv() is called in main.py, but we keep it here as a safety for standalone util usage
 load_dotenv()
 
-
-def get_supabase() -> Client:
+def get_supabase_client() -> Optional[Client]:
     """
-    Default database dependency.
-    By default returns an admin client (Service Role).
-    USE WITH CAUTION: This bypasses RLS.
+    EXPLANATION: Supabase Client Factory with Vercel/InsForge Patching
+    
+    1. Direct Supabase: Uses NEXT_PUBLIC_SUPABASE_URL (e.g., xyz.supabase.co)
+    2. Vercel Loop Protection: If URL is the Vercel app itself, it force-patches 
+       to the .insforge.site proxy to avoid infinite request loops.
     """
-    return get_supabase_client()
-
-
-def get_supabase_client(jwt: str | None = None) -> Client | None:
-    """
-    Dependency to provide a Supabase client.
-    Optionally accepts a JWT to enable Row-Level Security (RLS).
-    If no JWT is provided, it uses SERVICE_ROLE_KEY (admin access).
-    """
-    raw_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    if not raw_url:
-        print("[DATABASE] CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    
+    if not url or not key:
+        print("[DB] CRITICAL: Supabase environment variables missing.")
         return None
-        
-    # Clean up URL: InsForge often appends paths to this in .env which breaks the SDK
-    url = raw_url.split("/api/")[0].rstrip("/")
-
-    # Auto-fix: Convert dead .app domain to stable .site domain
-    # This addresses the "no change" requirement by restoring the previously working runtime patch.
-    if "eu-central.insforge.app" in url:
-        url = url.replace("eu-central.insforge.app", "insforge.site")
-
-    if jwt:
-        # Use simple Anon Key + User JWT to enforce RLS
-        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-        opts = ClientOptions(headers={"Authorization": f"Bearer {jwt}"})
-        client = create_client(url, key, options=opts)
-        client.postgrest.auth(jwt)
-        # Fix InsForge path issue: supabase-py appends /rest/v1 by default
-        client.postgrest.base_url = URL(f"{url}/api/database/records/")
-        return client
-
-    # Admin access using Service Role Key
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not key:
-        key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
     try:
-        if os.getenv("DEBUG_DB") == "1":
-            print(f"[DATABASE] Initializing client for {url}")
+        # KAİZEN: Standard String Manipulation vs fragile 'yarl' dependency
+        # Vercel builds often fail on native C-extensions like yarl if not pinned correctly.
         client = create_client(url, key)
-        client.postgrest.base_url = URL(f"{url}/api/database/records/")
+        
+        # EXPLANATION: The 'InsForge Proxy' Redirect Logic
+        # On InsForge environments, we MUST route database calls through the 
+        # .insforge.site proxy (which handles Auth and Multi-tenancy). 
+        # If the URL points to .vercel.app, we assume it's the internal loop and redirect.
+        if url and ".vercel.app" in url.lower():
+            # Robust replacement: pa5riyqv.eu-central.insforge-app.vercel.app -> pa5riyqv.eu-central.insforge.site
+            proxy_url = url.replace("-app.vercel.app", ".insforge.site").replace(".vercel.app", ".insforge.site")
+            print(f"[DB] Loop detected. Patching base_url: {url} -> {proxy_url}")
+            client.postgrest.base_url = proxy_url
+            
         return client
     except Exception as e:
-        print(f"[DATABASE] CRITICAL: Initialization failed: {str(e)}")
+        print(f"[DB] Client Initialization Failed: {e}")
         return None
+
+def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
+    if not client:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Database client failed to initialize. Check environment variables.")
+    return client
