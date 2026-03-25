@@ -14,11 +14,11 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # HARD-FORCED REMEDIATION V8 (DASHBOARD ALIGNMENT)
-    # The .site domain was verified as a redirect. We use the Dashboard's .app URL.
-    # Reverting to the canonical key 'H4Unbw...' which matches the user's settings.
+    # HARD-FORCED REMEDIATION V9 (SERVICE ROLE ELEVATION)
+    # The Python backend acts as an administrator and MUST use the Service Role Key
+    # to bypass RLS on system tables like 'landing_config'.
     url = "https://pa5riyqv.eu-central.insforge.app"
-    key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODIwNDB9.H4Unbw_QgpvcAV-qytM9WUkk0s74So1Dnj318lt_2ZQ"
+    key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
     
     if not key:
         print("[DB] CRITICAL: Supabase Key missing.")
