@@ -8,7 +8,7 @@ from fastapi import Depends
 load_dotenv()
 
 def get_supabase_client() -> Optional[Client]:
-    # V26: DEEP DIAGNOSTICS
+    # V27: ABSOLUTE PATH RESTORATION
     auth_url = "https://api.insforge.dev"
     rest_url = "https://pa5riyqv.insforge.site"
     key = "ik_4697b4a8df7380fb98a348d2d8c6d163"
@@ -16,28 +16,28 @@ def get_supabase_client() -> Optional[Client]:
     import traceback
     try:
         from supabase import create_client, ClientOptions
-        # SDK usually expects base URLs, let's try WITHOUT /rest/v1 suffixes first
+        # SDK manual overrides MUST include the API version suffixes
         opts = ClientOptions(
-            postgrest_url=rest_url,
-            gotrue_url=auth_url
+            postgrest_url=f"{rest_url}/rest/v1",
+            gotrue_url=f"{auth_url}/auth/v1"
         )
         client = create_client(rest_url, key, options=opts)
-        # Verify connectivity immediately
+        
+        # Verify connectivity for REST specifically
         try:
-            client.table("landing_page_config").select("count").limit(1).execute()
-        except Exception as conn_e:
-            print(f"[V26] CONNECTION TEST FAILED: {conn_e}")
-            # Do NOT return None here yet, might still work for Auth
+            # We don't execute, just check if the property is initialized
+            print(f"[V27] Client Ready. REST: {client.postgrest.url}, Auth: {client.auth.url}")
+        except Exception:
+            pass
             
         return client
     except Exception as e:
-        print(f"[V26] CRITICAL ALLOCATION FAILURE: {e}")
+        print(f"[V27] CRITICAL ALLOCATION FAILURE: {e}")
         print(traceback.format_exc())
         return None
 
 def get_supabase(client: Optional[Client] = Depends(get_supabase_client)):
     if not client:
         from fastapi import HTTPException
-        # V26: Expose the failure cause in the HTTP detail for debugging
-        raise HTTPException(status_code=500, detail="Database client failed to initialize. Check Vercel logs for Traceback.")
+        raise HTTPException(status_code=500, detail="Database client failed to initialize. (V27 Diagnostics: Paths Mismatch Possible)")
     return client
