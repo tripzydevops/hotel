@@ -16,7 +16,7 @@ async def get_user_info(request: Request, db: Client = Depends(get_supabase)):
     from backend.services.auth_service import get_token, get_current_active_user
     try:
         token = get_token(request)
-        user = await get_current_active_user(token, db)
+        user = await get_current_active_user(request, token, db)
         return {"user": user}
     except Exception as e:
         logger.error(f"Error in /api/auth/user: {e}")
@@ -34,7 +34,7 @@ async def sync_token(request: Request, db: Client = Depends(get_supabase)):
     from backend.services.auth_service import get_token, get_current_active_user
     try:
         token = get_token(request)
-        user = await get_current_active_user(token, db)
+        user = await get_current_active_user(request, token, db)
         return {"user": user, "status": "synced"}
     except Exception as e:
         # Return structured JSON even on failure to prevent frontend 'Invalid JSON' crashes
@@ -57,7 +57,7 @@ async def get_current_session(request: Request, db: Client = Depends(get_supabas
     from backend.services.auth_service import get_token, get_current_active_user
     try:
         token = get_token(request)
-        user = await get_current_active_user(token, db)
+        user = await get_current_active_user(request, token, db)
         return {"user": user}
     except Exception as e:
         logger.error(f"Error in /api/auth/sessions/current: {e}")
@@ -69,12 +69,12 @@ v1_router = APIRouter(prefix="/auth/v1", tags=["Authentication-V1"])
 async def get_current_session_v1(request: Request, db: Client = Depends(get_supabase)):
     from backend.services.auth_service import get_token, get_current_active_user
     token = get_token(request)
-    user = await get_current_active_user(token, db)
+    user = await get_current_active_user(request, token, db)
     return {"user": user}
 
 @v1_router.get("/user", include_in_schema=False)
 async def get_user_info_v1(request: Request, db: Client = Depends(get_supabase)):
     from backend.services.auth_service import get_token, get_current_active_user
     token = get_token(request)
-    user = await get_current_active_user(token, db)
+    user = await get_current_active_user(request, token, db)
     return {"user": user}
