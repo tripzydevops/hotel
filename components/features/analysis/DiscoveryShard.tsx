@@ -58,9 +58,9 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
     try {
       // 1. Get current user
       const { insforge } = await import("@/lib/insforge");
-      const { data: { session } } = await insforge.auth.getCurrentSession();
+      const { data: { user } } = await insforge.auth.getCurrentUser();
 
-      if (!session?.user?.id) throw new Error("No user session");
+      if (!user?.id) throw new Error("No user session");
 
       // 2. Add to tracked hotels
       await api.addHotel(

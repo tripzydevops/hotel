@@ -47,8 +47,11 @@ class ApiClient {
   private async getToken(): Promise<string | null> {
     try {
       const { insforge } = await import("@/lib/insforge");
-      const { data: { session } } = await insforge.auth.getCurrentSession();
-      return session?.accessToken || null;
+      // Wait for session initialization via getCurrentUser (Modern 1.2.0 Pattern)
+      await insforge.auth.getCurrentUser();
+      const headers = insforge.getHttpClient().getHeaders();
+      const authHeader = (headers as any)["Authorization"];
+      return authHeader ? authHeader.replace("Bearer ", "") : null;
     } catch (e) {
       console.error("[ApiClient] Unexpected error getting token:", e);
       return null;
