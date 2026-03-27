@@ -333,11 +333,10 @@ async def admin_update_user_logic(
                 print(f"[Admin] Profile frequency sync failed: {e}")
 
         # 3. Update Auth Fields (Requires Admin Bypass)
-        admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-        if admin_key and url:
+        from backend.utils.db import get_supabase_client
+        admin_db = get_supabase_client(admin=True)
+        if admin_db:
             try:
-                admin_db = create_client(url, admin_key)
                 auth_updates = {}
                 if updates.email:
                     auth_updates["email"] = updates.email
@@ -452,12 +451,10 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
     Manually create a user in Supabase Auth and User Profiles.
     Requires SERVICE_ROLE_KEY.
     """
-    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    if not admin_key or not url:
-        raise HTTPException(status_code=500, detail="Admin credentials missing")
-
-    admin_db = create_client(url, admin_key)
+    from backend.utils.db import get_supabase_client
+    admin_db = get_supabase_client(admin=True)
+    if not admin_db:
+        raise HTTPException(status_code=500, detail="Admin credentials missing or unreachable")
     try:
         res = admin_db.auth.admin.create_user(
             {"email": user.email, "password": user.password, "email_confirm": True}
@@ -519,12 +516,10 @@ async def delete_admin_user_logic(user_id: str, db: Client) -> Dict[str, Any]:
     """
     Delete a user and cascade delete their data.
     """
-    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    if not admin_key or not url:
-        raise HTTPException(status_code=500, detail="Admin credentials missing")
-
-    admin_db = create_client(url, admin_key)
+    from backend.utils.db import get_supabase_client
+    admin_db = get_supabase_client(admin=True)
+    if not admin_db:
+        raise HTTPException(status_code=500, detail="Admin credentials missing or unreachable")
     tables = [
         "hotels",
         "scan_sessions",

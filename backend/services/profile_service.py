@@ -25,8 +25,11 @@ async def get_enriched_profile_logic(
     is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
 
     # 0. Prepare admin access for truth checking and self-healing
-    admin_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    from backend.utils.db import get_supabase_client
+    admin_db = get_supabase_client(admin=True)
+    if not admin_db:
+        print("[Profile] Admin access unavailable")
+        return base_data or {}
 
     # 1. Fetch base metadata if not provided
     if base_data is None:
@@ -44,9 +47,8 @@ async def get_enriched_profile_logic(
                 # If the user is authenticated but missing a record in user_profiles,
                 # we create a fallback record from Auth metadata. This prevents
                 # users from being 'invisible' in the admin dashboard.
-                if admin_key and url:
+                if admin_db:
                     try:
-                        admin_db = create_client(url, admin_key)
                         auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
                         if auth_user and auth_user.user:
                             email = auth_user.user.email
@@ -90,8 +92,7 @@ async def get_enriched_profile_logic(
 
     try:
         viewer_db = db
-        if admin_key and url:
-            viewer_db = create_client(url, admin_key)
+        viewer_db = admin_db or db
 
         result = (
             viewer_db.table("profiles")
@@ -113,8 +114,7 @@ async def get_enriched_profile_logic(
         specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
         is_specific_admin = user_id_str == specific_admin_id
 
-        if admin_key and url:
-            admin_db = create_client(url, admin_key)
+        if admin_db:
             admin_email_found = None
             try:
                 user_auth = admin_db.auth.admin.get_user_by_id(user_id_str)
