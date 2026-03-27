@@ -30,8 +30,10 @@ export function useAnalysisStream(userId: string | undefined, roomType: string =
         setNarrative('');
 
         const { insforge } = await import('@/lib/insforge');
-        const { data: { session } } = await insforge.auth.getCurrentSession();
-        const token = session?.accessToken;
+        // Wait for session initialization (Modern 1.2.0 Pattern)
+        await insforge.auth.getCurrentUser();
+        const headers = insforge.getHttpClient().getHeaders();
+        const token = (headers as any)["Authorization"]?.replace("Bearer ", "");
 
         if (!isMounted) return;
 
