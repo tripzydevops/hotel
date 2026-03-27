@@ -4,12 +4,11 @@ import Image from "next/image";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
-import { useInsforge } from "@insforge/nextjs";
+import { insforge } from "@/lib/insforge";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { t } = useI18n();
-  const { signIn, signUp, verifyEmail, resendVerificationEmail } = useInsforge();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -29,8 +28,8 @@ export default function LoginPage() {
 
     try {
       const result = isLogin 
-        ? await signIn(email, password)
-        : await signUp(email, password);
+        ? await insforge.auth.signInWithPassword({ email, password })
+        : await insforge.auth.signUp({ email, password });
 
       setDebugInfo({
         baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -40,7 +39,7 @@ export default function LoginPage() {
         result
       });
 
-      if ('error' in result && result.error) {
+      if (result.error) {
         const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any).message || "Auth failed";
         
         if (errorMsg.includes("pending administrator approval") || errorMsg.includes("403")) {
@@ -80,7 +79,10 @@ export default function LoginPage() {
     const otp = formData.get("otp") as string;
 
     try {
-      const result = await verifyEmail(otp, emailForVerification);
+      const result = await insforge.auth.verifyEmail({ 
+        email: emailForVerification, 
+        otp: otp
+      });
       
       setDebugInfo({
         action: "verify",
@@ -88,8 +90,8 @@ export default function LoginPage() {
         result
       });
 
-      if ('error' in result) {
-        setError(result.error || "Verification failed");
+      if (result.error) {
+        setError(typeof result.error === 'string' ? result.error : (result.error as any).message || "Verification failed");
         setIsLoading(false);
       } else {
         router.push("/dashboard");
@@ -104,11 +106,12 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await resendVerificationEmail(emailForVerification);
-      if (!result || !result.success) {
-        setError(result?.message || "Failed to resend code");
+      const result = await insforge.auth.resendVerificationEmail({ 
+        email: emailForVerification 
+      });
+      if (result.error) {
+        setError(typeof result.error === 'string' ? result.error : (result.error as any).message || "Failed to resend code");
       } else {
-        // Show success briefly or just clear error
         setError(null);
       }
       setIsLoading(false);

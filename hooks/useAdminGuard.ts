@@ -2,14 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@insforge/nextjs";
 import { insforge } from "@/lib/insforge";
 
 export function useAdminGuard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const { user, isLoaded } = useUser();
+  const [user, setUser] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const { data } = await insforge.auth.getCurrentUser();
+        setUser(data);
+      } catch (err) {
+        console.error("Admin Guard Load Error", err);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+    loadUser();
+  }, []);
 
   useEffect(() => {
     const checkAdmin = async () => {
