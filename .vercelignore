@@ -75,3 +75,4 @@ session_check.txt
 log_dump.json
 price_logs_dump.json
 stitch_*.log
+legacy_archive/
