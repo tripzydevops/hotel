@@ -16,7 +16,7 @@ def get_supabase_client(jwt: Optional[str] = None) -> Any:
     # STABLE CANONICAL HUB (DASHBOARD ALIGNMENT)
     # Using the validated .site host as confirmed in platform updates.
     # InsForge Regional Transition: forcing eu-central alignment
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.site"
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.insforge.site"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
     
     try:

@@ -1,0 +1,98 @@
+*   Trying 52.29.21.196:443...
+* Connected to pa5riyqv.eu-central.insforge.app (52.29.21.196) port 443 (#0)
+* ALPN: offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+*  CAfile: /etc/ssl/certs/ca-certificates.crt
+*  CApath: /etc/ssl/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [3813 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [264 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [36 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [36 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=*.eu-central.insforge.app
+*  start date: Dec  9 00:00:00 2025 GMT
+*  expire date: Jan  7 23:59:59 2027 GMT
+*  subjectAltName: host "pa5riyqv.eu-central.insforge.app" matched cert's "*.eu-central.insforge.app"
+*  issuer: C=US; O=Amazon; CN=Amazon RSA 2048 M04
+*  SSL certificate verify ok.
+} [5 bytes data]
+* using HTTP/2
+* h2h3 [:method: GET]
+* h2h3 [:path: /auth/v1/health]
+* h2h3 [:scheme: https]
+* h2h3 [:authority: pa5riyqv.eu-central.insforge.app]
+* h2h3 [user-agent: curl/7.88.1]
+* h2h3 [accept: */*]
+* Using Stream ID: 1 (easy handle 0x5588848f87a0)
+} [5 bytes data]
+> GET /auth/v1/health HTTP/2
+> Host: pa5riyqv.eu-central.insforge.app
+> user-agent: curl/7.88.1
+> accept: */*
+> 
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [157 bytes data]
+< HTTP/2 200 
+< date: Sat, 28 Mar 2026 15:28:36 GMT
+< content-type: text/html; charset=UTF-8
+< content-length: 487
+< server: openresty/1.27.1.2
+< x-powered-by: Express
+< vary: Origin
+< access-control-allow-credentials: true
+< x-ratelimit-limit: 3000
+< x-ratelimit-remaining: 2992
+< x-ratelimit-reset: 1774712355
+< accept-ranges: bytes
+< cache-control: public, max-age=0
+< last-modified: Mon, 09 Mar 2026 06:34:41 GMT
+< etag: W/"1e7-19cd14e13e8"
+< 
+{ [487 bytes data]
+* Connection #0 to host pa5riyqv.eu-central.insforge.app left intact
+HTTP/2 200 
+date: Sat, 28 Mar 2026 15:28:36 GMT
+content-type: text/html; charset=UTF-8
+content-length: 487
+server: openresty/1.27.1.2
+x-powered-by: Express
+vary: Origin
+access-control-allow-credentials: true
+x-ratelimit-limit: 3000
+x-ratelimit-remaining: 2992
+x-ratelimit-reset: 1774712355
+accept-ranges: bytes
+cache-control: public, max-age=0
+last-modified: Mon, 09 Mar 2026 06:34:41 GMT
+etag: W/"1e7-19cd14e13e8"
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/auth/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InsForge Authentication</title>
+    <script type="module" crossorigin src="/auth/assets/index-BZ6Rm7Qa.js"></script>
+    <link rel="stylesheet" crossorigin href="/auth/assets/index-CBG1l6_b.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

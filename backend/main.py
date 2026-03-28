@@ -192,7 +192,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def db_health():
     import os
     return {
-        "resolved_url": "https://pa5riyqv.eu-central.insforge.site",
+        "resolved_url": "https://pa5riyqv.insforge.site",
         "env_url": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
         "key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
     }
