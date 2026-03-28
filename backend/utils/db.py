@@ -12,12 +12,14 @@ def get_supabase_client(jwt: Optional[str] = None) -> Any:
     # InsForge Platform Update: 2026-03-27
     # Infrastructure is now stable via official .dev TLD.
     # STABLE CANONICAL HUB (DASHBOARD ALIGNMENT)
-    # Using the validated .app regional host as confirmed in official documentation.
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"
+    # Infrastructure is now stable via official .site TLD for data.
+    # STABLE CANONICAL HUB (DASHBOARD ALIGNMENT)
+    # Using the validated .site host as confirmed in platform updates.
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.insforge.site"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
 
-    if not url or "insforge.dev" in url or "insforge.site" in url:
-        url = "https://pa5riyqv.eu-central.insforge.app"
+    if not url or "insforge.app" in url:
+        url = "https://pa5riyqv.insforge.site"
     
     try:
         supabase: Client = create_client(

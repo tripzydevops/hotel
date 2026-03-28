@@ -20,13 +20,16 @@ This document serves as the "Source of Truth" for the project's architecture and
 
 ### API & Backend Integration
 - **Rewrites over CORS**: Always use `next.config.ts` rewrites for `/api/:path*` to avoid cross-origin issues.
-- **Backend URL**: The current system points to `https://pa5riyqv.eu-central.insforge.app`. Any change to this must be mirrored in the `.env` and `next.config.ts`.
+- **Backend URL**: The current system points to `https://pa5riyqv.insforge.site`. Any change to this must be mirrored in the `.env` and `next.config.ts`.
+- **Backend Isolation**: Use the `.venv` virtual environment for all Python-based backend services. Avoid installing packages globally.
+- **Unified Structure**: All backend logic must reside in `backend/` (services/tasks) or `api/` (routes), following the consolidated structure.
 
 ## 3. Development Workflow
 - **Build Verification**: Every major change *must* be verified with `npm run build` locally before pushing.
-- **Dependency Management**: Never use the `--force` flag during installation without manual audit. 
-- **Type Safety**: The project enforces strict TypeScript rules. Do not use `ignoreBuildErrors: true` in production.
+- **Dependency Management**: Use `requirements.txt` for Python dependencies and `package.json` for frontend.
+- **Type Safety**: The project enforces strict TypeScript rules and Pyright/Pylance for Python via `.venv`.
 
 ## 4. Known Gotchas
+- **Building xhtml2pdf**: Requires `gcc` which may be missing in some environments; use pure-python alternatives like `fpdf2` if compilation fails.
 - **Leaflet Type Definitions**: Always ensure `@types/leaflet` is present in `devDependencies` if using map components.
 - **Turbopack Compatibility**: Tailwind 4 features are currently incompatible with the project's Turbopack build pipeline.

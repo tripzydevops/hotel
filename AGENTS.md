@@ -44,13 +44,13 @@ You must create a client instance using `createClient()` with your base URL and 
 import { createClient } from '@insforge/sdk';
 
 const client = createClient({
-  baseUrl: 'https://your-app.region.insforge.app',  // Your InsForge backend URL
+  baseUrl: 'https://your-app.region.insforge.site',  // Your InsForge backend URL
   anonKey: 'your-anon-key-here'       // Get this from backend metadata
 });
 
 ```
 
-**API BASE URL**: Your API base URL is `https://your-app.region.insforge.app`.
+**API BASE URL**: Your API base URL is `https://your-app.region.insforge.site`.
 
 ## Getting Detailed Documentation
 
