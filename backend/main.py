@@ -82,8 +82,8 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.app; "
-        "connect-src 'self' https://*.insforge.app https://*.vercel.app; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.site; "
+        "connect-src 'self' https://*.insforge.site https://*.vercel.app; "
         "img-src 'self' data: https:; "
         "style-src 'self' 'unsafe-inline';"
     )
@@ -134,7 +134,7 @@ async def manual_cors_middleware(request: Request, call_next):
         response = await call_next(request)
     
     origin = request.headers.get("origin")
-    if origin and response and (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
+    if origin and response and (".vercel.app" in origin or ".insforge.site" in origin or "localhost" in origin):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
@@ -192,7 +192,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def db_health():
     import os
     return {
-        "resolved_url": "https://pa5riyqv.eu-central.insforge.app",
+        "resolved_url": "https://pa5riyqv.eu-central.insforge.site",
         "env_url": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
         "key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
     }

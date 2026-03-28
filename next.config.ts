@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.insforge.app",
+        hostname: "*.insforge.site",
       },
       {
         protocol: "https",
@@ -69,11 +69,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/auth/v1/:path*",
-        destination: "https://pa5riyqv.eu-central.insforge.app/auth/v1/:path*",
+        destination: "https://pa5riyqv.eu-central.insforge.site/auth/v1/:path*",
       },
       {
         source: "/rest/v1/:path*",
-        destination: "https://pa5riyqv.eu-central.insforge.app/rest/v1/:path*",
+        destination: "https://pa5riyqv.eu-central.insforge.site/rest/v1/:path*",
       },
     ];
   },

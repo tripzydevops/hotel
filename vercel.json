@@ -29,11 +29,11 @@
     },
     {
       "source": "/auth/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
+      "destination": "https://pa5riyqv.eu-central.insforge.site/auth/v1/$1"
     },
     {
       "source": "/rest/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/rest/v1/$1"
+      "destination": "https://pa5riyqv.eu-central.insforge.site/rest/v1/$1"
     }
   ],
   "headers": [
