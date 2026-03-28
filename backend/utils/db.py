@@ -18,8 +18,8 @@ def get_supabase_client(jwt: Optional[str] = None) -> Any:
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.insforge.site"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
 
-    if not url or "insforge.app" in url:
-        url = "https://pa5riyqv.insforge.site"
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.site"
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
     
     try:
         supabase: Client = create_client(
