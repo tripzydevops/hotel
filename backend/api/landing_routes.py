@@ -4,7 +4,10 @@ from typing import List, Dict, Any
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_admin_user
+from backend.utils.logger import get_logger
 from pydantic import BaseModel
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["landing"])
 
