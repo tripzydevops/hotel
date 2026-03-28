@@ -20,7 +20,7 @@ This document serves as the "Source of Truth" for the project's architecture and
 
 ### API & Backend Integration
 - **Rewrites over CORS**: Always use `next.config.ts` rewrites for `/api/:path*` to avoid cross-origin issues.
-- **Backend URL**: The current system points to `https://pa5riyqv.insforge.site`. Any change to this must be mirrored in the `.env` and `next.config.ts`.
+- **Backend URL**: The current system points to `https://pa5riyqv.eu-central.insforge.site`. Any change to this must be mirrored in the `.env` and `next.config.ts`.
 - **Backend Isolation**: Use the `.venv` virtual environment for all Python-based backend services. Avoid installing packages globally.
 - **Unified Structure**: All backend logic must reside in `backend/` (services/tasks) or `api/` (routes), following the consolidated structure.
 
