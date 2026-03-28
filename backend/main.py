@@ -66,8 +66,9 @@ from backend.api import (
 # fail to match the registered routes (Double Prefixing Conflict).
 # KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
 app = FastAPI(
-    title="Hotel Rate Sentinel API", 
-    version="2026.02",
+    title="Hotel Price API",
+    description="Sentinel Core Engine - Market Intelligence Platform",
+    version="2026.03 (V23)",
     redirect_slashes=False,
 )
 

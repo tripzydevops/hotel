@@ -22,7 +22,7 @@ The previous fix addressed hotel record duplication, but Price Data is still not
 ### Automated Verification
 1. **Reproduction Script**: Run `reproduce_calendar_bug.py` with specific checks for January/February data across all 5 hotels.
    ```bash
-   export $(cat .env | xargs) && ./venv/bin/python3 reproduce_calendar_bug.py
+   export $(cat .env | xargs) && ./.venv/bin/python3 reproduce_calendar_bug.py
    ```
 
 ### Manual Verification

@@ -16,23 +16,44 @@ class ConfigUpdate(BaseModel):
 async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
     """Public endpoint to fetch all landing page configurations for a specific locale."""
     try:
-        res = (
-            db.table("landing_page_config")
-            .select("key, content")
-            .eq("locale", locale)
-            .execute()
-        )
-        config_dict = {item["key"]: item["content"] for item in res.data}
+        # V23 cascading logic:
+        # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
+        target_locales = [locale]
+        if "-" in locale:
+            target_locales.append(locale.split("-")[0])
+        
+        # Ensure we always have 'tr' as the ultimate fallback in Turkish-first projects
+        if "tr" not in target_locales:
+            target_locales.append("tr")
+        
+        # Try finding config for these locales in order
+        config_data = []
+        for loc in target_locales:
+            res = (
+                db.table("landing_page_config")
+                .select("key, content")
+                .eq("locale", loc)
+                .execute()
+            )
+            if res.data and len(res.data) > 0:
+                config_data = res.data
+                break
+
+        if not config_data:
+            # Final fallback to 'tr' if we still have nothing
+            config_dict = {}
+        else:
+            config_dict = {item["key"]: item["content"] for item in config_data}
+
         return config_dict
     except Exception as e:
-        import traceback
-        # V19: Added active_url visibility to debug Split-Gateway failover
+        logger.error(f"Landing config error: {str(e)}")
+        # V23: Simplified diagnostic return
         return JSONResponse(status_code=500, content={
-            "message": "Landing config failed (V19 Diagnostic - FORCE SYNC)", 
+            "message": "Landing config failed (V23 Upgrade - SYNCED)", 
             "active_url": str(db.supabase_url) if hasattr(db, 'supabase_url') else "unknown",
-            "error_type": str(type(e).__name__),
-            "details": str(e),
-            "trace": traceback.format_exc()
+            "error_type": type(e).__name__,
+            "details": str(e)
         })
 
 @router.get("/admin/landing/config")

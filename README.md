@@ -40,8 +40,8 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
 2.  Install frontend dependencies: `npm install`
 3.  Install backend dependencies:
     ```bash
-    python3 -m venv venv
-    source venv/bin/activate
+    python3 -m venv .venv
+    source .venv/bin/activate
     pip install -r requirements.txt
     ```
 4.  Set up `.env` (See `.env.local` for the latest Supabase keys).
@@ -53,7 +53,7 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
 npm run dev
 
 # Terminal 2: Backend (API & Background Tasks)
-source venv/bin/activate
+source .venv/bin/activate
 uvicorn backend.main:app --reload
 
 ```
