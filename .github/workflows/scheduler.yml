@@ -37,7 +37,8 @@ jobs:
       - name: Run Scheduler Script
         env:
           # EXPLANATION: Full environment for self-sufficient scan execution.
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          # InsForge Regional Migration: 2026-03-28
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.site' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}

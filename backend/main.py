@@ -81,8 +81,8 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; "
-        "connect-src 'self' https://*.supabase.co https://*.vercel.app; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.site; "
+        "connect-src 'self' https://*.insforge.site https://*.vercel.app; "
         "img-src 'self' data: https:; "
         "style-src 'self' 'unsafe-inline';"
     )
@@ -201,7 +201,7 @@ async def health_check():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     return {
         "status": "healthy",
-        "supabase_configured": bool(url),
+        "insforge_configured": bool(url),
         "timestamp": datetime.now().isoformat(),
         "version": "1.1.0-modular",
     }

@@ -11,8 +11,8 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
     -   FastAPI Backend (Serverless Function)
     -   **Background Scans**: Powered by FastAPI `BackgroundTasks` for in-process, non-blocking AI execution.
 2.  **Infrastructure**:
-    -   **Supabase**: Relational (PostgreSQL) and Vector Storage (`pgvector`).
-    -   **Cron Management**: Multi-layered triggers (GitHub Actions + Cron) for scheduled monitoring.
+    -   **InsForge**: Relational (PostgreSQL) and Vector Storage (`pgvector`) via regional `eu-central` infrastructure.
+    -   **Cron Management**: Multi-layered triggers (GitHub Actions + Cron) for scheduled monitoring with legacy bridging.
 
 ## 📊 Core Features
 

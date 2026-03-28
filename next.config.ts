@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "*.insforge.site",
+      },
+      {
+        protocol: "https",
         hostname: "*.booking.com",
       },
       {
