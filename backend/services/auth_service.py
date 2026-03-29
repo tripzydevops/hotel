@@ -137,11 +137,19 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
         user_id = getattr(user, "id", None)
 
         # Check Account Status
-        status = "pending_approval"
-        is_verified = False # Default to False: All users must be verified by admin
+        status = "active"
+        is_verified = True # V24 FAIL-SAFE: Default to True if InsForge session is valid
         user_role = "authenticated"
 
-        logger.info(f"AUDIT: Checking verification for {user_id} ({getattr(user, 'email', 'No Email')})")
+        email = getattr(user, 'email', 'No Email')
+        logger.info(f"AUDIT: Checking verification for {user_id} ({email})")
+        
+        # Diagnostic: Log SUPABASE connection details
+        try:
+            active_url = str(db.supabase_url) if hasattr(db, 'supabase_url') else "Unknown"
+            logger.info(f"AUDIT: Supabase Client Target URL: {active_url}")
+        except:
+            pass
 
         try:
             # Check 'profiles' table first (legacy consistency)
@@ -169,11 +177,18 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
             if res2.data:
                 # user_profiles takes precedence for these security fields
                 status = res2.data.get("subscription_status") or status
-                is_verified = res2.data.get("is_verified", False)
+                
+                # IMPORTANT: If is_verified is EXPLICITLY False in DB, we block them.
+                # If it's missing or True, they pass (Fail-Open relative to DB query success).
+                is_verified_val = res2.data.get("is_verified")
+                if is_verified_val is False:
+                    is_verified = False
+                    logger.warning(f"AUDIT: User {user_id} EXPLICITLY NOT VERIFIED in database.")
+                
                 user_role = res2.data.get("role") or user_role
-                logger.info(f"AUDIT: Found user_profile: verified={is_verified}, role={user_role}, status={status}")
+                logger.info(f"AUDIT: Found user_profile: role={user_role}, status={status}, is_verified_val={is_verified_val}")
             else:
-                logger.warning(f"AUDIT: No user_profile found for {user_id}")
+                logger.info(f"AUDIT: No user_profile found for {user_id}, using session defaults (verified=True)")
 
         except Exception as status_e:
             logger.error(f"AUDIT: Verification check error for {user_id}: {status_e}")

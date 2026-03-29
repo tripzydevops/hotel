@@ -8,7 +8,7 @@ import traceback
 
 load_dotenv()
 
-def get_supabase_client(jwt: Optional[str] = None) -> Any:
+def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Any:
     # InsForge Data Plane: eu-central cluster via .app TLD
     # The .app domain is the stable data-plane endpoint for PostgREST/Auth.
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"

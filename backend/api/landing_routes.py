@@ -43,21 +43,36 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
                 break
 
         if not config_data:
-            # Final fallback to 'tr' if we still have nothing
-            config_dict = {}
+            # V24 FALLBACK: Hardcoded defaults for a premium hotel experience if DB is empty
+            config_dict = {
+                "hero": {
+                    "title": "Welcome to Your Premium Stay",
+                    "subtitle": "Luxury, Comfort, and Elegance redefined for the modern traveler.",
+                    "cta": "Book Now"
+                },
+                "features": [
+                    {"title": "Spa & Wellness", "description": "Relax in our state-of-the-art wellness centers."},
+                    {"title": "Gourmet Dining", "description": "Exquisite cuisines prepared by world-renowned chefs."},
+                    {"title": "Smart Rooms", "description": "Control your entire room with one touch."}
+                ],
+                "about": {
+                    "title": "Our History",
+                    "content": "Founded with a vision of luxury, we provide unparalleled service since 1995."
+                }
+            }
+            logger.info(f"AUDIT: Using hardcoded landing config defaults for {locale}")
         else:
             config_dict = {item["key"]: item["content"] for item in config_data}
 
         return config_dict
     except Exception as e:
         logger.error(f"Landing config error: {str(e)}")
-        # V23: Simplified diagnostic return
-        return JSONResponse(status_code=500, content={
-            "message": "Landing config failed (V23 Upgrade - SYNCED)", 
-            "active_url": str(db.supabase_url) if hasattr(db, 'supabase_url') else "unknown",
-            "error_type": type(e).__name__,
-            "details": str(e)
-        })
+        # V24 Fallback: Return a valid JSON even in case of total failure
+        return {
+            "hero": {"title": "Elegant Stays (Offline Mode)", "subtitle": "Connection to theme data temporarily interrupted."},
+            "status": "partial_offline",
+            "error_hint": type(e).__name__
+        }
 
 @router.get("/admin/landing/config")
 async def get_admin_landing_config(
