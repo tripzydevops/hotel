@@ -12,7 +12,7 @@ def get_supabase_client(jwt: Optional[str] = None) -> Any:
     # InsForge Data Plane: eu-central cluster via .app TLD
     # The .app domain is the stable data-plane endpoint for PostgREST/Auth.
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     
     try:
         supabase: Client = create_client(

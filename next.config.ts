@@ -61,22 +61,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "/api/index.py",
-      },
-      {
-        source: "/auth/v1/:path*",
-        destination: "https://pa5riyqv.eu-central.insforge.app/auth/v1/:path*",
-      },
-      {
-        source: "/rest/v1/:path*",
-        destination: "https://pa5riyqv.eu-central.insforge.app/rest/v1/:path*",
-      },
-    ];
-  },
+  // REMOVED: Duplicate rewrites() — vercel.json handles all rewrites
+  // and takes precedence on Vercel. Having both caused unpredictable routing.
 };
 
 export default nextConfig;

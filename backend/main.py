@@ -283,7 +283,10 @@ app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
 app.include_router(recovery_routes.router)
 app.include_router(auth_routes.router)
-app.include_router(auth_routes.v1_router)
+# REMOVED: auth_routes.v1_router (prefix="/auth/v1")
+# The /auth/v1/* paths must be proxied directly to InsForge by Vercel.
+# FastAPI was intercepting these and returning 401 HTML because it expects
+# a Bearer token, but the InsForge SDK sends credentials.
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
