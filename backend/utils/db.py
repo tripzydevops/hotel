@@ -18,14 +18,18 @@ def load_env_standard():
 # Initial load for app-level execution
 load_env_standard()
 
-def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jwt: Optional[str] = None) -> Any:
+def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jwt: Optional[str] = None, admin: bool = False) -> Any:
     """
     Core Supabase client factory with InsForge-specific path overrides.
     Safe for both FastAPI dependency injection and standalone script usage.
     """
     # 1. Prioritize arguments, then env vars, then defaults
     target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"
-    target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+    
+    if admin:
+        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+    else:
+        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     
     if not target_url or not target_key:
         print("WARNING: Missing Supabase credentials for client initialization.")
