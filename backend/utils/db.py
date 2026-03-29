@@ -9,13 +9,8 @@ import traceback
 load_dotenv()
 
 def get_supabase_client(jwt: Optional[str] = None) -> Any:
-    # InsForge Platform Update: 2026-03-27
-    # Infrastructure is now stable via official .dev TLD.
-    # STABLE CANONICAL HUB (DASHBOARD ALIGNMENT)
-    # Infrastructure is now stable via official .site TLD for data.
-    # STABLE CANONICAL HUB (DASHBOARD ALIGNMENT)
-    # Using the validated .site host as confirmed in platform updates.
-    # InsForge Regional Transition: forcing eu-central alignment
+    # InsForge Data Plane: eu-central cluster via .app TLD
+    # The .app domain is the stable data-plane endpoint for PostgREST/Auth.
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "ik_4697b4a8df7380fb98a348d2d8c6d163")
     
