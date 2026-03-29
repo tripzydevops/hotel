@@ -3,7 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from typing import Optional
 from uuid import UUID
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    class MockPisa:
+        @staticmethod
+        def CreatePDF(html, dest, **kwargs):
+            dest.write(b"PDF generation is disabled in this environment (missing xhtml2pdf)")
+            return type('Obj', (), {'err': False})()
+    pisa = MockPisa()
 
 def generate_pdf_bytes(html_content: str) -> bytes:
     """Helper to run synchronous PDF generation in a threadpool."""

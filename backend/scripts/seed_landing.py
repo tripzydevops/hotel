@@ -1,17 +1,13 @@
-
-import os
 import asyncio
 import json
-from supabase import create_client
-from dotenv import load_dotenv
+from backend.utils.db import get_supabase_client, load_env_standard
 
-load_dotenv()
-load_dotenv(".env.local", override=True)
+# Standardize environment loading
+load_env_standard()
 
 async def main():
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    supabase = create_client(url, key)
+    # Initialize via the global factory to handle InsForge pathing
+    supabase = get_supabase_client()
 
     # Content for TR
     config_tr = [

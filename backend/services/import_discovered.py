@@ -3,22 +3,13 @@ Import Discovered Hotels Script
 Indexes hotels from SerpApi search results into hotel_directory.
 """
 
-import os
-from dotenv import load_dotenv
-from supabase import create_client
+from backend.utils.db import get_supabase_client, load_env_standard
 
-# Load environment variables
-load_dotenv(".env")
-load_dotenv(".env.local", override=True)
+# Standardize environment loading
+load_env_standard()
 
-SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Error: Missing Supabase credentials")
-    exit(1)
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Initialize via the global factory to handle InsForge pathing
+supabase = get_supabase_client()
 
 # Hotels identified from User's SerpApi search results (including property tokens)
 DISCOVERED_HOTELS = [

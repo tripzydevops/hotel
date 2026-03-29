@@ -1,16 +1,10 @@
-import os
-import sys
-from supabase import create_client, Client
+from backend.utils.db import get_supabase_client, load_env_standard
 
-# Initialize Supabase
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_SERVICE_KEY")
+# Standardize environment loading
+load_env_standard()
 
-if not url or not key:
-    print("X Error: Missing Supabase credentials")
-    sys.exit(1)
-
-supabase: Client = create_client(url, key)
+# Initialize via the global factory to handle InsForge pathing
+supabase = get_supabase_client()
 
 SQL_MIGRATION = """
 ALTER TABLE hotels 

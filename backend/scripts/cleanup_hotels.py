@@ -9,25 +9,13 @@ CRITICAL SAFETY GUARDS (Lessons from Ramada Incident - Feb 2026):
 
 Purpose: Purge hotels that cannot be scanned (useless) but protect ALL user data.
 """
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from backend.utils.db import get_supabase_client, load_env_standard
 
-from dotenv import load_dotenv
-# Load from project root .env.local
-env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env.local")
-load_dotenv(env_path)
+# Standardize environment loading
+load_env_standard()
 
-from supabase import create_client
-
-SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Missing Supabase credentials")
-    sys.exit(1)
-
-db = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Initialize via the global factory to handle InsForge pathing
+db = get_supabase_client()
 
 # EXPLANATION: Safety Mode Toggle
 # Why: To prevent accidental data loss, we require an explicit --force flag.

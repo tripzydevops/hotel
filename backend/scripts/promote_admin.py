@@ -1,21 +1,13 @@
-
 import os
 import sys
 from dotenv import load_dotenv
-from supabase import create_client
+from backend.utils.db import get_supabase_client, load_env_standard
 
-# Load vars
-load_dotenv()
-load_dotenv(".env.local", override=True)
+# Standardize environment loading
+load_env_standard()
 
-url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-if not url or not key:
-    print("Error: Supabase credentials (URL/SERVICE_ROLE_KEY) missing.")
-    sys.exit(1)
-
-supabase = create_client(url, key)
+# Initialize via the global factory to handle InsForge pathing
+supabase = get_supabase_client()
 
 def promote_user(search_term):
     print(f"Searching for user matching: '{search_term}'...")

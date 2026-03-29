@@ -1,14 +1,13 @@
-import os
 import asyncio
 from datetime import datetime
-from supabase import create_client, Client
-from dotenv import load_dotenv
+from supabase import Client
+from backend.utils.db import get_supabase_client, load_env_standard
 
-# Setup Supabase
-load_dotenv()
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(url, key)
+# Standardize environment loading
+load_env_standard()
+
+# Initialize via the global factory to handle InsForge pathing
+supabase: Client = get_supabase_client()
 
 async def comprehensive_data_restoration():
     print("--- Starting Comprehensive Data Restoration ---")
