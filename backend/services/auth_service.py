@@ -141,6 +141,8 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
         is_verified = False # Default to False: All users must be verified by admin
         user_role = "authenticated"
 
+        logger.info(f"AUDIT: Checking verification for {user_id} ({getattr(user, 'email', 'No Email')})")
+
         try:
             # Check 'profiles' table first (legacy consistency)
             res = (
@@ -153,6 +155,7 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
             logger.info(f"DB PROFILE CHECK for {user_id}: {res.data}")
             if res.data:
                 user_role = res.data.get("role", "authenticated")
+                logger.info(f"AUDIT: Found legacy profile role: {user_role}")
             
             # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
             res2 = (
@@ -162,15 +165,19 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
                 .maybe_single()
                 .execute()
             )
-            logger.info(f"DB USER_PROFILE CHECK for {user_id}: {res2.data}")
+
             if res2.data:
                 # user_profiles takes precedence for these security fields
                 status = res2.data.get("subscription_status") or status
                 is_verified = res2.data.get("is_verified", False)
                 user_role = res2.data.get("role") or user_role
+                logger.info(f"AUDIT: Found user_profile: verified={is_verified}, role={user_role}, status={status}")
+            else:
+                logger.warning(f"AUDIT: No user_profile found for {user_id}")
 
         except Exception as status_e:
-            logger.warning(f"Could not verify status for {user_id}: {status_e}")
+            logger.error(f"AUDIT: Verification check error for {user_id}: {status_e}")
+            logger.error(traceback.format_exc())
 
         # [POLICY] Enforce Admin Verification
         is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"]
