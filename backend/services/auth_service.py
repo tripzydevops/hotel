@@ -1,14 +1,19 @@
 """
 Authentication and Authorization Service.
 Handles role-based access control (RBAC) and user session verification.
+
+ARCHITECTURE NOTE (2026-03-29):
+InsForge is NOT compatible with supabase-py's auth.get_user() which calls
+/auth/v1/user (GoTrue path). InsForge returns a 0-byte body at that path.
+Instead, we call InsForge's REST API directly: GET /api/auth/sessions/current
 """
 
+import os
 import traceback
 from fastapi import Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from backend.utils.db import get_supabase_client, get_supabase
 from supabase import Client
-
 
 from backend.utils.logger import get_logger
 import httpx
@@ -17,7 +22,51 @@ from types import SimpleNamespace
 # EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
-print("!!! AUTH SERVICE MODULE LOADING !!!")
+# InsForge backend URL for direct REST API calls
+INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
+
+
+async def _verify_token_via_insforge(token: str) -> dict:
+    """
+    Verify a JWT token by calling InsForge's REST API directly.
+    
+    Uses GET /api/auth/sessions/current instead of supabase-py's 
+    db.auth.get_user() which calls the incompatible /auth/v1/user path.
+    
+    Returns a SimpleNamespace with .id, .email, .role attributes (duck-typed
+    to match what supabase-py's UserResponse.user would have provided).
+    """
+    url = f"{INSFORGE_URL}/api/auth/sessions/current"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(url, headers=headers)
+    
+    if resp.status_code != 200:
+        logger.error(f"InsForge auth verification failed: {resp.status_code} {resp.text[:200]}")
+        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    
+    try:
+        data = resp.json()
+    except Exception:
+        logger.error(f"InsForge auth returned non-JSON: {resp.text[:200]}")
+        raise HTTPException(status_code=401, detail="Auth service returned invalid response")
+    
+    # InsForge returns { "user": { "id": "...", "email": "...", "role": "..." } }
+    user_data = data.get("user")
+    if not user_data:
+        logger.error(f"InsForge auth response missing 'user' key: {data}")
+        raise HTTPException(status_code=401, detail="Invalid session payload")
+    
+    # Return a SimpleNamespace so existing code using getattr(user, "id") still works
+    return SimpleNamespace(
+        id=user_data.get("id"),
+        email=user_data.get("email"),
+        role=user_data.get("role", "authenticated"),
+    )
 
 
 def get_token(request: Request) -> str:
@@ -44,16 +93,8 @@ async def get_current_admin_user(request: Request, token: str = Depends(get_toke
     Verify that the request is made by an Admin.
     """
     try:
-        # Use SDK directly to avoid NameErrors and routing loops
-        try:
-            user_resp = db.auth.get_user(token)
-            if user_resp and getattr(user_resp, "user", None):
-                user_obj = user_resp.user
-            else:
-                raise HTTPException(status_code=401, detail="Invalid Admin Session")
-        except Exception as auth_e:
-            logger.error(f"Admin Auth SDK Failed: {auth_e}")
-            raise HTTPException(status_code=401, detail=f"Admin Auth Failed: {str(auth_e)}")
+        # Verify token via InsForge REST API (not supabase-py)
+        user_obj = await _verify_token_via_insforge(token)
 
         user_id = getattr(user_obj, "id", None)
         email = getattr(user_obj, "email", None)
@@ -90,16 +131,8 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
 
-        # Use SDK directly to avoid recursive calls or complex proxying
-        try:
-            user_resp = db.auth.get_user(token)
-            if user_resp and getattr(user_resp, "user", None):
-                user = user_resp.user
-            else:
-                raise HTTPException(status_code=401, detail="Invalid Session Payload")
-        except Exception as auth_e:
-            logger.error(f"Auth SDK Verification Failed: {auth_e}")
-            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(auth_e)}")
+        # Verify token via InsForge REST API (not supabase-py)
+        user = await _verify_token_via_insforge(token)
 
         user_id = getattr(user, "id", None)
 
