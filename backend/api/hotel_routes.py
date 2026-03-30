@@ -12,7 +12,6 @@ from backend.services.hotel_service import (
 from backend.services.location_service import LocationService
 from backend.services.profile_service import get_enriched_profile_logic
 from backend.services.subscription import SubscriptionService
-from backend.utils.helpers import log_query
 from backend.utils.security import verify_ownership
 from datetime import datetime, timezone
 
@@ -94,16 +93,22 @@ async def create_hotel(
     current_user=Depends(get_current_active_user),
 ):
     """
-    Logic for creating a hotel with plan-based limits and admin bypass.
+    Creates a hotel with plan-based limits, profile self-healing, and
+    token discovery via the unified service layer.
+
+    FIX (March 2026): Previously this route did a raw db.table("hotels").insert(),
+    which bypassed token discovery and left hotels without property_token/serp_api_id.
+    The cleanup script then deleted them as "orphans". Now we delegate to
+    add_hotel_to_account_logic which handles enrichment, directory sync, and logging.
     """
     user_id = current_user.id
     if not db:
         raise HTTPException(status_code=503, detail="Database unavailable")
 
-    # EXPLANATION: Plan-Based Limit Enforcement
-    # We fetch the enriched profile (which handles admin bypasses and overrides)
-    # and then delegate the limit check to the SubscriptionService.
-
+    # STEP 1: Profile Self-Healing & Plan Check
+    # get_enriched_profile_logic creates the user_profiles row if missing.
+    # This is CRITICAL: without a user_profiles entry, the cleanup script
+    # treats ALL of this user's hotels as unprotected orphans.
     profile = await get_enriched_profile_logic(user_id, None, db)
     can_add, reason = await SubscriptionService.check_hotel_limit(
         db, str(user_id), profile
@@ -112,6 +117,7 @@ async def create_hotel(
     if not can_add:
         raise HTTPException(status_code=403, detail=reason)
 
+    # STEP 2: Duplicate Detection (fast-path before service layer)
     if hotel.serp_api_id:
         dup = (
             db.table("hotels")
@@ -123,51 +129,22 @@ async def create_hotel(
         if dup.data:
             return dup.data[0]
 
+    # STEP 3: Target Hotel Toggle (only one target per user)
     if hotel.is_target_hotel:
         db.table("hotels").update({"is_target_hotel": False}).eq(
             "user_id", str(user_id)
         ).eq("is_target_hotel", True).execute()
 
+    # STEP 4: Normalize and delegate to service layer
+    # The service layer handles: token discovery from hotel_directory,
+    # property_token/serp_api_id enrichment, db insert, logging, and directory sync.
     hotel_data = hotel.model_dump()
     hotel_data["name"] = hotel_data["name"].title().strip()
     if hotel_data.get("location"):
         hotel_data["location"] = hotel_data["location"].title().strip()
 
-    result = (
-        db.table("hotels").insert({"user_id": str(user_id), **hotel_data}).execute()
-    )
-
-    if result.data:
-        await log_query(
-            db=db,
-            user_id=user_id,
-            hotel_name=hotel_data["name"],
-            location=hotel_data.get("location"),
-            action_type="create",
-        )
-        # EXPLANATION: Data-Rich Auto-Sync
-        # Automatically populates the global directory with high-quality metadata
-        # (coordinates, ratings, images) to benefit the entire system.
-        try:
-            db.table("hotel_directory").upsert(
-                {
-                    "name": hotel_data["name"],
-                    "location": hotel_data.get("location"),
-                    "serp_api_id": hotel_data.get("serp_api_id"),
-                    "latitude": hotel_data.get("latitude"),
-                    "longitude": hotel_data.get("longitude"),
-                    "rating": hotel_data.get("rating"),
-                    "stars": hotel_data.get("stars"),
-                    "image_url": hotel_data.get("image_url"),
-                    "review_count": hotel_data.get("review_count"),
-                    "last_verified_at": datetime.now().isoformat(),
-                },
-                on_conflict="serp_api_id",
-            ).execute()
-        except Exception as e:
-            print(f"Directory Auto-Sync Warning: {e}")
-
-    return result.data[0]
+    result = await add_hotel_to_account_logic(hotel_data, user_id, db)
+    return result
 
 
 @router.patch("/hotels/{hotel_id}")

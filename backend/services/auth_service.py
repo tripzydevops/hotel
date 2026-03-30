@@ -189,7 +189,25 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
                 user_role = res2.data.get("role") or user_role
                 logger.info(f"AUDIT: Found user_profile: role={user_role}, status={status}, is_verified_val={is_verified_val}")
             else:
-                logger.info(f"AUDIT: No user_profile found for {user_id}, using session defaults (verified=True)")
+                # UNIVERSAL SELF-HEALING (March 2026):
+                # A missing user_profiles row means the cleanup script will
+                # treat ALL of this user's hotels as unprotected orphans.
+                # We create the profile NOW, at the auth gate, so every
+                # downstream route can rely on its existence.
+                logger.info(f"AUDIT: No user_profile found for {user_id}, triggering self-healing...")
+                try:
+                    from backend.services.profile_service import get_enriched_profile_logic
+                    healed_profile = await get_enriched_profile_logic(user_id, None, db)
+                    if healed_profile:
+                        status = healed_profile.get("subscription_status") or status
+                        is_verified_val = healed_profile.get("is_verified")
+                        if is_verified_val is False:
+                            is_verified = False
+                        user_role = healed_profile.get("role") or user_role
+                        logger.info(f"AUDIT: Self-healed profile for {user_id}: role={user_role}, status={status}")
+                except Exception as heal_e:
+                    logger.error(f"AUDIT: Self-healing failed for {user_id}: {heal_e}")
+                    # Non-fatal: user can still proceed with session defaults
 
         except Exception as status_e:
             logger.error(f"AUDIT: Verification check error for {user_id}: {status_e}")
