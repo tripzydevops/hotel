@@ -259,7 +259,7 @@ export default function AddHotelModal({
               {/* Suggestions Dropdown */}
               {showSuggestions && name.length >= 2 && !isSearching && (
                 <div className="absolute z-[100] left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 ring-1 ring-black/50">
-                  <div className="max-h-40 overflow-y-auto">
+                  <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                     {suggestions.length > 0 ? (
                       suggestions.map((item, idx) => (
                         <button

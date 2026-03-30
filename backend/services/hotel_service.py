@@ -81,7 +81,12 @@ async def search_hotel_directory_logic(
         elif h_name_norm.startswith(q_normalized):
             hotel_score = hotel_score + 50
         elif q_normalized in h_name_norm:
-            hotel_score = hotel_score + 30
+            hotel_score = hotel_score + 40
+        
+        # Word-based score: Boost if ALL words match (position independent)
+        matches_all_words = all(w in h_combined for w in q_words)
+        if matches_all_words:
+            hotel_score = hotel_score + 60
 
         for w in q_words:
             if w in h_combined:
@@ -99,8 +104,10 @@ async def search_hotel_directory_logic(
         q_trimmed
     ) >= 4
 
+    # Primary sort by score (desc), secondary by name (asc)
     merged_results: List[Dict[str, Any]] = sorted(
-        local_results, key=lambda x: x.get("_search_score", 0), reverse=True
+        local_results, 
+        key=lambda x: (-x.get("_search_score", 0), x.get("name", "").lower())
     )
 
     if should_fallback:
