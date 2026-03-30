@@ -194,8 +194,7 @@ async def get_dashboard_logic(
             hid = str(h["id"])
             token = h.get("property_token") or h.get("serp_api_id")
             if not token:
-                logger.warning(f"Dashboard Service: Skipping hotel {h.get('name')} (ID: {h.get('id')}) due to missing both property_token and serp_api_id.")
-                continue
+                logger.info(f"Dashboard Service: Hotel {h.get('name')} (ID: {hid}) has no token yet. Showing as pending.")
 
             dir_data = directory_map.get(h.get("serp_api_id"), {})
             prices = hotel_prices_map.get(hid, [])
