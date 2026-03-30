@@ -265,6 +265,11 @@ async def add_hotel_to_account_logic(
                         print(f"DataForSEO Enrichment Error: {e}")
                 """
                 pass
+        # [FIX] Extract property_token if directory match found
+        property_token = hotel_data.get("property_token")
+        if 'd' in locals() and d:
+            property_token = property_token or d.get("property_token")
+            serp_api_id = serp_api_id or d.get("serp_api_id")
 
         # Prepare data for insertion
         data = {
@@ -273,6 +278,7 @@ async def add_hotel_to_account_logic(
             "location": hotel_data.get("location"),
             "is_target_hotel": hotel_data.get("is_target_hotel", False),
             "serp_api_id": serp_api_id,
+            "property_token": property_token,  # [FIX] Added property_token
             "preferred_currency": hotel_data.get("preferred_currency", "USD"),
             "rating": rating,
             "review_count": review_count,
