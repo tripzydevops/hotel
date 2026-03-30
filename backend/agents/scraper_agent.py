@@ -5,8 +5,6 @@ from uuid import UUID
 from supabase import Client
 from backend.models.schemas import ScanOptions
 from backend.services.provider_factory import ProviderFactory
-from backend.services.providers.dataforseo_provider import DataForSEOProvider
-
 from backend.utils.room_normalizer import RoomTypeNormalizer
 
 
@@ -19,138 +17,6 @@ class ScraperAgent:
     def __init__(self, db: Client):
         self.db = db
         self._log_buffer = {}
-
-    # EXPLANATION: [Global Pulse Phase 2] — Feature C: Room Type Normalization Map
-    # Turkish hotel systems often use localized room names. This map allows
-    # the cache to match "Standart Oda" → "Standard" so User B tracking
-    # "Standard Room" can reuse User A's cached result that has "Standart Oda".
-    ROOM_TYPE_NORMALIZE_MAP = {
-        "standart": "standard",
-        "standart oda": "standard",
-        "standart oda (çift kişilik)": "standard double",
-        "standart tek": "standard single",
-        "standart çift": "standard double",
-        "superior": "superior",
-        "süit": "suite",
-        "suit": "suite",
-        "aile odası": "family room",
-        "aile": "family room",
-        "delüks": "deluxe",
-        "ekonomi": "economy",
-        "tek kişilik": "single",
-        "çift kişilik": "double",
-        "üç kişilik": "triple",
-        "kral dairesi": "king suite",
-        "penthouse": "penthouse",
-    }
-
-    def _normalize_room_type(self, name: str) -> str:
-        """
-        [Global Pulse Phase 2] — Room Type Normalizer
-        Converts Turkish or variant room names to a canonical English form.
-        Used by _check_global_cache to match room types across users.
-        """
-        if not name:
-            return ""
-        lowered = name.strip().lower()
-        # Check direct match first
-        if lowered in self.ROOM_TYPE_NORMALIZE_MAP:
-            return self.ROOM_TYPE_NORMALIZE_MAP[lowered]
-        # Check partial match (e.g., "Standart Tek Kişilik Oda" contains "standart tek")
-        for turkish, english in self.ROOM_TYPE_NORMALIZE_MAP.items():
-            if turkish in lowered:
-                return english
-        return lowered  # Return original lowered if no match
-
-    async def _check_global_cache(
-        self, serp_api_id: str, check_in_date: date, requested_room_type: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
-        """
-        [Global Pulse] Checks if ANY user has scanned this hotel for this date
-        in the last 12 hours. If a cached result exists and the user requested
-        a specific room type, we attempt to extract that room's price from
-        the cached room_types array instead of returning just the base price.
-        """
-        if not serp_api_id:
-            return None
-
-        try:
-            # Look for a fresh pulse (recorded in last 720 mins / 12 hours)
-            # KAİZEN: 12-Hour Pulse Strategy
-            # Since scans reflect 12h intervals, a 12h cache allows User B 
-            # to reuse User A's result even if they are offset by several hours.
-            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=720)).isoformat()
-
-            res = (
-                self.db.table("price_logs")
-                .select("*")
-                .eq("serp_api_id", serp_api_id)
-                .eq("check_in_date", str(check_in_date))
-                .gte("recorded_at", cutoff)
-                .order("recorded_at", desc=True)
-                .limit(1)
-                .execute()
-            )
-
-            if res.data:
-                cache = res.data[0]
-                print(f"[GlobalPulse] Cache HIT for {serp_api_id} on {check_in_date}")
-
-                # EXPLANATION: [Global Pulse Phase 2] — Feature C: Room-Type-Aware Matching
-                # If the user requested a specific room type (e.g., "Deluxe"),
-                # we search the cached room_types array for a matching entry.
-                # This avoids a fresh API call when the data already exists.
-                price_val = cache.get("price")
-                final_price = float(price_val) if price_val is not None else 0.0
-                final_currency = str(cache.get("currency") or "TRY")
-                matched_room = None
-
-                cached_rooms_raw = cache.get("room_types")
-                cached_rooms = list(cast(list, cached_rooms_raw)) if isinstance(cached_rooms_raw, (list, tuple)) else []
-                if requested_room_type and cached_rooms:
-                    normalized_request = self._normalize_room_type(requested_room_type)
-                    for room in cached_rooms:
-                        if not isinstance(room, dict): continue
-                        room_name = str(room.get("name") or "")
-                        normalized_cached = self._normalize_room_type(room_name)
-                        if (
-                            normalized_request == normalized_cached
-                            or normalized_request in normalized_cached
-                        ):
-                            matched_room = room
-                            room_price = room.get("price")
-                            if room_price is not None:
-                                final_price = float(room_price)
-                            
-                            room_curr = room.get("currency")
-                            if room_curr is not None:
-                                final_currency = str(room_curr)
-
-                            print(
-                                f"[GlobalPulse] Room match: '{requested_room_type}' → '{room_name}' @ {final_price}"
-                            )
-                            break
-
-                # Reconstruct the price_data object to mimic SerpApi response
-                return {
-                    "price": final_price,
-                    "currency": final_currency,
-                    "vendor": str(cache.get("vendor") or "Unknown"),
-                    "source": "global_cache",
-                    "offers": cache.get("parity_offers") or cache.get("offers") or [],
-                    "room_types": cached_rooms,
-                    "search_rank": cache.get("search_rank"),
-                    "property_token": serp_api_id,
-                    "status": "success",
-                    "is_cached": True,
-                    "matched_room_type": str(matched_room.get("name") or "Unknown")
-                    if isinstance(matched_room, dict)
-                    else None,
-                }
-        except Exception as e:
-            print(f"[GlobalPulse] Cache lookup error: {e}")
-
-        return None
 
     async def log_reasoning(
         self,
@@ -190,7 +56,6 @@ class ScraperAgent:
             return
 
         try:
-            # HYPERSPEED KAIZEN: Single atomic append instead of n+1 reads
             res = (
                 self.db.table("scan_sessions")
                 .select("reasoning_trace")
@@ -209,14 +74,63 @@ class ScraperAgent:
             self.db.table("scan_sessions").update(
                 {
                     "reasoning_trace": raw_trace,
-                    "updated_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", sid_key).execute()
 
-            # Clear buffer for this session
             self._log_buffer[sid_key] = []
         except Exception as e:
             print(f"[ScraperAgent] Log flush failed: {e}")
+
+    async def _check_global_cache(self, serp_api_id: str, check_in: date) -> Optional[Dict[str, Any]]:
+        """
+        KAİZEN: Cross-User Shared Cache (GlobalPulse)
+        Searches price_logs for ANY hotel that shares the same serp_api_id.
+        Verification logic: Data must be within 12 hours.
+        """
+        if not serp_api_id or serp_api_id == "None":
+            return None
+
+        try:
+            # 1. Find all hotel IDs sharing this SerpApi ID
+            hotels_res = self.db.table("hotels").select("id").eq("serp_api_id", serp_api_id).execute()
+            sharing_hotel_ids = [h["id"] for h in (hotels_res.data or [])]
+            
+            if not sharing_hotel_ids:
+                return None
+
+            # 2. Check for recent logs for any of these hotels
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat()
+            
+            logs_res = (
+                self.db.table("price_logs")
+                .select("*")
+                .in_("hotel_id", sharing_hotel_ids)
+                .eq("check_in_date", check_in.isoformat())
+                .gte("recorded_at", cutoff)
+                .order("recorded_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            
+            if logs_res.data:
+                log = logs_res.data[0]
+                print(f"[GlobalPulse] HIT for {serp_api_id} on {check_in}")
+                return {
+                    "price": float(log["price"]),
+                    "currency": log.get("currency", "USD"),
+                    "status": "success",
+                    "vendor": log.get("vendor"),
+                    "offers": log.get("offers", []),
+                    "room_types": log.get("room_types", []),
+                    "metadata": log.get("metadata", {}),
+                    "recorded_at": log["recorded_at"],
+                    "source": "global_pulse"
+                }
+        except Exception as e:
+            print(f"[GlobalPulse] Cache lookup error: {e}")
+            
+        return None
 
     async def run_scan(
         self,
@@ -227,9 +141,8 @@ class ScraperAgent:
     ) -> List[Dict[str, Any]]:
         """Performs the actual scraping for a list of hotels."""
         results = []
-        semaphore = asyncio.Semaphore(10)  # Max 10 concurrent requests
+        semaphore = asyncio.Semaphore(10)
 
-        # [Reasoning] Start
         await self.log_reasoning(
             session_id,
             "Initialization",
@@ -246,327 +159,100 @@ class ScraperAgent:
             except Exception as e:
                 print(f"[ScraperAgent] Error updating session: {e}")
 
-        async def fetch_hotel(hotel_raw: Any):
-            if not isinstance(hotel_raw, dict): return
-            hotel = cast(Dict[str, Any], hotel_raw)
+        async def fetch_hotel(hotel: Dict[str, Any]):
             hotel_name = str(hotel.get("name") or "Unknown Hotel")
+            hotel_id = hotel["id"]
+            location = hotel.get("location")
+            serp_api_id = hotel.get("serp_api_id")
+
             try:
                 async with semaphore:
-                    # [Reasoning] Lock entry
                     await self.log_reasoning(
-                        session_id, "Resource", f"Semaphore lock acquired for {hotel_name}. slot: {semaphore._value}", "info"
+                        session_id, "Resource", f"Processing {hotel_name} (SerpApi ID: {serp_api_id})", "info"
                     )
+
+                    # Determine dates
+                    check_in_raw = options.check_in if options and options.check_in else hotel.get("fixed_check_in")
+                    check_out_raw = options.check_out if options and options.check_out else hotel.get("fixed_check_out")
                     
-                    hotel_id = hotel["id"]
-                    location = hotel.get("location")
-                    serp_api_id = hotel.get("serp_api_id")
+                    check_in: date = date.today() + timedelta(days=1)
+                    check_out: date = date.today() + timedelta(days=2)
 
-                    # [Reasoning] Processing Hotel
-                    await self.log_reasoning(
-                        session_id, "Scraping", f"Processing {hotel_name}...", "info"
-                    )
-
-                    # Determine search parameters
-                    check_in_raw = None
-                    if options and options.check_in:
-                        check_in_raw = options.check_in
-                    else:
-                        check_in_raw = hotel.get("fixed_check_in")
-
-                    check_out_raw = None
-                    if options and options.check_out:
-                        check_out_raw = options.check_out
-                    else:
-                        check_out_raw = hotel.get("fixed_check_out")
-
-                    # Normalize Dates
-                    check_in = None
                     if isinstance(check_in_raw, str) and check_in_raw:
-                        try:
-                            check_in = datetime.strptime(
-                                check_in_raw, "%Y-%m-%d"
-                            ).date()
-                        except ValueError:
-                            check_in = None
-                    elif isinstance(check_in_raw, date):
-                        check_in = check_in_raw
+                        try: check_in = datetime.strptime(check_in_raw, "%Y-%m-%d").date()
+                        except: pass
+                    elif isinstance(check_in_raw, date): check_in = check_in_raw
 
-                    check_out = None
                     if isinstance(check_out_raw, str) and check_out_raw:
-                        try:
-                            check_out = datetime.strptime(
-                                check_out_raw, "%Y-%m-%d"
-                            ).date()
-                        except ValueError:
-                            check_out = None
-                    elif isinstance(check_out_raw, date):
-                        check_out = check_out_raw
-                    
-                    # Ensure they aren't unassociated even if all checks fail
-                    if check_in is None: check_in = None
-                    if check_out is None: check_out = None
+                        try: check_out = datetime.strptime(check_out_raw, "%Y-%m-%d").date()
+                        except: pass
+                    elif isinstance(check_out_raw, date): check_out = check_out_raw
 
-                    adults = 2
-                    if options and options.adults:
-                        adults = options.adults
+                    adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
+
+                    # 1. GlobalPulse Check
+                    price_data = await self._check_global_cache(str(serp_api_id), check_in)
+
+                    if price_data:
+                        await self.log_reasoning(
+                            session_id, "Cache", f"HIT: Found shared price of {price_data.get('price')} for {hotel_name}.", "success"
+                        )
                     else:
-                        adults = hotel.get("default_adults") or 2
-                
-
-                    # Fallback: Auto-generate dates if not provided
-                    if not check_in or not check_out:
-                        from datetime import timedelta
-
-                        today = date.today()
-                        check_in = today + timedelta(days=1)
-                        check_out = today + timedelta(days=2)
-                        await self.log_reasoning(
-                            session_id,
-                            "Date Generation",
-                            f"Auto-generated dates for {hotel_name}: {check_in} to {check_out}",
-                            "info",
-                            {"check_in": str(check_in), "check_out": str(check_out)},
-                        )
-
-                    price_data = None
-                    try:
-                        # 1. Check Global Pulse Cache first
-                        await self.log_reasoning(
-                            session_id, "Cache", f"Checking shared pulse for {serp_api_id} on {check_in}...", "info"
-                        )
-                        if isinstance(check_in, date):
-                            price_data = await self._check_global_cache(
-                                str(serp_api_id), check_in
-                            )
-                        else:
-                            price_data = None
-
-                        if price_data:
-                            # KAİZEN: ID Sanitization
-                            # Sanitize cached data to ensure it doesn't leak IDs from other users
-                            price_data.pop("hotel_id", None)
-                            price_data.pop("id", None)
-                            await self.log_reasoning(
-                                session_id,
-                                "Cache HIT",
-                                f"Using shared global pulse for {hotel_name} (Scanned by another user recently)",
-                                "info",
-                            )
-                        else:
-                            # 2. Fetch fresh price with Provider Failover Loop
-                            # KAİZEN: High Availability Failover
-                            # We iterate through all active providers (e.g. SerpApi -> DataForSEO)
-                            # to guarantee a result even if one provider is exhausted.
-                            providers = ProviderFactory.get_active_providers()
-                            
-                            for provider in providers:
-                                try:
-                                    await self.log_reasoning(
-                                        session_id,
-                                        "API Call",
-                                        f"Attempting {hotel_name} via {provider.get_provider_name()}...",
-                                        "info",
-                                        {"provider": provider.get_provider_name()},
-                                    )
-
-                                    # Per-Request Timeout
-                                    price_data = await asyncio.wait_for(
-                                        provider.fetch_price(
-                                            hotel_name=hotel_name,
-                                            location=location,
-                                            check_in=check_in,
-                                            check_out=check_out,
-                                            adults=adults,
-                                            currency=getattr(options, "currency", "TRY")
-                                            if options
-                                            else "TRY",
-                                            serp_api_id=serp_api_id,
-                                        ),
-                                        timeout=120.0,
-                                    )
-
-                                    if price_data and price_data.get("status") == "success" and price_data.get("price"):
-                                        await self.log_reasoning(
-                                            session_id,
-                                            "Ingestion",
-                                            f"Successfully extracted {price_data['price']} via {provider.get_provider_name()}.",
-                                            "success",
-                                        )
-                                        break # Success! Exit loop.
-                                    else:
-                                        reason = price_data.get("error") if price_data else "No data"
-                                        await self.log_reasoning(
-                                            session_id,
-                                            "Failover",
-                                            f"{provider.get_provider_name()} returned no price ({reason}). Trying backup...",
-                                            "warning"
-                                        )
-                                except asyncio.TimeoutError:
-                                    await self.log_reasoning(
-                                        session_id,
-                                        "Timeout",
-                                        f"{provider.get_provider_name()} timed out. Checking failover...",
-                                        "warning",
-                                    )
-                                    continue
-                                except Exception as inner_e:
-                                    await self.log_reasoning(
-                                        session_id,
-                                        "Backoff",
-                                        f"{provider.get_provider_name()} failed: {str(inner_e)}. Switching...",
-                                        "error"
-                                    )
-                                    continue
-                                    
-                            if not isinstance(price_data, dict) or price_data.get("status") != "success":
-                                # If all providers failed
-                                price_data = {"status": "error", "error": "all_providers_failed"}
-
-                    except Exception as e:
-                        err_msg = str(e)
-                        await self.log_reasoning(
-                            session_id,
-                            "System Error",
-                            f"Unexpected error in live scan loop: {err_msg}",
-                            "error"
-                        )
-                        price_data = {"status": "error", "error": err_msg}
-
-                    # [NEW] [Global Pulse Phase 2] — Hotel Info Enrichment
-                    # If this is a DataForSEO provider and we have a property_token, 
-                    # we check if the hotel needs a metadata refresh.
-                    if (
-                        isinstance(price_data, dict) 
-                        and price_data.get("status") == "success"
-                        and price_data.get("property_token")
-                        and isinstance(ProviderFactory.get_provider(), DataForSEOProvider)
-                    ):
-                        # Determine if we need enrichment (missing key fields)
-                        needs_enrichment = False
-                        if not hotel.get("amenities") or not hotel.get("image_url") or not hotel.get("stars"):
-                            needs_enrichment = True
+                        await self.log_reasoning(session_id, "Cache", "MISS: Fetching fresh from SerpApi.", "info")
+                        # 2. Fetch from Provider
+                        # KAİZEN: SerpApi Priority
+                        # We use ProviderFactory but explicitly request SerpApi unless user forced another.
+                        pref = getattr(options, "provider", "serpapi") if options else "serpapi"
+                        provider = ProviderFactory.get_provider(prefer=pref)
                         
-                        if needs_enrichment:
-                            try:
-                                await self.log_reasoning(
-                                    session_id,
-                                    "Enrichment",
-                                    f"Fetching rich metadata (amenities, images) for {hotel_name}...",
-                                    "info"
-                                )
-                                df_provider = cast(DataForSEOProvider, ProviderFactory.get_provider())
-                                rich_data = await df_provider.fetch_hotel_info(
-                                    property_token=price_data["property_token"],
-                                    language_code="tr" # Default to TR for Turkish hotels
-                                )
-                                
-                                # Merge rich data into price_data for AnalystAgent to pick up
-                                if rich_data:
-                                    # Handle Pydantic v1/v2 compatibility and basic dicts without triggering IDE type warnings
-                                    if isinstance(rich_data, dict):
-                                        rich_dict = rich_data
-                                    elif hasattr(rich_data, "model_dump"):
-                                        rich_dict = rich_data.model_dump() # type: ignore
-                                    elif hasattr(rich_data, "dict"):
-                                        rich_dict = rich_data.dict() # type: ignore
-                                    else:
-                                        rich_dict = {}
-                                        
-                                    # Explicitly cast to dict for static analysis
-                                    rd_dict = rich_dict if isinstance(rich_dict, dict) else {}
-                                    
-                                    for key in ["amenities", "image_url", "stars", "review_count", "rating", "description"]:
-                                        val = rd_dict.get(key)
-                                        if val and isinstance(price_data, dict):
-                                            price_data[key] = val
-                                            
-                                    await self.log_reasoning(
-                                        session_id,
-                                        "Enrichment",
-                                        f"Successfully enriched {hotel_name} with {len(rd_dict.get('amenities', []))} amenities.",
-                                        "success"
-                                    )
-                            except Exception as enrich_e:
-                                await self.log_reasoning(
-                                    session_id,
-                                    "Enrichment",
-                                    f"Enrichment failed for {hotel_name}: {enrich_e}",
-                                    "warning"
-                                )
-
-                    # [NEW] Normalize Room Types if present
-                    if isinstance(price_data, dict) and price_data.get("room_types"):
-                        normalized_rooms = []
-                        # Type narrowing for Pyright
-                        room_list = price_data["room_types"]
-                        if isinstance(room_list, list):
-                            for room in room_list:
-                                # Expected format from provider: {"name": "...", "price": ..., "currency": ...}
-                                if isinstance(room, dict):
-                                    raw_name = str(room.get("name") or "Unknown")
-                                    # [Safety] Robust check for normalizer response
-                                    try:
-                                        norm_res = RoomTypeNormalizer.normalize(raw_name)
-
-                                        if isinstance(norm_res, dict):
-                                            room["canonical_code"] = norm_res.get("canonical_code", "unknown")
-                                            room["canonical_name"] = norm_res.get("canonical_name", "Unknown")
-                                    except Exception:
-                                        pass
-                                    normalized_rooms.append(room)
-
-                            price_data["room_types"] = normalized_rooms
-                            await self.log_reasoning(
-                                session_id,
-                                "Normalization",
-                                f"Mapped {len(normalized_rooms)} room variants to canonical types for {hotel_name}.",
-                                "info",
+                        try:
+                            # Per-hotel logic
+                            price_data = await asyncio.wait_for(
+                                provider.fetch_price(
+                                    hotel_name=hotel_name,
+                                    location=location,
+                                    check_in=check_in,
+                                    check_out=check_out,
+                                    adults=adults,
+                                    currency=getattr(options, "currency", "TRY") if options else "TRY",
+                                    serp_api_id=serp_api_id
+                                ),
+                                timeout=120.0
                             )
-                        # Also normalize offers/parity_offers if they have room names?
-                        # Providers usually put specific room names in 'room_types' array.
+                        except Exception as e:
+                            price_data = {"status": "error", "error": str(e)}
 
-                    status = (
-                        "success"
-                        if price_data and price_data.get("status") != "error"
-                        else "error"
-                    )
-                    if price_data and "error" in price_data:
-                        status = "error"
+                    # 3. Normalization logic omitted for brevity in core loop (handled by RoomTypeNormalizer if needed)
+                    if price_data and price_data.get("room_types"):
+                        for r in price_data["room_types"]:
+                            if isinstance(r, dict):
+                                try:
+                                    norm = RoomTypeNormalizer.normalize(r.get("name", ""))
+                                    r["canonical_code"] = norm.get("canonical_code")
+                                    r["canonical_name"] = norm.get("canonical_name")
+                                except: pass
 
-                result = {
-                    "hotel_id": hotel_id,
-                    "hotel_name": hotel_name,
-                    "location": location,
-                    "status": status,
-                    "price_data": price_data,
-                    "check_in": check_in,
-                    "adults": adults,
-                }
-
-                results.append(result)
-                return result
+                    status = "success" if price_data and price_data.get("status") == "success" else "error"
+                    
+                    result = {
+                        "hotel_id": hotel_id,
+                        "hotel_name": hotel_name,
+                        "status": status,
+                        "price_data": price_data,
+                        "check_in": str(check_in),
+                        "adults": adults
+                    }
+                    results.append(result)
+                    return result
 
             except Exception as e:
-                print(f"[ScraperAgent] Critical Error processing {hotel_name}: {e}")
-                error_result = {
-                    "hotel_id": hotel["id"],
-                    "hotel_name": hotel_name,
-                    "status": "error",
-                    "error": str(e),
-                }
-                results.append(error_result)
-                return error_result
+                err_res = {"hotel_id": hotel_id, "hotel_name": hotel_name, "status": "error", "error": str(e)}
+                results.append(err_res)
+                return err_res
 
-        # Run all hotels in parallel with semaphore control
-        await asyncio.gather(*(fetch_hotel(h) for h in hotels))
+        # Execute all
+        await asyncio.gather(*(fetch_hotel(h) for h in hotels if isinstance(h, dict)))
 
-        # HYPERSPEED: Batch flush all reasoning logs
-        # EXPLANATION: Single Source of Truth Architecture
-        # We previously experienced database collisions because both Scraper
-        # and Analyst were writing to price_logs. We have removed the
-        # _flush_price_logs call here. The AnalystAgent is now the
-        # sole writer of price data, ensuring consistency and
-        # resolving the "PARTIAL" scan status issue.
         if session_id:
             await self._flush_logs(session_id)
 

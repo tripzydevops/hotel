@@ -334,6 +334,8 @@ class ScanOptions(BaseModel):
     check_out: Optional[date] = None
     adults: int = Field(default=2, ge=1, le=10)
     currency: Optional[str] = "TRY"
+    hotel_ids: Optional[List[UUID]] = None
+    skip_intelligence: bool = Field(default=False, description="If True, skip AI Intelligence generation to save tokens.")
 
 
 class MonitorResult(BaseModel):

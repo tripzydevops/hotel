@@ -76,13 +76,19 @@ async def trigger_monitor_logic(
     """
 
     # Get all active hotels for user (exclude soft-deleted)
-    hotels_result = (
+    query = (
         db.table("hotels")
         .select("*")
         .eq("user_id", str(user_id))
         .is_("deleted_at", "null")
-        .execute()
     )
+    
+    # Filter by specific hotel IDs if provided in options
+    if options and options.hotel_ids:
+        hotel_id_strs = [str(hid) for hid in options.hotel_ids]
+        query = query.in_("id", hotel_id_strs)
+        
+    hotels_result = query.execute()
     hotels = hotels_result.data or []
 
     if not hotels:
@@ -220,7 +226,12 @@ async def trigger_monitor_logic(
 
     # Normalized Options for Background task
     normalized_options = ScanOptions(
-        check_in=check_in, check_out=check_out, adults=adults, currency=currency
+        check_in=check_in,
+        check_out=check_out,
+        adults=adults,
+        currency=currency,
+        hotel_ids=options.hotel_ids if options else None,
+        skip_intelligence=options.skip_intelligence if options else False,
     )
 
     # 3.5 [KAIZEN] Sync Scheduler (Anti-Drift)

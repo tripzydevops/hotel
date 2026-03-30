@@ -23,7 +23,8 @@ from types import SimpleNamespace
 logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
-INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "https://pa5riyqv.eu-central.insforge.app")
+INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+
 
 
 async def _verify_token_via_insforge(token: str) -> dict:

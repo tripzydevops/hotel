@@ -89,6 +89,7 @@ class ApiKeyManager:
         self._last_quota_check: Dict[str, datetime] = {}  # key -> last check time
         self._exhaustion_cooldown = timedelta(hours=24)  # Reset after 24h
         self._rate_limit_cooldown = timedelta(seconds=60)  # [FIX] Reduced from 15m to 60s for high-volume scans
+        self._last_used_key_suffix: Optional[str] = None
 
     async def _fetch_quota(self, api_key: str):
         """Fetch actual searches left from SerpApi Account API."""
@@ -129,6 +130,18 @@ class ApiKeyManager:
         except Exception as e:
             logger.error(f"Quota Check Error for {api_key[-6:]}: {e}")
         return None
+
+    def get_current_key(self) -> Optional[str]:
+        """Get the current available API key."""
+        with self._lock:
+            if not self._keys:
+                return None
+            return self._keys[self._current_index]
+
+    @property
+    def last_used_key_suffix(self) -> Optional[str]:
+        """Returns suffix of the last successfully used key."""
+        return self._last_used_key_suffix
 
     @property
     def current_key(self) -> str:
@@ -260,6 +273,19 @@ class ApiKeyManager:
                     is_limited = True
 
             if not is_limited:
+                # Rate Limit Check
+                if (
+                    next_key in self._rate_limited_keys
+                    and datetime.now() - self._rate_limited_keys[next_key]
+                    < self._rate_limit_cooldown
+                ):
+                    logger.warning(
+                        f"Key suffix {next_key[-5:]} is on rate-limit cooldown."
+                    )
+                    return False
+                
+                # Success - Set last used suffix
+                self._last_used_key_suffix = next_key[-5:]
                 logger.info(
                     f"Rotated to key {self._current_index + 1}/{len(self._keys)}"
                 )
@@ -380,6 +406,11 @@ class SerpApiClient:
     @property
     def api_key(self) -> str:
         return self._key_manager.current_key
+
+    @property
+    def last_used_key_suffix(self) -> Optional[str]:
+        """Returns suffix of the last successfully used key."""
+        return self._key_manager.last_used_key_suffix
 
     async def get_key_status(self) -> Dict[str, Any]:
         current_keys = load_api_keys()
@@ -762,6 +793,11 @@ class SerpApiClient:
                 "property_token": data.get("property_token"),
                 "reviews_breakdown": data.get("reviews_breakdown", []),
                 "reviews": data.get("reviews", []),
+                "description": data.get("description"),
+                "phone": data.get("phone"),
+                "website": data.get("website"),
+                "address": data.get("address"),
+                "gps_coordinates": data.get("gps_coordinates"),
             }
         if not best_match:
             for prop in properties:
@@ -878,6 +914,10 @@ class SerpApiClient:
             "search_rank": rank,
             "latitude": (best_match.get("gps_coordinates") or {}).get("latitude"),
             "longitude": (best_match.get("gps_coordinates") or {}).get("longitude"),
+            "description": best_match.get("description"),
+            "phone": best_match.get("phone"),
+            "website": best_match.get("website"),
+            "address": best_match.get("address"),
             "raw_data": best_match,
         }
 

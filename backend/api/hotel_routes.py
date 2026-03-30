@@ -70,22 +70,6 @@ async def list_locations(db: Client = Depends(get_supabase)):
     return await service.get_locations()
 
 
-@router.post("/hotels")
-async def add_hotel_to_account(
-    hotel: dict,
-    db: Client = Depends(get_supabase_rls),
-    current_active_user=Depends(get_current_active_user),
-):
-    """
-    Associates a hotel from the global directory with a specific user profile.
-    This triggers the initialization of tracking for that hotel.
-    """
-    # EXPLANATION: Hotel Onboarding
-    # Bridges the global directory and the user's personal tracking list.
-    # Essential for starting price monitoring for a new property.
-    user_id = current_active_user.id
-    return await add_hotel_to_account_logic(hotel, user_id, db)
-
 
 @router.get("/hotels/search")
 async def search_hotel_directory_v2(

@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any, cast
 from supabase import Client
 from fastapi import HTTPException
 from backend.services.serpapi_client import serpapi_client
+from backend.services.dataforseo_client import dataforseo_client
 from backend.utils.helpers import log_query
 
 
@@ -131,6 +132,7 @@ async def search_hotel_directory_logic(
             hotel_name=q_trimmed,
             location=city,
             action_type="search",
+            api_key_suffix=serpapi_client.last_used_key_suffix,
         )
 
     # Return top matches with explicit casting to satisfy linter
@@ -234,24 +236,28 @@ async def add_hotel_to_account_logic(
                     cid = cid or d.get("cid")
                     place_id = place_id or d.get("place_id")
                     
-                # 2. [PRO-METADATA] Use DataForSEO for deep metadata if still missing
-                if not phone or not email:
+                # 2. DataForSEO Enrichment (DEPRECATED - DEFAULT OFF)
+                # KAİZEN: Removed automatic third-party enrichment to respect data fidelity and cost control.
+                # Only re-enable if explicitly requested by the user.
+                """
+                if not phone or not website or not address:
                     try:
-                        from backend.services.providers.dataforseo_provider import dataforseo_provider
-                        print(f"Service: Fetching Pro metadata for {name}")
-                        pro_meta = await dataforseo_provider.get_hotel_metadata(name, location)
-                        if pro_meta:
-                            phone = phone or pro_meta.get("phone")
-                            email = email or pro_meta.get("email")
-                            website = website or pro_meta.get("website")
-                            address = address or pro_meta.get("address")
-                            description = description or pro_meta.get("description")
-                            cid = cid or pro_meta.get("cid")
-                            place_id = place_id or pro_meta.get("place_id")
-                            # If we found a CID/Place ID, it might help SerpApi later
-                            serp_api_id = serp_api_id or place_id or cid
+                        enrich_data = await dataforseo_client.get_hotel_details(name, location or "")
+                        if enrich_data:
+                            phone = phone or enrich_data.get("phone")
+                            website = website or enrich_data.get("website")
+                            address = address or enrich_data.get("address")
+                            rating = rating or enrich_data.get("rating")
+                            review_count = review_count or enrich_data.get("review_count")
+                            cid = cid or enrich_data.get("cid")
+                            place_id = place_id or enrich_data.get("place_id")
+                            # Add coordinates if missing
+                            hotel_data["latitude"] = hotel_data.get("latitude") or enrich_data.get("latitude")
+                            hotel_data["longitude"] = hotel_data.get("longitude") or enrich_data.get("longitude")
                     except Exception as e:
                         print(f"DataForSEO Enrichment Error: {e}")
+                """
+                pass
 
         # Prepare data for insertion
         data = {
@@ -285,6 +291,7 @@ async def add_hotel_to_account_logic(
                 hotel_name=data["name"],
                 location=data.get("location"),
                 action_type="add_to_account",
+                api_key_suffix=serpapi_client.last_used_key_suffix,
             )
 
             # EXPLANATION: Collaborative Data Growth

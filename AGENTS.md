@@ -1,133 +1,50 @@
 ---
-description: Instructions building apps with MCP
+description: Development Guidelines for Hotel App (Vercel + InsForge)
 globs: *
 alwaysApply: true
 ---
 
-# InsForge SDK Documentation - Overview
+# Hotel App Development Guidelines
 
-## What is InsForge?
+## Architecture Overview
 
-Backend-as-a-service (BaaS) platform providing:
+This project uses a hybrid architecture designed for performance and scalability:
+- **Hosting**: [Vercel](https://vercel.com) (Frontend & Backend/API)
+- **Deployment**: Integrated via GitHub Actions / Vercel Git integration.
+- **BaaS (Backend-as-a-Service)**: [InsForge](https://insforge.com) provides the remote infrastructure for:
+  - **Database**: PostgreSQL (managed via Supabase-compatible SDK)
+  - **Authentication**: User identity and session management
+  - **Storage**: Media and file hosting
+  - **AI**: Integrated chat and generation services
 
-- **Database**: PostgreSQL with PostgREST API
-- **Authentication**: Email/password + OAuth (Google, GitHub)
-- **Storage**: File upload/download
-- **AI**: Chat completions and image generation (OpenAI-compatible)
-- **Functions**: Serverless function deployment
-- **Realtime**: WebSocket pub/sub (database + client events)
+## Environment Configuration
 
-## Installation
+All infrastructure settings must be managed through environment variables. **Never hardcode service URLs.**
 
-The following is a step-by-step guide to installing and using the InsForge TypeScript SDK for Web applications. If you are building other types of applications, please refer to:
-- [Swift SDK documentation](/sdks/swift/overview) for iOS, macOS, tvOS, and watchOS applications.
-- [Kotlin SDK documentation](/sdks/kotlin/overview) for Android applications.
-- [REST API documentation](/sdks/rest/overview) for direct HTTP API access.
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your InsForge BaaS endpoint URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public key for frontend operations |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** key for backend/administrative tasks (Vercel only) |
 
-### 🚨 CRITICAL: Follow these steps in order
+## Authentication Integration
 
-### Step 1: Download Template
+- Use the `@insforge/sdk` for frontend session management.
+- Backend verification is handled via `backend/services/auth_service.py` using standard JWT validation against the InsForge identity provider.
 
-Use the `download-template` MCP tool to create a new project with your backend URL and anon key pre-configured.
+## Database Operations
 
-### Step 2: Install SDK
+- **Frontend**: Use the `supabase` client from `lib/insforge.ts`.
+- **Backend**: Use `get_supabase_client` from `backend/utils/db.py`.
+- **Note**: The backend utility handles the necessary path overrides to ensure compatibility with the InsForge PostgREST implementation.
 
-```bash
-npm install @insforge/sdk@latest
-```
+## Security & CORS
 
-### Step 3: Create SDK Client
+- Local development uses `localhost:3000` (frontend) and `localhost:8000` (backend).
+- Production hosting is on Vercel. 
+- The API's `manual_cors_middleware` in `backend/main.py` is configured to trust `.vercel.app` domains. Ensure new custom domains are added there when launched.
 
-You must create a client instance using `createClient()` with your base URL and anon key:
-
-```javascript
-import { createClient } from '@insforge/sdk';
-
-const client = createClient({
-  baseUrl: 'https://your-app.region.insforge.site',  // Your InsForge backend URL
-  anonKey: 'your-anon-key-here'       // Get this from backend metadata
-});
-
-```
-
-**API BASE URL**: Your API base URL is `https://your-app.region.insforge.site`.
-
-## Getting Detailed Documentation
-
-### 🚨 CRITICAL: Always Fetch Documentation Before Writing Code
-
-InsForge provides official SDKs and REST APIs, use them to interact with InsForge services from your application code.
-
-- [TypeScript SDK](/sdks/typescript/overview) - JavaScript/TypeScript
-- [Swift SDK](/sdks/swift/overview) - iOS, macOS, tvOS, and watchOS
-- [Kotlin SDK](/sdks/kotlin/overview) - Android and Kotlin Multiplatform
-- [REST API](/sdks/rest/overview) - Direct HTTP API access
-
-Before writing or editing any InsForge integration code, you **MUST** call the `fetch-docs` or `fetch-sdk-docs` MCP tool to get the latest SDK documentation. This ensures you have accurate, up-to-date implementation patterns.
-
-### Use the InsForge `fetch-docs` MCP tool to get specific SDK documentation:
-
-Available documentation types:
-
-- `"instructions"` - Essential backend setup (START HERE)
-- `"real-time"` - Real-time pub/sub (database + client events) via WebSockets
-- `"db-sdk-typescript"` - Database operations with TypeScript SDK
-- **Authentication** - Choose based on implementation:
-  - `"auth-sdk-typescript"` - TypeScript SDK methods for custom auth flows
-  - `"auth-components-react"` - Pre-built auth UI for React+Vite (singlepage App)
-  - `"auth-components-react-router"` - Pre-built auth UI for React(Vite+React Router) (Multipage App)
-  - `"auth-components-nextjs"` - Pre-built auth UI for Nextjs (SSR App)
-- `"storage-sdk"` - File storage operations
-- `"functions-sdk"` - Serverless functions invocation
-- `"ai-integration-sdk"` - AI chat and image generation
-- `"real-time"` - Real-time pub/sub (database + client events) via WebSockets
-- `"deployment"` - Deploy frontend applications via MCP tool
-
-These documentations are mostly for TypeScript SDK. For other languages, you can also use `fetch-sdk-docs` mcp tool to get specific documentation.
-
-### Use the InsForge `fetch-sdk-docs` MCP tool to get specific SDK documentation
-
-You can fetch sdk documentation using the `fetch-sdk-docs` MCP tool with specific feature type and language.
-
-Available feature types:
-- db - Database operations
-- storage - File storage operations
-- functions - Serverless functions invocation
-- auth - User authentication
-- ai - AI chat and image generation
-- realtime - Real-time pub/sub (database + client events) via WebSockets
-
-Available languages:
-- typescript - JavaScript/TypeScript SDK
-- swift - Swift SDK (for iOS, macOS, tvOS, and watchOS)
-- kotlin - Kotlin SDK (for Android and JVM applications)
-- rest-api - REST API
-
-## When to Use SDK vs MCP Tools
-
-### Always SDK for Application Logic:
-
-- Authentication (register, login, logout, profiles)
-- Database CRUD (select, insert, update, delete)
-- Storage operations (upload, download files)
-- AI operations (chat, image generation)
-- Serverless function invocation
-
-### Use MCP Tools for Infrastructure:
-
-- Project scaffolding (`download-template`) - Download starter templates with InsForge integration
-- Backend setup and metadata (`get-backend-metadata`)
-- Database schema management (`run-raw-sql`, `get-table-schema`)
-- Storage bucket creation (`create-bucket`, `list-buckets`, `delete-bucket`)
-- Serverless function deployment (`create-function`, `update-function`, `delete-function`)
-- Frontend deployment (`create-deployment`) - Deploy frontend apps to InsForge hosting
-
-## Important Notes
-
-- For auth: use `auth-sdk` for custom UI, or framework-specific components for pre-built UI
-- SDK returns `{data, error}` structure for all operations
-- Database inserts require array format: `[{...}]`
-- Serverless functions have single endpoint (no subpaths)
-- Storage: Upload files to buckets, store URLs in database
-- AI operations are OpenAI-compatible
-- **EXTRA IMPORTANT**: Use Tailwind CSS 3.4 (do not upgrade to v4). Lock these dependencies in `package.json`
+## Important Engineering Rules
+1. **Hosting**: Do **not** use InsForge for deployment or serverless functions. Use Vercel only.
+2. **Dependencies**: Lock Tailwind CSS to 3.4.
+3. **Internal Errors**: Never expose raw database or system traces to the client. Use the centralized error handling patterns.

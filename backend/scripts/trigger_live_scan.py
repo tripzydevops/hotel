@@ -14,7 +14,7 @@ from backend.agents.analyst_agent import AnalystAgent
 from backend.models.schemas import ScanOptions
 
 async def trigger_scan():
-    db = get_supabase()
+    db = get_supabase(admin=True)
     if not db:
         print("Error: Supabase client not available")
         return
@@ -27,7 +27,7 @@ async def trigger_scan():
     #     return
     
     # user_id = users.data[0]['user_id']
-    user_id = "6f44982b-1d95-48da-9040-97c6a36fe631"  # Adjusted for current user
+    user_id = "287aae1d-d72a-4be1-8e84-e8b0d65d2019"  # Adjusted for current user
     print(f"Using User ID: {user_id}")
 
     # 2. Get hotels for this user
@@ -37,7 +37,7 @@ async def trigger_scan():
         print("No hotels found for this user.")
         return
     
-    hotel_list = hotels.data
+    hotel_list = hotels.data[:1]
     print(f"Found {len(hotel_list)} hotels to scan: {[h['name'] for h in hotel_list]}")
 
     # 3. Initialize Agents

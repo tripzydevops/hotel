@@ -12,21 +12,41 @@ class ProviderFactory:
     _providers: List[HotelDataProvider] = []
 
     @classmethod
-    def get_active_providers(cls) -> List[HotelDataProvider]:
-        """Returns list of all active providers sorted by priority."""
+    def get_active_providers(cls, include_secondary: bool = False) -> List[HotelDataProvider]:
+        """
+        Returns list of active providers.
+        By default, returns ONLY SerpApi (Primary) to respect the user's focus on high-fidelity results.
+        DataForSEO is only included if explicitly requested.
+        """
         if not cls._providers:
             cls._register_providers()
-        return cls._providers
+        
+        if include_secondary:
+            return cls._providers
+            
+        # Filter to return only Primary (SerpApi)
+        return [p for p in cls._providers if isinstance(p, SerpApiProvider)]
 
     @classmethod
-    def get_provider(cls, prefer: str = "primary") -> HotelDataProvider:
+    def get_provider(cls, prefer: str = "serpapi") -> HotelDataProvider:
         """
         Get the most appropriate provider.
+        Defaults to SerpApi. Only returns DataForSEO if explicitly requested.
         """
         if not cls._providers:
             cls._register_providers()
 
-        # Default to First Available (SerpApi)
+        if prefer == "dataforseo":
+            df_provider = next((p for p in cls._providers if isinstance(p, DataForSEOProvider)), None)
+            if df_provider:
+                return df_provider
+
+        # Default to SerpApi (First element which is always SerpApi if registered)
+        serp_provider = next((p for p in cls._providers if isinstance(p, SerpApiProvider)), None)
+        if serp_provider:
+            return serp_provider
+
+        # Fallback to whatever is available if SerpApi is somehow missing but requested
         if cls._providers:
             return cls._providers[0]
 

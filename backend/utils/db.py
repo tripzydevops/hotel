@@ -23,17 +23,18 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
     Core Supabase client factory with InsForge-specific path overrides.
     Safe for both FastAPI dependency injection and standalone script usage.
     """
-    # 1. Prioritize arguments, then env vars, then defaults
-    target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "https://pa5riyqv.eu-central.insforge.app"
+    # 1. Prioritize arguments, then env vars
+    target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     
     if admin:
-        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     else:
-        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     if not target_url or not target_key:
-        print("WARNING: Missing Supabase credentials for client initialization.")
+        print(f"CRITICAL: Missing Supabase credentials (URL={bool(target_url)}, KEY={bool(target_key)}, ADMIN={admin})")
         return None
+
 
     try:
         # 2. Initialize the generic client
