@@ -175,6 +175,19 @@ async def get_enriched_profile_logic(
     else:
         profile_result["user_id"] = user_id_str
     
+    # ENSURE AT LEAST ONE NAME FIELD IS POPULATED
+    if not profile_result.get("display_name"):
+        email = profile_result.get("email")
+        if not email and admin_db:
+            try:
+                auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
+                if auth_user and auth_user.user:
+                    email = auth_user.user.email
+            except Exception:
+                pass
+        
+        profile_result["display_name"] = email.split("@")[0].capitalize() if email else "User"
+
     profile_result["plan_type"] = plan
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active
@@ -192,6 +205,11 @@ async def get_enriched_profile_logic(
         profile_result["created_at"] = datetime.now(timezone.utc).isoformat()
     if "updated_at" not in profile_result:
         profile_result["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # KAIZEN: Convert datetime objects to ISO strings for Pydantic consistency
+    for key in ["created_at", "updated_at"]:
+        if isinstance(profile_result.get(key), datetime):
+            profile_result[key] = profile_result[key].isoformat()
 
     return profile_result
 

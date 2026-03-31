@@ -185,7 +185,9 @@ class ApiClient {
   }
 
   async getProfile(): Promise<any> {
-    return this.fetch<any>(`/api/profile`);
+    const profile = await this.fetch<any>(`/api/profile`);
+    console.log("[API] Profile loaded:", profile?.display_name, profile?.plan_type);
+    return profile;
   }
 
   async searchDirectory(query: string, city?: string): Promise<any[]> {
@@ -301,20 +303,21 @@ class ApiClient {
     });
   }
 
-  async updateProfile(
-    profile: {
-      display_name?: string;
-      company_name?: string;
-      job_title?: string;
-      phone?: string;
-      avatar_url?: string;
-      timezone?: string;
-    },
-  ): Promise<any> {
-    return this.fetch<any>(`/api/profile`, {
+  async updateProfile(profile: {
+    display_name?: string;
+    company_name?: string;
+    job_title?: string;
+    phone?: string;
+    avatar_url?: string;
+    timezone?: string;
+  }): Promise<any> {
+    console.log("[API] Updating profile with:", Object.keys(profile));
+    const result = await this.fetch<any>(`/api/profile`, {
       method: "PUT",
       body: JSON.stringify(profile),
     });
+    console.log("[API] Profile update response:", result?.display_name);
+    return result;
   }
   async getAdminStats(): Promise<AdminStats> {
     return this.fetch<AdminStats>("/api/admin/stats");

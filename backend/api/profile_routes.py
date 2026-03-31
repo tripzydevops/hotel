@@ -41,10 +41,12 @@ async def get_profile(
     verify_ownership(user_id, current_user)
 
     try:
-        # Assuming get_profile_logic is a new or renamed function that encapsulates the enrichment logic
+        # Cast to UUID
+        user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        
         return await get_enriched_profile_logic(
-            user_id, None, db
-        )  # Pass None for base_data as get_enriched_profile_logic will fetch it
+            user_uuid, None, db
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -64,7 +66,10 @@ async def update_profile(
     verify_ownership(user_id, current_user)
 
     try:
-        return await update_profile_logic(user_id, profile, db)
+        # Cast to UUID
+        user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        
+        return await update_profile_logic(user_uuid, profile, db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

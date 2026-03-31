@@ -10,6 +10,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  initialData?: any;
   onUpdate?: (profile: any) => void;
 }
 
@@ -28,6 +29,7 @@ export default function ProfileModal({
   isOpen,
   onClose,
   userId,
+  initialData,
   onUpdate,
 }: ProfileModalProps) {
   const { t } = useI18n();
@@ -44,12 +46,22 @@ export default function ProfileModal({
 
   useEffect(() => {
     if (isOpen && userId) {
+      if (initialData) {
+        setProfile({
+          display_name: initialData.display_name || "",
+          company_name: initialData.company_name || "",
+          job_title: initialData.job_title || "",
+          phone: initialData.phone || "",
+          timezone: initialData.timezone || "UTC",
+        });
+        setLoading(false); // Can skip front-end loading if we have initialData
+      }
       loadProfile();
     }
-  }, [isOpen, userId]);
+  }, [isOpen, userId, initialData]);
 
   const loadProfile = async () => {
-    setLoading(true);
+    if (!initialData) setLoading(true);
     try {
       const data = await api.getProfile();
       setProfile({
@@ -80,7 +92,11 @@ export default function ProfileModal({
       const updated = await api.updateProfile(profile);
       console.log("[ProfileModal] Profile updated successfully:", updated);
 
-      if (onUpdate) onUpdate(updated);
+      // MERGE: Ensure enriched fields (role, plan) are preserved by merging 
+      // with initialData if the server response is somehow partial.
+      const fullProfile = { ...(initialData || {}), ...updated };
+
+      if (onUpdate) onUpdate(fullProfile);
       toast.success(t("profile.saveSuccess") || "Profile updated successfully");
       onClose();
     } catch (err: any) {

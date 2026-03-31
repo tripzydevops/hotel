@@ -282,6 +282,7 @@ export default function DashboardLayout({
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           userId={userId || ""}
+          initialData={profile}
           onUpdate={(updated) => setProfile(updated)}
         />
 
