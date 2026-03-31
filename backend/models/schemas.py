@@ -312,6 +312,22 @@ class ScanSession(BaseModel):
     currency: Optional[str] = "TRY"
     reasoning_trace: Optional[List[Any]] = None
 
+    @field_validator("reasoning_trace", mode="before")
+    @classmethod
+    def validate_reasoning_trace(cls, v: Any) -> Optional[List[Any]]:
+        if v == "" or v is None:
+            return []
+        if isinstance(v, str):
+            import json
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except:
+                return []
+        if isinstance(v, dict):
+            return [v]
+        return v
+
     class Config:
         from_attributes = True
 

@@ -4,7 +4,7 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
-from backend.models.schemas import MonitorResult, ScanOptions, QueryLog
+from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
 from backend.services.monitor_service import (
     trigger_monitor_logic,
     run_monitor_background,
@@ -167,7 +167,7 @@ async def check_scheduled_scan(
 # The ScanSessionModal polls this to get live reasoning_trace and status
 # updates. Without this, the Agent Mesh steps and Reasoning Timeline
 # stay stale after the modal opens.
-@router.get("/sessions/{session_id}")
+@router.get("/sessions/{session_id}", response_model=ScanSession)
 async def get_session(
     session_id: UUID, 
     db: Client = Depends(get_supabase_rls),
@@ -179,11 +179,13 @@ async def get_session(
             db.table("scan_sessions").select("*").eq("id", str(session_id)).execute()
         )
         if result.data:
-            return result.data[0]
-        return {"error": "Session not found"}
+            return ScanSession.model_validate(result.data[0])
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:
-        print(f"Error fetching session: {e}")
-        return {"error": str(e)}
+        if not isinstance(e, HTTPException):
+            print(f"Error fetching session: {e}")
+        raise e
 
 
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])

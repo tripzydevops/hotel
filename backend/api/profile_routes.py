@@ -192,6 +192,16 @@ async def update_settings(
                 .eq("user_id", str(user_id))
                 .execute()
             )
+            
+            # 3.5 [KAIZEN] Initialize/Update next_scan_at in profiles
+            # Why: If the user changes their frequency (timer), the scheduler needs to know.
+            # Especially for new users where next_scan_at is NULL (Safe/Lean Mode).
+            if "check_frequency_minutes" in update_data:
+                freq = update_data["check_frequency_minutes"]
+                # We update next_scan_at to now() + freq
+                from datetime import datetime, timedelta, timezone
+                new_next = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
+                db.table("profiles").update({"next_scan_at": new_next}).eq("id", str(user_id)).execute()
         except Exception as e:
             # If update fails (e.g. column missing), try fallback without push_subscription
             if "push_subscription" in update_data:

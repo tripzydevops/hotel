@@ -391,7 +391,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      activeSession.status !== "pending" || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Scraper"))
+                      activeSession.status !== "pending" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Scraper")))
                         ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -412,7 +412,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      ["completed", "partial", "failed"].includes(activeSession.status) || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Analyst"))
+                      ["completed", "partial", "failed"].includes(activeSession.status) || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Analyst")))
                         ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)] shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -433,7 +433,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      activeSession.status === "completed" || (activeSession.reasoning_trace || []).some(t => JSON.stringify(t).includes("Notifier"))
+                      activeSession.status === "completed" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Notifier")))
                         ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -460,9 +460,9 @@ export default function ScanSessionModal({
                 </h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar flex flex-col-reverse">
                   {/* flex-col-reverse ensures new items appear at the bottom but are rendered first for typing logic */}
-                  {[...(activeSession.reasoning_trace || [])].reverse().map((trace: any, i: number) => (
+                  {[...(Array.isArray(activeSession.reasoning_trace) ? activeSession.reasoning_trace : [])].reverse().map((trace: any, i: number) => (
                     <ReasoningItem 
-                      key={(activeSession.reasoning_trace?.length || 0) - i} 
+                      key={(Array.isArray(activeSession.reasoning_trace) ? activeSession.reasoning_trace.length : 0) - i} 
                       trace={trace} 
                       isNew={i === 0 && activeSession.status === "running"} 
                     />

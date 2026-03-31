@@ -59,17 +59,7 @@ export default function Dashboard() {
     setProfile,
   } = useDashboard(userId, t);
 
-  // Trigger lazy scan check on dashboard load (Delayed to prioritize render)
-  useEffect(() => {
-    if (userId) {
-      const timer = setTimeout(() => {
-        api.checkScheduledScan().catch((err) => {
-          console.error("[LazyCron] Failed to check scheduled scan:", err);
-        });
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [userId]);
+  // Removed: Lazy scan check on dashboard load. Scans are now handled by GitHub Action schedule or Manual user trigger.
 
   const {
     isAddHotelOpen,
@@ -229,16 +219,20 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
-            {data?.next_scan_at && !isRefreshing && (
+            {!isRefreshing && (
               <div className="hidden md:flex flex-col items-end mr-2">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                   {t("dashboard.nextScheduledScan")}
                 </span>
                 <span className="text-xs font-black text-[#F6C344] tabular-nums">
-                  {new Date(data.next_scan_at).toLocaleTimeString(locale, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {data?.next_scan_at ? (
+                    new Date(data.next_scan_at).toLocaleTimeString(locale, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  ) : (
+                    t("common.pending")
+                  )}
                 </span>
               </div>
             )}
