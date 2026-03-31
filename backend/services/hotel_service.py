@@ -55,18 +55,22 @@ async def search_hotel_directory_logic(
     
     # EXPLANATION: Smart Location Filtering
     # If a city is selected in the UI, we prioritize results from that location.
-    # We use 'ilike' with wildcards to handle "City, Country" formats in the DB.
-    if city:
-        query = query.ilike("location", f"%{city}%")
+    # We treat empty strings or "Select City" values as None.
+    clean_city = city.strip() if city and city.strip() and city.lower() != "select city" else None
+    
+    if clean_city:
+        query = query.ilike("location", f"%{clean_city}%")
 
     # Simple OR matching for multi-word search, plus a catch-all for the full string
     conditions = [f"name.ilike.%{q_normalized}%", f"location.ilike.%{q_normalized}%"]
     for w in q_words:
         if len(w) >= 3:
-            conditions.append(f"name.ilike.%{w}%")
-            conditions.append(f"location.ilike.%{w}%")
+            # Avoid redundant conditions if word is already q_normalized
+            if w != q_normalized:
+                conditions.append(f"name.ilike.%{w}%")
+                conditions.append(f"location.ilike.%{w}%")
 
-    result = query.or_(",".join(conditions)).limit(100).execute()
+    result = query.or_(",".join(conditions)).limit(200).execute()
 
     local_results = []
     for h in result.data or []:
@@ -112,20 +116,26 @@ async def search_hotel_directory_logic(
 
     if should_fallback:
         try:
+            # If no city, we try to broaden the query slightly for better search engine discovery
             live_query = f"{q_trimmed} Hotel"
-            if city:
-                live_query += f" {city}"
+            if clean_city:
+                live_query += f" {clean_city}"
+            else:
+                # If no city, typing often implies common brands or locations
+                # We can try to keep it simple but maybe add "Location" to hint search engine if needed
+                pass
 
             live_results = await serpapi_client.search_hotels(live_query, limit=10)
 
             # Filter and merge live results
             for lr in live_results:
                 lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
+                # If query is short, we need to be stricter with word match
                 if any(w in lr_norm for w in q_words):
                     lr["source"] = "serpapi"
-                    # Avoid duplicates
+                    # Avoid duplicates with sophisticated name comparison
                     if not any(
-                        normalize_term(res.get("name", "")) == normalize_term(lr["name"])
+                        normalize_term(res.get("name", "")) in lr_norm or lr_norm in normalize_term(res.get("name", ""))
                         for res in local_results
                     ):
                         merged_results.append(lr)
@@ -137,7 +147,7 @@ async def search_hotel_directory_logic(
             db=db,
             user_id=user_id,
             hotel_name=q_trimmed,
-            location=city,
+            location=clean_city,
             action_type="search",
             api_key_suffix=serpapi_client.last_used_key_suffix,
         )
@@ -290,8 +300,8 @@ async def add_hotel_to_account_logic(
             "description": description,
             "cid": cid,
             "place_id": place_id,
-            "sentiment_breakdown": hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None),
-            "reviews": hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None),
+            "sentiment_breakdown": (hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None)) if isinstance(hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None), list) else None,
+            "reviews": (hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None)) if isinstance(hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None), list) else None,
         }
 
         # Insert into user's hotels list

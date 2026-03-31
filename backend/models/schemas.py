@@ -3,7 +3,7 @@ Pydantic Models for Hotel Rate Monitor
 Provides structured data validation for all API operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date, timezone
 from uuid import UUID
@@ -57,6 +57,13 @@ class HotelBase(BaseModel):
     description: Optional[str] = None
     cid: Optional[str] = None
     place_id: Optional[str] = None
+    
+    @field_validator("sentiment_breakdown", "reviews", mode="before")
+    @classmethod
+    def validate_list_or_none(cls, v: Any) -> Optional[List[Dict[str, Any]]]:
+        if v == "" or isinstance(v, dict):
+            return []
+        return v
 
     class Config:
         from_attributes = True
