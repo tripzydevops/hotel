@@ -387,6 +387,8 @@ export const en = {
     timezone: "Timezone",
     saveProfile: "Save Profile",
     saving: "Saving...",
+    loading: "Syncing User Profile...",
+    error: "Failed to load profile data",
     namePlaceholder: "Your name",
     companyPlaceholder: "Your hotel or company",
     jobPlaceholder: "e.g. Revenue Manager",

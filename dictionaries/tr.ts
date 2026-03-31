@@ -384,6 +384,8 @@ export const tr = {
     timezone: "Zaman Dilimi",
     saveProfile: "Profili Kaydet",
     saving: "Kaydediliyor...",
+    loading: "Profil Eşitleniyor...",
+    error: "Profil verileri yüklenemedi",
     namePlaceholder: "İsminiz",
     companyPlaceholder: "Oteliniz veya şirketiniz",
     jobPlaceholder: "Örn: Gelir Yöneticisi",

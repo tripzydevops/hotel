@@ -34,7 +34,7 @@ export default function ProfileModal({
 }: ProfileModalProps) {
   const { t } = useI18n();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
     display_name: "",
@@ -54,11 +54,15 @@ export default function ProfileModal({
           phone: initialData.phone || "",
           timezone: initialData.timezone || "UTC",
         });
-        setLoading(false); // Can skip front-end loading if we have initialData
+        // If we have initial data, we don't strictly need to block the UI with a spinner
+        // but we still call loadProfile to ensure we have the freshest data from the server.
+        setLoading(false); 
+      } else {
+        setLoading(true);
       }
       loadProfile();
     }
-  }, [isOpen, userId, initialData]);
+  }, [isOpen, userId]); // Removed initialData from deps to prevent unnecessary resets if parent state flickers
 
   const loadProfile = async () => {
     if (!initialData) setLoading(true);
@@ -118,21 +122,24 @@ export default function ProfileModal({
             <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
               <User className="w-5 h-5" />
             </div>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">
               {t("profile.title")}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-3 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <div className="w-8 h-8 border-2 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium text-[var(--text-muted)] animate-pulse">
+              {t("profile.loading")}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -159,7 +166,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, display_name: e.target.value })
                   }
                   placeholder={t("profile.namePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -178,7 +185,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, company_name: e.target.value })
                   }
                   placeholder={t("profile.companyPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -197,7 +204,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, job_title: e.target.value })
                   }
                   placeholder={t("profile.jobPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -216,7 +223,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, phone: e.target.value })
                   }
                   placeholder={t("profile.phonePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -233,7 +240,7 @@ export default function ProfileModal({
                   onChange={(e) =>
                     setProfile({ ...profile, timezone: e.target.value })
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 [&>option]:bg-[var(--deep-ocean-card)]"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 [&>option]:bg-[var(--deep-ocean-card)]"
                 >
                   {TIMEZONES.map((tz) => (
                     <option key={tz} value={tz}>
@@ -248,7 +255,7 @@ export default function ProfileModal({
             <div className="flex gap-3 pt-4">
               <button
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all"
+                className="flex-1 py-3 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold hover:bg-white/10 transition-all"
               >
                 {t("common.cancel")}
               </button>
