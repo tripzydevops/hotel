@@ -14,8 +14,10 @@ export function useAuth() {
   useEffect(() => {
     async function loadUser() {
       try {
-        const { data } = await insforge.auth.getCurrentUser();
-        setUser(data);
+        const { data, error } = await insforge.auth.getCurrentUser() as any;
+        if (error) throw error;
+        // The SDK returns { data: { user }, error } or just data.
+        setUser(data?.user || data);
       } catch (err) {
         console.error("Auth Load Error", err);
       } finally {

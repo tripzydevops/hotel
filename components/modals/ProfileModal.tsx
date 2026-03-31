@@ -54,27 +54,26 @@ export default function ProfileModal({
           phone: initialData.phone || "",
           timezone: initialData.timezone || "UTC",
         });
-        // If we have initial data, we don't strictly need to block the UI with a spinner
-        // but we still call loadProfile to ensure we have the freshest data from the server.
         setLoading(false); 
       } else {
         setLoading(true);
       }
       loadProfile();
     }
-  }, [isOpen, userId]); // Removed initialData from deps to prevent unnecessary resets if parent state flickers
+  }, [isOpen, userId, !!initialData]);
 
   const loadProfile = async () => {
-    if (!initialData) setLoading(true);
     try {
       const data = await api.getProfile();
-      setProfile({
-        display_name: data.display_name || "",
-        company_name: data.company_name || "",
-        job_title: data.job_title || "",
-        phone: data.phone || "",
-        timezone: data.timezone || "UTC",
-      });
+      if (data) {
+        setProfile({
+          display_name: data.display_name || "",
+          company_name: data.company_name || "",
+          job_title: data.job_title || "",
+          phone: data.phone || "",
+          timezone: data.timezone || "UTC",
+        });
+      }
     } catch (err) {
       console.error("Failed to load profile:", err);
     } finally {

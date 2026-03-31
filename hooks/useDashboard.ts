@@ -27,14 +27,14 @@ export function useDashboard(
     updateSettings,
     loading: settingsLoading,
     error: settingsError,
-  } = useSettings(userId, hasDashboardData);
+  } = useSettings(userId, !!userId);
 
   const {
     profile,
     setProfile,
     loading: profileLoading,
     error: profileError,
-  } = useProfile(userId, hasDashboardData);
+  } = useProfile(userId, !!userId);
 
   // --- Queries ---
   const dashboardQuery = useQuery({
