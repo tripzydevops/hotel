@@ -56,6 +56,7 @@ class ScraperAgent:
             return
 
         try:
+            import json
             res = (
                 self.db.table("scan_sessions")
                 .select("reasoning_trace")
@@ -68,12 +69,17 @@ class ScraperAgent:
                 db_trace = res.data[0].get("reasoning_trace")
                 if isinstance(db_trace, list):
                     raw_trace = db_trace
+                elif isinstance(db_trace, str) and db_trace:
+                    try:
+                        raw_trace = json.loads(db_trace)
+                    except:
+                        raw_trace = []
             
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": raw_trace,
+                    "reasoning_trace": json.dumps(raw_trace),
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", sid_key).execute()

@@ -1,7 +1,7 @@
 from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any, cast
 from uuid import UUID
 from supabase import Client
@@ -60,17 +60,27 @@ class AnalystAgent:
             return
 
         try:
+            import json
             # Fetch existing trace
             existing = self.db.table("scan_sessions").select("reasoning_trace").eq("id", sid_key).single().execute()
-            raw_trace = existing.data.get("reasoning_trace") or [] if existing.data else []
+            raw_db = existing.data.get("reasoning_trace") if existing.data else None
+            
+            raw_trace = []
+            if isinstance(raw_db, list):
+                raw_trace = raw_db
+            elif isinstance(raw_db, str) and raw_db:
+                try:
+                    raw_trace = json.loads(raw_db)
+                except:
+                    raw_trace = []
             
             # Append new logs
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": raw_trace,
-                    "updated_at": datetime.now().isoformat(),
+                    "reasoning_trace": json.dumps(raw_trace),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", sid_key).execute()
 
