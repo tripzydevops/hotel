@@ -22,7 +22,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("hotel_plus_theme") as Theme;
+      const saved = localStorage.getItem("hp_theme") as Theme;
       if (saved && (saved === "dark" || saved === "light")) {
         return saved;
       }
@@ -33,13 +33,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     if (typeof window !== "undefined") {
-      localStorage.setItem("hotel_plus_theme", newTheme);
+      localStorage.setItem("hp_theme", newTheme);
     }
   };
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === "light") {
+      root.classList.add("light");
+    } else {
+      root.classList.remove("light");
+    }
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>

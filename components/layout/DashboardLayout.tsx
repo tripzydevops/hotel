@@ -122,14 +122,14 @@ export default function DashboardLayout({
     (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
   return (
-    <div className="flex min-h-screen bg-[#050B18]">
+    <div className="flex min-h-screen bg-[var(--deep-ocean)] transition-colors duration-500">
       <Sidebar profile={profile} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-[#050B18]/50 backdrop-blur-md sticky top-0 z-30">
+        <header className="h-20 border-b border-[var(--glass-border)] flex items-center justify-between px-8 bg-[var(--deep-ocean)]/50 backdrop-blur-md sticky top-0 z-30 transition-colors duration-500">
           <div className="flex items-center gap-8">
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight transition-colors duration-500">
               {getPageTitle()}
             </h2>
             {/* 
@@ -142,23 +142,23 @@ export default function DashboardLayout({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsAlertsOpen(true)}
-                className="w-10 h-10 rounded-xl border border-white/5 flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all relative"
+                className="w-10 h-10 rounded-xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--deep-ocean-accent)] hover:bg-[var(--deep-ocean-accent)]/80 transition-all relative"
               >
-                <Bell className="w-5 h-5 text-slate-300" />
+                <Bell className="w-5 h-5 text-[var(--text-secondary)]" />
                 {(data?.unread_alerts_count || 0) > 0 && (
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#050B18]" />
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--deep-ocean)]" />
                 )}
               </button>
 
-              <div className="h-8 w-[1px] bg-white/5 mx-1" />
+              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
 
               {/* Language Toggle */}
-              <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+              <div className="flex bg-[var(--deep-ocean-accent)] p-1 rounded-xl border border-[var(--glass-border)]">
                 <button
                   onClick={() => setLocale("en")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-[#F6C344] text-[#050B18]"
-                    : "text-slate-500 hover:text-white"
+                    ? "bg-[var(--soft-gold)] text-white"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   EN
@@ -166,24 +166,24 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("tr")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-[#F6C344] text-[#050B18]"
-                    : "text-slate-500 hover:text-white"
+                    ? "bg-[var(--soft-gold)] text-white"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   TR
                 </button>
               </div>
 
-              <div className="h-8 w-[1px] bg-white/5 mx-1" />
+              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
 
               <div className="flex items-center gap-3">
                 <div className="flex flex-col items-end items-end hidden sm:flex">
-                  <span className="text-xs font-bold text-white">
+                  <span className="text-xs font-bold text-[var(--text-primary)] transition-colors duration-500">
                     {/* EXPLANATION: Profile Name Sync
                         Changed from full_name to display_name to match backend and profile modal storage. */}
                     {profile?.display_name || "Enterprise User"}
                   </span>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                  <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest transition-colors duration-500">
                     {profile?.role === "admin"
                       ? "Administrator"
                       : "Revenue Director"}

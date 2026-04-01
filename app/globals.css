@@ -33,18 +33,19 @@
 
 /* ===== LIGHT THEME OVERRIDES ===== */
 .light-theme {
-  --deep-ocean: #f8fafc;
+  --deep-ocean: #f0f2f5;
   --deep-ocean-lighter: #ffffff;
   --deep-ocean-card: #ffffff;
-  --deep-ocean-accent: #f1f5f9;
+  --deep-ocean-accent: #e2e8f0;
   
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(0, 0, 0, 0.05);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: 15px;
+  --glass-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
 }
 
 .light-theme .command-card {
@@ -68,6 +69,10 @@
   opacity: 0.03;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.light-theme .bg-grain {
+  opacity: 0.15; /* More visible on light bg */
 }
 
 .radial-glow {

@@ -90,7 +90,7 @@ export default function Sidebar({
   const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
-    <aside className="w-64 bg-[#050B18] border-r border-white/5 flex flex-col h-screen sticky top-0 z-40">
+    <aside className="w-64 bg-[var(--deep-ocean)] border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-colors duration-500">
       {/* Logo Section */}
       <div className="p-8 mb-4">
         <HotelPlusLogo variant="sidebar" />
@@ -103,7 +103,7 @@ export default function Sidebar({
           href="/dashboard"
           className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/dashboard"
             ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
-            : "text-slate-400 hover:text-white hover:bg-white/5"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
             }`}
         >
           {pathname === "/dashboard" && (
@@ -127,7 +127,7 @@ export default function Sidebar({
             onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
             className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${isAnalysisActive
               ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
               }`}
           >
             {isAnalysisActive && (
@@ -159,7 +159,7 @@ export default function Sidebar({
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="ml-4 mt-1 pl-4 border-l border-white/10 space-y-1">
+                <div className="ml-4 mt-1 pl-4 border-l border-[var(--glass-border)] space-y-1">
                   {analysisSubItems.map((subItem) => {
                     const isSubActive = pathname === subItem.href;
                     return (
@@ -167,8 +167,8 @@ export default function Sidebar({
                         key={subItem.href}
                         href={subItem.href}
                         className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isSubActive
-                          ? "bg-white/10 text-white font-bold"
-                          : "text-slate-500 hover:text-white hover:bg-white/5"
+                          ? "bg-[var(--deep-ocean-accent)] text-[var(--text-primary)] font-bold"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
                           }`}
                       >
                         <subItem.icon className="w-4 h-4" />
@@ -187,7 +187,7 @@ export default function Sidebar({
           href="/reports"
           className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/reports"
             ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-            : "text-slate-400 hover:text-white hover:bg-white/5"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
             }`}
         >
           {pathname === "/reports" && (
@@ -207,8 +207,8 @@ export default function Sidebar({
         {profile?.role === "admin" && (
           <>
             <div className="pt-4 pb-2 px-4">
-              <div className="h-[1px] bg-white/5 w-full" />
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-4 ml-1">
+              <div className="h-[1px] bg-[var(--glass-border)] w-full" />
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-4 ml-1">
                 Management
               </p>
             </div>
@@ -216,7 +216,7 @@ export default function Sidebar({
               href={adminItem.href}
               className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin")
                 ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
                 }`}
             >
               <adminItem.icon
@@ -230,13 +230,13 @@ export default function Sidebar({
         )}
 
         <div className="pt-8 pb-4 px-4">
-          <div className="h-[1px] bg-white/5 w-full" />
+          <div className="h-[1px] bg-[var(--glass-border)] w-full" />
         </div>
 
         {/* Secondary Navigation */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-slate-500 hover:text-white hover:bg-white/5"
+          className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
         >
           <Settings className="w-5 h-5" />
           <span className="text-sm font-bold tracking-tight">Settings</span>
@@ -244,7 +244,7 @@ export default function Sidebar({
 
         <Link
           href="/help"
-          className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-slate-500 hover:text-white hover:bg-white/5"
+          className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
         >
           <HelpCircle className="w-5 h-5" />
           <span className="text-sm font-bold tracking-tight">Help Center</span>

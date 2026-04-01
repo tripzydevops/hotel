@@ -20,6 +20,7 @@ interface DiscoveryRival {
   stars: number;
   rating: number;
   similarity: number;
+  distance?: number;
   image_url?: string;
   amenities?: string[];
 }
@@ -168,7 +169,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
               animate={{ opacity: 1 }}
               className="grid grid-cols-1 gap-4"
             >
-              {rivals.map((rival, idx) => (
+              {rivals.map((rival: DiscoveryRival, idx: number) => (
                 <motion.div
                   key={rival.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -202,15 +203,23 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                           MATCH
                         </span>
                         <span className="text-[10px] font-black text-white">
-                          {rival.similarity
+                          {rival.similarity && !isNaN(rival.similarity)
                             ? Math.round(rival.similarity * 100)
-                            : "--"}
+                            : "0"}
                           %
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-medium">
-                      <span>{rival.location}</span>
+                      <span className="truncate">{rival.location}</span>
+                      {rival.distance && !isNaN(rival.distance) && (
+                        <>
+                          <span>•</span>
+                          <span className="text-[var(--soft-gold)] whitespace-nowrap">
+                            {rival.distance.toFixed(1)} km
+                          </span>
+                        </>
+                      )}
                       <span>•</span>
                       <div className="flex items-center gap-0.5 text-[var(--soft-gold)]">
                         {[

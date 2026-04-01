@@ -12,5 +12,6 @@
     "python.analysis.indexing": true,
     "python.analysis.include": [
         "./"
-    ]
+    ],
+    "css.lint.unknownAtRules": "ignore"
 }

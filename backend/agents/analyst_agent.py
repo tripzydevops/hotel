@@ -255,32 +255,59 @@ class AnalystAgent:
         except Exception as e:
             logger.error(f"[GlobalPulse] Pulse failure: {e}")
 
-    async def discover_rivals(self, target_identifier: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """VECTOR SEARCH Logic for ghost competitor discovery."""
+    async def discover_rivals(self, target_identifier: str, limit: int = 5, radius_km: float = 50.0) -> List[Dict[str, Any]]:
+        """VECTOR SEARCH Logic for ghost competitor discovery with geographical filtering."""
         try:
-            # 1. Find Target
-            target = self.db.table("hotel_directory").select("*").eq("serp_api_id", target_identifier).execute()
+            # 1. Find Target (Check directory first, then user's custom hotels)
+            target = self.db.table("hotel_directory").select("*").eq("id", target_identifier).execute()
+            if not target.data:
+                target = self.db.table("hotel_directory").select("*").eq("serp_api_id", target_identifier).execute()
             if not target.data:
                 target = self.db.table("hotels").select("*").eq("id", target_identifier).execute()
             
             if not target.data:
+                logger.warning(f"[AnalystAgent] Discovery target not found: {target_identifier}")
                 return []
 
             target_data = target.data[0]
+            
+            # Extract Coordinates
+            target_lat = target_data.get("latitude")
+            target_lon = target_data.get("longitude")
+            
+            # Handle Embedding
             target_embedding = target_data.get("embedding")
             if not target_embedding:
+                logger.info(f"[AnalystAgent] Generating missing embedding for {target_data.get('name')}")
                 text = format_hotel_for_embedding(target_data)
                 target_embedding = await get_embedding(text)
 
-            # 2. RPC Match
+            # 2. RPC Match with distance filtering
+            # Ensure target_hotel_id is a valid UUID for the RPC
+            try:
+                target_uuid = UUID(str(target_data.get("id")))
+            except (ValueError, TypeError):
+                # Fallback if ID is missing or invalid (unlikely with DB constraints)
+                logger.error(f"[AnalystAgent] Invalid target UUID: {target_data.get('id')}")
+                return []
+
             res = self.db.rpc("match_hotels", {
                 "query_embedding": target_embedding,
-                "match_threshold": 0.5,
-                "match_count": limit * 2,
-                "target_hotel_id": target_data.get("serp_api_id") or str(target_data.get("id")),
+                "match_threshold": 0.3, # Slightly lower threshold to be more permissive with distance filtering
+                "match_count": limit * 3, # Fetch more to allow for filtering/sorting
+                "target_hotel_id": str(target_uuid),
+                "target_lat": float(target_lat) if target_lat is not None else None,
+                "target_lon": float(target_lon) if target_lon is not None else None,
+                "max_distance_km": float(radius_km)
             }).execute()
 
-            return res.data[:limit] if res.data else []
+            if not res.data:
+                return []
+
+            # Filter out any lingering NaN or invalid similarity scores (just in case)
+            valid_results = [r for r in res.data if r.get("similarity") is not None]
+            
+            return valid_results[:limit]
         except Exception as e:
             logger.error(f"[AnalystAgent] Discovery error: {e}")
             return []
