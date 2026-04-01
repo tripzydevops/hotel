@@ -544,35 +544,56 @@ class SerpApiClient:
     def _extract_all_room_types(
         self, best_match: Dict[str, Any], currency: str
     ) -> List[Dict[str, Any]]:
-        """Extract room types from featured_prices or rooms array."""
+        """Extract room types from featured_prices, rooms, or other nested structures."""
         rooms = []
         room_names = set()
         raw_rooms = []
+        
+        # 1. Gather all potential room containers
         if best_match.get("rooms"):
             raw_rooms.extend(best_match["rooms"])
         if best_match.get("room_types"):
             raw_rooms.extend(best_match["room_types"])
+        if best_match.get("room_results"):
+            raw_rooms.extend(best_match["room_results"])
+            
         featured = best_match.get("featured_prices", []) or []
         for p in featured:
-            if "rooms" in p:
-                raw_rooms.extend(p["rooms"])
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+            if "room_types" in p: raw_rooms.extend(p["room_types"])
+            
         prices = best_match.get("prices", []) or []
         for p in prices:
-            if "rooms" in p:
-                raw_rooms.extend(p["rooms"])
+            if "rooms" in p: raw_rooms.extend(p["rooms"])
+            if "room_types" in p: raw_rooms.extend(p["room_types"])
 
+        # 2. Extract and Deduplicate
         for r in raw_rooms:
-            name = r.get("name") or r.get("title")
+            # Flexible Name Extraction
+            name = r.get("name") or r.get("title") or r.get("type") or r.get("room_category") or r.get("room_type")
             if not name or name in room_names:
                 continue
-            raw_p = (
-                r.get("rate_per_night", {}).get("lowest")
-                if isinstance(r.get("rate_per_night"), dict)
-                else r.get("rate_per_night") or r.get("price")
-            )
+            
+            # Flexible Price Extraction
+            raw_p = None
+            price_paths = [
+                r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else None,
+                r.get("rate_per_night"),
+                r.get("price"),
+                r.get("rate", {}).get("lowest") if isinstance(r.get("rate"), dict) else None,
+                r.get("rate"),
+                r.get("total_rate"),
+            ]
+            for p_candidate in price_paths:
+                if p_candidate:
+                    raw_p = p_candidate
+                    break
+            
             price = self._clean_price_string(raw_p, currency)
-            rooms.append({"name": name, "price": price, "currency": currency})
-            room_names.add(name)
+            if price is not None:
+                rooms.append({"name": name, "price": price, "currency": currency})
+                room_names.add(name)
+        
         return rooms
 
     async def search_hotels(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:

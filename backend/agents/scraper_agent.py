@@ -121,7 +121,7 @@ class ScraperAgent:
                     "currency": log.get("currency", "USD"),
                     "status": "success",
                     "vendor": log.get("vendor"),
-                    "offers": log.get("offers", []),
+                    "offers": log.get("parity_offers", []),
                     "room_types": log.get("room_types", []),
                     "metadata": log.get("metadata", {}),
                     "recorded_at": log["recorded_at"],
