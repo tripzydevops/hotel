@@ -1,7 +1,7 @@
 # PRODUCTION_READY: 2026-03-27T10:40:00Z
 import os
-from yarl import URL
 from typing import Optional, Any
+from yarl import URL
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from fastapi import Depends

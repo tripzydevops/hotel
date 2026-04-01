@@ -464,7 +464,7 @@ async def run_scheduler_check_logic():
     from backend.utils.db import get_supabase
 
     try:
-        supabase = get_supabase()
+        supabase = get_supabase(admin=True)
         if not supabase:
             logger.error("CRON: Database unavailable")
             return
@@ -561,11 +561,22 @@ async def run_scheduler_check_logic():
             s_logger.error(f"CRON: Market sync failed: {m_e}")
 
         # 1.1 Fetch all active profiles
+        # Fix: Robust two-step query for subscription_status (InsForge Migration)
+        # Step 1: Find active/trial users
+        active_users_res = (
+            supabase.table("user_profiles")
+            .select("user_id")
+            .in_("subscription_status", ["active", "trial"])
+            .execute()
+        )
+        active_user_ids = [str(u["user_id"]) for u in active_users_res.data or []]
+        
+        # Step 2: Query due profiles from the sub-list
         result = (
             supabase.table("profiles")
-            .select("id, next_scan_at, scan_frequency_minutes, subscription_status")
+            .select("id, next_scan_at, scan_frequency_minutes")
+            .in_("id", active_user_ids)
             .lte("next_scan_at", now_iso)
-            .in_("subscription_status", ["active", "trial"])
             .execute()
         )
 
