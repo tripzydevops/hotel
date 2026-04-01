@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
+import ThemeToggle from "./ThemeToggle";
 
 import { useModalContext } from "@/components/ui/ModalContext";
 
@@ -249,6 +250,11 @@ export default function Sidebar({
           <HelpCircle className="w-5 h-5" />
           <span className="text-sm font-bold tracking-tight">Help Center</span>
         </Link>
+
+        {/* Theme Toggle Section */}
+        <div className="pt-4 px-4">
+          <ThemeToggle />
+        </div>
       </nav>
 
 

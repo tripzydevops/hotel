@@ -199,7 +199,6 @@ async def update_settings(
             if "check_frequency_minutes" in update_data:
                 freq = update_data["check_frequency_minutes"]
                 # We update next_scan_at to now() + freq
-                from datetime import datetime, timedelta, timezone
                 new_next = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
                 db.table("profiles").update({"next_scan_at": new_next}).eq("id", str(user_id)).execute()
         except Exception as e:
