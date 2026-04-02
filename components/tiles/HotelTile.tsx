@@ -330,7 +330,7 @@ export default function HotelTile(props: HotelTileProps) {
 
             {/* Description Tooltip Influence */}
             {description && (
-              <div className="mt-2 flex items-start gap-1 p-2 rounded-lg bg-white/5 border border-white/5 group/desc overflow-hidden">
+              <div className="mt-2 flex items-start gap-1 p-2 rounded-lg bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] group/desc overflow-hidden">
                 <Info className="w-3 h-3 text-[var(--soft-gold)] mt-0.5 flex-shrink-0" />
                 <p className="text-[9px] text-[var(--text-muted)] line-clamp-2 leading-relaxed italic">
                   {description}
@@ -421,7 +421,7 @@ export default function HotelTile(props: HotelTileProps) {
                     e.stopPropagation();
                     onDelete(id);
                   }}
-                  className="p-2.5 rounded-xl transition-all shadow-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:scale-110 active:scale-95"
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-[var(--alert-red-soft)] text-[var(--alert-red)] border border-[var(--alert-red)]/20 hover:bg-[var(--alert-red)] hover:text-white hover:scale-110 active:scale-95"
                   title={t("common.delete")}
                   aria-label={t("common.delete")}
                 >
@@ -655,7 +655,7 @@ export default function HotelTile(props: HotelTileProps) {
         )}
 
         {!isTarget && (
-          <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+          <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] rounded-md text-[9px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
             {t("dashboard.liveRate")} • {t("dashboard.verified")}
           </div>
         )}
@@ -663,7 +663,7 @@ export default function HotelTile(props: HotelTileProps) {
 
       {/* Footer Stats (Target Only usually) */}
       {footerStats && (
-        <div className="flex items-center justify-between pt-6 border-t border-white/10">
+        <div className="flex items-center justify-between pt-6 border-t border-[var(--glass-border)]">
           <div>
             <p className="text-xs text-[var(--text-muted)]">
               {t("dashboard.previous")}
@@ -696,7 +696,7 @@ export default function HotelTile(props: HotelTileProps) {
 
       {/* Previous Price for Competitor */}
       {!isTarget && previousPrice && (
-        <div className="pt-3 border-t border-white/5">
+        <div className="pt-3 border-t border-[var(--glass-border)]">
           <p className="text-xs text-[var(--text-muted)]">
             {t("dashboard.previous")}:{" "}
             <span className="text-[var(--text-secondary)]">

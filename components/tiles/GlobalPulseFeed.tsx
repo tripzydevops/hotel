@@ -71,12 +71,12 @@ export const GlobalPulseFeed: React.FC = () => {
 
   if (loading && wins.length === 0) {
     return (
-      <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-2xl p-6 h-[400px] animate-pulse">
-        <div className="h-6 w-32 bg-slate-800 rounded mb-6" />
+      <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl p-6 h-[400px] animate-pulse">
+        <div className="h-6 w-32 bg-[var(--glass-bg-accent)] rounded mb-6" />
         {[1, 2, 3].map((i) => (
           <div key={i} className="mb-4 space-y-2">
-            <div className="h-4 w-full bg-slate-800 rounded" />
-            <div className="h-3 w-2/3 bg-slate-800 rounded" />
+            <div className="h-4 w-full bg-[var(--glass-bg-accent)] rounded" />
+            <div className="h-3 w-2/3 bg-[var(--glass-bg-accent)] rounded" />
           </div>
         ))}
       </div>
@@ -84,7 +84,7 @@ export const GlobalPulseFeed: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+    <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
       {/* Decorative Gradient Pulse */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 blur-[100px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-700" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-700" />
@@ -94,7 +94,7 @@ export const GlobalPulseFeed: React.FC = () => {
           <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
             <Globe className="w-5 h-5 animate-pulse" />
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Global Pulse</h2>
+          <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Global Pulse</h2>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
           <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
@@ -112,20 +112,20 @@ export const GlobalPulseFeed: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.1 }}
-                className="group/item flex items-start gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-default"
+                className="group/item flex items-start gap-4 p-4 rounded-xl bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] hover:bg-[var(--deep-ocean-accent)] transition-all cursor-default"
               >
                 <div className="mt-1 p-2 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover/item:scale-110 transition-transform">
                   <TrendingDown className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-semibold text-white truncate pr-2">{win.hotel_name}</h3>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate pr-2">{win.hotel_name}</h3>
                     <span className="text-xs font-black text-emerald-400 shrink-0">-{win.reduction}</span>
                   </div>
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-2">
+                  <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-2">
                     {win.message}
                   </p>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                  <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] font-medium">
                     <Clock className="w-3 h-3" />
                     {formatDistanceToNow(new Date(win.timestamp), { addSuffix: true })}
                   </div>
@@ -133,7 +133,7 @@ export const GlobalPulseFeed: React.FC = () => {
               </motion.div>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-500 italic text-sm">
+            <div className="flex flex-col items-center justify-center py-12 text-[var(--text-muted)] italic text-sm">
               <p>Scanning the network for wins...</p>
             </div>
           )}
@@ -143,7 +143,7 @@ export const GlobalPulseFeed: React.FC = () => {
       {/* EXPLANATION: [Global Pulse Phase 2] — Live Network Stats Footer
            Replaces the hardcoded "484 active users" with real metrics.
            Shows active users, monitored hotels, and cache efficiency. */}
-      <div className="mt-6 pt-4 border-t border-white/5">
+      <div className="mt-6 pt-4 border-t border-[var(--glass-border)]">
         {stats ? (
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col items-center gap-1">
@@ -151,25 +151,25 @@ export const GlobalPulseFeed: React.FC = () => {
                 <Users className="w-3 h-3" />
                 <span className="text-sm font-bold">{stats.active_users_count}</span>
               </div>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Users</span>
+              <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Users</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-1 text-cyan-400">
                 <Building2 className="w-3 h-3" />
                 <span className="text-sm font-bold">{stats.hotels_monitored}</span>
               </div>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Hotels</span>
+              <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Hotels</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-1 text-emerald-400">
                 <Shield className="w-3 h-3" />
                 <span className="text-sm font-bold">{stats.cache_hit_rate_24h}%</span>
               </div>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider">Cache Hit</span>
+              <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Cache Hit</span>
             </div>
           </div>
         ) : (
-          <p className="text-[10px] text-slate-500 font-medium text-center leading-relaxed">
+          <p className="text-[10px] text-[var(--text-muted)] font-medium text-center leading-relaxed">
             Loading network stats...
           </p>
         )}
