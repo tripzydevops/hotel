@@ -15,6 +15,7 @@ import ModalLoading from "@/components/ui/ModalLoading";
 import AddHotelModal from "@/components/modals/AddHotelModal";
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const ScanSessionModal = lazy(
   () => import("@/components/modals/ScanSessionModal"),
@@ -122,12 +123,12 @@ export default function DashboardLayout({
     (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
   return (
-    <div className="flex min-h-screen bg-[var(--deep-ocean)] transition-colors duration-500">
+    <div className="flex min-h-screen bg-transparent transition-colors duration-500">
       <Sidebar profile={profile} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 border-b border-[var(--glass-border)] flex items-center justify-between px-8 bg-[var(--deep-ocean)]/50 backdrop-blur-md sticky top-0 z-30 transition-colors duration-500">
+        <header className="h-20 border-b border-[var(--glass-border)] flex items-center justify-between px-8 bg-[var(--glass-bg)]/80 backdrop-blur-md sticky top-0 z-30 transition-colors duration-500">
           <div className="flex items-center gap-8">
             <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight transition-colors duration-500">
               {getPageTitle()}
@@ -142,22 +143,26 @@ export default function DashboardLayout({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsAlertsOpen(true)}
-                className="w-10 h-10 rounded-xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--deep-ocean-accent)] hover:bg-[var(--deep-ocean-accent)]/80 transition-all relative"
+                className="w-10 h-10 rounded-xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--glass-bg-subtle)] hover:bg-[var(--glass-bg-accent)] hover:border-[var(--glass-border-accent)] transition-all relative group"
               >
-                <Bell className="w-5 h-5 text-[var(--text-secondary)]" />
+                <Bell className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
                 {(data?.unread_alerts_count || 0) > 0 && (
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--deep-ocean)]" />
+                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[var(--alert-red)] rounded-full border-2 border-[var(--deep-ocean)] shadow-[0_0_8px_var(--alert-red)]" />
                 )}
               </button>
 
               <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
 
+              <ThemeToggle />
+
+              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
+
               {/* Language Toggle */}
-              <div className="flex bg-[var(--deep-ocean-accent)] p-1 rounded-xl border border-[var(--glass-border)]">
+              <div className="flex bg-[var(--glass-bg-subtle)] p-1 rounded-xl border border-[var(--glass-border)]">
                 <button
                   onClick={() => setLocale("en")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-[var(--soft-gold)] text-white"
+                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
@@ -166,7 +171,7 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("tr")}
                   className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-[var(--soft-gold)] text-white"
+                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
@@ -205,7 +210,6 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
           <div className="radial-glow pointer-events-none" />
-          <div className="bg-grain pointer-events-none" />
           <div className="relative z-10 p-8 pt-6">{children}</div>
         </main>
       </div>

@@ -202,7 +202,7 @@ export default function AnalysisPage() {
 
   if (loading && !data) {
     return (
-      <div className="min-h-screen bg-[var(--deep-ocean)] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
           <p className="text-[var(--soft-gold)] font-black uppercase tracking-widest text-[10px]">
@@ -231,10 +231,10 @@ export default function AnalysisPage() {
 
           {/* Search Feedback Banner */}
           {searchQuery && !loading && (
-            <div className="mb-6 mx-auto max-w-2xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 rounded-lg p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="mb-6 mx-auto max-w-2xl bg-[var(--glass-bg-accent)] border border-[var(--soft-gold)]/20 rounded-lg p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
-                <span className="text-sm text-white">
+                <span className="text-sm text-[var(--text-primary)]">
                   Found{" "}
                   <span className="font-bold text-[var(--soft-gold)]">
                     {data?.price_rank_list?.length || 0}
@@ -244,7 +244,7 @@ export default function AnalysisPage() {
               </div>
               <button
                 onClick={() => handleSearch("")}
-                className="text-xs text-white/50 hover:text-white hover:underline uppercase tracking-wider font-bold"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline uppercase tracking-wider font-bold"
               >
                 Clear Filter
               </button>
@@ -256,13 +256,13 @@ export default function AnalysisPage() {
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] cursor-pointer"
             >
               {CURRENCIES.map((c) => (
                 <option
                   key={c}
                   value={c}
-                  className="bg-[var(--deep-ocean)] text-white"
+                  className="bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                 >
                   {c}
                 </option>
@@ -411,7 +411,7 @@ export default function AnalysisPage() {
 
         {/* Agent Advisory Shard */}
         {(data?.advisory_keys?.length > 0 || data?.advisory_msg) && (
-          <div className="mb-12 glass-card p-8 border-l-4 border-l-[var(--soft-gold)] bg-[var(--soft-gold)]/5">
+          <div className="mb-12 glass-card p-8 border-l-4 border-l-[var(--soft-gold)] bg-[var(--glass-bg-accent)]">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-2xl bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]">
                 <Zap className="w-6 h-6 animate-pulse" />
@@ -420,7 +420,7 @@ export default function AnalysisPage() {
                 <h3 className="text-sm font-black text-[var(--soft-gold)] uppercase tracking-widest mb-2">
                   {t("analysis.advisory.title")}
                 </h3>
-                <div className="text-xl font-medium text-white italic leading-relaxed whitespace-pre-wrap">
+                <div className="text-xl font-medium text-[var(--text-primary)] italic leading-relaxed whitespace-pre-wrap">
                   {streamingNarrative ? (
                     <div className="animate-in fade-in duration-500">
                       {streamingNarrative}
@@ -438,7 +438,7 @@ export default function AnalysisPage() {
                 </div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-[var(--soft-gold)] border-2 border-[var(--deep-ocean)] flex items-center justify-center text-[8px] font-black text-[var(--deep-ocean)]">
+                    <div className="w-6 h-6 rounded-full bg-[var(--soft-gold)] border-2 border-[var(--bg-primary)] flex items-center justify-center text-[8px] font-black text-[var(--deep-ocean)]">
                       A
                     </div>
                   </div>
@@ -455,7 +455,7 @@ export default function AnalysisPage() {
           {/* Market Spread Visualization */}
           <div className="lg:col-span-2 glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white">
+              <h2 className="text-lg font-black text-[var(--text-primary)]">
                 {t("analysis.marketSpread")}
               </h2>
               <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-bold uppercase">
@@ -478,7 +478,7 @@ export default function AnalysisPage() {
                 >
                   #{data.market_rank} of {data.price_rank_list.length}
                 </div>
-                <span className="text-xs text-white/60">
+                <span className="text-xs text-[var(--text-muted)]">
                   {data.market_rank === 1
                     ? "You're the cheapest in the market!"
                     : data.market_rank <= 2
@@ -498,7 +498,7 @@ export default function AnalysisPage() {
                   {CURRENCY_SYMBOLS[currency]}
                   {data?.market_min?.toFixed(0)}
                 </span>
-                <span className="text-white/40">
+                <span className="text-[var(--text-muted)] opacity-40">
                   {CURRENCY_SYMBOLS[currency]}
                   {data?.market_min != null && data?.market_max != null
                     ? ((data.market_min + data.market_max) / 2)?.toFixed(0)
@@ -511,7 +511,7 @@ export default function AnalysisPage() {
               </div>
 
               {/* Range Bar - Premium Design */}
-              <div className="relative h-4 w-full bg-white/5 rounded-full mt-4 ring-1 ring-white/10 backdrop-blur-sm">
+              <div className="relative h-4 w-full bg-[var(--glass-bg-subtle)] rounded-full mt-4 ring-1 ring-[var(--glass-border)] backdrop-blur-sm">
                 {/* Gradient Track */}
                 <div className="absolute inset-0 rounded-full opacity-50 bg-gradient-to-r from-[var(--optimal-green)] via-[var(--soft-gold)] to-[var(--alert-red)]" />
 
@@ -533,12 +533,12 @@ export default function AnalysisPage() {
                         ? "bg-[var(--optimal-green)]"
                         : compSpread > 66
                           ? "bg-[var(--alert-red)]"
-                          : "bg-white"; // Truly white for mid-range
+                          : "bg-[var(--text-primary)]"; // Truly theme text for mid-range
 
                     return (
                       <div
                         key={comp.id || idx}
-                        className={`absolute w-5 h-5 rounded-full ${dotColor} top-1/2 -translate-y-1/2 hover:scale-150 hover:z-50 transition-all duration-300 cursor-pointer group border-2 border-white shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-10 flex items-center justify-center`}
+                        className={`absolute w-5 h-5 rounded-full ${dotColor} top-1/2 -translate-y-1/2 hover:scale-150 hover:z-50 transition-all duration-300 cursor-pointer group border-2 border-[var(--bg-secondary)] shadow-[0_4px_12px_rgba(0,0,0,0.5)] z-10 flex items-center justify-center`}
                         style={{
                           left: `calc(${Math.min(Math.max(compSpread, 2), 98)}%)`,
                           transform: "translate(-50%, -50%)",
@@ -549,8 +549,8 @@ export default function AnalysisPage() {
 
                         {/* Hover Tooltip - Micro Size */}
                         <div className="absolute -top-10 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap min-w-[80px]">
-                          <div className="relative px-2 py-1 rounded-md bg-[var(--deep-ocean)] border border-white/20 text-white shadow-xl z-[60]">
-                            <div className="text-[7px] font-bold text-white/50 uppercase tracking-wider leading-none mb-0.5">
+                          <div className="relative px-2 py-1 rounded-md bg-[var(--bg-secondary)] border border-[var(--glass-border)] text-[var(--text-primary)] shadow-xl z-[60]">
+                            <div className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
                               Competitor
                             </div>
                             <div className="font-bold text-[10px] leading-tight mb-0.5 max-w-[120px] truncate">
@@ -563,7 +563,7 @@ export default function AnalysisPage() {
                               {comp.price?.toFixed(0)}
                             </div>
                             {/* Tooltip Arrow */}
-                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--deep-ocean)] border-r border-b border-white/20 rotate-45" />
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--bg-secondary)] border-r border-b border-[var(--glass-border)] rotate-45" />
                           </div>
                         </div>
                       </div>
@@ -580,8 +580,8 @@ export default function AnalysisPage() {
                 >
                   {/* Diamond Icon */}
                   <div className="relative group cursor-help pointer-events-auto">
-                    <div className="w-8 h-8 rotate-45 bg-[var(--soft-gold)] border-4 border-[var(--deep-ocean)] shadow-[0_0_25px_rgba(255,215,0,0.6)] z-30 flex items-center justify-center hover:scale-110 transition-transform">
-                      <div className="w-2 h-2 bg-white rounded-full shadow-inner" />
+                    <div className="w-8 h-8 rotate-45 bg-[var(--soft-gold)] border-4 border-[var(--bg-secondary)] shadow-[0_0_25px_rgba(255,215,0,0.6)] z-30 flex items-center justify-center hover:scale-110 transition-transform">
+                      <div className="w-2 h-2 bg-[var(--text-primary)] rounded-full shadow-inner" />
                     </div>
                     {/* Pulse */}
                     <div className="absolute inset-0 bg-[var(--soft-gold)] rotate-45 animate-ping opacity-60 -z-10 rounded-sm" />
@@ -589,7 +589,7 @@ export default function AnalysisPage() {
 
                   {/* Always Visible Label - Micro Size */}
                   <div className="absolute -top-[50px] whitespace-nowrap pointer-events-auto z-40">
-                    <div className="relative px-2 py-1 bg-gradient-to-b from-[var(--soft-gold)] to-[var(--soft-gold)]/90 text-[var(--deep-ocean)] rounded-md shadow-xl border border-white/20 flex flex-col items-center gap-0.5">
+                    <div className="relative px-2 py-1 bg-gradient-to-b from-[var(--soft-gold)] to-[var(--soft-gold)]/90 text-[#0f172a] rounded-md shadow-xl border border-[var(--glass-border)] flex flex-col items-center gap-0.5">
                       <span className="text-[7px] font-black uppercase tracking-widest opacity-80 leading-none">
                         You
                       </span>
@@ -607,19 +607,19 @@ export default function AnalysisPage() {
               {/* Enhanced Position Labels */}
               <div className="flex justify-between mt-6 px-1">
                 <div className="flex flex-col items-start gap-1">
-                  <div className="h-4 w-[1px] bg-white/10 ml-2 mb-1" />
+                  <div className="h-4 w-[1px] bg-[var(--glass-border)] ml-2 mb-1" />
                   <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-wider bg-[var(--optimal-green)]/10 px-2 py-1 rounded">
                     Cheapest
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="h-4 w-[1px] bg-white/10 mb-1" />
-                  <span className="text-[10px] font-black text-white/60 uppercase tracking-wider bg-white/5 px-2 py-1 rounded">
+                  <div className="h-4 w-[1px] bg-[var(--glass-border)] mb-1" />
+                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded">
                     Mid-Range
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <div className="h-4 w-[1px] bg-white/10 mr-2 mb-1" />
+                  <div className="h-4 w-[1px] bg-[var(--glass-border)] mr-2 mb-1" />
                   <span className="text-[10px] font-black text-[var(--alert-red)] uppercase tracking-wider bg-[var(--alert-red)]/10 px-2 py-1 rounded">
                     Premium
                   </span>
@@ -628,12 +628,12 @@ export default function AnalysisPage() {
             </div>
 
             {/* Stats Row - Enhanced */}
-            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-white/5 pt-8">
+            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-[var(--glass-border)] pt-8">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   {t("analysis.priceGapToMin")}
                 </span>
-                <span className="text-xl font-black text-white">
+                <span className="text-xl font-black text-[var(--text-primary)]">
                   {data?.target_price != null && data?.market_min != null
                     ? `+${CURRENCY_SYMBOLS[currency] || "$"}${(data.target_price - data.market_min)?.toFixed(0)}`
                     : "N/A"}
@@ -643,7 +643,7 @@ export default function AnalysisPage() {
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   Gap to Median
                 </span>
-                <span className="text-xl font-black text-white">
+                <span className="text-xl font-black text-[var(--text-primary)]">
                   {data?.target_price != null && data?.market_avg != null
                     ? `${data.target_price < data.market_avg ? "-" : "+"}${CURRENCY_SYMBOLS[currency] || "$"}${Math.abs(data.target_price - data.market_avg)?.toFixed(0)}`
                     : "N/A"}
@@ -653,7 +653,7 @@ export default function AnalysisPage() {
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   {t("analysis.inventorySpread")}
                 </span>
-                <span className="text-xl font-black text-white">
+                <span className="text-xl font-black text-[var(--text-primary)]">
                   {data?.market_max != null && data?.market_min != null
                     ? `${CURRENCY_SYMBOLS[currency] || "$"}${(data.market_max - data.market_min)?.toFixed(0)}`
                     : "N/A"}
@@ -664,7 +664,7 @@ export default function AnalysisPage() {
 
           <div className="glass-card p-8 flex flex-col justify-between">
             <div>
-              <h2 className="text-lg font-black text-white mb-2">
+              <h2 className="text-lg font-black text-[var(--text-primary)] mb-2">
                 {t("analysis.targetPriceTrend")}
               </h2>
               <p className="text-xs text-[var(--text-muted)] font-medium mb-8">
@@ -677,7 +677,7 @@ export default function AnalysisPage() {
                   .map((point: any, idx: number) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)]"
                     >
                       <div className="flex items-center gap-3">
                         <div className="text-[10px] font-black text-[var(--text-muted)]">
@@ -687,7 +687,7 @@ export default function AnalysisPage() {
                           )}
                         </div>
                       </div>
-                      <div className="text-sm font-black text-white">
+                      <div className="text-sm font-black text-[var(--text-primary)]">
                         {CURRENCY_SYMBOLS[currency] || "$"}
                         {point.price}
                       </div>
@@ -749,25 +749,25 @@ function KPICard({
 
   return (
     <div
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-white/10"} group relative hover:z-50 cursor-pointer overflow-visible`}
+      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-[var(--glass-border)]"} group relative hover:z-50 cursor-pointer overflow-visible`}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
           {title}
         </span>
         <div
-          className={`p-2 rounded-lg bg-white/5 ${highlight ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"}`}
+          className={`p-2 rounded-lg bg-[var(--glass-bg-subtle)] ${highlight ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"}`}
         >
           {icon}
         </div>
       </div>
       <div className="flex items-end justify-between mb-1">
-        <div className="text-2xl font-black text-white tracking-tight">
+        <div className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
           {value}
         </div>
         {trend && (
           <div
-            className={`text-[10px] font-black uppercase px-2 py-1 rounded-md bg-white/5 ${trend === "up" ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
+            className={`text-[10px] font-black uppercase px-2 py-1 rounded-md bg-[var(--glass-bg-subtle)] ${trend === "up" ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
           >
             {trend === "up" ? "High" : "Low"}
           </div>
@@ -780,7 +780,7 @@ function KPICard({
       {/* Hover Tooltip - Robust width for 4-digit prices */}
       {hoverData && (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-[200] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 min-w-[240px]">
-          <div className="p-4 bg-[#0a0a14]/95 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl">
+          <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-xl shadow-2xl backdrop-blur-xl">
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
                 <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
@@ -792,23 +792,23 @@ function KPICard({
                       key={item.id}
                       className={`flex items-center justify-between py-1.5 px-2 rounded ${item.is_target
                         ? "bg-[var(--soft-gold)]/10 border-l-2 border-[var(--soft-gold)]"
-                        : "bg-white/[0.02]"
+                        : "bg-[var(--glass-bg-subtle)]"
                         }`}
                     >
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-white/50"}`}
+                          className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]/50"}`}
                         >
                           #{item.rank}
                         </span>
                         <span
-                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold" : "text-white/70"} truncate max-w-[120px]`}
+                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold" : "text-[var(--text-secondary)]"} truncate max-w-[120px]`}
                         >
                           {item.name}
                         </span>
                       </div>
                       <span
-                        className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-white/70"}`}
+                        className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]/70"}`}
                       >
                         {symbol}
                         {item.price != null ? item.price.toFixed(0) : "N/A"}
@@ -825,22 +825,22 @@ function KPICard({
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70">Your Price</span>
+                    <span className="text-xs text-[var(--text-secondary)]">Your Price</span>
                     <span className="text-sm font-black text-[var(--soft-gold)]">
                       {symbol}
                       {hoverData.targetPrice?.toFixed(0) || "N/A"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70">Market Avg</span>
-                    <span className="text-sm font-black text-white">
+                    <span className="text-xs text-[var(--text-secondary)]">Market Avg</span>
+                    <span className="text-sm font-black text-[var(--text-primary)]">
                       {symbol}
                       {hoverData.marketAvg?.toFixed(0) || "N/A"}
                     </span>
                   </div>
                   {hoverData.targetPrice && hoverData.marketAvg && (
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                      <span className="text-xs text-white/70">Difference</span>
+                    <div className="flex items-center justify-between pt-2 border-t border-[var(--glass-border)]">
+                      <span className="text-xs text-[var(--text-secondary)]">Difference</span>
                       <span
                         className={`text-sm font-black ${hoverData.targetPrice > hoverData.marketAvg ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
                       >
@@ -903,7 +903,7 @@ function KPICard({
                 <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">
                   Metric Explanation
                 </div>
-                <div className="text-[11px] text-white/80 leading-relaxed font-medium italic">
+                <div className="text-[11px] text-[var(--text-secondary)] leading-relaxed font-medium italic">
                   "{hoverData.description}"
                 </div>
               </div>

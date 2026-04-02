@@ -43,7 +43,7 @@ export default function ScanHistory({
           <div className="p-2 rounded-xl bg-[#F6C344]/10 text-[#F6C344]">
             <Database className="w-5 h-5" />
           </div>
-          <h2 className="text-xl font-black text-white tracking-tight">
+          <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">
             {title || t("history.intelLogs")}
           </h2>
         </div>
@@ -57,7 +57,7 @@ export default function ScanHistory({
           <button
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group card-blur rounded-[1.5rem] px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-all border border-white/5 hover:border-[#F6C344]/30 text-left"
+            className="group card-blur rounded-[1.5rem] px-6 py-4 flex items-center justify-between hover:bg-[var(--deep-ocean-accent)]/10 transition-all border border-[var(--glass-border)] hover:border-[#F6C344]/30 text-left"
           >
             <div className="flex items-center gap-6">
               <div
@@ -75,13 +75,13 @@ export default function ScanHistory({
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-black text-white uppercase tracking-wider">
+                  <p className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
                     {t("history.scanSession").replace(
                       "{0}",
                       session.session_type || "",
                     )}
                   </p>
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] bg-white/5 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--deep-ocean-accent)]/20 px-2 py-0.5 rounded">
                     {t("history.hotelsCount").replace(
                       "{0}",
                       session.hotels_count.toString(),
@@ -93,7 +93,7 @@ export default function ScanHistory({
                     <Clock className="w-3 h-3" />
                     <span>{formatDate(session.created_at)}</span>
                   </div>
-                  <span className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                  <span className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]/20" />
                   <span className="italic">
                     {t("history.sessionIdShort").replace(
                       "{0}",
@@ -116,7 +116,7 @@ export default function ScanHistory({
                   {session.status}
                 </span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-white group-hover:translate-x-1 transition-all" />
+              <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] group-hover:translate-x-1 transition-all" />
             </div>
           </button>
         ))}

@@ -179,7 +179,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] transition-colors duration-500">
         <LoadingState rows={1} skeleton={<ModalLoading />} />
       </div>
     );
@@ -187,7 +187,7 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--deep-ocean)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] transition-colors duration-500">
         <ErrorState
           title={t("common.errorTitle") || "Unable to load dashboard"}
           message={error}
@@ -202,7 +202,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">
       {impersonateId && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-white px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-white/20 animate-pulse">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-[var(--text-primary)] px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-[var(--glass-border)] animate-pulse">
           IMPERSONATING USER: {impersonateId.split("-")[0]}...
         </div>
       )}
@@ -221,7 +221,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             {!isRefreshing && (
               <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
                   {t("dashboard.nextScheduledScan")}
                 </span>
                 <span className="text-xs font-black text-[#F6C344] tabular-nums">
@@ -240,15 +240,15 @@ export default function Dashboard() {
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}
               className={`
-                metallic-gold p-[1px] rounded-xl shadow-2xl shadow-yellow-500/10 transition-all active:scale-95
+                relative p-[1px] rounded-xl transition-all active:scale-95 bg-[var(--soft-gold)]/20 hover:bg-[var(--soft-gold)]/40 shadow-lg shadow-[var(--soft-gold)]/5
                 ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
               `}
             >
-              <div className="bg-[#050B18] hover:bg-[#0A1629] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors">
+              <div className="bg-[var(--deep-ocean)] hover:bg-[var(--glass-bg-accent)] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-[var(--soft-gold)]/20 shadow-inner">
                 <RefreshCw
-                  className={`w-4 h-4 text-[#F6C344] ${isRefreshing ? "animate-spin" : ""}`}
+                  className={`w-4 h-4 text-[var(--soft-gold)] ${isRefreshing ? "animate-spin" : ""}`}
                 />
-                <span className="font-bold text-white text-sm uppercase tracking-widest">
+                <span className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-widest">
                   {isRefreshing ? t("common.scanning") : t("common.scanNow")}
                 </span>
               </div>
@@ -257,12 +257,12 @@ export default function Dashboard() {
             <button
               onClick={() => setIsAddHotelOpen(true)}
               className="
-                group relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 p-[1px] shadow-2xl shadow-amber-500/20 transition-all active:scale-95 hover:scale-105 hover:shadow-amber-500/40
+                group relative overflow-hidden rounded-xl bg-[var(--soft-gold)] p-[1px] shadow-2xl shadow-[var(--soft-gold)]/20 transition-all active:scale-95 hover:scale-105 hover:shadow-[var(--soft-gold)]/40
               "
             >
-              <div className="relative flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 px-5 py-2.5 rounded-[11px] transition-colors">
-                <Plus className="w-4 h-4 text-black stroke-[3px]" />
-                <span className="font-bold text-black text-sm uppercase tracking-widest">
+              <div className="relative flex items-center gap-2 bg-[var(--soft-gold)] px-5 py-2.5 rounded-[11px] transition-colors">
+                <Plus className="w-4 h-4 text-[var(--deep-ocean)] stroke-[3px]" />
+                <span className="font-bold text-[var(--deep-ocean)] text-sm uppercase tracking-widest">
                   {t("common.addHotel")}
                 </span>
               </div>
@@ -438,9 +438,9 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--alert-red)]/20 bg-[var(--alert-red)]/5"
           >
-            <p className="text-3xl font-black text-rose-500 tracking-tighter mb-1">
+            <p className="text-3xl font-black text-[var(--alert-red)] tracking-tighter mb-1">
               {
                 (data?.competitors || []).filter(
                   (c: HotelWithPrice) =>
@@ -449,23 +449,23 @@ export default function Dashboard() {
                 ).length
               }
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 group-hover:text-rose-400 transition-colors">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--alert-red)] transition-colors">
               {t("dashboard.yieldRisk")}
             </p>
           </motion.div>
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--optimal-green)]/20 bg-[var(--optimal-green)]/5"
           >
-            <p className="text-3xl font-black text-emerald-400 tracking-tighter mb-1">
+            <p className="text-3xl font-black text-[var(--optimal-green)] tracking-tighter mb-1">
               {
                 (data?.competitors || []).filter(
                   (c: HotelWithPrice) => c.price_info?.trend === "down",
                 ).length
               }
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 group-hover:text-emerald-400 transition-colors">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--optimal-green)] transition-colors">
               {t("dashboard.marketOpportunity")}
             </p>
           </motion.div>
@@ -474,7 +474,7 @@ export default function Dashboard() {
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
           >
-            <p className="text-3xl font-black text-white tracking-tighter mb-1">
+            <p className="text-3xl font-black text-[var(--text-primary)] tracking-tighter mb-1">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
                   {(() => {
@@ -508,19 +508,19 @@ export default function Dashboard() {
                 "—"
               )}
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t("dashboard.avgCompetitor")}
             </p>
           </motion.div>
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
+            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--glass-border)]"
           >
-            <p className="text-3xl font-black text-white tracking-tighter mb-1">
+            <p className="text-3xl font-black text-[var(--text-primary)] tracking-tighter mb-1">
               {currentHotelCount}
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t("dashboard.hotelsTracked")}
             </p>
           </motion.div>
@@ -544,20 +544,20 @@ export default function Dashboard() {
           title={t("dashboard.rapidPulseTitle")}
         />
 
-        <footer className="mt-20 py-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <footer className="mt-20 py-8 border-t border-[var(--glass-border)] flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-[var(--text-muted)] text-sm">
             {t("common.footerCopyright")}
           </p>
           <div className="flex gap-4">
             <a
               href="#"
-              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-xs font-medium uppercase tracking-wider"
             >
               {t("common.privacy")}
             </a>
             <a
               href="#"
-              className="text-[var(--text-muted)] hover:text-white transition-colors text-xs font-medium uppercase tracking-wider"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-xs font-medium uppercase tracking-wider"
             >
               {t("common.terms")}
             </a>

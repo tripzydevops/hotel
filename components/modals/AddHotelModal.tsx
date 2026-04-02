@@ -191,51 +191,49 @@ export default function AddHotelModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative overflow-hidden">
-        {/* Limit info removed - backend enforces limits in create_hotel */}
-
-        <div className="flex items-center justify-between mb-6 mt-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="premium-card w-full max-w-md p-8 relative overflow-visible radar-scan">
+        <div className="absolute -top-12 left-0 right-0 flex justify-center">
+          <div className="bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-signal shadow-[0_0_20px_var(--soft-gold-glow)]">
             {t("addHotel.title")}
-          </h2>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-black text-white italic tracking-tighter">
+              NEW <span className="text-[var(--soft-gold)]">SIGNAL</span>
+            </h2>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)] font-bold">
+              {t("addHotel.nameLabel")}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-white/10 rounded-full transition-all hover:rotate-90"
           >
             <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Form overlay removed - backend enforces limits */}
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="relative group">
+            <div className="absolute -top-2 left-3 px-2 bg-[var(--deep-ocean)] text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-tighter z-10 border-x border-[var(--glass-border)]">
               {t("addHotel.nameLabel")}
-            </label>
+            </div>
             <div className="relative z-50" ref={suggestionRef}>
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  setSerpApiId(undefined); // Reset ID if user types manually
-                  setSuggestions([]); // Clear suggestions while typing
+                  setSerpApiId(undefined);
+                  setSuggestions([]);
                   setShowSuggestions(true);
                 }}
-                onFocus={() =>
-                  name.length >= 2 &&
-                  setSuggestions((prev) => (prev.length > 0 ? prev : [])) &&
-                  setShowSuggestions(true)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setShowSuggestions(false);
-                }}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 pl-12 pr-12 text-white placeholder:text-white/10 focus:outline-none focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all font-medium"
                 placeholder={t("addHotel.namePlaceholder")}
               />
               {name.length > 0 && !isSearching && (
@@ -247,190 +245,167 @@ export default function AddHotelModal({
                     setSerpApiId(undefined);
                     setShowSuggestions(false);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full transition-colors"
                 >
                   <X className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 </button>
               )}
               {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] animate-spin" />
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] animate-spin" />
               )}
 
               {/* Suggestions Dropdown */}
               {showSuggestions && name.length >= 2 && !isSearching && (
-                <div className="absolute z-[100] left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200 ring-1 ring-black/50">
-                  <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                <div className="absolute z-[100] left-0 right-0 mt-2 bg-[var(--deep-ocean-lighter)] border border-[var(--soft-gold)]/20 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="max-h-80 overflow-y-auto">
                     {suggestions.length > 0 ? (
                       suggestions.map((item, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => handleSelectSuggestion(item)}
-                          className="w-full px-3 py-2 text-left hover:bg-white/10 flex flex-col transition-colors border-b border-white/5 last:border-none"
+                          className="w-full px-4 py-3 text-left hover:bg-[var(--soft-gold)]/10 flex flex-col transition-all border-b border-white/5 last:border-none group/item"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-white font-medium text-xs">
+                            <span className="text-white font-bold text-sm group-hover/item:text-[var(--soft-gold)] transition-colors">
                               {item.name}
                             </span>
                             {item.source === "serpapi" && (
-                              <span className="text-[8px] bg-blue-500/20 text-blue-300 py-0.5 px-1 rounded uppercase tracking-widest font-bold">
+                              <span className="text-[7px] border border-blue-500/30 text-blue-400 py-0.5 px-1.5 rounded-full uppercase tracking-widest font-black">
                                 {t("addHotel.globalMatch")}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-2.5 h-2.5 text-gray-400" />
-                            <span className="text-gray-400 text-[10px]">
+                          <div className="flex items-center gap-1.5 mt-1 opacity-60">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-[10px] font-medium">
                               {item.location}
                             </span>
                           </div>
                         </button>
                       ))
-                    ) : name.length >= 2 && !isSearching ? (
-                      <div className="px-3 py-4 text-center bg-white/[0.02]">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">
+                    ) : (
+                      <div className="px-4 py-8 text-center bg-white/[0.01]">
+                        <div className="w-8 h-8 rounded-full border border-dashed border-[var(--text-muted)] flex items-center justify-center mx-auto mb-2">
+                          <X className="w-4 h-4 text-[var(--text-muted)]" />
+                        </div>
+                        <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.2em] font-black">
                           {t("addHotel.noMatch")}
                         </p>
-                        <p className="text-[9px] text-gray-500">
-                          {t("addHotel.checkingLocation")}
-                        </p>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  {t("addHotel.countryLabel")}
-                </label>
-                <div className="relative">
-                  <select
-                    value={country}
-                    disabled={isManualEntry}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50 transition-all"
-                  >
-                    {countries.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  {isManualEntry
-                    ? t("addHotel.cityLabel")
-                    : t("addHotel.cityLabel")}
-                </label>
-                <div className="relative">
-                  {isManualEntry ? (
-                    <input
-                      type="text"
-                      required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder={t("addHotel.locationPlaceholder")}
-                      className="w-full bg-slate-900/50 border border-[var(--soft-gold)]/50 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
-                    />
-                  ) : (
-                    <select
-                      value={city}
-                      required
-                      onChange={(e) => {
-                        if (e.target.value === "__NEW__") {
-                          setIsManualEntry(true);
-                          setCity("");
-                        } else {
-                          setCity(e.target.value);
-                        }
-                      }}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 transition-all"
-                    >
-                      <option value="">{t("addHotel.selectCity")}</option>
-                      {filteredCities.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                      <option
-                        value="__NEW__"
-                        className="text-[var(--soft-gold)] font-bold bg-slate-900"
-                      >
-                        + {t("addHotel.addNewLocation")}
-                      </option>
-                    </select>
-                  )}
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">
+                {t("addHotel.countryLabel")}
+              </label>
+              <select
+                value={country}
+                disabled={isManualEntry}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] disabled:opacity-30 transition-all font-bold"
+              >
+                {countries.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsManualEntry(!isManualEntry)}
-                  className="text-[10px] text-[var(--soft-gold)] hover:underline flex items-center gap-1"
-                >
-                  <MapPin className="w-3 h-3" />
-                  {isManualEntry
-                    ? t("addHotel.selectCity")
-                    : t("addHotel.manualEntry")}
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  {t("addHotel.currencyLabel")}
-                </label>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">
+                {t("addHotel.cityLabel")}
+              </label>
+              {isManualEntry ? (
+                <input
+                  type="text"
+                  required
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="ENTER CITY"
+                  className="w-full bg-white/[0.03] border border-[var(--soft-gold)]/30 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)]/30 text-sm font-bold"
+                />
+              ) : (
                 <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full bg-slate-900/50 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-slate-900 disabled:opacity-50"
+                  value={city}
+                  required
+                  onChange={(e) => {
+                    if (e.target.value === "__NEW__") {
+                      setIsManualEntry(true);
+                      setCity("");
+                    } else {
+                      setCity(e.target.value);
+                    }
+                  }}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] transition-all font-bold"
                 >
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="TRY">TRY (₺)</option>
-                  <option value="GBP">GBP (£)</option>
+                  <option value="">{t("addHotel.selectCity")}</option>
+                  {filteredCities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                  <option
+                    value="__NEW__"
+                    className="text-[var(--soft-gold)] font-black"
+                  >
+                    + {t("addHotel.addNewLocation")}
+                  </option>
                 </select>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 py-2">
-            <input
-              type="checkbox"
-              id="isTarget"
-              checked={isTarget}
-              onChange={(e) => setIsTarget(e.target.checked)}
-              className="w-4 h-4 rounded border-white/10 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <label
-              htmlFor="isTarget"
-              className="text-sm text-[var(--text-secondary)] cursor-pointer select-none disabled:opacity-50"
+          <div className="flex items-center justify-between py-2 border-y border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="isTarget"
+                  checked={isTarget}
+                  onChange={(e) => setIsTarget(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                <label
+                  htmlFor="isTarget"
+                  className="ml-3 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] peer-checked:text-white transition-colors"
+                >
+                  {t("addHotel.targetLabel")}
+                </label>
+              </div>
+            </div>
+
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="bg-transparent text-[var(--soft-gold)] text-[10px] font-black uppercase tracking-widest border border-[var(--soft-gold)]/30 rounded-lg px-2 py-1 outline-none hover:bg-[var(--soft-gold)]/10 transition-colors"
             >
-              {t("addHotel.targetLabel")}
-            </label>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="TRY">TRY (₺)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-4">
             <button
               type="submit"
               disabled={loading || (!city && !isManualEntry)}
-              className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold text-sm py-3.5 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+              className="btn-gold w-full flex items-center justify-center gap-3 py-4 shadow-[0_10px_30px_rgba(212,175,55,0.2)]"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <Plus className="w-4 h-4 text-black stroke-[3px]" />
+                  <Plus className="w-5 h-5 stroke-[4px]" />
                   <span>{t("addHotel.submitButton")}</span>
                 </>
               )}

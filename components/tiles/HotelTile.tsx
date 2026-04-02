@@ -122,13 +122,13 @@ export default function HotelTile(props: HotelTileProps) {
       case "up":
         return (
           <TrendingUp
-            className={`${size} ${variant === "target" ? "text-[var(--danger)]" : "text-optimal-green"}`}
+            className={`${size} ${variant === "target" ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
           />
         );
       case "down":
         return (
           <TrendingDown
-            className={`${size} ${variant === "target" ? "text-[var(--success)]" : "text-alert-red"}`}
+            className={`${size} ${variant === "target" ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
           />
         );
       default:
@@ -140,12 +140,12 @@ export default function HotelTile(props: HotelTileProps) {
     switch (trend) {
       case "up":
         return variant === "target"
-          ? "text-[var(--danger)]"
-          : "text-optimal-green";
+          ? "text-[var(--alert-red)]"
+          : "text-[var(--optimal-green)]";
       case "down":
         return variant === "target"
-          ? "text-[var(--success)]"
-          : "text-alert-red";
+          ? "text-[var(--optimal-green)]"
+          : "text-[var(--alert-red)]";
       default:
         return "text-[var(--text-muted)]";
     }
@@ -154,11 +154,11 @@ export default function HotelTile(props: HotelTileProps) {
   const getTrendBgColor = () => {
     switch (trend) {
       case "up":
-        return "bg-optimal-green-soft";
+        return "bg-[var(--optimal-green-soft)]";
       case "down":
-        return "bg-alert-red-soft";
+        return "bg-[var(--alert-red-soft)]";
       default:
-        return "bg-white/5";
+        return "bg-[var(--glass-bg)]";
     }
   };
 
@@ -176,7 +176,7 @@ export default function HotelTile(props: HotelTileProps) {
     >
       {/* Target Gradient Overlay */}
       {isTarget && (
-        <div className="absolute inset-0 bg-gradient-to-br from-[#F6C344]/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/5 to-transparent pointer-events-none" />
       )}
       {/* Header */}
       <div
@@ -192,7 +192,7 @@ export default function HotelTile(props: HotelTileProps) {
         >
           {isTarget && (
             <div
-              className={`relative flex-shrink-0 ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-white/5`}
+              className={`relative flex-shrink-0 ${imageSize} rounded-xl overflow-hidden bg-[var(--soft-gold)]/10 flex items-center justify-center border border-[var(--glass-border)]`}
             >
               {imageUrl || (images && images.length > 0) ? (
                 <FallbackImage
@@ -226,8 +226,8 @@ export default function HotelTile(props: HotelTileProps) {
               <span
                 className={`text-[10px] uppercase tracking-widest font-black px-2.5 py-1 rounded-full border shadow-sm ${
                   isTarget
-                    ? "text-[#F6C344] bg-[#F6C344]/10 border-[#F6C344]/20"
-                    : "text-slate-400 bg-white/5 border-white/10"
+                    ? "text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 border-[var(--soft-gold)]/20"
+                    : "text-[var(--text-secondary)] bg-[var(--glass-bg)] border-[var(--glass-border)]"
                 }`}
               >
                 {isTarget ? t("common.myHotel") : t("common.competitor")}
@@ -235,7 +235,7 @@ export default function HotelTile(props: HotelTileProps) {
 
               {/* Rating */}
               {rating && (
-                <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded-full flex items-center gap-1 border border-white/5">
+                <span className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--deep-ocean-accent)] px-2 py-1 rounded-full flex items-center gap-1 border border-[var(--glass-border)]">
                   ★ {rating.toFixed(1)}
                 </span>
               )}
@@ -256,17 +256,17 @@ export default function HotelTile(props: HotelTileProps) {
               {/* User Request: Removed Rank Badges and Undercut Status to fix layout overlap */}
             </div>
             <h2
-              className={`${titleSize} text-white leading-tight mb-1 line-clamp-3 pr-1`}
+              className={`${titleSize} text-[var(--text-primary)] leading-tight mb-1 line-clamp-3 pr-1`}
               title={name}
             >
               {name}
             </h2>
             {stars && (
-              <div className="flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-md bg-[#F6C344]/10 border border-[#F6C344]/20 w-fit">
+              <div className="flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 w-fit">
                 {[...Array(Math.min(5, stars))].map((_, i) => (
                   <span
                     key={i}
-                    className="text-[10px] text-[#F6C344] font-bold"
+                    className="text-[10px] text-[var(--soft-gold)] font-bold"
                   >
                     ★
                   </span>
@@ -293,7 +293,7 @@ export default function HotelTile(props: HotelTileProps) {
                     <a
                       href={`tel:${phone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-card)] transition-all font-medium"
                       title={phone}
                     >
                       <Phone className="w-3 h-3 text-emerald-400" />
@@ -304,7 +304,7 @@ export default function HotelTile(props: HotelTileProps) {
                     <a
                       href={`mailto:${email}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-card)] transition-all font-medium"
                       title={email}
                     >
                       <Mail className="w-3 h-3 text-sky-400" />
@@ -317,7 +317,7 @@ export default function HotelTile(props: HotelTileProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-slate-400 hover:text-white hover:bg-white/10 transition-all font-medium"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-card)] transition-all font-medium"
                       title={website}
                     >
                       <Globe className="w-3 h-3 text-amber-400" />
@@ -353,23 +353,28 @@ export default function HotelTile(props: HotelTileProps) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEdit(id, {
-                      id,
-                      name,
-                      location,
-                      is_target_hotel: isTarget,
-                      user_id: "",
-                      created_at: "",
-                      price_info: {
-                        current_price: currentPrice,
-                        currency,
-                        trend,
-                        change_percent: changePercent,
-                        recorded_at: lastUpdated || "",
-                      },
-                    } as HotelWithPrice);
+                  onEdit(id, {
+                    id,
+                    name,
+                    location,
+                    is_target_hotel: isTarget,
+                    user_id: "",
+                    created_at: "",
+                    price_info: {
+                      current_price: currentPrice,
+                      currency,
+                      trend,
+                      change_percent: changePercent,
+                      recorded_at: lastUpdated || "",
+                    },
+                    rating,
+                    stars,
+                    image_url: imageUrl,
+                    amenities,
+                    images,
+                  } as HotelWithPrice);
                   }}
-                  className="p-2.5 rounded-xl transition-all shadow-lg bg-white/10 text-white border border-white/10 hover:bg-white/20 hover:scale-110 active:scale-95"
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-[var(--deep-ocean-accent)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:bg-[var(--deep-ocean-card)] hover:scale-110 active:scale-95"
                   title={t("common.edit")}
                   aria-label={t("common.edit")}
                 >
@@ -403,7 +408,7 @@ export default function HotelTile(props: HotelTileProps) {
                       rating,
                     } as HotelWithPrice);
                   }}
-                  className="p-2.5 rounded-xl transition-all shadow-lg bg-[#F6C344] text-[#050B18] hover:bg-[#EAB308] hover:scale-110 active:scale-95"
+                  className="p-2.5 rounded-xl transition-all shadow-lg bg-[var(--soft-gold)] text-[var(--deep-ocean)] hover:brightness-110 hover:scale-110 active:scale-95"
                   title={t("common.view")}
                   aria-label={t("common.view")}
                 >
@@ -424,7 +429,7 @@ export default function HotelTile(props: HotelTileProps) {
                 </button>
               )}
               <div
-                className={`p-2 rounded-xl bg-white/5 border border-white/5 ${getTrendColor()}`}
+                className={`p-2 rounded-xl bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] ${getTrendColor()}`}
               >
                 {getTrendIcon("w-8 h-8")}
               </div>
@@ -445,7 +450,7 @@ export default function HotelTile(props: HotelTileProps) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                {/* View on Top */}
+                {/* Tactical Actions */}
                 {onViewDetails && (
                   <button
                     onClick={(e) => {
@@ -473,13 +478,12 @@ export default function HotelTile(props: HotelTileProps) {
                         rating,
                       } as HotelWithPrice);
                     }}
-                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-[var(--deep-ocean-accent)] hover:bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--glass-border)]"
                     title={t("common.view")}
                   >
                     <Building2 className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {/* Edit Under View */}
                 {onEdit && (
                   <button
                     onClick={(e) => {
@@ -488,19 +492,26 @@ export default function HotelTile(props: HotelTileProps) {
                         id,
                         name,
                         location,
-                        is_target_hotel: isTarget,
+                        image_url: imageUrl,
                         user_id: "",
                         created_at: "",
+                        is_target_hotel: isTarget,
                         price_info: {
-                          current_price: currentPrice,
                           currency,
+                          current_price: currentPrice,
+                          offers,
+                          previous_price: previousPrice,
                           trend,
                           change_percent: changePercent,
                           recorded_at: lastUpdated || "",
                         },
+                        amenities,
+                        images,
+                        stars,
+                        rating,
                       } as HotelWithPrice);
                     }}
-                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-white/10 text-slate-400 hover:text-[#F6C344] border border-white/5"
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-[var(--deep-ocean-accent)] hover:bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--soft-gold)] border border-[var(--glass-border)]"
                     title={t("common.edit")}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -512,7 +523,7 @@ export default function HotelTile(props: HotelTileProps) {
                       e.stopPropagation();
                       onDelete(id);
                     }}
-                    className="p-1.5 rounded-lg transition-all shadow-sm bg-white/5 hover:bg-red-500/20 text-red-400/50 hover:text-red-400 border border-white/5"
+                    className="p-1.5 rounded-lg transition-all shadow-sm bg-[var(--deep-ocean-accent)] hover:bg-rose-500/20 text-rose-400/50 hover:text-rose-400 border border-[var(--glass-border)]"
                     title={t("common.delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -532,7 +543,7 @@ export default function HotelTile(props: HotelTileProps) {
           {!isTarget ? (
             <>
               <p
-                className={`text-price-md ${currentPrice > 0 ? "text-white" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}
+                className={`text-price-md ${currentPrice > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] animate-pulse"} transition-colors group-hover:text-[var(--soft-gold)]`}
               >
                 {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
               </p>
@@ -559,8 +570,8 @@ export default function HotelTile(props: HotelTileProps) {
             </>
           ) : (
             <>
-              <p className="text-[10px] font-bold tracking-widest text-[#F6C344] mb-2 uppercase flex items-center justify-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-[#F6C344] animate-pulse" />
+              <p className="text-[10px] font-bold tracking-widest text-[var(--soft-gold)] mb-2 uppercase flex items-center justify-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                 {/* 
                   EXPLANATION: Localization of Live Market Rate
                   Using i18n to ensure "Live Market Rate" follows the user's selected language.
@@ -570,11 +581,11 @@ export default function HotelTile(props: HotelTileProps) {
               <div className="relative inline-block mb-1">
                 {currentPrice > 0 ? (
                   <div className="flex flex-col items-center">
-                    <p className="text-2xl sm:text-4xl font-black text-white tracking-tighter transition-all">
+                    <p className="text-2xl sm:text-4xl font-black text-[var(--text-primary)] tracking-tighter transition-all">
                       {formatPrice(currentPrice)}
                     </p>
                     {vendor && (
-                      <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-white/5 bg-white/5">
+                      <span className="mt-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-3 py-1 rounded-full border border-[var(--glass-border)] bg-[var(--deep-ocean-accent)]">
                         {/* 
                           EXPLANATION: Found via localization
                           Ensuring the data source attribution is localized.
@@ -598,7 +609,7 @@ export default function HotelTile(props: HotelTileProps) {
                 )}
               </div>
               {/* Progressive Disclosure for Target */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 bg-[var(--deep-ocean-accent)] border border-white/10 rounded-xl text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 pointer-events-none shadow-2xl backdrop-blur-md">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-4 py-2 bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] rounded-xl text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-10 pointer-events-none shadow-2xl backdrop-blur-md">
                 {t("dashboard.verified")} • {lastUpdated || t("common.pending")}
               </div>
             </>
@@ -607,7 +618,7 @@ export default function HotelTile(props: HotelTileProps) {
           {/* Check-in info shared */}
           {(checkIn || (adults && adults !== 2)) && (
             <span
-              className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border ${isTarget ? "mt-2 font-bold text-[#F6C344] border-[#F6C344]/20 bg-[#F6C344]/5" : "text-[#F6C344] font-bold ml-1 border-[#F6C344]/20 py-0.5 bg-[#F6C344]/5"}`}
+              className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border ${isTarget ? "mt-2 font-bold text-[var(--soft-gold)] border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5" : "text-[var(--soft-gold)] font-bold ml-1 border-[var(--soft-gold)]/20 py-0.5 bg-[var(--soft-gold)]/5"}`}
             >
               {!isTarget && "• "}
               {checkIn

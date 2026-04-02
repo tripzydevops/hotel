@@ -26,20 +26,20 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
     ];
 
     return (
-        <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full ring-1 ring-white/5">
+        <div className="p-6 bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full ring-1 ring-[var(--glass-border)]">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-white">Strategic Opportunity Matrix</h3>
+                    <h3 className="text-lg font-semibold text-[var(--text-primary)]">Strategic Opportunity Matrix</h3>
                     <Tooltip 
                         content={
                             <div className="max-w-xs space-y-2 p-1">
-                                <p className="font-bold border-b border-white/10 pb-1">About the Matrix</p>
+                                <p className="font-bold border-b border-[var(--glass-border)] pb-1 text-[var(--text-primary)]">About the Matrix</p>
                                 <p>This grid plots your current market position based on two critical axes:</p>
                                 <ul className="list-disc pl-4 space-y-1">
                                     <li><span className="text-emerald-400">Vertical:</span> regional promotion intensity (from TGA).</li>
                                     <li><span className="text-blue-400">Horizontal:</span> your price gap vs competitors.</li>
                                 </ul>
-                                <p className="pt-1 italic text-xs text-slate-400">Current position: {intensity.toFixed(1)} intensity / {priceGap > 0 ? '+' : ''}{priceGap}% gap</p>
+                                <p className="pt-1 italic text-xs text-[var(--text-muted)]">Current position: {intensity.toFixed(1)} intensity / {priceGap > 0 ? '+' : ''}{priceGap}% gap</p>
                             </div>
                         }
                         side="bottom"
@@ -47,16 +47,15 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
                         <Info className="w-4 h-4 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
                     </Tooltip>
                 </div>
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest bg-slate-800/50 px-2 py-0.5 rounded">{city}</span>
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest bg-[var(--deep-ocean-accent)]/20 px-2 py-0.5 rounded">{city}</span>
             </div>
 
-            <div className="relative flex-1 aspect-square w-full max-w-[320px] mx-auto grid grid-cols-2 grid-rows-2 border border-slate-700/30">
-                {/* Y-Axis Label */}
-                <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-[8px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+            <div className="relative flex-1 aspect-square w-full max-w-[320px] mx-auto grid grid-cols-2 grid-rows-2 border border-[var(--glass-border)]">
+                <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                     Promotion Intensity (TGA) &uarr;
                 </div>
                 {/* X-Axis Label */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                     Price Gap vs Competitors &rarr;
                 </div>
 
@@ -68,7 +67,7 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
                         transition={{ delay: i * 0.1 }}
                         className={`p-3 flex flex-col justify-center items-center text-center border ${q.border} ${q.color} relative overflow-hidden group cursor-crosshair`}
                     >
-                        <span className="text-[11px] font-bold text-white mb-1 leading-tight group-hover:scale-105 transition-transform">
+                        <span className="text-[11px] font-bold text-[var(--text-primary)] mb-1 leading-tight group-hover:scale-105 transition-transform">
                             {q.name}
                         </span>
                         <p className="text-[9px] text-slate-400 leading-tight px-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -90,7 +89,7 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
                             transition={{ duration: 2, repeat: Infinity }}
                             className="absolute -inset-2 bg-emerald-400 rounded-full"
                         />
-                        <div className="w-3 h-3 bg-emerald-400 rounded-full border-2 border-white shadow-[0_0_15px_rgba(52,211,153,0.8)]" />
+                        <div className="w-3 h-3 bg-emerald-400 rounded-full border-2 border-[var(--deep-ocean-card)] shadow-[0_0_15px_rgba(52,211,153,0.8)]" />
                     </div>
                 </motion.div>
             </div>

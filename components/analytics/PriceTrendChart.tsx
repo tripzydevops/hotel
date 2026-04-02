@@ -50,7 +50,7 @@ export default function PriceTrendChart({
 
   if (data.length === 0) {
     return (
-      <div className="w-full h-[300px] flex items-center justify-center text-[var(--text-muted)] italic text-sm border border-white/5 bg-white/[0.02] rounded-xl">
+      <div className="w-full h-[300px] flex items-center justify-center text-[var(--text-muted)] italic text-sm border border-[var(--glass-border)] bg-[var(--deep-ocean-accent)]/5 rounded-xl">
         {t("reports.noHistoryData")}
       </div>
     );
@@ -71,19 +71,22 @@ export default function PriceTrendChart({
           </defs>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="rgba(255,255,255,0.05)"
+            stroke="var(--glass-border)"
+            strokeOpacity={0.5}
             vertical={false}
           />
           <XAxis
             dataKey="date"
-            stroke="#64748B"
+            stroke="currentColor"
+            className="text-[var(--text-muted)]"
             fontSize={12}
             tickLine={false}
             axisLine={false}
             minTickGap={30}
           />
           <YAxis
-            stroke="#64748B"
+            stroke="currentColor"
+            className="text-[var(--text-muted)]"
             fontSize={12}
             tickLine={false}
             axisLine={false}
@@ -98,13 +101,13 @@ export default function PriceTrendChart({
             domain={["auto", "auto"]}
           />
           <Tooltip
-            cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+            cursor={{ stroke: "var(--glass-border)", strokeWidth: 1 }}
             contentStyle={{
-              backgroundColor: "#0F172A", // var(--deep-ocean)
-              borderColor: "rgba(255,255,255,0.1)",
+              backgroundColor: "var(--deep-ocean-card)",
+              borderColor: "var(--glass-border)",
               borderRadius: "12px",
               boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-              color: "#fff",
+              color: "var(--text-primary)",
             }}
             formatter={(value: any) => [
               formatPrice(value),

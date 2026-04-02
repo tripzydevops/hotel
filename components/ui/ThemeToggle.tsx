@@ -11,7 +11,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative flex items-center gap-2 p-1 rounded-full bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/30 transition-all group overflow-hidden h-10 w-20 shadow-inner"
+      className="relative flex items-center gap-2 p-1 rounded-full bg-[var(--bg-accent)] border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/30 transition-all group overflow-hidden h-10 w-20 shadow-inner"
       aria-label="Toggle Theme"
     >
       {/* Sliding Background */}

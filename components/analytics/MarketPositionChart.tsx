@@ -59,18 +59,21 @@ export default function MarketPositionChart({
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="rgba(255,255,255,0.1)"
+            stroke="var(--glass-border)"
+            strokeOpacity={0.5}
             vertical={false}
           />
           <XAxis
             dataKey="name"
-            stroke="#94A3B8"
+            stroke="currentColor"
+            className="text-[var(--text-secondary)]"
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke="#94A3B8"
+            stroke="currentColor"
+            className="text-[var(--text-secondary)]"
             fontSize={12}
             tickLine={false}
             axisLine={false}
@@ -84,15 +87,15 @@ export default function MarketPositionChart({
             }
           />
           <Tooltip
-            cursor={{ fill: "rgba(255,255,255,0.05)" }}
+            cursor={{ fill: "var(--text-primary)", fillOpacity: 0.05 }}
             contentStyle={{
-              backgroundColor: "#0F172A", // var(--deep-ocean)
-              borderColor: "rgba(255,255,255,0.1)",
+              backgroundColor: "var(--deep-ocean-card)",
+              borderColor: "var(--glass-border)",
               borderRadius: "12px",
               boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-              color: "#fff",
+              color: "var(--text-primary)",
             }}
-            labelStyle={{ color: "#fff", fontWeight: "bold" }}
+            labelStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
             itemStyle={{ color: "#D4AF37" }}
             formatter={(value: any) => [
               formatPrice(typeof value === "number" ? value : 0),

@@ -26,7 +26,7 @@ export default function RecentSearches({ sessions, onOpenSession, onAddHotel }: 
           <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
              <Zap className="w-5 h-5" />
           </div>
-          <h2 className="text-xl font-black text-white tracking-tight">Rapid Pulse History</h2>
+          <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Rapid Pulse History</h2>
         </div>
       </div>
 
@@ -35,23 +35,23 @@ export default function RecentSearches({ sessions, onOpenSession, onAddHotel }: 
           <button 
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group glass-card p-5 hover:bg-white/[0.04] transition-all border border-white/5 hover:border-[var(--soft-gold)]/30 text-left relative overflow-hidden"
+            className="group glass-card p-5 hover:bg-[var(--deep-ocean-accent)]/10 transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/30 text-left relative overflow-hidden"
           >
             {/* Background Glow */}
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-[var(--soft-gold)]/5 blur-2xl group-hover:bg-[var(--soft-gold)]/10 transition-all rounded-full" />
             
             <div className="flex flex-col gap-4 relative z-10">
               <div className="flex items-center justify-between">
-                <div className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
+                <div className="p-2 rounded-lg bg-[var(--deep-ocean-accent)]/20 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
                   <Activity className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-white uppercase tracking-widest">
+                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-[var(--text-primary)] uppercase tracking-widest">
                   {formatDate(session.created_at)}
                 </span>
               </div>
 
               <div>
-                <p className="text-sm font-black text-white mb-1 group-hover:text-[var(--soft-gold)] transition-colors">
+                <p className="text-sm font-black text-[var(--text-primary)] mb-1 group-hover:text-[var(--soft-gold)] transition-colors">
                    {session.hotels_count} Properties Batch
                 </p>
                 <div className="flex items-center gap-2">
@@ -64,9 +64,9 @@ export default function RecentSearches({ sessions, onOpenSession, onAddHotel }: 
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--glass-border)]">
                 <span className="text-[10px] font-bold text-[var(--text-muted)]">View Details</span>
-                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all" />
               </div>
             </div>
           </button>

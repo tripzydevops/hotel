@@ -51,21 +51,21 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
 
   return (
     <div className="absolute top-1 left-1 group/intraday z-20">
-      <div className="p-0.5 rounded bg-white/5 border border-white/10 text-white/40 hover:text-[var(--soft-gold)] transition-colors cursor-help">
+      <div className="p-0.5 rounded bg-[var(--glass-bg-subtle)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-colors cursor-help">
         <Clock className="w-2 h-2" />
       </div>
 
       {/* Tooltip Content */}
-      <div className="absolute top-0 left-full ml-2 w-36 p-2 bg-[#0a1622]/95 backdrop-blur-md border border-[var(--soft-gold)]/20 rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
-        <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-white/10">
+      <div className="absolute top-0 left-full ml-2 w-36 p-2 bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border-accent)] rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
+        <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-[var(--glass-border)]">
           <History className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-          <span className="text-[8px] font-black uppercase text-white tracking-widest">Intraday Story</span>
+          <span className="text-[8px] font-black uppercase text-[var(--text-primary)] tracking-widest">Intraday Story</span>
         </div>
         <div className="space-y-1.5">
           {events.map((ev, idx) => (
             <div key={idx} className="flex items-center justify-between gap-1">
               <div className="flex flex-col items-start">
-                <span className="text-[7px] font-bold text-white/40 leading-none">
+                <span className="text-[7px] font-bold text-[var(--text-muted)] leading-none">
                   {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {ev.label && (
@@ -74,7 +74,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
                   </span>
                 )}
               </div>
-              <span className="text-[8px] font-black text-white">
+              <span className="text-[8px] font-black text-[var(--text-primary)]">
                 {symbol}{ev.price.toLocaleString()}
               </span>
             </div>
@@ -130,7 +130,7 @@ export default function RateIntelligenceGrid({
     <div className="glass-card p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-lg font-black text-white mb-1">
+          <h2 className="text-lg font-black text-[var(--text-primary)] mb-1">
             Rate Intelligence Grid
           </h2>
           <p className="text-xs text-[var(--text-muted)] font-medium">
@@ -138,23 +138,23 @@ export default function RateIntelligenceGrid({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-lg bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-xs font-black uppercase tracking-wider">
+          <div className="px-3 py-1.5 rounded-lg bg-[var(--glass-bg-accent)] border border-[var(--glass-border-accent)] text-[var(--soft-gold)] text-xs font-black uppercase tracking-wider">
             {sortedData.length} Days
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto relative rounded-xl border border-white/5">
+      <div className="overflow-x-auto relative rounded-xl border border-[var(--glass-border)]">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr>
               {/* Date Column */}
-              <th className="sticky left-0 z-20 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 min-w-[140px] border-b border-r border-white/10 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider">
+              <th className="sticky left-0 z-20 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 min-w-[140px] border-b border-r border-[var(--glass-border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider">
                 Date Range
               </th>
 
               {/* My Hotel Column */}
-              <th className="p-4 min-w-[140px] border-b border-white/10 bg-[var(--soft-gold)]/10 border-r border-[var(--soft-gold)]/20 text-center">
+              <th className="p-4 min-w-[140px] border-b border-[var(--glass-border)] bg-[var(--glass-bg-accent)] border-r border-[var(--glass-border-accent)] text-center">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest">
                     {hotelName}
@@ -169,10 +169,10 @@ export default function RateIntelligenceGrid({
               {effectiveCompetitors.map((comp) => (
                 <th
                   key={comp.id}
-                  className="p-4 min-w-[140px] border-b border-white/10 text-center"
+                  className="p-4 min-w-[140px] border-b border-[var(--glass-border)] text-center"
                 >
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-black text-white/70 uppercase tracking-wider truncate max-w-[120px]">
+                    <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider truncate max-w-[120px]">
                       {comp.name}
                     </span>
                   </div>
@@ -180,7 +180,7 @@ export default function RateIntelligenceGrid({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-[var(--glass-border)]">
             {sortedData.slice(0, 14).map((row) => {
               const dateObj = new Date(row.date);
               const isWeekend =
@@ -197,18 +197,18 @@ export default function RateIntelligenceGrid({
               return (
                 <tr
                   key={row.date}
-                  className="hover:bg-white/[0.02] transition-colors group"
+                  className="hover:bg-[var(--glass-bg-subtle)] transition-colors group"
                 >
                   {/* Date Cell */}
-                  <td className="sticky left-0 z-10 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 border-r border-white/10 group-hover:bg-[var(--deep-ocean)]">
+                  <td className="sticky left-0 z-10 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 border-r border-[var(--glass-border)] group-hover:bg-[var(--deep-ocean)]">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-white">
+                      <span className="text-sm font-black text-[var(--text-primary)]">
                         {dateObj.toLocaleDateString(
                           locale === "en" ? "en-US" : "tr-TR",
                           { month: "short", day: "numeric" },
                         )}
                       </span>
-                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                         {dateObj.toLocaleDateString(
                           locale === "en" ? "en-US" : "tr-TR",
                           { weekday: "long" },
@@ -224,7 +224,7 @@ export default function RateIntelligenceGrid({
 
                   {/* My Price Cell */}
                   <td
-                    className={`p-4 border-r border-[var(--soft-gold)]/10 text-center relative ${isMyPriceLowest ? "bg-[var(--optimal-green)]/10" : ""}`}
+                    className={`p-4 border-r border-[var(--glass-border-subtle)] text-center relative ${isMyPriceLowest ? "bg-[var(--optimal-green)]/10" : ""}`}
                   >
                     {row.price > 0 ? (
                       <div className={`flex flex-col items-center ${row.is_estimated_target ? "opacity-60 grayscale-[0.5]" : ""}`}>
@@ -245,7 +245,7 @@ export default function RateIntelligenceGrid({
                           </div>
                         )}
                         <span
-                          className={`text-sm font-black ${isMyPriceLowest ? "text-[var(--optimal-green)]" : "text-[var(--soft-gold)]"} ${row.is_estimated_target ? "decoration-dotted underline decoration-white/30" : ""}`}
+                          className={`text-sm font-black ${isMyPriceLowest ? "text-[var(--optimal-green)]" : "text-[var(--soft-gold)]"} ${row.is_estimated_target ? "decoration-dotted underline decoration-[var(--text-muted)]" : ""}`}
                         >
                           {symbol}
                           {row.price.toLocaleString()}
@@ -265,7 +265,7 @@ export default function RateIntelligenceGrid({
                         )}
                       </div>
                     ) : (
-                      <div className="text-[10px] font-black text-white/20 uppercase">
+                      <div className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                         N/A
                       </div>
                     )}
@@ -304,7 +304,7 @@ export default function RateIntelligenceGrid({
                     return (
                       <td
                         key={comp.id}
-                        className="p-4 text-center border-b border-white/5 relative group/cell"
+                        className="p-4 text-center border-b border-[var(--glass-border)] relative group/cell"
                       >
                         {price > 0 ? (
                           <div className={`flex flex-col items-center ${isEstimated ? "opacity-60 grayscale-[0.5]" : ""}`}>
@@ -326,7 +326,7 @@ export default function RateIntelligenceGrid({
                             )}
                             <div className="flex items-center gap-1">
                               <span
-                                className={`text-sm font-bold ${isCheaper ? "text-[var(--optimal-green)]" : isMoreExpensive ? "text-white" : "text-white/60"} ${isEstimated ? "decoration-dotted underline decoration-white/30" : ""}`}
+                                className={`text-sm font-bold ${isCheaper ? "text-[var(--optimal-green)]" : isMoreExpensive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"} ${isEstimated ? "decoration-dotted underline decoration-[var(--text-muted)]" : ""}`}
                               >
                                 {symbol}
                                 {price.toLocaleString()}
@@ -335,7 +335,7 @@ export default function RateIntelligenceGrid({
                             {/* Diff Badge */}
                             {diffPercent !== 0 && (
                               <span
-                                className={`text-[8px] font-black px-1.5 py-0.5 rounded mt-1 bg-white/5 ${diffPercent > 0 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
+                                className={`text-[8px] font-black px-1.5 py-0.5 rounded mt-1 bg-[var(--glass-bg-subtle)] ${diffPercent > 0 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
                               >
                                 {diffPercent > 0 ? "+" : ""}
                                 {diffPercent.toFixed(0)}%
@@ -344,14 +344,14 @@ export default function RateIntelligenceGrid({
                           </div>
                         ) : isVerificationFailed ? (
                           <div className="flex flex-col items-center justify-center opacity-70">
-                            <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 flex items-center gap-1" title="Price not available for this room type">
-                              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest whitespace-nowrap">
+                            <div className="px-1.5 py-0.5 rounded border border-[var(--glass-border)] bg-[var(--glass-bg-subtle)] flex items-center gap-1" title="Price not available for this room type">
+                              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                                 N/A
                               </span>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xl text-white/10">-</span>
+                          <span className="text-xl text-[var(--text-muted)]/20">-</span>
                         )}
                       </td>
                     );
@@ -363,7 +363,7 @@ export default function RateIntelligenceGrid({
         </table>
       </div>
 
-      <div className="mt-4 flex items-center gap-6 text-[10px] font-bold text-white/40 uppercase tracking-widest pl-2">
+      <div className="mt-4 flex items-center gap-6 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" />
           Best Market Position

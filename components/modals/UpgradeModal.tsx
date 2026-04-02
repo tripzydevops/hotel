@@ -18,7 +18,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       <div className="bg-[var(--deep-ocean-card)] border border-[var(--soft-gold)]/20 rounded-2xl w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 p-6 md:p-8">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -27,7 +27,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           <div className="w-12 h-12 rounded-full bg-[var(--soft-gold)]/10 flex items-center justify-center mx-auto mb-4 border border-[var(--soft-gold)]/20">
              <span className="text-2xl">🚀</span>
           </div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-[var(--text-secondary)] bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)] bg-clip-text text-transparent">
             Upgrade to Pro
           </h2>
           <p className="text-[var(--text-secondary)] text-sm mt-2">
@@ -47,12 +47,12 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                  <div className="w-5 h-5 rounded-full bg-[var(--optimal-green)]/10 flex items-center justify-center">
                      <Check className="w-3 h-3 text-[var(--optimal-green)]" />
                  </div>
-                 <span className="text-white text-sm">{feature}</span>
+                 <span className="text-[var(--text-primary)] text-sm">{feature}</span>
              </div>
           ))}
         </div>
 
-        <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
+        <div className="bg-[var(--deep-ocean-accent)]/10 rounded-xl p-4 mb-6 border border-[var(--glass-border)]">
              <div className="flex justify-between items-center mb-1">
                  <span className="text-white font-medium">Pro Plan</span>
                  <span className="text-2xl font-bold text-[var(--soft-gold)]">$99<span className="text-xs text-[var(--text-muted)] font-normal">/mo</span></span>

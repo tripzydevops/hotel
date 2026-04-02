@@ -131,11 +131,11 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
   );
 
   return (
-    <div className="backdrop-blur-md bg-black/80 border border-white/10 rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-        <span className="text-sm font-medium text-white/90">{dateStr}</span>
+    <div className="backdrop-blur-md bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--glass-border)]">
+        <span className="text-sm font-medium text-[var(--text-primary)]/90">{dateStr}</span>
         <div
-          className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${data.vsComp < 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+          className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${data.vsComp < 0 ? "bg-[var(--optimal-green)]/20 text-[var(--optimal-green)]" : "bg-[var(--alert-red)]/20 text-[var(--alert-red)]"}`}
         >
           {data.vsComp < 0 ? (
             <TrendingDown className="w-3 h-3" />
@@ -151,7 +151,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] shadow-[0_0_8px_var(--soft-gold)]"></div>
-            <span className="text-xs text-white/70">Your Rate</span>
+            <span className="text-xs text-[var(--text-secondary)]">Your Rate</span>
           </div>
           <span className="text-lg font-black text-[var(--soft-gold)]">
             {symbol}
@@ -160,23 +160,23 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
         </div>
 
         {/* Competitor List */}
-        <div className="space-y-1 pt-2 border-t border-white/10">
-          <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
+        <div className="space-y-1 pt-2 border-t border-[var(--glass-border)]">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]/60 mb-1">
             Market Snapshot
           </div>
           {sortedCompetitors.slice(0, 5).map((comp: any, i: number) => (
             <div key={i} className="flex justify-between text-xs py-0.5">
-              <span className="text-white/60 truncate max-w-[140px]">
+              <span className="text-[var(--text-secondary)] truncate max-w-[140px]">
                 {comp.name}
               </span>
-              <span className="font-medium text-white/80">
+              <span className="font-medium text-[var(--text-secondary)]">
                 {symbol}
                 {comp.price?.toFixed(0)}
               </span>
             </div>
           ))}
           {sortedCompetitors.length > 5 && (
-            <div className="text-[10px] text-white/30 pt-1">
+            <div className="text-[10px] text-[var(--text-muted)]/40 pt-1">
               +{sortedCompetitors.length - 5} more...
             </div>
           )}
@@ -202,31 +202,31 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
+          <div className="p-2 rounded-lg bg-[var(--glass-bg-accent)] text-[var(--soft-gold)]">
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white tracking-wide">
+            <h3 className="text-base font-bold text-[var(--text-primary)] tracking-wide">
               Rate Spread Analysis
             </h3>
-            <p className="text-xs text-white/40">Daily competitive position</p>
+            <p className="text-xs text-[var(--text-muted)]/60">Daily competitive position</p>
           </div>
         </div>
 
         {/* Month Navigation */}
-        <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/5">
+        <div className="flex items-center bg-[var(--glass-bg-subtle)] rounded-lg p-1 border border-[var(--glass-border)]">
           <button
             onClick={() => navigateMonth(-1)}
-            className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-95"
+            className="p-1.5 rounded hover:bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all active:scale-95"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-bold text-white min-w-[100px] text-center select-none">
+          <span className="text-sm font-bold text-[var(--text-primary)] min-w-[100px] text-center select-none">
             {monthLabel}
           </span>
           <button
             onClick={() => navigateMonth(1)}
-            className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-95"
+            className="p-1.5 rounded hover:bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all active:scale-95"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -236,7 +236,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
       {/* Chart */}
       <div className="h-[350px] w-full relative z-10">
         {chartData.length === 0 ? (
-          <div className="h-full w-full flex flex-col items-center justify-center text-white/30 gap-3">
+          <div className="h-full w-full flex flex-col items-center justify-center text-[var(--text-muted)]/40 gap-3">
             <Minus className="w-8 h-8 opacity-50" />
             <span className="text-sm">
               No rate data available for this month
@@ -265,15 +265,15 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
 
                 {/* Market Spread Gradient (Subtle Background) */}
                 <linearGradient id="colorSpread" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#64748b" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#64748b" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="var(--text-muted)" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="var(--text-muted)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
 
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="rgba(255,255,255,0.05)"
+                stroke="var(--glass-border)"
               />
 
               <XAxis
@@ -281,7 +281,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: "rgba(255,255,255,0.3)",
+                  fill: "var(--text-muted)",
                   fontSize: 11,
                   fontWeight: 500,
                 }}
@@ -293,7 +293,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: "rgba(255,255,255,0.3)",
+                  fill: "var(--text-muted)",
                   fontSize: 11,
                   fontWeight: 500,
                 }}
@@ -304,7 +304,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
               <Tooltip
                 content={<CustomTooltip symbol={symbol} />}
                 cursor={{
-                  stroke: "white",
+                  stroke: "var(--text-primary)",
                   strokeWidth: 1,
                   strokeDasharray: "4 4",
                   opacity: 0.3,
@@ -347,7 +347,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
               <Area
                 type="monotone"
                 dataKey="medianPrice"
-                stroke="#64748b"
+                stroke="var(--text-muted)"
                 strokeWidth={2}
                 strokeDasharray="4 4"
                 fill="none" // No fill for median, just line
@@ -367,9 +367,9 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
             Your Rate
           </span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-          <div className="w-4 h-0.5 border-t-2 border-dashed border-slate-400"></div>
-          <span className="text-xs text-white/50">Market Median</span>
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border)]">
+          <div className="w-4 h-0.5 border-t-2 border-dashed border-[var(--text-muted)]"></div>
+          <span className="text-xs text-[var(--text-secondary)]">Market Median</span>
         </div>
       </div>
     </div>

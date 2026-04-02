@@ -105,7 +105,7 @@ const ScoreCard = ({
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       className={`relative rounded-2xl border transition-all duration-300 group overflow-hidden cursor-default ${isTarget
         ? "bg-gradient-to-br from-blue-950/80 via-indigo-950/60 to-slate-900/80 backdrop-blur-xl border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.12),0_8px_32px_rgba(0,0,0,0.3)]"
-        : "bg-white/[0.04] backdrop-blur-lg border-white/[0.08] hover:border-white/15 hover:bg-white/[0.06] hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
+        : "bg-[var(--bg-accent)] backdrop-blur-lg border-[var(--glass-border)] hover:border-white/15 hover:bg-white/[0.06] hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
         }`}
     >
       {/* Animated gradient border shimmer for target hotel */}
@@ -131,7 +131,7 @@ const ScoreCard = ({
           </div>
           <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${isTarget
             ? "bg-blue-500/10 border-blue-500/20 text-blue-300"
-            : "bg-white/5 border-white/[0.08] text-gray-400"
+            : "bg-white/5 border-[var(--glass-border)] text-gray-400"
             }`}>
             {rank}
           </div>
@@ -172,7 +172,7 @@ const ScoreCard = ({
         </div>
 
         {/* Footer: Review count + Price change */}
-        <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
+        <div className="mt-4 pt-3.5 border-t border-[var(--glass-border)] flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
             <Star className="w-3 h-3 text-amber-500/70" />
             <span className="font-medium">{(hotel.review_count || 0).toLocaleString()} reviews</span>
@@ -224,7 +224,7 @@ const CategoryBar = ({
     <div className="flex flex-col">
       {/* Header: Category name + Score */}
       <div className="flex justify-between items-end mb-3">
-        <span className="text-sm font-bold text-white/80">{localizedCategory}</span>
+        <span className="text-sm font-bold text-[var(--text-secondary)]">{localizedCategory}</span>
         <div className="flex items-baseline gap-1.5">
           <span className="text-xl font-black text-white/90">
             {myScore > 0 ? myScore.toFixed(2) : "N/A"}
@@ -256,7 +256,7 @@ const CategoryBar = ({
           <span className="text-[11px] text-gray-500 w-24 truncate font-medium">
             {leaderName || t("sentiment.leader")}
           </span>
-          <div className="flex-1 h-[4px] bg-white/[0.04] rounded-full overflow-hidden">
+          <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${(leaderScore / 5) * 100}%` }}
@@ -272,7 +272,7 @@ const CategoryBar = ({
           <span className="text-[11px] text-gray-500 w-24 font-medium">
             {t("sentiment.avgComp")}
           </span>
-          <div className="flex-1 h-[4px] bg-white/[0.04] rounded-full overflow-hidden">
+          <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${(marketAvg / 5) * 100}%` }}
@@ -326,7 +326,7 @@ const KeywordTag = ({
       </span>
       {/* Glass-panel tooltip with review snippet */}
       {description && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl text-[10px] text-white/80 font-medium italic leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl text-[10px] text-[var(--text-secondary)] font-medium italic leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
           "{description}"
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95" />
         </div>
@@ -552,7 +552,7 @@ export default function SentimentPage() {
     , [targetHotel, selectedHotelIds]);
 
   return (
-    <div className="min-h-screen bg-[#060d1b] p-6 md:p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8 relative overflow-hidden">
       {/* ── Ambient background orbs (decorative depth) ── */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[120px]" />
@@ -565,7 +565,7 @@ export default function SentimentPage() {
         <div className="flex items-center gap-3 mb-8">
           <Link
             href="/analysis"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] text-sm text-gray-400 hover:text-white hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-accent)] backdrop-blur-sm border border-[var(--glass-border)] text-sm text-gray-400 hover:text-white hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             {t("sentiment.backToOverview")}
@@ -578,7 +578,7 @@ export default function SentimentPage() {
             <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300 mb-2 tracking-tight">
               {t("sentiment.title")}
             </h2>
-            <p className="text-gray-400/80 text-sm md:text-base">{t("sentiment.subtitle")}</p>
+            <p className="text-[var(--text-secondary)] text-sm md:text-base">{t("sentiment.subtitle")}</p>
           </div>
 
           {/* Hotel Selector Pills with checkmarks */}
@@ -600,7 +600,7 @@ export default function SentimentPage() {
                   }}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(targetHotel.id)
                     ? "bg-blue-500/15 border-blue-500/30 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                    : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-gray-500 hover:text-gray-300 hover:border-white/15"
                     }`}
                 >
                   {selectedHotelIds.includes(targetHotel.id) ? (
@@ -625,7 +625,7 @@ export default function SentimentPage() {
                   }}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(comp.id)
                     ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
-                    : "bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-gray-500 hover:text-gray-300 hover:border-white/15"
                     }`}
                 >
                   {selectedHotelIds.includes(comp.id) ? (
@@ -650,7 +650,7 @@ export default function SentimentPage() {
             <span className="text-sm text-gray-500">Loading intelligence data...</span>
           </div>
         ) : !targetHotel ? (
-          <div className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-12 text-center border border-white/[0.06]">
+          <div className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-12 text-center border border-[var(--glass-border)]">
             <Hotel className="w-10 h-10 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">{t("sentiment.noDataAvailable")}</p>
           </div>
@@ -692,7 +692,7 @@ export default function SentimentPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-white/[0.08] shadow-xl relative group min-h-[440px]"
+              className="mb-8 bg-gradient-to-br from-white/[0.04] to-blue-950/30 backdrop-blur-sm rounded-2xl border border-[var(--glass-border)] shadow-xl relative group min-h-[440px]"
             >
               <div className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
                 <Brain className="w-16 h-16 text-blue-300" />
@@ -727,7 +727,7 @@ export default function SentimentPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="lg:col-span-7 bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
+                className="lg:col-span-7 bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)]"
               >
                 {/* Section header with icon badge */}
                 <div className="flex items-center justify-between mb-8">
@@ -777,7 +777,7 @@ export default function SentimentPage() {
                     />
                   </div>
                   {/* Radar chart container with glass effect + decorative orbs */}
-                  <div className="flex items-center justify-center bg-white/[0.02] rounded-2xl p-8 border border-white/[0.05] relative overflow-hidden">
+                  <div className="flex items-center justify-center bg-[var(--bg-accent)] rounded-2xl p-8 border border-white/[0.05] relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/[0.06] blur-[60px] rounded-full" />
                     <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/[0.05] blur-[60px] rounded-full" />
                     <SentimentRadar data={radarData} />
@@ -802,7 +802,7 @@ export default function SentimentPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06] mb-8"
+              className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)] mb-8"
             >
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
@@ -834,7 +834,7 @@ export default function SentimentPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/[0.06]"
+              className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)]"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
@@ -844,7 +844,7 @@ export default function SentimentPage() {
                   Competitive Position
                 </h3>
                 {/* Segmented control with animated sliding indicator */}
-                <div className="flex bg-white/[0.04] rounded-xl p-1 border border-white/[0.08]">
+                <div className="flex bg-[var(--bg-accent)] rounded-xl p-1 border border-[var(--glass-border)]">
                   {(["battlefield", "history"] as const).map((v) => (
                     <button
                       key={v}
@@ -868,7 +868,7 @@ export default function SentimentPage() {
                         ? "opacity-20 cursor-not-allowed"
                         : timeframe === tf
                           ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
-                          : "bg-white/[0.03] text-gray-400 border-white/[0.08] hover:text-white hover:border-white/15"
+                          : "bg-[var(--bg-accent)] text-gray-400 border-[var(--glass-border)] hover:text-white hover:border-white/15"
                         }`}
                     >
                       {tf.charAt(0).toUpperCase() + tf.slice(1)}
@@ -888,13 +888,13 @@ export default function SentimentPage() {
               ) : (
                 <>
                   {/* History chart with gradient strokes and grid */}
-                  <div className="h-[400px] w-full relative mb-10 bg-white/[0.01] rounded-2xl border border-white/[0.04] p-4">
+                  <div className="h-[400px] w-full relative mb-10 bg-[var(--bg-accent)] rounded-2xl border border-white/[0.04] p-4">
                     {/* Horizontal grid lines for visual reference */}
                     <div className="absolute inset-4 flex flex-col justify-between pointer-events-none">
                       {[5.0, 4.5, 4.0, 3.5, 3.0].map((v) => (
                         <div key={v} className="flex items-center gap-2 w-full">
                           <span className="text-[9px] text-gray-600 w-6 text-right font-mono">{v.toFixed(1)}</span>
-                          <div className="flex-1 h-px bg-white/[0.04]" />
+                          <div className="flex-1 h-px bg-[var(--bg-accent)]" />
                         </div>
                       ))}
                     </div>
@@ -989,7 +989,7 @@ export default function SentimentPage() {
                       transition={{ delay: idx * 0.05 }}
                       className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 ${hotel.isTarget
                         ? "bg-blue-500/5 border-blue-500/15"
-                        : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
+                        : "bg-[var(--bg-accent)] border-[var(--glass-border)] hover:bg-[var(--bg-accent)]"
                         }`}
                     >
                       {/* Position badge with medal colors for top 3 */}
@@ -1003,15 +1003,15 @@ export default function SentimentPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1.5">
                           <span
-                            className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-white/70"}`}
+                            className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-[var(--text-secondary)]"}`}
                           >
                             {hotel.name}
                           </span>
-                          <span className="text-xs font-black text-white/80">
+                          <span className="text-xs font-black text-[var(--text-secondary)]">
                             {(hotel.rating || 0).toFixed(1)} ★
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-[var(--bg-accent)] rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
@@ -1034,7 +1034,7 @@ export default function SentimentPage() {
                   { color: "bg-amber-500", label: "Market Leader" },
                   { color: "bg-gray-500", label: "Competitors" },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                  <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--bg-accent)] border border-[var(--glass-border)]">
                     <span className={`w-3 h-1 ${item.color} rounded-full`} />
                     <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
                   </div>

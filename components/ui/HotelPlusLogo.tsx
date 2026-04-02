@@ -104,7 +104,7 @@ export default function HotelPlusLogo({
                         <HotelPlusFullSVG size={88} />
                     </div>
                 </div>
-                <h1 className="text-4xl font-black text-white tracking-tighter text-center mt-6">
+                <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter text-center mt-6">
                     Hotel <span className="text-[#D4AF37]">Plus</span>
                 </h1>
                 <p className="text-[10px] text-[#D4AF37]/80 uppercase tracking-[0.5em] font-black mt-2">
@@ -121,7 +121,7 @@ export default function HotelPlusLogo({
                     <HotelPlusFullSVG size={36} />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-white font-black text-lg tracking-tighter leading-none">
+                    <span className="text-[var(--text-primary)] font-black text-lg tracking-tighter leading-none">
                         Hotel <span className="text-[#D4AF37]">Plus</span>
                     </span>
                     {showDomain && (
@@ -141,7 +141,7 @@ export default function HotelPlusLogo({
                     <HotelPlusFullSVG size={40} />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-white font-black text-xl tracking-tighter leading-none">
+                    <span className="text-[var(--text-primary)] font-black text-xl tracking-tighter leading-none">
                         Hotel <span className="text-[#D4AF37]">Plus</span>
                     </span>
                     <span className="text-[9px] text-[#D4AF37]/70 tracking-[0.25em] font-bold mt-0.5 uppercase">
@@ -159,7 +159,7 @@ export default function HotelPlusLogo({
                 <HotelPlusFullSVG size={40} />
             </div>
             <div className="flex flex-col">
-                <span className="text-white font-black text-xl tracking-tighter leading-none">
+                <span className="text-[var(--text-primary)] font-black text-xl tracking-tighter leading-none">
                     Hotel <span className="text-[#D4AF37]">Plus</span>
                 </span>
                 <span className="text-[9px] text-[#D4AF37]/80 uppercase tracking-[0.3em] font-black mt-1">

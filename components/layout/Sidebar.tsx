@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
-import ThemeToggle from "./ThemeToggle";
 
 import { useModalContext } from "@/components/ui/ModalContext";
 
@@ -91,7 +90,7 @@ export default function Sidebar({
   const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
-    <aside className="w-64 bg-[var(--deep-ocean)] border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-colors duration-500">
+    <aside className="w-64 bg-[var(--glass-bg)]/80 backdrop-blur-2xl border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-colors duration-500">
       {/* Logo Section */}
       <div className="p-8 mb-4">
         <HotelPlusLogo variant="sidebar" />
@@ -103,8 +102,8 @@ export default function Sidebar({
         <Link
           href="/dashboard"
           className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/dashboard"
-            ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+            ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
             }`}
         >
           {pathname === "/dashboard" && (
@@ -127,14 +126,14 @@ export default function Sidebar({
           <button
             onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
             className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${isAnalysisActive
-              ? "bg-[var(--soft-gold)]/90 text-white shadow-[0_0_20px_rgba(212,175,55,0.3)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+              ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
               }`}
           >
             {isAnalysisActive && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
+                className="absolute left-0 top-0 w-1 h-full bg-[var(--deep-ocean)]/40 rounded-r-full"
               />
             )}
             <BarChart3 className="w-5 h-5" />
@@ -168,8 +167,8 @@ export default function Sidebar({
                         key={subItem.href}
                         href={subItem.href}
                         className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isSubActive
-                          ? "bg-[var(--deep-ocean-accent)] text-[var(--text-primary)] font-bold"
-                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+                          ? "bg-[var(--bg-accent)] text-[var(--text-primary)] font-bold border border-[var(--glass-border)]"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)]"
                           }`}
                       >
                         <subItem.icon className="w-4 h-4" />
@@ -187,15 +186,15 @@ export default function Sidebar({
         <Link
           href="/reports"
           className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/reports"
-            ? "bg-blue-600/90 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+            ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
             }`}
         >
           {pathname === "/reports" && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
-            />
+              <motion.div
+                layoutId="activeTab"
+                className="absolute left-0 top-0 w-1 h-full bg-[var(--deep-ocean)]/40 rounded-r-full"
+              />
           )}
           <FileText className="w-5 h-5" />
           <span className="text-sm font-bold tracking-tight">Reports</span>
@@ -217,7 +216,7 @@ export default function Sidebar({
               href={adminItem.href}
               className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin")
                 ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)]"
                 }`}
             >
               <adminItem.icon
@@ -251,10 +250,7 @@ export default function Sidebar({
           <span className="text-sm font-bold tracking-tight">Help Center</span>
         </Link>
 
-        {/* Theme Toggle Section */}
-        <div className="pt-4 px-4">
-          <ThemeToggle />
-        </div>
+        {/* Theme Toggle placeholder removed (Moved to Header) */}
       </nav>
 
 

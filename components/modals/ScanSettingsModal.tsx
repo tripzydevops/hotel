@@ -118,17 +118,17 @@ export default function ScanSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-2xl w-full max-w-sm p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Calendar className="w-5 h-5 text-[var(--soft-gold)]" />
             {t("scanSettings.title")}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-[var(--deep-ocean-accent)]/20 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
+            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-[var(--text-primary)]" />
           </button>
         </div>
 
@@ -187,7 +187,7 @@ export default function ScanSettingsModal({
                   min={todayStr}
                   value={checkIn}
                   onChange={(e) => handleCheckInChange(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
                 />
               </div>
               <div>
@@ -199,7 +199,7 @@ export default function ScanSettingsModal({
                   min={checkIn || todayStr}
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
                 />
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function ScanSettingsModal({
                   <select
                     value={adults}
                     onChange={(e) => setAdults(Number(e.target.value))}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
+                    className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
                   >
                     {[1, 2, 3, 4].map((num) => (
                       <option key={num} value={num}>
@@ -235,7 +235,7 @@ export default function ScanSettingsModal({
                   <select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
+                    className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
                   >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -253,7 +253,7 @@ export default function ScanSettingsModal({
               disabled={loading || !isEnterprise || dailyLimitReached}
               className={`w-full py-3 flex items-center justify-center gap-2 group transition-all rounded-xl font-bold uppercase tracking-widest text-xs
                 ${!isEnterprise || dailyLimitReached
-                  ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
+                  ? "bg-[var(--deep-ocean-accent)]/10 text-[var(--text-muted)]/40 cursor-not-allowed border border-[var(--glass-border)]"
                   : "btn-gold hover:scale-[1.02] active:scale-95 shadow-lg shadow-[var(--soft-gold)]/20"
                 }
               `}

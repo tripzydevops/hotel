@@ -108,17 +108,17 @@ export default function EditHotelModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
             {t("editHotel.title")}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-[var(--deep-ocean-accent)]/20 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
+            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-[var(--text-primary)]" />
           </button>
         </div>
 
@@ -138,18 +138,18 @@ export default function EditHotelModal({
                   if (e.target.value !== hotel.name) setSerpApiId(undefined);
                   setShowSuggestions(true);
                 }}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-10 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-10 text-[var(--text-primary)] placeholder:[var(--text-muted)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
               />
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+                <div className="absolute z-[100] left-0 right-0 mt-1 bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-lg shadow-2xl overflow-hidden">
                   {suggestions.map((item, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handleSelectSuggestion(item)}
-                      className="w-full px-3 py-2 text-left hover:bg-white/5 border-b border-white/5"
+                      className="w-full px-3 py-2 text-left hover:bg-[var(--deep-ocean-accent)]/10 border-b border-[var(--glass-border)]"
                     >
-                      <span className="text-white text-xs block">
+                      <span className="text-[var(--text-primary)] text-xs block">
                         {item.name}
                       </span>
                       <span className="text-[var(--text-muted)] text-[10px] block">
@@ -179,7 +179,7 @@ export default function EditHotelModal({
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:[var(--text-muted)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function EditHotelModal({
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
+                className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
               >
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
@@ -201,7 +201,7 @@ export default function EditHotelModal({
             </div>
           </div>
 
-          <div className="h-px bg-white/5 my-2" />
+          <div className="h-px bg-[var(--glass-border)] my-2" />
 
           <div className="space-y-3">
             <p className="text-xs font-semibold text-[var(--soft-gold)] uppercase tracking-wider">
@@ -219,7 +219,7 @@ export default function EditHotelModal({
                   max={10}
                   value={defaultAdults}
                   onChange={(e) => setDefaultAdults(parseInt(e.target.value))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
                 />
               </div>
             </div>
@@ -258,7 +258,7 @@ export default function EditHotelModal({
               id="isTargetEdit"
               checked={isTarget}
               onChange={(e) => setIsTarget(e.target.checked)}
-              className="w-4 h-4 rounded border-white/10 bg-white/5 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0"
+              className="w-4 h-4 rounded border-[var(--glass-border)] bg-[var(--deep-ocean-accent)]/10 text-[var(--soft-gold)] focus:ring-[var(--soft-gold)]/50 focus:ring-offset-0"
             />
             <label
               htmlFor="isTargetEdit"
