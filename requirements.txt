@@ -16,7 +16,5 @@ numpy>=1.26.0
 Jinja2>=3.1.2
 psutil>=5.9.0
 sse-starlette>=2.0.0
-celery>=5.3.6
-redis>=5.0.1
 xhtml2pdf>=0.2.11
 # REDEPLOY TRIGGER: 2026-03-28T12:37:30Z
