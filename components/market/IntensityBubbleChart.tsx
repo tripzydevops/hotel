@@ -39,10 +39,11 @@ export const IntensityBubbleChart: React.FC<IntensityBubbleChartProps> = ({ data
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Market Intensity Signals</h3>
             
             <div className="flex-1 min-h-[220px]">
-                <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] italic">
-                    <p className="text-sm">No significant market signals detected in this period.</p>
-                </div>
-            ) : (
+                {points.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] italic">
+                        <p className="text-sm">No significant market signals detected in this period.</p>
+                    </div>
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <XAxis
