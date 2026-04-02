@@ -109,7 +109,7 @@ export default function Sidebar({
           {pathname === "/dashboard" && (
             <motion.div
               layoutId="activeTab"
-              className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full"
+              className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-40 rounded-r-full"
             />
           )}
           <LayoutGrid className="w-5 h-5" />
@@ -133,7 +133,7 @@ export default function Sidebar({
             {isAnalysisActive && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute left-0 top-0 w-1 h-full bg-[var(--deep-ocean)]/40 rounded-r-full"
+                className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-20 rounded-r-full"
               />
             )}
             <BarChart3 className="w-5 h-5" />
@@ -193,7 +193,7 @@ export default function Sidebar({
           {pathname === "/reports" && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute left-0 top-0 w-1 h-full bg-[var(--deep-ocean)]/40 rounded-r-full"
+                className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-20 rounded-r-full"
               />
           )}
           <FileText className="w-5 h-5" />
