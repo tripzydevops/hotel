@@ -6,7 +6,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] text-[var(--text-primary)] p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mb-8">
           <ChevronLeft className="w-4 h-4" />
           <span>Back to Grid</span>
         </Link>
@@ -16,19 +16,19 @@ export default function HelpPage() {
             <HelpCircle className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-black">Help Center</h1>
-            <p className="text-slate-400">Documentation and Support</p>
+            <h1 className="text-3xl font-black text-[var(--text-primary)]">Help Center</h1>
+            <p className="text-[var(--text-muted)]">Documentation and Support</p>
           </div>
         </div>
         
         <div className="grid gap-6">
-          <div className="bg-white/5 border border-white/5 rounded-2xl p-8">
-            <h2 className="text-xl font-bold mb-4">Quick Start Guide</h2>
-            <p className="text-slate-400 leading-relaxed mb-4">
+          <div className="bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-2xl p-8">
+            <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">Quick Start Guide</h2>
+            <p className="text-[var(--text-muted)] leading-relaxed mb-4">
               Welcome to Hotel Plus Enterprise Core. This platform provides real-time market intelligence 
               and parity monitoring for your hotel property.
             </p>
-            <ul className="space-y-3 text-slate-300">
+            <ul className="space-y-3 text-[var(--text-secondary)]">
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
                 <span>Use the <strong>Market Price Search</strong> to see current rates vs competitors.</span>
@@ -44,9 +44,9 @@ export default function HelpPage() {
             </ul>
           </div>
           
-          <div className="bg-white/5 border border-white/5 rounded-2xl p-8">
-            <h2 className="text-xl font-bold mb-4">Support</h2>
-            <p className="text-slate-400">
+          <div className="bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-2xl p-8">
+            <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">Support</h2>
+            <p className="text-[var(--text-muted)]">
               Need technical assistance? Contact our engineering team at support@tripzy.com 
               or reach out via the Administrator panel.
             </p>
