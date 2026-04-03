@@ -412,6 +412,9 @@ export const en = {
     every4h: "Every 4 hours",
     every12h: "Every 12 hours",
     daily: "Daily (Recommended)",
+    regionalDisplay: "Regional & Display",
+    preferredCurrency: "Preferred Currency",
+    currencyDesc: "Prices across the dashboard will be converted to your preferred currency.",
   },
   sentiment: {
     title: "Sentiment Comparison",

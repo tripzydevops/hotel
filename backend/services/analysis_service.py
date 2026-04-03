@@ -342,9 +342,30 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None)
         if trends["trend"] != "unknown":
             trends_blurb = f"\nHistorical Trends: {trends['trend']}, Momentum: {trends['momentum']}"
 
-    prompt = f"You are a Senior Strategic Revenue Analyst for {hotel_name}. " \
-             f"Price Index: {ari}, Sentiment Index: {sent_index}. Strategy: {dna_text}. {trends_blurb}. " \
-             f"Generate 3 sections: MARKET DYNAMICS, STRATEGIC POSITIONING, ACTIONABLE RECOMMENDATIONS. Plain text only."
+    market_min = analysis_data.get("market_min", 0)
+    market_max = analysis_data.get("market_max", 0)
+    market_avg = analysis_data.get("market_avg", 0)
+    target_price = analysis_data.get("target_price", 0)
+
+    prompt = f"Act as a World-Class Revenue Strategy Expert for {hotel_name}. " \
+             f"Current Metrics:\n" \
+             f"- Your Price: {target_price}\n" \
+             f"- Market Average: {market_avg}\n" \
+             f"- Market Range: {market_min} to {market_max}\n" \
+             f"- Price Index (ARI): {ari}\n" \
+             f"- Value Index (Sentiment): {sent_index}\n" \
+             f"- Strategic Territory: {q_label}\n" \
+             f"- DNA Strategy: {dna_text}\n" \
+             f"{trends_blurb}\n\n" \
+             f"Task: Generate a HIGH-DENSITY STRATEGIC REPORT in Professional Markdown.\n" \
+             f"Use the following structure:\n" \
+             f"### 📊 MARKET DYNAMICS\n" \
+             f"Include a Markdown table comparing {hotel_name} to the market average and range extremes.\n" \
+             f"### 🎯 STRATEGIC POSITIONING\n" \
+             f"Analyze if the current pricing aligns with the '{dna_text}' strategy and {q_label} territory. Use bold text for key insights.\n" \
+             f"### ⚡ ACTIONABLE REVENUE PLAYS\n" \
+             f"Provide 3 specific, data-backed actions in a bulleted list. Use relevant emojis.\n" \
+             f"Return ONLY Markdown content. No conversational filler."
 
     try:
         client = get_genai_client()

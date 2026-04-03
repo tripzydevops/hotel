@@ -7,6 +7,7 @@ import {
   Bell,
   TrendingUp,
   Save,
+  Globe,
 } from "lucide-react";
 import { UserSettings } from "@/types";
 import { useI18n } from "@/lib/i18n";
@@ -45,6 +46,7 @@ export default function SettingsModal({
   const [sensitivity, setSensitivity] = useState(
     settings?.dynamic_threshold_sensitivity ?? 1.0,
   );
+  const [currency, setCurrency] = useState(settings?.currency || "TRY");
 
   // Sync state with props when settings load
   React.useEffect(() => {
@@ -56,6 +58,7 @@ export default function SettingsModal({
       setPushEnabled(settings.push_enabled ?? false);
       setDynamicEnabled(settings.dynamic_threshold_enabled ?? false);
       setSensitivity(settings.dynamic_threshold_sensitivity ?? 1.0);
+      setCurrency(settings.currency || "TRY");
     }
   }, [settings]);
 
@@ -140,6 +143,7 @@ export default function SettingsModal({
         push_enabled: pushEnabled,
         dynamic_threshold_enabled: dynamicEnabled,
         dynamic_threshold_sensitivity: sensitivity,
+        currency: currency,
       });
       onClose();
     } catch (error) {
@@ -316,6 +320,36 @@ export default function SettingsModal({
                 />
                 <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
               </label>
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10" />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-white flex items-center gap-2">
+              <Globe className="w-4 h-4 text-[var(--soft-gold)]" />
+              {t("settings.regionalDisplay")}
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">
+                  {t("settings.preferredCurrency")}
+                </label>
+              </div>
+              <select
+                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                <option value="TRY">TRY (₺)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
+              <p className="text-[10px] text-[var(--text-muted)] italic">
+                {t("settings.currencyDesc")}
+              </p>
             </div>
           </div>
 

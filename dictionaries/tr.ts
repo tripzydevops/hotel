@@ -409,6 +409,9 @@ export const tr = {
     every4h: "4 saatte bir",
     every12h: "12 saatte bir",
     daily: "Günlük (Önerilen)",
+    regionalDisplay: "Bölgesel ve Ekran",
+    preferredCurrency: "Tercih Edilen Para Birimi",
+    currencyDesc: "Panel genelindeki fiyatlar tercih ettiğiniz para birimine dönüştürülecektir.",
   },
   subscription: {
     title: "Abonelik Planları",
