@@ -356,6 +356,7 @@ export default function Dashboard() {
                       vendor={data.target_hotel.price_info?.vendor}
                       priceHistory={data.target_hotel.price_history}
                       checkIn={data.target_hotel.price_info?.check_in}
+                      checkOut={data.target_hotel.price_info?.check_out}
                       adults={data.target_hotel.price_info?.adults}
                       onEdit={(id) => handleEditHotel(id, data)}
                       onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
@@ -422,6 +423,7 @@ export default function Dashboard() {
                             vendor={competitor.price_info?.vendor}
                             priceHistory={competitor.price_history}
                             checkIn={competitor.price_info?.check_in}
+                            checkOut={competitor.price_info?.check_out}
                             adults={competitor.price_info?.adults}
                             isEstimated={competitor.price_info?.is_estimated}
                             onEdit={(id) => handleEditHotel(id, data)}

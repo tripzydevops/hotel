@@ -15,6 +15,8 @@ import {
   Globe,
   MapPin,
   Info,
+  Calendar,
+  Users,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
@@ -43,6 +45,7 @@ export interface HotelTileProps {
   vendor?: string;
   priceHistory?: PricePoint[];
   checkIn?: string;
+  checkOut?: string;
   adults?: number;
   offers?: { vendor?: string; price?: number }[];
   onEdit?: (id: string, hotel: HotelWithPrice) => void;
@@ -87,6 +90,7 @@ export default function HotelTile(props: HotelTileProps) {
     vendor,
     priceHistory,
     checkIn,
+    checkOut,
     adults,
     offers,
     onEdit,
@@ -335,6 +339,40 @@ export default function HotelTile(props: HotelTileProps) {
              )}
           </div>
         </div>
+
+        {/* Global Search Parameters Display */}
+        {(checkIn || adults) && (
+          <div className={`mt-4 pt-4 border-t border-[var(--glass-border)]/30 flex items-center flex-wrap gap-4 ${isTarget ? "justify-center" : "justify-between"}`}>
+            {checkIn && (
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-[var(--deep-ocean)]/40 border border-[var(--glass-border)]/50 group-hover/card:border-[var(--soft-gold)]/20 transition-colors">
+                <div className="p-1 rounded bg-[var(--soft-gold)]/10">
+                  <Calendar className="w-3 h-3 text-[var(--soft-gold)]/80" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] leading-none mb-1">Stay Period</span>
+                  <span className="text-[10px] font-bold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
+                    {new Date(checkIn).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                    {checkOut && ` - ${new Date(checkOut).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {adults !== undefined && (
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-[var(--deep-ocean)]/40 border border-[var(--glass-border)]/50 group-hover/card:border-[var(--soft-gold)]/20 transition-colors">
+                 <div className="p-1 rounded bg-indigo-500/10">
+                  <Users className="w-3 h-3 text-indigo-400/80" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] leading-none mb-1">Occupancy</span>
+                  <span className="text-[10px] font-bold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
+                    {adults} {adults === 1 ? 'Adult' : 'Adults'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer Stats - HUD Meta Info */}
