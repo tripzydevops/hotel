@@ -281,7 +281,9 @@ class AnalystAgent:
 
             target_data = target.data[0]
             
-            # Extract Coordinates
+            # Extract City and Coordinates
+            location = target_data.get("location", "")
+            target_city = location.split(",")[0].strip() if "," in location else location.strip()
             target_lat = target_data.get("latitude")
             target_lon = target_data.get("longitude")
             
@@ -308,7 +310,8 @@ class AnalystAgent:
                 "target_hotel_id": str(target_uuid),
                 "target_lat": float(target_lat) if target_lat is not None else None,
                 "target_lon": float(target_lon) if target_lon is not None else None,
-                "max_distance_km": float(radius_km)
+                "max_distance_km": float(radius_km),
+                "target_city": target_city
             }).execute()
 
             if not res.data:
