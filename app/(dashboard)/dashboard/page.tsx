@@ -202,7 +202,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">
       {impersonateId && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-600/90 text-[var(--text-primary)] px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-[var(--glass-border)] animate-pulse">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-[var(--alert-red)]/90 text-[var(--text-primary)] px-6 py-2 rounded-full font-bold shadow-2xl backdrop-blur-md border border-[var(--glass-border)] animate-pulse">
           IMPERSONATING USER: {impersonateId.split("-")[0]}...
         </div>
       )}
@@ -240,11 +240,11 @@ export default function Dashboard() {
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}
               className={`
-                group relative p-[1px] rounded-xl transition-all active:scale-95 bg-white/5 hover:bg-white/10 border border-white/10 shadow-lg
+                group relative p-[1px] rounded-xl transition-all active:scale-95 bg-[var(--glass-bg-accent)] hover:shadow-lg
                 ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
               `}
             >
-              <div className="bg-[var(--deep-ocean)]/40 backdrop-blur-md hover:bg-white/5 px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-white/5">
+              <div className="bg-[var(--deep-ocean)]/40 backdrop-blur-md hover:bg-[var(--glass-bg-accent)] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-[var(--glass-border)]">
                 <RefreshCw
                   className={`w-4 h-4 text-[var(--soft-gold)] ${isRefreshing ? "animate-spin" : ""}`}
                 />

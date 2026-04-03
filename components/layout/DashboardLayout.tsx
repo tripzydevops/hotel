@@ -128,15 +128,15 @@ export default function DashboardLayout({
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-[#0A1629]/40 backdrop-blur-3xl sticky top-0 z-30 transition-all duration-500 shadow-[0_1px_0_rgba(255,255,255,0.05)]">
+        <header className="h-24 border-b border-[var(--glass-border)] flex items-center justify-between px-10 bg-[var(--glass-bg)] backdrop-blur-3xl sticky top-0 z-30 transition-all duration-500 shadow-[var(--glass-shadow)]">
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
-              <h2 className="text-xl font-black text-white tracking-[-0.04em] uppercase transition-all duration-500 mb-0.5">
+              <h2 className="text-xl font-black text-[var(--text-primary)] tracking-[-0.04em] uppercase transition-all duration-500 mb-0.5">
                 {getPageTitle()}
               </h2>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                <span className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.2em]">Live Intelligence Active</span>
+                <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)]" />
+                <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] opacity-70">Live Intelligence Active</span>
               </div>
             </div>
           </div>
@@ -145,27 +145,27 @@ export default function DashboardLayout({
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsAlertsOpen(true)}
-                className="w-12 h-12 rounded-2xl border border-white/5 flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 transition-all relative group shadow-lg"
+                className="w-12 h-12 rounded-2xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--glass-bg-accent)] hover:bg-[var(--bg-accent)] transition-all relative group shadow-lg"
               >
-                <Bell className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
+                <Bell className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
                 {(data?.unread_alerts_count || 0) > 0 && (
-                  <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#0A1629] shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
+                  <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-[var(--alert-red)] rounded-full border-2 border-[var(--deep-ocean)] shadow-[0_0_10px_var(--alert-red)]" />
                 )}
               </button>
 
-              <div className="h-10 w-[1px] bg-white/5 mx-2" />
+              <div className="h-10 w-[1px] bg-[var(--glass-border)] mx-2" />
 
               <ThemeToggle />
 
               <div className="h-10 w-[1px] bg-white/5 mx-2" />
 
               {/* Language Toggle */}
-              <div className="flex bg-white/[0.03] p-1.5 rounded-2xl border border-white/5 shadow-inner">
+              <div className="flex bg-[var(--glass-bg-accent)] p-1.5 rounded-2xl border border-[var(--glass-border)] shadow-inner">
                 <button
                   onClick={() => setLocale("en")}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                    : "text-white/40 hover:text-white/80"
+                    ? "bg-[var(--soft-gold)] text-white shadow-lg shadow-[var(--soft-gold-glow)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   EN
@@ -173,22 +173,22 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("tr")}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                    : "text-white/40 hover:text-white/80"
+                    ? "bg-[var(--soft-gold)] text-white shadow-lg shadow-[var(--soft-gold-glow)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   TR
                 </button>
               </div>
 
-              <div className="h-10 w-[1px] bg-white/5 mx-2" />
+              <div className="h-10 w-[1px] bg-[var(--glass-border)] mx-2" />
 
               <div className="flex items-center gap-4">
                 <div className="flex flex-col items-end hidden lg:flex">
-                  <span className="text-sm font-black text-white/90 tracking-tight transition-colors duration-500">
+                  <span className="text-sm font-black text-[var(--text-primary)] tracking-tight transition-colors duration-500">
                     {profile?.display_name || "Enterprise User"}
                   </span>
-                  <span className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.2em] transition-colors duration-500">
+                  <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] transition-colors duration-500 opacity-80">
                     {profile?.role === "admin"
                       ? "System Master"
                       : "Revenue Intelligence"}
@@ -210,8 +210,8 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar">
           {/* Enhanced Background Effects */}
-          <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
-          <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/5 blur-[150px] rounded-full -z-10 pointer-events-none" />
+          <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[var(--soft-gold)]/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
+          <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-[var(--alert-red)]/5 blur-[150px] rounded-full -z-10 pointer-events-none" />
           
           <div className="relative z-10 px-10 py-10">{children}</div>
         </main>

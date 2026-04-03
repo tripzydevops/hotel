@@ -37,34 +37,34 @@
 }
 
 :root.light {
-  /* ===== PREMIUM PEARL & GOLD (LIGHT) ===== */
-  --deep-ocean: #F8FAFC; /* Pearl Base */
-  --deep-ocean-lighter: #FFFFFF;
-  --deep-ocean-accent: rgba(11, 31, 59, 0.05);
+  /* ===== PREMIUM PLATINUM & ANTIQUE GOLD (LIGHT) ===== */
+  --deep-ocean: #F1F5F9; /* High-end Platinum Base */
+  --deep-ocean-lighter: #FBFCFE;
+  --deep-ocean-accent: rgba(15, 23, 42, 0.05);
   
-  --soft-gold: #B49020; /* Darker Gold for visibility */
-  --soft-gold-dim: #8C6F12;
-  --soft-gold-bright: #D4AF37;
-  --soft-gold-glow: rgba(180, 144, 32, 0.15);
+  --soft-gold: #9A7B4F; /* Antique Gold for high contrast */
+  --soft-gold-dim: #7C6036;
+  --soft-gold-bright: #B68D5D;
+  --soft-gold-glow: rgba(154, 123, 79, 0.15);
 
-  --optimal-green: #059669;
-  --optimal-green-soft: rgba(5, 150, 105, 0.1);
-  --alert-red: #DC2626;
-  --alert-red-soft: rgba(220, 38, 38, 0.1);
+  --optimal-green: #065F46;
+  --optimal-green-soft: rgba(6, 95, 70, 0.08);
+  --alert-red: #B91C1C;
+  --alert-red-soft: rgba(185, 28, 28, 0.08);
 
-  --text-primary: #0F172A;
+  --text-primary: #0F172A; /* Slate Navy-Inked */
   --text-secondary: #475569;
   --text-muted: #64748B;
 
   /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(11, 31, 59, 0.1);
-  --glass-bg-accent: rgba(11, 31, 59, 0.03);
-  --glass-blur: 16px;
-  --glass-shadow: 0 10px 40px -15px rgba(11, 31, 59, 0.1);
-  --bg-accent: #F1F5F9;
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-bg-accent: rgba(15, 23, 42, 0.03);
+  --glass-blur: 24px;
+  --glass-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1);
+  --bg-accent: #E2E8F0;
   
-  --card-tint: rgba(180, 144, 32, 0.02);
+  --card-tint: rgba(154, 123, 79, 0.03);
 }
 
 /* ===== BASE STYLES ===== */

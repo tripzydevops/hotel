@@ -90,9 +90,9 @@ export default function Sidebar({
   const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
-    <aside className="w-80 glass-panel border-r border-white/5 flex flex-col h-screen sticky top-0 z-40 transition-all duration-500 overflow-hidden shadow-[20px_0_50px_rgba(0,0,0,0.2)]">
+    <aside className="w-80 glass-panel border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-all duration-500 overflow-hidden shadow-[var(--glass-shadow)]">
       {/* Decorative Gradient Background for Sidebar */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-indigo-600/5 blur-[80px] -z-10" />
+      <div className="absolute top-0 left-0 w-full h-64 bg-[var(--soft-gold-glow)] blur-[80px] -z-10" />
 
       {/* Logo Section */}
       <div className="p-10 mb-2">
@@ -105,24 +105,24 @@ export default function Sidebar({
         <Link
           href="/dashboard"
           className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${pathname === "/dashboard"
-            ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
-            : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
+            ? "bg-[var(--soft-gold)]/10 text-[var(--text-primary)] shadow-[var(--soft-gold-glow)] border border-[var(--soft-gold)]/20"
+            : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
             }`}
         >
           {pathname === "/dashboard" && (
             <motion.div
               layoutId="activeTabGlow"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[var(--soft-gold)] rounded-r-full shadow-[0_0_15px_var(--soft-gold)]"
             />
           )}
-          <div className={`${pathname === "/dashboard" ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+          <div className={`${pathname === "/dashboard" ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)] group-hover:text-[var(--soft-gold)]"} transition-colors`}>
             <LayoutGrid className="w-5 h-5" />
           </div>
           <span className="text-sm font-black tracking-[0.05em] uppercase">
             Market Search
           </span>
           {pathname === "/dashboard" && (
-            <ChevronRight className="ml-auto w-4 h-4 text-indigo-400 opacity-50" />
+            <ChevronRight className="ml-auto w-4 h-4 text-[var(--soft-gold)] opacity-50" />
           )}
         </Link>
 
@@ -131,17 +131,17 @@ export default function Sidebar({
           <button
             onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
             className={`w-full group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${isAnalysisActive
-              ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
-              : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
+              ? "bg-[var(--soft-gold)]/10 text-[var(--text-primary)] shadow-[var(--soft-gold-glow)] border border-[var(--soft-gold)]/20"
+              : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
               }`}
           >
             {isAnalysisActive && (
               <motion.div
                 layoutId="activeTabGlow"
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[var(--soft-gold)] rounded-r-full shadow-[0_0_15px_var(--soft-gold)]"
               />
             )}
-            <div className={`${isAnalysisActive ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+            <div className={`${isAnalysisActive ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)] group-hover:text-[var(--soft-gold)]"} transition-colors`}>
               <BarChart3 className="w-5 h-5" />
             </div>
             <span className="text-sm font-black tracking-[0.05em] uppercase">
@@ -152,7 +152,7 @@ export default function Sidebar({
               transition={{ duration: 0.2 }}
               className="ml-auto"
             >
-              <ChevronDown className={`w-4 h-4 opacity-50 ${isAnalysisActive ? "text-indigo-400" : ""}`} />
+              <ChevronDown className={`w-4 h-4 opacity-50 ${isAnalysisActive ? "text-[var(--soft-gold)]" : ""}`} />
             </motion.div>
           </button>
 
@@ -166,7 +166,7 @@ export default function Sidebar({
                 transition={{ duration: 0.3, ease: "circOut" }}
                 className="overflow-hidden"
               >
-                <div className="ml-8 mt-2 pl-4 border-l border-white/5 space-y-1 my-2">
+                <div className="ml-8 mt-2 pl-4 border-l border-[var(--glass-border)]/30 space-y-1 my-2">
                   {analysisSubItems.map((subItem) => {
                     const isSubActive = pathname === subItem.href;
                     return (
@@ -174,11 +174,11 @@ export default function Sidebar({
                         key={subItem.href}
                         href={subItem.href}
                         className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-xs font-bold uppercase tracking-widest ${isSubActive
-                          ? "bg-white/[0.06] text-white border border-white/5 shadow-lg"
-                          : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.03]"
+                          ? "bg-[var(--glass-bg-accent)] text-[var(--text-primary)] border border-[var(--glass-border)] shadow-lg"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
                           }`}
                       >
-                        <subItem.icon className={`w-3.5 h-3.5 ${isSubActive ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"}`} />
+                        <subItem.icon className={`w-3.5 h-3.5 ${isSubActive ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)] group-hover:text-[var(--soft-gold)]"}`} />
                         <span>{subItem.label}</span>
                       </Link>
                     );
@@ -193,22 +193,22 @@ export default function Sidebar({
         <Link
           href="/reports"
           className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${pathname === "/reports"
-            ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
-            : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
+            ? "bg-[var(--soft-gold)]/10 text-[var(--text-primary)] shadow-[var(--soft-gold-glow)] border border-[var(--soft-gold)]/20"
+            : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
             }`}
         >
           {pathname === "/reports" && (
             <motion.div
               layoutId="activeTabGlow"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[var(--soft-gold)] rounded-r-full shadow-[0_0_15px_var(--soft-gold)]"
             />
           )}
-          <div className={`${pathname === "/reports" ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+          <div className={`${pathname === "/reports" ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)] group-hover:text-[var(--soft-gold)]"} transition-colors`}>
             <FileText className="w-5 h-5" />
           </div>
           <span className="text-sm font-black tracking-[0.05em] uppercase">Reports</span>
           {pathname === "/reports" && (
-            <ChevronRight className="ml-auto w-4 h-4 text-indigo-400 opacity-50" />
+            <ChevronRight className="ml-auto w-4 h-4 text-[var(--soft-gold)] opacity-50" />
           )}
         </Link>
 
@@ -216,21 +216,21 @@ export default function Sidebar({
         {profile?.role === "admin" && (
           <div className="pt-6">
             <div className="px-5 mb-4 items-center flex gap-3">
-              <div className="h-[1px] bg-white/5 flex-1" />
-              <p className="text-[10px] text-indigo-400/60 font-black uppercase tracking-[0.3em] whitespace-nowrap">
+              <div className="h-[1px] bg-[var(--glass-border)] flex-1" />
+              <p className="text-[10px] text-[var(--soft-gold)] font-black uppercase tracking-[0.3em] whitespace-nowrap opacity-70">
                 Master Control
               </p>
-              <div className="h-[1px] bg-white/5 flex-1" />
+              <div className="h-[1px] bg-[var(--glass-border)] flex-1" />
             </div>
             <Link
               href={adminItem.href}
               className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all border ${pathname.startsWith("/admin")
-                ? "bg-rose-600/10 text-rose-400 border-rose-500/20 shadow-[0_8px_25px_rgba(225,29,72,0.1)]"
-                : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04] border-transparent"
+                ? "bg-[var(--alert-red)]/10 text-[var(--alert-red)] border-[var(--alert-red)]/20 shadow-[0_8px_25px_var(--alert-red-soft)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)] border-transparent"
                 }`}
             >
               <adminItem.icon
-                className={`w-5 h-5 ${pathname.startsWith("/admin") ? "text-rose-400" : "group-hover:text-rose-400 transition-colors"}`}
+                className={`w-5 h-5 ${pathname.startsWith("/admin") ? "text-[var(--alert-red)]" : "group-hover:text-[var(--alert-red)] transition-colors"}`}
               />
               <span className="text-sm font-black tracking-[0.05em] uppercase">
                 {adminItem.label}
@@ -240,13 +240,13 @@ export default function Sidebar({
         )}
 
         <div className="pt-10 pb-6">
-           <div className="h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent w-full" />
+           <div className="h-[1px] bg-gradient-to-r from-transparent via-[var(--glass-border)] to-transparent w-full" />
         </div>
 
         {/* Settings & Help */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="w-full group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
+          className="w-full group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
         >
           <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
           <span className="text-sm font-black tracking-[0.05em] uppercase">Settings</span>
@@ -254,7 +254,7 @@ export default function Sidebar({
 
         <Link
           href="/help"
-          className="group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
+          className="group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
         >
           <HelpCircle className="w-5 h-5" />
           <span className="text-sm font-black tracking-[0.05em] uppercase">Help Center</span>

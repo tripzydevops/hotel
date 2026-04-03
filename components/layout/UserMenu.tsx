@@ -39,23 +39,23 @@ export default function UserMenu({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-95 shadow-xl"
+        className="group flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] hover:bg-[var(--bg-accent)] hover:border-[var(--soft-gold)]/30 transition-all active:scale-95 shadow-xl"
       >
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-          <div className="w-full h-full rounded-full bg-[#0A1629] flex items-center justify-center text-white/90">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--soft-gold)] to-[var(--soft-gold-dim)] p-0.5 flex items-center justify-center overflow-hidden shadow-[var(--soft-gold-glow)]">
+          <div className="w-full h-full rounded-full bg-[var(--deep-ocean)] flex items-center justify-center text-[var(--text-primary)]">
             <User className="w-5 h-5" />
           </div>
         </div>
         <div className="hidden sm:flex flex-col items-start">
-          <span className="text-xs font-black text-white/90 uppercase tracking-tighter leading-none mb-1">
+          <span className="text-xs font-black text-[var(--text-primary)] uppercase tracking-tighter leading-none mb-1">
             {profile?.display_name?.split(' ')[0] || "User"}
           </span>
           <div className="flex items-center gap-1">
-            <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
-            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none">Pro Plan</span>
+            <Sparkles className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
+            <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest leading-none opacity-80">Pro Plan</span>
           </div>
         </div>
-        <ChevronDown className={`w-4 h-4 text-white/40 group-hover:text-white/80 transition-all ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-all ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -73,14 +73,14 @@ export default function UserMenu({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute right-0 mt-4 w-64 glass-card border border-white/10 rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] z-50 py-3 overflow-hidden"
+              className="absolute right-0 mt-4 w-64 glass-card border border-[var(--glass-border)] rounded-[2rem] shadow-[var(--glass-shadow)] z-50 py-3 overflow-hidden"
             >
               {/* Dropdown Header */}
-              <div className="px-6 py-4 bg-white/[0.03] border-b border-white/5 mb-2">
-                <p className="text-xs font-black text-white uppercase tracking-widest truncate mb-1">
+              <div className="px-6 py-4 bg-[var(--glass-bg-accent)] border-b border-[var(--glass-border)] mb-2">
+                <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest truncate mb-1">
                   {profile?.display_name || "Enterprise User"}
                 </p>
-                <p className="text-[10px] text-white/40 font-bold truncate tracking-tight uppercase">
+                <p className="text-[10px] text-[var(--text-muted)] font-bold truncate tracking-tight uppercase">
                   {profile?.email || "hotel-plus-core"}
                 </p>
               </div>
@@ -91,9 +91,9 @@ export default function UserMenu({
                     onOpenProfile?.();
                     setIsOpen(false);
                   }}
-                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-indigo-600/10 transition-all"
+                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--soft-gold)]/10 transition-all"
                 >
-                  <div className="p-2 bg-white/[0.03] rounded-xl group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                  <div className="p-2 bg-[var(--glass-bg-accent)] rounded-xl group-hover:bg-[var(--soft-gold)]/20 group-hover:text-[var(--soft-gold)] transition-colors">
                     <User className="w-3.5 h-3.5" />
                   </div>
                   Account Profile
@@ -103,9 +103,9 @@ export default function UserMenu({
                     onOpenSettings?.();
                     setIsOpen(false);
                   }}
-                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-indigo-600/10 transition-all"
+                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--soft-gold)]/10 transition-all"
                 >
-                  <div className="p-2 bg-white/[0.03] rounded-xl group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                  <div className="p-2 bg-[var(--glass-bg-accent)] rounded-xl group-hover:bg-[var(--soft-gold)]/20 group-hover:text-[var(--soft-gold)] transition-colors">
                     <Settings className="w-3.5 h-3.5" />
                   </div>
                   Scan Settings
@@ -115,16 +115,16 @@ export default function UserMenu({
                     onOpenBilling?.() || onOpenUpgrade?.();
                     setIsOpen(false);
                   }}
-                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-indigo-600/10 transition-all"
+                  className="w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--soft-gold)]/10 transition-all"
                 >
-                  <div className="p-2 bg-white/[0.03] rounded-xl group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                  <div className="p-2 bg-[var(--glass-bg-accent)] rounded-xl group-hover:bg-[var(--soft-gold)]/20 group-hover:text-[var(--soft-gold)] transition-colors">
                     <CreditCard className="w-3.5 h-3.5" />
                   </div>
                   Subscription
                 </button>
               </div>
 
-              <div className="h-[1px] bg-white/5 mx-6 my-3" />
+              <div className="h-[1px] bg-[var(--glass-border)] mx-6 my-3" />
 
               <div className="px-2">
                 <button

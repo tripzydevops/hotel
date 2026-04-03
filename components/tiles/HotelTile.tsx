@@ -235,7 +235,7 @@ export default function HotelTile(props: HotelTileProps) {
               )}
 
               {props.isEstimated && (
-                <span className="text-[10px] font-bold text-red-500 bg-red-500/15 px-3 py-1 rounded-lg border-2 border-red-500/30 flex items-center gap-1.5 animate-pulse">
+                <span className="text-[10px] font-bold text-[var(--alert-red)] bg-[var(--alert-red)]/15 px-3 py-1 rounded-lg border-2 border-[var(--alert-red)]/30 flex items-center gap-1.5 animate-pulse">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {t("common.estimated") || "ESTIMATED"}
                 </span>
@@ -337,7 +337,7 @@ export default function HotelTile(props: HotelTileProps) {
           <div className={`flex flex-col items-end ${isTarget ? "mt-4 items-center" : ""}`}>
              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${getTrendBgColor()} border-2 border-[var(--glass-border)]`}>
                 {getTrendIcon("w-4 h-4")}
-                <span className={`text-xs font-black ${changePercent > 0 ? "text-red-500" : "text-emerald-500"}`}>
+                <span className={`text-xs font-black ${changePercent > 0 ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}>
                   {changePercent > 0 ? "+" : ""}{changePercent.toFixed(1)}%
                 </span>
              </div>
