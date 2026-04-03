@@ -3,49 +3,49 @@
 @tailwind utilities;
 
 :root {
-  /* ===== ANTIGRAVITY PREMIUM TOKENS (COMMAND CENTER) ===== */
-  --deep-ocean: #0D1B2A;
-  --deep-ocean-lighter: #1B263B;
-  --deep-ocean-accent: rgba(27, 38, 59, 0.6);
-  --deep-ocean-card: rgba(27, 38, 59, 0.4);
-
+  /* ===== SIGNATURE DEEP OCEAN & GOLD (DARK) ===== */
+  --deep-ocean: #0B1F3B;
+  --deep-ocean-lighter: #15294A;
+  --deep-ocean-accent: rgba(21, 41, 74, 0.8);
+  
   --soft-gold: #D4AF37;
-  --soft-gold-dim: #997B1E;
+  --soft-gold-dim: #B49020;
   --soft-gold-bright: #F4CF62;
-  --soft-gold-glow: rgba(212, 175, 55, 0.15);
+  --soft-gold-glow: rgba(212, 175, 55, 0.2);
 
   --optimal-green: #10B981;
-  --optimal-green-soft: rgba(16, 185, 129, 0.1);
+  --optimal-green-soft: rgba(16, 185, 129, 0.15);
   --alert-red: #EF4444;
-  --alert-red-soft: rgba(239, 68, 68, 0.1);
+  --alert-red-soft: rgba(239, 68, 68, 0.15);
 
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
 
-  /* ===== HIGH-FIDELITY GLASSMOPHISM ===== */
-  --glass-bg: rgba(13, 27, 42, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-bg-accent: rgba(255, 255, 255, 0.03);
-  --glass-blur: 24px;
-  --glass-shadow: 0 8px 64px -12px rgba(0, 0, 0, 0.9);
-  --bg-accent: #1B263B;
+  /* ===== GLASSMOPHISM & DEPTH (DARK) ===== */
+  --glass-bg: rgba(21, 41, 74, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-bg-accent: rgba(255, 255, 255, 0.05);
+  --glass-blur: 20px;
+  --glass-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+  --bg-accent: #112240;
+  
+  --card-tint: rgba(212, 175, 55, 0.03);
 
   --font-montserrat: "Montserrat", sans-serif;
   --font-inter: "Inter", sans-serif;
 }
 
 :root.light {
-  /* ===== LIGHT MODE PREMIUM OVERRIDES ===== */
-  --deep-ocean: #F1F5F9; /* More depth than pure white */
-  --deep-ocean-lighter: #F8FAFC;
-  --deep-ocean-accent: rgba(15, 23, 42, 0.05);
-  --deep-ocean-card: rgba(255, 255, 255, 0.8);
-
-  --soft-gold: #B49020; /* Darker for accessibility on light bg */
+  /* ===== PREMIUM PEARL & GOLD (LIGHT) ===== */
+  --deep-ocean: #F8FAFC; /* Pearl Base */
+  --deep-ocean-lighter: #FFFFFF;
+  --deep-ocean-accent: rgba(11, 31, 59, 0.05);
+  
+  --soft-gold: #B49020; /* Darker Gold for visibility */
   --soft-gold-dim: #8C6F12;
   --soft-gold-bright: #D4AF37;
-  --soft-gold-glow: rgba(180, 144, 32, 0.1);
+  --soft-gold-glow: rgba(180, 144, 32, 0.15);
 
   --optimal-green: #059669;
   --optimal-green-soft: rgba(5, 150, 105, 0.1);
@@ -53,130 +53,138 @@
   --alert-red-soft: rgba(220, 38, 38, 0.1);
 
   --text-primary: #0F172A;
-  --text-secondary: #334155;
+  --text-secondary: #475569;
   --text-muted: #64748B;
 
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-bg-accent: rgba(15, 23, 42, 0.03);
+  /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(11, 31, 59, 0.1);
+  --glass-bg-accent: rgba(11, 31, 59, 0.03);
   --glass-blur: 16px;
-  --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
-  --bg-accent: #E2E8F0;
+  --glass-shadow: 0 10px 40px -15px rgba(11, 31, 59, 0.1);
+  --bg-accent: #F1F5F9;
+  
+  --card-tint: rgba(180, 144, 32, 0.02);
 }
 
-/* ===== BASE RESET & TYPOGRAPHY ===== */
+/* ===== BASE STYLES ===== */
 body {
   background-color: var(--deep-ocean);
   background-image: 
-    radial-gradient(circle at 0% 0%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(30, 58, 95, 0.02) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, var(--soft-gold-glow) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, var(--deep-ocean-accent) 0%, transparent 40%);
   color: var(--text-primary);
   font-family: var(--font-inter), system-ui, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-montserrat), sans-serif;
-  letter-spacing: -0.03em;
-  font-weight: 900;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
-/* ===== TACTICAL UTILITIES ===== */
-.premium-card {
+/* ===== PREMIUM UI UTILITIES ===== */
+
+.glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 20px;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.premium-card:hover {
-  border-color: rgba(212, 175, 55, 0.2);
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 80px -20px rgba(0, 0, 0, 1), 0 0 30px rgba(212, 175, 55, 0.05);
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--card-tint) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--soft-gold);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
+}
+
+.tinted-frame {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-accent);
+  border-radius: 12px;
+  padding: 1rem;
 }
 
 .tactical-label {
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.25em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--soft-gold);
-  opacity: 0.8;
+  color: var(--text-secondary);
 }
 
-.radar-scan {
-  position: relative;
-  overflow: hidden;
+.btn-premium {
+  background: linear-gradient(135deg, var(--soft-gold) 0%, var(--soft-gold-dim) 100%);
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px var(--soft-gold-glow);
+  transition: all 0.2s ease;
 }
 
-.radar-scan::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.05),
-    transparent
-  );
-  animation: radar-shimmer 3s infinite linear;
+.btn-premium:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+  box-shadow: 0 8px 25px var(--soft-gold-glow);
 }
 
-@keyframes radar-shimmer {
-  0% { left: -100%; }
-  100% { left: 200%; }
-}
-
-.gold-glow {
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
-}
-
-/* ===== SCROLLBAR OVERRIDE ===== */
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
   background: var(--deep-ocean);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--deep-ocean-accent);
+  background: var(--glass-border);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--soft-gold);
 }
 
-/* ===== CUSTOM ANIMATIONS ===== */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+/* ===== ANIMATIONS ===== */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes signal-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
-  70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+.animate-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-bg-accent),
+    transparent
+  );
+  animation: shimmer 2s infinite;
 }
 
-.animate-signal {
-  animation: signal-pulse 2s infinite;
-}
-
-/* ===== LEGACY COMPATIBILITY ===== */
-.glass-card { @apply premium-card; }
-.btn-gold {
-  @apply bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-xl hover:shadow-[var(--soft-gold-glow)];
-}

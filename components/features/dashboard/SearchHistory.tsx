@@ -42,40 +42,44 @@ export default function SearchHistory({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {searches.map((search) => (
           <button
             key={search.id}
             onClick={() => onReSearch(search.hotel_name, search.location)}
-            className="group card-blur rounded-[1.5rem] p-4 hover:bg-[var(--deep-ocean-accent)]/10 transition-all border border-[var(--glass-border)] hover:border-[#F6C344]/30 text-left flex flex-col justify-between"
+            className="group glass-card rounded-[2rem] p-5 hover:bg-white/[0.04] transition-all border-white/5 hover:border-white/10 text-left flex flex-col justify-between h-full"
           >
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-1.5 rounded-lg bg-[var(--deep-ocean-accent)]/20 text-slate-500 group-hover:text-[#F6C344] transition-colors">
-                  <Search className="w-3.5 h-3.5" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] group-hover:bg-[var(--soft-gold)]/10 transition-all">
+                  <Search className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.1em] opacity-40 group-hover:opacity-100 transition-opacity">
                   {formatDate(search.created_at)}
                 </span>
               </div>
 
-              <h3 className="text-sm font-black text-[var(--text-primary)] mb-1 truncate group-hover:text-[#F6C344] transition-colors">
+              <h3 className="text-sm font-black text-[var(--text-primary)] mb-1.5 truncate group-hover:text-[var(--soft-gold)] transition-colors tracking-tight uppercase">
                 {search.hotel_name}
               </h3>
 
               {search.location && (
-                <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] mb-3">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] mb-4 font-bold opacity-60">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-indigo-400/80" />
                   <span className="truncate">{search.location}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 mt-2 text-[#F6C344] group-hover:text-[var(--text-primary)] transition-colors">
-              <span className="text-[9px] font-black uppercase tracking-widest">
-                {t("history.reSearch")}
-              </span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5 group-hover:border-[var(--soft-gold)]/20 transition-colors">
+              <div className="flex-1">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
+                  {t("history.reSearch")}
+                </span>
+              </div>
+              <div className="p-1.5 rounded-full bg-white/5 group-hover:bg-[var(--soft-gold)]/10 group-hover:text-[var(--soft-gold)] transition-all">
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </div>
             </div>
           </button>
         ))}

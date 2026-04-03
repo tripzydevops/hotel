@@ -62,7 +62,7 @@ export function BentoTile({
       whileHover={{ scale: 1.01, translateY: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={`
-        card-blur p-4 sm:p-6 rounded-[2.5rem]
+        glass-card p-4 sm:p-6 rounded-[2rem]
         flex flex-col
         ${onClick ? "cursor-pointer" : ""}
         ${sizeClasses[size]}

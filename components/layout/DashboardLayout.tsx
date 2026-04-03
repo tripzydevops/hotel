@@ -128,70 +128,70 @@ export default function DashboardLayout({
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 border-b border-[var(--glass-border)] flex items-center justify-between px-8 bg-[var(--glass-bg)]/80 backdrop-blur-md sticky top-0 z-30 transition-colors duration-500">
+        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-[#0A1629]/40 backdrop-blur-3xl sticky top-0 z-30 transition-all duration-500 shadow-[0_1px_0_rgba(255,255,255,0.05)]">
           <div className="flex items-center gap-8">
-            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight transition-colors duration-500">
-              {getPageTitle()}
-            </h2>
-            {/* 
-              User Request: Removed Date Display ("OCT 12 - OCT 26") 
-              and Search Bar to clean up the header UI. 
-            */}
+            <div className="flex flex-col">
+              <h2 className="text-xl font-black text-white tracking-[-0.04em] uppercase transition-all duration-500 mb-0.5">
+                {getPageTitle()}
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                <span className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.2em]">Live Intelligence Active</span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsAlertsOpen(true)}
-                className="w-10 h-10 rounded-xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--glass-bg-subtle)] hover:bg-[var(--glass-bg-accent)] hover:border-[var(--glass-border-accent)] transition-all relative group"
+                className="w-12 h-12 rounded-2xl border border-white/5 flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 transition-all relative group shadow-lg"
               >
-                <Bell className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                <Bell className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
                 {(data?.unread_alerts_count || 0) > 0 && (
-                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[var(--alert-red)] rounded-full border-2 border-[var(--deep-ocean)] shadow-[0_0_8px_var(--alert-red)]" />
+                  <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#0A1629] shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
                 )}
               </button>
 
-              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
+              <div className="h-10 w-[1px] bg-white/5 mx-2" />
 
               <ThemeToggle />
 
-              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
+              <div className="h-10 w-[1px] bg-white/5 mx-2" />
 
               {/* Language Toggle */}
-              <div className="flex bg-[var(--glass-bg-subtle)] p-1 rounded-xl border border-[var(--glass-border)]">
+              <div className="flex bg-white/[0.03] p-1.5 rounded-2xl border border-white/5 shadow-inner">
                 <button
                   onClick={() => setLocale("en")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                    : "text-white/40 hover:text-white/80"
                     }`}
                 >
                   EN
                 </button>
                 <button
                   onClick={() => setLocale("tr")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                    : "text-white/40 hover:text-white/80"
                     }`}
                 >
                   TR
                 </button>
               </div>
 
-              <div className="h-8 w-[1px] bg-[var(--glass-border)] mx-1" />
+              <div className="h-10 w-[1px] bg-white/5 mx-2" />
 
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end items-end hidden sm:flex">
-                  <span className="text-xs font-bold text-[var(--text-primary)] transition-colors duration-500">
-                    {/* EXPLANATION: Profile Name Sync
-                        Changed from full_name to display_name to match backend and profile modal storage. */}
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end hidden lg:flex">
+                  <span className="text-sm font-black text-white/90 tracking-tight transition-colors duration-500">
                     {profile?.display_name || "Enterprise User"}
                   </span>
-                  <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest transition-colors duration-500">
+                  <span className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.2em] transition-colors duration-500">
                     {profile?.role === "admin"
-                      ? "Administrator"
-                      : "Revenue Director"}
+                      ? "System Master"
+                      : "Revenue Intelligence"}
                   </span>
                 </div>
                 <UserMenu
@@ -208,9 +208,12 @@ export default function DashboardLayout({
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
-          <div className="radial-glow pointer-events-none" />
-          <div className="relative z-10 p-8 pt-6">{children}</div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+          {/* Enhanced Background Effects */}
+          <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
+          <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/5 blur-[150px] rounded-full -z-10 pointer-events-none" />
+          
+          <div className="relative z-10 px-10 py-10">{children}</div>
         </main>
       </div>
 

@@ -90,62 +90,69 @@ export default function Sidebar({
   const isAnalysisActive = pathname.startsWith("/analysis");
 
   return (
-    <aside className="w-64 bg-[var(--glass-bg)]/80 backdrop-blur-2xl border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-colors duration-500">
+    <aside className="w-80 glass-panel border-r border-white/5 flex flex-col h-screen sticky top-0 z-40 transition-all duration-500 overflow-hidden shadow-[20px_0_50px_rgba(0,0,0,0.2)]">
+      {/* Decorative Gradient Background for Sidebar */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-indigo-600/5 blur-[80px] -z-10" />
+
       {/* Logo Section */}
-      <div className="p-8 mb-4">
+      <div className="p-10 mb-2">
         <HotelPlusLogo variant="sidebar" />
       </div>
 
       {/* Primary Navigation */}
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-6 space-y-1.5 overflow-y-auto custom-scrollbar pb-10">
         {/* Market Price Search */}
         <Link
           href="/dashboard"
-          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/dashboard"
-            ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
+          className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${pathname === "/dashboard"
+            ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
+            : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
             }`}
         >
           {pathname === "/dashboard" && (
             <motion.div
-              layoutId="activeTab"
-              className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-40 rounded-r-full"
+              layoutId="activeTabGlow"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
             />
           )}
-          <LayoutGrid className="w-5 h-5" />
-          <span className="text-sm font-bold tracking-tight">
-            Market Price Search
+          <div className={`${pathname === "/dashboard" ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+            <LayoutGrid className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-black tracking-[0.05em] uppercase">
+            Market Search
           </span>
           {pathname === "/dashboard" && (
-            <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
+            <ChevronRight className="ml-auto w-4 h-4 text-indigo-400 opacity-50" />
           )}
         </Link>
 
         {/* Market Analysis - Collapsible */}
-        <div>
+        <div className="pt-2">
           <button
             onClick={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
-            className={`w-full group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${isAnalysisActive
-              ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
+            className={`w-full group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${isAnalysisActive
+              ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
+              : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
               }`}
           >
             {isAnalysisActive && (
               <motion.div
-                layoutId="activeTab"
-                className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-20 rounded-r-full"
+                layoutId="activeTabGlow"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
               />
             )}
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-sm font-bold tracking-tight">
-              Market Analysis
+            <div className={`${isAnalysisActive ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <span className="text-sm font-black tracking-[0.05em] uppercase">
+              Analysis
             </span>
             <motion.div
               animate={{ rotate: isAnalysisExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
               className="ml-auto"
             >
-              <ChevronDown className="w-4 h-4 opacity-50" />
+              <ChevronDown className={`w-4 h-4 opacity-50 ${isAnalysisActive ? "text-indigo-400" : ""}`} />
             </motion.div>
           </button>
 
@@ -156,22 +163,22 @@ export default function Sidebar({
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.3, ease: "circOut" }}
                 className="overflow-hidden"
               >
-                <div className="ml-4 mt-1 pl-4 border-l border-[var(--glass-border)] space-y-1">
+                <div className="ml-8 mt-2 pl-4 border-l border-white/5 space-y-1 my-2">
                   {analysisSubItems.map((subItem) => {
                     const isSubActive = pathname === subItem.href;
                     return (
                       <Link
                         key={subItem.href}
                         href={subItem.href}
-                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isSubActive
-                          ? "bg-[var(--bg-accent)] text-[var(--text-primary)] font-bold border border-[var(--glass-border)]"
-                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)]"
+                        className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-xs font-bold uppercase tracking-widest ${isSubActive
+                          ? "bg-white/[0.06] text-white border border-white/5 shadow-lg"
+                          : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.03]"
                           }`}
                       >
-                        <subItem.icon className="w-4 h-4" />
+                        <subItem.icon className={`w-3.5 h-3.5 ${isSubActive ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"}`} />
                         <span>{subItem.label}</span>
                       </Link>
                     );
@@ -185,75 +192,74 @@ export default function Sidebar({
         {/* Reports */}
         <Link
           href="/reports"
-          className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all relative overflow-hidden ${pathname === "/reports"
-            ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_4px_20px_rgba(212,175,55,0.2)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-accent)]"
+          className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${pathname === "/reports"
+            ? "bg-indigo-600/10 text-white shadow-[0_8px_25px_rgba(79,70,229,0.15)] border border-indigo-500/20"
+            : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
             }`}
         >
           {pathname === "/reports" && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute left-0 top-0 w-1 h-full bg-[var(--text-primary)] opacity-20 rounded-r-full"
-              />
+            <motion.div
+              layoutId="activeTabGlow"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]"
+            />
           )}
-          <FileText className="w-5 h-5" />
-          <span className="text-sm font-bold tracking-tight">Reports</span>
+          <div className={`${pathname === "/reports" ? "text-indigo-400" : "text-[var(--text-muted)] group-hover:text-indigo-400"} transition-colors`}>
+            <FileText className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-black tracking-[0.05em] uppercase">Reports</span>
           {pathname === "/reports" && (
-            <ChevronRight className="ml-auto w-4 h-4 opacity-50" />
+            <ChevronRight className="ml-auto w-4 h-4 text-indigo-400 opacity-50" />
           )}
         </Link>
 
         {/* Admin Section */}
         {profile?.role === "admin" && (
-          <>
-            <div className="pt-4 pb-2 px-4">
-              <div className="h-[1px] bg-[var(--glass-border)] w-full" />
-              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-4 ml-1">
-                Management
+          <div className="pt-6">
+            <div className="px-5 mb-4 items-center flex gap-3">
+              <div className="h-[1px] bg-white/5 flex-1" />
+              <p className="text-[10px] text-indigo-400/60 font-black uppercase tracking-[0.3em] whitespace-nowrap">
+                Master Control
               </p>
+              <div className="h-[1px] bg-white/5 flex-1" />
             </div>
             <Link
               href={adminItem.href}
-              className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin")
-                ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)]"
+              className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all border ${pathname.startsWith("/admin")
+                ? "bg-rose-600/10 text-rose-400 border-rose-500/20 shadow-[0_8px_25px_rgba(225,29,72,0.1)]"
+                : "text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04] border-transparent"
                 }`}
             >
               <adminItem.icon
-                className={`w-5 h-5 ${pathname.startsWith("/admin") ? "text-amber-500" : "group-hover:text-amber-500 transition-colors"}`}
+                className={`w-5 h-5 ${pathname.startsWith("/admin") ? "text-rose-400" : "group-hover:text-rose-400 transition-colors"}`}
               />
-              <span className="text-sm font-bold tracking-tight">
+              <span className="text-sm font-black tracking-[0.05em] uppercase">
                 {adminItem.label}
               </span>
             </Link>
-          </>
+          </div>
         )}
 
-        <div className="pt-8 pb-4 px-4">
-          <div className="h-[1px] bg-[var(--glass-border)] w-full" />
+        <div className="pt-10 pb-6">
+           <div className="h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent w-full" />
         </div>
 
-        {/* Secondary Navigation */}
+        {/* Settings & Help */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+          className="w-full group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
         >
-          <Settings className="w-5 h-5" />
-          <span className="text-sm font-bold tracking-tight">Settings</span>
+          <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
+          <span className="text-sm font-black tracking-[0.05em] uppercase">Settings</span>
         </button>
 
         <Link
           href="/help"
-          className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--deep-ocean-accent)]"
+          className="group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all text-[var(--text-muted)] hover:text-white hover:bg-white/[0.04]"
         >
           <HelpCircle className="w-5 h-5" />
-          <span className="text-sm font-bold tracking-tight">Help Center</span>
+          <span className="text-sm font-black tracking-[0.05em] uppercase">Help Center</span>
         </Link>
-
-        {/* Theme Toggle placeholder removed (Moved to Header) */}
       </nav>
-
-
     </aside>
   );
 }

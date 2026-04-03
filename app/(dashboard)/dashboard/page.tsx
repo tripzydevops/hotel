@@ -240,11 +240,11 @@ export default function Dashboard() {
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}
               className={`
-                relative p-[1px] rounded-xl transition-all active:scale-95 bg-[var(--soft-gold)]/20 hover:bg-[var(--soft-gold)]/40 shadow-lg shadow-[var(--soft-gold)]/5
+                group relative p-[1px] rounded-xl transition-all active:scale-95 bg-white/5 hover:bg-white/10 border border-white/10 shadow-lg
                 ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
               `}
             >
-              <div className="bg-[var(--deep-ocean)] hover:bg-[var(--glass-bg-accent)] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-[var(--soft-gold)]/20 shadow-inner">
+              <div className="bg-[var(--deep-ocean)]/40 backdrop-blur-md hover:bg-white/5 px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-white/5">
                 <RefreshCw
                   className={`w-4 h-4 text-[var(--soft-gold)] ${isRefreshing ? "animate-spin" : ""}`}
                 />
@@ -257,7 +257,7 @@ export default function Dashboard() {
             <button
               onClick={() => setIsAddHotelOpen(true)}
               className="
-                group relative overflow-hidden rounded-xl bg-[var(--soft-gold)] p-[1px] shadow-2xl shadow-[var(--soft-gold)]/20 transition-all active:scale-95 hover:scale-105 hover:shadow-[var(--soft-gold)]/40
+                group relative overflow-hidden rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#D4AF37] p-[1px] shadow-xl transition-all active:scale-95 hover:scale-105 hover:shadow-[var(--soft-gold)]/40
               "
             >
               <div className="relative flex items-center gap-2 bg-[var(--soft-gold)] px-5 py-2.5 rounded-[11px] transition-colors">
@@ -438,7 +438,7 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--alert-red)]/20 bg-[var(--alert-red)]/5"
+            className="glass-card p-6 text-center group cursor-default rounded-[2rem] border-[var(--alert-red)]/20 bg-[var(--alert-red)]/5"
           >
             <p className="text-3xl font-black text-[var(--alert-red)] tracking-tighter mb-1">
               {
@@ -456,7 +456,7 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--optimal-green)]/20 bg-[var(--optimal-green)]/5"
+            className="glass-card p-6 text-center group cursor-default rounded-[2rem] border-[var(--optimal-green)]/20 bg-[var(--optimal-green)]/5"
           >
             <p className="text-3xl font-black text-[var(--optimal-green)] tracking-tighter mb-1">
               {
@@ -472,7 +472,7 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-white/5"
+            className="glass-card p-6 text-center group cursor-default rounded-[2rem]"
           >
             <p className="text-3xl font-black text-[var(--text-primary)] tracking-tighter mb-1">
               {data?.competitors && data.competitors.length > 0 ? (
@@ -515,7 +515,7 @@ export default function Dashboard() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="card-blur p-6 text-center group cursor-default rounded-3xl border border-[var(--glass-border)]"
+            className="glass-card p-6 text-center group cursor-default rounded-[2rem]"
           >
             <p className="text-3xl font-black text-[var(--text-primary)] tracking-tighter mb-1">
               {currentHotelCount}
