@@ -40,9 +40,9 @@
 :root.light,
 .light-theme {
   /* ===== PREMIUM PLATINUM & ANTIQUE GOLD (LIGHT) ===== */
-  --deep-ocean: #F1F5F9; /* High-end Platinum Base */
-  --deep-ocean-lighter: #FBFCFE;
-  --deep-ocean-accent: rgba(15, 23, 42, 0.05);
+  --deep-ocean: #F8FAFC; /* Cleaner White-Grey Base */
+  --deep-ocean-lighter: #FFFFFF;
+  --deep-ocean-accent: rgba(15, 23, 42, 0.04);
 
   --soft-gold: #9A7B4F; /* Antique Gold for high contrast */
   --soft-gold-dim: #7C6036;
@@ -50,20 +50,20 @@
   --soft-gold-glow: rgba(154, 123, 79, 0.15);
 
   --optimal-green: #065F46;
-  --optimal-green-soft: rgba(6, 95, 70, 0.08);
+  --optimal-green-soft: rgba(6, 95, 70, 0.1);
   --alert-red: #B91C1C;
-  --alert-red-soft: rgba(185, 28, 28, 0.08);
+  --alert-red-soft: rgba(185, 28, 28, 0.1);
 
   --text-primary: #0F172A; /* Slate Navy-Inked */
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --text-secondary: #334155;
+  --text-muted: #475569;
 
   /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
-  --glass-bg: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-bg-accent: rgba(15, 23, 42, 0.03);
+  --glass-bg: #FFFFFF;
+  --glass-border: rgba(15, 23, 42, 0.12);
+  --glass-bg-accent: rgba(15, 23, 42, 0.04);
   --glass-blur: 24px;
-  --glass-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15);
+  --glass-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
   --bg-accent: #E2E8F0;
   --deep-ocean-card: #FFFFFF;
 
@@ -121,7 +121,7 @@
 }
 
 .light-theme .radial-glow {
-  background: linear-gradient(180deg, #f0f2f7 0%, #f7f8fb 50%, #f7f8fb 100%) !important;
+  background: radial-gradient(circle at 50% 0%, rgba(154, 123, 79, 0.08) 0%, #F8FAFC 35%, #F1F5F9 100%) !important;
 }
 .light-theme .bg-grain {
   opacity: 0.015;
@@ -184,6 +184,8 @@
 }
 
 .light-theme .bg-\[var\(--soft-gold\)\]\/90 .text-white,
+.light-theme .bg-\[var\(--alert-red\)\] .text-white,
+.light-theme .bg-\[var\(--optimal-green\)\] .text-white,
 .light-theme [class*="bg-blue-"] .text-white,
 .light-theme [class*="bg-amber-"] .text-white,
 .light-theme [class*="bg-rose-"] .text-white,
