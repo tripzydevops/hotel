@@ -240,6 +240,7 @@ export const tr = {
       reputation_focus: "İtibar yönetimine odaklanın.",
       aggressive_monitoring:
         "Agresif fiyat indirimleri için rakipleri izleyin.",
+      analyzing: "Pazar bağlamı analiz ediliyor...",
     },
   },
   sentiment: {

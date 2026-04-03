@@ -438,7 +438,7 @@ export default function AnalysisPage() {
                         {t(`analysis.advisory.${key}` as any)}{" "}
                       </span>
                     ))
-                    : <p className="opacity-60">{t("analysis.advisory.analyzing" || "Analyzing market context...")}</p>}
+                    : <p className="opacity-60">{t("analysis.advisory.analyzing" as any)}</p>}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex -space-x-2">

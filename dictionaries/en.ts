@@ -235,6 +235,7 @@ export const en = {
         "Volume Strategy: Your low rates are attracting budget-conscious guests.",
       reputation_focus: "Focus on reputation management.",
       aggressive_monitoring: "Monitor competitors for aggressive price cuts.",
+      analyzing: "Analyzing market context...",
     },
     targetPrice: "Target Price",
   },
