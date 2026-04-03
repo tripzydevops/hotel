@@ -59,15 +59,15 @@ export default function AnalysisTabs() {
           >
             <div
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-xs uppercase tracking-wide
+                flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 font-bold text-xs uppercase tracking-wide border
                 ${
                   isActive
-                    ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_0_15px_rgba(246,195,68,0.3)]"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    ? "bg-[var(--soft-gold)] text-[#0f172a] border-[var(--soft-gold)] shadow-[0_0_15px_rgba(246,195,68,0.3)]"
+                    : "bg-[var(--glass-bg)] border-transparent text-[var(--text-muted)] hover:border-[var(--glass-border)] hover:text-[var(--text-primary)]"
                 }
               `}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-[var(--deep-ocean)]" : "text-current"}`} />
+              <Icon className={`w-4 h-4 ${isActive ? "text-[#0f172a]" : "text-current"}`} />
               <span>{t(tab.key as any) || tab.label}</span>
             </div>
             
