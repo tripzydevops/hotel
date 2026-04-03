@@ -48,21 +48,23 @@ async def update_hotel_embedding(supabase, hotel_id, embedding, name):
         return False
 
 async def backfill():
-    print("[Hotel Embedding] Starting Resilient Batch Backfill (768-dim)...")
+    print("[Hotel Embedding] Starting Resilient Batch Backfill (Free Tier Safe)...")
     supabase = get_supabase()
     if not supabase:
         print("[Error] Could not initialize Supabase client.")
         return
     
-    batch_size = 50
+    batch_size = 10 # Safer for Free Tier
     
     while True:
-        print(f"[Hotel Embedding] Fetching next {batch_size} hotels...")
-        # Using select("*") to be safe against schema mismatches
-        response = supabase.table("hotel_directory").select("*") \
-            .is_("embedding", "null") \
-            .limit(batch_size).execute()
-        
+        print(f"[Hotel Embedding] Fetching next {batch_size} stale hotels...")
+        # Call RPC to get both NULL and Zero-Vector hotels
+        try:
+            response = supabase.rpc("get_stale_hotel_embeddings", {"batch_size": batch_size}).execute()
+        except Exception as e:
+            print(f"[Error] RPC Failed: {e}")
+            break
+            
         hotels = response.data
         if not hotels:
             print("[Hotel Embedding] All hotels have embeddings. Backfill complete.")
@@ -76,14 +78,20 @@ async def backfill():
         # Parallel updates to local InsForge/Supabase
         tasks = []
         for i, h in enumerate(hotels):
-            tasks.append(update_hotel_embedding(supabase, h['id'], embeddings[i], h.get('name')))
+            # Only update if the returned embedding is valid (not null or all zeros)
+            if any(v != 0.0 for v in embeddings[i]):
+                tasks.append(update_hotel_embedding(supabase, h['id'], embeddings[i], h.get('name')))
+            else:
+                print(f"    - [Skipped] {h.get('name')} (received zero-vector from API)")
             
-        results = await asyncio.gather(*tasks)
-        successful = sum(1 for r in results if r)
-        print(f"  -> {successful}/{len(hotels)} updates successful.")
+        if tasks:
+            results = await asyncio.gather(*tasks)
+            successful = sum(1 for r in results if r)
+            print(f"  -> {successful}/{len(tasks)} updates successful.")
         
-        # Increase sleep to avoid hitting quota
-        await asyncio.sleep(2)
+        # Increase sleep for Free Tier (15 requests per minute limit)
+        print(f"  -> Sleeping 10s (Free Tier Safe Delay)...")
+        await asyncio.sleep(10)
 
 if __name__ == "__main__":
     asyncio.run(backfill())

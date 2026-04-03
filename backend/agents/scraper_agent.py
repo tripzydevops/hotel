@@ -92,7 +92,7 @@ class ScraperAgent:
         """
         KAİZEN: Cross-User Shared Cache (GlobalPulse)
         Searches price_logs for ANY hotel that shares the same serp_api_id.
-        Verification logic: Data must be within 12 hours.
+        Verification logic: Data must be within 6 hours.
         """
         if not serp_api_id or serp_api_id == "None":
             return None
@@ -105,8 +105,8 @@ class ScraperAgent:
             if not sharing_hotel_ids:
                 return None
 
-            # 2. Check for recent logs for any of these hotels
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat()
+        # Verification logic: Data must be within 6 hours.
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
             
             logs_res = (
                 self.db.table("price_logs")
