@@ -113,161 +113,167 @@ export default function ProfileModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+      <div className="glass-modal w-full max-w-md max-h-[min(90vh,650px)] shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-              <User className="w-5 h-5" />
+        <div className="p-6 border-b border-[var(--glass-border)] flex items-center justify-between shrink-0 bg-[var(--glass-bg-accent)]">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center text-[var(--deep-ocean)] text-lg font-black shadow-lg ring-2 ring-[var(--soft-gold)]/20">
+              {profile.display_name
+                ? profile.display_name.charAt(0).toUpperCase()
+                : "U"}
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">
-              {t("profile.title")}
-            </h2>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                {t("profile.title")}
+              </h2>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-black mt-0.5">
+                USER PROFILE CONFIGURATION
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
+            className="p-2 hover:bg-[var(--glass-bg-accent)] rounded-lg transition-all hover:rotate-90 group"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="w-8 h-8 border-2 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-[var(--text-muted)] animate-pulse">
-              {t("profile.loading")}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Avatar Placeholder */}
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--soft-gold)] to-[#e6b800] flex items-center justify-center text-[var(--deep-ocean)] text-2xl font-bold shadow-lg">
-                {profile.display_name
-                  ? profile.display_name.charAt(0).toUpperCase()
-                  : "U"}
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="w-10 h-10 border-2 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />
+              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] animate-pulse">
+                {t("profile.loading")}
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+              {/* Display Name */}
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("profile.displayName")}
+                </label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                  <input
+                    type="text"
+                    value={profile.display_name}
+                    onChange={(e) =>
+                      setProfile({ ...profile, display_name: e.target.value })
+                    }
+                    placeholder={t("profile.namePlaceholder")}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-4 text-[var(--text-primary)] transition-all focus:outline-none focus:border-[var(--soft-gold)] font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Company Name */}
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("profile.companyName")}
+                </label>
+                <div className="relative group">
+                  <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                  <input
+                    type="text"
+                    value={profile.company_name}
+                    onChange={(e) =>
+                      setProfile({ ...profile, company_name: e.target.value })
+                    }
+                    placeholder={t("profile.companyPlaceholder")}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-4 text-[var(--text-primary)] transition-all focus:outline-none focus:border-[var(--soft-gold)] font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Job Title */}
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("profile.jobTitle")}
+                </label>
+                <div className="relative group">
+                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                  <input
+                    type="text"
+                    value={profile.job_title}
+                    onChange={(e) =>
+                      setProfile({ ...profile, job_title: e.target.value })
+                    }
+                    placeholder={t("profile.jobPlaceholder")}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-4 text-[var(--text-primary)] transition-all focus:outline-none focus:border-[var(--soft-gold)] font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("profile.phone")}
+                </label>
+                <div className="relative group">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                  <input
+                    type="tel"
+                    value={profile.phone}
+                    onChange={(e) =>
+                      setProfile({ ...profile, phone: e.target.value })
+                    }
+                    placeholder={t("profile.phonePlaceholder")}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-4 text-[var(--text-primary)] transition-all focus:outline-none focus:border-[var(--soft-gold)] font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Timezone */}
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("profile.timezone")}
+                </label>
+                <div className="relative group">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                  <select
+                    value={profile.timezone}
+                    onChange={(e) =>
+                      setProfile({ ...profile, timezone: e.target.value })
+                    }
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] font-bold transition-all"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz} value={tz} className="bg-[var(--deep-ocean-lighter)]">
+                        {tz}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Display Name */}
-            <div>
-              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-                {t("profile.displayName")}
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  value={profile.display_name}
-                  onChange={(e) =>
-                    setProfile({ ...profile, display_name: e.target.value })
-                  }
-                  placeholder={t("profile.namePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
-                />
+        {/* Footer */}
+        <div className="p-6 border-t border-[var(--glass-border)] bg-[var(--glass-bg-accent)] shrink-0 flex gap-4">
+          <button
+            onClick={onClose}
+            className="flex-1 py-4 border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] font-bold hover:bg-[var(--glass-border)] transition-all active:scale-95"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="flex-1 py-4 btn-premium shadow-[0_10px_30px_rgba(212,175,55,0.1)] active:scale-95"
+          >
+            {saving ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>{t("profile.saving")}</span>
               </div>
-            </div>
-
-            {/* Company Name */}
-            <div>
-              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-                {t("profile.companyName")}
-              </label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  value={profile.company_name}
-                  onChange={(e) =>
-                    setProfile({ ...profile, company_name: e.target.value })
-                  }
-                  placeholder={t("profile.companyPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
-                />
-              </div>
-            </div>
-
-            {/* Job Title */}
-            <div>
-              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-                {t("profile.jobTitle")}
-              </label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  value={profile.job_title}
-                  onChange={(e) =>
-                    setProfile({ ...profile, job_title: e.target.value })
-                  }
-                  placeholder={t("profile.jobPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-                {t("profile.phone")}
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                  type="tel"
-                  value={profile.phone}
-                  onChange={(e) =>
-                    setProfile({ ...profile, phone: e.target.value })
-                  }
-                  placeholder={t("profile.phonePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
-                />
-              </div>
-            </div>
-
-            {/* Timezone */}
-            <div>
-              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">
-                {t("profile.timezone")}
-              </label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <select
-                  value={profile.timezone}
-                  onChange={(e) =>
-                    setProfile({ ...profile, timezone: e.target.value })
-                  }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 [&>option]:bg-[var(--deep-ocean-card)]"
-                >
-                  {TIMEZONES.map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={onClose}
-                className="flex-1 py-3 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold hover:bg-white/10 transition-all"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-3 rounded-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold hover:bg-[var(--soft-gold-hover)] transition-all disabled:opacity-50"
-              >
-                {saving ? t("profile.saving") : t("profile.saveProfile")}
-              </button>
-            </div>
-          </div>
-        )}
+            ) : t("profile.saveProfile")}
+          </button>
+        </div>
       </div>
     </div>
   );

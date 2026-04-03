@@ -90,44 +90,42 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ===== PREMIUM UI UTILITIES ===== */
 
-.glass-card {
+.glass-modal {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 16px;
+  border-radius: 20px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--card-tint) 0%, transparent 100%);
-  pointer-events: none;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
 }
 
-.glass-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--soft-gold);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.tinted-frame {
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg-accent);
-  border-radius: 12px;
-  padding: 1rem;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--soft-gold-dim);
 }
 
 .tactical-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .btn-premium {
@@ -140,6 +138,10 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 12px;
   box-shadow: 0 4px 15px var(--soft-gold-glow);
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-premium:hover {
@@ -205,7 +207,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2rem;
   margin-bottom: 1rem;
   display: flex;
-  items: center;
+  align-items: center;
   gap: 0.5rem;
   border-bottom: 1px solid var(--glass-border);
   padding-bottom: 0.5rem;

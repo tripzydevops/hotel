@@ -117,107 +117,113 @@ export default function ScanSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-2xl w-full max-w-sm p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[var(--soft-gold)]" />
-            {t("scanSettings.title")}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+      <div className="glass-modal w-full max-w-sm shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-[var(--glass-border)] flex items-center justify-between shrink-0 bg-[var(--glass-bg-accent)]">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shadow-inner">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                {t("scanSettings.title")}
+              </h2>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-black mt-0.5">
+                ON-DEMAND INTELLIGENCE
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--deep-ocean-accent)]/20 rounded-full transition-colors"
+            className="p-2 hover:bg-[var(--glass-bg-accent)] rounded-lg transition-all hover:rotate-90 group"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-[var(--text-primary)]" />
+            <X className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
           </button>
         </div>
 
-        {/* Global Limit Alerts */}
-        {(!isEnterprise || dailyLimitReached) && (
-          <div className="mb-6 p-4 rounded-xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex gap-3">
-              <div className="p-2 rounded-lg bg-[var(--soft-gold)]/10 h-fit">
-                {dailyLimitReached ? (
-                  <Clock className="w-4 h-4 text-[var(--soft-gold)]" />
-                ) : (
-                  <Lock className="w-4 h-4 text-[var(--soft-gold)]" />
-                )}
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-1">
-                  {dailyLimitReached
-                    ? "Daily Limit Reached"
-                    : "Upgrade Required"}
-                </h4>
-                <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                  {dailyLimitReached
-                    ? "You've used your manual scan for today. Upgrade to increase your limit."
-                    : "Manual scans are restricted to Enterprise plans for deep market analysis."}
-                </p>
-                <button
-                  onClick={onUpgrade}
-                  className="mt-3 text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-tighter hover:brightness-125 transition-all flex items-center gap-1 group"
-                >
-                  Explore Enterprise Plans
-                  <Play className="w-2 h-2 fill-current transition-transform group-hover:translate-x-0.5" />
-                </button>
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Global Limit Alerts */}
+          {(!isEnterprise || dailyLimitReached) && (
+            <div className="p-4 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 animate-in slide-in-from-top-2 duration-300 shadow-sm">
+              <div className="flex gap-4">
+                <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 h-fit ring-1 ring-[var(--soft-gold)]/20">
+                  {dailyLimitReached ? (
+                    <Clock className="w-4 h-4 text-[var(--soft-gold)]" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-[var(--soft-gold)]" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-col">
+                    <h4 className="text-xs font-black text-[var(--soft-gold)] uppercase tracking-widest leading-tight">
+                      {dailyLimitReached
+                        ? "Scan Limit Reached"
+                        : "Premium Feature"}
+                    </h4>
+                    <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">Access Restricted</span>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed italic border-l-2 border-[var(--soft-gold)]/30 pl-3">
+                    {dailyLimitReached
+                      ? "Your daily manual intelligence allowance is exhausted. Upgrade for unlimited scans."
+                      : "Deeper market analysis requires an Enterprise subscription tier."}
+                  </p>
+                  <button
+                    onClick={onUpgrade}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[var(--soft-gold)] text-deep-ocean rounded-lg text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[var(--soft-gold)]/10 group"
+                  >
+                    Upgrade Now
+                    <Play className="w-2 h-2 fill-current transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 opacity-100 transition-opacity"
-        >
-          <div
-            className={
-              !isEnterprise || dailyLimitReached
-                ? "opacity-40 pointer-events-none grayscale-[0.5]"
-                : ""
-            }
+          <form
+            onSubmit={handleSubmit}
+            className={`space-y-6 transition-all duration-500 ${(!isEnterprise || dailyLimitReached) ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}
           >
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                  {t("scanSettings.checkIn")}
-                </label>
-                <input
-                  type="date"
-                  min={todayStr}
-                  value={checkIn}
-                  onChange={(e) => handleCheckInChange(e.target.value)}
-                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">{t("scanSettings.checkIn")}</label>
+                <div className="relative group">
+                  <input
+                    type="date"
+                    min={todayStr}
+                    value={checkIn}
+                    onChange={(e) => handleCheckInChange(e.target.value)}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3 px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] font-bold text-xs transition-all shadow-sm [color-scheme:dark]"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                  {t("scanSettings.checkOut")}
-                </label>
-                <input
-                  type="date"
-                  min={checkIn || todayStr}
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
-                />
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">{t("scanSettings.checkOut")}</label>
+                <div className="relative group">
+                  <input
+                    type="date"
+                    min={checkIn || todayStr}
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3 px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] font-bold text-xs transition-all shadow-sm [color-scheme:dark]"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                  {t("scanSettings.adults")}
-                </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">{t("scanSettings.adults")}</label>
+                <div className="relative group">
+                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-[var(--soft-gold)] transition-colors pointer-events-none" />
                   <select
                     value={adults}
                     onChange={(e) => setAdults(Number(e.target.value))}
-                    className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-11 pr-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] font-bold text-xs transition-all appearance-none cursor-pointer shadow-sm"
                   >
                     {[1, 2, 3, 4].map((num) => (
-                      <option key={num} value={num}>
+                      <option key={num} value={num} className="bg-[var(--deep-ocean-lighter)]">
                         {t("scanSettings.adultCount")
                           .replace("{0}", num.toString())
                           .replace("{1}", num > 1 ? "s" : "")}
@@ -226,56 +232,55 @@ export default function ScanSettingsModal({
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1 uppercase tracking-wider">
-                  Currency
-                </label>
-                <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">Currency</label>
+                <div className="relative group">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-[var(--soft-gold)] transition-colors pointer-events-none" />
                   <select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full bg-[var(--deep-ocean-accent)]/10 border border-[var(--glass-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)] appearance-none"
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-11 pr-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] font-bold text-xs transition-all appearance-none cursor-pointer shadow-sm"
                   >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="TRY">TRY (₺)</option>
-                    <option value="GBP">GBP (£)</option>
+                    <option value="USD" className="bg-[var(--deep-ocean-lighter)]">USD ($)</option>
+                    <option value="EUR" className="bg-[var(--deep-ocean-lighter)]">EUR (€)</option>
+                    <option value="TRY" className="bg-[var(--deep-ocean-lighter)]">TRY (₺)</option>
+                    <option value="GBP" className="bg-[var(--deep-ocean-lighter)]">GBP (£)</option>
                   </select>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading || !isEnterprise || dailyLimitReached}
-              className={`w-full py-3 flex items-center justify-center gap-2 group transition-all rounded-xl font-bold uppercase tracking-widest text-xs
-                ${!isEnterprise || dailyLimitReached
-                  ? "bg-[var(--deep-ocean-accent)]/10 text-[var(--text-muted)]/40 cursor-not-allowed border border-[var(--glass-border)]"
-                  : "btn-gold hover:scale-[1.02] active:scale-95 shadow-lg shadow-[var(--soft-gold)]/20"
-                }
-              `}
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-[var(--deep-ocean)] border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {!isEnterprise || dailyLimitReached ? (
-                    <Lock className="w-4 h-4" />
-                  ) : (
-                    <Play className="w-4 h-4 fill-current" />
-                  )}
-                  <span>{t("scanSettings.startScan")}</span>
-                </>
-              )}
-            </button>
-            <p className="text-center text-[10px] text-[var(--text-muted)] mt-2">
-              {t("scanSettings.defaultDatesNote")}
-            </p>
-          </div>
-        </form>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading || !isEnterprise || dailyLimitReached}
+                className="w-full btn-premium py-4 flex items-center justify-center gap-3 group shadow-[0_15px_40px_rgba(212,175,55,0.15)] active:scale-[0.98]"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-3 border-deep-ocean border-t-transparent rounded-full animate-spin" />
+                    <span className="uppercase tracking-widest font-black text-xs">Scanning...</span>
+                  </div>
+                ) : (
+                  <>
+                    {!isEnterprise || dailyLimitReached ? (
+                      <Lock className="w-5 h-5 text-deep-ocean/50" />
+                    ) : (
+                      <Play className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" />
+                    )}
+                    <span className="text-sm font-black uppercase tracking-[0.2em]">{t("scanSettings.startScan")}</span>
+                  </>
+                )}
+              </button>
+              <div className="mt-4 flex flex-col items-center gap-1">
+                <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">
+                  {t("scanSettings.defaultDatesNote")}
+                </p>
+                <div className="w-8 h-1 bg-[var(--soft-gold)]/20 rounded-full" />
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

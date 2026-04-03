@@ -191,221 +191,231 @@ export default function AddHotelModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="premium-card w-full max-w-md p-8 relative overflow-visible radar-scan">
-        <div className="absolute -top-12 left-0 right-0 flex justify-center">
-          <div className="bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-signal shadow-[0_0_20px_var(--soft-gold-glow)]">
-            {t("addHotel.title")}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+      <div className="glass-modal w-full max-w-md max-h-[min(90vh,700px)] shadow-2xl border border-[var(--soft-gold)]/20">
+        {/* Tactical Header */}
+        <div className="p-6 border-b border-[var(--glass-border)] flex items-center justify-between shrink-0 bg-[var(--soft-gold)]/5">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-white italic tracking-tighter">
-              NEW <span className="text-[var(--soft-gold)]">SIGNAL</span>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+              <Plus className="w-5 h-5 text-[var(--soft-gold)]" />
+              {t("addHotel.title")}
             </h2>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)] font-bold">
-              {t("addHotel.nameLabel")}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)]" />
+              <p className="text-[9px] uppercase tracking-[0.25em] text-[var(--soft-gold)] font-black">
+                READY FOR DEPLOYMENT
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-all hover:rotate-90"
+            className="p-2 hover:bg-[var(--glass-bg-accent)] rounded-xl transition-all hover:rotate-90 group border border-transparent hover:border-[var(--glass-border)]"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
+            <X className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="relative group">
-            <div className="absolute -top-2 left-3 px-2 bg-[var(--deep-ocean)] text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-tighter z-10 border-x border-[var(--glass-border)]">
-              {t("addHotel.nameLabel")}
-            </div>
-            <div className="relative z-50" ref={suggestionRef}>
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setSerpApiId(undefined);
-                  setSuggestions([]);
-                  setShowSuggestions(true);
-                }}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 pl-12 pr-12 text-white placeholder:text-white/10 focus:outline-none focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all font-medium"
-                placeholder={t("addHotel.namePlaceholder")}
-              />
-              {name.length > 0 && !isSearching && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setName("");
-                    setSuggestions([]);
-                    setSerpApiId(undefined);
-                    setShowSuggestions(false);
-                  }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                </button>
-              )}
-              {isSearching && (
-                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] animate-spin" />
-              )}
-
-              {/* Suggestions Dropdown */}
-              {showSuggestions && name.length >= 2 && !isSearching && (
-                <div className="absolute z-[100] left-0 right-0 mt-2 bg-[var(--deep-ocean-lighter)] border border-[var(--soft-gold)]/20 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                  <div className="max-h-80 overflow-y-auto">
-                    {suggestions.length > 0 ? (
-                      suggestions.map((item, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleSelectSuggestion(item)}
-                          className="w-full px-4 py-3 text-left hover:bg-[var(--soft-gold)]/10 flex flex-col transition-all border-b border-white/5 last:border-none group/item"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-white font-bold text-sm group-hover/item:text-[var(--soft-gold)] transition-colors">
-                              {item.name}
-                            </span>
-                            {item.source === "serpapi" && (
-                              <span className="text-[7px] border border-blue-500/30 text-blue-400 py-0.5 px-1.5 rounded-full uppercase tracking-widest font-black">
-                                {t("addHotel.globalMatch")}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-1 opacity-60">
-                            <MapPin className="w-3 h-3" />
-                            <span className="text-[10px] font-medium">
-                              {item.location}
-                            </span>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-8 text-center bg-white/[0.01]">
-                        <div className="w-8 h-8 rounded-full border border-dashed border-[var(--text-muted)] flex items-center justify-center mx-auto mb-2">
-                          <X className="w-4 h-4 text-[var(--text-muted)]" />
-                        </div>
-                        <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.2em] font-black">
-                          {t("addHotel.noMatch")}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">
-                {t("addHotel.countryLabel")}
+        {/* Scrollable Body */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Hotel Name Field */}
+            <div className="space-y-2">
+              <label className="tactical-label ml-1">
+                {t("addHotel.nameLabel")}
               </label>
-              <select
-                value={country}
-                disabled={isManualEntry}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] disabled:opacity-30 transition-all font-bold"
-              >
-                {countries.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">
-                {t("addHotel.cityLabel")}
-              </label>
-              {isManualEntry ? (
+              <div className="relative z-50" ref={suggestionRef}>
+                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] opacity-50" />
                 <input
                   type="text"
                   required
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="ENTER CITY"
-                  className="w-full bg-white/[0.03] border border-[var(--soft-gold)]/30 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)]/30 text-sm font-bold"
-                />
-              ) : (
-                <select
-                  value={city}
-                  required
+                  value={name}
                   onChange={(e) => {
-                    if (e.target.value === "__NEW__") {
-                      setIsManualEntry(true);
-                      setCity("");
-                    } else {
-                      setCity(e.target.value);
-                    }
+                    setName(e.target.value);
+                    setSerpApiId(undefined);
+                    setSuggestions([]);
+                    setShowSuggestions(true);
                   }}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] transition-all font-bold"
-                >
-                  <option value="">{t("addHotel.selectCity")}</option>
-                  {filteredCities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                  <option
-                    value="__NEW__"
-                    className="text-[var(--soft-gold)] font-black"
-                  >
-                    + {t("addHotel.addNewLocation")}
-                  </option>
-                </select>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between py-2 border-y border-white/5">
-            <div className="flex items-center gap-3">
-              <div className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="isTarget"
-                  checked={isTarget}
-                  onChange={(e) => setIsTarget(e.target.checked)}
-                  className="sr-only peer"
+                  className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3.5 pl-12 pr-12 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--soft-gold)] transition-all font-medium"
+                  placeholder={t("addHotel.namePlaceholder")}
                 />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
-                <label
-                  htmlFor="isTarget"
-                  className="ml-3 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] peer-checked:text-white transition-colors"
-                >
-                  {t("addHotel.targetLabel")}
-                </label>
+                {name.length > 0 && !isSearching && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName("");
+                      setSuggestions([]);
+                      setSerpApiId(undefined);
+                      setShowSuggestions(false);
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-[var(--glass-bg-accent)] rounded-full transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  </button>
+                )}
+                {isSearching && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-gold)] animate-spin" />
+                )}
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && name.length >= 2 && !isSearching && (
+                  <div className="absolute left-0 right-0 mt-2 bg-[var(--deep-ocean-lighter)] border border-[var(--glass-border)] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 z-[100]">
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {suggestions.length > 0 ? (
+                        suggestions.map((item, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleSelectSuggestion(item)}
+                            className="w-full px-4 py-3.5 text-left hover:bg-[var(--soft-gold)]/10 flex flex-col transition-all border-b border-[var(--glass-border)] last:border-none group/item hover:pl-6"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[var(--text-primary)] font-bold text-sm group-hover/item:text-[var(--soft-gold)] transition-colors">
+                                {item.name}
+                              </span>
+                              {item.source === "serpapi" && (
+                                <span className="text-[8px] bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/30 text-[var(--soft-gold)] py-0.5 px-2 rounded-full uppercase tracking-widest font-black">
+                                  {t("addHotel.globalMatch")}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1.5 opacity-60">
+                              <MapPin className="w-3 h-3 text-[var(--soft-gold)]" />
+                              <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-tight">
+                                {item.location}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center">
+                          <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-black">
+                            {t("addHotel.noMatch")}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="bg-transparent text-[var(--soft-gold)] text-[10px] font-black uppercase tracking-widest border border-[var(--soft-gold)]/30 rounded-lg px-2 py-1 outline-none hover:bg-[var(--soft-gold)]/10 transition-colors"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="TRY">TRY (₺)</option>
-              <option value="GBP">GBP (£)</option>
-            </select>
+            {/* Location Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("addHotel.countryLabel")}
+                </label>
+                <select
+                  value={country}
+                  disabled={isManualEntry}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3 px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] text-sm disabled:opacity-30 transition-all font-bold"
+                >
+                  {countries.map((c) => (
+                    <option key={c} value={c} className="bg-[var(--deep-ocean-lighter)]">
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="tactical-label ml-1">
+                  {t("addHotel.cityLabel")}
+                </label>
+                {isManualEntry ? (
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="ENTER CITY"
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--soft-gold)]/30 rounded-xl py-3 px-4 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)]/30 text-sm font-bold"
+                  />
+                ) : (
+                  <select
+                    value={city}
+                    required
+                    onChange={(e) => {
+                      if (e.target.value === "__NEW__") {
+                        setIsManualEntry(true);
+                        setCity("");
+                      } else {
+                        setCity(e.target.value);
+                      }
+                    }}
+                    className="w-full bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl py-3 px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--soft-gold)] text-sm transition-all font-bold"
+                  >
+                    <option value="" className="bg-[var(--deep-ocean-lighter)]">{t("addHotel.selectCity")}</option>
+                    {filteredCities.map((c) => (
+                      <option key={c} value={c} className="bg-[var(--deep-ocean-lighter)]">
+                        {c}
+                      </option>
+                    ))}
+                    <option
+                      value="__NEW__"
+                      className="text-[var(--soft-gold)] font-black bg-[var(--deep-ocean-lighter)]"
+                    >
+                      + {t("addHotel.addNewLocation")}
+                    </option>
+                  </select>
+                )}
+              </div>
+            </div>
+
+            {/* Target & Currency Section */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between p-4 bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                    {t("addHotel.targetLabel")}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">
+                    Mark as primary tracking subject
+                  </span>
+                </div>
+                <div className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    id="isTarget"
+                    checked={isTarget}
+                    onChange={(e) => setIsTarget(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-[var(--glass-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl">
+                <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                  Report Currency
+                </span>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="bg-transparent text-[var(--soft-gold)] text-xs font-black uppercase tracking-widest outline-none"
+                >
+                  <option value="USD" className="bg-[var(--deep-ocean-lighter)]">USD ($)</option>
+                  <option value="EUR" className="bg-[var(--deep-ocean-lighter)]">EUR (€)</option>
+                  <option value="TRY" className="bg-[var(--deep-ocean-lighter)]">TRY (₺)</option>
+                  <option value="GBP" className="bg-[var(--deep-ocean-lighter)]">GBP (£)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div className="pt-4">
+          {/* Footer */}
+          <div className="p-6 border-t border-[var(--glass-border)] bg-[var(--glass-bg-accent)] shrink-0">
             <button
               type="submit"
               disabled={loading || (!city && !isManualEntry)}
-              className="btn-gold w-full flex items-center justify-center gap-3 py-4 shadow-[0_10px_30px_rgba(212,175,55,0.2)]"
+              className="btn-premium w-full py-4 shadow-[0_10px_30px_rgba(212,175,55,0.1)] active:scale-95"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <Plus className="w-5 h-5 stroke-[4px]" />
+                  <Plus className="w-5 h-5" />
                   <span>{t("addHotel.submitButton")}</span>
                 </>
               )}

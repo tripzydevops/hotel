@@ -172,12 +172,19 @@ export default function HotelTile(props: HotelTileProps) {
     <motion.div
       whileHover={{ scale: 1.01, translateY: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`glass-card ${padding} flex flex-col ${isTarget ? "ring-2 ring-[var(--soft-gold)]/30" : "justify-between"} group/card relative overflow-visible`}
+      className={`glass-modal ${padding} flex flex-col ${isTarget ? "border-[var(--soft-gold)]/40 shadow-[0_0_40px_rgba(212,175,55,0.15)]" : "border-[var(--glass-border)]"} group/card relative overflow-visible`}
     >
       {/* Target Gold Glow */}
       {isTarget && (
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[var(--soft-gold)]/50 to-transparent pointer-events-none" />
       )}
+      
+      {/* HUD-style corners */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[var(--soft-gold)]/30 rounded-tl-lg pointer-events-none" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[var(--soft-gold)]/30 rounded-tr-lg pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[var(--soft-gold)]/30 rounded-bl-lg pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[var(--soft-gold)]/30 rounded-br-lg pointer-events-none" />
+
       {/* Header */}
       <div
         className={`flex items-start justify-between ${isTarget ? "mb-6" : "mb-3"}`}
@@ -187,7 +194,7 @@ export default function HotelTile(props: HotelTileProps) {
         >
           {isTarget && (
             <div
-              className={`relative flex-shrink-0 ${imageSize} rounded-2xl overflow-hidden bg-[var(--soft-gold)]/20 flex items-center justify-center border-2 border-[var(--soft-gold)]/30 shadow-2xl`}
+              className={`relative flex-shrink-0 ${imageSize} rounded-2xl overflow-hidden bg-[var(--deep-ocean-lighter)] flex items-center justify-center border border-[var(--soft-gold)]/30 shadow-2xl group-hover/card:border-[var(--soft-gold)]/60 transition-colors`}
             >
               {imageUrl || (images && images.length > 0) ? (
                 <FallbackImage
@@ -199,7 +206,7 @@ export default function HotelTile(props: HotelTileProps) {
                   }
                   alt={name}
                   fill
-                  className="object-cover"
+                  className="object-cover opacity-80 group-hover/card:opacity-100 transition-opacity"
                   sizes={isTarget ? "(max-width: 640px) 100vw, 800px" : "64px"}
                   priority={priority}
                   // @ts-ignore
@@ -212,154 +219,134 @@ export default function HotelTile(props: HotelTileProps) {
               ) : (
                 <Building2 className="w-8 h-8 text-[var(--soft-gold)]" />
               )}
+              {/* Image Scanning Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--soft-gold)]/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none" />
             </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               {/* Primary Label */}
-              <span
-                className={`text-[10px] uppercase tracking-[0.15em] font-bold px-3 py-1 rounded-lg border-2 shadow-sm ${
-                  isTarget
-                    ? "text-[var(--soft-gold)] bg-[var(--soft-gold)]/15 border-[var(--soft-gold)]/30"
-                    : "text-[var(--text-secondary)] bg-[var(--glass-bg-accent)] border-[var(--glass-border)]"
-                }`}
-              >
-                {isTarget ? t("common.myHotel") : t("common.competitor")}
-              </span>
+              <div className="flex items-center gap-1.5 ">
+                <span className={`w-1.5 h-1.5 rounded-full ${isTarget ? "bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)]" : "bg-[var(--text-muted)]"}`} />
+                <span
+                  className={`text-[9px] uppercase tracking-[0.25em] font-black ${
+                    isTarget
+                      ? "text-[var(--soft-gold)]"
+                      : "text-[var(--text-muted)]"
+                  }`}
+                >
+                  {isTarget ? t("common.myHotel") : t("common.competitor")}
+                </span>
+              </div>
 
               {/* Rating */}
               {rating && (
-                <span className="text-[10px] font-bold text-[var(--text-primary)] bg-[var(--glass-bg-accent)] px-3 py-1 rounded-lg flex items-center gap-1.5 border-2 border-[var(--glass-border)]">
-                  <span className="text-[var(--soft-gold)]">★</span> {rating.toFixed(1)}
-                </span>
+                <div className="flex items-center gap-1 pl-2 border-l border-[var(--glass-border)]">
+                  <span className="text-[10px] font-bold text-[var(--text-primary)]">
+                    {rating.toFixed(1)}
+                  </span>
+                  <span className="text-[8px] text-[var(--soft-gold)] font-black uppercase tracking-tighter">SCORE</span>
+                </div>
               )}
 
               {props.isEstimated && (
-                <span className="text-[10px] font-bold text-[var(--alert-red)] bg-[var(--alert-red)]/15 px-3 py-1 rounded-lg border-2 border-[var(--alert-red)]/30 flex items-center gap-1.5 animate-pulse">
-                  <AlertTriangle className="w-3.5 h-3.5" />
+                <span className="text-[9px] font-black text-[var(--alert-red)] px-2 py-0.5 rounded bg-[var(--alert-red)]/10 border border-[var(--alert-red)]/20 animate-pulse tracking-widest">
                   {t("common.estimated") || "ESTIMATED"}
                 </span>
               )}
             </div>
             <h2
-              className={`${titleSize} text-[var(--text-primary)] leading-tight mb-2 line-clamp-2 pr-2 font-montserrat tracking-tight`}
+              className={`${titleSize} text-[var(--text-primary)] leading-tight mb-1 line-clamp-1 pr-2 font-montserrat tracking-tight group-hover/card:text-[var(--soft-gold)] transition-colors`}
               title={name}
             >
               {name}
             </h2>
-            {stars && (
-              <div className="flex items-center gap-0.5 mb-2 px-2 py-1 rounded-lg bg-[var(--soft-gold)]/10 border-2 border-[var(--soft-gold)]/20 w-fit">
-                {[...Array(Math.min(5, stars))].map((_, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] text-[var(--soft-gold)] font-bold"
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-            )}
+            
             {location && (
-              <p className="text-sm font-medium text-[var(--text-secondary)] mt-1 truncate flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider truncate flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-[var(--soft-gold)]/60" />
                 {location}
               </p>
             )}
           </div>
         </div>
 
-        {/* Actions - Restored Tactical Layout */}
-        <div
-          className={`flex ${isTarget ? "flex-row items-center gap-3" : "flex-row items-start gap-2"} flex-shrink-0 ml-2`}
-        >
-          {isTarget ? (
-            <>
-              {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(id, props as any);
-                  }}
-                  className="p-3 rounded-2xl transition-all shadow-xl bg-[var(--glass-bg-accent)] text-[var(--text-primary)] border-2 border-[var(--glass-border)] hover:border-[var(--soft-gold)] hover:scale-110 active:scale-95"
-                  title={t("common.edit")}
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-              )}
-              {onViewDetails && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewDetails(props as any);
-                  }}
-                  className="p-3 rounded-2xl transition-all shadow-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] hover:brightness-110 hover:scale-110 active:scale-95 ring-4 ring-[var(--soft-gold)]/20"
-                  title={t("common.view")}
-                >
-                  <Building2 className="w-5 h-5" />
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {onViewDetails && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewDetails(props as any);
-                  }}
-                  className="p-2 rounded-xl transition-all bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-2 border-[var(--glass-border)] hover:border-[var(--soft-gold)] shadow-sm"
-                >
-                  <Building2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+        {/* Actions - Tactical Buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2 overflow-hidden">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(id, props as any);
+              }}
+              className="p-2 rounded-lg transition-all bg-[var(--glass-bg-accent)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/50 group/btn"
+              title={t("common.edit")}
+            >
+              <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+            </button>
+          )}
+          {onViewDetails && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails(props as any);
+              }}
+              className="p-2 rounded-lg transition-all bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/30 hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] group/btn"
+              title={t("common.view")}
+            >
+              <Info className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Main Stat Block - Frame Tinting Applied */}
+      {/* Main Stat Block - Tactical HUD Layout */}
       <div
-        className={`flex-1 flex flex-col ${isTarget ? "justify-center py-8" : "mt-4"} rounded-2xl bg-[var(--glass-bg-accent)] border-2 border-[var(--glass-border)] p-4 relative overflow-hidden`}
+        className={`flex-1 flex flex-col ${isTarget ? "justify-center py-6" : "mt-2"} rounded-xl bg-[var(--deep-ocean-lighter)]/50 border border-[var(--glass-border)] p-4 relative group-hover/card:border-[var(--soft-gold)]/20 transition-colors`}
       >
-        {/* Subtle Shine Background */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[var(--glass-border)] to-transparent opacity-20 rotate-12" />
+        <div className="absolute top-0 right-0 p-2 overflow-hidden pointer-events-none opacity-10">
+          <Building2 className="w-12 h-12 -mr-4 -mt-4 rotate-12" />
+        </div>
         
-        <div className={`${isTarget ? "text-center" : "flex items-center justify-between"}`}>
-          <div>
-            <p className={`tactical-label mb-1 ${isTarget ? "justify-center" : ""}`}>
-              {t("dashboard.liveMarketRate")}
-            </p>
-            <p className={`${isTarget ? "text-4xl font-black" : "text-2xl font-bold"} text-[var(--text-primary)] tracking-tight`}>
+        <div className={`${isTarget ? "flex flex-col items-center" : "flex items-center justify-between"}`}>
+          <div className={isTarget ? "text-center mb-4" : ""}>
+            <div className={`flex items-center gap-1.5 mb-1 ${isTarget ? "justify-center" : ""}`}>
+               <div className="w-1 h-3 bg-[var(--soft-gold)]/60 rounded-full" />
+               <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-black">
+                 {t("dashboard.liveMarketRate")}
+               </p>
+            </div>
+            <p className={`${isTarget ? "text-4xl font-black" : "text-xl font-bold"} text-[var(--text-primary)] tracking-tighter leading-none`}>
               {currentPrice > 0 ? formatPrice(currentPrice) : "—"}
             </p>
           </div>
 
-          <div className={`flex flex-col items-end ${isTarget ? "mt-4 items-center" : ""}`}>
-             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${getTrendBgColor()} border-2 border-[var(--glass-border)]`}>
-                {getTrendIcon("w-4 h-4")}
-                <span className={`text-xs font-black ${changePercent > 0 ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}>
+          <div className={`flex flex-col items-end ${isTarget ? "items-center" : ""}`}>
+             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass-bg-accent)] group-hover/card:border-[var(--soft-gold)]/30 transition-colors`}>
+                {getTrendIcon("w-3.5 h-3.5")}
+                <span className={`text-[11px] font-black tracking-widest ${changePercent > 0 ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}>
                   {changePercent > 0 ? "+" : ""}{changePercent.toFixed(1)}%
                 </span>
              </div>
              {vendor && (
-               <span className="text-[10px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-widest">
-                 via {vendor}
+               <span className="text-[8px] font-black text-[var(--text-muted)] mt-2 uppercase tracking-[0.25em] opacity-60">
+                 DATA SOURCE: {vendor}
                </span>
              )}
           </div>
         </div>
       </div>
 
-      {/* Footer Stats - Restored Card Identity */}
+      {/* Footer Stats - HUD Meta Info */}
       {footerStats && (
-        <div className="mt-6 flex items-center justify-between pt-6 border-t-2 border-[var(--glass-border)]">
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-1 tracking-tighter">{t("dashboard.previous")}</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{previousPrice ? formatPrice(previousPrice) : "—"}</p>
+        <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-[var(--glass-border)]">
+          <div className="flex flex-col">
+            <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t("dashboard.previous")}</p>
+            <p className="text-xs font-bold text-[var(--text-primary)]/80 tracking-tight">{previousPrice ? formatPrice(previousPrice) : "—"}</p>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-1 tracking-tighter">{t("dashboard.updated")}</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{lastUpdated || "Just now"}</p>
+          <div className="flex flex-col items-end">
+            <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">{t("dashboard.updated")}</p>
+            <p className="text-xs font-bold text-[var(--text-primary)]/80 tracking-tight underline decoration-[var(--soft-gold)]/30 underline-offset-4">{lastUpdated || "Live"}</p>
           </div>
         </div>
       )}
