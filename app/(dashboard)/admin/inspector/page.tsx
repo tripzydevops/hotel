@@ -36,7 +36,7 @@ export default function DebugDataPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B18] p-8">
+    <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">

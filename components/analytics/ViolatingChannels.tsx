@@ -76,7 +76,7 @@ export default function ViolatingChannels({
   };
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-gradient-to-b from-[#0A1629]/80 to-[#050B18] border border-white/5 shadow-2xl relative">
+    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-gradient-to-b from-[var(--deep-ocean-lighter)]/80 to-[var(--deep-ocean)] border border-white/5 shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-black text-white uppercase tracking-widest">Revenue Recovery</h2>
         {violations.length > 0 && (
@@ -91,7 +91,7 @@ export default function ViolatingChannels({
           violations.map((v, idx) => (
             <div
               key={idx}
-              className={`p-6 rounded-[1.5rem] bg-[#050B18]/50 border-2 relative overflow-hidden group transition-all ${
+              className={`p-6 rounded-[1.5rem] bg-[var(--deep-ocean)]/50 border-2 relative overflow-hidden group transition-all ${
                 v.severity === "high"
                   ? "border-rose-500/20 hover:border-rose-500/50"
                   : "border-yellow-500/20 hover:border-yellow-500/50"
@@ -154,7 +154,7 @@ export default function ViolatingChannels({
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#0A1629] border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
+              className="bg-[var(--deep-ocean-lighter)] border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
             >
               <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-transparent">
                 <div className="flex items-center gap-4">
@@ -186,7 +186,7 @@ export default function ViolatingChannels({
                   </div>
                 ) : (
                   <>
-                    <div className="bg-[#050B18] border border-white/5 rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
+                    <div className="bg-[var(--deep-ocean)] border border-white/5 rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
                       <pre className="text-sm text-slate-300 font-medium whitespace-pre-wrap font-sans">
                         {disputeLetter}
                       </pre>

@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/lib/theme";
 import ModalLoading from "@/components/ui/ModalLoading";
 
 // Modals
@@ -39,6 +40,7 @@ export default function DashboardLayout({
 }) {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   React.useEffect(() => {
     setMounted(true);
@@ -123,7 +125,7 @@ export default function DashboardLayout({
     (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
   return (
-    <div className="flex min-h-screen bg-transparent transition-colors duration-500">
+    <div className={`flex min-h-screen bg-transparent transition-colors duration-500 ${theme === 'light' ? 'light-theme' : ''}`}>
       <Sidebar profile={profile} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

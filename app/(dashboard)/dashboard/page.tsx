@@ -272,7 +272,7 @@ export default function Dashboard() {
                 ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
               `}
             >
-              <div className="bg-[var(--deep-ocean)]/60 backdrop-blur-xl hover:bg-indigo-500/10 px-6 py-3 rounded-[15px] flex items-center gap-3 transition-all border border-[var(--glass-border)] group-hover:border-indigo-500/30">
+              <div className="bg-[var(--glass-bg-accent)] backdrop-blur-xl hover:bg-[var(--bg-accent)] px-6 py-3 rounded-[15px] flex items-center gap-3 transition-all border border-[var(--glass-border)] group-hover:border-[var(--glass-border-hover)]">
                 <RefreshCw
                   className={`w-4 h-4 text-indigo-400 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-700"}`}
                 />

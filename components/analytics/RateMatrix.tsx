@@ -361,7 +361,7 @@ export default function RateMatrix({
                   key={comp.id || idx}
                   className={`group hover:bg-white/5 transition-all ${isTarget ? "bg-blue-500/5 hover:bg-blue-500/10" : ""}`}
                 >
-                  <td className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[#050B18]/90 backdrop-blur-sm z-10">
+                  <td className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[var(--deep-ocean)]/90 backdrop-blur-sm z-10">
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isTarget ? "bg-blue-500/20 border-blue-500/30" : "bg-white/5 border-white/5"}`}
                     >

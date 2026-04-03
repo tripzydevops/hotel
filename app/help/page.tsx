@@ -4,7 +4,7 @@ import { ChevronLeft, HelpCircle } from "lucide-react";
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-[#050B18] text-white p-8">
+    <div className="min-h-screen bg-[var(--deep-ocean)] text-[var(--text-primary)] p-8">
       <div className="max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8">
           <ChevronLeft className="w-4 h-4" />

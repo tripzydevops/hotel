@@ -40,7 +40,7 @@ jobs:
           # InsForge Regional Migration: 2026-03-28
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
           # [NEW] Backup keys for high-volume rotation

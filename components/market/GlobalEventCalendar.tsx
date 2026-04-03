@@ -23,7 +23,7 @@ export function GlobalEventCalendar() {
 
   if (loading) {
     return (
-      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
+      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[var(--deep-ocean-lighter)]/50 to-[var(--deep-ocean)]/50">
         <Loader2 className="w-8 h-8 text-[#F6C344] animate-spin mb-4" />
         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">
           Loading Global Market Calendar...
@@ -46,7 +46,7 @@ export function GlobalEventCalendar() {
 
   if (!events || events.length === 0) {
     return (
-      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
+      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[var(--deep-ocean-lighter)]/50 to-[var(--deep-ocean)]/50">
         <CalendarDays className="w-8 h-8 text-slate-600 mb-4" />
         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
           No Upcoming Events Detected
@@ -66,7 +66,7 @@ export function GlobalEventCalendar() {
   });
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 bg-gradient-to-br from-[#0A1629]/80 to-[#050B18] border border-white/5 shadow-2xl relative overflow-hidden group">
+    <div className="card-blur rounded-[2.5rem] p-8 bg-gradient-to-br from-[var(--deep-ocean-lighter)]/80 to-[var(--deep-ocean)] border border-white/5 shadow-2xl relative overflow-hidden group">
       {/* Background Accent */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#F6C344]/5 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
@@ -126,7 +126,7 @@ export function GlobalEventCalendar() {
                 return (
                   <div 
                     key={event.id || idx} 
-                    className="group/item p-2.5 rounded-xl bg-[#050B18]/40 hover:bg-[#050B18]/60 border border-white/5 hover:border-white/10 transition-all duration-200"
+                    className="group/item p-2.5 rounded-xl bg-[var(--deep-ocean)]/40 hover:bg-[var(--deep-ocean)]/60 border border-white/5 hover:border-white/10 transition-all duration-200"
                   >
                     <div className="flex items-start gap-3">
                       {/* Date Indicator Block */}
