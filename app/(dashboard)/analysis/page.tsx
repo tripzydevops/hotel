@@ -754,9 +754,10 @@ function KPICard({
 
   return (
     <motion.div
-      whileHover={{ y: -5, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-[var(--glass-border)]"} group relative hover:z-[100] cursor-pointer !overflow-visible`}
+      className="glass-card p-6 relative group !overflow-visible hover:z-[400] transition-all duration-300"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
@@ -786,43 +787,43 @@ function KPICard({
 
       {/* Hover Tooltip - Enhanced Readability & Contrast */}
       {hoverData && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-[200] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 min-w-[260px]">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-4 z-[500] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 min-w-[280px]">
           {/* Tooltip Tail/Arrow */}
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#13233D] border-t border-l border-white/10 rotate-45 z-[-1]" />
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#0B1E3B] border-t border-l border-white/20 rotate-45 z-[1]" />
           
-          <div className="p-5 bg-[#13233D]/98 border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-2xl ring-1 ring-black/50">
+          <div className="relative p-6 bg-[#0B1E3B] border border-white/20 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] ring-1 ring-black/50">
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
-                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
                   Price Leaderboard
                 </div>
-                <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1 thin-scrollbar">
-                  {hoverData.priceRankList.slice(0, 8).map((item) => (
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 thin-scrollbar">
+                  {hoverData.priceRankList.map((item) => (
                     <div
                       key={item.id}
-                      className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${item.is_target
-                        ? "bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20"
-                        : "bg-white/5 border border-transparent hover:bg-white/10"
+                      className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-all ${item.is_target
+                        ? "bg-[var(--soft-gold)]/15 border border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20"
+                        : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
                         }`}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-3">
                         <span
-                          className={`text-[10px] font-black w-5 ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]/40"}`}
+                          className={`text-[10px] font-black w-5 text-center ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"}`}
                         >
                           #{item.rank}
                         </span>
                         <span
-                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold" : "text-[var(--text-primary)]/80"} truncate max-w-[130px]`}
+                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold px-0.5" : "text-white/80 font-medium"} truncate max-w-[140px]`}
                         >
                           {item.name}
                         </span>
                       </div>
                       <span
-                        className={`text-xs font-black ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]/90"}`}
+                        className={`text-xs font-black tabular-nums ${item.is_target ? "text-[var(--soft-gold)]" : "text-white"}`}
                       >
                         {symbol}
-                        {item.price != null ? Math.round(item.price) : "N/A"}
+                        {item.price != null ? Math.round(item.price).toLocaleString() : "N/A"}
                       </span>
                     </div>
                   ))}
@@ -831,30 +832,34 @@ function KPICard({
             )}
             {hoverData.type === "average" && (
               <>
-                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
                   Market Comparison
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                    <span className="text-xs text-white/60 font-medium italic">Base Metric</span>
+                    <span className="text-[10px] font-black text-[var(--text-muted)] tracking-wider">ARI INDEX</span>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-secondary)] font-medium">Your Current Rate</span>
-                    <span className="text-sm font-black text-[var(--soft-gold)]">
+                    <span className="text-xs text-white/70 font-medium">Your Current Rate</span>
+                    <span className="text-base font-black text-[var(--soft-gold)] tabular-nums">
                       {symbol}
-                      {Math.round(hoverData.targetPrice || 0)}
+                      {Math.round(hoverData.targetPrice || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-secondary)] font-medium">Market Average (ARI)</span>
-                    <span className="text-sm font-black text-white">
+                    <span className="text-xs text-white/70 font-medium">Market Average</span>
+                    <span className="text-base font-black text-white tabular-nums">
                       {symbol}
-                      {Math.round(hoverData.marketAvg || 0)}
+                      {Math.round(hoverData.marketAvg || 0).toLocaleString()}
                     </span>
                   </div>
                   {hoverData.targetPrice && hoverData.marketAvg && (
-                    <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-1">
-                      <span className="text-xs text-[var(--text-secondary)] font-medium">Rate Performance</span>
+                    <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-2">
+                      <span className="text-xs text-white/90 font-bold uppercase tracking-tighter">Performance</span>
                       <span
-                        className={`text-sm font-black px-2 py-0.5 rounded ${hoverData.targetPrice > hoverData.marketAvg ? "bg-[var(--alert-red)]/10 text-[var(--alert-red)]" : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)]"}`}
+                        className={`text-sm font-black px-2.5 py-1 rounded-lg ${hoverData.targetPrice > hoverData.marketAvg ? "bg-[var(--alert-red)]/10 text-[var(--alert-red)] border border-[var(--alert-red)]/20" : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"}`}
                       >
                         {hoverData.targetPrice > hoverData.marketAvg ? "+" : ""}
                         {(
@@ -862,7 +867,7 @@ function KPICard({
                             hoverData.marketAvg) *
                           100
                         )?.toFixed(1)}
-                        %
+                        % {hoverData.targetPrice > hoverData.marketAvg ? "Above" : "Below"}
                       </span>
                     </div>
                   )}
@@ -871,40 +876,40 @@ function KPICard({
             )}
             {hoverData.type === "spread" && (
               <>
-                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
                   Price Range Analysis
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {hoverData.minHotel && (
-                    <div className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[var(--optimal-green)]/5 border border-[var(--optimal-green)]/20">
+                    <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--optimal-green)]/10 border border-[var(--optimal-green)]/20 shadow-inner">
                       <div className="flex flex-col">
-                        <span className="text-[9px] text-[var(--optimal-green)] uppercase font-black mb-0.5">
-                          Market Min
+                        <span className="text-[9px] text-[var(--optimal-green)] uppercase font-black tracking-widest mb-1">
+                          Market Minimum
                         </span>
-                        <span className="text-xs text-white/90 truncate max-w-[150px] font-medium">
+                        <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
                           {hoverData.minHotel.name}
                         </span>
                       </div>
-                      <span className="text-sm font-black text-[var(--optimal-green)]">
+                      <span className="text-base font-black text-[var(--optimal-green)] tabular-nums">
                         {symbol}
-                        {Math.round(hoverData.minHotel.price)}
+                        {Math.round(hoverData.minHotel.price).toLocaleString()}
                       </span>
                     </div>
                   )}
                   {hoverData.maxHotel && (
-                    <div className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[var(--alert-red)]/5 border border-[var(--alert-red)]/20">
+                    <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--alert-red)]/10 border border-[var(--alert-red)]/20 shadow-inner">
                       <div className="flex flex-col">
-                        <span className="text-[9px] text-[var(--alert-red)] uppercase font-black mb-0.5">
-                          Market Max
+                        <span className="text-[9px] text-[var(--alert-red)] uppercase font-black tracking-widest mb-1">
+                          Market Maximum
                         </span>
-                        <span className="text-xs text-white/90 truncate max-w-[150px] font-medium">
+                        <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
                           {hoverData.maxHotel.name}
                         </span>
                       </div>
-                      <span className="text-sm font-black text-[var(--alert-red)]">
+                      <span className="text-base font-black text-[var(--alert-red)] tabular-nums">
                         {symbol}
-                        {Math.round(hoverData.maxHotel.price)}
+                        {Math.round(hoverData.maxHotel.price).toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -912,12 +917,12 @@ function KPICard({
               </>
             )}
             {hoverData.type === "info" && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
                   Metric Perspective
                 </div>
-                <div className="text-xs text-[var(--text-secondary)] leading-relaxed font-medium italic p-3 bg-white/5 rounded-xl border border-white/5">
+                <div className="text-sm text-white/80 leading-relaxed font-medium p-4 bg-white/5 rounded-2xl border border-white/10 italic">
                   "{hoverData.description}"
                 </div>
               </div>
