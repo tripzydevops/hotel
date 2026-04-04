@@ -308,6 +308,7 @@ export default function AnalysisPage() {
         {/* Global KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 overflow-visible">
           <KPICard
+            index={0}
             title={t("analysis.marketAverage")}
             value={
               data?.market_average != null
@@ -324,6 +325,7 @@ export default function AnalysisPage() {
             }}
           />
           <KPICard
+            index={1}
             title={t("analysis.targetPrice")}
             value={
               data?.target_price != null
@@ -339,6 +341,7 @@ export default function AnalysisPage() {
             }}
           />
           <KPICard
+            index={2}
             title={t("analysis.marketSpread")}
             value={
               data?.market_min && data?.market_max
@@ -355,6 +358,7 @@ export default function AnalysisPage() {
             }}
           />
           <KPICard
+            index={3}
             title={t("analysis.marketPosition")}
             value={data?.competitive_rank != null ? `#${data.competitive_rank}` : "N/A"}
             subtitle={`of ${data?.total_hotels ?? 0} hotels`}
@@ -366,6 +370,7 @@ export default function AnalysisPage() {
             }}
           />
           <KPICard
+            index={4}
             title="Avg Rate Index (ARI)"
             value={data?.ari ? `${data.ari}%` : "100%"}
             subtitle="Market Rate Competitiveness"
@@ -377,6 +382,7 @@ export default function AnalysisPage() {
             }}
           />
           <KPICard
+            index={5}
             title="Sentiment Index"
             value={data?.sentiment_index ? `${data.sentiment_index}%` : "100%"}
             subtitle="Reputation vs Market"
@@ -737,9 +743,11 @@ function KPICard({
   subtitle,
   icon,
   highlight = false,
+  index,
   trend,
   hoverData,
 }: {
+  index: number;
   title: string;
   value: string;
   subtitle: string;
