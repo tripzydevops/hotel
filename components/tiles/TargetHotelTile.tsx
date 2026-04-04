@@ -32,7 +32,6 @@ interface TargetHotelTileProps {
   vendor?: string;
   priceHistory?: PricePoint[];
   checkIn?: string;
-  checkOut?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
   onViewDetails?: (hotel: any) => void;

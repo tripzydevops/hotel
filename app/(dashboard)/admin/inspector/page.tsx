@@ -36,15 +36,15 @@ export default function DebugDataPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
+    <div className="min-h-screen bg-[#050B18] p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Data Inspector
             </h1>
-            <p className="text-[var(--text-muted)] font-medium">
+            <p className="text-slate-400 font-medium">
               Raw data visualization for debugging
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function DebugDataPage() {
             }
             status={
               dashboardData?.target_hotel ||
-                (dashboardData?.competitors && dashboardData.competitors.length > 0)
+                dashboardData?.competitors?.length > 0
                 ? "success"
                 : "warning"
             }
@@ -115,15 +115,15 @@ export default function DebugDataPage() {
 
         {/* Target Hotel Data */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <div className="w-1 h-5 bg-blue-500 rounded-full" />
             Target Hotel
           </h2>
           {dashboardData?.target_hotel ? (
-            <div className="bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl overflow-hidden">
+            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-[var(--glass-bg-accent)] text-[var(--text-muted)] font-bold uppercase text-xs">
+                  <thead className="bg-white/5 text-slate-400 font-bold uppercase text-xs">
                     <tr>
                       <th className="px-4 py-3">Name</th>
                       <th className="px-4 py-3">Price</th>
@@ -133,7 +133,7 @@ export default function DebugDataPage() {
                       <th className="px-4 py-3">SerpApi ID</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--glass-border)] text-[var(--text-primary)]">
+                  <tbody className="divide-y divide-white/5 text-white">
                     <tr>
                       <td className="px-4 py-3 font-medium">
                         {dashboardData.target_hotel.name}
@@ -164,19 +164,19 @@ export default function DebugDataPage() {
               </div>
 
               {/* Raw JSON Toggle for Target */}
-              <div className="p-4 bg-[var(--bg-card)]/50 border-t border-[var(--glass-border)]">
+              <div className="p-4 bg-black/20 border-t border-white/5">
                 <details className="text-xs">
-                  <summary className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer select-none">
+                  <summary className="text-slate-500 hover:text-white cursor-pointer select-none">
                     View Raw Target JSON
                   </summary>
-                  <pre className="mt-2 text-emerald-500 font-mono overflow-auto max-h-60 p-2 rounded bg-black/20">
+                  <pre className="mt-2 text-green-400 font-mono overflow-auto max-h-60 p-2 rounded bg-black/50">
                     {JSON.stringify(dashboardData.target_hotel, null, 2)}
                   </pre>
                 </details>
               </div>
             </div>
           ) : (
-            <div className="p-8 bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl text-center text-[var(--text-muted)]">
+            <div className="p-8 bg-white/5 border border-white/10 rounded-xl text-center text-slate-500">
               No target hotel found.
             </div>
           )}
@@ -184,15 +184,15 @@ export default function DebugDataPage() {
 
         {/* Competitor Data */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <div className="w-1 h-5 bg-amber-500 rounded-full" />
             Competitors
           </h2>
           {dashboardData?.competitors?.length > 0 ? (
-            <div className="bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl overflow-hidden">
+            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-[var(--glass-bg-accent)] text-[var(--text-muted)] font-bold uppercase text-xs">
+                  <thead className="bg-white/5 text-slate-400 font-bold uppercase text-xs">
                     <tr>
                       <th className="px-4 py-3">Name</th>
                       <th className="px-4 py-3">Price</th>
@@ -201,7 +201,7 @@ export default function DebugDataPage() {
                       <th className="px-4 py-3">Similarity</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--glass-border)] text-[var(--text-primary)]">
+                  <tbody className="divide-y divide-white/5 text-white">
                     {dashboardData.competitors.map((comp: any) => (
                       <tr key={comp.id}>
                         <td className="px-4 py-3 font-medium">{comp.name}</td>
@@ -226,7 +226,7 @@ export default function DebugDataPage() {
               </div>
             </div>
           ) : (
-            <div className="p-8 bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] rounded-xl text-center text-[var(--text-muted)]">
+            <div className="p-8 bg-white/5 border border-white/10 rounded-xl text-center text-slate-500">
               No competitors found.
             </div>
           )}
@@ -234,11 +234,11 @@ export default function DebugDataPage() {
 
         {/* Full Raw Data Dump */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <div className="w-1 h-5 bg-slate-500 rounded-full" />
             Full API Response
           </h2>
-          <div className="bg-[#0a0f1e] border border-[var(--glass-border)] rounded-xl p-4 overflow-hidden">
+          <div className="bg-[#0a0f1e] border border-white/10 rounded-xl p-4 overflow-hidden">
             <div className="overflow-auto max-h-[500px]">
               <pre className="text-xs text-slate-300 font-mono">
                 {dashboardData

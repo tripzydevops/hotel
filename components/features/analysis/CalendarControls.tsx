@@ -43,21 +43,18 @@ export default function CalendarControls({
   excludedHotelIds,
   onExcludedChange,
 }: CalendarControlsProps) {
-  // Use fallback categories if none are provided
-  const safeRoomTypes = availableRoomTypes?.length > 0 ? availableRoomTypes : ["Standard", "Deluxe", "Suite"];
-
   // Group room types by standardized category
   const uniqueRoomCategories = Array.from(
-    new Set(safeRoomTypes.map((rt) => getStandardizedRoomCategory(rt)))
+    new Set(availableRoomTypes.map((rt) => getStandardizedRoomCategory(rt)))
   ).sort();
 
   // Helper to find the first actual room type for a selected category
   const getFirstRoomForCategory = (category: string) => {
-    const matches = safeRoomTypes.filter(
+    const matches = availableRoomTypes.filter(
       (rt) => getStandardizedRoomCategory(rt) === category
     );
 
-    if (matches.length === 0) return category; // Fallback to category name if no exact match
+    if (matches.length === 0) return undefined;
 
     // KAIZEN: If category is Standard, prioritize those that are actually named "Standard"
     // to avoid picking "Başkanlık" or other miscategorized rooms first.

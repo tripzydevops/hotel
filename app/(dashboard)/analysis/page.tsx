@@ -26,8 +26,6 @@ import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
 import dynamic from "next/dynamic";
 import RoomTypeMapper from "@/components/features/analysis/RoomTypeMapper";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 // Heavy chart components are loaded dynamically on the client side only to 
 // optimize the main application bundle size and initial painting speed.
@@ -422,23 +420,21 @@ export default function AnalysisPage() {
                 <h3 className="text-sm font-black text-[var(--soft-gold)] uppercase tracking-widest mb-2">
                   {t("analysis.advisory.title")}
                 </h3>
-                <div className="text-xl font-medium text-[var(--text-primary)] italic leading-relaxed">
+                <div className="text-xl font-medium text-[var(--text-primary)] italic leading-relaxed whitespace-pre-wrap">
                   {streamingNarrative ? (
-                    <div className="animate-in fade-in duration-500 markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {streamingNarrative}
-                      </ReactMarkdown>
+                    <div className="animate-in fade-in duration-500">
+                      {streamingNarrative}
                       {loading && (
                         <span className="inline-block w-1.5 h-5 ml-1 bg-[var(--soft-gold)] animate-pulse align-middle" />
                       )}
                     </div>
                   ) : data?.advisory_keys && data.advisory_keys.length > 0
                     ? data.advisory_keys.map((key: string, idx: number) => (
-                      <span key={idx} className="block mb-2">
+                      <span key={idx}>
                         {t(`analysis.advisory.${key}` as any)}{" "}
                       </span>
                     ))
-                    : <p className="opacity-60">{t("analysis.advisory.analyzing" as any)}</p>}
+                    : `"${data?.advisory_msg || "Analyzing market context..."}"`}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex -space-x-2">

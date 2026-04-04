@@ -46,49 +46,49 @@ export default function RapidPulseHistory({
           <button
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group glass-card rounded-2xl p-4 hover:bg-[var(--glass-border)] transition-all border-[var(--glass-border)] text-left relative overflow-hidden h-full flex flex-col justify-between min-h-[140px]"
+            className="group glass-card rounded-[2.5rem] p-6 hover:bg-white/[0.04] transition-all border-white/5 hover:border-white/10 text-left relative overflow-hidden h-full flex flex-col justify-between"
           >
             {/* Background Glow */}
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/5 blur-3xl group-hover:bg-indigo-500/10 transition-all rounded-full" />
 
-            <div className="flex flex-col gap-4 relative z-10 w-full">
-              <div className="flex items-center justify-between w-full">
-                <div className="p-2 rounded-lg bg-[var(--glass-border)] text-[var(--text-muted)] group-hover:text-indigo-500 transition-all">
+            <div className="flex flex-col gap-5 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-white/5 text-[var(--text-muted)] group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all">
                   <Activity className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-[var(--text-primary)] uppercase tracking-wider opacity-80">
+                <span className="text-[10px] font-black text-[var(--text-muted)] group-hover:text-white uppercase tracking-[0.2em] opacity-60">
                   {formatDate(session.created_at)}
                 </span>
               </div>
 
-              <div className="w-full">
-                <p className="text-xs sm:text-sm font-black text-[var(--text-primary)] mb-2 group-hover:text-indigo-500 transition-colors tracking-tight uppercase leading-snug break-words">
+              <div>
+                <p className="text-sm font-black text-[var(--text-primary)] mb-1.5 group-hover:text-indigo-300 transition-colors tracking-tight uppercase">
                   {t("history.propertiesBatch").replace(
                     "{0}",
                     session.hotels_count.toString(),
                   )}
                 </p>
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[var(--glass-border)] border border-[var(--glass-border)] w-fit mt-auto">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/5 w-fit">
                   <span
-                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                    className={`w-1.5 h-1.5 rounded-full ${
                       session.status === "completed"
-                        ? "bg-[var(--optimal-green)] shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                        ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
                         : "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"
                     }`}
                   />
-                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest leading-none">
+                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest">
                     {session.status} Scan
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-[var(--glass-border)] transition-all w-full">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] group-hover:text-indigo-500 transition-colors">
+            <div className="flex items-center justify-between pt-5 mt-5 border-t border-white/5 group-hover:border-indigo-500/20 transition-all">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-indigo-300 transition-colors">
                 {t("history.viewDetails")}
               </span>
-              <div className="p-1.5 rounded-full bg-[var(--glass-border)] transition-all">
-                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-primary)] group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+              <div className="p-1.5 rounded-full bg-white/5 group-hover:bg-indigo-500/10 transition-all">
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-indigo-300 group-hover:translate-x-0.5 transition-all" />
               </div>
             </div>
           </button>

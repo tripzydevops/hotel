@@ -235,7 +235,6 @@ export const en = {
         "Volume Strategy: Your low rates are attracting budget-conscious guests.",
       reputation_focus: "Focus on reputation management.",
       aggressive_monitoring: "Monitor competitors for aggressive price cuts.",
-      analyzing: "Analyzing market context...",
     },
     targetPrice: "Target Price",
   },
@@ -413,9 +412,6 @@ export const en = {
     every4h: "Every 4 hours",
     every12h: "Every 12 hours",
     daily: "Daily (Recommended)",
-    regionalDisplay: "Regional & Display",
-    preferredCurrency: "Preferred Currency",
-    currencyDesc: "Prices across the dashboard will be converted to your preferred currency.",
   },
   sentiment: {
     title: "Sentiment Comparison",

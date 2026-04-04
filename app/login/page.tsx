@@ -16,7 +16,8 @@ export default function LoginPage() {
   const [emailForVerification, setEmailForVerification] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -30,7 +31,13 @@ export default function LoginPage() {
         ? await insforge.auth.signInWithPassword({ email, password })
         : await insforge.auth.signUp({ email, password });
 
-
+      setDebugInfo({
+        baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+        isLogin,
+        email,
+        result
+      });
 
       if (result.error) {
         const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any).message || "Auth failed";
@@ -77,6 +84,12 @@ export default function LoginPage() {
         otp: otp
       });
       
+      setDebugInfo({
+        action: "verify",
+        email: emailForVerification,
+        result
+      });
+
       if (result.error) {
         setError(typeof result.error === 'string' ? result.error : (result.error as any).message || "Verification failed");
         setIsLoading(false);
@@ -310,7 +323,27 @@ export default function LoginPage() {
           {t("auth.protectedText")}
         </div>
 
+        <button 
+          onClick={() => setShowDebug(!showDebug)}
+          className="mt-6 block mx-auto text-[11px] px-4 py-1.5 rounded-full border border-white/10 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all"
+        >
+          {showDebug ? "Hide Debug System" : "Show Debug System"}
+        </button>
 
+        {showDebug && (
+          <div className="mt-4 p-4 bg-black/80 rounded-xl border border-white/10 text-[10px] font-mono text-green-400 overflow-auto max-h-48">
+            <pre>{JSON.stringify({
+              config: {
+                // KAİZEN: Show actual client baseUrl instead of potentially stale env var
+                baseUrl: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SUPABASE_URL,
+                anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'missing'
+              },
+              lastResult: debugInfo,
+              isVerifying,
+              emailForVerification
+            }, null, 2)}</pre>
+          </div>
+        )}
       </div>
     </div>
   );

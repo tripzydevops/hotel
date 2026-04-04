@@ -240,7 +240,6 @@ export const tr = {
       reputation_focus: "İtibar yönetimine odaklanın.",
       aggressive_monitoring:
         "Agresif fiyat indirimleri için rakipleri izleyin.",
-      analyzing: "Pazar bağlamı analiz ediliyor...",
     },
   },
   sentiment: {
@@ -410,9 +409,6 @@ export const tr = {
     every4h: "4 saatte bir",
     every12h: "12 saatte bir",
     daily: "Günlük (Önerilen)",
-    regionalDisplay: "Bölgesel ve Ekran",
-    preferredCurrency: "Tercih Edilen Para Birimi",
-    currencyDesc: "Panel genelindeki fiyatlar tercih ettiğiniz para birimine dönüştürülecektir.",
   },
   subscription: {
     title: "Abonelik Planları",

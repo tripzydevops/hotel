@@ -93,6 +93,7 @@ export default function Sidebar({
     <aside className="w-80 glass-panel border-r border-[var(--glass-border)] flex flex-col h-screen sticky top-0 z-40 transition-all duration-500 overflow-hidden shadow-[var(--glass-shadow)]">
       {/* Decorative Gradient Background for Sidebar */}
       <div className="absolute top-0 left-0 w-full h-64 bg-[var(--soft-gold-glow)] blur-[80px] -z-10" />
+
       {/* Logo Section */}
       <div className="p-10 mb-2">
         <HotelPlusLogo variant="sidebar" />

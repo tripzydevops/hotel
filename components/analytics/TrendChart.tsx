@@ -50,9 +50,8 @@ export default function TrendChart({
 
   if (!data || data.length < 2) return null;
   
-  // Unique ID for gradient and filter
+  // Unique ID for gradient (simple hash to avoid conflicts)
   const gradientId = `trendGradient-${color.replace("#", "")}`;
-  const filterId = `trendGlow-${color.replace("#", "")}`;
 
   return (
     <svg 
@@ -64,32 +63,24 @@ export default function TrendChart({
     >
         <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.3"/>
+                <stop offset="0%" stopColor={color} stopOpacity="0.2"/>
                 <stop offset="100%" stopColor={color} stopOpacity="0"/>
             </linearGradient>
-
-            <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="1.5" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
         </defs>
         
         <polygon 
             points={areaPoints} 
             fill={`url(#${gradientId})`} 
             stroke="none"
-            className="transition-all duration-500"
         />
 
         <polyline 
             points={linePoints} 
             fill="none" 
             stroke={color} 
-            strokeWidth="2.5" 
+            strokeWidth="2" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            filter={`url(#${filterId})`}
-            className="transition-all duration-500"
         />
     </svg>
   );

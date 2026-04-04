@@ -56,7 +56,6 @@ class ScraperAgent:
             return
 
         try:
-            import json
             res = (
                 self.db.table("scan_sessions")
                 .select("reasoning_trace")
@@ -69,17 +68,12 @@ class ScraperAgent:
                 db_trace = res.data[0].get("reasoning_trace")
                 if isinstance(db_trace, list):
                     raw_trace = db_trace
-                elif isinstance(db_trace, str) and db_trace:
-                    try:
-                        raw_trace = json.loads(db_trace)
-                    except:
-                        raw_trace = []
             
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": json.dumps(raw_trace),
+                    "reasoning_trace": raw_trace,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", sid_key).execute()
@@ -92,7 +86,7 @@ class ScraperAgent:
         """
         KAİZEN: Cross-User Shared Cache (GlobalPulse)
         Searches price_logs for ANY hotel that shares the same serp_api_id.
-        Verification logic: Data must be within 6 hours.
+        Verification logic: Data must be within 12 hours.
         """
         if not serp_api_id or serp_api_id == "None":
             return None
@@ -105,8 +99,8 @@ class ScraperAgent:
             if not sharing_hotel_ids:
                 return None
 
-        # Verification logic: Data must be within 6 hours.
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
+            # 2. Check for recent logs for any of these hotels
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat()
             
             logs_res = (
                 self.db.table("price_logs")

@@ -8,8 +8,11 @@ const nextConfig: NextConfig = {
   // [REMOVED] Legacy External Proxy. API now handled by local Python backend at api/index.py
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
-  // [REMOVED] Experimental features cleaned up as per project rules (No Experimental)
-
+  experimental: {
+    // optimizePackageImports reduces bundle size by only importing the parts of 
+    // these heavy libraries that are actually used in each page.
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
   images: {
     remotePatterns: [
       {
@@ -58,24 +61,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // P-API REWRITES (V25): Dynamic Environment-based Routing
-  // Moves rewrites from vercel.json to next.config.ts to allow project-specific
-  // routing without manual configuration in vercel.json.
-  async rewrites() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-    if (!supabaseUrl) return [];
-
-    return [
-      {
-        source: "/auth/v1/:path*",
-        destination: `${supabaseUrl}/auth/v1/:path*`,
-      },
-      {
-        source: "/rest/v1/:path*",
-        destination: `${supabaseUrl}/rest/v1/:path*`,
-      },
-    ];
-  },
+  // REMOVED: Duplicate rewrites() — vercel.json handles all rewrites
+  // and takes precedence on Vercel. Having both caused unpredictable routing.
 };
 
 export default nextConfig;

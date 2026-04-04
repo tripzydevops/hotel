@@ -88,131 +88,111 @@ export default function SubscriptionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-300">
-      <div className="glass-modal w-full max-w-5xl shadow-2xl border border-[var(--soft-gold)]/20 my-8">
-        {/* Tactical Header */}
-        <div className="p-8 border-b border-[var(--glass-border)] flex items-center justify-between shrink-0 bg-[var(--soft-gold)]/5 sticky top-0 z-10 backdrop-blur-md">
-          <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="glass-card w-full max-w-4xl p-6 animate-in fade-in zoom-in-95 duration-200 my-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
               {t("subscription.title")}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)]" />
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-muted)] font-black">
-                {t("subscription.subtitle").replace("{0}", currentPlan.toUpperCase())}
-              </p>
-            </div>
+            <p className="text-[var(--text-muted)] text-sm mt-1">
+              {t("subscription.subtitle").replace(
+                "{0}",
+                currentPlan.toUpperCase(),
+              )}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--glass-bg-accent)] rounded-xl transition-all hover:rotate-90 group border border-transparent hover:border-[var(--glass-border)]"
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
           >
-            <X className="w-6 h-6 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-8">
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map((plan) => {
-              const isCurrent = currentPlan === plan.id;
-              const isPopular = plan.popular;
-              const Icon = plan.icon;
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {PLANS.map((plan) => {
+            const isCurrent = currentPlan === plan.id;
+            const isPopular = plan.popular;
+            const Icon = plan.icon;
 
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative rounded-2xl p-8 border transition-all duration-500 flex flex-col group/card ${
-                    isPopular
-                      ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)] shadow-[0_0_40px_rgba(212,175,55,0.1)] scale-105 z-10 h-full"
-                      : "bg-[var(--glass-bg-accent)] border-[var(--glass-border)] hover:border-[var(--soft-gold)]/30 hover:bg-[var(--soft-gold)]/5 h-full"
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-2xl p-6 border transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl md:hover:shadow-[var(--soft-gold)]/10 flex flex-col ${isPopular
+                    ? "bg-gradient-to-b from-white/10 to-transparent border-[var(--soft-gold)]"
+                    : "bg-white/5 border-white/10"
                   }`}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-[0_0_15px_var(--soft-gold)] whitespace-nowrap">
-                      {t("subscription.mostPopular")}
-                    </div>
-                  )}
-
-                  <div className={`p-4 rounded-2xl w-fit mb-6 transition-transform group-hover/card:scale-110 duration-500 ${
-                    isPopular ? "bg-[var(--soft-gold)]/20" : "bg-[var(--glass-bg)] border border-[var(--glass-border)]"
-                  }`}>
-                    <Icon
-                      className={`w-8 h-8 ${isPopular ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]"}`}
-                    />
+              >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--soft-gold)] text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
+                    {t("subscription.mostPopular")}
                   </div>
+                )}
 
-                  <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight group-hover/card:text-[var(--soft-gold)] transition-colors">
-                    {plan.name}
-                  </h3>
-                  
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-4xl font-black text-[var(--text-primary)] tracking-tighter">
-                      {plan.price}
-                    </span>
-                    <span className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                      / {plan.period}
-                    </span>
-                  </div>
-                  
-                  <p className="text-xs font-medium text-[var(--text-muted)] mb-8 leading-relaxed">
-                    {plan.description}
-                  </p>
-
-                  <div className="space-y-4 mb-10 flex-1">
-                    {plan.features.map((feature, i) => (
-                      <div
-                        key={i}
-                        className="flex items-start gap-3 group/feature"
-                      >
-                        <div className={`mt-0.5 p-0.5 rounded-full ${isPopular ? "bg-[var(--soft-gold)]/20" : "bg-[var(--glass-border)]"}`}>
-                          <Check className={`w-3 h-3 ${isPopular ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]"}`} />
-                        </div>
-                        <span className="text-xs font-semibold text-[var(--text-secondary)] leading-snug group-hover/feature:text-[var(--text-primary)] transition-colors">
-                          {feature}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => handleUpgrade(plan.id)}
-                    disabled={isCurrent || loading !== null}
-                    className={`w-full py-4 px-6 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${
-                      isCurrent
-                        ? "bg-[var(--glass-border)] text-[var(--text-muted)] cursor-default border border-transparent"
-                        : isPopular
-                        ? "btn-premium shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)]"
-                        : "bg-[var(--text-primary)] text-[var(--deep-ocean)] hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] active:scale-95"
-                    }`}
-                  >
-                    {loading === plan.id ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : isCurrent ? (
-                      <>
-                        <Shield className="w-4 h-4" />
-                        <span>{t("subscription.currentPlan")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4" />
-                        <span>{t("subscription.upgrade")}</span>
-                      </>
-                    )}
-                  </button>
+                <div className="p-3 bg-white/5 rounded-xl w-fit mb-4">
+                  <Icon
+                    className={`w-6 h-6 ${isPopular ? "text-[var(--soft-gold)]" : "text-white"}`}
+                  />
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="mt-12 text-center">
-            <div className="inline-block px-6 py-3 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--glass-border)]">
-              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.25em] font-black">
-                {t("subscription.contactSales")}
-              </p>
-            </div>
-          </div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {plan.name}
+                </h3>
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="text-3xl font-black text-white">
+                    {plan.price}
+                  </span>
+                  <span className="text-sm text-[var(--text-muted)]">
+                    {plan.period}
+                  </span>
+                </div>
+                <p className="text-sm text-[var(--text-muted)] mb-6 h-10">
+                  {plan.description}
+                </p>
+
+                <div className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((feature, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 text-sm text-[var(--text-secondary)]"
+                    >
+                      <Check
+                        className={`w-4 h-4 shrink-0 mt-0.5 ${isPopular ? "text-[var(--soft-gold)]" : "text-white/50"}`}
+                      />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={isCurrent || loading !== null}
+                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isCurrent
+                      ? "bg-white/10 text-white cursor-default"
+                      : isPopular
+                        ? "btn-gold shadow-lg shadow-[var(--soft-gold)]/20 hover:scale-[1.02]"
+                        : "bg-white text-black hover:bg-gray-100"
+                    }`}
+                >
+                  {loading === plan.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isCurrent ? (
+                    t("subscription.currentPlan")
+                  ) : (
+                    t("subscription.upgrade")
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 text-center text-xs text-[var(--text-muted)]">
+          {t("subscription.contactSales")}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any, cast
 from uuid import UUID
 from supabase import Client
@@ -60,27 +60,17 @@ class AnalystAgent:
             return
 
         try:
-            import json
             # Fetch existing trace
             existing = self.db.table("scan_sessions").select("reasoning_trace").eq("id", sid_key).single().execute()
-            raw_db = existing.data.get("reasoning_trace") if existing.data else None
-            
-            raw_trace = []
-            if isinstance(raw_db, list):
-                raw_trace = raw_db
-            elif isinstance(raw_db, str) and raw_db:
-                try:
-                    raw_trace = json.loads(raw_db)
-                except:
-                    raw_trace = []
+            raw_trace = existing.data.get("reasoning_trace") or [] if existing.data else []
             
             # Append new logs
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": json.dumps(raw_trace),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "reasoning_trace": raw_trace,
+                    "updated_at": datetime.now().isoformat(),
                 }
             ).eq("id", sid_key).execute()
 
@@ -281,9 +271,7 @@ class AnalystAgent:
 
             target_data = target.data[0]
             
-            # Extract City and Coordinates
-            location = target_data.get("location", "")
-            target_city = location.split(",")[0].strip() if "," in location else location.strip()
+            # Extract Coordinates
             target_lat = target_data.get("latitude")
             target_lon = target_data.get("longitude")
             
@@ -310,8 +298,7 @@ class AnalystAgent:
                 "target_hotel_id": str(target_uuid),
                 "target_lat": float(target_lat) if target_lat is not None else None,
                 "target_lon": float(target_lon) if target_lon is not None else None,
-                "max_distance_km": float(radius_km),
-                "target_city": target_city
+                "max_distance_km": float(radius_km)
             }).execute()
 
             if not res.data:

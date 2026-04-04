@@ -92,8 +92,6 @@ class ApiClient {
 
     if (!response.ok) {
       let errorMessage = response.statusText;
-      const statusCode = response.status;
-      
       try {
         const errorData = await response.json();
         if (typeof errorData.detail === "string") {
@@ -106,18 +104,9 @@ class ApiClient {
           errorMessage = errorData.message || errorData.error || errorMessage;
         }
       } catch (e) {
-        // Use a more descriptive fallback if statusText is empty
-        if (!errorMessage) {
-          if (statusCode === 401) errorMessage = "Unauthorized session; please log in again.";
-          else if (statusCode === 403) errorMessage = "Forbidden; you do not have access to this resource.";
-          else if (statusCode === 500) errorMessage = "Internal server error; please check system logs.";
-          else errorMessage = `HTTP Error ${statusCode}`;
-        }
+        // Ignore JSON parse error, stick to statusText
       }
-      
-      const finalMessage = `API Error [${statusCode}]: ${errorMessage}`;
-      console.error(finalMessage);
-      throw new Error(finalMessage);
+      throw new Error(`API Error: ${errorMessage}`);
     }
 
     return response.json();

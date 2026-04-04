@@ -11,8 +11,6 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 // EXPLANATION: Maps the upstream `label` prop (e.g. "Value Leader") to the
 // corresponding i18n dictionary key (e.g. "strategicMap.positions.valueLeader").
@@ -206,15 +204,9 @@ export default function AdvisorQuadrant({
                     {quadrantStyle.icon}
                     <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
                   </div>
-                  <div className="text-[11px] leading-relaxed text-white/70 mb-3 markdown-content">
-                    {customInsight ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {customInsight}
-                      </ReactMarkdown>
-                    ) : (
-                      <p className="whitespace-pre-line">{posDescription}</p>
-                    )}
-                  </div>
+                  <p className="text-[11px] leading-relaxed text-white/70 mb-3 whitespace-pre-line">
+                    {customInsight || posDescription}
+                  </p>
                   <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
                     <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
                     <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
@@ -264,15 +256,9 @@ export default function AdvisorQuadrant({
               <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
                 {t("strategicMap.marketInsight")}
               </div>
-              <div className="text-xs font-medium text-white/80 leading-relaxed markdown-content">
-                {customInsight ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {customInsight}
-                  </ReactMarkdown>
-                ) : (
-                  <p className="whitespace-pre-line">{posInsight}</p>
-                )}
-              </div>
+              <p className="text-xs font-medium text-white/80 leading-relaxed whitespace-pre-line">
+                {customInsight || posInsight}
+              </p>
             </div>
           </div>
 
