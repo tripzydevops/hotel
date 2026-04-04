@@ -7,6 +7,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import {
   TrendingUp,
@@ -332,6 +333,10 @@ export default function AnalysisPage() {
             subtitle={t("hotelDetails.liveRates")}
             icon={<Target className="w-5 h-5" />}
             highlight
+            hoverData={{
+              type: "info",
+              description: "The ideal price to achieve maximum occupancy and revenue based on current market data and competitive positioning.",
+            }}
           />
           <KPICard
             title={t("analysis.marketSpread")}
@@ -748,8 +753,10 @@ function KPICard({
     : "$";
 
   return (
-    <div
-      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-[var(--glass-border)]"} group relative hover:z-50 cursor-pointer overflow-visible`}
+    <motion.div
+      whileHover={{ y: -5, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`glass-card p-6 border-l-4 ${highlight ? "border-l-[var(--soft-gold)]" : "border-l-[var(--glass-border)]"} group relative hover:z-[100] cursor-pointer !overflow-visible`}
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
@@ -911,6 +918,6 @@ function KPICard({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
