@@ -16,7 +16,7 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
 
 ## 📊 Core Features
 
--   **Gemini 2026 Intelligence 🧠**: Powered by `gemini-3-flash-preview` and `google-genai` SDK for autonomous market reasoning and "Deep Think" insights.
+-   **Gemini 2026 (Gen 3) Intelligence 🧠**: Powered by `gemini-3-flash-preview` and `google-genai` SDK for autonomous market reasoning and "Deep Think" insights.
 -   **Market Analysis**: Real-time price benchmarking against market averages.
 -   **Rate Intelligence Grid**: 14-day lookahead comparison with "Strict Matching" for Suites.
 -   **Discovery Engine 👻**: Autonomous "Ghost Competitor" identification using semantic vector search.

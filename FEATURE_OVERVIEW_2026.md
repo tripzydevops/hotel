@@ -36,7 +36,7 @@ The "Smart Memory" system ensures that sentiment data is not just a snapshot of 
 
 ---
 
-## 3. Gemini 2026 Migration
+## 3. Gemini 2026 (Gen 3) Migration
 **Status**: Live (`gemini-3-flash-preview`)
 
 We migrated our AI reasoning layer to the latest Gemini models and SDKs to leverage superior market analysis capabilities and "Deep Think" reasoning traces.
