@@ -6,6 +6,10 @@ from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from fastapi import Depends
 import traceback
+from backend.utils.logger import get_logger
+
+# EXPLANATION: Module-level logger for consistent behavior
+logger = get_logger(__name__)
 
 def load_env_standard():
     """

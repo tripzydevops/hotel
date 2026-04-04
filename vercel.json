@@ -20,6 +20,10 @@
       "destination": "/api/index.py"
     },
     {
+      "source": "/api/auth/v1/(.*)",
+      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
+    },
+    {
       "source": "/api/auth/(.*)",
       "destination": "/api/index.py"
     },
