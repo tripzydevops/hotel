@@ -10,6 +10,7 @@ from backend.services.monitor_service import (
     run_monitor_background,
 )
 from datetime import datetime, timezone
+from backend.utils.limiter import limiter
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
@@ -18,8 +19,10 @@ router_legacy = APIRouter(tags=["monitor"])
 
 
 @router.post("/monitor", response_model=MonitorResult)
+@limiter.limit("1/minute")
 async def trigger_monitor(
     background_tasks: BackgroundTasks,
+    request: Request,  # Required by slowapi
     options: Optional[ScanOptions] = None,
     db: Client = Depends(get_supabase_rls),
     current_active_user=Depends(get_current_active_user),
@@ -42,6 +45,7 @@ async def trigger_monitor(
 @router.post("/trigger-scan")
 @router_legacy.get("/trigger-scan")
 @router_legacy.post("/trigger-scan")
+@limiter.limit("1/minute")
 async def check_scheduled_scan(
     background_tasks: BackgroundTasks,
     request: Request,

@@ -95,6 +95,7 @@ async def trigger_monitor_logic(
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
 
     # 1. ADMIN BYPASS / LIMIT ENFORCEMENT
+    profile_data = {}
     try:
         is_admin = False
         profile_res = (
@@ -123,7 +124,8 @@ async def trigger_monitor_logic(
                 .eq("id", str(user_id))
                 .execute()
             )
-            profile_data = full_profile_res.data[0] if full_profile_res.data else {}
+            if full_profile_res.data:
+                profile_data = full_profile_res.data[0]
             access = await SubscriptionService.get_user_limits(db, profile_data)
 
             if access.get("state") == "locked":
@@ -175,7 +177,13 @@ async def trigger_monitor_logic(
                 )
 
     except Exception as e:
-        logger.error(f"Limit check exception: {e}")
+        logger.error(f"Limit check exception: {e}", exc_info=True)
+        return MonitorResult(
+            hotels_checked=0,
+            prices_updated=0,
+            alerts_generated=0,
+            errors=["SAFETY_BLOCK: Scan blocked — rate limit verification failed. Please try again."],
+        )
 
     # 2. DEFAULT DATES NORMALIZATION
     check_in = options.check_in if options and options.check_in else None
@@ -278,7 +286,6 @@ async def trigger_monitor_logic(
                 user_id=user_id,
                 hotels=hotels,
                 options=normalized_options,
-                db=db,
                 session_id=UUID(session_id) if session_id else None,
             )
             logger.info(f"Background scan started for session {session_id}")
@@ -302,20 +309,31 @@ async def run_monitor_background(
     user_id: UUID,
     hotels: List[Dict[str, Any]],
     options: Optional[ScanOptions],
-    db: Client,
-    session_id: Optional[UUID],
+    db: Optional[Client] = None,
+    session_id: Optional[UUID] = None,
 ):
     """
     Background orchestrator. Mission Control for specialized AI agents.
+    
+    EXPLANATION: Isolated Client Context (H7)
+    We ensure a fresh Supabase client is used inside this background task.
+    Sharing the request-scoped client often leads to 'httpx.PoolTimeout'
+    or 'Client closed' errors if the original HTTP request finishes quickly.
     """
+    # 0. Safety: Get fresh client if not provided or if we're in background
+    from backend.utils.db import get_supabase
+    _db = db or get_supabase(admin=True)
+    if not _db:
+        logger.critical(f"Background: Database unavailable for user {user_id}")
+        return
     try:
         # 1. Initialize Agents (Lazy Loading)
         from backend.agents.scraper_agent import ScraperAgent
         from backend.agents.analyst_agent import AnalystAgent
         from backend.agents.notifier_agent import NotifierAgent
 
-        scraper = ScraperAgent(db)
-        analyst = AnalystAgent(db)
+        scraper = ScraperAgent(_db)
+        analyst = AnalystAgent(_db)
         notifier = NotifierAgent()
 
         # 2. Get User Settings
@@ -323,7 +341,7 @@ async def run_monitor_background(
         settings = {}
         try:
             settings_res = (
-                db.table("settings")
+                _db.table("settings")
                 .select("*")
                 .eq("user_id", str(user_id))
                 .execute()
@@ -348,7 +366,7 @@ async def run_monitor_background(
         try:
             from backend.services.room_type_service import update_room_type_catalog
 
-            await update_room_type_catalog(db, scraper_results, hotels)
+            await update_room_type_catalog(_db, scraper_results, hotels)
         except Exception as e:
             logger.warning(f"Room Catalog failure: {e}")
 
@@ -356,7 +374,7 @@ async def run_monitor_background(
         if analysis.get("alerts"):
             try:
                 settings_res = (
-                    db.table("settings")
+                    _db.table("settings")
                     .select("*")
                     .eq("user_id", str(user_id))
                     .execute()
@@ -376,7 +394,7 @@ async def run_monitor_background(
             final_status = "partial"
 
         if session_id:
-            db.table("scan_sessions").update(
+            _db.table("scan_sessions").update(
                 {"status": final_status, "completed_at": datetime.now().isoformat()}
             ).eq("id", str(session_id)).execute()
 
@@ -385,8 +403,8 @@ async def run_monitor_background(
         # somehow missed the trigger update, or a scheduled scan that finished.
         try:
             # FIX: Fetch both profile and settings to ensure frequency consistency
-            profile_res = db.table("profiles").select("next_scan_at, scan_frequency_minutes").eq("id", str(user_id)).execute()
-            settings_res = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
+            profile_res = _db.table("profiles").select("next_scan_at, scan_frequency_minutes").eq("id", str(user_id)).execute()
+            settings_res = _db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
             
             if profile_res.data:
                 prof = profile_res.data[0]
@@ -412,7 +430,7 @@ async def run_monitor_background(
                         freq = prof.get("scan_frequency_minutes")
                         
                     new_nxt = (now_utc + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
-                    db.table("profiles").update({"next_scan_at": new_nxt}).eq("id", str(user_id)).execute()
+                    _db.table("profiles").update({"next_scan_at": new_nxt}).eq("id", str(user_id)).execute()
                     logger.info(f"Background: Force-advanced next_scan_at for {user_id} to {new_nxt}")
         except Exception as fe:
             logger.warning(f"Background: Final sync safety failed: {fe}")
@@ -424,7 +442,7 @@ async def run_monitor_background(
             try:
                 # Capture Error in reasoning trace
                 res = (
-                    db.table("scan_sessions")
+                    _db.table("scan_sessions")
                     .select("reasoning_trace")
                     .eq("id", str(session_id))
                     .execute()
@@ -432,7 +450,7 @@ async def run_monitor_background(
                 trace = res.data[0].get("reasoning_trace") or [] if res.data else []
                 trace.append(f"[SYSTEM FAILURE] {str(e)}")
 
-                db.table("scan_sessions").update(
+                _db.table("scan_sessions").update(
                     {
                         "status": "failed",
                         "reasoning_trace": trace,

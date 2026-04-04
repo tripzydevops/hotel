@@ -25,6 +25,9 @@ from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
+from backend.utils.limiter import limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 
 logger = get_logger(__name__)
 
@@ -56,6 +59,7 @@ from backend.api import (
 # (which Vercel uses for builds), the entire backend will crash with a 500 error at startup.
 # We explicitly pinned 'google-genai>=1.0.0' to resolve this.
 # KAİZEN: Always use gemini-3-* models. gemini-1.5-* is legacy.
+from backend.services.auth_service import get_current_admin_user
 
 
 # Initialize FastAPI
@@ -71,6 +75,10 @@ app = FastAPI(
     version="2026.03 (V23)",
     redirect_slashes=False,
 )
+
+# Setup Rate Limiting State
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # SECURITY MIDDLEWARE: Inject standard protection headers
 @app.middleware("http")
@@ -189,7 +197,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # Basic Health/Diagnostic Endpoints
 @app.get("/api/health/db")
-async def db_health():
+async def db_health(admin: Any = Depends(get_current_admin_user)):
     import os
     return {
         "resolved_url": "https://pa5riyqv.eu-central.insforge.app",
@@ -209,7 +217,10 @@ async def health_check():
 
 
 @app.get("/api/debug/system-report")
-async def system_report(db: Client = Depends(get_supabase)):
+async def system_report(
+    db: Client = Depends(get_supabase),
+    admin: Any = Depends(get_current_admin_user)
+):
     """Deep diagnostics for environment and database connectivity."""
 
     # 1. Environment Check (Masked)
@@ -291,13 +302,14 @@ app.include_router(auth_routes.router)
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
 @app.get("/api/cron")
-async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
+async def trigger_cron_job(request: Request, background_tasks: BackgroundTasks):
     """External cron entry point."""
     cron_secret = os.getenv("CRON_SECRET")
     if not cron_secret:
         logger.critical("SECURITY CONFIG ERROR: CRON_SECRET not set in environment.")
         return JSONResponse(status_code=500, content={"detail": "System configuration error"})
         
+    key = request.headers.get("X-Cron-Secret")
     if key != cron_secret:
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
 

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from backend.utils.limiter import limiter
+from backend.utils.errors import raise_masked_error
 from pydantic import BaseModel
 from typing import Optional
 from supabase import Client
@@ -19,8 +21,10 @@ class DisputeRequest(BaseModel):
     language: Optional[str] = "tr"
 
 @router.post("/generate-dispute")
+@limiter.limit("5/minute")
 async def api_generate_dispute(
     req: DisputeRequest,
+    request: Request,
     db: Client = Depends(get_supabase_rls)
 ):
     """
@@ -42,5 +46,4 @@ async def api_generate_dispute(
         
         return {"letter": letter}
     except Exception as e:
-        logger.error(f"Error in generate-dispute API: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_masked_error(e, message="Failed to generate dispute letter", context="RecoveryGenerateDispute")

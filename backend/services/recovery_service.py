@@ -51,7 +51,7 @@ async def generate_dispute_letter(
     if client:
         try:
             response = client.models.generate_content(
-                model="gemini-3.0-flash-preview",
+                model="gemini-3.1-flash",
                 contents=prompt,
             )
             return response.text
@@ -67,7 +67,7 @@ async def generate_dispute_letter(
     
     import httpx
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash-preview:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key={api_key}"
         payload = {
             "contents": [{
                 "parts": [{"text": prompt}]

@@ -22,7 +22,9 @@ async def get_enriched_profile_logic(
     to handle complex enterprise/admin overrides without polluting the primary metadata table.
     """
     user_id_str = str(user_id)
-    is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
+    
+    admin_uids = [uid.strip() for uid in os.getenv("ADMIN_UIDS", "").split(",") if uid.strip()]
+    is_dev_user = user_id_str in admin_uids
 
     # 0. Prepare admin access for truth checking and self-healing
     from backend.utils.db import get_supabase_client
@@ -111,8 +113,7 @@ async def get_enriched_profile_logic(
     # 2. Admin Bypass Logic: Force Enterprise if user is a known admin or has a specific ID
     # This ensures internal staff always has full platform access.
     try:
-        specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
-        is_specific_admin = user_id_str == specific_admin_id
+        is_specific_admin = user_id_str in admin_uids
 
         if admin_db:
             admin_email_found = None
@@ -126,14 +127,8 @@ async def get_enriched_profile_logic(
             is_admin_email = False
             if admin_email_found:
                 email_lower = admin_email_found.lower()
-                is_admin_email = email_lower in [
-                    "admin@hotel.plus",
-                    "selcuk@rate-sentinel.com",
-                    "asknsezen@gmail.com",
-                    "askinsezen@gmail.com",
-                    "yusuf@tripzy.travel",
-                    "elif@tripzy.travel",
-                ] or email_lower.endswith("@hotel.plus")
+                admin_emails = [email.strip().lower() for email in os.getenv("ADMIN_EMAILS", "").split(",") if email.strip()]
+                is_admin_email = email_lower in admin_emails
 
             is_admin_role = (
                 base_data

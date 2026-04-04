@@ -17,11 +17,9 @@ The **Hotel Rate Sentinel** project is in a **Healthy** state with a highly modu
 - **Modern Stack:** React 19 and TanStack Query provide a high-performance, reactive foundation.
 
 ### 🛡️ Security Posture
-- **[RESOLVED] XSS Vulnerability:** Fixed a high-severity Jinja2 autoescape issue in `report_templates.py`.
-- **[RESOLVED] Dependencies:** Resolved 7 frontend vulnerabilities via `npm audit fix` and fixed missing `Jinja2` backend dependency.
-- **[HEALTHY] Database RLS:** Verified that core user tables (`hotels`, `price_logs`, `alerts`) follow strict owner-based Row Level Security.
-- **[HEALTHY] Authorization:** Verified consistent use of Supabase RLS and `verify_ownership` checks across all sensitive API routes.
-- **[HEALTHY] Headers:** Strong global security headers (CSP, HSTS, no-sniff) are enforced in `main.py`.
+- **[RESOLVED] Headers:** Strong global security headers (CSP, HSTS, no-sniff) are enforced in `main.py`.
+- **[RESOLVED] Dependency Vulnerabilities:** Fixed critical Next.js SSRF/DoS vulnerabilities via `npm audit fix --force`.
+- **[RESOLVED] Diagnostic Route Protection:** Protected sensitive system/db health endpoints with mandatory administrative authentication.
 - **[HEALTHY] Database Safety:** All RPCs and queries use safe, parameter-bound patterns, preventing SQL Injection.
 
 ### 🏥 Database Health
@@ -30,7 +28,7 @@ The **Hotel Rate Sentinel** project is in a **Healthy** state with a highly modu
 - [HEALTHY] Optimization: Presence of index on `hotels(deleted_at)` confirmed for optimized soft-delete filtering.
 
 ### ⚠️ Areas for Improvement
-- **Frontend Dependencies:** 7 vulnerabilities (6 High) found in `package.json`. Recommended action: `npm audit fix`.
+- **[RESOLVED] Frontend Dependencies:** Run `npm audit fix --force` to patch Next.js vulnerabilities.
 - **Task Completeness:** A `TODO` remains in `notification_service.py` for Twilio/Meta API integration.
 
 ## Health Score Cards

@@ -227,6 +227,8 @@ async def get_dashboard_logic(
                         "recorded_at": current_log.get("recorded_at"),
                         "vendor": current_log.get("vendor"),
                         "check_in": current_log.get("check_in_date"),
+                        "check_out": current_log.get("check_out_date"),
+                        "adults": current_log.get("adults"),
                         "offers": current_log.get("parity_offers") or [],
                         "room_types": current_log.get("room_types") or [],
                     }
