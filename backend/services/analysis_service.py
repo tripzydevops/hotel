@@ -169,36 +169,49 @@ def get_price_for_room(
         return None, None, 0.0
 
     t_lower = target_room_type.lower().strip()
-    is_standard = any(s in t_lower for s in ["standard", "standart", "economy", "ekonomik", "promo", "base"]) or not target_room_type
+    r_types = price_log.get("room_types") or []
+
+    # 1. OPTIMIZED MATCHING: EXACT NAME FIRST
+    # If the user selected a specific room name from the dropdown, find it exactly.
+    if isinstance(r_types, list) and target_room_type:
+        for r in r_types:
+            if not isinstance(r, dict): continue
+            r_name = (r.get("name") or "").strip().lower()
+            if r_name == t_lower:
+                p = _extract_price(r.get("price"))
+                if p is not None and p > 0:
+                    return p, r.get("name"), 1.0
+
+    # 2. CATEGORY DETECTION (Fallback to Keywords)
+    # Synchronizing with frontend's roomNormalization.ts logic
+    standard_keys = ["standard", "standart", "economy", "ekonomik", "promo", "base", "classic", "klasik", "double", "twin", "single", "tek", "çift"]
+    is_standard = any(s in t_lower for s in standard_keys) or not target_room_type
     is_suite = any(s in t_lower for s in ["suite", "süit"])
-    is_deluxe = any(s in t_lower for s in ["deluxe", "superior", "premium"])
+    is_deluxe = any(s in t_lower for s in ["deluxe", "superior", "premium", "corner"])
     
-    # 1. HANDLE STANDARD ROOM (Prioritize Lead Price)
-    if is_standard:
-        # Lead price is the most reliable "from" price for Standard
+    # 3. HANDLE STANDARD CATEGORY
+    if is_standard and not is_suite and not is_deluxe:
+        # Lead price is the most reliable "from" price for Standard in the market logs
         lead_p = _extract_price(price_log.get("price"))
         if lead_p is not None and lead_p > 0:
             return lead_p, "Standard (Main)", 1.0
             
-        # Very rare fallback to finding the absolute minimum in room_types if lead price is null
-        r_types = price_log.get("room_types") or []
+        # Fallback within category if lead price is null
         if isinstance(r_types, list) and r_types:
             valid_prices = []
             for r in r_types:
                 if not isinstance(r, dict): continue
-                # Basic guard: Don't pick a suite as a fallback for standard lead price
                 r_name = (r.get("name") or "").lower()
-                if any(k in r_name for k in ["suite", "süit", "presidential", "kral"]): continue
-                p = _extract_price(r.get("price"))
-                if p: valid_prices.append((p, r.get("name") or "Standard"))
+                # Must match standard keys OR be a safe generic name
+                if any(k in r_name for k in standard_keys) or not any(k in r_name for k in ["suite", "süit", "deluxe", "superior", "premium"]):
+                    p = _extract_price(r.get("price"))
+                    if p: valid_prices.append((p, r.get("name") or "Standard"))
             if valid_prices:
                 valid_prices.sort(key=lambda x: x[0])
                 return valid_prices[0][0], valid_prices[0][1], 0.8
         return None, None, 0.0
 
-    # 2. HANDLE PREMIUM ROOMS (Deluxe, Suite)
-    # Strictly check room_types array. No fallback to lead price.
-    r_types = price_log.get("room_types") or []
+    # 4. HANDLE PREMIUM CATEGORIES (Deluxe, Suite)
     if not isinstance(r_types, list) or not r_types:
         return None, None, 0.0 
         
@@ -209,21 +222,21 @@ def get_price_for_room(
         p = _extract_price(r.get("price"))
         if not p: continue
 
-        # Strict keyword matching
-        if is_suite and any(k in r_name for k in ["suite", "süit"]):
+        # Strict keyword matching per category
+        if is_suite and any(k in r_name for k in ["suite", "süit", "presidential", "kral"]):
             matches.append((p, r.get("name"), 0.9))
         elif is_deluxe and any(k in r_name for k in ["deluxe", "superior", "premium", "corner"]):
-            # Guard: Must not be a standard room mislabeled or in a variants list
+            # Verification: Ensure it's not actually a 'Standard' room with some weird name
             if any(s in r_name for s in ["standard", "standart"]) and "deluxe" not in r_name:
                 continue
             matches.append((p, r.get("name"), 0.9))
             
     if matches:
-        # Pick the most representative one (usually lowest of the matches)
+        # Pick the most representative (lowest) price for the selected category
         matches.sort(key=lambda x: x[0])
         return matches[0][0], matches[0][1], matches[0][2]
 
-    # No match found for specific type -> Return None (results in "No Price" in UI)
+    # No match found for requested room or its category
     return None, None, 0.0
 
 
@@ -526,8 +539,8 @@ async def perform_market_analysis(
     # We scan more than just the first log to ensure stability of the dropdown options.
     all_room_names = {"Standard"}
     for p_logs in hotel_prices_map.values():
-        # Scan up to 15 recent logs for each hotel to capture all room types they've recently offered
-        recent_logs = cast(List[Dict[str, Any]], p_logs)[:15]
+        # Scan up to 30 recent logs for each hotel to capture all room types they've recently offered
+        recent_logs = cast(List[Dict[str, Any]], p_logs)[:30]
         for p_log in recent_logs:
             rt_list = p_log.get("room_types") or []
             for rt in rt_list:

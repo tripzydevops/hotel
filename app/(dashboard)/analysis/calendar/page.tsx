@@ -58,9 +58,9 @@ export default function CalendarPage() {
       if (result.all_hotels && allHotels.length === 0)
         setAllHotels(result.all_hotels);
 
-      // Auto-select "Standard Room" if no room type selected yet & available
+      // Auto-select a default room type ONLY if nothing is selected yet
       if (
-        (!roomType || !result.available_room_types.includes(roomType)) &&
+        !roomType &&
         result.available_room_types &&
         result.available_room_types.length > 0
       ) {

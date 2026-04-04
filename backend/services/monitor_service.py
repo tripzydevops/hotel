@@ -469,7 +469,7 @@ async def run_scheduler_check_logic():
     from backend.utils.db import get_supabase
 
     try:
-        supabase = get_supabase()
+        supabase = get_supabase(admin=True)
         if not supabase:
             logger.error("CRON: Database unavailable")
             return
