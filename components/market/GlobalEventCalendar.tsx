@@ -104,7 +104,7 @@ export function GlobalEventCalendar() {
       </div>
 
       {/* Compact Monthly Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 relative z-10 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
         {Object.entries(groupedEvents).map(([month, monthEvents]) => (
           <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-white/5">
             <h3 className="text-[11px] font-black text-[#F6C344] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
