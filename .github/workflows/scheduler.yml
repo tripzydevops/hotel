@@ -54,4 +54,4 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
         run: |
-          python -m backend.scripts.run_scheduled_scraper --batch-size 20
+          python -m backend.scripts.run_scheduler
