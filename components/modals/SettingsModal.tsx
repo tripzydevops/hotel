@@ -193,17 +193,17 @@ export default function SettingsModal({
                         {t("settings.scanFrequency")}
                       </label>
                       <div className="relative group">
-                         <select
-                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm appearance-none cursor-pointer transition-all hover:bg-white/10"
-                          value={frequency}
-                          onChange={(e) => setFrequency(parseInt(e.target.value))}
-                        >
-                          <option value="0">{t("settings.realtime")}</option>
-                          <option value="60">{t("settings.hourly")}</option>
-                          <option value="240">{t("settings.every4h")}</option>
-                          <option value="720">{t("settings.every12h")}</option>
-                          <option value="1440">{t("settings.daily")}</option>
-                        </select>
+                          <select
+                           className="w-full bg-[#0B1F3B] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm appearance-none cursor-pointer transition-all hover:bg-[#15294A]"
+                           value={frequency}
+                           onChange={(e) => setFrequency(parseInt(e.target.value))}
+                         >
+                           <option className="bg-[#0B1F3B] text-white" value="0">{t("settings.realtime")}</option>
+                           <option className="bg-[#0B1F3B] text-white" value="60">{t("settings.hourly")}</option>
+                           <option className="bg-[#0B1F3B] text-white" value="240">{t("settings.every4h")}</option>
+                           <option className="bg-[#0B1F3B] text-white" value="720">{t("settings.every12h")}</option>
+                           <option className="bg-[#0B1F3B] text-white" value="1440">{t("settings.daily")}</option>
+                         </select>
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white/60 transition-colors">
                           <SettingsIcon className="w-4 h-4 rotate-90" />
                         </div>

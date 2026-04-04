@@ -412,7 +412,12 @@ async def run_monitor_background(
                         freq = prof.get("scan_frequency_minutes")
                         
                     new_nxt = (now_utc + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
-                    db.table("profiles").update({"next_scan_at": new_nxt}).eq("id", str(user_id)).execute()
+                    # Use upsert for profile sync safety to handle missing records
+                    db.table("profiles").upsert({
+                        "id": str(user_id),
+                        "next_scan_at": new_nxt,
+                        "scan_frequency_minutes": freq
+                    }).execute()
                     logger.info(f"Background: Force-advanced next_scan_at for {user_id} to {new_nxt}")
         except Exception as fe:
             logger.warning(f"Background: Final sync safety failed: {fe}")
@@ -639,9 +644,12 @@ async def run_scheduler_check_logic():
 
                 next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
 
-                supabase.table("profiles").update({"next_scan_at": next_run_iso}).eq(
-                    "id", user_id
-                ).execute()
+                # Use upsert to handle cases where the user may not have a profile record yet
+                supabase.table("profiles").upsert({
+                    "id": user_id,
+                    "next_scan_at": next_run_iso,
+                    "scan_frequency_minutes": freq
+                }).execute()
                 s_logger.info(
                     f"User {user_id}: Updated next_scan_at to {next_run_iso} (intended was {intended_at_str})"
                 )

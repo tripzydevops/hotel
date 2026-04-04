@@ -379,7 +379,7 @@ async def get_dashboard_logic(
         # This aligns the Dashboard UI with the actual backend scheduler.
         next_scan_at = (
             core_profile_res.data.get("next_scan_at")
-            if core_profile_res and hasattr(core_profile_res, "data")
+            if core_profile_res and hasattr(core_profile_res, "data") and core_profile_res.data
             else None
         )
 
@@ -387,22 +387,27 @@ async def get_dashboard_logic(
         if not next_scan_at:
             freq = (
                 (user_settings.get("check_frequency_minutes") or 0)
-                if user_settings
+                if user_settings and isinstance(user_settings, dict)
                 else 0
             )
             if freq > 0:
-                latest = None
+                latest_ts = None
                 for h in enriched_hotels:
-                    if h["price_history"]:
-                        ts = h["price_history"][0]["recorded_at"]
-                        if latest is None or ts > latest:
-                            latest = ts
-                if latest and isinstance(latest, str):
+                    if h.get("price_history"):
+                        ts = h["price_history"][0].get("recorded_at")
+                        if ts:
+                            if latest_ts is None or ts > latest_ts:
+                                latest_ts = ts
+                
+                if latest_ts and isinstance(latest_ts, str):
                     try:
-                        last_run = datetime.fromisoformat(latest.replace("Z", "+00:00"))
+                        last_run = datetime.fromisoformat(latest_ts.replace("Z", "+00:00"))
                         next_scan_at = (last_run + timedelta(minutes=freq)).isoformat()
                     except (ValueError, AttributeError) as e:
-                        logger.warning(f"Failed to parse latest scan date '{latest}': {e}")
+                        logger.warning(f"Failed to parse latest scan date '{latest_ts}': {e}")
+                else:
+                    # Final fallback: If no history exists, next scan is scheduled for Now + freq
+                    next_scan_at = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat()
 
         # 8. Dynamic Market Insight (Sentiment Page bridging)
         synthetic_narrative = "No strategic narrative available yet. Run a scan to generate AI insights."

@@ -194,13 +194,22 @@ async def update_settings(
             )
             
             # 3.5 [KAIZEN] Initialize/Update next_scan_at in profiles
-            # Why: If the user changes their frequency (timer), the scheduler needs to know.
-            # Especially for new users where next_scan_at is NULL (Safe/Lean Mode).
-            if "check_frequency_minutes" in update_data:
-                freq = update_data["check_frequency_minutes"]
-                # We update next_scan_at to now() + freq
-                new_next = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
-                db.table("profiles").update({"next_scan_at": new_next}).eq("id", str(user_id)).execute()
+            # Only update if the frequency has changed to avoid resetting the scan timer unnecessarily.
+            existing_freq = existing.data[0].get("check_frequency_minutes") if existing.data else None
+            new_freq = update_data.get("check_frequency_minutes")
+            
+            if new_freq is not None and new_freq != existing_freq:
+                try:
+                    new_next = (datetime.now(timezone.utc) + timedelta(minutes=new_freq)).isoformat().replace("+00:00", "Z")
+                    # Use upsert to handle cases where the profile record might be missing or needs initialization
+                    db.table("profiles").upsert({
+                        "id": str(user_id),
+                        "next_scan_at": new_next,
+                        "scan_frequency_minutes": new_freq
+                    }).execute()
+                    print(f"[Settings] Updated scan schedule for {user_id} to {new_next} (Frequency: {new_freq}m)")
+                except Exception as sync_e:
+                    print(f"[Settings] Profile sync failed: {sync_e}")
         except Exception as e:
             # If update fails (e.g. column missing), try fallback without push_subscription
             if "push_subscription" in update_data:
@@ -226,6 +235,15 @@ async def update_settings(
                 .insert({"user_id": str(user_id), **update_data})
                 .execute()
             )
+            
+            # Initialize schedule for new settings
+            new_freq = update_data.get("check_frequency_minutes", 1440)
+            new_next = (datetime.now(timezone.utc) + timedelta(minutes=new_freq)).isoformat().replace("+00:00", "Z")
+            db.table("profiles").upsert({
+                "id": str(user_id),
+                "next_scan_at": new_next,
+                "scan_frequency_minutes": new_freq
+            }).execute()
         except Exception as e:
             if "push_subscription" in update_data:
                 del update_data["push_subscription"]
@@ -237,20 +255,9 @@ async def update_settings(
             else:
                 raise e
 
-    # KAİZEN: Synchronize next_scan_at if frequency changed
-    if "check_frequency_minutes" in update_data:
-        try:
-            freq = update_data["check_frequency_minutes"]
-            now_dt = datetime.now(timezone.utc).replace(microsecond=0)
-            next_run = (
-                (now_dt + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
-            )
-            db.table("profiles").update({"next_scan_at": next_run}).eq(
-                "id", str(user_id)
-            ).execute()
-            print(f"[Settings] Synced next_scan_at for {user_id} to {next_run}")
-        except Exception as e:
-            print(f"[Settings] Profile sync failed: {e}")
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to update settings")
+    return result.data[0]
 
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to update settings")

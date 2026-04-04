@@ -12,7 +12,8 @@ load_dotenv(".env.local", override=True)
 import sys
 sys.path.append(os.getcwd())
 
-from backend.utils.db import get_supabase, convert_currency
+from backend.utils.db import get_supabase_client as get_supabase
+from backend.utils.helpers import convert_currency
 from backend.services.price_comparator import price_comparator
 from fastapi.encoders import jsonable_encoder
 
