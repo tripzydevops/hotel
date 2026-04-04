@@ -21,6 +21,7 @@ from backend.utils.sentiment_utils import (
 from backend.services.analysis_service import (
     generate_synthetic_narrative,
     calculate_rate_recommendation,
+    get_price_for_room,
 )
 
 logger = get_logger(__name__)
@@ -203,11 +204,16 @@ async def get_dashboard_logic(
             current_log = prices[0] if prices else None
             prev_log = prices[1] if len(prices) > 1 else None
             price_info = None
-            if current_log and current_log.get("price") is not None:
+            if current_log:
                 try:
-                    curr_p = float(current_log["price"])
-                    curr_c = current_log.get("currency") or "USD"
-                    active_prices.append(curr_p)
+                    # [NEW] Use Strict Source Routing for Dashboard Prices
+                    # This ensures the 'standard' price in dashboard matches the analysis selection.
+                    target_room = h.get("room_type_standard") or "Standard"
+                    curr_p, matched_name, confidence = get_price_for_room(current_log, target_room, {})
+                    
+                    if curr_p is not None:
+                        curr_c = current_log.get("currency") or "USD"
+                        active_prices.append(curr_p)
 
                     prev_p = None
                     if prev_log and prev_log.get("price") is not None:

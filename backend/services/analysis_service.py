@@ -161,117 +161,69 @@ def get_price_for_room(
 ) -> Tuple[Optional[float], Optional[str], float]:
     """
     Finds the best matching room price within a price log.
+    STRICT SOURCE ROUTING:
+    - Standard -> Lead Price (top-level 'price') is the primary source.
+    - Deluxe/Suite -> 'room_types' array is the ONLY source.
     """
-    r_types = price_log.get("room_types") or []
-    if not isinstance(r_types, list):
+    if not price_log:
         return None, None, 0.0
 
-    hid = str(price_log.get("hotel_id", ""))
-    allowed_names = allowed_room_names_map.get(hid)
+    t_lower = target_room_type.lower().strip()
+    is_standard = any(s in t_lower for s in ["standard", "standart", "economy", "ekonomik", "promo", "base"]) or not target_room_type
+    is_suite = any(s in t_lower for s in ["suite", "süit"])
+    is_deluxe = any(s in t_lower for s in ["deluxe", "superior", "premium"])
+    
+    # 1. HANDLE STANDARD ROOM (Prioritize Lead Price)
+    if is_standard:
+        # Lead price is the most reliable "from" price for Standard
+        lead_p = _extract_price(price_log.get("price"))
+        if lead_p is not None and lead_p > 0:
+            return lead_p, "Standard (Main)", 1.0
+            
+        # Very rare fallback to finding the absolute minimum in room_types if lead price is null
+        r_types = price_log.get("room_types") or []
+        if isinstance(r_types, list) and r_types:
+            valid_prices = []
+            for r in r_types:
+                if not isinstance(r, dict): continue
+                # Basic guard: Don't pick a suite as a fallback for standard lead price
+                r_name = (r.get("name") or "").lower()
+                if any(k in r_name for k in ["suite", "süit", "presidential", "kral"]): continue
+                p = _extract_price(r.get("price"))
+                if p: valid_prices.append((p, r.get("name") or "Standard"))
+            if valid_prices:
+                valid_prices.sort(key=lambda x: x[0])
+                return valid_prices[0][0], valid_prices[0][1], 0.8
+        return None, None, 0.0
 
-    if allowed_names:
-        allowed_lower = {a.lower().strip() for a in allowed_names}
-        for r in r_types:
-            if isinstance(r, dict):
-                r_name = r.get("name", "")
-                if r_name.lower().strip() in allowed_lower:
-                    t_lower = target_room_type.lower()
-                    r_lower = r_name.lower()
-
-                    is_standard_t = any(s in t_lower for s in ["standard", "standart"])
-                    is_standard_r = any(s in r_lower for s in ["standard", "standart"])
-
-                    # 1. Suite Guard
-                    if "suite" in t_lower and not any(
-                        k in r_lower for k in ["suite", "süit"]
-                    ):
-                        continue
-
-                    # 2. Deluxe Guard
-                    if (
-                        any(k in t_lower for k in ["deluxe", "superior", "premium"])
-                        and is_standard_r
-                        and "deluxe" not in r_lower
-                    ):
-                        continue
-
-                    # 3. Standard Leak Guard
-                    if not is_standard_t and is_standard_r:
-                        if not ("suite" in t_lower and "suite" in r_lower):
-                            continue
-
-                    return (
-                        _extract_price(r.get("price")),
-                        r_name,
-                        0.82 + (0.1 * int(r_name == target_room_type)),
-                    )
-
-    target_variants = [target_room_type.lower()]
-    if any(s in target_room_type.lower() for s in ["standard", "standart"]):
-        target_variants.extend(["standard", "standart", "klasik", "classic", "ekonomik", "economy", "promo"])
-    if "suite" in target_room_type.lower():
-        target_variants.append("süit")
-    if any(k in target_room_type.lower() for k in ["deluxe", "superior", "premium"]):
-        target_variants.extend(["deluxe", "superior", "premium", "corner"])
-    if any(k in target_room_type.lower() for k in ["family", "aile"]):
-        target_variants.extend(["family", "aile", "connection", "connected", "bağlantılı"])
-
+    # 2. HANDLE PREMIUM ROOMS (Deluxe, Suite)
+    # Strictly check room_types array. No fallback to lead price.
+    r_types = price_log.get("room_types") or []
+    if not isinstance(r_types, list) or not r_types:
+        return None, None, 0.0 
+        
+    matches = []
     for r in r_types:
-        if not isinstance(r, dict):
-            continue
+        if not isinstance(r, dict): continue
         r_name = (r.get("name") or "").lower()
-        c_name = (r.get("canonical_name") or "").lower()
-        c_code = (r.get("canonical_code") or "").upper()
+        p = _extract_price(r.get("price"))
+        if not p: continue
 
-        if target_room_type.lower() in ["standard", "standart"] and c_code == "STD":
-            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.95
-
-        if any(v in c_name for v in target_variants):
-            if "suite" in target_room_type.lower() and not any(k in c_name for k in ["suite", "süit"]):
+        # Strict keyword matching
+        if is_suite and any(k in r_name for k in ["suite", "süit"]):
+            matches.append((p, r.get("name"), 0.9))
+        elif is_deluxe and any(k in r_name for k in ["deluxe", "superior", "premium", "corner"]):
+            # Guard: Must not be a standard room mislabeled or in a variants list
+            if any(s in r_name for s in ["standard", "standart"]) and "deluxe" not in r_name:
                 continue
-            # [STRICT] Prevent standard rooms from matching premium targets via variant matches
-            is_std_t = any(s in target_room_type.lower() for s in ["standard", "standart"])
-            is_std_r = any(s in c_name for s in ["standard", "standart"])
-            if not is_std_t and is_std_r and not any(k in target_room_type.lower() for k in ["deluxe", "superior", "premium"]):
-                continue
-                
-            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
+            matches.append((p, r.get("name"), 0.9))
+            
+    if matches:
+        # Pick the most representative one (usually lowest of the matches)
+        matches.sort(key=lambda x: x[0])
+        return matches[0][0], matches[0][1], matches[0][2]
 
-        if any(v in r_name for v in target_variants):
-            t_low = target_room_type.lower()
-            is_std_t = any(s in t_low for s in ["standard", "standart"])
-            is_std_r = any(s in r_name for s in ["standard", "standart"])
-            if "suite" in t_low and not any(k in r_name for k in ["suite", "süit"]):
-                continue
-            if not is_std_t and is_std_r and "deluxe" not in r_name and "superior" not in r_name:
-                continue
-            return _extract_price(r.get("price")), r.get("name") or "Standard", 0.85
-
-    # FALLBACK
-    target_low = target_room_type.lower().strip()
-    is_premium = any(k in target_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile", "balcony", "view"])
-    is_base = not target_low or target_low == "oda" or any(v in target_low for v in ["standard", "standart", "base", "klasik", "classic", "eco", "promo"])
-    is_standard_request = (is_base and not is_premium) or not target_room_type
-
-    if is_standard_request and r_types:
-        valid_prices = []
-        for r in r_types:
-            if not isinstance(r, dict): continue
-            r_name = (r.get("name") or "").lower()
-            if any(k in r_name for k in ["presidential", "başkanlık", "kral", "king suite", "queen suite", "balayı", "honeymoon", "dubleks", "duplex"]):
-                continue
-            p = _extract_price(r.get("price"))
-            if p is not None:
-                valid_prices.append((p, r.get("name") or "Standard (Min)"))
-        if valid_prices:
-            valid_prices.sort(key=lambda x: x[0])
-            return valid_prices[0][0], valid_prices[0][1], 0.65
-
-    if is_standard_request and not r_types:
-        top_p = _extract_price(price_log.get("price"))
-        if top_p is not None and top_p > 0:
-            return top_p, "Standard (Legacy)", 0.7
-
+    # No match found for specific type -> Return None (results in "No Price" in UI)
     return None, None, 0.0
 
 
