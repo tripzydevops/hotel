@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from uuid import UUID
-from typing import Optional, Any
+from typing import Optional
+from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import (
     UserProfile,
@@ -14,16 +15,13 @@ from backend.services.profile_service import (
 )
 from datetime import datetime, timezone, timedelta
 from backend.utils.security import verify_ownership
-from backend.utils.logger import get_logger
-
-logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["profile"])
 
 
 @router.get("/profile", response_model=UserProfile)
 async def get_profile(
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Fetch user profile with enriched data."""
@@ -37,6 +35,7 @@ async def get_profile(
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
     # KAIZEN: Enforce ownership to prevent ID harvesting
     verify_ownership(user_id, current_user)
@@ -55,7 +54,7 @@ async def get_profile(
 @router.put("/profile", response_model=UserProfile)
 async def update_profile(
     profile: UserProfileUpdate,
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Update user profile (upsert)."""
@@ -77,7 +76,7 @@ async def update_profile(
 
 @router.get("/settings", response_model=Settings)
 async def get_settings(
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -143,7 +142,7 @@ async def get_settings(
 @router.put("/settings", response_model=Settings)
 async def update_settings(
     settings: SettingsUpdate,
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
-from typing import List, Any
+from typing import List
+from uuid import UUID
+from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import Alert
@@ -10,7 +12,7 @@ router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 @router.get("", response_model=List[Alert])
 async def list_alerts(
     unread_only: bool = False,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -31,7 +33,7 @@ async def list_alerts(
 @router.patch("/{alert_id}/read")
 async def mark_alert_read(
     alert_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     # KAIZEN: Ownership Verification for specific resource
@@ -60,7 +62,7 @@ async def mark_alert_read(
 
 @router.delete("/user")
 async def clear_all_alerts(
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -81,7 +83,7 @@ async def clear_all_alerts(
 @router.delete("/{alert_id}")
 async def delete_alert(
     alert_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Removes a single alert by ID."""

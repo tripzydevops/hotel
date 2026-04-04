@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import List, Optional, Any
+from typing import List, Optional
 from uuid import UUID
+from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.utils.db import get_supabase
 from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegistry
@@ -22,7 +23,7 @@ async def search_hotel_directory(
     q: str,
     user_id: Optional[UUID] = Query(None),
     city: Optional[str] = Query(None),
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
 ):
     """Search hotel directory (local + live callback). No auth required."""
     if not q or len(q.strip()) < 2:
@@ -38,7 +39,7 @@ async def search_hotel_directory(
 
 @router.get("/hotels", response_model=List[Hotel])
 async def list_hotels(
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
     include_deleted: bool = False,
 ):
@@ -60,7 +61,7 @@ async def list_hotels(
 
 
 @router.get("/locations", response_model=List[LocationRegistry])
-async def list_locations(db: Any = Depends(get_supabase)):
+async def list_locations(db: Client = Depends(get_supabase)):
     """Fetch all discovered locations for the dropdowns."""
     if not db:
         return []
@@ -74,7 +75,7 @@ async def search_hotel_directory_v2(
     query: str,
     limit: int = 20,
     city: Optional[str] = Query(None),
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_active_user=Depends(get_current_active_user),
 ):
     """
@@ -88,7 +89,7 @@ async def search_hotel_directory_v2(
 @router.post("/hotels", response_model=Hotel)
 async def create_hotel(
     hotel: HotelCreate,
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -150,7 +151,7 @@ async def create_hotel(
 async def update_hotel(
     hotel_id: UUID,
     hotel: HotelUpdate,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     # KAIZEN: Ownership Verification for specific resource
@@ -187,7 +188,7 @@ async def update_hotel(
 @router.delete("/hotels/{hotel_id}")
 async def delete_hotel(
     hotel_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     # KAIZEN: Ownership Verification

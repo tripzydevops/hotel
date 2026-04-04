@@ -3,7 +3,7 @@ Pydantic Models for Hotel Rate Monitor
 Provides structured data validation for all API operations.
 """
 
-from pydantic import BaseModel, Field, field_validator, AnyHttpUrl
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date, timezone
 from uuid import UUID
@@ -180,7 +180,7 @@ class UserProfileBase(BaseModel):
     company_name: Optional[str] = None
     job_title: Optional[str] = None
     phone: Optional[str] = None
-    avatar_url: Optional[AnyHttpUrl] = None
+    avatar_url: Optional[str] = None
     timezone: Optional[str] = "UTC"
 
     class Config:

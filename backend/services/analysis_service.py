@@ -342,30 +342,9 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None)
         if trends["trend"] != "unknown":
             trends_blurb = f"\nHistorical Trends: {trends['trend']}, Momentum: {trends['momentum']}"
 
-    market_min = analysis_data.get("market_min", 0)
-    market_max = analysis_data.get("market_max", 0)
-    market_avg = analysis_data.get("market_avg", 0)
-    target_price = analysis_data.get("target_price", 0)
-
-    prompt = f"Act as a World-Class Revenue Strategy Expert for {hotel_name}. " \
-             f"Current Metrics:\n" \
-             f"- Your Price: {target_price}\n" \
-             f"- Market Average: {market_avg}\n" \
-             f"- Market Range: {market_min} to {market_max}\n" \
-             f"- Price Index (ARI): {ari}\n" \
-             f"- Value Index (Sentiment): {sent_index}\n" \
-             f"- Strategic Territory: {q_label}\n" \
-             f"- DNA Strategy: {dna_text}\n" \
-             f"{trends_blurb}\n\n" \
-             f"Task: Generate a HIGH-DENSITY STRATEGIC REPORT in Professional Markdown.\n" \
-             f"Use the following structure:\n" \
-             f"### 📊 MARKET DYNAMICS\n" \
-             f"Include a Markdown table comparing {hotel_name} to the market average and range extremes.\n" \
-             f"### 🎯 STRATEGIC POSITIONING\n" \
-             f"Analyze if the current pricing aligns with the '{dna_text}' strategy and {q_label} territory. Use bold text for key insights.\n" \
-             f"### ⚡ ACTIONABLE REVENUE PLAYS\n" \
-             f"Provide 3 specific, data-backed actions in a bulleted list. Use relevant emojis.\n" \
-             f"Return ONLY Markdown content. No conversational filler."
+    prompt = f"You are a Senior Strategic Revenue Analyst for {hotel_name}. " \
+             f"Price Index: {ari}, Sentiment Index: {sent_index}. Strategy: {dna_text}. {trends_blurb}. " \
+             f"Generate 3 sections: MARKET DYNAMICS, STRATEGIC POSITIONING, ACTIONABLE RECOMMENDATIONS. Plain text only."
 
     try:
         client = get_genai_client()
@@ -465,22 +444,18 @@ async def perform_market_analysis(
         if prices_for_h:
             p_log = prices_for_h[0]
             lead_cur = p_log.get("currency") or "USD"
-            # [FIX] Always include hotel in ranking, even if specific room type is missing (shows as N/A)
             price_val, match_name, match_score = get_price_for_room(p_log, room_type, allowed_room_names_map)
-            conv = None
             if price_val is not None:
                 conv = convert_currency(price_val, lead_cur, display_currency)
-                if conv > 0: 
-                    current_prices.append(conv)
-            
-            price_rank_list.append({
-                "id": hid, "name": h.get("name"), "price": conv, "rank": 0, "is_target": is_target,
-                "rating": h.get("rating"), "review_count": h.get("review_count"),
-                "matched_room_name": match_name, "match_score": match_score,
-                "offers": p_log.get("parity_offers") or [],
-            })
-            if is_target:
-                target_price = conv
+                if conv > 0: current_prices.append(conv)
+                price_rank_list.append({
+                    "id": hid, "name": h.get("name"), "price": conv, "rank": 0, "is_target": is_target,
+                    "rating": h.get("rating"), "review_count": h.get("review_count"),
+                    "matched_room_name": match_name, "match_score": match_score,
+                    "offers": p_log.get("parity_offers") or [],
+                })
+                if is_target:
+                    target_price = conv
     # [FIX] Comprehensive Pivot for Daily Prices (Rate Spread Chart)
     # Using explicit typing to assist IDE inference
     daily_snapshot_map: Dict[str, Dict[str, Any]] = {}
@@ -512,29 +487,28 @@ async def perform_market_analysis(
                 continue
             
             p_val, _, _ = get_price_for_room(p_log, room_type, allowed_room_names_map)
-            conv_p = None
             if p_val is not None:
                 conv_p = convert_currency(float(p_val), p_log.get("currency") or "USD", display_currency)
-            
-            if date_key not in daily_snapshot_map:
-                daily_snapshot_map[date_key] = {
-                    "date": date_key, 
-                    "target_price": 0.0,
-                    "comp_prices": [],
-                    "seen_ids": set()
-                }
-            
-            # [FIX] Aggregation Logic: Logs are already sorted DESC by recorded_at. 
-            # To ensure newest-log precedence, we only record the FIRST log encountered per hotel per date.
-            if hid not in daily_snapshot_map[date_key]["seen_ids"]:
-                if is_target:
-                    daily_snapshot_map[date_key]["target_price"] = float(conv_p or 0.0)
-                else:
-                    daily_snapshot_map[date_key]["comp_prices"].append({
-                        "name": h.get("name", "Competitor"),
-                        "price": float(conv_p) if conv_p is not None else None
-                    })
-                daily_snapshot_map[date_key]["seen_ids"].add(hid)
+                
+                if date_key not in daily_snapshot_map:
+                    daily_snapshot_map[date_key] = {
+                        "date": date_key, 
+                        "target_price": 0.0,
+                        "comp_prices": [],
+                        "seen_ids": set()
+                    }
+                
+                # [FIX] Aggregation Logic: Logs are already sorted DESC by recorded_at. 
+                # To ensure newest-log precedence, we only record the FIRST log encountered per hotel per date.
+                if hid not in daily_snapshot_map[date_key]["seen_ids"]:
+                    if is_target:
+                        daily_snapshot_map[date_key]["target_price"] = float(conv_p)
+                    else:
+                        daily_snapshot_map[date_key]["comp_prices"].append({
+                            "name": h.get("name", "Competitor"),
+                            "price": float(conv_p)
+                        })
+                    daily_snapshot_map[date_key]["seen_ids"].add(hid)
 
     # Convert map to ordered list for frontend (asc order for timeline)
     daily_prices: List[Dict[str, Any]] = []
@@ -579,16 +553,14 @@ async def perform_market_analysis(
     min_h_obj = next((h for h in price_rank_list if h["price"] == market_min), {"name": "N/A"})
     max_h_obj = next((h for h in price_rank_list if h["price"] == market_max), {"name": "N/A"})
     
-    # [FIX] Comprehensive search across ALL historical logs for available room types
+    # [NEW] Collect all available room types in the market logs for the dropdown
     all_room_names = set()
     for p_logs in hotel_prices_map.values():
-        for p_log in p_logs:
-            rt_list = p_log.get("room_types") or []
+        if p_logs:
+            rt_list = p_logs[0].get("room_types") or []
             for rt in rt_list:
-                if isinstance(rt, dict):
-                    name = rt.get("name")
-                    if name:
-                        all_room_names.add(name)
+                if isinstance(rt, dict) and rt.get("name"):
+                    all_room_names.add(rt["name"])
     
     # [NEW] Pre-map hotels to the frontend's interface
     transformed_hotels = [
@@ -727,13 +699,13 @@ async def get_market_intelligence_data(
         rt_lower = room_type.lower()
         
         # Add broad defaults if we're looking for standard
-        if "standard" in rt_lower or "standart" in rt_lower or "economy" in rt_lower:
-            synonyms.extend(["Standard Room", "Standart Oda", "Double Room", "Twin Room", "Economy Room", "Classic Room", "Promo Room", "Standart Oda"])
-        elif "deluxe" in rt_lower or "superior" in rt_lower or "premium" in rt_lower:
-            synonyms.extend(["Deluxe Room", "Superior Room", "Premium Room", "Executive Room", "Comfort Room", "Delüks Oda", "Deluxe King", "Deluxe Twin"])
-        elif "suite" in rt_lower or "suit" in rt_lower:
-            synonyms.extend(["Suite", "Suit", "Junior Suite", "Family Suite", "King Suite", "Presidential Suite", "Family Room", "Executive Suite"])
-        
+        if "standard" in rt_lower or "standart" in rt_lower:
+            synonyms.extend(["Standard Room", "Standart Oda", "Double Room", "Twin Room", "Deluxe Room", "Economy Room"])
+        elif "deluxe" in rt_lower:
+            synonyms.extend(["Deluxe King", "Deluxe Twin", "Superior Room"])
+        elif "suite" in rt_lower:
+            synonyms.extend(["Junior Suite", "Executive Suite", "King Suite", "Business Suite"])
+            
         allowed_map[str(h["id"])] = list(set(synonyms))
     
     return await perform_market_analysis(

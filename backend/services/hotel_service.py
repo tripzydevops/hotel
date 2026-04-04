@@ -227,7 +227,6 @@ async def add_hotel_to_account_logic(
         cid = hotel_data.get("cid")
         place_id = hotel_data.get("place_id")
 
-        d = {}  # Directory match data — initialized empty for safe fallback
         if not serp_api_id or not phone:
             name = hotel_data.get("name")
             location = hotel_data.get("location")
@@ -278,9 +277,9 @@ async def add_hotel_to_account_logic(
                 pass
         # [FIX] Extract property_token if directory match found
         property_token = hotel_data.get("property_token")
-        
-        property_token = property_token or d.get("property_token")
-        serp_api_id = serp_api_id or d.get("serp_api_id")
+        if 'd' in locals() and d:
+            property_token = property_token or d.get("property_token")
+            serp_api_id = serp_api_id or d.get("serp_api_id")
 
         # Prepare data for insertion
         data = {
@@ -301,8 +300,8 @@ async def add_hotel_to_account_logic(
             "description": description,
             "cid": cid,
             "place_id": place_id,
-            "sentiment_breakdown": (hotel_data.get("sentiment_breakdown") or d.get("sentiment_breakdown")) if isinstance(hotel_data.get("sentiment_breakdown") or d.get("sentiment_breakdown"), list) else None,
-            "reviews": (hotel_data.get("reviews") or d.get("reviews")) if isinstance(hotel_data.get("reviews") or d.get("reviews"), list) else None,
+            "sentiment_breakdown": (hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None)) if isinstance(hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None), list) else None,
+            "reviews": (hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None)) if isinstance(hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None), list) else None,
         }
 
         # Insert into user's hotels list

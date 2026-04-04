@@ -1,29 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from typing import List, Dict, Any, Optional
-# from supabase import Client (moved to function scope)
-# from backend.utils.db import get_supabase (moved to function scope)
+from typing import List, Dict, Any
+from supabase import Client
+from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_admin_user
 from backend.utils.logger import get_logger
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
-
-# Fallback constants for missing or failed database config
-HERO_TITLE_FALLBACK = "Hotel Pricing Sentinel"
-HERO_SUBTITLE_FALLBACK = "Monitor your competitors in real-time."
-HERO_DESCRIPTION_FALLBACK = "Never miss a rate change again. Automated intelligence for your hotel."
-HERO_CTA_TEXT_FALLBACK = "Start Monitoring"
-
-class LandingConfigResponse(BaseModel):
-    """Container for landing page configuration."""
-    hero_title: str
-    hero_subtitle: str
-    hero_description: Optional[str] = None
-    hero_cta: Optional[str] = "Get Started"
-    hero_image_url: Optional[str] = None
-    sections: List[Dict[str, Any]] = []
-    updated_at: Optional[str] = None
 
 router = APIRouter(prefix="/api", tags=["landing"])
 
@@ -32,19 +16,9 @@ class ConfigUpdate(BaseModel):
     configs: List[Dict[str, Any]]
 
 @router.get("/landing/config")
-async def get_landing_config(locale: str = "tr"):
+async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
     """Public endpoint to fetch all landing page configurations for a specific locale."""
     try:
-        from backend.utils.db import get_supabase
-        db = get_supabase()
-        
-        if not db:
-            print("DB_RECOVERY: Database client unavailable. Returning fallback configuration.")
-            return LandingConfigResponse(
-                hero_title=HERO_TITLE_FALLBACK,
-                hero_subtitle=HERO_SUBTITLE_FALLBACK,
-                sections=[]
-            )
         # V23 cascading logic:
         # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
         target_locales = [locale]
@@ -104,9 +78,8 @@ async def get_landing_config(locale: str = "tr"):
 async def get_admin_landing_config(
     locale: str = "tr",
     current_user: dict = Depends(get_current_admin_user),
+    db: Client = Depends(get_supabase),
 ):
-    from backend.utils.db import get_supabase
-    db = get_supabase()
     try:
         res = (
             db.table("landing_page_config")
@@ -123,9 +96,8 @@ async def get_admin_landing_config(
 async def update_landing_config(
     data: ConfigUpdate,
     current_user: dict = Depends(get_current_admin_user),
+    db: Client = Depends(get_supabase),
 ):
-    from backend.utils.db import get_supabase
-    db = get_supabase()
     try:
         for item in data.configs:
             db.table("landing_page_config").upsert(

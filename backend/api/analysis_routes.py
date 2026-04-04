@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, Dict, Any, List, cast
 from uuid import UUID
+from supabase import Client
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
@@ -18,7 +19,7 @@ async def discover_competitors_v1(
     hotel_id: str,
     limit: int = 5,
     current_user=Depends(get_current_active_user),
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
 ):
     """
     Autonomous Rival Discovery.
@@ -53,7 +54,7 @@ async def get_market_intelligence(
     end_date: Optional[date] = None,
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -87,7 +88,7 @@ async def get_market_intelligence(
 @router.post("/analysis/discovery/{hotel_id}")
 async def discover_competitors_trigger(
     hotel_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Trigger Ghost Competitor Discovery."""
@@ -112,7 +113,7 @@ async def discover_competitors_trigger(
 async def get_sentiment_history(
     hotel_id: str,
     days: int = 30,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -161,7 +162,7 @@ async def get_sentiment_history(
 
 @router.get("/analysis/debug")
 async def debug_analysis_data(
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -315,7 +316,7 @@ async def stream_market_intelligence(
     end_date: Optional[date] = None,
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

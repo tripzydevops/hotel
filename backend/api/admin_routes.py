@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Request
-from backend.utils.limiter import limiter
-from typing import List, Optional, Any, Dict
+from fastapi import APIRouter, Depends
+from typing import List, Optional, Any
 from uuid import UUID
+from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_admin_user
 from backend.models.schemas import (
@@ -57,8 +57,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 @router.get("/debug-providers")
-@limiter.limit("10/minute")
-async def debug_providers(request: Request, admin=Depends(get_current_admin_user)):
+async def debug_providers(admin=Depends(get_current_admin_user)):
     """
     Diagnostic endpoint to verify data provider status.
     Returns which providers (SerpApi, RapidAPI) are registered and active.
@@ -79,9 +78,8 @@ async def debug_providers(request: Request, admin=Depends(get_current_admin_user
 
 
 @router.get("/providers")
-@limiter.limit("10/minute")
 async def get_admin_providers(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Returns the list of network providers and their status for the API Keys panel.
@@ -94,9 +92,8 @@ async def get_admin_providers(
 
 
 @router.get("/stats", response_model=AdminStats)
-@limiter.limit("10/minute")
 async def get_admin_stats(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Fetches high-level system statistics for the Admin Dashboard.
@@ -108,22 +105,9 @@ async def get_admin_stats(
     return await get_admin_stats_logic(db)
 
 
-@router.get("/admin/users", response_model=List[Dict])
-async def get_all_users(
-    current_user: dict = Depends(get_current_admin_user),
-    db: Any = Depends(get_supabase),
-):
-    """
-    Checks the validity and remaining quota of configured external API keys.
-    Essential for monitoring budget and operational continuity.
-    """
-    return await get_admin_users_logic(db)
-
-
 @router.get("/api-keys/status")
-@limiter.limit("60/minute")
 async def get_api_key_status(
-    request: Request, user: Any = Depends(get_current_admin_user), db: Any = Depends(get_supabase)
+    user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)
 ):
     """
     Checks the validity and remaining quota of configured external API keys.
@@ -135,8 +119,7 @@ async def get_api_key_status(
 
 
 @router.post("/api-keys/rotate")
-@limiter.limit("5/minute")
-async def force_rotate_api_key(request: Request, user: Any = Depends(get_current_admin_user)):
+async def force_rotate_api_key(user: Any = Depends(get_current_admin_user)):
     """
     Manually triggers rotation of API keys if provided.
     Implements a fallback mechanism to ensure at least one key is always active.
@@ -145,8 +128,7 @@ async def force_rotate_api_key(request: Request, user: Any = Depends(get_current
 
 
 @router.post("/api-keys/reset")
-@limiter.limit("5/minute")
-async def reset_api_keys(request: Request, user: Any = Depends(get_current_admin_user)):
+async def reset_api_keys(user: Any = Depends(get_current_admin_user)):
     """
     Clears key usage history. Used for monthly resets or manual maintenance.
     """
@@ -154,9 +136,8 @@ async def reset_api_keys(request: Request, user: Any = Depends(get_current_admin
 
 
 @router.post("/api-keys/reload")
-@limiter.limit("10/minute")
 async def reload_api_keys(
-    request: Request, user: Any = Depends(get_current_admin_user), db: Any = Depends(get_supabase)
+    user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)
 ):
     """
     Reloads API keys from environment/vault without restarting the service.
@@ -165,13 +146,11 @@ async def reload_api_keys(
 
 
 @router.patch("/users/{user_id}")
-@limiter.limit("20/minute")
 async def admin_update_user(
     user_id: UUID,
     updates: AdminUserUpdate,
-    request: Request,
     user: Any = Depends(get_current_admin_user),
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
 ):
     """
     Directly updates a user profile from the admin interface.
@@ -183,9 +162,8 @@ async def admin_update_user(
 
 
 @router.get("/users", response_model=List[AdminUser])
-@limiter.limit("60/minute")
 async def get_admin_users(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Lists all users in the system with their roles and subscription status.
@@ -195,12 +173,10 @@ async def get_admin_users(
 
 
 @router.get("/directory", response_model=List[AdminDirectoryEntry])
-@limiter.limit("60/minute")
 async def get_admin_directory(
-    request: Request,
     limit: int = 100,
     city: Optional[str] = None,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -214,11 +190,9 @@ async def get_admin_directory(
 
 
 @router.post("/users", response_model=dict)
-@limiter.limit("10/minute")
 async def create_admin_user(
     user: AdminUserCreate,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -228,11 +202,9 @@ async def create_admin_user(
 
 
 @router.delete("/users/{user_id}")
-@limiter.limit("10/minute")
 async def delete_admin_user(
     user_id: UUID,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -243,11 +215,9 @@ async def delete_admin_user(
 
 
 @router.post("/directory", response_model=dict)
-@limiter.limit("20/minute")
 async def add_admin_directory_entry(
     entry: dict,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -257,11 +227,9 @@ async def add_admin_directory_entry(
 
 
 @router.delete("/directory/{entry_id}")
-@limiter.limit("20/minute")
 async def delete_admin_directory(
     entry_id: str,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -271,12 +239,10 @@ async def delete_admin_directory(
 
 
 @router.put("/directory/{entry_id}")
-@limiter.limit("20/minute")
 async def update_admin_directory(
     entry_id: str,
     updates: dict,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -286,11 +252,9 @@ async def update_admin_directory(
 
 
 @router.get("/logs", response_model=List[AdminLog])
-@limiter.limit("60/minute")
 async def get_admin_logs(
-    request: Request,
     limit: int = 50,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -300,11 +264,9 @@ async def get_admin_logs(
 
 
 @router.get("/feed")
-@limiter.limit("60/minute")
 async def get_admin_feed(
-    request: Request,
     limit: int = 50,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -314,11 +276,9 @@ async def get_admin_feed(
 
 
 @router.get("/hotels")
-@limiter.limit("60/minute")
 async def get_admin_hotels(
-    request: Request,
     limit: int = 100,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -328,11 +288,9 @@ async def get_admin_hotels(
 
 
 @router.get("/scans", response_model=List[dict])
-@limiter.limit("60/minute")
 async def get_admin_scans(
-    request: Request,
     limit: int = 50,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -342,11 +300,9 @@ async def get_admin_scans(
 
 
 @router.get("/scans/{scan_id}")
-@limiter.limit("60/minute")
 async def get_admin_scan_details(
     scan_id: UUID,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -356,12 +312,10 @@ async def get_admin_scan_details(
 
 
 @router.put("/hotels/{hotel_id}")
-@limiter.limit("20/minute")
 async def update_admin_hotel(
     hotel_id: str,
     updates: dict,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -371,11 +325,9 @@ async def update_admin_hotel(
 
 
 @router.delete("/hotels/{hotel_id}")
-@limiter.limit("20/minute")
 async def delete_admin_hotel(
     hotel_id: str,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -385,9 +337,8 @@ async def delete_admin_hotel(
 
 
 @router.get("/plans", response_model=List[MembershipPlan])
-@limiter.limit("60/minute")
 async def get_admin_plans(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Lists all subscription plans.
@@ -396,11 +347,9 @@ async def get_admin_plans(
 
 
 @router.post("/plans", response_model=MembershipPlan)
-@limiter.limit("10/minute")
 async def create_admin_plan(
     plan: PlanCreate,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -410,12 +359,10 @@ async def create_admin_plan(
 
 
 @router.put("/plans/{plan_id}", response_model=MembershipPlan)
-@limiter.limit("10/minute")
 async def update_admin_plan(
     plan_id: UUID,
     plan: PlanUpdate,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -425,11 +372,9 @@ async def update_admin_plan(
 
 
 @router.delete("/plans/{plan_id}")
-@limiter.limit("5/minute")
 async def delete_admin_plan(
     plan_id: UUID,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -440,9 +385,8 @@ async def delete_admin_plan(
 
 @router.get("/global-settings")
 @router.get("/settings")
-@limiter.limit("60/minute")
 async def get_admin_settings(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Fetches global application parameters (maintenance mode, signup flags).
@@ -452,11 +396,9 @@ async def get_admin_settings(
 
 @router.post("/global-settings")
 @router.put("/settings")
-@limiter.limit("20/minute")
 async def update_admin_settings(
     settings: dict,
-    request: Request,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -468,9 +410,8 @@ async def update_admin_settings(
 
 
 @router.post("/sync")
-@limiter.limit("5/minute")
 async def sync_directory(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Triggers a manual sync between user hotels and the global directory.
@@ -482,9 +423,8 @@ async def sync_directory(
 
 
 @router.post("/cleanup-test-data")
-@limiter.limit("5/minute")
 async def cleanup_test_data(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Removes test records and artifacts from the system.
@@ -493,11 +433,9 @@ async def cleanup_test_data(
 
 
 @router.get("/market-intelligence")
-@limiter.limit("60/minute")
 async def get_market_intelligence(
-    request: Request,
     city: Optional[str] = None,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -513,9 +451,8 @@ async def get_market_intelligence(
 
 
 @router.get("/scheduler/queue")
-@limiter.limit("60/minute")
 async def get_scheduler_queue(
-    request: Request, db: Any = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
 ):
     """
     Returns the list of users with scheduled scans for the admin Upcoming Queue tab.
@@ -529,8 +466,7 @@ async def get_scheduler_queue(
 
 
 @router.post("/scheduler/trigger-all")
-@limiter.limit("5/minute")
-async def trigger_all_overdue(request: Request, admin=Depends(get_current_admin_user)):
+async def trigger_all_overdue(admin=Depends(get_current_admin_user)):
     """
     Manually triggers all overdue/due scans at once.
     Wakes up the background scheduler pipeline.
@@ -539,9 +475,8 @@ async def trigger_all_overdue(request: Request, admin=Depends(get_current_admin_
 
 
 @router.delete("/scans/cleanup-empty")
-@limiter.limit("10/minute")
 async def cleanup_empty_scans(
-    request: Request, admin=Depends(get_current_admin_user), db: Any = Depends(get_supabase)
+    admin=Depends(get_current_admin_user), db: Client = Depends(get_supabase)
 ):
     """
     Administrative cleanup: Removes scans that failed or have no results.

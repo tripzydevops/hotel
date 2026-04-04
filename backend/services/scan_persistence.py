@@ -98,27 +98,7 @@ class ScanPersistenceService:
         # 2. Final Batch Insertions
         try:
             if price_logs_to_insert:
-                # KAİZEN: Deduplicated Upsert via RPC
-                # We use the custom RPC because the unique constraint involves an expression 
-                # (date_trunc), which standard Supabase/PostgREST upsert doesn't always handle 
-                # cleanly in the 'on_conflict' parameter.
-                for log in price_logs_to_insert:
-                    try:
-                        self.db.rpc("upsert_price_log", {
-                            "p_hotel_id": log["hotel_id"],
-                            "p_price": log["price"],
-                            "p_currency": log["currency"],
-                            "p_check_in_date": log["check_in_date"],
-                            "p_recorded_at": log["recorded_at"],
-                            "p_is_estimated": log["is_estimated"],
-                            "p_session_id": log["session_id"],
-                            "p_vendor": log["vendor"],
-                            "p_parity_offers": log["parity_offers"],
-                            "p_room_types": log["room_types"],
-                            "p_metadata": log["metadata"]
-                        }).execute()
-                    except Exception as le:
-                        logger.warning(f"Failed to upsert individual price log for {log.get('hotel_id')}: {le}")
+                self.db.table("price_logs").insert(price_logs_to_insert).execute()
             if sentiment_history_to_insert:
                 self.db.table("sentiment_history").insert(sentiment_history_to_insert).execute()
             if alerts_to_insert:

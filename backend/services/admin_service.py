@@ -25,10 +25,6 @@ from backend.models.schemas import (
     PlanUpdate,
 )
 from backend.services.serpapi_client import serpapi_client, MANUAL_RENEWAL_OVERRIDES, CREDIT_LIMITS
-from backend.utils.logger import get_logger
-
-from backend.utils.errors import raise_masked_error
-logger = get_logger(__name__)
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 import csv
@@ -43,7 +39,7 @@ async def search_admin_directory_logic(db: Client, q: str) -> List[Dict[str, Any
         res = db.table("hotel_directory").select("*").ilike("name", f"%{q}%").execute()
         return res.data or []
     except Exception as e:
-        logger.error(f"Admin: Directory search failure: {e}")
+        print(f"Admin: Directory search failure: {e}")
         return []
 
 
@@ -51,12 +47,9 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
     """Get system-wide statistics."""
     try:
         # Count Users (approx via settings or profiles)
-        users_count = 0
-        try:
-            users_count_res = db.table("profiles").select("id", count="exact").execute()
-            users_count = users_count_res.count or 0
-        except Exception as e:
-            logger.warning(f"Admin: Could not count profiles: {e}")
+        users_count = (
+            db.table("settings").select("user_id", count="exact").execute().count or 0
+        )
 
         # Count Hotels
         hotels_count = (
@@ -131,8 +124,7 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
                             s["completed_at"].replace("Z", "+00:00")
                         )
                         durations.append((end - start).total_seconds() * 1000)
-                    except Exception as e:
-                        logger.debug(f"Admin: Duration parse error: {e}")
+                    except Exception:
                         pass
 
             if durations:
@@ -151,11 +143,8 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
             service_role_active="SUPABASE_SERVICE_ROLE_KEY" in os.environ,
         )
     except Exception as e:
-        raise_masked_error(
-            e, 
-            message="Failed to retrieve system statistics", 
-            context="AdminStats"
-        )
+        print(f"Admin Stats Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Admin Data Error: {str(e)}")
 
 
 async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
@@ -219,7 +208,7 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
                 entry["searches_left"] = max(0, limit - db_usage)
                 entry["refresh_date"] = renew_str or "Unknown"
             except Exception as e:
-                logger.error(f"Admin: Failed to aggregate logs for {suffix}: {e}")
+                print(f"Admin: Failed to aggregate logs for {suffix}: {e}")
 
         status["keys_status"] = keys_list
         status["quota_per_key"] = 250
@@ -227,11 +216,8 @@ async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
         status["monthly_usage"] = sum(k.get("usage", 0) for k in keys_list)
         return status
     except Exception as e:
-        raise_masked_error(
-            e, 
-            message="Failed to retrieve API key status", 
-            context="APIKeyStatus"
-        )
+        print(f"API Key Status Error: {e}")
+        return {"error": str(e), "total_keys": 0, "active_keys": 0}
 
 
 async def get_admin_providers_logic() -> List[Dict[str, Any]]:
@@ -247,7 +233,7 @@ async def get_admin_providers_logic() -> List[Dict[str, Any]]:
 
         return ProviderFactory.get_status_report()
     except Exception as e:
-        logger.error(f"Admin Providers Error: {e}")
+        print(f"Admin Providers Error: {e}")
         return []
 
 
@@ -261,7 +247,7 @@ async def force_rotate_api_key_logic() -> Dict[str, Any]:
             "current_status": await serpapi_client.get_key_status(),
         }
     except Exception as e:
-        raise_masked_error(e, message="Failed to retrieve admin stats", context="AdminStats")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def reset_api_keys_logic() -> Dict[str, Any]:
@@ -270,7 +256,7 @@ async def reset_api_keys_logic() -> Dict[str, Any]:
         serpapi_client._key_manager.reset_all()
         return {"status": "success", "message": "All keys reset"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to retrieve history", context="AdminHistory")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def reload_api_keys_logic() -> Dict[str, Any]:
@@ -283,10 +269,8 @@ async def reload_api_keys_logic() -> Dict[str, Any]:
             "current_status": serpapi_client.get_key_status(),
         }
     except Exception as e:
-        raise_masked_error(
-            e, 
-            message="Failed to generate CSV export", 
-            context="DirectoryExport"
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
         )
 
 
@@ -344,9 +328,9 @@ async def admin_update_user_logic(
                 db.table("profiles").update({"next_scan_at": next_run}).eq(
                     "id", user_id_str
                 ).execute()
-                logger.info(f"[Admin] Synced next_scan_at for {user_id_str} to {next_run}")
+                print(f"[Admin] Synced next_scan_at for {user_id_str} to {next_run}")
             except Exception as e:
-                logger.error(f"[Admin] Profile frequency sync failed: {e}")
+                print(f"[Admin] Profile frequency sync failed: {e}")
 
         # 3. Update Auth Fields (Requires Admin Bypass)
         from backend.utils.db import get_supabase_client
@@ -362,12 +346,13 @@ async def admin_update_user_logic(
                     # KAİZEN: Handle cases where user might not exist in Auth but exists in profiles
                     admin_db.auth.admin.update_user_by_id(user_id_str, auth_updates)
             except Exception as auth_err:
-                logger.error(f"[Admin] Auth-side update skipped or failed for {user_id_str}: {auth_err}")
+                print(f"[Admin] Auth-side update skipped or failed for {user_id_str}: {auth_err}")
                 # We don't raise here because profile/settings might have succeeded
 
         return {"status": "success", "message": "User updated successfully"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to update user profile", context="AdminUpdateUser")
+        print(f"Admin Update User Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def get_admin_users_logic(db: Client) -> List[AdminUser]:
@@ -451,14 +436,13 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
                 udata["max_hotels"] = access.get("limits", {}).get("hotel_limit", 5)
 
                 final_users.append(AdminUser(**udata))
-            except Exception as e:
-                logger.error(f"Admin: Profile enrichment failure for {uid}: {e}")
+            except Exception:
                 udata["max_hotels"] = 5  # Absolute fallback
                 final_users.append(AdminUser(**udata))
 
         return final_users
     except Exception as e:
-        logger.error(f"Admin Users Failure: {e}")
+        print(f"Admin Users Failure: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch users")
 
 
@@ -525,7 +509,7 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
 
         return {"status": "success", "user_id": str(new_user.id)}
     except Exception as e:
-        raise_masked_error(e, message="Failed to create user account", context="AdminCreateUser")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 async def delete_admin_user_logic(user_id: str, db: Client) -> Dict[str, Any]:
@@ -547,14 +531,12 @@ async def delete_admin_user_logic(user_id: str, db: Client) -> Dict[str, Any]:
     for table in tables:
         try:
             admin_db.table(table).delete().eq("user_id", str(user_id)).execute()
-        except Exception as e:
-            logger.error(f"Admin: Cleanup failure for table {table} (User: {user_id}): {e}")
+        except Exception:
             pass
 
     try:
         admin_db.auth.admin.delete_user(str(user_id))
-    except Exception as e:
-        logger.error(f"Admin: Auth deletion failure for {user_id}: {e}")
+    except Exception:
         pass
 
     return {"status": "success"}
@@ -591,8 +573,7 @@ async def get_admin_logs_logic(db: Client, limit: int = 50) -> List[AdminLog]:
                 )
             )
         return logs
-    except Exception as e:
-        logger.error(f"Admin: Logs fetch failure: {e}")
+    except Exception:
         return []
 
 
@@ -635,7 +616,7 @@ async def add_admin_directory_entry_logic(entry: dict, db: Client) -> Dict[str, 
         ).execute()
         return {"status": "success"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to fetch Hotel Directory", context="AdminDirectory")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def delete_admin_directory_logic(entry_id: str, db: Client) -> Dict[str, Any]:
@@ -644,7 +625,7 @@ async def delete_admin_directory_logic(entry_id: str, db: Client) -> Dict[str, A
         db.table("hotel_directory").delete().eq("id", entry_id).execute()
         return {"status": "success"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to create directory entry", context="AdminDirectoryCreate")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def update_admin_directory_logic(
@@ -659,7 +640,7 @@ async def update_admin_directory_logic(
             db.table("hotel_directory").update(update_data).eq("id", entry_id).execute()
         return {"status": "success", "id": entry_id}
     except Exception as e:
-        raise_masked_error(e, message="Failed to delete directory entry", context="AdminDirectoryDelete")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def get_admin_hotels_logic(db: Client, limit: int = 100) -> List[Dict[str, Any]]:
@@ -894,7 +875,7 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
 
         return {"session": session, "logs": logs}
     except Exception as e:
-        raise_masked_error(e, message="Failed to update session status", context="AdminSessionUpdate")
+        raise HTTPException(500, str(e))
 
 
 async def get_admin_plans_logic(db: Client) -> List[Dict[str, Any]]:
@@ -902,8 +883,7 @@ async def get_admin_plans_logic(db: Client) -> List[Dict[str, Any]]:
     try:
         res = db.table("membership_plans").select("*").order("price_monthly").execute()
         return res.data or []
-    except Exception as e:
-        logger.error(f"Admin: Membership plans fetch failure: {e}")
+    except Exception:
         # Fallback to defaults if table doesn't exist yet
         return [
             {"id": "starter", "name": "Starter", "price_monthly": 49, "hotel_limit": 5},
@@ -924,7 +904,7 @@ async def create_admin_plan_logic(plan: PlanCreate, db: Client) -> Dict[str, Any
         res = db.table("membership_plans").insert(data).execute()
         return res.data[0] if res.data else {"status": "success"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to fetch plans", context="AdminPlans")
+        raise HTTPException(500, str(e))
 
 
 async def update_admin_plan_logic(
@@ -936,7 +916,7 @@ async def update_admin_plan_logic(
         res = db.table("membership_plans").update(data).eq("id", str(id)).execute()
         return res.data[0] if res.data else {"status": "success"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to create plan", context="AdminPlanCreate")
+        raise HTTPException(500, str(e))
 
 
 async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
@@ -945,7 +925,7 @@ async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
         db.table("membership_plans").delete().eq("id", str(id)).execute()
         return {"status": "success"}
     except Exception as e:
-        raise_masked_error(e, message="Failed to delete plan", context="AdminPlanDelete")
+        raise HTTPException(500, str(e))
 
 
 async def get_admin_settings_logic(db: Client) -> AdminSettings:
@@ -1039,7 +1019,7 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
             "token_corrections": token_backfills,
         }
     except Exception as e:
-        logger.error(f"Admin: Directory Sync Error: {e}")
+        print(f"Admin: Directory Sync Error: {e}")
         return {"status": "error", "message": str(e)}
 
 
@@ -1060,7 +1040,7 @@ async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:
 
         return {"status": "success", "deleted_count": len(hotel_ids)}
     except Exception as e:
-        logger.error(f"Admin: Cleanup Error: {e}")
+        print(f"Admin: Cleanup Error: {e}")
         return {"status": "error", "message": str(e)}
 
 
@@ -1089,8 +1069,6 @@ async def get_admin_market_intelligence_logic(
             query = query.ilike("location", f"%{city}%")
         dir_result = query.execute()
         directory_hotels = dir_result.data or []
-        if not directory_hotels:
-            return {"hotels": [], "summary": {"count": 0, "cities": []}}
 
         # 2. Fetch latest prices from tracked hotels in the same city
         #    We join via hotels table (which has serp_api_id) to price_logs
@@ -1310,7 +1288,7 @@ async def get_admin_market_intelligence_logic(
                         }
                     )
         except Exception as e:
-            logger.error(f"Visibility Aggregation Error: {e}")
+            print(f"Visibility Aggregation Error: {e}")
 
         # KAİZEN: Dynamic Currency Detection
         # Instead of hardcoding '$', we detect the currency used in the most recent scans.
@@ -1328,8 +1306,7 @@ async def get_admin_market_intelligence_logic(
                 )
                 if curr_res.data:
                     detected_currency = curr_res.data[0].get("currency", "TRY")
-        except Exception as e:
-            logger.error(f"Admin: Plan parsing error: {e}")
+        except Exception:
             pass
 
         # EXPLANATION: Competitive Network Generation
@@ -1401,7 +1378,7 @@ async def get_admin_market_intelligence_logic(
             },
         }
     except Exception as e:
-        logger.error(f"Admin Market Intelligence Error: {e}")
+        print(f"Admin Market Intelligence Error: {e}")
         traceback.print_exc()
         # Return safe empty structure instead of crashing
         return {
@@ -1515,8 +1492,7 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
             try:
                 next_dt = datetime.fromisoformat(next_scan.replace("Z", "+00:00"))
                 status = "overdue" if next_dt <= now else "pending"
-            except Exception as e:
-                logger.error(f"Admin: Date parsing error: {e}")
+            except Exception:
                 status = "pending"
 
             hotels_list = hotels_map.get(uid, [])
@@ -1541,7 +1517,7 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
 
         return queue
     except Exception as e:
-        logger.error(f"Admin Scheduler Queue Error: {e}")
+        print(f"Admin Scheduler Queue Error: {e}")
         traceback.print_exc()
         return []
 
@@ -1576,7 +1552,7 @@ async def trigger_all_overdue_logic() -> Dict[str, Any]:
             "message": "All overdue scans triggered successfully.",
         }
     except Exception as e:
-        logger.error(f"Trigger All Overdue Error: {e}")
+        print(f"Trigger All Overdue Error: {e}")
         return {"error": str(e)}
 
 
@@ -1637,5 +1613,5 @@ async def cleanup_empty_scans_logic(db: Client) -> Dict[str, Any]:
             "message": f"Successfully removed {len(all_to_delete)} empty or failed scan sessions.",
         }
     except Exception as e:
-        logger.error(f"Cleanup Empty Scans Error: {e}")
+        print(f"Cleanup Empty Scans Error: {e}")
         return {"error": str(e)}

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request
-from typing import List, Optional, Any
+from typing import List, Optional
 from uuid import UUID
+from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
@@ -9,7 +10,6 @@ from backend.services.monitor_service import (
     run_monitor_background,
 )
 from datetime import datetime, timezone
-from backend.utils.limiter import limiter
 
 router = APIRouter(prefix="/api", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
@@ -18,12 +18,10 @@ router_legacy = APIRouter(tags=["monitor"])
 
 
 @router.post("/monitor", response_model=MonitorResult)
-@limiter.limit("1/minute")
 async def trigger_monitor(
     background_tasks: BackgroundTasks,
-    request: Request,  # Required by slowapi
     options: Optional[ScanOptions] = None,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_active_user=Depends(get_current_active_user),
 ) -> MonitorResult:
     """
@@ -44,12 +42,11 @@ async def trigger_monitor(
 @router.post("/trigger-scan")
 @router_legacy.get("/trigger-scan")
 @router_legacy.post("/trigger-scan")
-@limiter.limit("1/minute")
 async def check_scheduled_scan(
     background_tasks: BackgroundTasks,
     request: Request,
     force: bool = Query(False),
-    db: Optional[Any] = Depends(get_supabase_rls),
+    db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """Lazy cron workaround for Vercel free tier."""
@@ -173,7 +170,7 @@ async def check_scheduled_scan(
 @router.get("/sessions/{session_id}", response_model=ScanSession)
 async def get_session(
     session_id: UUID, 
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user)
 ):
     """Fetch a single scan session by ID for live status/reasoning updates."""
@@ -194,7 +191,7 @@ async def get_session(
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
 async def get_session_logs(
     session_id: UUID, 
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user)
 ):
     """Fetch all query logs linked to a specific scan session."""
@@ -215,7 +212,7 @@ async def get_session_logs(
 @router.delete("/logs/{log_id}")
 async def delete_log(
     log_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """

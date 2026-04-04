@@ -20,7 +20,7 @@ def generate_pdf_bytes(html_content: str) -> bytes:
     return result.getvalue()
 
 from datetime import datetime
-from typing import Any
+from supabase import Client
 from backend.utils.db import get_supabase
 from backend.services.auth_service import (
     get_current_active_user,
@@ -44,7 +44,7 @@ class BriefingRequest(BaseModel):
 @router.post("/briefing")
 async def generate_briefing(
     request: BriefingRequest,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -74,7 +74,7 @@ async def generate_briefing(
 @router.get("/briefing/{report_id}")
 async def get_briefing_detail(
     report_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -96,7 +96,7 @@ async def get_briefing_detail(
 @router.get("/briefing/saved/{report_id}/pdf")
 async def export_saved_briefing_pdf(
     report_id: UUID,
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -273,7 +273,7 @@ async def export_saved_briefing_pdf(
 
 @router.get("")
 async def get_reports(
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -287,7 +287,7 @@ async def get_reports(
 @router.post("/export")
 async def export_report(
     format: str = "csv",
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -300,7 +300,7 @@ async def export_report(
 @router.get("/{report_id}/pdf")
 async def export_report_pdf(
     report_id: UUID,
-    db: Any = Depends(get_supabase),
+    db: Client = Depends(get_supabase),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -393,7 +393,7 @@ async def export_briefing_pdf(
     rival_hotel_id: Optional[str] = None,
     days: int = 30,
     report_type: Optional[str] = "Strategic Market Pulse",
-    db: Any = Depends(get_supabase_rls),
+    db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
     """
