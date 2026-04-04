@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request, { params }: { params: { auth: string[] } }) {
-  return await handleRequest(request, params);
+export async function GET(request: Request, { params }: { params: Promise<{ auth: string[] }> }) {
+  const resolvedParams = await params;
+  return await handleRequest(request, resolvedParams);
 }
 
-export async function POST(request: Request, { params }: { params: { auth: string[] } }) {
-  return await handleRequest(request, params);
+export async function POST(request: Request, { params }: { params: Promise<{ auth: string[] }> }) {
+  const resolvedParams = await params;
+  return await handleRequest(request, resolvedParams);
 }
 
 async function handleRequest(request: Request, params: { auth: string[] }) {
