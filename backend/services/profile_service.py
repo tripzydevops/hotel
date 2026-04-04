@@ -10,6 +10,9 @@ from typing import Optional, Dict, Any
 from fastapi import HTTPException
 from supabase import Client, create_client
 from backend.models.schemas import UserProfileUpdate
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def get_enriched_profile_logic(
@@ -77,8 +80,8 @@ async def get_enriched_profile_logic(
                                 "plan_type": "trial",
                                 "subscription_status": "trial",
                                 "is_verified": False,
-                                "created_at": datetime.now(timezone.utc).isoformat(),
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                                "created_at": datetime.now(timezone.utc),
+                                "updated_at": datetime.now(timezone.utc),
                             }
                             admin_db.table("user_profiles").insert(new_profile).execute()
                             base_data = new_profile
@@ -91,8 +94,8 @@ async def get_enriched_profile_logic(
                                 "check_frequency_minutes": 1440,
                                 "notifications_enabled": True,
                                 "currency": "TRY",
-                                "created_at": datetime.now(timezone.utc).isoformat(),
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                                "created_at": datetime.now(timezone.utc),
+                                "updated_at": datetime.now(timezone.utc),
                             }).execute()
                     except Exception as he:
                         print(f"[Profile] Self-healing attempt failed: {he}")
@@ -211,17 +214,12 @@ async def get_enriched_profile_logic(
     elif "is_verified" not in profile_result:
         profile_result["is_verified"] = base_data.get("is_verified", False) if base_data else False
 
-    # Ensure timestamps exist for model validation
+    # Ensure timestamps exist for model validation as datetime objects
     if "created_at" not in profile_result:
-        profile_result["created_at"] = datetime.now(timezone.utc).isoformat()
+        profile_result["created_at"] = datetime.now(timezone.utc)
     if "updated_at" not in profile_result:
-        profile_result["updated_at"] = datetime.now(timezone.utc).isoformat()
+        profile_result["updated_at"] = datetime.now(timezone.utc)
     
-    # KAIZEN: Convert datetime objects to ISO strings for Pydantic consistency
-    for key in ["created_at", "updated_at"]:
-        if isinstance(profile_result.get(key), datetime):
-            profile_result[key] = profile_result[key].isoformat()
-
     return profile_result
 
 

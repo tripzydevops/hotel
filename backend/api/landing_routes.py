@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 # from supabase import Client (moved to function scope)
 # from backend.utils.db import get_supabase (moved to function scope)
 from backend.services.auth_service import get_current_admin_user
@@ -8,6 +8,22 @@ from backend.utils.logger import get_logger
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
+
+# Fallback constants for missing or failed database config
+HERO_TITLE_FALLBACK = "Hotel Pricing Sentinel"
+HERO_SUBTITLE_FALLBACK = "Monitor your competitors in real-time."
+HERO_DESCRIPTION_FALLBACK = "Never miss a rate change again. Automated intelligence for your hotel."
+HERO_CTA_TEXT_FALLBACK = "Start Monitoring"
+
+class LandingConfigResponse(BaseModel):
+    """Container for landing page configuration."""
+    hero_title: str
+    hero_subtitle: str
+    hero_description: Optional[str] = None
+    hero_cta: Optional[str] = "Get Started"
+    hero_image_url: Optional[str] = None
+    sections: List[Dict[str, Any]] = []
+    updated_at: Optional[str] = None
 
 router = APIRouter(prefix="/api", tags=["landing"])
 

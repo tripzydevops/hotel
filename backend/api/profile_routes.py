@@ -14,6 +14,9 @@ from backend.services.profile_service import (
 )
 from datetime import datetime, timezone, timedelta
 from backend.utils.security import verify_ownership
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["profile"])
 
@@ -34,7 +37,6 @@ async def get_profile(
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
-        raise HTTPException(status_code=503, detail="Database unavailable")
 
     # KAIZEN: Enforce ownership to prevent ID harvesting
     verify_ownership(user_id, current_user)
