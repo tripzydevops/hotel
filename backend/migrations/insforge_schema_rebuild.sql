@@ -89,30 +89,76 @@ CREATE INDEX IF NOT EXISTS hotel_directory_embedding_idx ON hotel_directory USIN
 -- Comment for documentation
 COMMENT ON COLUMN hotel_directory.embedding IS 'Semantic embedding of hotel metadata (vibe, segment, location) for autonomous discovery.';
 -- RPC function for vector similarity search
-CREATE OR REPLACE FUNCTION match_hotels (
-        query_embedding vector(768),
-        match_threshold float,
-        match_count int,
-        target_hotel_id uuid
-    ) RETURNS TABLE (
-        id uuid,
-        name text,
-        location text,
-        stars float,
-        rating float,
-        similarity float
-    ) LANGUAGE plpgsql AS $$ BEGIN RETURN QUERY
-SELECT h.id,
-    h.name,
-    h.location,
-    h.stars::float,
-    h.rating::float,
-    (1 - (h.embedding <=> query_embedding))::float AS similarity
-FROM hotel_directory h
-WHERE 1 - (h.embedding <=> query_embedding) > match_threshold
-    AND h.id <> target_hotel_id
-ORDER BY similarity DESC
-LIMIT match_count;
+CREATE OR REPLACE FUNCTION public.match_hotels(
+    query_embedding vector,
+    match_threshold double precision,
+    match_count integer,
+    target_hotel_id uuid,
+    target_lat double precision DEFAULT NULL,
+    target_lon double precision DEFAULT NULL,
+    max_distance_km double precision DEFAULT NULL,
+    target_city text DEFAULT NULL
+)
+RETURNS TABLE (
+    id uuid,
+    name text,
+    location text,
+    similarity double precision,
+    stars double precision,
+    rating double precision,
+    distance double precision
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        h.id,
+        h.name,
+        h.location,
+        COALESCE((1.0 - (h.embedding <=> query_embedding)), 0.0)::float8 as similarity,
+        h.stars::float8,
+        h.rating::float8,
+        CASE
+            WHEN target_lat IS NULL OR target_lon IS NULL OR h.latitude IS NULL OR h.longitude IS NULL THEN NULL
+            ELSE (
+                6371 * acos(
+                    LEAST(1.0, GREATEST(-1.0, 
+                        cos(radians(target_lat)) * cos(radians(h.latitude)) *
+                        cos(radians(h.longitude) - radians(target_lon)) +
+                        sin(radians(target_lat)) * sin(radians(h.latitude))
+                    ))
+                )
+            )::float8
+        END AS distance
+    FROM hotel_directory h
+    WHERE 
+        (h.embedding IS NOT NULL AND (1.0 - (h.embedding <=> query_embedding)) > match_threshold)
+        AND h.id <> target_hotel_id
+        AND (
+            (
+                target_lat IS NOT NULL AND target_lon IS NOT NULL AND h.latitude IS NOT NULL AND h.longitude IS NOT NULL
+                AND (
+                    6371 * acos(
+                        LEAST(1.0, GREATEST(-1.0, 
+                            cos(radians(target_lat)) * cos(radians(h.latitude)) *
+                            cos(radians(h.longitude) - radians(target_lon)) +
+                            sin(radians(target_lat)) * sin(radians(h.latitude))
+                        ))
+                    ) <= COALESCE(max_distance_km, 50.0)
+                )
+            )
+            OR
+            (
+                (target_lat IS NULL OR target_lon IS NULL OR h.latitude IS NULL OR h.longitude IS NULL)
+                AND (
+                    target_city IS NULL 
+                    OR h.location ILIKE '%' || target_city || '%'
+                )
+            )
+        )
+    ORDER BY COALESCE((1.0 - (h.embedding <=> query_embedding)), 0.0) DESC
+    LIMIT match_count;
 END;
 $$;-- Migration 005: Room Type Semantic Matching
 -- Creates a catalog of room types with vector embeddings
