@@ -924,7 +924,7 @@ function KPICard({
             )}
           </div>
         </div>
-      )}}
+      )}
     </motion.div>
   );
 }
