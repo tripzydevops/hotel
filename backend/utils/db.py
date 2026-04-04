@@ -30,9 +30,18 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
     from supabase import create_client, Client, ClientOptions
     from yarl import URL
 
-    # 1. Prioritize arguments, then env vars
+    # EXPLANATION: Environment Lookup
+    # In production (Vercel), we expect NEXT_PUBLIC_SUPABASE_URL to be set.
+    # For admin tasks, we MUST use SUPABASE_SERVICE_ROLE_KEY instead of ANON_KEY.
     target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    
+    if admin:
+        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        if not target_key:
+            # Fallback for local debugging if role key is missing but anon is present
+            target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    else:
+        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
     if not target_url or not target_key:
         sys.stderr.write(f"CRITICAL: SUPABASE_CONFIG_MISSING - URL: {'SET' if target_url else 'MISSING'}, KEY: {'SET' if target_key else 'MISSING'}\n")

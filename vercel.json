@@ -20,7 +20,15 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/api/auth/v1/(.*)",
+      "source": "/api/auth/user",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/api/auth/sync-token",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/api/auth/sessions/current",
       "destination": "/api/index.py"
     },
     {
@@ -33,11 +41,11 @@
     },
     {
       "source": "/auth/v1/(.*)",
-      "destination": "/api/index.py"
+      "destination": "https://ik_569a919326e5a606990494541539bd13.supabase.insforge.app/auth/v1/$1"
     },
     {
       "source": "/rest/v1/(.*)",
-      "destination": "/api/index.py"
+      "destination": "https://ik_569a919326e5a606990494541539bd13.supabase.insforge.app/rest/v1/$1"
     }
   ],
   "headers": [
