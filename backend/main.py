@@ -22,11 +22,9 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-# from backend.utils.db import get_supabase (moved to function scope)
+from supabase import Client
+from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
-from backend.utils.limiter import limiter
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
 
 logger = get_logger(__name__)
 
@@ -58,7 +56,6 @@ from backend.api import (
 # (which Vercel uses for builds), the entire backend will crash with a 500 error at startup.
 # We explicitly pinned 'google-genai>=1.0.0' to resolve this.
 # KAİZEN: Always use gemini-3-* models. gemini-1.5-* is legacy.
-from backend.services.auth_service import get_current_admin_user
 
 
 # Initialize FastAPI
@@ -74,10 +71,6 @@ app = FastAPI(
     version="2026.03 (V23)",
     redirect_slashes=False,
 )
-
-# Setup Rate Limiting State
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # SECURITY MIDDLEWARE: Inject standard protection headers
 @app.middleware("http")
@@ -130,16 +123,25 @@ async def api_ping():
 
 
 # CORS configuration
-# Default CORS configuration using FastAPI's standard middleware
-# This is more robust than manual header injection on Vercel
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Vercel handles actual origin filtering if needed
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+# KAİZEN: Ultra-robust manual CORS handling.
+# Standard CORSMiddleware can sometimes be bypassed by other middlewares or return 405 on OPTIONS.
+# This middleware ENSURES headers are set for all Vercel and InsForge origins.
+@app.middleware("http")
+async def manual_cors_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        response = JSONResponse(content="OK")
+    else:
+        response = await call_next(request)
+    
+    origin = request.headers.get("origin")
+    if origin and response and (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        response.headers["Access-Control-Max-Age"] = "86400"
+    
+    return response
 
 # Enable Gzip compression for all responses larger than 1000 bytes
 # This significantly improves performance for data-heavy API endpoints
@@ -158,15 +160,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
-    # 1. Handle FastAPI's built-in HTTPException
-    from fastapi import HTTPException
-    if isinstance(exc, HTTPException):
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": str(exc.detail)}
-        )
-
-    # 2. Handle generic exceptions with status_code attribute
     if hasattr(exc, "status_code"):
         status_code = getattr(exc, "status_code")
         detail = getattr(exc, "detail", str(exc))
@@ -178,17 +171,10 @@ async def global_exception_handler(request: Request, exc: Exception):
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
 
-    # Provide helpful hints for common initialization errors
-    detail = str(exc)
-    if "NoneType" in detail and "table" in detail:
-        detail = "DATABASE_UNAVAILABLE: Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables."
-    elif "GOOGLE_API_KEY" in detail or "NoneType" in detail and "models" in detail:
-        detail = "AI_SERVICE_UNAVAILABLE: Check GOOGLE_API_KEY environment variable for Gemini orchestration."
-
     # EXPLANATION: Debug-Friendly Error Response
     return JSONResponse(
         status_code=500,
-        content={"detail": detail},
+        content={"detail": f"Internal Server Error: {str(exc)}"},
     )
 
 
@@ -203,7 +189,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # Basic Health/Diagnostic Endpoints
 @app.get("/api/health/db")
-async def db_health(admin: Any = Depends(get_current_admin_user)):
+async def db_health():
     import os
     return {
         "resolved_url": "https://pa5riyqv.eu-central.insforge.app",
@@ -223,10 +209,7 @@ async def health_check():
 
 
 @app.get("/api/debug/system-report")
-async def system_report(
-    db: Client = Depends(get_supabase),
-    admin: Any = Depends(get_current_admin_user)
-):
+async def system_report(db: Client = Depends(get_supabase)):
     """Deep diagnostics for environment and database connectivity."""
 
     # 1. Environment Check (Masked)
@@ -299,20 +282,22 @@ app.include_router(pulse_routes.router)
 app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
 app.include_router(recovery_routes.router)
-# Note: auth_routes.router now has no prefix internally, so we mount it at /api/auth
-app.include_router(auth_routes.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(auth_routes.router)
+# REMOVED: auth_routes.v1_router (prefix="/auth/v1")
+# The /auth/v1/* paths must be proxied directly to InsForge by Vercel.
+# FastAPI was intercepting these and returning 401 HTML because it expects
+# a Bearer token, but the InsForge SDK sends credentials.
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
 @app.get("/api/cron")
-async def trigger_cron_job(request: Request, background_tasks: BackgroundTasks):
+async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
     """External cron entry point."""
     cron_secret = os.getenv("CRON_SECRET")
     if not cron_secret:
         logger.critical("SECURITY CONFIG ERROR: CRON_SECRET not set in environment.")
         return JSONResponse(status_code=500, content={"detail": "System configuration error"})
         
-    key = request.headers.get("X-Cron-Secret")
     if key != cron_secret:
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
 
@@ -320,7 +305,6 @@ async def trigger_cron_job(request: Request, background_tasks: BackgroundTasks):
     from backend.services.market.sync_service import run_market_sync_if_needed
     from backend.utils.db import get_supabase
 
-    # V24: Use factory safely outside of DI
     db = get_supabase()
     background_tasks.add_task(run_scheduler_check_logic)
     background_tasks.add_task(run_market_sync_if_needed, db)
@@ -330,11 +314,4 @@ async def trigger_cron_job(request: Request, background_tasks: BackgroundTasks):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "backend.main:app", 
-        host="0.0.0.0", 
-        port=8000, 
-        reload=True,
-        reload_dirs=["backend"],
-        log_level="info"
-    )
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

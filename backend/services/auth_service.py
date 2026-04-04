@@ -12,8 +12,8 @@ import os
 import traceback
 from fastapi import Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-# from backend.utils.db import get_supabase_client, get_supabase (moved to function scope)
-# from supabase import Client (moved to function scope)
+from backend.utils.db import get_supabase_client, get_supabase
+from supabase import Client
 
 from backend.utils.logger import get_logger
 import httpx
@@ -23,25 +23,21 @@ from types import SimpleNamespace
 logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
-_RAW_INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-# KAİZEN: Robust quote stripping for the gateway URL
-INSFORGE_URL = str(_RAW_INSFORGE_URL).strip().strip("'").strip('"').rstrip("/") if _RAW_INSFORGE_URL else None
+INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 
 
 
 async def _verify_token_via_insforge(token: str) -> dict:
     """
     Verify a JWT token by calling InsForge's REST API directly.
+    
+    Uses GET /api/auth/sessions/current instead of supabase-py's 
+    db.auth.get_user() which calls the incompatible /auth/v1/user path.
+    
+    Returns a SimpleNamespace with .id, .email, .role attributes (duck-typed
+    to match what supabase-py's UserResponse.user would have provided).
     """
-    if not INSFORGE_URL or INSFORGE_URL == "None":
-        logger.error("AUTH_URL_MISSING: NEXT_PUBLIC_SUPABASE_URL is not set or invalid.")
-        raise HTTPException(
-            status_code=503, 
-            detail="AUTH_SERVICE_UNAVAILABLE: InsForge URL (NEXT_PUBLIC_SUPABASE_URL) is missing from environment variables. Check Vercel settings."
-        )
-
     url = f"{INSFORGE_URL}/api/auth/sessions/current"
-    logger.info(f"InsForge auth: Checking session against {url}")
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -93,12 +89,10 @@ def get_token(request: Request) -> str:
     raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
 
 
-async def get_current_admin_user(request: Request, token: str = Depends(get_token)):
+async def get_current_admin_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the request is made by an Admin.
     """
-    from backend.utils.db import get_supabase
-    db = get_supabase()
     try:
         # Verify token via InsForge REST API (not supabase-py)
         user_obj = await _verify_token_via_insforge(token)
@@ -130,12 +124,10 @@ async def get_current_admin_user(request: Request, token: str = Depends(get_toke
         raise HTTPException(status_code=401, detail=str(e))
 
 
-async def get_current_active_user(request: Request, token: str = Depends(get_token)):
+async def get_current_active_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
     """
     Verify that the user is logged in AND has an active approval status.
     """
-    from backend.utils.db import get_supabase
-    db = get_supabase()
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
@@ -246,10 +238,9 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
 
 def get_supabase_rls(
     token: str = Depends(get_token),
-) -> Any:
+) -> Client:
     """
     Dependency that returns a Supabase client with RLS enabled.
     Uses the JWT from the Authorization header.
     """
-    from backend.utils.db import get_supabase_client
     return get_supabase_client(jwt=token)
