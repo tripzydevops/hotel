@@ -110,7 +110,8 @@ export default function CalendarControls({
               const actualRoom = getFirstRoomForCategory(category);
               if (actualRoom) onRoomTypeChange(actualRoom);
             }}
-            className="w-full appearance-none bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer hover:bg-[var(--soft-gold)]/10 transition-colors"
+            className="w-full appearance-none bg-[var(--deep-ocean-lighter)] border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer hover:bg-[var(--deep-ocean-lighter)]/80 transition-colors"
+
           >
             {!roomType && (
               <option value="" disabled className="bg-[var(--deep-ocean)] text-white/40">

@@ -537,7 +537,8 @@ async def perform_market_analysis(
     
     # [NEW] Collect all available room types in the market logs for the dropdown
     # We scan more than just the first log to ensure stability of the dropdown options.
-    all_room_names = {"Standard"}
+    # [KAIZEN] Always include core categories to ensure they are selectable in the UI
+    all_room_names = {"Standard", "Deluxe", "Suite"}
     for p_logs in hotel_prices_map.values():
         # Scan up to 30 recent logs for each hotel to capture all room types they've recently offered
         recent_logs = cast(List[Dict[str, Any]], p_logs)[:30]
