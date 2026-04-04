@@ -249,7 +249,7 @@ export default function HotelTile(props: HotelTileProps) {
             </h2>
             {stars && (
               <div className="flex items-center gap-0.5 mb-2 px-2 py-1 rounded-lg bg-[var(--soft-gold)]/10 border-2 border-[var(--soft-gold)]/20 w-fit">
-                {[...Array(Math.min(5, stars))].map((_, i) => (
+                {Array.from({ length: Math.max(0, Math.min(5, Math.floor(Number(stars) || 0))) }).map((_, i) => (
                   <span
                     key={i}
                     className="text-[10px] text-[var(--soft-gold)] font-bold"

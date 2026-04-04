@@ -222,9 +222,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                       )}
                       <span>•</span>
                       <div className="flex items-center gap-0.5 text-[var(--soft-gold)]">
-                        {[
-                          ...Array(Math.min(5, Math.floor(rival.stars || 0))),
-                        ].map((_, i) => (
+                        {Array.from({ length: Math.max(0, Math.min(5, Math.floor(rival.stars || 0))) }).map((_, i) => (
                           <span key={i}>★</span>
                         ))}
                       </div>
