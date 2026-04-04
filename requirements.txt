@@ -16,6 +16,6 @@ numpy>=1.26.0
 Jinja2>=3.1.2
 psutil>=5.9.0
 sse-starlette>=2.0.0
-xhtml2pdf>=0.2.11
 slowapi>=0.1.9
-# REDEPLOY TRIGGER: 2026-04-04T03:48:30Z
+yarl>=1.9.4
+# REDEPLOY TRIGGER: 2026-04-04T04:45:30Z

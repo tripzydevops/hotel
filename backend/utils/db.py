@@ -38,14 +38,19 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
 
     try:
         # 2. Initialize the generic client
-        supabase: Client = create_client(
-            target_url, 
-            target_key, 
-            options=ClientOptions(
+        # Ensure credentials exist before initialization
+        if not target_url or not target_key:
+            logger.error("SUPABASE CONFIG MISSING: URL or Anon Key is empty")
+            return None
+
+        # Fix: Ensure URL is string for yarl
+        target_url = str(target_url)
+        
+        supabase: Client = create_client(target_url, target_key, options=ClientOptions(
                 postgrest_client_timeout=30,
-                storage_client_timeout=30
-            )
-        )
+                storage_client_timeout=30,
+                schema="public"
+            ))
         
         # 3. Path Redirection: Override default PostgREST path for InsForge compatability
         # Use yarl for safe URL manipulation (avoids double-slash or missing slash issues)
