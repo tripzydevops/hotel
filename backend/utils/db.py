@@ -74,14 +74,22 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
         return None
 
 def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_client)):
-    """FastAPI dependency for Supabase with automatic 500 on failure."""
+    """FastAPI dependency for Supabase with descriptive diagnostics on failure."""
     if not client:
+        # EXPLANATION: Detailed error for Vercel troubleshooting
+        url_set = bool(os.getenv("NEXT_PUBLIC_SUPABASE_URL"))
+        key_set = bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+        missing = []
+        if not url_set: missing.append("NEXT_PUBLIC_SUPABASE_URL")
+        if not key_set: missing.append("SUPABASE_SERVICE_ROLE_KEY/ANON_KEY")
+        
         from fastapi import HTTPException
         raise HTTPException(
-            status_code=500, 
-            detail="DATABASE_INIT_FAILED: Please check connection pool status."
+            status_code=503, 
+            detail=f"DATABASE_CONFIG_ERROR: Missing [{', '.join(missing)}]. Please check Vercel Environment Variables and Redeploy."
         )
     return client
 
-# Alias for backward compatibility with existing code (Functions and Dependencies)
-get_supabase = get_supabase_client
+# Alias for backward compatibility (using the wrapper that provides error info)
+get_supabase = get_supabase_dependency
+get_get_supabase_client = get_supabase_client # Real factory

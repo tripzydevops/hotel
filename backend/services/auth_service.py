@@ -23,20 +23,23 @@ from types import SimpleNamespace
 logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
-INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+_RAW_INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+# EXPLANATION: Remove trailing slash to avoid double-slashes in paths
+INSFORGE_URL = _RAW_INSFORGE_URL.rstrip("/") if _RAW_INSFORGE_URL else None
 
 
 
 async def _verify_token_via_insforge(token: str) -> dict:
     """
     Verify a JWT token by calling InsForge's REST API directly.
-    
-    Uses GET /api/auth/sessions/current instead of supabase-py's 
-    db.auth.get_user() which calls the incompatible /auth/v1/user path.
-    
-    Returns a SimpleNamespace with .id, .email, .role attributes (duck-typed
-    to match what supabase-py's UserResponse.user would have provided).
     """
+    if not INSFORGE_URL:
+        logger.error("AUTH_URL_MISSING: NEXT_PUBLIC_SUPABASE_URL is not set.")
+        raise HTTPException(
+            status_code=503, 
+            detail="AUTH_SERVICE_UNAVAILABLE: Backend configuration missing (URL)."
+        )
+
     url = f"{INSFORGE_URL}/api/auth/sessions/current"
     headers = {
         "Authorization": f"Bearer {token}",
