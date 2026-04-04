@@ -69,8 +69,24 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // REMOVED: Duplicate rewrites() — vercel.json handles all rewrites
-  // and takes precedence on Vercel. Having both caused unpredictable routing.
+  // P-API REWRITES (V25): Dynamic Environment-based Routing
+  // Moves rewrites from vercel.json to next.config.ts to allow project-specific
+  // routing without manual configuration in vercel.json.
+  async rewrites() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+    if (!supabaseUrl) return [];
+
+    return [
+      {
+        source: "/auth/v1/:path*",
+        destination: `${supabaseUrl}/auth/v1/:path*`,
+      },
+      {
+        source: "/rest/v1/:path*",
+        destination: `${supabaseUrl}/rest/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

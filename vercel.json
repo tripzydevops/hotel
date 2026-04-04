@@ -21,7 +21,7 @@
     },
     {
       "source": "/api/auth/v1/(.*)",
-      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/auth/v1/$1"
+      "destination": "/api/index.py"
     },
     {
       "source": "/api/auth/(.*)",
@@ -33,11 +33,11 @@
     },
     {
       "source": "/auth/v1/(.*)",
-      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/auth/v1/$1"
+      "destination": "/api/index.py"
     },
     {
       "source": "/rest/v1/(.*)",
-      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/rest/v1/$1"
+      "destination": "/api/index.py"
     }
   ],
   "headers": [

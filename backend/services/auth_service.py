@@ -41,6 +41,7 @@ async def _verify_token_via_insforge(token: str) -> dict:
         )
 
     url = f"{INSFORGE_URL}/api/auth/sessions/current"
+    logger.info(f"InsForge auth: Checking session against {url}")
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
