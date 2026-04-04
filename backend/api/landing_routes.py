@@ -18,9 +18,17 @@ class ConfigUpdate(BaseModel):
 @router.get("/landing/config")
 async def get_landing_config(locale: str = "tr"):
     """Public endpoint to fetch all landing page configurations for a specific locale."""
-    from backend.utils.db import get_supabase
-    db = get_supabase()
     try:
+        from backend.utils.db import get_supabase
+        db = get_supabase()
+        
+        if not db:
+            print("DB_RECOVERY: Database client unavailable. Returning fallback configuration.")
+            return LandingConfigResponse(
+                hero_title=HERO_TITLE_FALLBACK,
+                hero_subtitle=HERO_SUBTITLE_FALLBACK,
+                sections=[]
+            )
         # V23 cascading logic:
         # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
         target_locales = [locale]

@@ -178,10 +178,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
 
+    # Provide helpful hints for common initialization errors
+    detail = str(exc)
+    if "NoneType" in detail and "table" in detail:
+        detail = "DATABASE_UNAVAILABLE: Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables."
+    elif "GOOGLE_API_KEY" in detail or "NoneType" in detail and "models" in detail:
+        detail = "AI_SERVICE_UNAVAILABLE: Check GOOGLE_API_KEY environment variable for Gemini orchestration."
+
     # EXPLANATION: Debug-Friendly Error Response
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"},
+        content={"detail": detail},
     )
 
 

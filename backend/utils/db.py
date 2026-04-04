@@ -53,12 +53,14 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
         target_key = str(target_key).strip().strip("'").strip('"')
 
     if not target_url or not target_key:
-        sys.stderr.write(f"CRITICAL: SUPABASE_CONFIG_MISSING - URL: {'SET' if target_url else 'MISSING'}, KEY: {'SET' if target_key else 'MISSING'}\n")
+        print(f"CRITICAL: SUPABASE_CONFIG_MISSING - URL: {'SET' if target_url else 'MISSING'}, KEY: {'SET' if target_key else 'MISSING'}")
         return None
 
     try:
         # Resolve any extra slash issues
         target_url = str(target_url).rstrip("/")
+        
+        print(f"INIT: Initializing Supabase client for: {target_url}")
         
         supabase: Client = create_client(target_url, target_key, options=ClientOptions(
             postgrest_client_timeout=30,
@@ -74,7 +76,10 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
             
         return supabase
     except Exception as e:
-        sys.stderr.write(f"CRITICAL: SUPABASE_INIT_ERROR: {str(e)}\n")
+        print(f"CRITICAL: SUPABASE_INIT_ERROR: {str(e)}")
+        # Log stack trace for better debugging in Vercel logs
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -88,7 +93,14 @@ def get_supabase() -> Any:
         missing = []
         if not os.getenv("NEXT_PUBLIC_SUPABASE_URL"): missing.append("URL")
         if not os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"): missing.append("Key")
-        raise RuntimeError(f"DATABASE_CONFIG_ERROR: Missing [{', '.join(missing)}]. Check ENV.")
+        
+        if missing:
+            print(f"DATABASE_CONFIG_ERROR: Missing [{', '.join(missing)}]. Check ENV.")
+        else:
+            print("DATABASE_INIT_ERROR: Environment variables are set but client initialization failed. Check logs above.")
+        
+        return None # Return None instead of raising RuntimeError to prevent 500 crashes
+    
     return db
 
 
