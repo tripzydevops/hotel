@@ -570,7 +570,13 @@ class SerpApiClient:
         # 2. Extract and Deduplicate
         for r in raw_rooms:
             # Flexible Name Extraction
-            name = r.get("name") or r.get("title") or r.get("type") or r.get("room_category") or r.get("room_type")
+            name = (
+                r.get("name") 
+                or r.get("title") 
+                or r.get("type") 
+                or r.get("room_category") 
+                or r.get("room_type")
+            )
             if not name or name in room_names:
                 continue
             
@@ -591,10 +597,57 @@ class SerpApiClient:
             
             price = self._clean_price_string(raw_p, currency)
             if price is not None:
-                rooms.append({"name": name, "price": price, "currency": currency})
+                # Capture room amenities if present
+                room_amenities = r.get("amenities", [])
+                rooms.append({
+                    "name": name, 
+                    "price": price, 
+                    "currency": currency,
+                    "amenities": room_amenities
+                })
                 room_names.add(name)
         
         return rooms
+
+    def _extract_amenities(self, best_match: Dict[str, Any]) -> List[str]:
+        """Extract a flat list of amenities from various potential sources."""
+        raw_amenities = best_match.get("amenities", [])
+        if not raw_amenities:
+            return []
+            
+        # If it's a list of strings, return it
+        if all(isinstance(a, str) for a in raw_amenities):
+            return raw_amenities
+            
+        # If it's a list of category objects (common on detail page)
+        # e.g. [{"category": "Food and drink", "amenities": ["Bar", "Restaurant"]}]
+        flat_list = []
+        for item in raw_amenities:
+            if isinstance(item, str):
+                flat_list.append(item)
+            elif isinstance(item, dict):
+                sub_amenities = item.get("amenities", [])
+                if isinstance(sub_amenities, list):
+                    flat_list.extend(sub_amenities)
+                elif item.get("description"):
+                    flat_list.append(item["description"])
+                elif item.get("text"):
+                    flat_list.append(item["text"])
+        
+        return list(set(flat_list)) # Deduplicate
+
+    def _extract_description(self, best_match: Dict[str, Any]) -> Optional[str]:
+        """Deep extract description from various SerpApi fields."""
+        desc = best_match.get("description")
+        if desc:
+            return desc
+            
+        # Detail page often has it in 'about'
+        about = best_match.get("about", {})
+        if isinstance(about, dict):
+            return about.get("summary") or about.get("description")
+            
+        return None
 
     async def search_hotels(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         # Default to checking in tomorrow
@@ -656,8 +709,8 @@ class SerpApiClient:
                                 "stars": p.get("extracted_hotel_class"),
                                 "rating": p.get("overall_rating"),
                                 "review_count": p.get("reviews"),
-                                "description": p.get("description"),
-                                "amenities": p.get("amenities", []),
+                                "description": self._extract_description(p),
+                                "amenities": self._extract_amenities(p),
                                 "image_url": p.get("images", [{}])[0].get("thumbnail")
                                 if p.get("images")
                                 else None,
@@ -920,7 +973,7 @@ class SerpApiClient:
             "stars": best_match.get("extracted_hotel_class"),
             "property_token": best_match.get("property_token"),
             "image_url": best_match.get("images", [{}])[0].get("thumbnail"),
-            "amenities": best_match.get("amenities", []),
+            "amenities": self._extract_amenities(best_match),
             "images": [
                 {"thumbnail": i.get("thumbnail"), "original": i.get("original")}
                 for i in best_match.get("images", [])[:10]
@@ -935,7 +988,7 @@ class SerpApiClient:
             "search_rank": rank,
             "latitude": (best_match.get("gps_coordinates") or {}).get("latitude"),
             "longitude": (best_match.get("gps_coordinates") or {}).get("longitude"),
-            "description": best_match.get("description"),
+            "description": self._extract_description(best_match),
             "phone": best_match.get("phone"),
             "website": best_match.get("website"),
             "address": best_match.get("address"),

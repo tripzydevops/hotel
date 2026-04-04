@@ -213,7 +213,7 @@ class ScanPersistenceService:
         # KAİZEN: Smart Update Logic for Static Fields
         # We fetch existing state to avoid redundant writes for stable data (descriptions, amenities, etc.)
         hotel_data_res = self.db.table("hotels").select(
-            "sentiment_breakdown, description, amenities, images, phone, website, latitude, longitude, updated_at"
+            "sentiment_breakdown, description, amenities, images, phone, website, address, stars, latitude, longitude, room_types, updated_at"
         ).eq("id", hotel_id).maybe_single().execute()
         
         current_hotel = hotel_data_res.data if hotel_data_res else {}
@@ -245,13 +245,29 @@ class ScanPersistenceService:
             except Exception:
                 is_stale = True # Fallback to update if parsing fails
         
-        static_fields = ["description", "amenities", "images", "phone", "website", "address", "stars", "latitude", "longitude"]
+        static_fields = ["description", "amenities", "images", "phone", "website", "address", "stars", "latitude", "longitude", "room_types"]
         for field in static_fields:
             new_val = price_data.get(field)
-            if new_val:
-                # If missing or stale, update
-                if not current_hotel.get(field) or is_stale:
-                    meta_update[field] = new_val
+            if not new_val:
+                continue
+                
+            existing_val = current_hotel.get(field)
+            should_update = False
+            
+            if not existing_val or is_stale:
+                should_update = True
+            elif field == "description" and len(str(new_val)) > len(str(existing_val or "")) * 1.2:
+                # Significant description improvement (>20% longer)
+                should_update = True
+            elif field == "amenities" and isinstance(new_val, list) and len(new_val) > len(existing_val or []):
+                # More amenities found
+                should_update = True
+            elif field == "room_types" and isinstance(new_val, list) and len(new_val) > 0:
+                # Always snapshot room types if found, to keep the UI fresh
+                should_update = True
+            
+            if should_update:
+                meta_update[field] = new_val
 
         # Update DB
         if meta_update:
