@@ -173,17 +173,8 @@ export default function Dashboard() {
     [
       data?.target_hotel?.price_info?.currency,
       data?.competitors,
-      userSettings?.currency,
     ],
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] transition-colors duration-500">
-        <LoadingState rows={1} skeleton={<ModalLoading />} />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -197,7 +188,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!data && loading) return null;
+
 
   return (
     <div className="min-h-screen pb-24 relative overflow-hidden">

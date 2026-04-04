@@ -325,9 +325,9 @@ export default function AnalysisPage() {
           <KPICard
             title={t("analysis.targetPrice")}
             value={
-              data?.target_price
+              data?.target_price != null
                 ? `${CURRENCY_SYMBOLS[currency] || "$"}${data.target_price}`
-                : "N/A"
+                : "No Price"
             }
             subtitle={t("hotelDetails.liveRates")}
             icon={<Target className="w-5 h-5" />}

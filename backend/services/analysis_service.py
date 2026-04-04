@@ -577,7 +577,7 @@ async def perform_market_analysis(
         "hotel_name": target_hotel_name,
         "market_average": float(int(market_average * 100) / 100.0) if market_average > 0 else 0.0,
         "market_avg": float(int(market_average * 100) / 100.0) if market_average > 0 else 0.0,  # Legacy alias
-        "target_price": float(int((target_price or 0.0) * 100) / 100.0),
+        "target_price": float(int(target_price * 100) / 100.0) if target_price is not None else None,
         "market_min": market_min,
         "market_max": market_max,
         "min_hotel": {"name": min_h_obj.get("name"), "price": market_min},
