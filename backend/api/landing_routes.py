@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
-from supabase import Client
-from backend.utils.db import get_supabase
+# from supabase import Client (moved to function scope)
+# from backend.utils.db import get_supabase (moved to function scope)
 from backend.services.auth_service import get_current_admin_user
 from backend.utils.logger import get_logger
 from pydantic import BaseModel
@@ -16,8 +16,10 @@ class ConfigUpdate(BaseModel):
     configs: List[Dict[str, Any]]
 
 @router.get("/landing/config")
-async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
+async def get_landing_config(locale: str = "tr"):
     """Public endpoint to fetch all landing page configurations for a specific locale."""
+    from backend.utils.db import get_supabase
+    db = await get_supabase()
     try:
         # V23 cascading logic:
         # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
@@ -78,8 +80,9 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
 async def get_admin_landing_config(
     locale: str = "tr",
     current_user: dict = Depends(get_current_admin_user),
-    db: Client = Depends(get_supabase),
 ):
+    from backend.utils.db import get_supabase
+    db = await get_supabase()
     try:
         res = (
             db.table("landing_page_config")
@@ -96,8 +99,9 @@ async def get_admin_landing_config(
 async def update_landing_config(
     data: ConfigUpdate,
     current_user: dict = Depends(get_current_admin_user),
-    db: Client = Depends(get_supabase),
 ):
+    from backend.utils.db import get_supabase
+    db = await get_supabase()
     try:
         for item in data.configs:
             db.table("landing_page_config").upsert(

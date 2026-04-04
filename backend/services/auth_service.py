@@ -12,8 +12,8 @@ import os
 import traceback
 from fastapi import Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from backend.utils.db import get_supabase_client, get_supabase
-from supabase import Client
+# from backend.utils.db import get_supabase_client, get_supabase (moved to function scope)
+# from supabase import Client (moved to function scope)
 
 from backend.utils.logger import get_logger
 import httpx
@@ -92,10 +92,12 @@ def get_token(request: Request) -> str:
     raise HTTPException(status_code=401, detail="Missing Authorization Header or Token Query Param")
 
 
-async def get_current_admin_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
+async def get_current_admin_user(request: Request, token: str = Depends(get_token)):
     """
     Verify that the request is made by an Admin.
     """
+    from backend.utils.db import get_supabase
+    db = await get_supabase()
     try:
         # Verify token via InsForge REST API (not supabase-py)
         user_obj = await _verify_token_via_insforge(token)
@@ -127,10 +129,12 @@ async def get_current_admin_user(request: Request, token: str = Depends(get_toke
         raise HTTPException(status_code=401, detail=str(e))
 
 
-async def get_current_active_user(request: Request, token: str = Depends(get_token), db: Client = Depends(get_supabase)):
+async def get_current_active_user(request: Request, token: str = Depends(get_token)):
     """
     Verify that the user is logged in AND has an active approval status.
     """
+    from backend.utils.db import get_supabase
+    db = await get_supabase()
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
@@ -241,9 +245,10 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
 
 def get_supabase_rls(
     token: str = Depends(get_token),
-) -> Client:
+) -> Any:
     """
     Dependency that returns a Supabase client with RLS enabled.
     Uses the JWT from the Authorization header.
     """
+    from backend.utils.db import get_supabase_client
     return get_supabase_client(jwt=token)
