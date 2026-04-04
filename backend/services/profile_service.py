@@ -29,9 +29,24 @@ async def get_enriched_profile_logic(
     # 0. Prepare admin access for truth checking and self-healing
     from backend.utils.db import get_supabase_client
     admin_db = get_supabase_client(admin=True)
+    
+    # KAİZEN: Ensure we have a default profile structure to avoid Pydantic validation errors (500s)
+    profile_result = base_data or {}
+    if not profile_result:
+        profile_result = {
+            "user_id": str(user_id),
+            "display_name": "User",
+            "plan_type": "free",
+            "subscription_status": "inactive",
+            "is_verified": False,
+            "role": "user",
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
+        }
+
     if not admin_db:
-        print("[Profile] Admin access unavailable")
-        return base_data or {}
+        logger.warning(f"[Profile] Admin access unavailable for {user_id}. Returning minimal profile.")
+        return profile_result
 
     # 1. Fetch base metadata if not provided
     if base_data is None:
@@ -93,18 +108,19 @@ async def get_enriched_profile_logic(
     sub_data = []
 
     try:
-        viewer_db = db
-        viewer_db = admin_db or db
-
-        result = (
-            viewer_db.table("profiles")
-            .select("plan_type, subscription_status")
-            .eq("id", user_id_str)
-            .execute()
-        )
-        sub_data = result.data
+        if admin_db:
+            result = (
+                admin_db.table("profiles")
+                .select("plan_type, subscription_status")
+                .eq("id", user_id_str)
+                .execute()
+            )
+            sub_data = result.data
+        else:
+            sub_data = []
     except Exception as e:
-        print(f"Profile Sync Error: {e}")
+        logger.error(f"Profile Sync Error: {e}")
+        sub_data = []
 
     if sub_data:
         plan = sub_data[0].get("plan_type") or "trial"

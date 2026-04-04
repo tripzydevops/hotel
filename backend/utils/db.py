@@ -1,7 +1,10 @@
 import sys
 import os
 from typing import Optional, Any
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 from fastapi import Depends
 import traceback
 from backend.utils.logger import get_logger
@@ -33,6 +36,7 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
     # EXPLANATION: Environment Lookup
     # In production (Vercel), we expect NEXT_PUBLIC_SUPABASE_URL to be set.
     # For admin tasks, we MUST use SUPABASE_SERVICE_ROLE_KEY instead of ANON_KEY.
+    # KAİZEN: Robust quote-stripping for URLs and Keys
     target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     
     if admin:
@@ -42,6 +46,11 @@ def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jw
             target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     else:
         target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+
+    if target_url:
+        target_url = str(target_url).strip().strip("'").strip('"').rstrip("/")
+    if target_key:
+        target_key = str(target_key).strip().strip("'").strip('"')
 
     if not target_url or not target_key:
         sys.stderr.write(f"CRITICAL: SUPABASE_CONFIG_MISSING - URL: {'SET' if target_url else 'MISSING'}, KEY: {'SET' if target_key else 'MISSING'}\n")

@@ -24,8 +24,8 @@ logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
 _RAW_INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-# EXPLANATION: Remove trailing slash to avoid double-slashes in paths
-INSFORGE_URL = _RAW_INSFORGE_URL.rstrip("/") if _RAW_INSFORGE_URL else None
+# KAİZEN: Robust quote stripping for the gateway URL
+INSFORGE_URL = str(_RAW_INSFORGE_URL).strip().strip("'").strip('"').rstrip("/") if _RAW_INSFORGE_URL else None
 
 
 
