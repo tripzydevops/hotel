@@ -19,7 +19,7 @@ class ConfigUpdate(BaseModel):
 async def get_landing_config(locale: str = "tr"):
     """Public endpoint to fetch all landing page configurations for a specific locale."""
     from backend.utils.db import get_supabase
-    db = await get_supabase()
+    db = get_supabase()
     try:
         # V23 cascading logic:
         # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
@@ -82,7 +82,7 @@ async def get_admin_landing_config(
     current_user: dict = Depends(get_current_admin_user),
 ):
     from backend.utils.db import get_supabase
-    db = await get_supabase()
+    db = get_supabase()
     try:
         res = (
             db.table("landing_page_config")
@@ -101,7 +101,7 @@ async def update_landing_config(
     current_user: dict = Depends(get_current_admin_user),
 ):
     from backend.utils.db import get_supabase
-    db = await get_supabase()
+    db = get_supabase()
     try:
         for item in data.configs:
             db.table("landing_page_config").upsert(

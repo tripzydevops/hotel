@@ -98,7 +98,7 @@ async def get_current_admin_user(request: Request, token: str = Depends(get_toke
     Verify that the request is made by an Admin.
     """
     from backend.utils.db import get_supabase
-    db = await get_supabase()
+    db = get_supabase()
     try:
         # Verify token via InsForge REST API (not supabase-py)
         user_obj = await _verify_token_via_insforge(token)
@@ -135,7 +135,7 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
     Verify that the user is logged in AND has an active approval status.
     """
     from backend.utils.db import get_supabase
-    db = await get_supabase()
+    db = get_supabase()
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database Unavailable")
