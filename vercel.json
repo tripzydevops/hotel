@@ -21,7 +21,7 @@
     },
     {
       "source": "/api/auth/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
+      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/auth/v1/$1"
     },
     {
       "source": "/api/auth/(.*)",
@@ -33,11 +33,11 @@
     },
     {
       "source": "/auth/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
+      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/auth/v1/$1"
     },
     {
       "source": "/rest/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/rest/v1/$1"
+      "destination": "https://thrqylyixmoxhbtzndoe.insforge.app/rest/v1/$1"
     }
   ],
   "headers": [

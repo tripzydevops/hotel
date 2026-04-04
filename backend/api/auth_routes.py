@@ -9,7 +9,8 @@ from backend.utils.limiter import limiter
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+# Prefix is added when including this router in main.py to avoid double-prefixing
+router = APIRouter()
 
 @router.get("/user", include_in_schema=True)
 @limiter.limit("10/minute")
@@ -83,7 +84,7 @@ async def get_current_session(request: Request, db: Client = Depends(get_supabas
         logger.error(f"Error in /api/auth/sessions/current: {e}")
         raise HTTPException(status_code=401, detail=str(e))
 
-v1_router = APIRouter(prefix="/auth/v1", tags=["Authentication-V1"])
+v1_router = APIRouter(prefix="/v1", tags=["Authentication-V1"])
 
 @v1_router.get("/sessions/current", include_in_schema=False)
 async def get_current_session_v1(request: Request, db: Client = Depends(get_supabase)):
@@ -98,3 +99,5 @@ async def get_user_info_v1(request: Request, db: Client = Depends(get_supabase))
     token = get_token(request)
     user = await get_current_active_user(request, token, db)
     return {"user": user}
+# Include the V1 routes (proxied paths) into the main auth router
+router.include_router(v1_router)

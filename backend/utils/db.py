@@ -11,13 +11,15 @@ from backend.utils.logger import get_logger
 # EXPLANATION: Module-level logger for consistent behavior
 logger = get_logger(__name__)
 
-def load_env_standard():
-    """
-    Standardize environment variable loading for both App and CLI scripts.
-    Prioritizes .env.local for development compatibility.
-    """
-    load_dotenv(".env")
-    load_dotenv(".env.local", override=True)
+def load_env_standard() -> None:
+    try:
+        # Load from multiple potential locations safely
+        for env_file in [".env", ".env.local", ".env.production"]:
+            if os.path.exists(env_file):
+                load_dotenv(env_file, override=True)
+    except Exception:
+        # Silently continue on Vercel where env vars are injected directly
+        pass
 
 # Initial load for app-level execution
 load_env_standard()

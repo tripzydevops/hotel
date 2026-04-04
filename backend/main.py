@@ -131,26 +131,16 @@ async def api_ping():
 
 
 # CORS configuration
-# KAİZEN: Ultra-robust manual CORS handling.
-# Standard CORSMiddleware can sometimes be bypassed by other middlewares or return 405 on OPTIONS.
-# This middleware ENSURES headers are set for all Vercel and InsForge origins.
-@app.middleware("http")
-async def manual_cors_middleware(request: Request, call_next):
-    if request.method == "OPTIONS":
-        response = JSONResponse(content="OK")
-    else:
-        response = await call_next(request)
-    
-    origin = request.headers.get("origin")
-    # SAFETY CHECK: Ensure response exists and is valid before accessing attributes
-    if response and hasattr(response, "headers") and origin:
-        if (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey, Prefer"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-    
-    return response
+# Default CORS configuration using FastAPI's standard middleware
+# This is more robust than manual header injection on Vercel
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Vercel handles actual origin filtering if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
 # Enable Gzip compression for all responses larger than 1000 bytes
 # This significantly improves performance for data-heavy API endpoints
@@ -294,11 +284,8 @@ app.include_router(pulse_routes.router)
 app.include_router(market_routes.router)
 app.include_router(execution_routes.router)
 app.include_router(recovery_routes.router)
-app.include_router(auth_routes.router)
-# REMOVED: auth_routes.v1_router (prefix="/auth/v1")
-# The /auth/v1/* paths must be proxied directly to InsForge by Vercel.
-# FastAPI was intercepting these and returning 401 HTML because it expects
-# a Bearer token, but the InsForge SDK sends credentials.
+# Note: auth_routes.router now has no prefix internally, so we mount it at /api/auth
+app.include_router(auth_routes.router, prefix="/api/auth", tags=["Auth"])
 
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
