@@ -22,8 +22,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
-from supabase import Client
-from backend.utils.db import get_supabase
+# from backend.utils.db import get_supabase (moved to function scope)
 from backend.utils.logger import get_logger
 from backend.utils.limiter import limiter
 from slowapi.errors import RateLimitExceeded
@@ -159,6 +158,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     # EXPLANATION: Transparent Error Handling
     # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
     # the root cause from the client and makes debugging impossible.
+    # 1. Handle FastAPI's built-in HTTPException
+    from fastapi import HTTPException
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": str(exc.detail)}
+        )
+
+    # 2. Handle generic exceptions with status_code attribute
     if hasattr(exc, "status_code"):
         status_code = getattr(exc, "status_code")
         detail = getattr(exc, "detail", str(exc))
@@ -305,6 +313,7 @@ async def trigger_cron_job(request: Request, background_tasks: BackgroundTasks):
     from backend.services.market.sync_service import run_market_sync_if_needed
     from backend.utils.db import get_supabase
 
+    # V24: Use factory safely outside of DI
     db = get_supabase()
     background_tasks.add_task(run_scheduler_check_logic)
     background_tasks.add_task(run_market_sync_if_needed, db)

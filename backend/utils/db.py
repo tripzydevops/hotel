@@ -1,8 +1,6 @@
-# PRODUCTION_READY: 2026-03-27T10:40:00Z
+import sys
 import os
 from typing import Optional, Any
-from yarl import URL
-from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from fastapi import Depends
 import traceback
@@ -26,70 +24,77 @@ load_env_standard()
 
 def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jwt: Optional[str] = None, admin: bool = False) -> Any:
     """
-    Core Supabase client factory with InsForge-specific path overrides.
-    Safe for both FastAPI dependency injection and standalone script usage.
+    Factory for Supabase Client with path overrides for InsForge.
+    Safe for both FastAPI dependency injection and standalone usage.
     """
+    from supabase import create_client, Client, ClientOptions
+    from yarl import URL
+
     # 1. Prioritize arguments, then env vars
     target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    
-    if admin:
-        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    else:
-        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    
+    target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+
     if not target_url or not target_key:
-        print(f"CRITICAL: Missing Supabase credentials (URL={bool(target_url)}, KEY={bool(target_key)}, ADMIN={admin})")
+        sys.stderr.write(f"CRITICAL: SUPABASE_CONFIG_MISSING - URL: {'SET' if target_url else 'MISSING'}, KEY: {'SET' if target_key else 'MISSING'}\n")
         return None
 
-
     try:
-        # 2. Initialize the generic client
-        # Ensure credentials exist before initialization
-        if not target_url or not target_key:
-            logger.error("SUPABASE CONFIG MISSING: URL or Anon Key is empty")
-            return None
-
-        # Fix: Ensure URL is string for yarl
-        target_url = str(target_url)
+        # Resolve any extra slash issues
+        target_url = str(target_url).rstrip("/")
         
         supabase: Client = create_client(target_url, target_key, options=ClientOptions(
-                postgrest_client_timeout=30,
-                storage_client_timeout=30,
-                schema="public"
-            ))
+            postgrest_client_timeout=30,
+            storage_client_timeout=30,
+            schema="public"
+        ))
         
-        # 3. Path Redirection: Override default PostgREST path for InsForge compatability
-        # Use yarl for safe URL manipulation (avoids double-slash or missing slash issues)
-        base = URL(target_url)
-        supabase.postgrest.base_url = base / "api/database/records"
-        
-        if jwt:
-            supabase.postgrest.auth(jwt)
+        # 2. Path Overrides for InsForge
+        if target_url and "insforge.app" in target_url:
+            base = URL(target_url)
+            # InsForge-specific REST path
+            supabase.postgrest.base_url = base / "api/database/records"
             
         return supabase
     except Exception as e:
-        # Avoid crashing the script during initialization; let the caller handle the None result
-        print(f"CRITICAL_DB_INIT_FAILED: {str(e)}")
-        traceback.print_exc()
+        sys.stderr.write(f"CRITICAL: SUPABASE_INIT_ERROR: {str(e)}\n")
         return None
 
-def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_client)):
-    """FastAPI dependency for Supabase with descriptive diagnostics on failure."""
-    if not client:
-        # EXPLANATION: Detailed error for Vercel troubleshooting
-        url_set = bool(os.getenv("NEXT_PUBLIC_SUPABASE_URL"))
-        key_set = bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+
+def get_supabase() -> Any:
+    """
+    Standard, safe function for obtaining a database client.
+    Works in scripts, background tasks, AND routes.
+    """
+    db = get_supabase_client()
+    if not db:
         missing = []
-        if not url_set: missing.append("NEXT_PUBLIC_SUPABASE_URL")
-        if not key_set: missing.append("SUPABASE_SERVICE_ROLE_KEY/ANON_KEY")
+        if not os.getenv("NEXT_PUBLIC_SUPABASE_URL"): missing.append("URL")
+        if not os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"): missing.append("Key")
+        raise RuntimeError(f"DATABASE_CONFIG_ERROR: Missing [{', '.join(missing)}]. Check ENV.")
+    return db
+
+
+def get_supabase_dependency(client: Optional[Any] = None) -> Any:
+    """
+    FastAPI Dependency wrapper. Calls the factory and handles errors via HTTPException.
+    """
+    from fastapi import HTTPException
+    
+    # Use provided client or fetch via factory
+    db = client or get_supabase_client()
+    
+    if not db:
+        missing = []
+        if not os.getenv("NEXT_PUBLIC_SUPABASE_URL"): missing.append("URL")
+        if not os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"): missing.append("Key")
         
-        from fastapi import HTTPException
         raise HTTPException(
             status_code=503, 
             detail=f"DATABASE_CONFIG_ERROR: Missing [{', '.join(missing)}]. Please check Vercel Environment Variables and Redeploy."
         )
-    return client
+    return db
 
-# Alias for backward compatibility (using the wrapper that provides error info)
-get_supabase = get_supabase_dependency
+
+# EXPLANATION: Backwards compatibility aliases
+get_db_session = get_supabase_dependency
 get_get_supabase_client = get_supabase_client # Real factory

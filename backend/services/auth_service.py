@@ -33,11 +33,11 @@ async def _verify_token_via_insforge(token: str) -> dict:
     """
     Verify a JWT token by calling InsForge's REST API directly.
     """
-    if not INSFORGE_URL:
-        logger.error("AUTH_URL_MISSING: NEXT_PUBLIC_SUPABASE_URL is not set.")
+    if not INSFORGE_URL or INSFORGE_URL == "None":
+        logger.error("AUTH_URL_MISSING: NEXT_PUBLIC_SUPABASE_URL is not set or invalid.")
         raise HTTPException(
             status_code=503, 
-            detail="AUTH_SERVICE_UNAVAILABLE: Backend configuration missing (URL)."
+            detail="AUTH_SERVICE_UNAVAILABLE: InsForge URL (NEXT_PUBLIC_SUPABASE_URL) is missing from environment variables. Check Vercel settings."
         )
 
     url = f"{INSFORGE_URL}/api/auth/sessions/current"
