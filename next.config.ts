@@ -8,19 +8,8 @@ const nextConfig: NextConfig = {
   // [REMOVED] Legacy External Proxy. API now handled by local Python backend at api/index.py
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
-  experimental: {
-    serverActions: {
-      allowedOrigins: [
-        "localhost:3000",
-        "tripzydevops-hotel.vercel.app",
-        "www.hotelplustr.com",
-        "hotelplustr.com",
-      ]
-    },
-    // optimizePackageImports reduces bundle size by only importing the parts of 
-    // these heavy libraries that are actually used in each page.
-    optimizePackageImports: ["lucide-react", "recharts"],
-  },
+  // [REMOVED] Experimental features cleaned up as per project rules (No Experimental)
+
   images: {
     remotePatterns: [
       {
