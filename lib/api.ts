@@ -32,6 +32,8 @@ export const API_BASE_URL = isProduction
 
 class ApiClient {
   public readonly baseURL = API_BASE_URL;
+  private insforgeInstance: any = null;
+  private inflightSessionPromise: Promise<any> | null = null;
 
   public async getHeaders(): Promise<HeadersInit> {
     const token = await this.getToken();
@@ -44,12 +46,33 @@ class ApiClient {
     return headers;
   }
 
+  /**
+   * Retrieves the current authentication token from the SDK.
+   * PERFORMANCE: Memoizes the import and uses an inflight promise to 'lock'
+   * session checks. This prevents 401 errors caused by concurrent session
+   * initialization race conditions.
+   */
   private async getToken(): Promise<string | null> {
     try {
-      const { insforge } = await import("@/lib/insforge");
-      // Wait for session initialization via getCurrentUser (Modern 1.2.0 Pattern)
-      await insforge.auth.getCurrentUser();
-      const headers = insforge.getHttpClient().getHeaders();
+      // 1. Memoized Import
+      if (!this.insforgeInstance) {
+        const { insforge } = await import("@/lib/insforge");
+        this.insforgeInstance = insforge;
+      }
+
+      // 2. Session Lock (Single Inflight Promise)
+      // If a check is already underway, await the same promise.
+      if (!this.inflightSessionPromise) {
+        this.inflightSessionPromise = this.insforgeInstance.auth.getCurrentUser()
+          .finally(() => {
+            this.inflightSessionPromise = null;
+          });
+      }
+      
+      const userResult = await this.inflightSessionPromise;
+      
+      // 3. Fallback: Check headers directly if session result is valid
+      const headers = this.insforgeInstance.getHttpClient().getHeaders();
       const authHeader = (headers as any)["Authorization"];
       return authHeader ? authHeader.replace("Bearer ", "") : null;
     } catch (e) {

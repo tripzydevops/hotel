@@ -150,187 +150,235 @@ export default function SettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
+      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-2xl p-0 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
-              <SettingsIcon className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shadow-inner">
+              <SettingsIcon className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-white">
-              {t("settings.title")}
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold text-white leading-none mb-1">
+                {t("settings.title")}
+              </h2>
+              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
+                Configure your strategic monitoring
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all ring-1 ring-white/10 hover:ring-white/20"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[var(--soft-gold)]" />
-              {t("settings.triggerThreshold")}
-            </label>
-            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
-              <input
-                type="range"
-                min="0.1"
-                max="10"
-                step="0.1"
-                value={threshold}
-                onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                className="flex-1 accent-[var(--soft-gold)]"
-              />
-              <span className="text-lg font-black text-white w-14 text-right">
-                {threshold}%
-              </span>
-            </div>
-            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
-              {t("settings.thresholdDesc").replace("{0}", threshold.toString())}
-            </p>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {/* Left Column: Monitoring */}
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] flex items-center gap-2">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Monitoring Logic
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {/* Frequency */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-white/90">
+                        {t("settings.scanFrequency")}
+                      </label>
+                      <div className="relative group">
+                         <select
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm appearance-none cursor-pointer transition-all hover:bg-white/10"
+                          value={frequency}
+                          onChange={(e) => setFrequency(parseInt(e.target.value))}
+                        >
+                          <option value="0">{t("settings.realtime")}</option>
+                          <option value="60">{t("settings.hourly")}</option>
+                          <option value="240">{t("settings.every4h")}</option>
+                          <option value="720">{t("settings.every12h")}</option>
+                          <option value="1440">{t("settings.daily")}</option>
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white/60 transition-colors">
+                          <SettingsIcon className="w-4 h-4 rotate-90" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] italic">
+                        Determines how often the Global Pulse AI scans your competitors.
+                      </p>
+                    </div>
 
-          <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium text-white flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[var(--soft-gold)]" />
-                  AI Smart Thresholds
-                </label>
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
-                  Auto-adjust for market noise
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={dynamicEnabled}
-                  onChange={(e) => setDynamicEnabled(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
-              </label>
-            </div>
-
-            {dynamicEnabled && (
-              <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                  <span>Sensitivity</span>
-                  <span className="text-[var(--soft-gold)]">{sensitivity}x</span>
+                    {/* Threshold */}
+                    <div className="space-y-4 p-5 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-white/90 flex items-center gap-2">
+                          {t("settings.triggerThreshold")}
+                        </label>
+                        <span className="text-lg font-black text-[var(--soft-gold)] tabular-nums">
+                          {threshold}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="10"
+                        step="0.1"
+                        value={threshold}
+                        onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                        className="w-full accent-[var(--soft-gold)] h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer hover:bg-white/20 transition-all"
+                      />
+                      <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                        {t("settings.thresholdDesc").replace("{0}", threshold.toString())}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2.0"
-                  step="0.1"
-                  value={sensitivity}
-                  onChange={(e) => setSensitivity(parseFloat(e.target.value))}
-                  className="w-full accent-[var(--soft-gold)] h-1"
-                />
-                <p className="text-[9px] text-[var(--text-muted)] leading-relaxed italic">
-                  Higher sensitivity silences more noise in volatile markets, but may delay alerts.
-                </p>
+
+                {/* AI Smarts */}
+                <div className="space-y-4 p-5 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 animate-in fade-in duration-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                         AI Smart Thresholds
+                      </h4>
+                      <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mt-1">
+                        Dynamic Volatility Filter
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={dynamicEnabled}
+                        onChange={(e) => setDynamicEnabled(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                    </label>
+                  </div>
+
+                  {dynamicEnabled && (
+                    <div className="space-y-4 pt-2 animate-in slide-in-from-top-2">
+                      <div className="h-px bg-white/10" />
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
+                        <span>Analysis Sensitivity</span>
+                        <span className="text-[var(--soft-gold)]">{sensitivity}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2.0"
+                        step="0.1"
+                        value={sensitivity}
+                        onChange={(e) => setSensitivity(parseFloat(e.target.value))}
+                        className="w-full accent-[var(--soft-gold)] h-1"
+                      />
+                      <p className="text-[9px] text-[var(--text-muted)] leading-relaxed italic border-l-2 border-[var(--soft-gold)]/30 pl-3">
+                        Higher sensitivity auto-suppresses alerts during "Market Noise" periods (holidays, city-wide events) to prevent fatigue.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-white flex items-center gap-2">
-              <SettingsIcon className="w-4 h-4 text-[var(--soft-gold)]" />
-              {t("settings.scanFrequency")}
-            </label>
-            <select
-              className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [&>option]:bg-[var(--deep-ocean-card)]"
-              value={frequency}
-              onChange={(e) => setFrequency(parseInt(e.target.value))}
-            >
-              <option value="0">{t("settings.realtime")}</option>
-              <option value="60">{t("settings.hourly")}</option>
-              <option value="240">{t("settings.every4h")}</option>
-              <option value="720">{t("settings.every12h")}</option>
-              <option value="1440">{t("settings.daily")}</option>
-            </select>
-          </div>
+              {/* Right Column: Notifications */}
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Bell className="w-3.5 h-3.5" />
+                    Alert Protocols
+                  </h3>
 
-          <div className="h-px bg-white/10" />
+                  <div className="space-y-4">
+                    {/* Email Alerts */}
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 hover:border-white/10 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-white/90">
+                          {t("settings.emailAlerts")}
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enabled}
+                            onChange={(e) => setEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                        </label>
+                      </div>
+                      {enabled && (
+                        <div className="animate-in fade-in slide-in-from-top-1">
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                            placeholder="alerts@yourhotel.com"
+                          />
+                        </div>
+                      )}
+                    </div>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-white flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[var(--soft-gold)]" />
-              {t("settings.notificationChannels")}
-            </h3>
+                    {/* Push Alerts */}
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between hover:border-white/10 transition-colors">
+                      <div>
+                        <span className="text-sm font-semibold text-white/90">
+                          {t("settings.pushAlerts")}
+                        </span>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1">Direct OS notifications</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={pushEnabled}
+                          onChange={(e) => togglePushNotifications(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
+                      </label>
+                    </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
-                <span className="text-sm text-[var(--text-secondary)]">
-                  {t("settings.emailAlerts")}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enabled}
-                    onChange={(e) => setEnabled(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
-                </label>
+                    {/* WhatsApp Alerts (Coming Soon) */}
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between opacity-50 grayscale select-none">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-white/90">{t("settings.whatsappAlerts")}</span>
+                        <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-tighter mt-1">
+                           Enterprise Only
+                        </span>
+                      </div>
+                      <div className="w-11 h-6 bg-white/5 rounded-full border border-white/5"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              {enabled && (
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
-                  placeholder="name@company.com"
-                />
-              )}
-            </div>
-
-            <div
-              className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 opacity-75 cursor-not-allowed"
-              title={t("settings.comingSoon")}
-            >
-              <span className="text-sm text-[var(--text-secondary)] flex flex-col">
-                <span>{t("settings.whatsappAlerts")}</span>
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  {t("settings.comingSoon")}
-                </span>
-              </span>
-              <div className="w-11 h-6 bg-white/10 rounded-full"></div>
-            </div>
-
-            <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
-              <span className="text-sm text-[var(--text-secondary)]">
-                {t("settings.pushAlerts")}
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pushEnabled}
-                  onChange={(e) => togglePushNotifications(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
-              </label>
             </div>
           </div>
 
-          <div className="pt-2">
+          {/* Footer */}
+          <div className="p-6 border-t border-white/10 bg-black/20 flex gap-4 mt-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3.5 rounded-xl border border-white/10 text-white text-sm font-bold hover:bg-white/5 transition-all"
+            >
+              Discard Changes
+            </button>
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-gold py-3 flex items-center justify-center gap-2 group"
+              className="flex-[2] btn-gold py-3.5 flex items-center justify-center gap-3 group relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-12" />
               {loading ? (
                 <div className="w-5 h-5 border-2 border-[var(--deep-ocean)] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
-                  <span>{t("settings.savePreferences")}</span>
+                  <Save className="w-4 h-4 shadow-sm" />
+                  <span className="relative z-10">{t("settings.savePreferences")}</span>
                 </>
               )}
             </button>

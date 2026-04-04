@@ -47,7 +47,8 @@ async def _verify_token_via_insforge(token: str) -> dict:
         resp = await client.get(url, headers=headers)
     
     if resp.status_code != 200:
-        logger.error(f"InsForge auth verification failed: {resp.status_code} {resp.text[:200]}")
+        token_preview = f"{token[:6]}...{token[-4:]}" if len(token) > 20 else "short_token"
+        logger.error(f"InsForge auth verification failed: {resp.status_code} {resp.text[:200]} | Token: {token_preview} (len={len(token)})")
         raise HTTPException(status_code=401, detail="Invalid or expired session token")
     
     try:

@@ -20,6 +20,8 @@ export function useSettings(userId: string | null, enabled: boolean = true) {
       queryClient.setQueryData(["settings", userId], variables);
       // Settings might affect dashboard currency/display, so refresh dashboard too
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+      // Profile also contains next_scan_at which depends on frequency
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
     },
   });
 
