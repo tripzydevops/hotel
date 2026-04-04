@@ -194,11 +194,19 @@ async def update_settings(
             )
             
             # 3.5 [KAIZEN] Initialize/Update next_scan_at in profiles
-            # Only update if the frequency has changed to avoid resetting the scan timer unnecessarily.
+            # We check both the existing settings and the profile table to ensure 
+            # they are perfectly in sync, even if a previous partially-failed save 
+            # left the database in a desynchronized state.
+            
+            # Fetch current profile frequency to detect out-of-sync states
+            profile_state = db.table("profiles").select("scan_frequency_minutes").eq("id", str(user_id)).maybe_single().execute()
+            current_profile_freq = profile_state.data.get("scan_frequency_minutes") if profile_state.data else None
+            
             existing_freq = existing.data[0].get("check_frequency_minutes") if existing.data else None
             new_freq = update_data.get("check_frequency_minutes")
-            
-            if new_freq is not None and new_freq != existing_freq:
+
+            # Update if frequency changed OR if tables are out of sync
+            if new_freq is not None and (new_freq != existing_freq or new_freq != current_profile_freq):
                 try:
                     new_next = (datetime.now(timezone.utc) + timedelta(minutes=new_freq)).isoformat().replace("+00:00", "Z")
                     # Use upsert to handle cases where the profile record might be missing or needs initialization

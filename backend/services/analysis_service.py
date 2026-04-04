@@ -229,6 +229,12 @@ def get_price_for_room(
         if any(v in c_name for v in target_variants):
             if "suite" in target_room_type.lower() and not any(k in c_name for k in ["suite", "süit"]):
                 continue
+            # [STRICT] Prevent standard rooms from matching premium targets via variant matches
+            is_std_t = any(s in target_room_type.lower() for s in ["standard", "standart"])
+            is_std_r = any(s in c_name for s in ["standard", "standart"])
+            if not is_std_t and is_std_r and not any(k in target_room_type.lower() for k in ["deluxe", "superior", "premium"]):
+                continue
+                
             return _extract_price(r.get("price")), r.get("name") or "Standard", 0.9
 
         if any(v in r_name for v in target_variants):
@@ -522,11 +528,22 @@ async def perform_market_analysis(
         # Calculate daily market average
         d_avg = sum(c_vals) / len(c_vals) if c_vals else market_average
         
+        # [FIX] Strict Room Type Display
+        # If user is looking at a Premium room type (Suite, Deluxe etc.), we
+        # must NOT fall back to market average if target hotel is sold out.
+        # Standard requests still use the market average fallback to keep the line consistent.
+        t_low = (room_type or "").lower()
+        is_premium = any(k in t_low for k in ["suite", "süit", "deluxe", "superior", "premium", "family", "aile"])
+        
+        final_price = tp
+        if tp <= 0 and not is_premium:
+            final_price = d_avg
+
         daily_prices.append({
             "date": snap["date"],
-            "price": tp if tp > 0 else d_avg,
+            "price": final_price,
             "comp_avg": d_avg,
-            "vs_comp": float(int(((tp - d_avg) / d_avg * 100) * 10) / 10.0) if tp > 0 and d_avg > 0 else 0.0,
+            "vs_comp": float(int(((final_price - d_avg) / d_avg * 100) * 10) / 10.0) if final_price > 0 and d_avg > 0 else 0.0,
             "competitors": c_details
         })
 
@@ -554,13 +571,18 @@ async def perform_market_analysis(
     max_h_obj = next((h for h in price_rank_list if h["price"] == market_max), {"name": "N/A"})
     
     # [NEW] Collect all available room types in the market logs for the dropdown
-    all_room_names = set()
+    # We scan more than just the first log to ensure stability of the dropdown options.
+    all_room_names = {"Standard"}
     for p_logs in hotel_prices_map.values():
-        if p_logs:
-            rt_list = p_logs[0].get("room_types") or []
+        # Scan up to 15 recent logs for each hotel to capture all room types they've recently offered
+        recent_logs = cast(List[Dict[str, Any]], p_logs)[:15]
+        for p_log in recent_logs:
+            rt_list = p_log.get("room_types") or []
             for rt in rt_list:
                 if isinstance(rt, dict) and rt.get("name"):
-                    all_room_names.add(rt["name"])
+                    name = rt["name"].strip()
+                    if name:
+                        all_room_names.add(name)
     
     # [NEW] Pre-map hotels to the frontend's interface
     transformed_hotels = [
