@@ -1,21 +1,60 @@
-name: CI
+name: Trigger Scheduler
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    # Run every 5 minutes for better responsiveness
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 jobs:
-  build:
+  trigger-scheduler:
     runs-on: ubuntu-latest
+    # EXPLANATION: Safety timeout — prevents runaway jobs from burning Actions minutes.
+    # A full scan cycle for 5-10 hotels typically takes 3-5 minutes.
+    timeout-minutes: 30
+
+    # EXPLANATION: Concurrency guard — only one scheduler instance runs at a time.
+    # If a previous run is still executing, the new trigger is skipped.
+    # This prevents duplicate scans when a run takes longer than 15 minutes.
+    concurrency:
+      group: scheduler-run
+      cancel-in-progress: false
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libcairo2-dev
+
       - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test
-      - name: Deploy
-        run: npm run deploy
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Scheduler Script
+        env:
+          # EXPLANATION: Full environment for self-sufficient scan execution.
+          # InsForge Regional Migration: 2026-03-28
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          # [NEW] Backup keys for high-volume rotation
+          SERPAPI_API_KEY_2: ${{ secrets.SERPAPI_API_KEY_2 }}
+          SERPAPI_API_KEY_3: ${{ secrets.SERPAPI_API_KEY_3 }}
+          SERPAPI_API_KEY_4: ${{ secrets.SERPAPI_API_KEY_4 }}
+          # [NEW] Market Scraper Key
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          # [NEW] Push Notification Keys
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+        run: |
+          python -m backend.scripts.run_scheduler
