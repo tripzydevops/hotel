@@ -171,6 +171,7 @@ export const tr = {
     checkOut: "Çıkış Tarihi",
     adults: "Misafir (Yetişkin)",
     adultCount: "{0} Yetişkin",
+    nightCount: "{0} Gece",
     startScan: "Taramayı Başlat",
     defaultDatesNote: "Varsayılan tarihler (Bugün/Yarın) için boş bırakın.",
   },

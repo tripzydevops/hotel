@@ -22,7 +22,7 @@ import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
 
 import TrendChart from "@/components/analytics/TrendChart";
-import { getStarRating, formatCurrency, formatDate } from "@/lib/utils";
+import { getStarRating, formatCurrency, formatDate, calculateNights } from "@/lib/utils";
 import { PricePoint, HotelWithPrice } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { ReactNode } from "react";
@@ -333,18 +333,29 @@ export default function HotelTile(props: HotelTileProps) {
         {(checkIn || adults) && (
           <div className="flex flex-wrap items-center gap-3 mb-4 opacity-70 group-hover/card:opacity-100 transition-opacity">
             {checkIn && (
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded-lg border border-[var(--glass-border)]">
-                <Calendar className="w-3 h-3 text-[var(--soft-gold)]" />
-                <span>
-                  {checkIn ? formatDate(checkIn, { year: undefined }) : ""}
-                  {checkOut ? ` - ${formatDate(checkOut, { year: undefined })}` : ""}
+              <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-3 py-1.5 rounded-lg border border-[var(--glass-border)] shadow-sm">
+                <Calendar className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                <span className="flex items-center gap-1.5">
+                  {formatDate(checkIn, { month: 'short', day: 'numeric' })}
+                  {checkOut ? (
+                    <>
+                      <span className="opacity-30">→</span>
+                      {formatDate(checkOut, { month: 'short', day: 'numeric' })}
+                      <span className="ml-1 px-1.5 py-0.5 rounded bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] text-[9px]">
+                        {(() => {
+                            const nights = calculateNights(new Date(checkIn), new Date(checkOut));
+                            return t("scanSettings.nightCount", { 0: nights, 1: nights > 1 ? 's' : '' });
+                        })()}
+                      </span>
+                    </>
+                  ) : ""}
                 </span>
               </div>
             )}
             {adults !== undefined && (
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded-lg border border-[var(--glass-border)]">
-                <Users className="w-3 h-3 text-[var(--soft-gold)]" />
-                <span>{t("scanSettings.adultCount").replace('{0}', adults.toString()).replace('{1}', adults > 1 ? 's' : '')}</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-3 py-1.5 rounded-lg border border-[var(--glass-border)] shadow-sm">
+                <Users className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                <span>{t("scanSettings.adultCount", { 0: adults, 1: adults > 1 ? 's' : '' })}</span>
               </div>
             )}
           </div>

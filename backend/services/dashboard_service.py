@@ -174,7 +174,7 @@ async def get_dashboard_logic(
         hotel_prices_map = {}
         all_prices_res = (
             db.table("price_logs")
-            .select("*")
+            .select("*, scan_sessions(adults, check_out_date)")
             .in_("hotel_id", hotel_ids)
             .order("recorded_at", desc=True)
             .limit(200)
@@ -228,11 +228,17 @@ async def get_dashboard_logic(
                         "current_price": curr_p,
                         "previous_price": prev_p,
                         "currency": curr_c,
+                        "name": h.get("name"),
+                        "currentPrice": current_log.get("price"),
+                        "previousPrice": prev_p,
+                        "currency": current_log.get("currency"),
                         "trend": trend_val,
                         "change_percent": change,
                         "recorded_at": current_log.get("recorded_at"),
                         "vendor": current_log.get("vendor"),
                         "check_in": current_log.get("check_in_date"),
+                        "check_out": current_log.get("scan_sessions", {}).get("check_out_date") if current_log.get("scan_sessions") else None,
+                        "adults": current_log.get("scan_sessions", {}).get("adults") if current_log.get("scan_sessions") else 2,
                         "offers": current_log.get("parity_offers") or [],
                         "room_types": current_log.get("room_types") or [],
                     }

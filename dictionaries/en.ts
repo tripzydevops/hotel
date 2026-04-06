@@ -169,6 +169,7 @@ export const en = {
     checkOut: "Check-out",
     adults: "Guests (Adults)",
     adultCount: "{0} Adult{1}",
+    nightCount: "{0} Night{1}",
     startScan: "Start Scan",
     defaultDatesNote: "Leave dates empty for default (Today/Tomorrow).",
   },
