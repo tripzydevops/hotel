@@ -304,7 +304,7 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None)
     hotel_id = analysis_data.get("hotel_id")
     ari = analysis_data.get("ari")
     sent_index = analysis_data.get("sent_index")
-    dna_text = analysis_data.get("pricing_dna_text")
+    dna_text = analysis_data.get("pricing_dna")
     q_label = analysis_data.get("quadrant_label")
 
     trends_blurb = ""
@@ -634,7 +634,7 @@ async def perform_market_analysis(
         "daily_prices": daily_prices, # Pivoted market-wide data
         "recommendation": calculate_rate_recommendation(ari, sent_index, target_price),
         "advisory_keys": advisory_keys,
-        "synthetic_narrative": generate_synthetic_narrative(ari_val, sent_val, target_h.get("pricing_dna_text") if target_h else None, target_hotel_name)
+        "synthetic_narrative": generate_synthetic_narrative(ari_val, sent_val, target_h.get("pricing_dna") if target_h else None, target_hotel_name)
     }
 
 
@@ -652,7 +652,7 @@ async def get_market_intelligence_data(
     # [ROBUST] Programaatic filtering to avoid Supabase client version ambiguity with .is_("null")
     logger.info(f"[Analysis] Fetching hotels for user_id: {user_id}")
     # [OPTIMIZED] Fetch only required fields for analysis
-    res = db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,sentiment_score,pricing_dna_text,deleted_at").eq("user_id", str(user_id)).execute()
+    res = db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,pricing_dna,deleted_at").eq("user_id", str(user_id)).execute()
     all_hotels = res.data or []
     hotels = [h for h in all_hotels if not h.get("deleted_at")]
     
