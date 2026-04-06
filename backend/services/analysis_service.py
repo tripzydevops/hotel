@@ -478,7 +478,7 @@ async def perform_market_analysis(
                 event = {
                     "price": float(conv_p),
                     "recorded_at": p_log.get("recorded_at"),
-                    "vendor": p_log.get("vendor_name") or "Direct",
+                    "vendor": p_log.get("vendor") or "Direct",
                     "label": "Price Scan"
                 }
 
@@ -694,7 +694,7 @@ async def get_market_intelligence_data(
 
     h_ids = [str(h["id"]) for h in hotels]
     # [OPTIMIZED] Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
-    p_res = db.table("price_logs").select("hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor_name").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
+    p_res = db.table("price_logs").select("hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
     logs = p_res.data or []
     
     p_map = {}
