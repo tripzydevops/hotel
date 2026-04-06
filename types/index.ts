@@ -131,6 +131,9 @@ export interface QueryLog {
   session_id?: string;
   check_in_date?: string;
   adults?: number;
+  room_types?: any[];
+  sentiment_summary?: any[];
+  status_detail?: string;
 }
 
 export interface ScanSession {

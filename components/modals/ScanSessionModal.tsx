@@ -182,6 +182,8 @@ export default function ScanSessionModal({
       "Currency",
       "Vendor",
       "Status",
+      "Room Types",
+      "Status Detail",
       "Date",
     ];
     const rows = logs.map((log) => [
@@ -191,6 +193,8 @@ export default function ScanSessionModal({
       log.currency || "",
       log.vendor || "",
       log.status,
+      log.room_types?.map(rt => rt.name || rt).join(" | ") || "",
+      log.status_detail || "",
       log.created_at,
     ]);
 
@@ -498,22 +502,43 @@ export default function ScanSessionModal({
                           <AlertCircle className="w-5 h-5" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-base font-black text-white leading-none mb-1.5">
-                          {log.hotel_name}
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] font-bold uppercase tracking-wider">
-                            <MapPin className="w-3 h-3" />
-                            <span>{log.location || t("common.pending")}</span>
-                          </div>
-                          {log.vendor && (
-                            <>
-                              <span className="w-1 h-1 rounded-full bg-white/10" />
-                              <span className="text-[10px] font-bold text-[var(--soft-gold)]/80 italic">
-                                via {log.vendor}
-                              </span>
-                            </>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {log.status === "failed" && log.status_detail && (
+                            <span className="text-[9px] font-bold text-alert-red italic flex items-center gap-1">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {log.status_detail}
+                            </span>
+                          )}
+                          
+                          {log.sentiment_summary && log.sentiment_summary.length > 0 && (
+                            <div className="flex items-center gap-1 pb-0.5">
+                              {log.sentiment_summary.slice(0, 2).map((s: any, idx: number) => (
+                                <span 
+                                  key={idx}
+                                  className={`text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                                    (s.sentiment || 0) > 0.5 ? "bg-optimal-green/10 text-optimal-green" : "bg-alert-red/10 text-alert-red"
+                                  }`}
+                                >
+                                  {s.category}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {log.room_types && log.room_types.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {log.room_types.slice(0, 3).map((rt: any, idx: number) => (
+                                <span 
+                                  key={idx}
+                                  className="text-[8px] px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/40 font-medium"
+                                >
+                                  {typeof rt === 'string' ? rt : rt.name}
+                                </span>
+                              ))}
+                              {log.room_types.length > 3 && (
+                                <span className="text-[8px] text-white/20">+{log.room_types.length - 3}</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

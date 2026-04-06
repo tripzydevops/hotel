@@ -57,6 +57,7 @@ class ScanPersistenceService:
         price_logs_to_insert = []
         sentiment_history_to_insert = []
         alerts_to_insert = []
+        query_logs_to_insert = []
         embedding_queue = []
         volatilities = []
         
@@ -95,6 +96,9 @@ class ScanPersistenceService:
             if processed.get("volatility") is not None:
                 volatilities.append(processed["volatility"])
 
+            # 1.5 Prepare Query Log entry for audit
+            query_logs_to_insert.append(processed["query_log"])
+
         # 2. Final Batch Insertions
         try:
             if price_logs_to_insert:
@@ -103,6 +107,8 @@ class ScanPersistenceService:
                 self.db.table("sentiment_history").insert(sentiment_history_to_insert).execute()
             if alerts_to_insert:
                 self.db.table("alerts").insert(alerts_to_insert).execute()
+            if query_logs_to_insert:
+                self.db.table("query_logs").insert(query_logs_to_insert).execute()
         except Exception as e:
             logger.error(f"Batch persistence failed: {e}")
             if log_reasoning_fn:
@@ -319,6 +325,21 @@ class ScanPersistenceService:
 
         return {
             "price_log": price_log,
+            "query_log": {
+                "user_id": str(user_id),
+                "session_id": str(session_id) if session_id else None,
+                "hotel_name": result.get("hotel_name", "Unknown"),
+                "location": result.get("location"),
+                "status": "success" if result.get("status") == "success" else "failed",
+                "status_detail": result.get("error"),
+                "price": price_log["price"] if price_log["price"] > 0 else None,
+                "currency": price_log["currency"],
+                "vendor": price_log["vendor"],
+                "check_in_date": price_log["check_in_date"],
+                "room_types": price_log["room_types"],
+                "sentiment_summary": meta_update.get("sentiment_breakdown"),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
             "sentiment_history": sentiment_history,
             "alert": alert,
             "volatility": volatility,
