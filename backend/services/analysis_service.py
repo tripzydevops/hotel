@@ -467,21 +467,35 @@ async def perform_market_analysis(
                     daily_snapshot_map[date_key] = {
                         "date": date_key, 
                         "target_price": 0.0,
-                        "comp_prices": [],
+                        "target_intraday_events": [],
+                        "comp_prices_map": {}, # Map hid -> comp price object for easy updates
                         "seen_ids": set()
                     }
                 
-                # [FIX] Aggregation Logic: Logs are already sorted DESC by recorded_at. 
-                # To ensure newest-log precedence, we only record the FIRST log encountered per hotel per date.
-                if hid not in daily_snapshot_map[date_key]["seen_ids"]:
-                    if is_target:
+                # [KAIZEN] Intraday Event Collection
+                # We collect every scan for this day into the intraday_events array.
+                event = {
+                    "price": float(conv_p),
+                    "recorded_at": p_log.get("recorded_at"),
+                    "vendor": p_log.get("vendor_name") or "Direct",
+                    "label": "Price Scan"
+                }
+
+                if is_target:
+                    daily_snapshot_map[date_key]["target_intraday_events"].append(event)
+                    # Use the first one found (latest) as the primary price
+                    if hid not in daily_snapshot_map[date_key]["seen_ids"]:
                         daily_snapshot_map[date_key]["target_price"] = float(conv_p)
-                    else:
-                        daily_snapshot_map[date_key]["comp_prices"].append({
+                else:
+                    if hid not in daily_snapshot_map[date_key]["comp_prices_map"]:
+                        daily_snapshot_map[date_key]["comp_prices_map"][hid] = {
                             "name": h.get("name", "Competitor"),
-                            "price": float(conv_p)
-                        })
-                    daily_snapshot_map[date_key]["seen_ids"].add(hid)
+                            "price": float(conv_p),
+                            "intraday_events": []
+                        }
+                    daily_snapshot_map[date_key]["comp_prices_map"][hid]["intraday_events"].append(event)
+                
+                daily_snapshot_map[date_key]["seen_ids"].add(hid)
 
     # Convert map to ordered list for frontend (asc order for timeline)
     daily_prices: List[Dict[str, Any]] = []
@@ -489,7 +503,9 @@ async def perform_market_analysis(
     for d_key in sorted_dates:
         snap = daily_snapshot_map[d_key]
         tp: float = float(snap.get("target_price") or 0.0)
-        c_details: List[Dict[str, Any]] = snap.get("comp_prices") or []
+        
+        # Convert comp_prices_map back to a list
+        c_details: List[Dict[str, Any]] = list(snap.get("comp_prices_map", {}).values())
         c_vals = [float(cp["price"]) for cp in c_details]
         
         # Calculate daily market average
@@ -511,7 +527,8 @@ async def perform_market_analysis(
             "price": final_price,
             "comp_avg": d_avg,
             "vs_comp": float(int(((final_price - d_avg) / d_avg * 100) * 10) / 10.0) if final_price > 0 and d_avg > 0 else 0.0,
-            "competitors": c_details
+            "competitors": c_details,
+            "intraday_events": snap.get("target_intraday_events", [])
         })
 
     # target_history is used for the trend card (desc order usually)
@@ -631,7 +648,8 @@ async def get_market_intelligence_data(
 ) -> Dict[str, Any]:
     # [ROBUST] Programaatic filtering to avoid Supabase client version ambiguity with .is_("null")
     logger.info(f"[Analysis] Fetching hotels for user_id: {user_id}")
-    res = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+    # [OPTIMIZED] Fetch only required fields for analysis
+    res = db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,sentiment_score,pricing_dna_text,deleted_at").eq("user_id", str(user_id)).execute()
     all_hotels = res.data or []
     hotels = [h for h in all_hotels if not h.get("deleted_at")]
     
@@ -672,7 +690,8 @@ async def get_market_intelligence_data(
         }
 
     h_ids = [str(h["id"]) for h in hotels]
-    p_res = db.table("price_logs").select("*").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
+    # [OPTIMIZED] Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
+    p_res = db.table("price_logs").select("hotel_id,check_in_date,price,recorded_at,currency,room_types,vendor_name").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
     logs = p_res.data or []
     
     p_map = {}

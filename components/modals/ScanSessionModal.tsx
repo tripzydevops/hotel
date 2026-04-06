@@ -542,7 +542,6 @@ export default function ScanSessionModal({
                           )}
                         </div>
                       </div>
-                    </div>
 
                     <div className="flex items-center gap-8">
                       {log.price && (
