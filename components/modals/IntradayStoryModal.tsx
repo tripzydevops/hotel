@@ -18,14 +18,18 @@ export default function IntradayStoryModal({
 }: IntradayStoryModalProps) {
   if (!events || events.length === 0) return null;
 
-  // Sort events by time
-  const sortedEvents = [...events].sort(
-    (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+  // Sort events by time with safety check
+  const sortedEvents = [...(events || [])].sort(
+    (a, b) => {
+      const dateA = a.recorded_at ? new Date(a.recorded_at).getTime() : 0;
+      const dateB = b.recorded_at ? new Date(b.recorded_at).getTime() : 0;
+      return dateA - dateB;
+    }
   );
 
-  const firstEvent = sortedEvents[0];
-  const lastEvent = sortedEvents[sortedEvents.length - 1];
-  const priceDiff = lastEvent.price - firstEvent.price;
+  const firstEvent = sortedEvents[0] || { price: 0 };
+  const lastEvent = sortedEvents[sortedEvents.length - 1] || { price: 0 };
+  const priceDiff = (lastEvent.price || 0) - (firstEvent.price || 0);
   const isUp = priceDiff > 0;
   const isDown = priceDiff < 0;
 
@@ -137,7 +141,7 @@ export default function IntradayStoryModal({
                       
                       <div className="flex items-center gap-4">
                         <span className="text-3xl font-black text-white tracking-tighter">
-                          {event.price.toLocaleString()}
+                          {event.price ? event.price.toLocaleString() : "—"}
                         </span>
                         
                         {index > 0 && diff !== 0 && (
@@ -149,6 +153,12 @@ export default function IntradayStoryModal({
                           </div>
                         )}
                       </div>
+
+                      {event.narrative && (
+                        <p className="mt-3 text-sm font-medium text-[var(--text-secondary)] leading-relaxed max-w-lg italic border-l-2 border-[var(--soft-gold)]/20 pl-4 py-1 bg-white/5 rounded-r-lg">
+                          “{event.narrative}”
+                        </p>
+                      )}
                     </div>
 
                     {index === 0 && (

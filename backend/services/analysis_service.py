@@ -466,6 +466,7 @@ async def perform_market_analysis(
                 if date_key not in daily_snapshot_map:
                     daily_snapshot_map[date_key] = {
                         "date": date_key, 
+                        "check_out_date": p_log.get("check_out_date"),
                         "target_price": 0.0,
                         "target_intraday_events": [],
                         "comp_prices_map": {}, # Map hid -> comp price object for easy updates
@@ -524,6 +525,7 @@ async def perform_market_analysis(
 
         daily_prices.append({
             "date": snap["date"],
+            "check_out_date": snap.get("check_out_date"),
             "price": final_price,
             "comp_avg": d_avg,
             "vs_comp": float(int(((final_price - d_avg) / d_avg * 100) * 10) / 10.0) if final_price > 0 and d_avg > 0 else 0.0,
@@ -616,6 +618,7 @@ async def perform_market_analysis(
         "min_hotel": {"name": min_h_obj.get("name"), "price": market_min},
         "max_hotel": {"name": max_h_obj.get("name"), "price": market_max},
         "all_hotels": transformed_hotels,  # Cleaned for AnalysisFilters
+        "competitors": [h for h in transformed_hotels if not h["is_target"]],
         "total_hotels": len(hotels),
         "total_competitors": len(hotels) - 1 if len(hotels) > 0 else 0,
         "available_room_types": sorted(list(all_room_names)),
@@ -691,7 +694,7 @@ async def get_market_intelligence_data(
 
     h_ids = [str(h["id"]) for h in hotels]
     # [OPTIMIZED] Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
-    p_res = db.table("price_logs").select("hotel_id,check_in_date,price,recorded_at,currency,room_types,vendor_name").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
+    p_res = db.table("price_logs").select("hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor_name").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
     logs = p_res.data or []
     
     p_map = {}

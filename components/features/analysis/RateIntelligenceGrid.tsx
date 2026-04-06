@@ -26,6 +26,7 @@ interface IntradayEvent {
 
 interface DailyPrice {
   date: string;
+  check_out_date?: string;
   price: number;
   comp_avg: number;
   vs_comp: number;
@@ -202,12 +203,25 @@ export default function RateIntelligenceGrid({
                   {/* Date Cell */}
                   <td className="sticky left-0 z-10 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 border-r border-[var(--glass-border)] group-hover:bg-[var(--deep-ocean)]">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-[var(--text-primary)]">
-                        {dateObj.toLocaleDateString(
-                          locale === "en" ? "en-US" : "tr-TR",
-                          { month: "short", day: "numeric" },
+                      <div className="flex flex-col mb-1">
+                        <span className="text-sm font-black text-[var(--text-primary)] leading-tight">
+                          {dateObj.toLocaleDateString(
+                            locale === "en" ? "en-US" : "tr-TR",
+                            { month: "short", day: "numeric" },
+                          )}
+                        </span>
+                        {row.check_out_date && (
+                          <div className="flex items-center gap-1 opacity-60">
+                            <div className="w-1 h-px bg-[var(--text-muted)]" />
+                            <span className="text-[10px] font-bold text-[var(--text-muted)]">
+                              {new Date(row.check_out_date).toLocaleDateString(
+                                locale === "en" ? "en-US" : "tr-TR",
+                                { month: "short", day: "numeric" },
+                              )}
+                            </span>
+                          </div>
                         )}
-                      </span>
+                      </div>
                       <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                         {dateObj.toLocaleDateString(
                           locale === "en" ? "en-US" : "tr-TR",

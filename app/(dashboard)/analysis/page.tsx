@@ -420,6 +420,18 @@ export default function AnalysisPage() {
           </div>
         )}
 
+        {/* Rate Intelligence Grid (Calendar) */}
+        {data?.daily_prices && data.daily_prices.length > 0 && (
+          <div className="mb-12">
+            <RateIntelligenceGrid
+              dailyPrices={data.daily_prices}
+              competitors={data.competitors || []}
+              hotelName={data?.hotel_name || "Your Hotel"}
+              currency={currency}
+            />
+          </div>
+        )}
+
         {/* Agent Advisory Shard */}
         {(data?.advisory_keys?.length > 0 || data?.advisory_msg) && (
           <div className="mb-12 glass-card p-8 border-l-4 border-l-[var(--soft-gold)] bg-[var(--glass-bg-accent)]">

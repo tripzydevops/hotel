@@ -121,27 +121,31 @@ export default function HotelTile(props: HotelTileProps) {
 
   const handleIntradayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Simulate intraday events for the demo
+    // Simulate intraday events for the demo with the correct schema
     const mockEvents = [
       {
         id: "1",
-        time: "10:30 AM",
-        type: "price_drop",
-        hotel: name,
-        delta: -15,
-        narrative: "Competitor lowered price by 15% due to sudden low occupancy signals in this district.",
-        impact: "High",
-        confidence: 0.94
+        recorded_at: new Date(Date.now() - 4 * 3600000).toISOString(),
+        price: currentPrice + 150,
+        vendor: "Booking.com",
+        label: "Morning Peak",
+        narrative: "Initial high rate detected during morning scan. Market demand was peaking."
       },
       {
         id: "2",
-        time: "1:15 PM",
-        type: "inventory_low",
-        hotel: name,
-        delta: 2,
-        narrative: "Only 2 rooms remaining at this rate. Market scarcity detected.",
-        impact: "Medium",
-        confidence: 0.88
+        recorded_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+        price: currentPrice + 50,
+        vendor: "Expedia",
+        label: "Midday Adjustment",
+        narrative: "Competitor lowered price by 5% due to sudden low occupancy signals in this district."
+      },
+      {
+        id: "3",
+        recorded_at: new Date(Date.now() - 30 * 60000).toISOString(),
+        price: currentPrice,
+        vendor: vendor || "Direct",
+        label: "Current",
+        narrative: "Market scarcity detected. Only a few rooms remaining at this optimized rate."
       }
     ];
     openIntradayModal(mockEvents, name);
