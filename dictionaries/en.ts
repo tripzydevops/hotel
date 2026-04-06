@@ -40,6 +40,12 @@ export const en = {
     errorTitle: "Error",
     estimated: "ESTIMATED / SOLD OUT",
     saveSuccess: "Saved successfully",
+    scan: "scan",
+    scans: "scans",
+    latest: "Latest",
+    high: "High",
+    low: "Low",
+    average: "Average",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
@@ -128,6 +134,7 @@ export const en = {
     noRooms: "No specific room type data available for this date.",
     stars: "{0} Stars",
     current: "Current",
+    checkIn: "Stay Date",
   },
   addHotel: {
     title: "Add New Hotel",

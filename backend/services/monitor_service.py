@@ -177,18 +177,20 @@ async def trigger_monitor_logic(
     except Exception as e:
         logger.error(f"Limit check exception: {e}")
 
-    # 2. DEFAULT DATES NORMALIZATION
+    # 2. Stay Metadata Logic
     check_in = options.check_in if options and options.check_in else None
     check_out = options.check_out if options and options.check_out else None
-
     today = date.today()
+    
     if (not check_in) or (str(check_in) == str(today)):
         # Late night advances for Google Travel reliability
         if datetime.now().hour >= 18:
             check_in = today + timedelta(days=1)
+            # Trace will be logged after session_id is available
 
     if not check_in:
         check_in = today
+    
     if not check_out:
         check_out = check_in + timedelta(days=1)
     elif check_out <= check_in:
@@ -219,6 +221,14 @@ async def trigger_monitor_logic(
         if session_result.data:
             session_id = session_result.data[0]["id"]
             logger.info(f"Created scan session: {session_id}")
+            
+            # [KAIZEN] Post-creation reasoning trace for the 18:00 cutoff
+            if (not options or not options.check_in or str(options.check_in) == str(date.today())) and datetime.now().hour >= 18:
+                try:
+                    db.table("scan_sessions").update({
+                        "reasoning_trace": [{"step": "Monitor", "level": "info", "message": "Advanced check-in to tomorrow due to 18:00 cutoff for Google Travel reliability.", "timestamp": datetime.now().timestamp()}]
+                    }).eq("id", str(session_id)).execute()
+                except: pass
         else:
             logger.error("Session creation returned no data. Scan will run without history trail.")
     except Exception as e:

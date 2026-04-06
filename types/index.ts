@@ -84,6 +84,7 @@ export interface PriceInfo {
 export interface PricePoint {
   price: number;
   recorded_at: string;
+  check_in_date?: string;
 }
 
 export interface HotelWithPrice extends Hotel {

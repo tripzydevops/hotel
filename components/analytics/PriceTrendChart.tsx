@@ -25,19 +25,49 @@ export default function PriceTrendChart({
 }: PriceTrendChartProps) {
   const { t, locale } = useI18n();
 
-  const data = [...history]
+  // 1. Group data by local date string
+  const groupedData = history.reduce((acc, p) => {
+    const d = new Date(p.recorded_at);
+    const dateKey = d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(p);
+    return acc;
+  }, {} as Record<string, PricePoint[]>);
+
+  // 2. Transform into chart points (one per day)
+  const data = Object.entries(groupedData)
+    .map(([dateKey, points]) => {
+      // Sort points in this day by recorded_at (latest first)
+      const sortedPoints = [...points].sort(
+        (a, b) =>
+          new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
+      );
+
+      const latest = sortedPoints[0];
+      const prices = points.map((p) => p.price);
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+      return {
+        date: dateKey.replace(/, \d{4}/, ""), // Remove year for cleaner X-axis
+        fullDate: dateKey,
+        price: latest.price,
+        min,
+        max,
+        avg,
+        count: points.length,
+        latestCheckIn: latest.check_in_date,
+      };
+    })
     .sort(
       (a, b) =>
-        new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
-    )
-    .map((p) => ({
-      date: new Date(p.recorded_at).toLocaleDateString(
-        locale === "en" ? "en-US" : "tr-TR",
-        { month: "short", day: "numeric" },
-      ),
-      fullDate: new Date(p.recorded_at).toLocaleString(),
-      price: p.price,
-    }));
+        new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime(),
+    );
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -46,6 +76,55 @@ export default function PriceTrendChart({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] p-4 rounded-xl shadow-2xl backdrop-blur-xl min-w-[200px]">
+          <p className="text-[var(--text-muted)] text-xs font-medium mb-3 border-b border-[var(--glass-border)] pb-2 flex justify-between">
+            <span>{data.fullDate}</span>
+            <span className="bg-[var(--deep-ocean-accent)]/20 px-2 rounded-full">
+              {data.count} {data.count === 1 ? t("common.scan") || "scan" : t("common.scans") || "scans"}
+            </span>
+          </p>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[var(--text-muted)] text-xs">{t("common.latest") || "Latest"}</span>
+              <span className="text-[#D4AF37] font-bold text-lg">{formatPrice(data.price)}</span>
+            </div>
+            
+            {data.count > 1 && (
+              <div className="pt-2 mt-2 border-t border-[var(--glass-border)]/50 space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[var(--text-muted)]">{t("common.high") || "Daily High"}</span>
+                  <span className="text-red-400 font-medium">{formatPrice(data.max)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-[var(--text-muted)]">{t("common.low") || "Daily Low"}</span>
+                  <span className="text-green-400 font-medium">{formatPrice(data.min)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-[var(--text-muted)]">{t("common.average") || "Average"}</span>
+                  <span className="text-[var(--text-primary)] font-medium">{formatPrice(data.avg)}</span>
+                </div>
+              </div>
+            )}
+            
+            {data.latestCheckIn && (
+              <div className="mt-2 pt-2 border-t border-[var(--glass-border)]/30">
+                <p className="text-[10px] text-[var(--text-muted)] italic">
+                  {t("hotelDetails.checkIn") || "Stay Date"}: {data.latestCheckIn}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (data.length === 0) {
@@ -79,15 +158,15 @@ export default function PriceTrendChart({
             dataKey="date"
             stroke="currentColor"
             className="text-[var(--text-muted)]"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
-            minTickGap={30}
+            minTickGap={20}
           />
           <YAxis
             stroke="currentColor"
             className="text-[var(--text-muted)]"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) =>
@@ -100,21 +179,7 @@ export default function PriceTrendChart({
             }
             domain={["auto", "auto"]}
           />
-          <Tooltip
-            cursor={{ stroke: "var(--glass-border)", strokeWidth: 1 }}
-            contentStyle={{
-              backgroundColor: "var(--deep-ocean-card)",
-              borderColor: "var(--glass-border)",
-              borderRadius: "12px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-              color: "var(--text-primary)",
-            }}
-            formatter={(value: any) => [
-              formatPrice(value),
-              t("hotelDetails.price"),
-            ]}
-            labelFormatter={(label) => label}
-          />
+          <Tooltip content={<CustomTooltip />} />
           <Area
             type="monotone"
             dataKey="price"
@@ -122,6 +187,7 @@ export default function PriceTrendChart({
             strokeWidth={3}
             fillOpacity={1}
             fill="url(#colorPrice)"
+            animationDuration={1000}
           />
         </AreaChart>
       </ResponsiveContainer>

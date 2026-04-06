@@ -40,6 +40,12 @@ export const tr = {
     errorTitle: "Hata",
     estimated: "TAHMİNİ / YER YOK",
     saveSuccess: "Başarıyla kaydedildi",
+    scan: "tarama",
+    scans: "tarama",
+    latest: "Güncel",
+    high: "En Yüksek",
+    low: "En Düşük",
+    average: "Ortalama",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
@@ -130,6 +136,7 @@ export const tr = {
     noRooms: "Bu tarih için belirli oda tipi verisi bulunmuyor.",
     stars: "{0} Yıldız",
     current: "Mevcut",
+    checkIn: "Konaklama Tarihi",
   },
   addHotel: {
     title: "Yeni Otel Ekle",

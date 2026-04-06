@@ -206,9 +206,12 @@ class ScanPersistenceService:
         meta_update = {
             "last_scan": datetime.now(timezone.utc).isoformat(),
             "vendor_source": price_data.get("vendor", "Provider"),
-            "current_price": current_price if current_price > 0 else None,
             "preferred_currency": currency,
         }
+        
+        # Only update the 'live' price if we have a fresh, valid one
+        if current_price > 0 and not is_estimated:
+            meta_update["current_price"] = current_price
         
         # KAİZEN: Smart Update Logic for Static Fields
         # We fetch existing state to avoid redundant writes for stable data (descriptions, amenities, etc.)
@@ -287,11 +290,15 @@ class ScanPersistenceService:
                     alert = {"user_id": str(user_id), "hotel_id": hotel_id, **breach}
 
         # 6. Prepare Outputs
+        check_out = result.get("check_out") or (check_in + timedelta(days=1))
+        check_out_str = str(check_out)
+
         price_log = {
             "hotel_id": hotel_id,
             "price": current_price,
             "currency": currency,
             "check_in_date": check_in_str,
+            "check_out_date": check_out_str,
             "is_estimated": is_estimated,
             "session_id": str(session_id) if session_id else None,
             "vendor": price_data.get("vendor", "Provider"),

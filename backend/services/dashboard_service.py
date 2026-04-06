@@ -177,7 +177,7 @@ async def get_dashboard_logic(
             .select("*, scan_sessions(adults, check_out_date)")
             .in_("hotel_id", hotel_ids)
             .order("recorded_at", desc=True)
-            .limit(200)
+            .limit(1000)
             .execute()
         )
 
@@ -185,7 +185,7 @@ async def get_dashboard_logic(
             hid = str(p["hotel_id"])
             if hid not in hotel_prices_map:
                 hotel_prices_map[hid] = []
-            if len(hotel_prices_map[hid]) < 10:
+            if len(hotel_prices_map[hid]) < 100:
                 hotel_prices_map[hid].append(p)
 
         # 4. Process Hotel Data
@@ -344,6 +344,7 @@ async def get_dashboard_logic(
                         {
                             "price": float(p["price"]),
                             "recorded_at": p.get("recorded_at"),
+                            "check_in_date": p.get("check_in_date"),
                         }
                         for p in prices
                         if p.get("price") is not None

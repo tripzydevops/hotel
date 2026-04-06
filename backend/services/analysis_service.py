@@ -436,11 +436,13 @@ async def perform_market_analysis(
         is_target = (hid == target_hotel_id)
         p_logs = hotel_prices_map.get(hid, [])
         
-        # Limit to last 30 logs for performance
-        logs_slice: List[Dict[str, Any]] = cast(List[Dict[str, Any]], p_logs)[:30]
+        # Limit to last 100 logs for better historical/stay coverage
+        logs_slice: List[Dict[str, Any]] = cast(List[Dict[str, Any]], p_logs)[:100]
         
         for p_log in logs_slice:
-            raw_date = p_log.get("recorded_at")
+            # [KAIZEN] Prioritize check_in_date for actual stay-based analysis
+            # Current dashboard 'Rate Spread' expects stay dates, not scan times.
+            raw_date = p_log.get("check_in_date") or p_log.get("recorded_at")
             if not raw_date or not isinstance(raw_date, str): continue
             
             # [FIX] Strict date cleaning to avoid "Invalid Date" in frontend
