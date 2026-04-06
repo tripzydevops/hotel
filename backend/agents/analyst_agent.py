@@ -275,12 +275,23 @@ class AnalystAgent:
             target_lat = target_data.get("latitude")
             target_lon = target_data.get("longitude")
             
-            # Handle Embedding
+            # Handle Embedding (missing or zero-norm/broken)
             target_embedding = target_data.get("embedding")
-            if not target_embedding:
-                logger.info(f"[AnalystAgent] Generating missing embedding for {target_data.get('name')}")
+            is_zero_vector = False
+            if target_embedding and isinstance(target_embedding, list):
+                is_zero_vector = all(v == 0 for v in target_embedding)
+
+            if not target_embedding or is_zero_vector:
+                logger.info(f"[AnalystAgent] Generating missing/broken embedding for {target_data.get('name')}")
                 text = format_hotel_for_embedding(target_data)
                 target_embedding = await get_embedding(text)
+                
+                # Update the source table to 'heal' it permanently
+                try:
+                    table_to_update = "hotel_directory" if "location_name" in target_data else "hotels"
+                    self.db.table(table_to_update).update({"embedding": target_embedding}).eq("id", target_data["id"]).execute()
+                except Exception as e:
+                    logger.warning(f"[AnalystAgent] Failed to heal embedding in DB: {e}")
 
             # 2. RPC Match with distance filtering
             # Ensure target_hotel_id is a valid UUID for the RPC

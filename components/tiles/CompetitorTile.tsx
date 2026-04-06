@@ -37,6 +37,7 @@ interface CompetitorTileProps {
   vendor?: string;
   priceHistory?: PricePoint[];
   checkIn?: string;
+  checkOut?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
 

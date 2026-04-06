@@ -15,11 +15,14 @@ import {
   Globe,
   MapPin,
   Info,
+  Calendar,
+  Users,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
 
 import TrendChart from "@/components/analytics/TrendChart";
+import { getStarRating, formatCurrency, formatDate } from "@/lib/utils";
 import { PricePoint, HotelWithPrice } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { ReactNode } from "react";
@@ -43,6 +46,7 @@ export interface HotelTileProps {
   vendor?: string;
   priceHistory?: PricePoint[];
   checkIn?: string;
+  checkOut?: string;
   adults?: number;
   offers?: { vendor?: string; price?: number }[];
   onEdit?: (id: string, hotel: HotelWithPrice) => void;
@@ -87,6 +91,7 @@ export default function HotelTile(props: HotelTileProps) {
     vendor,
     priceHistory,
     checkIn,
+    checkOut,
     adults,
     offers,
     onEdit,
@@ -324,6 +329,27 @@ export default function HotelTile(props: HotelTileProps) {
         {/* Subtle Shine Background */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[var(--glass-border)] to-transparent opacity-20 rotate-12" />
         
+        {/* Scan Parameters - New Section */}
+        {(checkIn || adults) && (
+          <div className="flex flex-wrap items-center gap-3 mb-4 opacity-70 group-hover/card:opacity-100 transition-opacity">
+            {checkIn && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded-lg border border-[var(--glass-border)]">
+                <Calendar className="w-3 h-3 text-[var(--soft-gold)]" />
+                <span>
+                  {checkIn ? formatDate(checkIn, { year: undefined }) : ""}
+                  {checkOut ? ` - ${formatDate(checkOut, { year: undefined })}` : ""}
+                </span>
+              </div>
+            )}
+            {adults !== undefined && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded-lg border border-[var(--glass-border)]">
+                <Users className="w-3 h-3 text-[var(--soft-gold)]" />
+                <span>{t("scanSettings.adultCount").replace('{0}', adults.toString()).replace('{1}', adults > 1 ? 's' : '')}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className={`${isTarget ? "text-center" : "flex items-center justify-between"}`}>
           <div>
             <p className={`tactical-label mb-1 ${isTarget ? "justify-center" : ""}`}>
