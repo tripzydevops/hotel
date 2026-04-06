@@ -7,17 +7,18 @@ import {
   Building2,
   Trash2,
   Edit2,
-  Hotel as HotelIcon,
-  Tag,
+  Users,
+  Zap,
+  Cpu,
   AlertTriangle,
+  MapPin,
+  Calendar,
+  Info,
   Phone,
   Mail,
   Globe,
-  MapPin,
-  Info,
-  Calendar,
-  Users,
 } from "lucide-react";
+import { useModalContext } from "@/components/ui/ModalContext";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
 
@@ -38,6 +39,8 @@ export interface HotelTileProps {
   currency?: string;
   trend: TrendDirection;
   changePercent: number;
+
+  // Handlers
   lastUpdated?: string;
   onDelete?: (id: string) => void;
   rating?: number;
@@ -113,6 +116,36 @@ export default function HotelTile(props: HotelTileProps) {
     cid,
     placeId,
   } = props;
+
+  const { openIntradayModal } = useModalContext();
+
+  const handleIntradayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Simulate intraday events for the demo
+    const mockEvents = [
+      {
+        id: "1",
+        time: "10:30 AM",
+        type: "price_drop",
+        hotel: name,
+        delta: -15,
+        narrative: "Competitor lowered price by 15% due to sudden low occupancy signals in this district.",
+        impact: "High",
+        confidence: 0.94
+      },
+      {
+        id: "2",
+        time: "1:15 PM",
+        type: "inventory_low",
+        hotel: name,
+        delta: 2,
+        narrative: "Only 2 rooms remaining at this rate. Market scarcity detected.",
+        impact: "Medium",
+        confidence: 0.88
+      }
+    ];
+    openIntradayModal(mockEvents, name);
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
@@ -303,6 +336,13 @@ export default function HotelTile(props: HotelTileProps) {
                   <Building2 className="w-5 h-5" />
                 </button>
               )}
+              <button
+                onClick={handleIntradayClick}
+                className="p-3 rounded-2xl transition-all shadow-xl bg-[var(--optimal-green)]/20 text-[var(--optimal-green)] border-2 border-[var(--optimal-green)]/30 hover:bg-[var(--optimal-green)]/30 hover:scale-110 active:scale-95"
+                title="View AI Intraday Story"
+              >
+                <Zap className="w-5 h-5 fill-current" />
+              </button>
             </>
           ) : (
             <div className="flex flex-col gap-2">
@@ -313,10 +353,18 @@ export default function HotelTile(props: HotelTileProps) {
                     onViewDetails(props as any);
                   }}
                   className="p-2 rounded-xl transition-all bg-[var(--glass-bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-2 border-[var(--glass-border)] hover:border-[var(--soft-gold)] shadow-sm"
+                  title={t("common.view")}
                 >
                   <Building2 className="w-4 h-4" />
                 </button>
               )}
+              <button
+                onClick={handleIntradayClick}
+                className="p-2 rounded-xl transition-all bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border-2 border-[var(--optimal-green)]/20 hover:bg-[var(--optimal-green)]/20 hover:scale-105 active:scale-95"
+                title="View AI Intraday Story"
+              >
+                <Zap className="w-4 h-4 fill-current" />
+              </button>
             </div>
           )}
         </div>

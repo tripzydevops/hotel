@@ -54,6 +54,7 @@ interface CompetitorTileProps {
   description?: string;
   cid?: string;
   placeId?: string;
+  lastUpdated?: string;
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {

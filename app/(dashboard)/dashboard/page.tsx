@@ -32,6 +32,7 @@ import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { GlobalPulseFeed } from "@/components/tiles/GlobalPulseFeed";
+import { formatDateTime } from "@/lib/utils";
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -308,8 +309,8 @@ export default function Dashboard() {
                         data.target_hotel.price_info?.change_percent || 0
                       }
                       lastUpdated={
-                        data.target_hotel.price_info
-                          ? t("common.justNow")
+                        data.target_hotel.price_info?.recorded_at
+                          ? formatDateTime(data.target_hotel.price_info.recorded_at)
                           : t("dashboard.pendingInitial")
                       }
                       onDelete={handleDeleteHotel}
@@ -378,6 +379,11 @@ export default function Dashboard() {
                               competitor.price_info?.change_percent || 0
                             }
                             isUndercut={isUndercut}
+                            lastUpdated={
+                              competitor.price_info?.recorded_at
+                                ? formatDateTime(competitor.price_info.recorded_at)
+                                : t("dashboard.pendingInitial")
+                            }
                             rank={index + 1}
                             onDelete={handleDeleteHotel}
                             rating={competitor.rating}

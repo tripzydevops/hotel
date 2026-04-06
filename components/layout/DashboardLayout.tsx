@@ -31,6 +31,9 @@ const SubscriptionModal = lazy(
 const HotelDetailsModal = lazy(
   () => import("@/components/modals/HotelDetailsModal"),
 );
+const IntradayStoryModal = lazy(
+  () => import("@/components/modals/IntradayStoryModal"),
+);
 
 export default function DashboardLayout({
   children,
@@ -84,6 +87,10 @@ export default function DashboardLayout({
     setReSearchName,
     reSearchLocation,
     setReSearchLocation,
+    isIntradayModalOpen,
+    setIsIntradayModalOpen,
+    selectedIntradayEvents,
+    selectedIntradayHotelName,
   } = useModalContext();
 
   // Hide sidebar on login and admin pages
@@ -322,6 +329,13 @@ export default function DashboardLayout({
             setIsDetailsModalOpen(false);
             setIsBillingOpen(true);
           }}
+        />
+
+        <IntradayStoryModal
+          isOpen={isIntradayModalOpen}
+          onClose={() => setIsIntradayModalOpen(false)}
+          events={selectedIntradayEvents}
+          hotelName={selectedIntradayHotelName}
         />
       </Suspense>
     </div>

@@ -41,6 +41,23 @@ export function formatDate(
 }
 
 /**
+ * Format date and time for display
+ */
+export function formatDateTime(
+  date: Date | string,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    ...options,
+  });
+}
+
+/**
  * Calculate nights between two dates
  */
 export function calculateNights(checkIn: Date, checkOut: Date): number {

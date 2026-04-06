@@ -40,6 +40,13 @@ interface ModalContextType {
   setReSearchName: (name: string) => void;
   reSearchLocation: string;
   setReSearchLocation: (location: string) => void;
+  isIntradayModalOpen: boolean;
+  setIsIntradayModalOpen: (open: boolean) => void;
+  selectedIntradayEvents: any[] | null;
+  setSelectedIntradayEvents: (events: any[] | null) => void;
+  selectedIntradayHotelName: string;
+  setSelectedIntradayHotelName: (name: string) => void;
+  openIntradayModal: (events: any[], hotelName: string) => void;
 
   // Handlers
   handleOpenDetails: (hotel: Hotel, data: DashboardData | null) => void;
@@ -77,6 +84,10 @@ export function ModalProvider({ children }: { children: ReactNode }) {
 
   const [reSearchName, setReSearchName] = useState("");
   const [reSearchLocation, setReSearchLocation] = useState("");
+
+  const [isIntradayModalOpen, setIsIntradayModalOpen] = useState(false);
+  const [selectedIntradayEvents, setSelectedIntradayEvents] = useState<any[] | null>(null);
+  const [selectedIntradayHotelName, setSelectedIntradayHotelName] = useState("");
 
   const handleOpenDetails = (hotel: Hotel, data: DashboardData | null) => {
     const fullHotel =
@@ -157,11 +168,16 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     }
     setIsScanSettingsOpen(true);
   };
-
   const handleReSearch = (name: string, location?: string) => {
     setReSearchName(name);
     setReSearchLocation(location || "");
     setIsAddHotelOpen(true);
+  };
+
+  const openIntradayModal = (events: any[], hotelName: string) => {
+    setSelectedIntradayEvents(events);
+    setSelectedIntradayHotelName(hotelName);
+    setIsIntradayModalOpen(true);
   };
 
   const value = useMemo(
@@ -196,6 +212,13 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       setReSearchName,
       reSearchLocation,
       setReSearchLocation,
+      isIntradayModalOpen,
+      setIsIntradayModalOpen,
+      selectedIntradayEvents,
+      setSelectedIntradayEvents,
+      selectedIntradayHotelName,
+      setSelectedIntradayHotelName,
+      openIntradayModal,
       handleOpenDetails,
       handleOpenSession,
       handleEditHotel,
@@ -218,6 +241,10 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       selectedHotelForDetails,
       reSearchName,
       reSearchLocation,
+      isIntradayModalOpen,
+      selectedIntradayEvents,
+      selectedIntradayHotelName,
+      openIntradayModal,
     ],
   );
 
