@@ -27,6 +27,7 @@ export const tr = {
     view: "Görüntüle",
     today: "Bugün",
     justNow: "Az Önce",
+    you: "Siz",
     pending: "Beklemede",
     availableNow: "Şu an Müsait",
     privacy: "Gizlilik",
@@ -652,5 +653,25 @@ export const tr = {
         description: "Otelinizi stratejik haritada doğru konumlandırmak için henüz yeterli rakip verimiz yok. İzleme listenize daha fazla otel ekleyin ve anlamlı pazar konumlandırma verisiyle bu analizi doldurmak için tarama yapın.",
       },
     },
+  },
+  intradayStory: {
+    modalTitle: "Yapay Zeka Gün İçi Hikayesi",
+    viewAiStory: "AI Gün İçi Hikayesini Gör",
+    via: "aracılığıyla",
+    justNow: "Az önce",
+    labels: {
+      "Price Scan": "Fiyat Taraması",
+    },
+  },
+  rateIntelligence: {
+    title: "Fiyat İstihbaratı Matrisi",
+    subtitle: "Rekabet setiyle 14 günlük fiyat karşılaştırması",
+    daysCount: "{0} Gün",
+    dateRange: "Tarih Aralığı",
+    lowestRate: "En Düşük Fiyat",
+    notAvailable: "Bu oda tipi için fiyat mevcut değil",
+    bestPosition: "En İyi Pazar Konumu",
+    aboveAvg: "Pazar Ortalaması Üstü",
+    belowAvg: "Pazar Ortalaması Altı",
   },
 };

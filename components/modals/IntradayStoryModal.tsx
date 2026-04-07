@@ -2,6 +2,7 @@
 
 import React from "react";
 import { X, Clock, TrendingUp, TrendingDown, Minus, Building2, Calendar } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface IntradayStoryModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function IntradayStoryModal({
   events,
   hotelName,
 }: IntradayStoryModalProps) {
+  const { t } = useI18n();
   if (!events || events.length === 0) return null;
 
   // Sort events by time with safety check
@@ -59,7 +61,7 @@ export default function IntradayStoryModal({
             </div>
             <div>
               <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none italic">
-                Intraday <span className="text-[var(--soft-gold)]">Story</span>
+                {t("intradayStory.modalTitle")}
               </h2>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[.2em] opacity-80">

@@ -343,7 +343,7 @@ export default function HotelTile(props: HotelTileProps) {
               <button
                 onClick={handleIntradayClick}
                 className="p-3 rounded-2xl transition-all shadow-xl bg-[var(--optimal-green)]/20 text-[var(--optimal-green)] border-2 border-[var(--optimal-green)]/30 hover:bg-[var(--optimal-green)]/30 hover:scale-110 active:scale-95"
-                title="View AI Intraday Story"
+                title={t("intradayStory.viewAiStory")}
               >
                 <Zap className="w-5 h-5 fill-current" />
               </button>
@@ -365,7 +365,7 @@ export default function HotelTile(props: HotelTileProps) {
               <button
                 onClick={handleIntradayClick}
                 className="p-2 rounded-xl transition-all bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border-2 border-[var(--optimal-green)]/20 hover:bg-[var(--optimal-green)]/20 hover:scale-105 active:scale-95"
-                title="View AI Intraday Story"
+                title={t("intradayStory.viewAiStory")}
               >
                 <Zap className="w-4 h-4 fill-current" />
               </button>
@@ -432,7 +432,7 @@ export default function HotelTile(props: HotelTileProps) {
              </div>
              {vendor && (
                <span className="text-[10px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-widest">
-                 via {vendor}
+                 {t("intradayStory.via")} {vendor}
                </span>
              )}
           </div>
@@ -448,7 +448,7 @@ export default function HotelTile(props: HotelTileProps) {
           </div>
           <div className="text-center">
             <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-1 tracking-tighter">{t("dashboard.updated")}</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{lastUpdated || "Just now"}</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{lastUpdated || t("intradayStory.justNow")}</p>
           </div>
         </div>
       )}

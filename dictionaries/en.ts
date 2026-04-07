@@ -27,6 +27,7 @@ export const en = {
     view: "View",
     today: "Today",
     justNow: "Just Now",
+    you: "You",
     pending: "Pending",
     availableNow: "Available Now",
     privacy: "Privacy",
@@ -652,5 +653,25 @@ export const en = {
         description: "We don't have enough competitor data yet to accurately place your hotel on the strategic map. Add more hotels to your tracking list and run a scan to populate this analysis with meaningful market positioning data.",
       },
     },
+  },
+  intradayStory: {
+    modalTitle: "AI Intraday Story",
+    viewAiStory: "View AI Intraday Story",
+    via: "via",
+    justNow: "Just now",
+    labels: {
+      "Price Scan": "Price Scan",
+    },
+  },
+  rateIntelligence: {
+    title: "Rate Intelligence Grid",
+    subtitle: "14-day price comparison vs compset",
+    daysCount: "{0} Days",
+    dateRange: "Date Range",
+    lowestRate: "Lowest Rate",
+    notAvailable: "Price not available for this room type",
+    bestPosition: "Best Market Position",
+    aboveAvg: "Above Market Avg",
+    belowAvg: "Below Market Avg",
   },
 };

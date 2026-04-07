@@ -48,6 +48,7 @@ interface RateIntelligenceGridProps {
 }
 
 const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol: string }) => {
+  const { t } = useI18n();
   if (!events || events.length === 0) return null;
 
   return (
@@ -60,7 +61,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
       <div className="absolute top-0 left-full ml-2 w-36 p-2 bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border-accent)] rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
         <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-[var(--glass-border)]">
           <History className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-          <span className="text-[8px] font-black uppercase text-[var(--text-primary)] tracking-widest">Intraday Story</span>
+          <span className="text-[8px] font-black uppercase text-[var(--text-primary)] tracking-widest">{t("intradayStory.modalTitle")}</span>
         </div>
         <div className="space-y-1.5">
           {events.map((ev, idx) => (
@@ -71,7 +72,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
                 </span>
                 {ev.label && (
                   <span className="text-[6px] font-black text-[var(--soft-gold)] uppercase tracking-tighter leading-none mt-0.5">
-                    {ev.label}
+                    {t(`intradayStory.labels.${ev.label}`, { defaultValue: ev.label })}
                   </span>
                 )}
               </div>
@@ -132,15 +133,15 @@ export default function RateIntelligenceGrid({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-black text-[var(--text-primary)] mb-1">
-            Rate Intelligence Grid
+            {t("rateIntelligence.title")}
           </h2>
           <p className="text-xs text-[var(--text-muted)] font-medium">
-            14-day price comparison vs compset
+            {t("rateIntelligence.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 rounded-lg bg-[var(--glass-bg-accent)] border border-[var(--glass-border-accent)] text-[var(--soft-gold)] text-xs font-black uppercase tracking-wider">
-            {sortedData.length} Days
+            {t("rateIntelligence.daysCount", { 0: sortedData.length })}
           </div>
         </div>
       </div>
@@ -151,7 +152,7 @@ export default function RateIntelligenceGrid({
             <tr>
               {/* Date Column */}
               <th className="sticky left-0 z-20 bg-[var(--deep-ocean)]/95 backdrop-blur-xl p-4 min-w-[140px] border-b border-r border-[var(--glass-border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider">
-                Date Range
+                {t("rateIntelligence.dateRange")}
               </th>
 
               {/* My Hotel Column */}
@@ -161,7 +162,7 @@ export default function RateIntelligenceGrid({
                     {hotelName}
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-[9px] font-black uppercase">
-                    You
+                    {t("common.you")}
                   </span>
                 </div>
               </th>
@@ -288,7 +289,7 @@ export default function RateIntelligenceGrid({
                     {isMyPriceLowest && (
                       <div
                         className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]"
-                        title="Lowest Rate"
+                        title={t("rateIntelligence.lowestRate")}
                       />
                     )}
                   </td>
@@ -358,7 +359,7 @@ export default function RateIntelligenceGrid({
                           </div>
                         ) : isVerificationFailed ? (
                           <div className="flex flex-col items-center justify-center opacity-70">
-                            <div className="px-1.5 py-0.5 rounded border border-[var(--glass-border)] bg-[var(--glass-bg-subtle)] flex items-center gap-1" title="Price not available for this room type">
+                            <div className="px-1.5 py-0.5 rounded border border-[var(--glass-border)] bg-[var(--glass-bg-subtle)] flex items-center gap-1" title={t("rateIntelligence.notAvailable")}>
                               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                                 N/A
                               </span>
@@ -380,15 +381,15 @@ export default function RateIntelligenceGrid({
       <div className="mt-4 flex items-center gap-6 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" />
-          Best Market Position
+          {t("rateIntelligence.bestPosition")}
         </div>
         <div className="flex items-center gap-2">
           <TrendingUp className="w-3 h-3 text-[var(--alert-red)]" />
-          Above Market Avg
+          {t("rateIntelligence.aboveAvg")}
         </div>
         <div className="flex items-center gap-2">
           <TrendingDown className="w-3 h-3 text-[var(--optimal-green)]" />
-          Below Market Avg
+          {t("rateIntelligence.belowAvg")}
         </div>
       </div>
     </div>
