@@ -40,6 +40,8 @@ import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import { useModalContext } from "@/components/ui/ModalContext";
 
 import { useAuth } from "@/hooks/useAuth";
+import ErrorModal from "@/components/modals/ErrorModal";
+import { useRouter } from "next/navigation";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -52,6 +54,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export default function AnalysisPage() {
   const { t, locale } = useI18n();
   const { userId } = useAuth();
+  const router = useRouter();
   /* Modal Context */
   const {
     setIsProfileOpen,
@@ -62,6 +65,7 @@ export default function AnalysisPage() {
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ title: string; message: string; action?: any } | null>(null);
   const [currency, setCurrency] = useState<string>("TRY");
 
   // Filter state
@@ -93,6 +97,7 @@ export default function AnalysisPage() {
     if (!userId) return;
     setLoading(true);
     setStreamingNarrative(""); // Reset narrative on reload
+    setError(null); // Clear previous errors
 
     try {
       // Build query params
@@ -100,37 +105,50 @@ export default function AnalysisPage() {
       if (currency) params.set("currency", currency);
       if (startDate) params.set("start_date", startDate);
       if (endDate) params.set("end_date", endDate);
-      if (roomType) params.set("room_type", roomType);
       if (excludedHotelIds.length > 0)
         params.set("exclude_hotel_ids", excludedHotelIds.join(","));
-      if (searchQuery) {
-        params.set("search_query", searchQuery);
-      }
+      if (roomType) params.set("room_type", roomType);
+      if (searchQuery) params.set("search_query", searchQuery);
 
-      // 1. Get Token for SSE (EventSource doesn't support custom headers easily)
+      // [IMPROVEMENT] Session Validation
+      // Ensure we have a valid token before attempting to connect to the stream.
+      // If no token is found, we proactively prompt for re-login.
       const token = await (api as any).getToken();
-      if (token) params.set("token", token);
+      if (!token) {
+        setLoading(false);
+        setError({
+          title: "Session Expired",
+          message: "Your authorization token has timed out. Please log back in to continue your analysis.",
+          action: {
+            label: "Log In",
+            onClick: () => router.push("/login"),
+            icon: "login",
+          }
+        });
+        return;
+      }
+      params.set("token", token);
 
-      // 2. Establish SSE Connection
-      const eventSource = new EventSource(`${api.baseURL}/api/v2/analysis/stream?${params.toString()}`);
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/market-analysis?${params.toString()}`;
+      const eventSource = new EventSource(url);
 
-      eventSource.addEventListener("data_init", (e) => {
+      eventSource.addEventListener("data_init", (e: any) => {
         try {
           const result = JSON.parse(e.data);
           setData(result);
           if (result.display_currency) setCurrency(result.display_currency);
-          if (result.all_hotels && allHotels.length === 0) setAllHotels(result.all_hotels);
           
-          // KAİZEN: Immediate UI Feedback
-          // We set loading to false as soon as core market data is received.
-          // The AI narrative will continue to stream into the shard in the background.
+          if (result.target_hotel && result.competitors) {
+            setAllHotels([result.target_hotel, ...result.competitors]);
+          }
+          
           setLoading(false);
         } catch (err) {
           console.error("Failed to parse data_init:", err);
         }
       });
 
-      eventSource.addEventListener("narrative_chunk", (e) => {
+      eventSource.addEventListener("narrative_chunk", (e: any) => {
         try {
           const { chunk } = JSON.parse(e.data);
           setStreamingNarrative(prev => prev + chunk);
@@ -140,25 +158,45 @@ export default function AnalysisPage() {
       });
 
       eventSource.addEventListener("complete", () => {
-        console.log("SSE Stream complete");
+        console.log("[Analysis] Stream complete");
         setLoading(false);
         eventSource.close();
       });
 
-      eventSource.addEventListener("error", (e) => {
-        console.error("SSE Stream error:", e);
-        setLoading(false);
+      eventSource.onerror = (err) => {
+        console.error("SSE Error:", err);
         eventSource.close();
-      });
+        
+        // If we still didn't get data, show a friendly error
+        if (!data) {
+          setLoading(false);
+          setError({
+            title: "Analysis Error",
+            message: "We encountered a problem synchronizing your market data. This may be due to a connection timeout or an expired session.",
+            action: {
+              label: "Try Again",
+              onClick: () => loadData(),
+              icon: "retry",
+            }
+          });
+        }
+      };
 
-      // Cleanup on re-run
       return () => {
         eventSource.close();
       };
-
-    } catch (err) {
-      console.error("Failed to initialize analysis stream:", err);
+    } catch (error: any) {
+      console.error("Failed to connect to analysis stream:", error);
       setLoading(false);
+      setError({
+        title: "Connection Failed",
+        message: error.message || "An unexpected error occurred while connecting to the intelligence engine.",
+        action: {
+          label: "Retry Connection",
+          onClick: () => loadData(),
+          icon: "retry",
+        }
+      });
     }
   }, [
     userId,
@@ -167,8 +205,8 @@ export default function AnalysisPage() {
     endDate,
     excludedHotelIds,
     roomType,
-    searchQuery,
-    allHotels.length
+    router,
+    data, // Added to check for fallback
   ]);
 
   useEffect(() => {
