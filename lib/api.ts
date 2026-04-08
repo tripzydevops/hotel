@@ -619,7 +619,7 @@ class ApiClient {
     const headers: any = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${API_BASE_URL}/api/reports/briefing/saved/${reportId}/pdf`;
+    const url = `${this.baseURL}/api/reports/briefing/${reportId}/download`;
     const response = await fetch(url, {
       method: "GET",
       headers,
@@ -642,8 +642,10 @@ class ApiClient {
     return this.fetch<any>(`/api/reports/briefing/${reportId}`);
   }
 
-  async getMarketForecast(city: string, days: number = 30): Promise<any[]> {
-    return this.fetch<any[]>(`/api/market/forecast?city=${encodeURIComponent(city)}&days=${days}`);
+  async getMarketForecast(city: string, days: number = 30, language?: string): Promise<any> {
+    let url = `/api/market/forecast?city=${encodeURIComponent(city)}&days=${days}`;
+    if (language) url += `&language=${encodeURIComponent(language)}`;
+    return this.fetch<any>(url);
   }
 
   async getMarketCities(): Promise<string[]> {

@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 import json
 from sse_starlette.sse import EventSourceResponse
+from backend.services.ai_service import ai_commander
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
@@ -360,3 +361,30 @@ async def stream_market_intelligence(
             yield {"event": "error", "data": json.dumps({"detail": str(e)})}
 
     return EventSourceResponse(event_generator())
+
+@router.get("/v1/analysis/command-brief/{hotel_id}")
+async def get_ai_command_brief(
+    hotel_id: str,
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    KAIZEN: Strategic Command AI Brief.
+    Synthesizes market data into actionable intelligence.
+    """
+    from backend.services.analysis_service import get_market_intelligence_data
+
+    try:
+        # 1. Fetch the raw market intelligence data
+        # We use default params for simplicity in the brief
+        analysis_data = await get_market_intelligence_data(
+            db=db,
+            user_id=str(current_user.id),
+        )
+
+        # 2. Generate the AI brief
+        brief = await ai_commander.generate_command_brief(analysis_data)
+        
+        return brief
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Command Brief failed: {str(e)}")

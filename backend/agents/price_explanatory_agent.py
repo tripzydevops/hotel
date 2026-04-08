@@ -14,7 +14,7 @@ class PriceExplanatoryAgent:
     def __init__(self, db: Client):
         self.db = db
 
-    async def generate_rationale(self, compression_data: Dict[str, Any]) -> str:
+    async def generate_rationale(self, compression_data: Dict[str, Any], language: str = "en") -> str:
         """
         Uses Gemini 3 to generate a sharp, executive-level pulse card rationale.
         """
@@ -25,11 +25,18 @@ class PriceExplanatoryAgent:
         signal_str = ", ".join([f"{s['name']} ({s['type']})" for s in signals])
         
         # Default heuristic fallback if AI is unavailable or fails
-        fallback_msg = f"Demand signals detected in {city}. Intensity level {score}/10 suggests upcoming volume. Review rate structure."
-        if score > 7:
-            fallback_msg = f"Critical compression risk in {city} ({score}/10). High event density detected. Recommend holding ADR floors."
-        elif score < 4:
-            fallback_msg = f"Stable demand in {city} ({score}/10). Focus on occupancy volume and standard seasonal pricing."
+        if language == "tr":
+            fallback_msg = f"{city} bölgesinde talep sinyalleri tespit edildi. {score}/10 yoğunluk seviyesi yaklaşan hacmi gösteriyor. Fiyat yapısını gözden geçirin."
+            if score > 7:
+                fallback_msg = f"{city} bölgesinde kritik sıkışma riski ({score}/10). Yüksek etkinlik yoğunluğu tespit edildi. Taban ADR değerlerini korumanız önerilir."
+            elif score < 4:
+                fallback_msg = f"{city} bölgesinde istikrarlı talep ({score}/10). Doluluk hacmine ve standart sezonluk fiyatlandırmaya odaklanın."
+        else:
+            fallback_msg = f"Demand signals detected in {city}. Intensity level {score}/10 suggests upcoming volume. Review rate structure."
+            if score > 7:
+                fallback_msg = f"Critical compression risk in {city} ({score}/10). High event density detected. Recommend holding ADR floors."
+            elif score < 4:
+                fallback_msg = f"Stable demand in {city} ({score}/10). Focus on occupancy volume and standard seasonal pricing."
 
         client = get_genai_client()
         if not client:
@@ -42,14 +49,16 @@ class PriceExplanatoryAgent:
         CITY: {city}
         COMPRESSION SCORE: {score}/10
         SIGNALS DETECTED: {signal_str}
+        LANGUAGE: {language}
         
         INSTRUCTIONS:
+        - Respond in the language specified ({'Turkish' if language == 'tr' else 'English'}).
         - Use a sharp, professional, and directive tone.
         - Explain WHY the demand is shifting (e.g., 'Overlap between fair and announcement').
         - Provide a clear recommendation (e.g., 'Lock floor price at +20%' or 'Hold ADR').
         - Limit to 2 sentences.
         
-        Format: "Signal Detected: [Brief summary]. Recommendation: [Action]."
+        Format: "Signal Detected: [Brief summary]. Recommendation: [Action]." (In the target language)
         """
 
         try:

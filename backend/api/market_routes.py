@@ -88,6 +88,7 @@ async def get_market_events(city: Optional[str] = None, db: Client = Depends(get
 async def get_market_forecast(
     city: str, 
     days: int = 30, 
+    language: Optional[str] = 'en',
     db: Client = Depends(get_supabase_rls)
 ):
     """
@@ -133,9 +134,9 @@ async def get_market_forecast(
                 total_tga_intensity += s.get("score", 0)
 
         if day.get("signals"):
-            day["rationale"] = await price_agent.generate_rationale(day)
+            day["rationale"] = await price_agent.generate_rationale(day, language=language)
         else:
-            day["rationale"] = "Market stable. Standard seasonal occupancy expected."
+            day["rationale"] = "Market stable. Standard seasonal occupancy expected." if language == 'en' else "Piaysada istikrar hakim. Standart mevsimsel doluluk bekleniyor."
         enriched_forecast.append(day)
         
     avg_score = round(float(total_score / len(raw_forecast)), 1) if raw_forecast else 0.0

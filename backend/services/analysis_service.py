@@ -296,26 +296,36 @@ def get_genai_client():
     return _genai_client
 
 
-async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None):
+async def stream_narrative_gen(
+    target_hotel_name: str,
+    analysis_results: Dict[str, Any],
+    locale: str = "en"
+):
     """
-    KAIZEN: Streaming Narrative Producer with restored structure.
+    Step 2: Stream the Gemini narrative based on high-level market results.
     """
-    hotel_name = analysis_data.get("hotel_name")
-    hotel_id = analysis_data.get("hotel_id")
-    ari = analysis_data.get("ari")
-    sent_index = analysis_data.get("sent_index")
-    dna_text = analysis_data.get("pricing_dna")
-    q_label = analysis_data.get("quadrant_label")
+    # Defensive values to avoid lint errors/crashes
+    ari = analysis_results.get("ari", 100.0)
+    sent_index = analysis_results.get("sent_index", 100.0)
+    dna_text = analysis_results.get("pricing_dna", "Neutral strategy.")
+    hotel_name = target_hotel_name
 
-    trends_blurb = ""
-    if db and hotel_id:
-        trends = await get_sentiment_trends(db, hotel_id)
-        if trends["trend"] != "unknown":
-            trends_blurb = f"\nHistorical Trends: {trends['trend']}, Momentum: {trends['momentum']}"
-
-    prompt = f"You are a Senior Strategic Revenue Analyst for {hotel_name}. " \
-             f"Price Index: {ari}, Sentiment Index: {sent_index}. Strategy: {dna_text}. {trends_blurb}. " \
-             f"Generate 3 sections: MARKET DYNAMICS, STRATEGIC POSITIONING, ACTIONABLE RECOMMENDATIONS. Plain text only."
+    language = "Turkish" if locale == "tr" else "English"
+    prompt = f"""
+    Act as a senior hotel revenue analyst. Analyze the following market position for '{target_hotel_name}':
+    - Target Price: {analysis_results.get('target_price')}
+    - Market Average: {analysis_results.get('market_average')}
+    - Competitor Count: {len(analysis_results.get('transformed_hotels', []))}
+    - Advisory Signals: {', '.join(analysis_results.get('advisory_keys', []))}
+    
+    Provide a professional, 3-paragraph strategic story:
+    1. Current Market Landscape
+    2. Competitor Positioning & Threats
+    3. Actionable Revenue Recommendations
+    
+    IMPORTANT: You MUST respond in {language}. Use professional hotel industry terminology.
+    Keep it concise but insightful.
+    """
 
     try:
         client = get_genai_client()
@@ -323,11 +333,11 @@ async def stream_narrative_gen(analysis_data: Dict[str, Any], db: Client = None)
             yield generate_synthetic_narrative(ari, sent_index, dna_text, str(hotel_name or "Unknown"))
             return
 
-        response = client.models.generate_content_stream(model="gemini-3-flash-preview", contents=prompt)
+        response = client.models.generate_content_stream(model="gemini-2.0-flash-exp", contents=prompt)
         for chunk in response:
             if chunk and hasattr(chunk, "text") and chunk.text:
                 yield chunk.text
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.02)
     except Exception as e:
         logger.error(f"[SSE] AI Narrative failed: {e}")
         yield generate_synthetic_narrative(ari, sent_index, dna_text, str(hotel_name or "Unknown"))
@@ -379,7 +389,12 @@ async def perform_market_analysis(
     start_date: Optional[str],
     end_date: Optional[str],
     allowed_room_names_map: Dict[str, List[str]],
+    locale: str = "en",
 ) -> Dict[str, Any]:
+    # Initialize core stats early to avoid UnboundLocalError
+    market_average = 0.0
+    market_min = 0.0
+    market_max = 0.0
     current_prices: List[float] = []
     market_sentiments: List[float] = []
     target_hotel_id: Optional[str] = None
@@ -473,13 +488,37 @@ async def perform_market_analysis(
                         "seen_ids": set()
                     }
                 
-                # [KAIZEN] Intraday Event Collection
-                # We collect every scan for this day into the intraday_events array.
+                # [KAIZEN] Intraday Event Collection & Detection
+                # We compare with the previous scan for the same stay date to detect shifts.
+                prev_price = None
+                # Logs are sorted desc by recorded_at, so the 'next' log in the loop 
+                # is actually the 'previous' chronological scan.
+                # Find the next log for the SAME check_in_date
+                current_index = logs_slice.index(p_log)
+                for next_log in logs_slice[current_index + 1:]:
+                    if next_log.get("check_in_date") == p_log.get("check_in_date"):
+                        p_v, _, _ = get_price_for_room(next_log, room_type, allowed_room_names_map)
+                        if p_v:
+                            prev_price = convert_currency(float(p_v), next_log.get("currency") or "USD", display_currency)
+                        break
+
+                label = "Price Scan"
+                if locale == "tr": label = "Fiyat Taraması"
+
+                if prev_price and prev_price > 0:
+                    diff_pct = (conv_p - prev_price) / prev_price
+                    if diff_pct <= -0.10:
+                        label = "Flash Sale"
+                        if locale == "tr": label = "Flaş İndirim"
+                    elif diff_pct >= 0.15:
+                        label = "Rate Spike"
+                        if locale == "tr": label = "Fiyat Artışı"
+
                 event = {
                     "price": float(conv_p),
                     "recorded_at": p_log.get("recorded_at"),
                     "vendor": p_log.get("vendor") or "Direct",
-                    "label": "Price Scan"
+                    "label": label
                 }
 
                 if is_target:
@@ -510,7 +549,7 @@ async def perform_market_analysis(
         c_vals = [float(cp["price"]) for cp in c_details]
         
         # Calculate daily market average
-        d_avg = sum(c_vals) / len(c_vals) if c_vals else market_average
+        d_avg = sum(c_vals) / len(c_vals) if c_vals else 0.0
         
         # [FIX] Strict Room Type Display
         # If user is looking at a Premium room type (Suite, Deluxe etc.), we
