@@ -140,7 +140,7 @@ export interface ScanSession {
   id: string;
   user_id: string;
   session_type: "manual" | "scheduled";
-  status: "pending" | "running" | "completed" | "failed" | "partial";
+  status: "pending" | "running" | "completed" | "failed" | "partial" | "intelligence_pending";
   hotels_count: number;
   created_at: string;
   completed_at?: string;

@@ -302,7 +302,7 @@ class ScanSession(BaseModel):
     id: UUID
     user_id: UUID
     session_type: Optional[str] = "manual"
-    status: str  # "queued", "processing", "completed", "failed", "partial_success"
+    status: str  # "queued", "processing", "completed", "failed", "partial_success", "intelligence_pending"
     hotels_count: int = 0
     created_at: datetime
     completed_at: Optional[datetime] = None
