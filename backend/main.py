@@ -275,26 +275,60 @@ async def system_report(db: Client = Depends(get_supabase)):
     }
 
 
-# Include Modular Routers
-app.include_router(admin_routes.router)
-app.include_router(hotel_routes.router)
-app.include_router(monitor_routes.router)
-app.include_router(monitor_routes.router_legacy)
+# --- ROUTE REGISTRATION ---
 
-app.include_router(dashboard_routes.router)
-app.include_router(reports_routes.router)
-app.include_router(profile_routes.router)
-app.include_router(analysis_routes.router)
-app.include_router(alerts_routes.router)
-app.include_router(landing_routes.router)
-app.include_router(pulse_routes.router)
-app.include_router(market_routes.router)
-app.include_router(execution_routes.router)
-app.include_router(recovery_routes.router)
-app.include_router(auth_routes.router)
-# RESTORED: auth_routes.v1_router (prefix="/auth/v1")
-# This is REQUIRED for the InsForge SDK log in check to work correctly.
-app.include_router(auth_routes.v1_router)
+# 1. Core Services
+app.include_router(auth_routes.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(auth_routes.v1_router) # Required for InsForge SDK Login
+app.include_router(hotel_routes.router, prefix="/api/hotels", tags=["Hotels"])
+app.include_router(profile_routes.router, prefix="/api/profile", tags=["Profile"])
+
+# 2. Intelligence & Reports (Defensive Loading)
+try:
+    from backend.api import analysis_routes
+    app.include_router(analysis_routes.router, prefix="/api/analysis", tags=["Analysis"])
+    ANALYSIS_ENABLED = True
+except Exception as e:
+    import traceback
+    print(f"CRITICAL: Analysis Routes failed to load: {e}")
+    traceback.print_exc()
+    ANALYSIS_ENABLED = False
+
+app.include_router(market_routes.router, prefix="/api/market", tags=["Market"])
+app.include_router(reports_routes.router, prefix="/api/reports", tags=["Reports"])
+
+# 3. Operational Routes
+app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(monitor_routes.router, prefix="/api/monitor", tags=["Monitor"])
+app.include_router(monitor_routes.router_legacy, include_in_schema=False)
+app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(alerts_routes.router, prefix="/api/alerts", tags=["Alerts"])
+app.include_router(landing_routes.router, prefix="/api/landing", tags=["Landing"])
+app.include_router(pulse_routes.router, prefix="/api/pulse", tags=["Pulse"])
+app.include_router(execution_routes.router, prefix="/api/execution", tags=["Execution"])
+app.include_router(recovery_routes.router, prefix="/api/recovery", tags=["Recovery"])
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Diagnostic startup check for system health.
+    """
+    from backend.services.ai_service import HAS_GENAI
+    print("--- STARTUP DIAGNOSTICS ---")
+    print(f"AI Service: {'ENABLED' if HAS_GENAI else 'DISABLED (google-genai SDK missing)'}")
+    print(f"Analysis Module: {'READY' if ANALYSIS_ENABLED else 'FAILED TO INITIALIZE'}")
+    
+    # Check DB Connection (Proactive Error Handling)
+    try:
+        from backend.utils.db import get_supabase_client
+        db = get_supabase_client(admin=True)
+        if db:
+            print("Database Connection: OK")
+        else:
+            print("Database Connection: FAILED (Empty Client)")
+    except Exception as e:
+        print(f"Database Connection: ERROR ({e})")
+    print("---------------------------")
 # The /auth/v1/* paths must be proxied directly to InsForge by Vercel.
 # FastAPI was intercepting these and returning 401 HTML because it expects
 # a Bearer token, but the InsForge SDK sends credentials.

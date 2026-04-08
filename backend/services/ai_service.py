@@ -1,7 +1,19 @@
 import json
 import os
-from typing import Dict, Any, List
-from google import genai
+from typing import Dict, Any, List, Optional
+
+# [FIX] Added typing-safe import for Google GenAI to satisfy strict linter checks
+try:
+    from google import genai
+    from google.genai import types
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
+    # Mock types for internal structural compatibility if library is missing
+    class MockTypes:
+        def __getattr__(self, name): return None
+    types = MockTypes()
+
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,25 +25,33 @@ class AICommanderService:
     """
 
     def __init__(self):
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            logger.error("GOOGLE_API_KEY not found in environment.")
-            self.client = None
-        else:
-            self.client = genai.Client(api_key=api_key)
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.model_name = "gemini-2.0-flash"  # KAIZEN: Use standard flash model
+        self.client = None
         
-        # KAİZEN: Use a high-speed Flash model for analysis to reduce latency
-        self.model_name = "gemini-2.0-flash"
+        if HAS_GENAI and self.api_key:
+            try:
+                self.client = genai.Client(api_key=self.api_key)
+            except Exception as e:
+                logger.error(f"Failed to initialize GenAI client: {e}")
+        else:
+            if not self.api_key:
+                logger.warning("AI_COMMANDER: GEMINI_API_KEY not found in environment.")
+            if not HAS_GENAI:
+                logger.warning("AI_COMMANDER: google-genai library not available.")
 
     async def generate_command_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generates a strategic brief based on market intelligence data.
+        KAIZEN: AI Strategist. Summarizes market data into high-level commands.
         """
         if not self.client:
             return {
-                "summary": "AI Strategic Command is offline. Please check GOOGLE_API_KEY.",
-                "tactical_actions": ["Verify configuration"],
-                "sentiment_narrative": "Offline"
+                "brief": "AI Command Brief is currently unavailable (check API configuration).",
+                "recommendations": [
+                    "Manual Review Required",
+                    "Verify GEMINI_API_KEY environment variable",
+                ],
+                "status": "offline",
             }
 
         # Prepare context from market data
