@@ -110,12 +110,10 @@ class ScanPersistenceService:
                 return
             try:
                 # Use admin_db for persistence in background to avoid RLS/Session issues
-                # [FIX] Using .upsert() with ignore_duplicates for price_logs to respect idx_price_logs_dedup
-                if table_name == "price_logs":
-                    # We use upsert to handle the unique index conflict gracefully
-                    self.admin_db.table(table_name).upsert(items, on_conflict="hotel_id,check_in_date,recorded_at").execute()
-                else:
-                    self.admin_db.table(table_name).insert(items).execute()
+                # Note: price_logs has a unique index (hotel_id, check_in_date, recorded_at_minute)
+                # but standard .upsert() column matching is tricky with date_trunc in index.
+                # We fallback to per-item insertion if batch fails.
+                self.admin_db.table(table_name).insert(items).execute()
             except Exception as e:
                 logger.warning(f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts.")
                 # Per-item fallback
@@ -318,6 +316,13 @@ class ScanPersistenceService:
                     alert = {"user_id": str(user_id), "hotel_id": hotel_id, **breach}
 
         # 6. Prepare Outputs
+        # Ensure check_in is a date/datetime object for timedelta arithmetic
+        if isinstance(check_in, str):
+            try:
+                check_in = date.fromisoformat(check_in)
+            except ValueError:
+                check_in = datetime.fromisoformat(check_in).date()
+
         check_out = result.get("check_out") or (check_in + timedelta(days=1))
         check_out_str = str(check_out)
 

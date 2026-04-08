@@ -1,12 +1,9 @@
-"""
-Authentication and Authorization Service.
-Handles role-based access control (RBAC) and user session verification.
-
-ARCHITECTURE NOTE (2026-03-29):
-InsForge is NOT compatible with supabase-py's auth.get_user() which calls
-/auth/v1/user (GoTrue path). InsForge returns a 0-byte body at that path.
-Instead, we call InsForge's REST API directly: GET /api/auth/sessions/current
-"""
+# EXPLANATION: Auth Protocol Divergence (InsForge Compatibility)
+# ARCHITECTURE NOTE (2026-03-29):
+# InsForge is NOT compatible with supabase-py's auth.get_user() which calls
+# /auth/v1/user (GoTrue path). InsForge returns a 0-byte body at that path.
+# Instead, we call InsForge's REST API directly: GET /api/auth/sessions/current
+# This ensures we get actual session data rather than a silent failure.
 
 import os
 import traceback
@@ -43,6 +40,9 @@ async def _verify_token_via_insforge(token: str) -> dict:
         "Content-Type": "application/json",
     }
     
+    # EXPLANATION: Direct Session Verification
+    # We bypass the client libraries during verification to handle InsForge's
+    # custom REST auth layer. This fixed the "Invalid Session" loops.
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(url, headers=headers)
     
@@ -138,6 +138,10 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
 
         user_id = getattr(user, "id", None)
 
+        # EXPLANATION: User Verification Logic (Fail-Open)
+        # We perform a multi-table check:
+        # 1. 'profiles' (legacy) for roles.
+        # 2. 'user_profiles' (modern) for subscription and verification status.
         # Check Account Status
         status = "active"
         is_verified = True # V24 FAIL-SAFE: Default to True if InsForge session is valid
@@ -190,11 +194,12 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
                 user_role = res2.data.get("role") or user_role
                 logger.info(f"AUDIT: Found user_profile: role={user_role}, status={status}, is_verified_val={is_verified_val}")
             else:
-                # UNIVERSAL SELF-HEALING (March 2026):
+                # EXPLANATION: Auth-Gate Self-Healing (Resilience)
                 # A missing user_profiles row means the cleanup script will
                 # treat ALL of this user's hotels as unprotected orphans.
                 # We create the profile NOW, at the auth gate, so every
-                # downstream route can rely on its existence.
+                # downstream route can rely on its existence. This prevents
+                # user data from being accidentally purged by late-night cron jobs.
                 logger.info(f"AUDIT: No user_profile found for {user_id}, triggering self-healing...")
                 try:
                     from backend.services.profile_service import get_enriched_profile_logic

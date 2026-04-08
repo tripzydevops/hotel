@@ -340,7 +340,7 @@ async def startup_event():
 
 # Vercel Cron/Scheduler Entry Point (Keep in main for simple discovery by cron services)
 @app.get("/api/cron")
-async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
+async def trigger_cron_job(key: str):
     """External cron entry point."""
     cron_secret = os.getenv("CRON_SECRET")
     if not cron_secret:
@@ -353,11 +353,31 @@ async def trigger_cron_job(key: str, background_tasks: BackgroundTasks):
     from backend.services.monitor_service import run_scheduler_check_logic
     from backend.services.market.sync_service import run_market_sync_if_needed
     from backend.utils.db import get_supabase
+    import asyncio
 
     db = get_supabase()
-    background_tasks.add_task(run_scheduler_check_logic)
-    background_tasks.add_task(run_market_sync_if_needed, db)
-    return {"status": "success", "message": "Scheduler and Market Sync triggered"}
+    
+    # [ROBUST] Synchronous Batch Processing
+    # We remove BackgroundTasks because Vercel/Serverless may suspend execution
+    # immediately after the response is sent. By running directly, we ensure
+    # that the batch is processed and the GitHub Action trigger tracks actual success.
+    try:
+        # We apply a timeout (55s) to stay within Vercel's Pro limit (60s)
+        # while processing the current batch.
+        await asyncio.wait_for(
+            asyncio.gather(
+                run_scheduler_check_logic(),
+                run_market_sync_if_needed(db)
+            ),
+            timeout=55.0
+        )
+        return {"status": "success", "message": "Batch processed successfully"}
+    except asyncio.TimeoutError:
+        logger.warning("CRON: Batch processing timed out after 55s, but next_scan_at locks should prevent duplicate runs.")
+        return {"status": "timeout", "message": "Processing partially completed (timeout)"}
+    except Exception as e:
+        logger.error(f"CRON ERROR: {str(e)}")
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
 
 
 if __name__ == "__main__":

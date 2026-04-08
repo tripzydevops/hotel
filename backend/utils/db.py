@@ -45,9 +45,11 @@ def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Optio
             
         # EXPLANATION: PostgREST Type Safety (Regression Fix)
         # The 'postgrest-py' library now requires the 'base_url' to be 
-        # a 'yarl.URL' object rather than a raw string. Overriding with 
-        # a string previously caused "AttributeError: 'str' object has no 
-        # attribute 'with_path'", which broke all database connectivity.
+        # a 'yarl.URL' object rather than a raw string. 
+        # Additionally, InsForge requires a specific path suffix (/api/database/records)
+        # to correctly route requests to the managed PostgREST instance.
+        # Overriding with a raw string previously caused "AttributeError: 'str' object 
+        # has no attribute 'with_path'", which broke all database connectivity.
         from yarl import URL
         clean_base = url.rstrip("/")
         supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")

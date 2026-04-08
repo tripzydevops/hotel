@@ -608,20 +608,45 @@ async def run_scheduler_check_logic():
         except Exception as m_e:
             s_logger.error(f"CRON: Market sync failed: {m_e}")
 
-        # 1.1 Fetch all active profiles
+        # 1.1 Fetch a batch of active profiles due for scan
+        # KAİZEN: Use batching (limit 5) to prevent Vercel timeout issues.
+        # This ensures we process a manageable chunk and advance their timestamps
+        # before the next cron run picks up the next batch.
         result = (
             supabase.table("profiles")
             .select("id, next_scan_at, scan_frequency_minutes, subscription_status")
             .lte("next_scan_at", now_iso)
             .in_("subscription_status", ["active", "trial"])
+            .order("next_scan_at", desc=False) # Process oldest first
+            .limit(5)
             .execute()
         )
 
         active_due = result.data or []
-        s_logger.info(f"CRON: Found {len(active_due)} active profiles due for scan.")
+        s_logger.info(f"CRON: Selected batch of {len(active_due)} profiles due for scan.")
 
         if not active_due:
             return
+
+        # 1.1.5 IMMEDIATE PROACTIVE LOCKING
+        # Before we do ANYTHING expensive (like fetching hotels or starting scans),
+        # we advance the next_scan_at for these users. This ensures that even if 
+        # the function times out, they won't be picked up again immediately.
+        # This prevents the 'stuck in the past' loop when Vercel kills the process.
+        for user in active_due:
+            try:
+                user_id = user["id"]
+                freq = user.get("scan_frequency_minutes") or 1440
+                next_run_dt = now_dt + timedelta(minutes=freq)
+                next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
+                
+                supabase.table("profiles").update({
+                    "next_scan_at": next_run_iso
+                }).eq("id", user_id).execute()
+                
+                s_logger.info(f"CRON: Pre-locked user {user_id} to next scan at {next_run_iso}")
+            except Exception as lock_e:
+                s_logger.error(f"CRON: Failed to pre-lock user {user['id']}: {lock_e}")
 
         # 1.2 Fetch actual user settings for frequency override
         due_ids = [u["id"] for u in active_due]
@@ -653,6 +678,10 @@ async def run_scheduler_check_logic():
                 user_hotels_map[uid] = []
             user_hotels_map[uid].append(h)
 
+        # 1.4 Cleanup zombies (already in batch, but as a secondary safety)
+        # We don't want to run the expensive zombie cleanup every time if we can avoid it,
+        # but it keeps the scan_sessions table clean.
+
         # 2. Process users in parallel with controlled concurrency
         # [KAIZEN] Controlled Parallelism
         # We use a semaphore to process 5-10 users at once. This avoids stalling the
@@ -665,38 +694,8 @@ async def run_scheduler_check_logic():
                     user_id = user["id"]
                     s_logger.info(f"Processing user {user_id}...")
 
-                    # 2.1 Update next_scan_at immediately (Locking mechanism)
-                    freq = (
-                        settings_map.get(user_id)
-                        or user.get("scan_frequency_minutes")
-                        or 1440
-                    )
-                    intended_at_str = user.get("next_scan_at")
-
-                    if intended_at_str:
-                        try:
-                            intended_at = datetime.fromisoformat(
-                                intended_at_str.replace("Z", "+00:00")
-                            )
-                            next_run_dt = intended_at + timedelta(minutes=freq)
-                            if next_run_dt < now_dt:
-                                next_run_dt = now_dt + timedelta(minutes=freq)
-                        except Exception:
-                            next_run_dt = now_dt + timedelta(minutes=freq)
-                    else:
-                        next_run_dt = now_dt + timedelta(minutes=freq)
-
-                    next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
-
-                    supabase.table("profiles").upsert({
-                        "id": user_id,
-                        "next_scan_at": next_run_iso,
-                        "scan_frequency_minutes": freq
-                    }).execute()
-                    
-                    s_logger.info(
-                        f"User {user_id}: Soft-locked next_scan_at to {next_run_iso}"
-                    )
+                    # Note: next_scan_at was already updated in the pre-lock phase above (1.1.5)
+                    # This avoids the race condition on Vercel timeouts.
 
                     # 2.2 Execute scan
                     hotels = user_hotels_map.get(user_id, [])
@@ -719,6 +718,7 @@ async def run_scheduler_check_logic():
 
                         try:
                             s_logger.info(f"Executing scan for user {user_id} ({len(hotels)} hotels)...")
+                            # We use run_monitor_background which internally handles agents
                             await run_monitor_background(
                                 user_id=UUID(user_id),
                                 hotels=hotels,
@@ -728,13 +728,17 @@ async def run_scheduler_check_logic():
                             )
                         except Exception as direct_e:
                             s_logger.error(f"Direct execution failed for {user_id}: {direct_e}")
+                    else:
+                        s_logger.info(f"User {user_id} has no hotels to scan. Skipping.")
                 except Exception as u_e:
                     s_logger.error(f"Error in process_single_user for {user.get('id')}: {u_e}")
 
-        # Dispatch all tasks concurrently
+        # Dispatch batch concurrently
+        # KAİZEN: Process the batch. Even if one fails, others are gathered.
+        # Since we limited batch to 5, this is safe for a 1-minute cron run.
         tasks = [process_single_user(user) for user in active_due]
         await asyncio.gather(*tasks)
-        s_logger.info(f"CRON: Finished processing all {len(active_due)} users.")
+        s_logger.info(f"CRON: Finished processing batch of {len(active_due)} users.")
 
     except Exception as e:
         s_logger.critical(f"CRON ERROR: {e}")

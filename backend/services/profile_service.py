@@ -15,12 +15,11 @@ from backend.models.schemas import UserProfileUpdate
 async def get_enriched_profile_logic(
     user_id: UUID, base_data: Optional[Dict[str, Any]], db: Client
 ) -> Dict[str, Any]:
-    """
-    Enriches profile data with subscription status and admin bypass rules.
-
-    Why: We separate 'user_profiles' (metadata) from 'profiles' (auth/plan truth)
-    to handle complex enterprise/admin overrides without polluting the primary metadata table.
-    """
+    # EXPLANATION: Profile Enrichment & Data Governance
+    # We separate 'user_profiles' (managed metadata) from 'profiles' (auth system truth)
+    # to handle complex enterprise/admin overrides without polluting the primary 
+    # authentication tables. This ensures admin bypasses and specific plan overrides 
+    # work even if the central billing system is slow to update.
     user_id_str = str(user_id)
     is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
 
@@ -43,10 +42,11 @@ async def get_enriched_profile_logic(
             if res.data:
                 base_data = res.data[0]
             else:
-                # KAİZEN: Self-Healing Logic
+                # EXPLANATION: Automatic Profile Provisioning (Self-Healing)
                 # If the user is authenticated but missing a record in user_profiles,
                 # we create a fallback record from Auth metadata. This prevents
-                # users from being 'invisible' in the admin dashboard.
+                # users from being 'invisible' in the admin dashboard and protects
+                # them from "account cleanup" scripts that look for orphaned hotels.
                 if admin_db:
                     try:
                         auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
@@ -108,8 +108,10 @@ async def get_enriched_profile_logic(
         plan = sub_data[0].get("plan_type") or "trial"
         status = sub_data[0].get("subscription_status") or "trial"
 
-    # 2. Admin Bypass Logic: Force Enterprise if user is a known admin or has a specific ID
-    # This ensures internal staff always has full platform access.
+    # EXPLANATION: Administrative Bypass (Super-User Rules)
+    # This logic forces "Enterprise" status for known admin IDs and internal
+    # emails. This ensures internal staff always have full platform access 
+    # regardless of their billing status. This is a critical debugging/testing bridge.
     try:
         specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
         is_specific_admin = user_id_str == specific_admin_id

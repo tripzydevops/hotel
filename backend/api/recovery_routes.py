@@ -26,6 +26,10 @@ async def api_generate_dispute(
     """
     Generates an AI-powered dispute letter for a parity violation.
     """
+    # EXPLANATION: Revenue Recovery AI (Business Intelligence)
+    # This route leverages the 'AnalystAgent' to generate persuasive, 
+    # data-rich dispute letters when OTAs (Online Travel Agencies) 
+    # violate price parity agreements. This is a core "Revenue Recovery" USP.
     try:
         # Fetch hotel name for context
         hotel_res = db.table("hotels").select("name").eq("id", req.hotel_id).single().execute()

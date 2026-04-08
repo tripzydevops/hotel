@@ -61,16 +61,26 @@ class AnalystAgent:
             return
 
         try:
+            import json
             # Fetch existing trace
             existing = self.db.table("scan_sessions").select("reasoning_trace").eq("id", sid_key).single().execute()
-            raw_trace = existing.data.get("reasoning_trace") or [] if existing.data else []
+            raw_val = existing.data.get("reasoning_trace") if existing.data else None
+            
+            raw_trace = []
+            if raw_val:
+                try:
+                    raw_trace = json.loads(raw_val) if isinstance(raw_val, str) else raw_val
+                    if not isinstance(raw_trace, list):
+                        raw_trace = []
+                except Exception:
+                    raw_trace = []
             
             # Append new logs
             raw_trace.extend(self._log_buffer[sid_key])
 
             self.admin_db.table("scan_sessions").update(
                 {
-                    "reasoning_trace": raw_trace,
+                    "reasoning_trace": json.dumps(raw_trace),
                     "updated_at": datetime.now().isoformat(),
                 }
             ).eq("id", sid_key).execute()
