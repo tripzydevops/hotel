@@ -1,6 +1,6 @@
 # PRODUCTION_READY: 2026-03-27T10:40:00Z
 import os
-from yarl import URL
+# from yarl import URL # Removed for Vercel portability
 from typing import Optional, Any
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
@@ -18,42 +18,36 @@ def load_env_standard():
 # Initial load for app-level execution
 load_env_standard()
 
-def get_supabase_client(url: Optional[str] = None, key: Optional[str] = None, jwt: Optional[str] = None, admin: bool = False) -> Any:
+def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Optional[Client]:
     """
-    Core Supabase client factory with InsForge-specific path overrides.
-    Safe for both FastAPI dependency injection and standalone script usage.
+    Returns a configured Supabase client.
+    
+    If admin=True, it uses the SUPABASE_SERVICE_ROLE_KEY (bypasses RLS).
+    If jwt is provided, it returns a client scoped to that user (honors RLS).
     """
-    # 1. Prioritize arguments, then env vars
-    target_url = url or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") if admin else os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
-    if admin:
-        target_key = key or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    else:
-        target_key = key or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    
-    if not target_url or not target_key:
-        print(f"CRITICAL: Missing Supabase credentials (URL={bool(target_url)}, KEY={bool(target_key)}, ADMIN={admin})")
+    if not url or not key:
         return None
-
-
-    try:
-        # 2. Initialize the generic client
-        supabase: Client = create_client(
-            target_url, 
-            target_key, 
-            options=ClientOptions(
-                postgrest_client_timeout=30,
-                storage_client_timeout=30
-            )
-        )
         
-        # 3. Path Redirection: Override default PostgREST path for InsForge compatability
-        # Use yarl for safe URL manipulation (avoids double-slash or missing slash issues)
-        base = URL(target_url)
-        supabase.postgrest.base_url = base / "api/database/records"
+    # Standard header-based authentication for RLS
+    options = ClientOptions().replace(
+        auto_refresh_token=False,
+        persist_session=False
+    )
+    
+    try:
+        supabase = create_client(url, key, options=options)
         
         if jwt:
             supabase.postgrest.auth(jwt)
+            
+        # PATH OVERRIDE FOR INSFORGE:
+        # InsForge uses a different path for PostgREST records than standard Supabase.
+        # We must append /api/database/records to the base URL.
+        clean_base = url.rstrip("/")
+        supabase.postgrest.base_url = f"{clean_base}/api/database/records"
             
         return supabase
     except Exception as e:

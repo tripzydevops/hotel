@@ -63,6 +63,11 @@ async def get_current_session(request: Request, db: Client = Depends(get_supabas
         logger.error(f"Error in /api/auth/sessions/current: {e}")
         raise HTTPException(status_code=401, detail=str(e))
 
+@router.api_route("/token", methods=["GET", "POST", "HEAD"])
+async def auth_token_bridge(request: Request, db: Client = Depends(get_supabase)):
+    """SDK Token Bridge for session synchronization."""
+    return await sync_token(request, db)
+
 v1_router = APIRouter(prefix="/auth/v1", tags=["Authentication-V1"])
 
 @v1_router.get("/sessions/current", include_in_schema=False)

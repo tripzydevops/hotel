@@ -133,6 +133,15 @@ async def manual_cors_middleware(request: Request, call_next):
     else:
         response = await call_next(request)
     
+    # PROD DIAGNOSTICS: Log token presence for auth debugging
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        # Log only the first 15 chars of token for safety
+        token_hint = f"{auth_header[:15]}..." 
+        logger.info(f"DIAG: Auth Header detected on {request.url.path} | {token_hint}")
+    elif request.url.path.startswith("/api/auth"):
+        logger.info(f"DIAG: No Auth Header on sensitive path: {request.url.path}")
+
     origin = request.headers.get("origin")
     if origin and response and (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
         response.headers["Access-Control-Allow-Origin"] = origin
