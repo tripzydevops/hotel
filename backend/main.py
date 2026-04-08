@@ -278,15 +278,15 @@ async def system_report(db: Client = Depends(get_supabase)):
 # --- ROUTE REGISTRATION ---
 
 # 1. Core Services
-app.include_router(auth_routes.router)
-app.include_router(auth_routes.v1_router) # Required for InsForge SDK Login
-app.include_router(hotel_routes.router)
-app.include_router(profile_routes.router)
+app.include_router(auth_routes.router, prefix="/api")
+app.include_router(auth_routes.v1_router, prefix="/api") # Required for InsForge SDK Login
+app.include_router(hotel_routes.router, prefix="/api")
+app.include_router(profile_routes.router, prefix="/api")
 
 # 2. Intelligence & Reports (Defensive Loading)
 try:
     from backend.api import analysis_routes
-    app.include_router(analysis_routes.router)
+    app.include_router(analysis_routes.router, prefix="/api")
     ANALYSIS_ENABLED = True
 except Exception as e:
     import traceback
@@ -294,19 +294,19 @@ except Exception as e:
     traceback.print_exc()
     ANALYSIS_ENABLED = False
 
-app.include_router(market_routes.router)
-app.include_router(reports_routes.router)
+app.include_router(market_routes.router, prefix="/api")
+app.include_router(reports_routes.router, prefix="/api")
 
 # 3. Operational Routes
-app.include_router(admin_routes.router)
-app.include_router(monitor_routes.router)
-app.include_router(monitor_routes.router_legacy, include_in_schema=False)
-app.include_router(dashboard_routes.router)
-app.include_router(alerts_routes.router)
-app.include_router(landing_routes.router)
-app.include_router(pulse_routes.router)
-app.include_router(execution_routes.router)
-app.include_router(recovery_routes.router)
+app.include_router(admin_routes.router, prefix="/api")
+app.include_router(monitor_routes.router, prefix="/api")
+app.include_router(monitor_routes.router_legacy, include_in_schema=False, prefix="/api")
+app.include_router(dashboard_routes.router, prefix="/api")
+app.include_router(alerts_routes.router, prefix="/api")
+app.include_router(landing_routes.router, prefix="/api")
+app.include_router(pulse_routes.router, prefix="/api")
+app.include_router(execution_routes.router, prefix="/api")
+app.include_router(recovery_routes.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():

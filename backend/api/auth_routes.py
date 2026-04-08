@@ -8,7 +8,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.get("/user", include_in_schema=True)
 async def get_user_info(request: Request, db: Client = Depends(get_supabase)):

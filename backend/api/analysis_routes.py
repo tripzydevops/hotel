@@ -12,7 +12,7 @@ import json
 from sse_starlette.sse import EventSourceResponse
 from backend.services.ai_service import ai_commander
 
-router = APIRouter(prefix="/api", tags=["analysis"])
+router = APIRouter(tags=["analysis"])
 
 
 @router.get("/v1/discovery/{hotel_id}")

@@ -45,9 +45,10 @@ def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Optio
             
         # PATH OVERRIDE FOR INSFORGE:
         # InsForge uses a different path for PostgREST records than standard Supabase.
-        # We must append /api/database/records to the base URL.
+        # We must append /api/database/records to the base URL as a yarl.URL object.
+        from yarl import URL
         clean_base = url.rstrip("/")
-        supabase.postgrest.base_url = f"{clean_base}/api/database/records"
+        supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")
             
         return supabase
     except Exception as e:

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api", tags=["landing"])
+router = APIRouter(tags=["landing"])
 
 class ConfigUpdate(BaseModel):
     locale: str = "tr"
@@ -17,20 +17,21 @@ class ConfigUpdate(BaseModel):
 
 @router.get("/landing/config")
 async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
-    """Public endpoint to fetch all landing page configurations for a specific locale."""
+    """
+    KAIZEN: Ultra-fast landing page config delivery.
+    Fetches marketing text and CTA anchors for the specified locale.
+    """
+    config_data = []
+    # Support for fallback to 'en' if 'tr' is missing
+    target_locales = [locale]
+    if locale != "en":
+        target_locales.append("en")
+
     try:
-        # V23 cascading logic:
-        # Try full locale (e.g., 'tr-TR'), then base part (e.g., 'tr'), then default 'tr'.
-        target_locales = [locale]
-        if "-" in locale:
-            target_locales.append(locale.split("-")[0])
-        
-        # Ensure we always have 'tr' as the ultimate fallback in Turkish-first projects
-        if "tr" not in target_locales:
-            target_locales.append("tr")
-        
-        # Try finding config for these locales in order
-        config_data = []
+        # Check if database is initialized
+        if not db:
+            raise Exception("Database client not available")
+
         for loc in target_locales:
             res = (
                 db.table("landing_page_config")
@@ -38,40 +39,44 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
                 .eq("locale", loc)
                 .execute()
             )
-            if res.data and len(res.data) > 0:
-                config_data = res.data
+            # Robust check for data (APIResponse object or list if older SDK)
+            data = getattr(res, "data", None)
+            if data is None and isinstance(res, list):
+                data = res
+
+            if data and len(data) > 0:
+                config_data = data
                 break
 
         if not config_data:
-            # V24 FALLBACK: Hardcoded defaults for a premium hotel experience if DB is empty
+            # V24 FALLBACK: Hardcoded defaults if DB is empty or unreachable
             config_dict = {
                 "hero": {
-                    "title": "Welcome to Your Premium Stay",
-                    "subtitle": "Luxury, Comfort, and Elegance redefined for the modern traveler.",
-                    "cta": "Book Now"
+                    "title": "HotelPlus: Autonomous Intelligence",
+                    "subtitle": "Offline Mode Active",
+                    "cta": "Get Started",
                 },
-                "features": [
-                    {"title": "Spa & Wellness", "description": "Relax in our state-of-the-art wellness centers."},
-                    {"title": "Gourmet Dining", "description": "Exquisite cuisines prepared by world-renowned chefs."},
-                    {"title": "Smart Rooms", "description": "Control your entire room with one touch."}
-                ],
-                "about": {
-                    "title": "Our History",
-                    "content": "Founded with a vision of luxury, we provide unparalleled service since 1995."
-                }
+                "features": [],
+                "status": "partial_offline",
             }
-            logger.info(f"AUDIT: Using hardcoded landing config defaults for {locale}")
         else:
-            config_dict = {item["key"]: item["content"] for item in config_data}
+            # Process DB rows into a dictionary
+            # Row format: {"key": "hero", "content": {...}}
+            config_dict = {item.get("key"): item.get("content") for item in config_data if item.get("key")}
+            config_dict["status"] = "online"
 
         return config_dict
+
     except Exception as e:
-        logger.error(f"Landing config error: {str(e)}")
-        # V24 Fallback: Return a valid JSON even in case of total failure
+        logger.error(f"Landing config error: {str(e)}", exc_info=True)
         return {
-            "hero": {"title": "Elegant Stays (Offline Mode)", "subtitle": "Connection to theme data temporarily interrupted."},
-            "status": "partial_offline",
-            "error_hint": type(e).__name__
+            "hero": {
+                "title": "HotelPlus TR",
+                "subtitle": f"Service temporarily unavailable: {type(e).__name__}",
+                "cta": "Retry",
+            },
+            "status": "error",
+            "error_hint": str(e),
         }
 
 @router.get("/admin/landing/config")
