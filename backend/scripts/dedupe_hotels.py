@@ -14,9 +14,11 @@ async def comprehensive_data_restoration():
     
     target_user_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a" # tripzydevops
     
-    # 1. Fetch active hotels for the target user
-    res = supabase.table("hotels").select("*").eq("user_id", target_user_id).is_("deleted_at", "null").execute()
-    active_hotels = res.data or []
+    # 1. Fetch hotels for the target user (filtering active ones in-memory)
+    res = supabase.table("hotels").select("*").eq("user_id", target_user_id).execute()
+    data = res.data or []
+    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+    active_hotels = [h for h in data if not h.get("deleted_at")]
     print(f"Active Hotels for tripzydevops: {len(active_hotels)}")
     
     for h in active_hotels:

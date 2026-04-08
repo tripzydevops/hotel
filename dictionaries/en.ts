@@ -47,6 +47,7 @@ export const en = {
     high: "High",
     low: "Low",
     average: "Average",
+    intelligencePending: "Deep Intelligence Pending...",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",

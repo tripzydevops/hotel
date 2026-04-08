@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, Dict, Any, List, cast
 from uuid import UUID
 from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import get_current_active_user, get_supabase_rls, get_supabase_admin
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
@@ -56,6 +56,7 @@ async def get_market_intelligence(
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
     db: Client = Depends(get_supabase_rls),
+    admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -79,6 +80,7 @@ async def get_market_intelligence(
             end_date=str(end_date) if end_date else None,
             exclude_hotel_ids=exclude_hotel_ids,
             search_query=search_query,
+            admin_db=admin_db,
         )
 
         return JSONResponse(content=jsonable_encoder(analysis_data))
@@ -318,6 +320,7 @@ async def stream_market_intelligence(
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
     db: Client = Depends(get_supabase_rls),
+    admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -343,6 +346,7 @@ async def stream_market_intelligence(
                 end_date=str(end_date) if end_date else None,
                 exclude_hotel_ids=exclude_hotel_ids,
                 search_query=search_query,
+                admin_db=admin_db,
             )
 
             # Send initial payload
@@ -352,7 +356,12 @@ async def stream_market_intelligence(
             }
 
             # 2. Stream AI Narrative
-            async for chunk in stream_narrative_gen(analysis_data, db=db):
+            async for chunk in stream_narrative_gen(
+                target_hotel_name=analysis_data.get("hotel_name", "Target"),
+                analysis_results=analysis_data,
+                locale="en",
+                admin_db=admin_db
+            ):
                 yield {"event": "narrative_chunk", "data": json.dumps({"chunk": chunk})}
 
             yield {"event": "complete", "data": "done"}
@@ -366,6 +375,7 @@ async def stream_market_intelligence(
 async def get_ai_command_brief(
     hotel_id: str,
     db: Client = Depends(get_supabase_rls),
+    admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -380,11 +390,12 @@ async def get_ai_command_brief(
         analysis_data = await get_market_intelligence_data(
             db=db,
             user_id=str(current_user.id),
+            admin_db=admin_db,
         )
 
         # 2. Generate the AI brief
         brief = await ai_commander.generate_command_brief(analysis_data)
-        
+
         return brief
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Command Brief failed: {str(e)}")

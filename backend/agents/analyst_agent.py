@@ -18,10 +18,11 @@ class AnalystAgent:
     Delegates persistence and low-level data processing to ScanPersistenceService.
     """
 
-    def __init__(self, db: Client):
+    def __init__(self, db: Client, admin_db: Optional[Client] = None):
         self.db = db
+        self.admin_db = admin_db or db
         self.adk_agent = MarketIntelligenceAgent()
-        self.persistence = ScanPersistenceService(db)
+        self.persistence = ScanPersistenceService(db, admin_db=self.admin_db)
         self._log_buffer = {}
 
     async def log_reasoning(
@@ -67,7 +68,7 @@ class AnalystAgent:
             # Append new logs
             raw_trace.extend(self._log_buffer[sid_key])
 
-            self.db.table("scan_sessions").update(
+            self.admin_db.table("scan_sessions").update(
                 {
                     "reasoning_trace": raw_trace,
                     "updated_at": datetime.now().isoformat(),
@@ -79,7 +80,7 @@ class AnalystAgent:
         except Exception as e:
             logger.error(f"[AnalystAgent] Log flush failed: {e}")
 
-    async def analyze_results(
+    async def persist_results_only(
         self,
         user_id: UUID,
         scraper_results: List[Dict[str, Any]],
@@ -89,12 +90,10 @@ class AnalystAgent:
         session_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
         """
-        Orchestrates the analysis of scraper results.
-        1. Persists data and checks for local alerts via persistence service.
-        2. Generates high-level market intelligence via ADK agent.
-        3. Dispatches global pulse alerts to other users.
+        Phase 1: Persists raw scraper data and performs basic heuristic analysis (ARI, basic alerts).
+        This must be fast and reliable.
         """
-        logger.info(f"[AnalystAgent] Starting analysis for User {user_id}")
+        logger.info(f"[AnalystAgent] Persisting results for User {user_id}")
         
         # 1. Persistence & Base Analysis
         analysis_summary = await self.persistence.persist_scan_results(
@@ -106,41 +105,76 @@ class AnalystAgent:
             session_id=session_id,
             log_reasoning_fn=self.log_reasoning
         )
+        
+        await self._flush_logs(session_id)
+        return analysis_summary
 
-        # 2. Market Intelligence (ADK Agent Activation)
+    async def run_intelligence_only(
+        self,
+        user_id: UUID,
+        scraper_results: List[Dict[str, Any]],
+        analysis_summary: Dict[str, Any],
+        threshold: float = 2.0,
+        options: Optional[ScanOptions] = None,
+        session_id: Optional[UUID] = None,
+    ):
+        """
+        Phase 2: Deep AI Reasoning (Market Intelligence).
+        This is slower and uses Gemini 3.
+        """
         if options and options.skip_intelligence:
-            logger.info(f"[AnalystAgent] Skipping AI Intelligence as requested by options.")
-            await self.log_reasoning(session_id, "Market Intel", "[Skip] Strategic analysis bypassed per user request.")
-        else:
-            try:
-                volatility = analysis_summary.get("volatility_avg", 0.0)
-                intel_res = await self.adk_agent.run_analysis(scraper_results, threshold, volatility=volatility)
-                intel_trace = intel_res.get("reasoning") or []
-                final_report = intel_res.get("final_report")
-                
-                if final_report:
-                    import time
-                    intel_trace.append({
-                        "step": "Strategic Report",
-                        "level": "success",
-                        "message": final_report,
-                        "timestamp": time.time()
-                    })
+            logger.info(f"[AnalystAgent] Skipping AI Intelligence as requested.")
+            await self.log_reasoning(session_id, "Market Intel", "[Skip] Strategic analysis bypassed.")
+            await self._flush_logs(session_id)
+            return
 
-                if session_id:
-                    sid_key = str(session_id)
-                    if sid_key not in self._log_buffer:
-                        self._log_buffer[sid_key] = []
-                    self._log_buffer[sid_key].extend(intel_trace)
-            except Exception as e:
-                logger.error(f"[AnalystAgent] Intelligence Error: {e}")
-                await self.log_reasoning(session_id, "Market Intel", f"[Error] Strategic analysis failed: {str(e)}")
+        logger.info(f"[AnalystAgent] Starting Market Intelligence for Session {session_id}")
+        try:
+            volatility = analysis_summary.get("volatility_avg", 0.0)
+            intel_res = await self.adk_agent.run_analysis(scraper_results, threshold, volatility=volatility)
+            intel_trace = intel_res.get("reasoning") or []
+            final_report = intel_res.get("final_report")
+            
+            if final_report:
+                import time
+                intel_trace.append({
+                    "step": "Strategic Report",
+                    "level": "success",
+                    "message": final_report,
+                    "timestamp": time.time()
+                })
 
-        # 3. Final Flush
-        if session_id:
+            if session_id:
+                sid_key = str(session_id)
+                if sid_key not in self._log_buffer:
+                    self._log_buffer[sid_key] = []
+                self._log_buffer[sid_key].extend(intel_trace)
+                await self._flush_logs(session_id)
+        except Exception as e:
+            logger.error(f"[AnalystAgent] Intelligence Error: {e}")
+            await self.log_reasoning(session_id, "Market Intel", f"[Error] Strategic analysis failed: {str(e)}")
             await self._flush_logs(session_id)
 
-        # 4. Global Pulse dispatch
+    async def analyze_results(
+        self,
+        user_id: UUID,
+        scraper_results: List[Dict[str, Any]],
+        threshold: float = 2.0,
+        settings: Optional[Dict[str, Any]] = None,
+        options: Optional[ScanOptions] = None,
+        session_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        """Legacy wrapper for backward compatibility."""
+        summary = await self.persist_results_only(user_id, scraper_results, threshold, settings, options, session_id)
+        await self.run_intelligence_only(user_id, scraper_results, summary, threshold, options, session_id)
+        
+        # Dispatch pulse (internal logic preserved)
+        asyncio.create_task(self._process_global_pulse(user_id, scraper_results))
+        
+        return summary
+
+    async def _process_global_pulse(self, user_id: UUID, scraper_results: List[Dict[str, Any]]):
+        """Helper to extract pulse data and dispatch background alerts."""
         pulse_queue = []
         for res in scraper_results:
             price_data = res.get("price_data")
@@ -157,11 +191,9 @@ class AnalystAgent:
                             "current_price": curr_p,
                             "currency": price_data.get("currency", "TRY")
                         })
-        
         if pulse_queue:
-            asyncio.create_task(self._pulse_batch_global_alerts(user_id, pulse_queue))
-
-        return analysis_summary
+            # Note: _pulse_batch_global_alerts is defined below
+            await self._pulse_batch_global_alerts(user_id, pulse_queue)
 
     async def _pulse_batch_global_alerts(
         self, initiator_user_id: UUID, pulse_data: List[Dict[str, Any]]
@@ -177,7 +209,7 @@ class AnalystAgent:
 
             # 1. Find all rivals for all hotel IDs (excluding initiator)
             rivals_res = (
-                self.db.table("hotels")
+                self.admin_db.table("hotels")
                 .select("user_id, id, name, serp_api_id")
                 .in_("serp_api_id", serp_ids)
                 .neq("user_id", str(initiator_user_id))
@@ -205,7 +237,7 @@ class AnalystAgent:
             # 4. Fetch history for baselines
             rival_hotel_ids = [str(r.get("id")) for r in rivals_res.data]
             hist_res = (
-                self.db.table("price_logs")
+                self.admin_db.table("price_logs")
                 .select("hotel_id, price, currency")
                 .in_("hotel_id", rival_hotel_ids)
                 .order("recorded_at", desc=True)

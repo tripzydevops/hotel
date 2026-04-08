@@ -113,14 +113,14 @@ class SubscriptionService:
         limit = access["limits"].get("hotel_limit", 5)
 
         # Count current usage (not soft-deleted)
-        count_res = (
+        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+        res = (
             db.table("hotels")
-            .select("id", count="exact")
+            .select("id, deleted_at")
             .eq("user_id", user_id)
-            .is_("deleted_at", "null")
             .execute()
         )
-        current_count = count_res.count or 0
+        current_count = len([h for h in (res.data or []) if not h.get("deleted_at")])
 
         if current_count >= limit:
             return (

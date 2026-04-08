@@ -245,3 +245,10 @@ def get_supabase_rls(
     Uses the JWT from the Authorization header.
     """
     return get_supabase_client(jwt=token)
+
+def get_supabase_admin() -> Client:
+    """
+    Dependency that returns a Supabase client with Admin privileges (Service Role).
+    Used for performance-sensitive background operations that bypass RLS.
+    """
+    return get_supabase_client(admin=True)

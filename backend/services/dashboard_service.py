@@ -99,8 +99,14 @@ async def get_dashboard_logic(
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
         
         # 6. Hotels (Bulk Fetch)
-        # KAİZEN: Using .is_("deleted_at", "null") is standard but we'll add extra safety
-        hotels_res = db.table("hotels").select("*").eq("user_id", str(user_id)).is_("deleted_at", "null").execute()
+        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+        res = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
+        all_hotels_raw = res.data or []
+        hotels_data = [h for h in all_hotels_raw if not h.get("deleted_at")]
+        
+        # Mocking hotels_res structure for compatibility with subsequent code
+        from types import SimpleNamespace
+        hotels_res = SimpleNamespace(data=hotels_data)
         
         # 7. Core Profile (for next_scan_at)
         core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).maybe_single().execute()
@@ -497,14 +503,15 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
             return []
 
         hotel_ids = list(set([a["hotel_id"] for a in raw_alerts]))
-        hotels_res = (
+        res = (
             db.table("hotels")
-            .select("id, name")
+            .select("id, name, deleted_at")
             .in_("id", hotel_ids)
-            .is_("deleted_at", "null")
             .execute()
         )
-        hotel_name_map = {h["id"]: h["name"] for h in hotels_res.data}
+        # [ROBUST] Programmatic filtering
+        hotels_data = [h for h in (res.data or []) if not h.get("deleted_at")]
+        hotel_name_map = {h["id"]: h["name"] for h in hotels_data}
 
         wins = []
         for a in raw_alerts:

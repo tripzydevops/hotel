@@ -144,7 +144,7 @@ export default function ScanSessionModal({
       fetchSession();
 
       // Poll for updates if scan is not finished
-      const isActive = liveSession?.status === "running" || liveSession?.status === "pending";
+      const isActive = liveSession?.status === "running" || liveSession?.status === "pending" || liveSession?.status === "intelligence_pending";
       if (isActive) {
         logsIntervalId = setInterval(fetchSessionLogs, 3000);
         sessionIntervalId = setInterval(fetchSession, 3000);
@@ -231,10 +231,12 @@ export default function ScanSessionModal({
                     className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
                       activeSession.status === "completed"
                         ? "bg-optimal-green/20 text-optimal-green"
+                        : activeSession.status === "intelligence_pending"
+                        ? "bg-blue-500/20 text-blue-400"
                         : "bg-amber-500/20 text-amber-500"
                     }`}
                   >
-                    {activeSession.status}
+                    {activeSession.status === "intelligence_pending" ? t("common.intelligencePending") : activeSession.status}
                   </span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-muted)] font-medium">
@@ -346,15 +348,19 @@ export default function ScanSessionModal({
         <div className="flex-1 overflow-y-auto p-8 bg-[var(--deep-ocean)]/30 backdrop-blur-sm">
           <div className="space-y-8">
             {/* Live Progress Bar */}
-            {(activeSession.status === "running" || activeSession.status === "pending") && (
+            {(activeSession.status === "running" || activeSession.status === "pending" || activeSession.status === "intelligence_pending") && (
               <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
                 <div className="flex justify-between items-end mb-3">
                   <div>
                     <h4 className="text-xs font-black text-white uppercase tracking-wider mb-1">
-                      Scan in Progress...
+                      {activeSession.status === "intelligence_pending" ? "Deep Intelligence Analysis" : "Scan in Progress..."}
                     </h4>
                     <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                      {activeSession.status === "running" ? "Agents harvesting data..." : "Queued in Mesh..."}
+                      {activeSession.status === "intelligence_pending" 
+                        ? "Gemini 2.0 Pro generating strategic reports..." 
+                        : activeSession.status === "running" 
+                        ? "Agents harvesting data..." 
+                        : "Queued in Mesh..."}
                     </p>
                   </div>
                   <span className="text-sm font-black text-[var(--soft-gold)]">
@@ -381,9 +387,9 @@ export default function ScanSessionModal({
                 <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
               </div>
               <h3 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-6 flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] ${activeSession.status === "running" ? "animate-pulse" : ""}`} />
+                <span className={`w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] ${["running", "intelligence_pending"].includes(activeSession.status) ? "animate-pulse" : ""}`} />
                 Agent-Mesh Processing Status
-                {activeSession.status === "running" && (
+                {["running", "intelligence_pending"].includes(activeSession.status) && (
                    <span className="ml-auto text-[8px] text-[var(--soft-gold)]/60 animate-pulse">LIVE FEED ACTIVE</span>
                 )}
               </h3>
@@ -437,7 +443,7 @@ export default function ScanSessionModal({
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                      activeSession.status === "completed" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Notifier")))
+                      ["completed", "intelligence_pending"].includes(activeSession.status) || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Notifier")))
                         ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                         : "bg-white/5 border-white/10 text-[var(--text-muted)]"
                     }`}
@@ -450,6 +456,27 @@ export default function ScanSessionModal({
                     </p>
                     <p className="text-[8px] font-bold text-[var(--text-muted)]">
                       Alerts Dispatched
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 4: Intelligence */}
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+                      activeSession.status === "completed" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Intelligence")))
+                        ? "bg-purple-500/20 border-purple-500/50 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                      Intelligence Agent
+                    </p>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)]">
+                      Strategic Reports
                     </p>
                   </div>
                 </div>

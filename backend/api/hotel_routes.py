@@ -53,11 +53,14 @@ async def list_hotels(
     # Powers the sidebar and dashboard selector. By default, it hides
     # archived hotels to prevent cluttering the UI.
     query = db.table("hotels").select("*").eq("user_id", str(user_id))
-    if not include_deleted:
-        query = query.is_("deleted_at", "null")
-
     result = query.execute()
-    return result.data or []
+    data = result.data or []
+
+    if include_deleted:
+        return data
+
+    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+    return [h for h in data if not h.get("deleted_at")]
 
 
 @router.get("/locations", response_model=List[LocationRegistry])

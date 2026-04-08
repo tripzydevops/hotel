@@ -14,6 +14,12 @@ class ScraperAgent:
     2026 Strategy: Decoupled from monolith for independent scaling.
     """
 
+    # KAİZEN: Global Concurrency Control
+    # This semaphore is shared across all instances of ScraperAgent in this process.
+    # It ensures that even if we process multiple users in parallel, the total 
+    # number of concurrent SerpApi requests remains within safe limits.
+    _global_semaphore = asyncio.Semaphore(15)
+
     def __init__(self, db: Client):
         self.db = db
         self._log_buffer = {}
@@ -99,15 +105,17 @@ class ScraperAgent:
             if not sharing_hotel_ids:
                 return None
 
-            # 2. Check for recent logs for any of these hotels
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat()
+            # GlobalPulse Strategy: Check if anyone else has scanned this hotel in the last 3 hours.
+            # This is our cross-user cache and pooling layer to handle duplicates.
+            three_hours_ago = (datetime.now() - timedelta(hours=3)).isoformat()
             
             logs_res = (
                 self.db.table("price_logs")
                 .select("*")
+                .select("price, recorded_at, currency, room_types, vendor")
                 .in_("hotel_id", sharing_hotel_ids)
                 .eq("check_in_date", check_in.isoformat())
-                .gte("recorded_at", cutoff)
+                .gte("recorded_at", three_hours_ago)
                 .order("recorded_at", desc=True)
                 .limit(1)
                 .execute()
@@ -141,7 +149,6 @@ class ScraperAgent:
     ) -> List[Dict[str, Any]]:
         """Performs the actual scraping for a list of hotels."""
         results = []
-        semaphore = asyncio.Semaphore(10)
 
         await self.log_reasoning(
             session_id,
@@ -166,7 +173,7 @@ class ScraperAgent:
             serp_api_id = hotel.get("serp_api_id")
 
             try:
-                async with semaphore:
+                async with self._global_semaphore:
                     await self.log_reasoning(
                         session_id, "Resource", f"Processing {hotel_name} (SerpApi ID: {serp_api_id})", "info"
                     )

@@ -77,14 +77,14 @@ async def check_scheduled_scan(
             return {"triggered": False, "reason": "MANUAL_ONLY"}
 
         # 2. Hotels Check
-        hotels_res = (
+        res = (
             db.table("hotels")
             .select("*")
             .eq("user_id", uid)
-            .is_("deleted_at", "null")
             .execute()
         )
-        hotels = hotels_res.data or []
+        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+        hotels = [h for h in (res.data or []) if not h.get("deleted_at")]
         if not hotels:
             return {"triggered": False, "reason": "NO_HOTELS"}
 

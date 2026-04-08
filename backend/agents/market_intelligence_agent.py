@@ -24,6 +24,7 @@ class MarketIntelligenceAgent:
         """
         Runs the Gemini 3 agentic reasoning flow over current scan results.
         """
+        import asyncio
         # 1. Prepare data summary for the agent
         summary = []
         for res in scraper_results:
@@ -47,45 +48,39 @@ class MarketIntelligenceAgent:
         if not client:
             return self._heuristic_fallback(summary, threshold, volatility)
 
-        # 3. Agentic Execution with Gemini 3
+        # 3. Agentic Execution with Gemini 3 (using Interactions API)
         try:
             prompt = f"""
-            You are a Senior Hotel Revenue Analyst. Your goal is to synthesize pricing data and sentiment into high-level strategy.
+            You are a Senior Hotel Revenue Analyst. Analyze this market dataset and provide strategic reasoning.
             
-            ANALYTIC FLOW:
-            1. Verify if price movements are significant relative to the {threshold}% threshold.
-            2. Evaluate brand strength and pricing power from reviews.
-            3. Combine these signals into a strategy:
-               - High Price + High Sentiment = 'Veblen Strength' (Safe to maintain rates).
-               - Low Price + High Sentiment = 'Value Opportunity' (Market capture potential).
-               - High Price + Low Sentiment = 'Yield Risk' (Potential occupancy loss).
-               - Low Price + Low Sentiment = 'Commoditized' (Race to the bottom).
+            GOALS:
+            1. Identify price anomalies (> {threshold}%).
+            2. Extract pricing power signals from guest sentiment.
+            3. Formulate a recovery or yields maximization strategy.
             
-            DATA SUMMARY: {summary}
-            MARKET VOLATILITY: {volatility}%
-            ALERT THRESHOLD: {threshold}%
+            DATA: {summary}
+            VOLATILITY: {volatility}%
             
-            OUTPUT REQUIREMENTS:
-            - You MUST return a JSON object with two keys: 'reasoning_trace' and 'final_report'.
-            - 'reasoning_trace' must be a list of objects: {{"step": "Step Name", "message": "Quick insight"}}
-            - 'final_report' must be a concise, executive summary in ALL CAPS for headers.
-            - DO NOT use markdown symbols like hashtags or asterisks.
+            REQUIRED JSON STRUCTURE:
+            {{
+              "reasoning_trace": [{"step": "str", "message": "str"}],
+              "final_report": "CONCISE SUMMARY WITH ALL CAPS HEADERS"
+            }}
             """
 
-            response = client.models.generate_content(
+            # [KAIZEN] Offloading to thread to keep event loop live
+            interaction = await asyncio.to_thread(
+                client.interactions.create,
                 model=self.model,
-                contents=prompt,
-                config={
-                    'response_mime_type': 'application/json'
-                }
+                input=prompt,
+                config={'response_mime_type': 'application/json'}
             )
 
-            # Safeguard against empty or malformed response
-            if not response or not response.text:
-                raise ValueError("Empty response from Gemini")
+            if not interaction or not interaction.outputs:
+                raise ValueError("No output from Gemini interactions")
 
             import json
-            raw_data = json.loads(response.text)
+            raw_data = json.loads(interaction.outputs[-1].text)
             
             trace = raw_data.get("reasoning_trace", [])
             import time
@@ -101,7 +96,7 @@ class MarketIntelligenceAgent:
             }
 
         except Exception as e:
-            logger.error(f"[MarketIntelligenceAgent] Gemini Error: {e}")
+            logger.error(f"[MarketIntelligenceAgent] Gemini 3 Error: {e}")
             return self._heuristic_fallback(summary, threshold, volatility)
 
     def _heuristic_fallback(self, summary: List[Dict[str, Any]], threshold: float, volatility: float) -> Dict[str, Any]:

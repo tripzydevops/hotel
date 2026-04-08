@@ -165,18 +165,20 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     existed becomes shared and searchable by others.
     """
     # Fetch unique hotels from the main table
-    hotels_res = (
+    res = (
         db.table("hotels")
-        .select("name, location, serp_api_id")
-        .is_("deleted_at", "null")
+        .select("*, is_target_hotel, pricing_dna, location, logo_url")
         .execute()
     )
-    if not hotels_res.data:
+    data = res.data or []
+    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+    hotels_res = [h for h in data if not h.get("deleted_at")]
+    if not hotels_res:
         return {"status": "success", "count": 0}
 
     # Extract unique properties
     unique_hotels = {}
-    for h in hotels_res.data:
+    for h in hotels_res:
         key = f"{h['name'].lower()}|{h.get('location', '').lower()}"
         if key not in unique_hotels:
             unique_hotels[key] = {

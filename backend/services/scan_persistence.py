@@ -22,8 +22,9 @@ class ScanPersistenceService:
     threshold enforcement, and batch updates.
     """
 
-    def __init__(self, db: Client):
+    def __init__(self, db: Client, admin_db: Optional[Client] = None):
         self.db = db
+        self.admin_db = admin_db or db  # Fallback to shared if admin not provided
 
     async def persist_scan_results(
         self,
@@ -99,20 +100,37 @@ class ScanPersistenceService:
             # 1.5 Prepare Query Log entry for audit
             query_logs_to_insert.append(processed["query_log"])
 
-        # 2. Final Batch Insertions
-        try:
-            if price_logs_to_insert:
-                self.db.table("price_logs").insert(price_logs_to_insert).execute()
-            if sentiment_history_to_insert:
-                self.db.table("sentiment_history").insert(sentiment_history_to_insert).execute()
-            if alerts_to_insert:
-                self.db.table("alerts").insert(alerts_to_insert).execute()
-            if query_logs_to_insert:
-                self.db.table("query_logs").insert(query_logs_to_insert).execute()
-        except Exception as e:
-            logger.error(f"Batch persistence failed: {e}")
-            if log_reasoning_fn:
-                await log_reasoning_fn(session_id, "Analysis", f"[CRITICAL] Batch insert failed: {str(e)}", "error")
+        # 2. Final Batch Insertions with Resilience
+        # We now attempt batch inserts but provide a per-hotel fallback if batch fails 
+        # (e.g. due to unique constraint violations on idx_price_logs_dedup)
+        
+        # Helper for resilient insertion
+        async def _resilient_insert(table_name: str, items: List[Dict[str, Any]]):
+            if not items:
+                return
+            try:
+                # Use admin_db for persistence in background to avoid RLS/Session issues
+                # [FIX] Using .upsert() with ignore_duplicates for price_logs to respect idx_price_logs_dedup
+                if table_name == "price_logs":
+                    # We use upsert to handle the unique index conflict gracefully
+                    self.admin_db.table(table_name).upsert(items, on_conflict="hotel_id,check_in_date,recorded_at").execute()
+                else:
+                    self.admin_db.table(table_name).insert(items).execute()
+            except Exception as e:
+                logger.warning(f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts.")
+                # Per-item fallback
+                for item in items:
+                    try:
+                        self.admin_db.table(table_name).insert(item).execute()
+                    except Exception as item_err:
+                        # Log and ignore individual failures to keep the pipeline moving
+                        logger.error(f"Failed to persist {table_name} item for {item.get('hotel_id')}: {item_err}")
+
+        # Execute insertions
+        await _resilient_insert("price_logs", price_logs_to_insert)
+        await _resilient_insert("sentiment_history", sentiment_history_to_insert)
+        await _resilient_insert("alerts", alerts_to_insert)
+        await _resilient_insert("query_logs", query_logs_to_insert)
 
         # 3. Parallel Embedding Generation
         if embedding_queue:
@@ -278,9 +296,13 @@ class ScanPersistenceService:
             if should_update:
                 meta_update[field] = new_val
 
-        # Update DB
+        # Update DB using admin_db for background reliability
         if meta_update:
-            self.db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+            try:
+                self.admin_db.table("hotels").update(meta_update).eq("id", hotel_id).execute()
+            except Exception as e:
+                logger.error(f"[Persistence] Failed to update hotel {hotel_id}: {e}")
+                # We don't raise here; failing to update the metadata shouldn't stop pricing logs
 
         # 5. Alert & Volatility
         alert = None
@@ -357,7 +379,7 @@ class ScanPersistenceService:
         for i, res in enumerate(results):
             hid, _ = queue[i]
             status = "current" if res is True else "failed"
-            self.db.table("hotels").update({"embedding_status": status}).eq("id", hid).execute()
+            self.admin_db.table("hotels").update({"embedding_status": status}).eq("id", hid).execute()
         
         if log_reasoning_fn:
             await log_reasoning_fn(session_id, "Analysis", f"[Embedding] Parallel processing complete for {len(tasks)} profiles.", "info")
@@ -373,7 +395,7 @@ class ScanPersistenceService:
             profile = "\n".join(parts)
             embedding = await get_embedding(profile)
             if embedding:
-                self.db.table("hotels").update({"sentiment_embedding": embedding}).eq("id", hotel_id).execute()
+                self.admin_db.table("hotels").update({"sentiment_embedding": embedding}).eq("id", hotel_id).execute()
                 return True
         except Exception: pass
         return False

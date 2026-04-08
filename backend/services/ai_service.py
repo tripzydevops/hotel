@@ -20,8 +20,8 @@ class AICommanderService:
         else:
             self.client = genai.Client(api_key=api_key)
         
-        # KAİZEN: Use the latest reasoning model for market strategy
-        self.model_name = "gemini-3.1-pro-preview"
+        # KAİZEN: Use a high-speed Flash model for analysis to reduce latency
+        self.model_name = "gemini-2.0-flash"
 
     async def generate_command_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """

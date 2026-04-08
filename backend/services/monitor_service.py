@@ -4,6 +4,7 @@ Orchestrates the asynchronous background AI Agent-Mesh for price monitoring.
 """
 
 import os
+import asyncio
 import logging
 import traceback
 from datetime import date, datetime, timedelta, timezone
@@ -75,12 +76,11 @@ async def trigger_monitor_logic(
     Enterprise users have unlimited background agent cycles.
     """
 
-    # Get all active hotels for user (exclude soft-deleted)
+    # Get all hotels for user (filtering soft-deleted in-memory)
     query = (
         db.table("hotels")
         .select("*")
         .eq("user_id", str(user_id))
-        .is_("deleted_at", "null")
     )
     
     # Filter by specific hotel IDs if provided in options
@@ -89,7 +89,9 @@ async def trigger_monitor_logic(
         query = query.in_("id", hotel_id_strs)
         
     hotels_result = query.execute()
-    hotels = hotels_result.data or []
+    data = hotels_result.data or []
+    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+    hotels = [h for h in data if not h.get("deleted_at")]
 
     if not hotels:
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
@@ -348,22 +350,61 @@ async def run_monitor_background(
         logger.info(f"Starting ScraperAgent for {len(hotels)} hotels...")
         scraper_results = await scraper.run_scan(user_id, hotels, options, session_id)
 
-        # 4. Phase 2: Analyst Agent
-        logger.info("Starting AnalystAgent...")
-        analysis = await analyst.analyze_results(
+        # 4. Phase 2: Analyst Agent (Persistence Phase)
+        logger.info("Starting AnalystAgent Persistence...")
+        analysis_summary = await analyst.persist_results_only(
             user_id, scraper_results, threshold, settings=settings, options=options, session_id=session_id
         )
 
-        # 4.5 Room Type Cataloging
+        # 4.5 Room Type Cataloging (Quick)
         try:
             from backend.services.room_type_service import update_room_type_catalog
-
             await update_room_type_catalog(db, scraper_results, hotels)
         except Exception as e:
             logger.warning(f"Room Catalog failure: {e}")
 
+        # 5. Determine status and trigger AI Phase (Non-blocking)
+        final_status = "completed"
+        if any(res.get("status") != "success" for res in scraper_results):
+            final_status = "partial"
+        
+        if options and options.skip_intelligence:
+            if session_id:
+                db.table("scan_sessions").update({
+                    "status": final_status, 
+                    "completed_at": datetime.now().isoformat()
+                }).eq("id", str(session_id)).execute()
+        else:
+            # Shift to Intelligence Pending so user sees results but knows AI is working
+            if session_id:
+                db.table("scan_sessions").update({
+                    "status": "intelligence_pending",
+                    "updated_at": datetime.now().isoformat()
+                }).eq("id", str(session_id)).execute()
+            
+            # Launch AI phase (Background task within the background task)
+            # EXPLANATION: We use create_task to allow the main orchestrator to "finish"
+            # basic reporting/alerts while AI chews on the data.
+            async def intel_task_wrapper():
+                try:
+                    await analyst.run_intelligence_only(
+                        user_id, scraper_results, analysis_summary, threshold, options, session_id
+                    )
+                    # Once AI finishes, we set the true final status
+                    if session_id:
+                        db.table("scan_sessions").update({
+                            "status": final_status,
+                            "completed_at": datetime.now().isoformat()
+                        }).eq("id", str(session_id)).execute()
+                except Exception as intel_e:
+                    logger.error(f"Intelligence Task Crash: {intel_e}")
+                    if session_id:
+                        db.table("scan_sessions").update({"status": final_status}).eq("id", str(session_id)).execute()
+
+            asyncio.create_task(intel_task_wrapper())
+
         # 5. Phase 3: Notifier Agent
-        if analysis.get("alerts"):
+        if analysis_summary.get("alerts"):
             try:
                 settings_res = (
                     db.table("settings")
@@ -375,20 +416,12 @@ async def run_monitor_background(
                 if settings:
                     hotel_name_map = {h["id"]: h["name"] for h in hotels}
                     await notifier.dispatch_alerts(
-                        analysis["alerts"], settings, hotel_name_map
+                        analysis_summary["alerts"], settings, hotel_name_map
                     )
             except Exception as e:
                 logger.warning(f"Notifier failure: {e}")
 
-        # 6. Finalize Session
-        final_status = "completed"
-        if any(res.get("status") != "success" for res in scraper_results):
-            final_status = "partial"
-
-        if session_id:
-            db.table("scan_sessions").update(
-                {"status": final_status, "completed_at": datetime.now().isoformat()}
-            ).eq("id", str(session_id)).execute()
+        # 6. Finalize Session moved to Phase 5 status-aware logic to support background AI
 
         # 7. [KAIZEN] Final Sync Safety
         # Ensure next_scan_at is pushed forward if this was a manual scan that 
@@ -602,15 +635,15 @@ async def run_scheduler_check_logic():
             s["user_id"]: s["check_frequency_minutes"] for s in settings_res.data or []
         }
 
-        # 1.3 Pool all hotels (active only)
-        hotels_res = (
+        # 1.3 Pool all hotels (filtering soft-deleted in-memory)
+        res = (
             supabase.table("hotels")
             .select("*")
             .in_("user_id", due_ids)
-            .is_("deleted_at", "null")
             .execute()
         )
-        all_hotels = hotels_res.data or []
+        # [ROBUST] Programmatic filtering
+        all_hotels = [h for h in (res.data or []) if not h.get("deleted_at")]
 
         # Group hotels by user for processing
         user_hotels_map = {}
@@ -620,105 +653,88 @@ async def run_scheduler_check_logic():
                 user_hotels_map[uid] = []
             user_hotels_map[uid].append(h)
 
-        for user in active_due:
-            try:
-                user_id = user["id"]
-                s_logger.info(f"Processing user {user_id}...")
+        # 2. Process users in parallel with controlled concurrency
+        # [KAIZEN] Controlled Parallelism
+        # We use a semaphore to process 5-10 users at once. This avoids stalling the
+        # entire queue if one user's hotels take a long time to scan.
+        user_semaphore = asyncio.Semaphore(10)  # Adjust based on server capacity
 
-                # 2. Update next_scan_at immediately (Locking mechanism)
-                # KAİZEN: Precise Scheduling (Anti-Drift)
-                # We calculate the NEXT scan relative to the INTENDED schedule time
-                # instead of now() to prevent the "creeping drift" problem where
-                # delays accumulate day over day.
-                freq = (
-                    settings_map.get(user_id)
-                    or user.get("scan_frequency_minutes")
-                    or 1440
-                )
-                intended_at_str = user.get("next_scan_at")
+        async def process_single_user(user):
+            async with user_semaphore:
+                try:
+                    user_id = user["id"]
+                    s_logger.info(f"Processing user {user_id}...")
 
-                if intended_at_str:
-                    try:
-                        intended_at = datetime.fromisoformat(
-                            intended_at_str.replace("Z", "+00:00")
-                        )
-                        next_run_dt = intended_at + timedelta(minutes=freq)
-                        # Guard: If we are catastrophically behind (e.g. system was down for days),
-                        # don't schedule 1000 scans in the past. Re-anchor to now.
-                        if next_run_dt < now_dt:
+                    # 2.1 Update next_scan_at immediately (Locking mechanism)
+                    freq = (
+                        settings_map.get(user_id)
+                        or user.get("scan_frequency_minutes")
+                        or 1440
+                    )
+                    intended_at_str = user.get("next_scan_at")
+
+                    if intended_at_str:
+                        try:
+                            intended_at = datetime.fromisoformat(
+                                intended_at_str.replace("Z", "+00:00")
+                            )
+                            next_run_dt = intended_at + timedelta(minutes=freq)
+                            if next_run_dt < now_dt:
+                                next_run_dt = now_dt + timedelta(minutes=freq)
+                        except Exception:
                             next_run_dt = now_dt + timedelta(minutes=freq)
-                    except Exception:
+                    else:
                         next_run_dt = now_dt + timedelta(minutes=freq)
-                else:
-                    next_run_dt = now_dt + timedelta(minutes=freq)
 
-                next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
+                    next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
 
-                # Use upsert to handle cases where the user may not have a profile record yet
-                supabase.table("profiles").upsert({
-                    "id": user_id,
-                    "next_scan_at": next_run_iso,
-                    "scan_frequency_minutes": freq
-                }).execute()
-                s_logger.info(
-                    f"User {user_id}: Updated next_scan_at to {next_run_iso} (intended was {intended_at_str})"
-                )
+                    supabase.table("profiles").upsert({
+                        "id": user_id,
+                        "next_scan_at": next_run_iso,
+                        "scan_frequency_minutes": freq
+                    }).execute()
+                    
+                    s_logger.info(
+                        f"User {user_id}: Soft-locked next_scan_at to {next_run_iso}"
+                    )
 
-                # 3. Execute scan DIRECTLY (self-sufficient — no external worker needed)
-                # EXPLANATION: Previous architecture dispatched to Celery/Redis, requiring
-                # a separate VM worker to be alive. If the worker was down, scans silently
-                # failed. Now we run the scan in-process so GitHub Actions is self-sufficient.
-                hotels = user_hotels_map.get(user_id, [])
-                if hotels:
-                    # Create a scan session for tracking
-                    session_id = None
-                    try:
-                        session_result = (
-                            supabase.table("scan_sessions")
-                            .insert(
-                                {
+                    # 2.2 Execute scan
+                    hotels = user_hotels_map.get(user_id, [])
+                    if hotels:
+                        session_id = None
+                        try:
+                            session_result = (
+                                supabase.table("scan_sessions")
+                                .insert({
                                     "user_id": user_id,
                                     "session_type": "scheduled",
                                     "hotels_count": len(hotels),
                                     "status": "pending",
-                                }
+                                })
+                                .execute()
                             )
-                            .execute()
-                        )
-                        session_id = (
-                            session_result.data[0]["id"]
-                            if session_result.data
-                            else None
-                        )
-                    except Exception as se:
-                        s_logger.warning(
-                            f"Session creation failed for scheduled scan: {se}"
-                        )
+                            session_id = session_result.data[0]["id"] if session_result.data else None
+                        except Exception as se:
+                            s_logger.warning(f"Session creation failed for {user_id}: {se}")
 
-                    # KAİZEN: Direct Execution (eliminates Celery worker dependency)
-                    # Run the full scan pipeline in-process instead of dispatching to Redis.
-                    # This ensures scans complete even without an external VM worker.
-                    try:
-                        s_logger.info(
-                            f"Executing scan directly for user {user_id} ({len(hotels)} hotels)..."
-                        )
-                        await run_monitor_background(
-                            user_id=UUID(user_id),
-                            hotels=hotels,
-                            options=None,
-                            db=supabase,
-                            session_id=UUID(session_id) if session_id else None,
-                        )
-                        s_logger.info(
-                            f"Direct scan completed for user {user_id} (session={session_id})"
-                        )
-                    except Exception as direct_e:
-                        s_logger.error(
-                            f"Direct execution failed for {user_id}: {direct_e}"
-                        )
+                        try:
+                            s_logger.info(f"Executing scan for user {user_id} ({len(hotels)} hotels)...")
+                            await run_monitor_background(
+                                user_id=UUID(user_id),
+                                hotels=hotels,
+                                options=None,
+                                db=supabase,
+                                session_id=UUID(session_id) if session_id else None,
+                            )
+                        except Exception as direct_e:
+                            s_logger.error(f"Direct execution failed for {user_id}: {direct_e}")
+                except Exception as u_e:
+                    s_logger.error(f"Error in process_single_user for {user.get('id')}: {u_e}")
 
-            except Exception as u_e:
-                s_logger.error(f"Error processing user {user.get('id')}: {u_e}")
+        # Dispatch all tasks concurrently
+        tasks = [process_single_user(user) for user in active_due]
+        await asyncio.gather(*tasks)
+        s_logger.info(f"CRON: Finished processing all {len(active_due)} users.")
 
     except Exception as e:
         s_logger.critical(f"CRON ERROR: {e}")

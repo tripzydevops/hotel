@@ -47,6 +47,7 @@ export const tr = {
     high: "En Yüksek",
     low: "En Düşük",
     average: "Ortalama",
+    intelligencePending: "Derin Zeka Bekleniyor...",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
