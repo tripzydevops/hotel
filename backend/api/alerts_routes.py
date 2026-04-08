@@ -6,7 +6,7 @@ from backend.utils.db import get_supabase
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import Alert
 
-router = APIRouter(prefix="/api/alerts", tags=["alerts"])
+router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
 @router.get("", response_model=List[Alert])

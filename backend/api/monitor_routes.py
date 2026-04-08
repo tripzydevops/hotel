@@ -11,13 +11,13 @@ from backend.services.monitor_service import (
 )
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/api", tags=["monitor"])
+router = APIRouter(prefix="/monitor", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
 router_legacy = APIRouter(tags=["monitor"])
 
 
 
-@router.post("/monitor", response_model=MonitorResult)
+@router.post("", response_model=MonitorResult)
 async def trigger_monitor(
     background_tasks: BackgroundTasks,
     options: Optional[ScanOptions] = None,
@@ -38,8 +38,10 @@ async def trigger_monitor(
     )
 
 
-@router.get("/trigger-scan")
-@router.post("/trigger-scan")
+@router.get("/trigger")
+@router.post("/trigger")
+@router.get("/trigger-scan", include_in_schema=False)
+@router.post("/trigger-scan", include_in_schema=False)
 @router_legacy.get("/trigger-scan")
 @router_legacy.post("/trigger-scan")
 async def check_scheduled_scan(

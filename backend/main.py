@@ -69,7 +69,7 @@ app = FastAPI(
     title="Hotel Price API",
     description="Sentinel Core Engine - Market Intelligence Platform",
     version="2026.03 (V23)",
-    redirect_slashes=False,
+    # redirect_slashes=True is the default and preferred for link robustness
 )
 
 # SECURITY MIDDLEWARE: Inject standard protection headers
@@ -298,6 +298,10 @@ app.include_router(market_routes.router, prefix="/api")
 app.include_router(reports_routes.router, prefix="/api")
 
 # 3. Operational Routes
+# EXPLANATION: Centralized API Routing (Regression Fix)
+# We moved the "/api" prefixing here to prevent "double-prefixing" 
+# bugs where individual routers were also adding "/api".
+# All routes are now registered relative to the root, prefixed here.
 app.include_router(admin_routes.router, prefix="/api")
 app.include_router(monitor_routes.router, prefix="/api")
 app.include_router(monitor_routes.router_legacy, include_in_schema=False, prefix="/api")

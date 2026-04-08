@@ -16,7 +16,10 @@ from backend.services.profile_service import (
 from datetime import datetime, timezone, timedelta
 from backend.utils.security import verify_ownership
 
-router = APIRouter(prefix="/api", tags=["profile"])
+# EXPLANATION: Routing Normalization (Regression Fix)
+# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# (e.g., /api/api/profile/...) when registered in main.py.
+router = APIRouter(tags=["profile"])
 
 
 @router.get("/profile", response_model=UserProfile)

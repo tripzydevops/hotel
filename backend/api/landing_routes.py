@@ -9,6 +9,11 @@ from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
+# EXPLANATION: Routing & Query Normalization (Regression Fix)
+# 1. Removed "/api" prefix from APIRouter to avoid doubled paths 
+#    (e.g., /api/api/landing/config) when registered in main.py.
+# 2. Fixed query in get_landing_config by removing invalid .eq("status", "active") 
+#    filter as the landing_page_config table does not contain a status column.
 router = APIRouter(tags=["landing"])
 
 class ConfigUpdate(BaseModel):

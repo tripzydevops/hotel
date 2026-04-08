@@ -15,7 +15,10 @@ from backend.services.subscription import SubscriptionService
 from backend.utils.security import verify_ownership
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/api", tags=["hotels"])
+# EXPLANATION: Routing Normalization (Regression Fix)
+# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# (e.g., /api/api/hotels/...) when registered in main.py.
+router = APIRouter(tags=["hotels"])
 
 
 @router.get("/v1/directory/search")

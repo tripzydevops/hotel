@@ -12,6 +12,9 @@ import json
 from sse_starlette.sse import EventSourceResponse
 from backend.services.ai_service import ai_commander
 
+# EXPLANATION: Routing Normalization (Regression Fix)
+# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# (e.g., /api/api/analysis/...) when registered in main.py.
 router = APIRouter(tags=["analysis"])
 
 

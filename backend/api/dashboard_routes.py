@@ -7,7 +7,10 @@ from backend.services.dashboard_service import get_dashboard_logic, get_recent_w
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
-router = APIRouter(prefix="/api", tags=["dashboard"])
+# EXPLANATION: Routing Normalization (Regression Fix)
+# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# (e.g., /api/api/dashboard/...) when registered in main.py.
+router = APIRouter(tags=["dashboard"])
 
 
 @router.get("/dashboard")
