@@ -537,6 +537,8 @@ class SerpApiClient:
                         "vendor": p.get("source") or p.get("name") or "Unknown",
                         "price": price,
                         "currency": currency,
+                        "room_category": p.get("room_category") or p.get("room_type") or p.get("room_name"),
+                        "link": p.get("link")
                     }
                 )
         return offers
@@ -569,25 +571,25 @@ class SerpApiClient:
 
         # 2. Extract and Deduplicate
         for r in raw_rooms:
-            # Flexible Name Extraction
+            # Flexible Name Extraction (Kaizen 2026)
             name = (
                 r.get("name") 
                 or r.get("title") 
                 or r.get("type") 
+                or r.get("room_name")
                 or r.get("room_category") 
                 or r.get("room_type")
             )
+            
             if not name or name in room_names:
                 continue
             
-            # Flexible Price Extraction
+            # Robust Price Extraction
             raw_p = None
             price_paths = [
-                r.get("rate_per_night", {}).get("lowest") if isinstance(r.get("rate_per_night"), dict) else None,
-                r.get("rate_per_night"),
-                r.get("price"),
-                r.get("rate", {}).get("lowest") if isinstance(r.get("rate"), dict) else None,
-                r.get("rate"),
+                r.get("rate_per_night", {}).get("extracted_lowest") if isinstance(r.get("rate_per_night"), dict) else r.get("rate_per_night"),
+                r.get("price", {}).get("extracted_lowest") if isinstance(r.get("price"), dict) else r.get("price"),
+                r.get("rate", {}).get("extracted_lowest") if isinstance(r.get("rate"), dict) else r.get("rate"),
                 r.get("total_rate"),
             ]
             for p_candidate in price_paths:
@@ -596,16 +598,19 @@ class SerpApiClient:
                     break
             
             price = self._clean_price_string(raw_p, currency)
-            if price is not None:
-                # Capture room amenities if present
-                room_amenities = r.get("amenities", [])
-                rooms.append({
-                    "name": name, 
-                    "price": price, 
-                    "currency": currency,
-                    "amenities": room_amenities
-                })
-                room_names.add(name)
+            
+            # Capture room amenities and description if present
+            room_amenities = r.get("amenities", [])
+            room_desc = r.get("description")
+            
+            rooms.append({
+                "name": name, 
+                "price": price, 
+                "currency": currency,
+                "amenities": room_amenities,
+                "description": room_desc
+            })
+            room_names.add(name)
         
         return rooms
 
@@ -784,20 +789,43 @@ class SerpApiClient:
                         else:
                             return None, "quota_exhausted"
                     
-                    resp.raise_for_status()
+                    if resp.status_code >= 400:
+                        content = await resp.aread()
+                        logger.error(f"SerpApi Error ({resp.status_code}): {content.decode()[:500]}")
+                        return None, f"status_{resp.status_code}"
                     return resp, None
                 except Exception as e:
-                    logger.error(f"SerpApi Request Error: {e}")
-                    return None, "request_error"
+                    logger.error(f"SerpApi Connection Error: {e}")
+                    return None, "connection_error"
 
         async def pivot_if_necessary(result, current_params):
-            """If result has price but no offers, try one direct lookup via ID/Token."""
-            if result and result.get("price") and not result.get("offers"):
-                token = result.get("serp_api_id")
+            """If result has price but no offers or no room types, try one direct lookup via ID/Token."""
+            if not result or not result.get("price"):
+                return result
+
+            # Pivot if missing offers OR missing room types (to get deep data)
+            has_offers = bool(result.get("offers"))
+            has_rooms = bool(result.get("room_types"))
+            has_reviews = bool(result.get("reviews"))
+            
+            if not has_offers or not has_rooms or not has_reviews:
+                token = result.get("property_token") or result.get("serp_api_id")
                 if token:
-                    logger.info(f"[SerpApi] Result for {hotel_name} has price but NO OFFERS. Pivoting to deep detail for token: {token}...")
+                    missing_parts = []
+                    if not has_offers: missing_parts.append("offers")
+                    if not has_rooms: missing_parts.append("rooms")
+                    if not has_reviews: missing_parts.append("reviews")
+                    
+                    # EXPLANATION: Smart Pivot Logic (Kaizen 2026)
+                    # Standard SerpApi property lists often return summary data only. 
+                    # If we detect missing rich content (reviews, rooms, specific offers), 
+                    # we perform a secondary "pivot" request using the hotel's property_token.
+                    # This yields the full detail page which is much richer for persistence.
+                    logger.info(f"[SerpApi] Result for {hotel_name} is missing {', '.join(missing_parts)}. Pivoting to deep detail...")
                     pivot_params = current_params.copy()
-                    pivot_params.pop("q", None) # Force Detail page
+                    
+                    # q is actually REQUIRED for google_hotels engine even with property_token
+                    pivot_params.pop("location", None) # Location often conflicts with ID lookups
                     if str(token).isdigit():
                         pivot_params["hotel_id"] = token
                         pivot_params.pop("property_token", None)
@@ -808,10 +836,36 @@ class SerpApiClient:
                     p_resp, p_err = await make_request(pivot_params)
                     if p_resp:
                         p_result = self._parse_hotel_result(
-                            p_resp.json(), hotel_name, currency, token
+                            p_resp.json(), hotel_name, currency, token, is_deep_scan=True
                         )
-                        if p_result and p_result.get("offers"):
-                            logger.info(f"[SerpApi] Pivot SUCCESS for {hotel_name}. Found {len(p_result['offers'])} offers.")
+                        # Only return pivot result if it actually added something useful
+                        if p_result and (p_result.get("offers") or p_result.get("room_types") or p_result.get("reviews")):
+                            logger.info(f"[SerpApi] Pivot SUCCESS for {hotel_name}. Checking for actual review objects...")
+                            
+                            # EXPLANATION: Review Engine Chaining (Kaizen 2026)
+                            # The 'google_hotels' detail page ironically only includes a review count.
+                            # To get actual review objects (text, rating) for persistence, we must 
+                            # call the 'google_hotels_reviews' engine separately using the token.
+                            if token:
+                                review_params = {
+                                    "engine": "google_hotels_reviews",
+                                    "data_id": token,
+                                    "property_token": token,
+                                    "q": hotel_name,
+                                    "api_key": current_params.get("api_key"),
+                                    "hl": current_params.get("hl", "tr"),
+                                    "gl": current_params.get("gl", "tr"),
+                                }
+                                r_resp, r_err = await make_request(review_params)
+                                if r_resp and r_resp.status_code == 200:
+                                    r_data = r_resp.json()
+                                    actual_reviews = r_data.get("reviews", [])
+                                    if isinstance(actual_reviews, list) and actual_reviews:
+                                        logger.info(f"[SerpApi] Successfully fetched {len(actual_reviews)} review objects for {hotel_name}")
+                                        p_result["reviews"] = actual_reviews
+                                    else:
+                                        logger.warning(f"[SerpApi] google_hotels_reviews returned 0 reviews for {token}")
+                            
                             return p_result
             return result
 
@@ -822,7 +876,7 @@ class SerpApiClient:
         
         if response:
             result = self._parse_hotel_result(
-                response.json(), hotel_name, currency, serp_api_id
+                response.json(), hotel_name, currency, serp_api_id, is_deep_scan=bool(serp_api_id)
             )
             result = await pivot_if_necessary(result, params)
             if result and result.get("price"):
@@ -839,7 +893,7 @@ class SerpApiClient:
         response, err = await make_request(fallback_params)
         if response:
             result = self._parse_hotel_result(
-                response.json(), hotel_name, currency, None
+                response.json(), hotel_name, currency, None, is_deep_scan=False
             )
             # Pivot if keyword found the hotel but no deep OTA data
             result = await pivot_if_necessary(result, fallback_params)
@@ -853,6 +907,7 @@ class SerpApiClient:
         target_hotel: str,
         default_currency: str = "USD",
         target_serp_id: Optional[str] = None,
+        is_deep_scan: bool = False,
     ) -> Optional[Dict[str, Any]]:
         properties = data.get("properties", [])
         best_match = None
@@ -862,6 +917,10 @@ class SerpApiClient:
                 "prices": data.get("prices", []),
                 "rate_per_night": data.get("rate_per_night"),
                 "amenities": data.get("amenities", []),
+                "amenities_detailed": data.get("amenities_detailed", []),
+                "rooms": data.get("rooms", []),
+                "room_results": data.get("room_results", []),
+                "featured_prices": data.get("featured_prices", []),
                 "images": data.get("images", []),
                 "overall_rating": data.get("overall_rating"),
                 "property_token": data.get("property_token"),
@@ -873,6 +932,9 @@ class SerpApiClient:
                 "address": data.get("address"),
                 "gps_coordinates": data.get("gps_coordinates"),
             }
+            # This is a detail page result
+            best_match = data
+            logger.info(f"[SerpApi] Detail result keys for {target_hotel}: {list(best_match.keys())}")
         if not best_match:
             for prop in properties:
                 if (
@@ -955,8 +1017,9 @@ class SerpApiClient:
         review_count = raw_reviews if isinstance(raw_reviews, int) else (
             len(raw_reviews) if isinstance(raw_reviews, list) else None
         )
-
+        all_room_types = self._extract_all_room_types(best_match, default_currency)
         return {
+            "status": "success",
             "hotel_name": self._clean_hotel_name(best_match.get("name", target_hotel)),
             "price": price,
             "currency": default_currency,
@@ -972,19 +1035,20 @@ class SerpApiClient:
             "review_count": review_count,
             "stars": best_match.get("extracted_hotel_class"),
             "property_token": best_match.get("property_token"),
-            "image_url": best_match.get("images", [{}])[0].get("thumbnail"),
+            "image_url": (best_match.get("images") or [{}])[0].get("thumbnail") if best_match.get("images") else None,
             "amenities": self._extract_amenities(best_match),
             "images": [
                 {"thumbnail": i.get("thumbnail"), "original": i.get("original")}
                 for i in best_match.get("images", [])[:10]
             ],
             "offers": parsed_offers,
-            "room_types": self._extract_all_room_types(best_match, default_currency),
+            "room_types": all_room_types,
+            "is_deep_scan": is_deep_scan or (len(all_room_types) >= 2 or len(parsed_offers) >= 5),
             "reviews_breakdown": self._normalize_reviews_breakdown(
                 best_match.get("reviews_breakdown", []),
                 best_match.get("overall_rating"),
             ),
-            "reviews": best_match.get("reviews", []),
+            "reviews": best_match.get("reviews", []) if isinstance(best_match.get("reviews"), list) else [],
             "search_rank": rank,
             "latitude": (best_match.get("gps_coordinates") or {}).get("latitude"),
             "longitude": (best_match.get("gps_coordinates") or {}).get("longitude"),

@@ -59,6 +59,7 @@ class ScanPersistenceService:
         sentiment_history_to_insert = []
         alerts_to_insert = []
         query_logs_to_insert = []
+        reviews_to_insert = []
         embedding_queue = []
         volatilities = []
         
@@ -97,6 +98,9 @@ class ScanPersistenceService:
             if processed.get("volatility") is not None:
                 volatilities.append(processed["volatility"])
 
+            if processed.get("rich_reviews"):
+                reviews_to_insert.extend(processed["rich_reviews"])
+
             # 1.5 Prepare Query Log entry for audit
             query_logs_to_insert.append(processed["query_log"])
 
@@ -129,6 +133,12 @@ class ScanPersistenceService:
         await _resilient_insert("sentiment_history", sentiment_history_to_insert)
         await _resilient_insert("alerts", alerts_to_insert)
         await _resilient_insert("query_logs", query_logs_to_insert)
+        
+        # EXPLANATION: Granular Review Persistence (Kaizen 2026)
+        # While the 'hotels' table stores a JSON snapshot of reviews for fast UI display,
+        # we also persist individual review objects to the 'hotel_reviews' table.
+        # This enables long-term historical sentiment analysis and NLP tasks.
+        await _resilient_insert("hotel_reviews", reviews_to_insert)
 
         # 3. Parallel Embedding Generation
         if embedding_queue:
@@ -141,7 +151,7 @@ class ScanPersistenceService:
         history_map = {}
         try:
             res = (
-                self.db.table("price_logs")
+                self.admin_db.table("price_logs")
                 .select("hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata")
                 .in_("hotel_id", hotel_ids)
                 .order("recorded_at", desc=True)
@@ -217,12 +227,13 @@ class ScanPersistenceService:
         offers = price_data.get("offers", [])
         is_shallow = len(offers) < 5 and not is_estimated
         current_room_types = price_data.get("room_types", [])
-        if not current_room_types and not is_estimated:
-            # Carry forward room types if missing
+        if not current_room_types and not is_estimated and status == "success":
+            # Carry forward room types if missing but scan was successful
             for h in history:
                 if h.get("room_types"):
                     current_room_types = h["room_types"]
                     break
+
 
         # 4. Metadata & Sentiment
         meta_update = {
@@ -238,7 +249,7 @@ class ScanPersistenceService:
         # KAİZEN: Smart Update Logic for Static Fields
         # We fetch existing state to avoid redundant writes for stable data (descriptions, amenities, etc.)
         hotel_data_res = self.db.table("hotels").select(
-            "sentiment_breakdown, description, amenities, images, phone, website, address, stars, latitude, longitude, room_types, updated_at"
+            "sentiment_breakdown, reviews, description, amenities, images, phone, website, address, stars, latitude, longitude, room_types, updated_at"
         ).eq("id", hotel_id).maybe_single().execute()
         
         current_hotel = hotel_data_res.data if hotel_data_res else {}
@@ -250,6 +261,10 @@ class ScanPersistenceService:
             meta_update["sentiment_breakdown"] = merged
             meta_update["guest_mentions"] = generate_mentions(merged)
             is_sentiment_modified = True
+            
+        # Store raw review snippets if present (usually from Deep Scans)
+        if "reviews" in price_data and isinstance(price_data["reviews"], list) and len(price_data["reviews"]) > 0:
+            meta_update["reviews"] = price_data["reviews"]
 
         # Dynamic Fields (Update every time)
         for field in ["rating", "review_count"]:
@@ -338,6 +353,7 @@ class ScanPersistenceService:
             "parity_offers": offers,
             "room_types": current_room_types,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "is_deep_scan": result.get("is_deep_scan", False),
             "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)}
         }
 
@@ -349,6 +365,35 @@ class ScanPersistenceService:
                 "review_count": meta_update.get("review_count"),
                 "sentiment_breakdown": meta_update.get("sentiment_breakdown"),
             }
+
+        # EXPLANATION: Normalizing Scraped Reviews (Kaizen 2026)
+        # We transform raw SerpApi review objects into our schema-compliant format.
+        # This includes generating synthetic but stable IDs if missing, and 
+        # flattening category ratings (e.g. 'Cleanliness') for analytics.
+        rich_reviews = []
+        if "reviews" in price_data and isinstance(price_data["reviews"], list):
+            import uuid
+            for r in price_data["reviews"]:
+                # Map SerpApi fields to our DB schema
+                review_obj = {
+                    "hotel_id": hotel_id,
+                    "external_id": r.get("id") or str(uuid.uuid4()),
+                    "author": r.get("title") or r.get("author", "Anonymous"),
+                    "rating": r.get("rating", 0),
+                    "text": r.get("snippet") or r.get("review_text") or "",
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                    "review_date": r.get("date") or datetime.now(timezone.utc).date().isoformat()
+                }
+                rich_reviews.append(review_obj)
+
+        # [ROBUST] Always use admin_db for metadata to avoid RLS/consistency lag
+        hotel_data = self.admin_db.table("hotels").select("*").eq("id", hotel_id).execute()
+        hotel = hotel_data.data[0] if hotel_data.data else {}
+        
+        # Update hotel last_scanned_at
+        self.admin_db.table("hotels").update({
+            "last_scanned_at": datetime.now().isoformat()
+        }).eq("id", hotel_id).execute()
 
         return {
             "price_log": price_log,
@@ -368,6 +413,7 @@ class ScanPersistenceService:
                 "created_at": datetime.now(timezone.utc).isoformat()
             },
             "sentiment_history": sentiment_history,
+            "rich_reviews": rich_reviews,
             "alert": alert,
             "volatility": volatility,
             "embedding_task": (hotel_id, meta_update) if is_sentiment_modified else None

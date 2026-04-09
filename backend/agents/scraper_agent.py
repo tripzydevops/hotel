@@ -107,12 +107,12 @@ class ScraperAgent:
 
             # GlobalPulse Strategy: Check if anyone else has scanned this hotel in the last 3 hours.
             # This is our cross-user cache and pooling layer to handle duplicates.
-            three_hours_ago = (datetime.now() - timedelta(hours=3)).isoformat()
+            # [FIX] Use UTC-aware datetime for comparison to prevent timezone drift.
+            three_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
             
             logs_res = (
                 self.db.table("price_logs")
-                .select("*")
-                .select("price, recorded_at, currency, room_types, vendor")
+                .select("price, recorded_at, currency, room_types, vendor, parity_offers, metadata")
                 .in_("hotel_id", sharing_hotel_ids)
                 .eq("check_in_date", check_in.isoformat())
                 .gte("recorded_at", three_hours_ago)
@@ -123,14 +123,25 @@ class ScraperAgent:
             
             if logs_res.data:
                 log = logs_res.data[0]
+                
+                # KAİZEN: Forced Full Intelligence Rule
+                # If the cache hit lacks room types but we know this is a tokenized property,
+                # we bypass the cache to ensure we get a fresh deep scan.
+                cached_rooms = log.get("room_types", [])
+                cached_offers = log.get("parity_offers", [])
+                
+                if not cached_rooms or not cached_offers:
+                    print(f"[GlobalPulse] BYPASS for {serp_api_id}: Cache lacks deep data (Rooms: {len(cached_rooms)}, Offers: {len(cached_offers)})")
+                    return None
+
                 print(f"[GlobalPulse] HIT for {serp_api_id} on {check_in}")
                 return {
                     "price": float(log["price"]),
                     "currency": log.get("currency", "USD"),
                     "status": "success",
                     "vendor": log.get("vendor"),
-                    "offers": log.get("parity_offers", []),
-                    "room_types": log.get("room_types", []),
+                    "offers": cached_offers,
+                    "room_types": cached_rooms,
                     "metadata": log.get("metadata", {}),
                     "recorded_at": log["recorded_at"],
                     "source": "global_pulse"
@@ -198,7 +209,9 @@ class ScraperAgent:
                     adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
 
                     # 1. GlobalPulse Check
-                    price_data = await self._check_global_cache(str(serp_api_id), check_in)
+                    price_data = None
+                    if not options or not options.skip_cache:
+                        price_data = await self._check_global_cache(str(serp_api_id), check_in)
 
                     if price_data:
                         await self.log_reasoning(
@@ -247,7 +260,8 @@ class ScraperAgent:
                         "status": status,
                         "price_data": price_data,
                         "check_in": str(check_in),
-                        "adults": adults
+                        "adults": adults,
+                        "is_deep_scan": price_data.get("is_deep_scan", False)
                     }
                     results.append(result)
                     return result

@@ -17,6 +17,7 @@ import {
   Zap,
   LayoutGrid,
   Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Link from "next/link";
@@ -467,6 +468,18 @@ export default function AnalysisPage() {
         {/* Rate Intelligence Grid (Calendar) */}
         {data?.daily_prices && data.daily_prices.length > 0 && (
           <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-black text-[var(--text-primary)]">
+                {t("rateIntelligence.title")}
+              </h2>
+              <Link
+                href="/analysis/calendar"
+                className="flex items-center gap-2 text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest hover:opacity-80 transition-opacity"
+              >
+                {t("rateIntelligence.viewDetail")}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
             <RateIntelligenceGrid
               dailyPrices={data.daily_prices}
               competitors={data.competitors || []}

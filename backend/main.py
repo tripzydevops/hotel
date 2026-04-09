@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
+from backend.services.retention_service import RetentionService
 
 logger = get_logger(__name__)
 
@@ -367,11 +368,12 @@ async def trigger_cron_job(key: str):
         await asyncio.wait_for(
             asyncio.gather(
                 run_scheduler_check_logic(),
-                run_market_sync_if_needed(db)
+                run_market_sync_if_needed(db),
+                RetentionService.run_maintenance_cycle(db)
             ),
             timeout=55.0
         )
-        return {"status": "success", "message": "Batch processed successfully"}
+        return {"status": "success", "message": "Batch processed and maintenance complete"}
     except asyncio.TimeoutError:
         logger.warning("CRON: Batch processing timed out after 55s, but next_scan_at locks should prevent duplicate runs.")
         return {"status": "timeout", "message": "Processing partially completed (timeout)"}

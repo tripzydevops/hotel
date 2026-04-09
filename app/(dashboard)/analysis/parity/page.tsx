@@ -2,24 +2,40 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
-import { Share2, ArrowLeft } from "lucide-react";
+import { Share2, ArrowLeft, RefreshCw, Download } from "lucide-react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import ParityStats from "@/components/analytics/ParityStats";
 import RateMatrix from "@/components/analytics/RateMatrix";
 import ViolatingChannels from "@/components/analytics/ViolatingChannels";
 import { motion } from "framer-motion";
+import { useModalContext } from "@/components/ui/ModalContext";
+import { api } from "@/lib/api";
+import { useState } from "react";
 
 export default function ParityPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
+  const { handleRefresh } = useModalContext();
+  const [isExporting, setIsExporting] = useState(false);
   // Fetch real-time dashboard data including competitors and target hotel
-  const { data, profile, loading } = useDashboard(userId, t);
+  const { data, profile, loading, isRefreshing } = useDashboard(userId, t);
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await api.exportReport();
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center justify-between mb-8">
         <Link
           href="/analysis"
           className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-white transition-colors"
@@ -27,6 +43,25 @@ export default function ParityPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Overview
         </Link>
+        
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {isExporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export
+          </button>
+          <button
+            onClick={() => handleRefresh(data)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Scanning..." : "Start Monitor"}
+          </button>
+        </div>
       </div>
 
       {/* Header */}

@@ -13,7 +13,15 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
 class PredictiveService:
-    """Service for AI-driven price prediction and threshold adjustment."""
+    """
+    EXPLANATION: Volatility-Aware Intelligence (Kaizen 2026)
+    The predictive service prevents 'Alert Fatigue' by dynamically adjusting
+    thresholds based on market noise. Instead of a static percentage, we
+    observe the Standard Deviation of daily price movements.
+    
+    In highly volatile markets (e.g., during a local festival), the service
+    automatically suppresses alerts that fall within the 'expected' noise floor.
+    """
 
     async def calculate_market_volatility(
         self, 

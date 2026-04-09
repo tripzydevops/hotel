@@ -9,18 +9,20 @@ from backend.models.schemas import ScanOptions
 from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.embeddings import format_hotel_for_embedding, get_embedding
 from backend.services.scan_persistence import ScanPersistenceService
+from backend.utils.db import get_supabase
 
 logger = logging.getLogger(__name__)
 
 class AnalystAgent:
     """
-    Agent responsible for high-level market analysis, discovery, and orchestration.
-    Delegates persistence and low-level data processing to ScanPersistenceService.
+    Analyst Agent.
+    Specialized in price analytics, trend detection, and multi-hotel correlation.
     """
 
     def __init__(self, db: Client, admin_db: Optional[Client] = None):
         self.db = db
-        self.admin_db = admin_db or db
+        # [ROBUST] Background persistence requires admin bypass for RLS on query_logs/hotels
+        self.admin_db = admin_db or get_supabase(admin=True)
         self.adk_agent = MarketIntelligenceAgent()
         self.persistence = ScanPersistenceService(db, admin_db=self.admin_db)
         self._log_buffer = {}
@@ -63,7 +65,7 @@ class AnalystAgent:
         try:
             import json
             # Fetch existing trace
-            existing = self.db.table("scan_sessions").select("reasoning_trace").eq("id", sid_key).single().execute()
+            existing = self.admin_db.table("scan_sessions").select("reasoning_trace").eq("id", sid_key).single().execute()
             raw_val = existing.data.get("reasoning_trace") if existing.data else None
             
             raw_trace = []
@@ -103,8 +105,12 @@ class AnalystAgent:
         Phase 1: Persists raw scraper data and performs basic heuristic analysis (ARI, basic alerts).
         This must be fast and reliable.
         """
-        logger.info(f"[AnalystAgent] Persisting results for User {user_id}")
-        
+        # EXPLANATION: Two-Phase Analysis Strategy (Kaizen 2026)
+        # We split analysis into two distinct phases to optimize for perceived latency:
+        # Phase 1 (Persistence): Saves raw data, runs heuristic alerts (ARI/Parity), and updates DB.
+        # Phase 2 (Intelligence): Runs heavy LLM reasoning for strategic market advice.
+        # This allows the user to see fresh data immediately while the 'AI Brain' thinks in the background.
+
         # 1. Persistence & Base Analysis
         analysis_summary = await self.persistence.persist_scan_results(
             user_id=user_id,

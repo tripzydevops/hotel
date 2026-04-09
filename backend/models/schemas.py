@@ -359,6 +359,7 @@ class ScanOptions(BaseModel):
     currency: Optional[str] = "TRY"
     hotel_ids: Optional[List[UUID]] = None
     skip_intelligence: bool = Field(default=False, description="If True, skip AI Intelligence generation to save tokens.")
+    skip_cache: bool = Field(default=False, description="If True, skip GlobalPulse cache and fetch fresh from SerpApi.")
 
 
 class MonitorResult(BaseModel):
