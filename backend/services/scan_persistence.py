@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import re
 from datetime import datetime, timedelta, timezone, date
 from typing import List, Dict, Any, Optional, cast
 from uuid import UUID
@@ -382,7 +383,7 @@ class ScanPersistenceService:
                     "rating": r.get("rating", 0),
                     "text": r.get("snippet") or r.get("review_text") or "",
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
-                    "review_date": r.get("date") or datetime.now(timezone.utc).date().isoformat()
+                    "review_date": self._parse_relative_date(r.get("date") or r.get("review_date"))
                 }
                 rich_reviews.append(review_obj)
 
@@ -450,3 +451,47 @@ class ScanPersistenceService:
                 return True
         except Exception: pass
         return False
+    def _parse_relative_date(self, date_str: Optional[str]) -> str:
+        """
+        Robust relative date parser for SerpApi strings (En/Tr).
+        Example inputs: "3 months ago", "2 hafta önce", "vorgestern", etc.
+        """
+        # [KAIZEN 2026] Fuzzy Date Normalization
+        # SerpApi returns localized strings based on the 'hl' parameter.
+        # This helper ensures PostgreSQL dates are always valid.
+        
+        if not date_str or not isinstance(date_str, str):
+            return date.today().isoformat()
+        
+        now = date.today()
+        ds = date_str.lower()
+        
+        try:
+            # 1. Look for numbers
+            matches = re.findall(r'(\d+)', ds)
+            val = int(matches[0]) if matches else 1
+            
+            # 2. Years
+            if any(x in ds for x in ["yıl", "year", "ann"]):
+                return (now - timedelta(days=val*365)).isoformat()
+            
+            # 3. Months (approximate 30 days)
+            if any(x in ds for x in ["ay", "month", "mois"]):
+                return (now - timedelta(days=val*30)).isoformat()
+            
+            # 4. Weeks
+            if any(x in ds for x in ["hafta", "week", "semaine"]):
+                return (now - timedelta(days=val*7)).isoformat()
+            
+            # 5. Days
+            if any(x in ds for x in ["gün", "day", "jour", "hier", "dün"]):
+                return (now - timedelta(days=val)).isoformat()
+                
+            # Fallback check for ISO-like strings
+            if re.match(r'\d{4}-\d{2}-\d{2}', date_str):
+                return date_str
+                
+        except Exception:
+            pass
+            
+        return now.isoformat()
