@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Settings, Save, Loader2, Info, AlertTriangle, Cloud, ToggleLeft, ToggleRight, DollarSign } from "lucide-react";
+import { Settings, Save, Loader2, Info, AlertTriangle, Cloud, ToggleLeft, ToggleRight, DollarSign, Activity, Clock } from "lucide-react";
+import { AdminSettings } from "@/types";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<AdminSettings | null>(null);
   
   // Available currencies
   const CURRENCIES = ["USD", "EUR", "GBP", "TRY"];
@@ -36,7 +37,7 @@ export default function AdminSettingsPage() {
         signup_enabled: settings.signup_enabled,
         default_currency: settings.default_currency,
         system_alert_message: settings.system_alert_message || null,
-        default_check_frequency: 144 // Hardcoded for now if backend doesn't support it fully
+        scan_interval_hours: settings.scan_interval_hours
       });
       setSettings(updated);
       alert("Settings saved successfully.");
@@ -154,9 +155,54 @@ export default function AdminSettingsPage() {
                         className="w-full h-32 bg-white/5 border border-white/10 rounded-lg p-4 text-white text-sm focus:outline-none focus:border-[var(--soft-gold)]"
                         placeholder="Enter a message to display on all user dashboards (e.g. 'Scheduled Maintenance at 02:00 UTC'). Leave empty to disable."
                         value={settings.system_alert_message || ""}
-                        onChange={(e) => setSettings({...settings, system_alert_message: e.target.value})}
+                        onChange={(e) => setSettings({...settings, system_alert_message: e.target.value} as AdminSettings)}
                     />
                 </div>
+            </div>
+        </div>
+
+        {/* Scan Heartbeat (New) */}
+        <div className="glass-card p-6 border border-white/10 md:col-span-2">
+            <div className="flex items-center gap-2 mb-6 border-b border-white/5 pb-4">
+                <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
+                <h2 className="text-lg font-bold text-white">Scanning Heartbeat</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <label className="block text-xs uppercase font-bold text-[var(--text-muted)] mb-2">Global Scan Interval (Hours)</label>
+                    <div className="relative">
+                        <input 
+                            type="number"
+                            min="1"
+                            max="720"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[var(--soft-gold)]"
+                            value={settings.scan_interval_hours}
+                            onChange={(e) => setSettings({...settings, scan_interval_hours: parseInt(e.target.value) || 24} as AdminSettings)}
+                        />
+                        <Clock className="absolute right-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
+                    </div>
+                </div>
+
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                        <div className="text-[var(--text-muted)] text-[10px] uppercase font-bold mb-1">Last Global Scan</div>
+                        <div className="text-sm font-mono text-white">
+                            {settings.last_global_scan_at ? new Date(settings.last_global_scan_at).toLocaleString() : "Never"}
+                        </div>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                        <div className="text-[var(--text-muted)] text-[10px] uppercase font-bold mb-1">Next Global Scan</div>
+                        <div className="text-sm font-mono text-optimal-green">
+                            {settings.next_global_scan_at ? new Date(settings.next_global_scan_at).toLocaleString() : "TBD"}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex gap-3 text-xs text-amber-200">
+                <Info className="w-4 h-4 shrink-0" />
+                Heartbeat scanner runs on a shared pool. It collects unique hotels across all users and executes a batch update to minimize API costs.
             </div>
         </div>
 

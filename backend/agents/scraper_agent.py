@@ -214,27 +214,61 @@ class ScraperAgent:
                             session_id, "Cache", f"HIT: Found shared price of {price_data.get('price')} for {hotel_name}.", "success"
                         )
                     else:
-                        await self.log_reasoning(session_id, "Cache", "MISS: Fetching fresh from SerpApi.", "info")
-                        # Fetch from Provider using SerpApi by default.
-                        pref = getattr(options, "provider", "serpapi") if options else "serpapi"
-                        provider = ProviderFactory.get_provider(prefer=pref)
+                        # 2. Provider Fetch with Fallback
+                        await self.log_reasoning(session_id, "Provider", "Starting multi-provider fetch sequence...", "info")
                         
-                        try:
-                            # Per-hotel logic
-                            price_data = await asyncio.wait_for(
-                                provider.fetch_price(
-                                    hotel_name=hotel_name,
-                                    location=location,
-                                    check_in=check_in,
-                                    check_out=check_out,
-                                    adults=adults,
-                                    currency=getattr(options, "currency", "TRY") if options else "TRY",
-                                    serp_api_id=serp_api_id
-                                ),
-                                timeout=120.0
-                            )
-                        except Exception as e:
-                            price_data = {"status": "error", "error": str(e)}
+                        active_providers = ProviderFactory.get_active_providers()
+                        last_error = "No active providers"
+                        
+                        for provider in active_providers:
+                            p_name = provider.get_provider_name()
+                            await self.log_reasoning(session_id, "Provider", f"Trying {p_name}...", "info")
+                            
+                            try:
+                                # Per-hotel logic with timeout
+                                current_data = await asyncio.wait_for(
+                                    provider.fetch_price(
+                                        hotel_name=hotel_name,
+                                        location=location,
+                                        check_in=check_in,
+                                        check_out=check_out,
+                                        adults=adults,
+                                        currency=getattr(options, "currency", "TRY") if options else "TRY",
+                                        serp_api_id=serp_api_id
+                                    ),
+                                    timeout=120.0
+                                )
+                                
+                                # Validate results: we want at least a base price or room types
+                                if current_data and current_data.get("status") == "success":
+                                    # If DataForSEO found pricing, we accept it. 
+                                    # If it's a "deep" result with rooms, even better.
+                                    price_val = current_data.get("price", 0)
+                                    if price_val > 0 or current_data.get("room_types"):
+                                        price_data = current_data
+                                        await self.log_reasoning(
+                                            session_id, 
+                                            "Provider", 
+                                            f"SUCCESS: {p_name} returned price {price_val}.", 
+                                            "success"
+                                        )
+                                        break
+                                    else:
+                                        await self.log_reasoning(session_id, "Provider", f"{p_name} returned empty results. Trying next...", "warning")
+                                else:
+                                    err_msg = current_data.get("error") if current_data else "Unknown error"
+                                    last_error = f"{p_name}: {err_msg}"
+                                    await self.log_reasoning(session_id, "Provider", f"FAILED: {p_name} - {err_msg}", "warning")
+                                    
+                            except asyncio.TimeoutError:
+                                await self.log_reasoning(session_id, "Provider", f"TIMEOUT: {p_name} exceeded 120s limit.", "error")
+                                last_error = f"{p_name}: Timeout"
+                            except Exception as e:
+                                await self.log_reasoning(session_id, "Provider", f"EXCEPTION: {p_name} crash - {str(e)}", "error")
+                                last_error = f"{p_name}: {str(e)}"
+                        
+                        if not price_data:
+                            price_data = {"status": "error", "error": f"All providers failed. Last issue: {last_error}"}
 
                     # 3. Normalization logic omitted for brevity in core loop (handled by RoomTypeNormalizer if needed)
                     if price_data and price_data.get("room_types"):

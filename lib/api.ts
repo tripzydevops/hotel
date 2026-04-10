@@ -12,6 +12,7 @@ import {
   KeyStatus,
   MarketIntelligenceResponse,
   Report,
+  AdminSettings,
 } from "@/types";
 
 // EXPLANATION: Environment-aware API Configuration
@@ -441,12 +442,12 @@ class ApiClient {
     });
   }
 
-  async getAdminSettings() {
-    return this.fetch<any>(`/api/admin/settings`);
+  async getAdminSettings(): Promise<AdminSettings> {
+    return this.fetch<AdminSettings>(`/api/admin/settings`);
   }
 
-  async updateAdminSettings(updates: any) {
-    return this.fetch<any>(`/api/admin/settings`, {
+  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<AdminSettings> {
+    return this.fetch<AdminSettings>(`/api/admin/settings`, {
       method: "PUT",
       body: JSON.stringify(updates),
     });

@@ -68,6 +68,8 @@ export interface Hotel {
   description?: string;
   cid?: string;
   place_id?: string;
+  overall_sentiment_score?: number;
+  parity_score?: number;
 }
 
 export interface PriceInfo {
@@ -191,6 +193,10 @@ export interface DashboardData {
   profile?: UserProfile;
   user_settings?: UserSettings;
   market_insight?: string;
+  agg_metrics?: {
+    avg_rating: number;
+    rate_parity_score: number;
+  };
 }
 
 export interface ScanOptions {
@@ -389,4 +395,15 @@ export interface Report {
     hotels: unknown[];
     ai_insights: string[];
   };
+}
+
+export interface AdminSettings {
+  id: string;
+  maintenance_mode: boolean;
+  signup_enabled: boolean;
+  default_currency: string;
+  system_alert_message?: string;
+  scan_interval_hours: number;
+  last_global_scan_at?: string;
+  next_global_scan_at?: string;
 }

@@ -280,116 +280,15 @@ class AnalystAgent:
                             "currency": price_data.get("currency", "TRY")
                         })
         if pulse_queue:
-            # Note: _pulse_batch_global_alerts is defined below
-            await self._pulse_batch_global_alerts(user_id, pulse_queue)
-
-    async def _pulse_batch_global_alerts(
-        self, initiator_user_id: UUID, pulse_data: List[Dict[str, Any]]
-    ):
-        """
-        Global Pulse Strategy: Notify OTHER users if their rival hotels (scanned by this user) have price changes.
-        """
-        if not pulse_data:
-            return
-
-        try:
-            serp_ids = [p["serp_api_id"] for p in pulse_data]
-
-            # 1. Find all users monitoring these properties (excluding initiator)
-            # Join with user_hotels to correctly handle many-to-many multitenancy
-            rivals_res = (
-                self.admin_db.table("user_hotels")
-                .select("user_id, hotel_id, role, hotels(id, name, serp_api_id)")
-                .filter("hotels.serp_api_id", "in", f"({','.join(serp_ids)})")
-                .neq("user_id", str(initiator_user_id))
-                .execute()
-            )
-
-            if not rivals_res.data:
-                return
-
-            # Flatten results for easier processing
-            rivals_data = []
-            for item in rivals_res.data:
-                h = item.get("hotels")
-                if h:
-                    rivals_data.append({
-                        "user_id": item["user_id"],
-                        "id": h["id"],
-                        "name": h["name"],
-                        "serp_api_id": h["serp_api_id"]
-                    })
-
-            if not rivals_data:
-                return
-
-            pulse_map = {str(p.get("serp_api_id") or ""): p for p in pulse_data}
-
-            # 2. Group rival users
-            rival_users_map = {}
-            for rival in rivals_data:
-                uid = rival["user_id"]
-                if uid not in rival_users_map:
-                    rival_users_map[uid] = []
-                rival_users_map[uid].append(rival)
-
-            # 3. Fetch settings for all rivals
-            all_rival_uids = list(rival_users_map.keys())
-            settings_res = self.db.table("settings").select("*").in_("user_id", all_rival_uids).execute()
-            settings_lookup = {str(s.get("user_id")): s for s in (settings_res.data or [])}
-
-            # 4. Fetch history for baselines
-            rival_hotel_ids = [str(r.get("id")) for r in rivals_res.data]
-            hist_res = (
-                self.admin_db.table("price_logs")
-                .select("hotel_id, price, currency")
-                .in_("hotel_id", rival_hotel_ids)
-                .order("recorded_at", desc=True)
-                .limit(len(rival_hotel_ids) * 2)
-                .execute()
-            )
-
-            history_lookup = {}
-            for entry in hist_res.data:
-                hid = entry["hotel_id"]
-                if hid not in history_lookup:
-                    history_lookup[hid] = entry
-
-            # 5. Process each rival user
-            notifier = NotifierAgent()
-            for uid, user_rivals in rival_users_map.items():
-                user_settings = settings_lookup.get(uid)
-                if not user_settings or not user_settings.get("notifications_enabled"):
-                    continue
-
-                user_alerts = []
-                hotel_name_map = {}
-
-                for rival in user_rivals:
-                    hid = str(rival.get("id"))
-                    serp_id = str(rival.get("serp_api_id"))
-                    pulse = pulse_map.get(serp_id)
-                    last_log = history_lookup.get(hid)
-
-                    if pulse and last_log:
-                        curr_p = pulse["current_price"]
-                        prev_p = float(last_log["price"])
-                        change_pct = abs(curr_p - prev_p) / max(prev_p, 1) * 100
-                        
-                        if change_pct >= 2.0:
-                            user_alerts.append({
-                                "hotel_id": hid,
-                                "type": "market_pulse",
-                                "message": f"Global Pulse: {rival['name']} rate shifted {change_pct:.1f}% to {curr_p} {pulse['currency']}",
-                                "metadata": {"old_price": prev_p, "new_price": curr_p, "pct": change_pct}
-                            })
-                            hotel_name_map[hid] = rival["name"]
-
-                if user_alerts:
-                    await notifier.dispatch_alerts(user_alerts, user_settings, hotel_name_map)
-
-        except Exception as e:
-            logger.error(f"[GlobalPulse] Pulse failure: {e}")
+            from backend.services.monitor_service import _trigger_heartbeat_notifications
+            for p in pulse_queue:
+                await _trigger_heartbeat_notifications(
+                    self.db, 
+                    p["hotel_id"], 
+                    p["current_price"], 
+                    p["currency"], 
+                    initiator_id=user_id
+                )
 
     async def discover_rivals(self, target_identifier: str, limit: int = 5, radius_km: float = 50.0) -> List[Dict[str, Any]]:
         """VECTOR SEARCH Logic for ghost competitor discovery with geographical filtering."""

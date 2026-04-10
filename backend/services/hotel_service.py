@@ -102,11 +102,9 @@ async def search_hotel_directory_logic(
     # Check for good local matches
     has_good_local = any(h["_search_score"] >= 40 for h in local_results)
 
-    # 2. Live Fallback (SerpApi)
+    # 2. Live Fallback (Multi-Provider)
     # Only fallback if local results are poor or sparse
-    should_fallback = (not has_good_local or len(local_results) < 5) and len(
-        q_trimmed
-    ) >= 4
+    should_fallback = (not has_good_local or len(local_results) < 5) and len(q_trimmed) >= 4
 
     # Primary sort by score (desc), secondary by name (asc)
     merged_results: List[Dict[str, Any]] = sorted(
@@ -115,32 +113,43 @@ async def search_hotel_directory_logic(
     )
 
     if should_fallback:
-        try:
-            # If no city, we try to broaden the query slightly for better search engine discovery
-            live_query = f"{q_trimmed} Hotel"
-            if clean_city:
-                live_query += f" {clean_city}"
-            else:
-                # If no city, typing often implies common brands or locations
-                # We can try to keep it simple but maybe add "Location" to hint search engine if needed
-                pass
+        from backend.services.provider_factory import ProviderFactory
+        
+        live_query = f"{q_trimmed} Hotel"
+        if clean_city:
+            live_query += f" {clean_city}"
 
-            live_results = await serpapi_client.search_hotels(live_query, limit=10)
-
-            # Filter and merge live results
-            for lr in live_results:
-                lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
-                # If query is short, we need to be stricter with word match
-                if any(w in lr_norm for w in q_words):
-                    lr["source"] = "serpapi"
-                    # Avoid duplicates with sophisticated name comparison
-                    if not any(
-                        normalize_term(res.get("name", "")) in lr_norm or lr_norm in normalize_term(res.get("name", ""))
-                        for res in local_results
-                    ):
-                        merged_results.append(lr)
-        except Exception as e:
-            print(f"Directory Fallback Error: {e}")
+        active_providers = ProviderFactory.get_active_providers()
+        
+        for provider in active_providers:
+            p_name = provider.get_provider_name()
+            try:
+                print(f"[Directory Search] Trying {p_name} for '{live_query}'")
+                live_results = await provider.search_hotels(live_query, limit=10)
+                
+                if live_results:
+                    # Filter and merge live results
+                    found_new = False
+                    for lr in live_results:
+                        lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
+                        # If query is short, we need to be stricter with word match
+                        if any(w in lr_norm for w in q_words):
+                            lr["source"] = p_name.lower()
+                            # Avoid duplicates with sophisticated name comparison
+                            if not any(
+                                normalize_term(res.get("name", "")) in lr_norm or lr_norm in normalize_term(res.get("name", ""))
+                                for res in local_results
+                            ):
+                                merged_results.append(lr)
+                                found_new = True
+                    
+                    if found_new:
+                        print(f"[Directory Search] SUCCESS with {p_name}")
+                        break # Stop if we found good results
+                else:
+                    print(f"[Directory Search] {p_name} returned no results")
+            except Exception as e:
+                print(f"[Directory Search] {p_name} Error: {e}")
 
     if user_id:
         await log_query(
@@ -149,10 +158,10 @@ async def search_hotel_directory_logic(
             hotel_name=q_trimmed,
             location=clean_city,
             action_type="search",
-            api_key_suffix=serpapi_client.last_used_key_suffix,
+            api_key_suffix="multi-provider",
         )
 
-    # Return top matches with explicit casting to satisfy linter
+    # Return top matches
     final_output = cast(List[Dict[str, Any]], list(merged_results[:40]))
     return final_output
 

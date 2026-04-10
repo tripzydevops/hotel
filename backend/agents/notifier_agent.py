@@ -90,13 +90,19 @@ class NotifierAgent:
             )
 
             try:
+                # Robust extraction: check both root and metadata
+                metadata = alert.get("metadata") or {}
+                curr_p = alert.get("new_price") or metadata.get("new_price")
+                prev_p = alert.get("old_price") or metadata.get("old_price")
+                currency = alert.get("currency") or metadata.get("currency") or "USD"
+
                 await notification_service.send_notifications(
                     settings=settings,
                     hotel_name=hotel_name,
                     alert_message=alert["message"],
-                    current_price=alert["new_price"],
-                    previous_price=alert["old_price"],
-                    currency=alert.get("currency", "USD"),
+                    current_price=curr_p,
+                    previous_price=prev_p,
+                    currency=currency,
                 )
                 await self.log_reasoning(
                     session_id, f"Alert for {hotel_name} dispatched."

@@ -103,6 +103,8 @@ export const tr = {
     nextScanNote: "Manuel taramalar planlı sayaç süresini sıfırlar.",
     limitReached: "Otel Limitine Ulaşıldı",
     liveMarketRate: "Güncel Piyasa Oranı",
+    sentimentScore: "Misafir Memnuniyet Puanı",
+    rateParity: "Fiyat Paritesi",
   },
   hotelDetails: {
     overview: "Genel Bakış",

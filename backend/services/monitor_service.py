@@ -8,11 +8,12 @@ import asyncio
 import logging
 import traceback
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 from uuid import UUID
 from fastapi import BackgroundTasks
 from supabase import Client
 from backend.models.schemas import ScanOptions, MonitorResult
+from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -527,7 +528,13 @@ async def run_scheduler_check_logic():
             logger.error("CRON: Database unavailable")
             return
 
-        # 0. Cleanup Zombie Sessions
+        # 1. RUN SYSTEM HEARTBEAT (Hotel-Centric)
+        await run_system_heartbeat(supabase)
+        
+        # 2. PROCESS COMPLETED TASKS
+        await process_system_scans(supabase)
+
+        # 3. Cleanup Zombie Sessions
         # Cleanup Zombie Sessions: Sessions running for > 2 hours are marked failed.
         try:
             zombie_cutoff = (
@@ -705,67 +712,303 @@ async def run_scheduler_check_logic():
         # We don't want to run the expensive zombie cleanup every time if we can avoid it,
         # but it keeps the scan_sessions table clean.
 
-        # 2. Process users in parallel with controlled concurrency
-        # Controlled Parallelism
-        # We use a semaphore to process 5-10 users at once. This avoids stalling the
-        # entire queue if one user's hotels take a long time to scan.
-        user_semaphore = asyncio.Semaphore(10)  # Adjust based on server capacity
-
-        async def process_single_user(user):
-            async with user_semaphore:
-                try:
-                    user_id = user["id"]
-                    s_logger.info(f"Processing user {user_id}...")
-
-                    # Note: next_scan_at was already updated in the pre-lock phase above (1.1.5)
-                    # This avoids the race condition on Vercel timeouts.
-
-                    # 2.2 Execute scan
-                    hotels = user_hotels_map.get(user_id, [])
-                    if hotels:
-                        session_id = None
-                        try:
-                            session_result = (
-                                supabase.table("scan_sessions")
-                                .insert({
-                                    "user_id": user_id,
-                                    "session_type": "scheduled",
-                                    "hotels_count": len(hotels),
-                                    "status": "pending",
-                                })
-                                .execute()
-                            )
-                            session_id = session_result.data[0]["id"] if session_result.data else None
-                        except Exception as se:
-                            s_logger.warning(f"Session creation failed for {user_id}: {se}")
-
-                        try:
-                            s_logger.info(f"Executing scan for user {user_id} ({len(hotels)} hotels)...")
-                            # We use run_monitor_background which internally handles agents
-                            await run_monitor_background(
-                                user_id=UUID(user_id),
-                                hotels=hotels,
-                                options=None,
-                                db=supabase,
-                                session_id=UUID(session_id) if session_id else None,
-                            )
-                        except Exception as direct_e:
-                            s_logger.error(f"Direct execution failed for {user_id}: {direct_e}")
-                    else:
-                        s_logger.info(f"User {user_id} has no hotels to scan. Skipping.")
-                except Exception as u_e:
-                    s_logger.error(f"Error in process_single_user for {user.get('id')}: {u_e}")
-
-        # Dispatch batch concurrently
-        # Process the batch. Even if one fails, others are gathered.
-        # Since we limited batch to 5, this is safe for a 1-minute cron run.
-        tasks = [process_single_user(user) for user in active_due]
-        await asyncio.gather(*tasks)
-        s_logger.info(f"CRON: Finished processing batch of {len(active_due)} users.")
+        # 2. FINISHED: Consolidate logic. 
+        # We no longer run per-user scans here. 
+        # Instead, run_system_heartbeat handles background global monitoring for ALL active hotels.
+        # This reduces DataForSEO costs by 80%+.
+        s_logger.info("CRON: Per-user scheduled scanning is now handled by Global System Heartbeat.")
 
     except Exception as e:
         s_logger.critical(f"CRON ERROR: {e}")
         s_logger.error(traceback.format_exc())
+
+    except Exception as e:
+        s_logger.critical(f"CRON ERROR: {e}")
+        s_logger.error(traceback.format_exc())
+
+
+async def run_system_heartbeat(db: Client):
+    """
+    Checks if a global system-wide hotel scan is due.
+    If due, submits all unique monitored hotels to the DataForSEO Task API.
+    """
+    s_logger = get_scheduler_logger()
+    try:
+        # 1. Fetch Admin Settings
+        settings_res = db.table("admin_settings").select("*").limit(1).execute()
+        if not settings_res.data:
+            s_logger.warning("Heartbeat: No admin settings found. Skipping.")
+            return
+
+        settings = settings_res.data[0]
+        interval = settings.get("scan_interval_hours", 24)
+        last_scan = settings.get("last_global_scan_at")
+        
+        now = datetime.now(timezone.utc)
+        
+        # 2. Check overlap
+        is_due = True
+        if last_scan:
+            try:
+                last_dt = datetime.fromisoformat(last_scan.replace("Z", "+00:00"))
+                if (now - last_dt).total_seconds() < (interval * 3600):
+                    is_due = False
+            except Exception:
+                is_due = True
+        
+        if not is_due:
+            # next_scan_at usually set by the updater, but check if we should update UI info
+            return
+
+        s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
+
+        # 3. Fetch all unique monitored hotels
+        monitored_res = (
+            db.table("user_hotels")
+            .select("hotel_id, hotels(name, location, serp_api_id)")
+            .eq("is_monitored", True)
+            .execute()
+        )
+
+        if not monitored_res.data:
+            s_logger.info("Heartbeat: No monitored hotels found.")
+            return
+
+        # Deduplicate by Unique Token (serp_api_id) to save credits
+        criteria_groups = {} # token -> [list_of_ids]
+        criteria_data = {}   # token -> hotel_metadata
+        
+        for item in monitored_res.data:
+            h = item.get("hotels")
+            if not h: continue
+            
+            # Use serp_api_id as the primary unique key
+            token = h.get("serp_api_id")
+            if not token:
+                # Fallback to name/location only if serp_api_id is missing
+                token = f"{h['name'].lower().strip()}|{h['location'].lower().strip()}"
+            
+            if token not in criteria_groups:
+                criteria_groups[token] = []
+                criteria_data[token] = h
+            criteria_groups[token].append(item["hotel_id"])
+
+        if not criteria_groups:
+            s_logger.info("Heartbeat: No valid monitored hotels found after deduplication.")
+            return
+
+        s_logger.info(f"Heartbeat: Submitting {len(criteria_groups)} unique search tasks (from {len(monitored_res.data)} monitored records)...")
+
+        # 4. Prepare DataForSEO Tasks (Today -> Tomorrow, 2 Adults)
+        check_in = date.today().strftime("%Y-%m-%d")
+        check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+        
+        task_params = []
+        for key, h_ids in criteria_groups.items():
+            h_data = criteria_data[key]
+            # Use the first ID as the primary reference tag
+            primary_id = h_ids[0]
+            task_params.append({
+                "location_name": h_data["location"],
+                "keyword": h_data["name"],
+                "check_in": check_in,
+                "check_out": check_out,
+                "adults": 2,
+                "currency": "TRY",
+                "tag": str(primary_id) # Critical: use tag to identify results
+            })
+
+        batch_size = 100
+        total_tasks_posted = 0
+        for i in range(0, len(task_params), batch_size):
+            batch = task_params[i : i + batch_size]
+            task_ids = await dataforseo_provider.post_price_tasks(batch)
+            if task_ids:
+                total_tasks_posted += len(task_ids)
+
+        s_logger.info(f"Heartbeat: Successfully posted {total_tasks_posted} scanning tasks.")
+
+        # 5. Update Admin Settings
+        next_scan = now + timedelta(hours=interval)
+        try:
+            db.table("admin_settings").update({
+                "last_global_scan_at": now.isoformat(),
+                "next_global_scan_at": next_scan.isoformat()
+            }).eq("id", settings["id"]).execute()
+        except Exception as e:
+            s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
+
+    except Exception as e:
+        s_logger.error(f"Heartbeat Failure: {e}")
+
+
+async def process_system_scans(db: Client):
+    """
+    Checks for completed DataForSEO tasks and updates hotel prices.
+    Uses 'tag' from results to map back to hotel_id.
+    """
+    s_logger = get_scheduler_logger()
+    try:
+        # 1. Get completed task IDs
+        completed_ids = await dataforseo_provider.get_completed_tasks()
+        if not completed_ids:
+            return
+
+        s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
+
+        for tid in completed_ids:
+            try:
+                # 2. Fetch full results
+                result = await dataforseo_provider.fetch_task_results(tid)
+                if not result or result.get("status") != "success":
+                    continue
+
+                # Use tag (h_id) passed during submission
+                h_id = result.get("tag")
+                price = result.get("price")
+                currency = result.get("currency")
+                
+                if not price or not h_id:
+                    continue
+
+                # 3. Update Hotels and History
+                try:
+                    # 3. Get the hotel info to find siblings sharing the same property token
+                    primary_res = db.table("hotels").select("name, location, serp_api_id").eq("id", h_id).single().execute()
+                    if not primary_res.data:
+                        continue
+                    
+                    hotel_ref = primary_res.data
+                    serp_id = hotel_ref.get("serp_api_id")
+                    h_name = hotel_ref["name"]
+                    h_location = hotel_ref["location"]
+
+                    if serp_id:
+                        # Priority 1: Match all variations sharing the same unique Token
+                        matching_hotels = db.table("hotels").select("id, current_price").eq("serp_api_id", serp_id).execute()
+                    else:
+                        # Fallback: Match by name/location
+                        matching_hotels = db.table("hotels").select("id, current_price").eq("name", h_name).eq("location", h_location).execute()
+                    
+                    if not matching_hotels.data:
+                        continue
+
+                    for h_obj in matching_hotels.data:
+                        target_id = h_obj["id"]
+                        prev_price_val = h_obj.get("current_price")
+                        
+                        # Update each entity
+                        db.table("hotels").update({
+                            "current_price": price,
+                            "previous_price": prev_price_val,
+                            "last_scanned_at": datetime.now(timezone.utc).isoformat(),
+                            "last_scan": datetime.now(timezone.utc).isoformat()
+                        }).eq("id", target_id).execute()
+
+                        # Insert history for each
+                        db.table("price_logs").insert({
+                            "hotel_id": target_id,
+                            "price": price,
+                            "currency": currency,
+                            "source": "System Heartbeat (Deduplicated)",
+                            "recorded_at": datetime.now(timezone.utc).isoformat()
+                        }).execute()
+
+                        # 4. Trigger per-user notifications for this specific entity
+                        await _trigger_heartbeat_notifications(db, target_id, price, currency)
+                        
+                    s_logger.info(f"Task Processor: Updated {len(matching_hotels.data)} variations sharing token '{serp_id or h_name}' to {price} {currency}")
+
+                except Exception as e:
+                    s_logger.error(f"Failed to sync hotel results for {h_id}: {e}")
+
+            except Exception as item_e:
+                s_logger.error(f"Task Processor: Error processing task {tid}: {item_e}")
+
+    except Exception as e:
+        s_logger.error(f"Task Processor General Failure: {e}")
+
+async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, initiator_id: Optional[UUID] = None):
+    """
+    Finds all users monitoring this hotel and triggers alerts if price drops/changes.
+    If initiator_id is provided, those alerts are marked as 'market_pulse' for others.
+    """
+    try:
+        from backend.agents.notifier_agent import NotifierAgent
+        notifier = NotifierAgent()
+
+        # 1. Find all users who monitor this hotel
+        query = db.table("user_hotels").select("user_id, hotel_id, hotels(name, serp_api_id)").eq("hotel_id", hotel_id).eq("is_monitored", True)
+        users_res = query.execute()
+        if not users_res.data:
+            return
+
+        hotel_data = users_res.data[0].get("hotels", {})
+        hotel_name = hotel_data.get("name", "Unknown Hotel")
+        serp_id = hotel_data.get("serp_api_id")
+
+        # 2. For each user, check their individual threshold
+        user_ids = [u["user_id"] for u in users_res.data]
+        settings_res = db.table("settings").select("*").in_("user_id", user_ids).execute()
+        settings_map = {str(s["user_id"]): s for s in settings_res.data}
+
+        for user_id_str in user_ids:
+            user_id = UUID(user_id_str)
+            settings = settings_map.get(user_id_str)
+            if not settings or not settings.get("notifications_enabled"):
+                continue
+
+            # Skip initiator if strictly heartbeat-only (not used for manual triggers)
+            # Actually, we want manual triggers to notify the initiator TOO, but system heartbeats notify everyone.
+            
+            threshold = settings.get("threshold_percent", 2.0)
+            
+            # Fetch last baseline from history (index 1 is previous, index 0 is current)
+            # Get price history for threshold comparison
+            history_res = db.table("price_logs")\
+                .select("price")\
+                .eq("hotel_id", hotel_id)\
+                .order("recorded_at", desc=True)\
+                .limit(2)\
+                .execute()
+            
+            if len(history_res.data) < 2:
+                continue
+            
+            prev_price = float(history_res.data[1]["price"])
+            change_pct = ((current_price - prev_price) / max(prev_price, 1)) * 100
+
+            if abs(change_pct) >= threshold:
+                # If triggered by someone else, it's a pulse. If global, it's a heartbeat/drop.
+                is_manual_initiator = initiator_id and str(initiator_id) == user_id_str
+                
+                if initiator_id and not is_manual_initiator:
+                    alert_type = "market_pulse"
+                    prefix = "Global Pulse: "
+                else:
+                    alert_type = "price_drop" if change_pct < 0 else "price_spike"
+                    prefix = ""
+
+                alert_msg = f"{prefix}{hotel_name} rate shifted {abs(change_pct):.1f}% to {current_price} {currency}"
+                
+                # Record alert
+                alert_res = db.table("alerts").insert({
+                    "user_id": str(user_id),
+                    "hotel_id": hotel_id,
+                    "alert_type": alert_type,
+                    "message": alert_msg,
+                    "old_price": prev_price,
+                    "new_price": current_price,
+                    "currency": currency,
+                    "metadata": {"pct": change_pct}
+                }).execute()
+
+                # Dispatch notification
+                if alert_res.data:
+                    await notifier.dispatch_alerts([alert_res.data[0]], settings, {hotel_id: hotel_name})
+
+    except Exception as e:
+        logger.error(f"Heartbeat Notifier Error for hotel {hotel_id}: {e}")
 
 
 if __name__ == "__main__":

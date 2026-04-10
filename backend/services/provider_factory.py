@@ -12,52 +12,49 @@ class ProviderFactory:
     _providers: List[HotelDataProvider] = []
 
     @classmethod
-    def get_active_providers(cls, include_secondary: bool = False) -> List[HotelDataProvider]:
+    def get_active_providers(cls) -> List[HotelDataProvider]:
         """
-        Returns list of active providers.
-        By default, returns ONLY SerpApi (Primary) to respect the user's focus on high-fidelity results.
-        DataForSEO is only included if explicitly requested.
+        Returns list of active providers in order of priority.
+        1. DataForSEO (Primary - Multi-vendor pricing, TRY support)
+        2. SerpApi (Fallback - High fidelity fallback)
         """
         if not cls._providers:
             cls._register_providers()
         
-        if include_secondary:
-            return cls._providers
-            
-        # Filter to return only Primary (SerpApi)
-        return [p for p in cls._providers if isinstance(p, SerpApiProvider)]
+        return cls._providers
 
     @classmethod
-    def get_provider(cls, prefer: str = "serpapi") -> HotelDataProvider:
+    def get_provider(cls, prefer: str = "dataforseo") -> HotelDataProvider:
         """
         Get the most appropriate provider.
-        Defaults to SerpApi. Only returns DataForSEO if explicitly requested.
+        Defaults to DataForSEO. Falls back to SerpApi if DataForSEO is not configured.
         """
         if not cls._providers:
             cls._register_providers()
 
-        if prefer == "dataforseo":
-            df_provider = next((p for p in cls._providers if isinstance(p, DataForSEOProvider)), None)
-            if df_provider:
-                return df_provider
+        # Try preferred provider
+        target = next((p for p in cls._providers if p.get_provider_name().lower() == prefer.lower()), None)
+        if target:
+            return target
 
-        # Default to SerpApi (First element which is always SerpApi if registered)
-        serp_provider = next((p for p in cls._providers if isinstance(p, SerpApiProvider)), None)
-        if serp_provider:
-            return serp_provider
-
-        # Fallback to whatever is available if SerpApi is somehow missing but requested
+        # Failover sequence
         if cls._providers:
             return cls._providers[0]
 
-        raise Exception("No providers configured! Check your .env parameters.")
+        raise Exception("No providers configured! Check your .env parameters (DATAFORSEO_LOGIN, SERPAPI_API_KEY).")
 
     @classmethod
     def _register_providers(cls):
         # Force clear to prevent zombie instances in persistent processes
         cls._providers = []
 
-        # 1. SerpApi (Primary - High Fidelity)
+        # 1. DataForSEO (Primary - New Default)
+        df_login = os.getenv("DATAFORSEO_LOGIN")
+        df_pass = os.getenv("DATAFORSEO_PASSWORD")
+        if df_login and df_pass:
+            cls._providers.append(DataForSEOProvider())
+
+        # 2. SerpApi (Fallback)
         serp_keys = []
         primary = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
         if primary:
@@ -71,16 +68,6 @@ class ProviderFactory:
         if serp_keys:
             cls._providers.append(SerpApiProvider())
 
-        # 2. DataForSEO (Secondary - Extended Data)
-        df_login = os.getenv("DATAFORSEO_LOGIN")
-        df_pass = os.getenv("DATAFORSEO_PASSWORD")
-        if df_login and df_pass:
-            cls._providers.append(DataForSEOProvider())
-
-        # Alternative providers (RapidAPI, Serper, Decodo) are decommissioned
-        # as per user request to restore original SerpApi fidelity.
-        pass
-
     @classmethod
     def get_status_report(cls) -> List[dict]:
         """
@@ -93,87 +80,59 @@ class ProviderFactory:
 
         report = []
 
-        # Determine which key is actually active from the SerpApiProvider instance
-        serp_provider = next(
-            (p for p in cls._providers if isinstance(p, SerpApiProvider)), None
-        )
-        if serp_provider:
-            serp_provider.get_active_key_index()
-
-        # 1. Real Status from SerpApi Manager
-        from backend.services.serpapi_client import serpapi_client
-
-        try:
-            # We use the sync-wrapped get_status from the client for quick report
-            detailed = serpapi_client.get_status()
-            keys_info = detailed.get("keys_status", [])
-            mgr = serpapi_client._key_manager
-
-            for i, info in enumerate(keys_info):
-                k = mgr._keys[i] if i < len(mgr._keys) else None
-                name_meta = ["Primary", "Aşkın Sezen", "Free Tier", "Dynamic Support"]
-                name = (
-                    f"SerpApi Key {i + 1} ({name_meta[i]})"
-                    if i < len(name_meta)
-                    else f"SerpApi Key {i + 1}"
-                )
-
-                # Health logic: "Active" for currently selected index, else Ready/Exhausted
-                health = "Ready"
-                if i == detailed.get("current_key_index", 0) - 1:
-                    health = "Active"
-                elif info.get("is_exhausted"):
-                    health = "Exhausted"
-
-                report.append(
-                    {
-                        "name": name,
-                        "type": "Hotel Prices",
-                        "enabled": True,
-                        "priority": i + 1,
-                        "limit": "250/mo",
-                        "refresh": mgr._renewal_info.get(k, "Pending")
-                        if k
-                        else "Unknown",
-                        "latency": "Matched",
-                        "health": health,
-                    }
-                )
-        except Exception as e:
-            logger.error(f"Status report fetch error: {e}")
-            # Fallback to simple list if manager access fails
-            for i in range(1, 5):
-                report.append(
-                    {
-                        "name": f"SerpApi Key {i}",
-                        "type": "Hotel Prices",
-                        "enabled": bool(
-                            os.getenv(f"SERPAPI_API_KEY{'_' + str(i) if i > 1 else ''}")
-                        ),
-                        "priority": i,
-                        "limit": "250/mo",
-                        "refresh": "Pending",
-                        "latency": "Error",
-                        "health": "Ready",
-                    }
-                )
-
-        # 2. DataForSEO status
+        # 1. DataForSEO status (Primary)
         df_provider = next(
             (p for p in cls._providers if isinstance(p, DataForSEOProvider)), None
         )
         if df_provider:
             report.append(
                 {
-                    "name": "DataForSEO (Standard Queue)",
-                    "type": "Hotel Records",
+                    "name": "DataForSEO (Live UI/API)",
+                    "type": "Hotel Prices & Meta",
                     "enabled": True,
-                    "priority": len(report) + 1,
+                    "priority": 1,
                     "limit": "Unlimited (Credit-based)",
-                    "refresh": "N/A",
-                    "latency": "Standard (Task-based)",
+                    "refresh": "Real-time",
+                    "latency": "Fast (Live)",
                     "health": "Active" if df_provider.login else "Error",
                 }
             )
 
+        # 2. SerpApi status (Fallback)
+        serp_provider = next(
+            (p for p in cls._providers if isinstance(p, SerpApiProvider)), None
+        )
+        if serp_provider:
+            from backend.services.serpapi_client import serpapi_client
+            try:
+                detailed = serpapi_client.get_status()
+                keys_info = detailed.get("keys_status", [])
+                mgr = serpapi_client._key_manager
+
+                for i, info in enumerate(keys_info):
+                    k = mgr._keys[i] if i < len(mgr._keys) else None
+                    name = f"SerpApi Key {i + 1} (FallbackTier)"
+                    
+                    health = "Ready"
+                    if i == detailed.get("current_key_index", 0) - 1:
+                        health = "Active"
+                    elif info.get("is_exhausted"):
+                        health = "Exhausted"
+
+                    report.append(
+                        {
+                            "name": name,
+                            "type": "Hotel Prices",
+                            "enabled": True,
+                            "priority": 2 + i,
+                            "limit": "250/mo",
+                            "refresh": mgr._renewal_info.get(k, "Pending") if k else "Unknown",
+                            "latency": "Fallback",
+                            "health": health,
+                        }
+                    )
+            except Exception as e:
+                logger.error(f"SerpApi Status report error: {e}")
+
         return report
+t

@@ -25,6 +25,13 @@ We utilize a **Serverless-First Strategy** to ensure high availability and low m
 -   **Diagnostic Dashboard 🛠️**: A dedicated `/debug` page for monitoring system health, environment variables, and Vercel serverless function status.
 -   **Hybrid Room Config**: Dynamic room type mapping via Database (`room_tokens`, `room_aliases`) with static fallbacks.
 
+## 📚 Technical Documentation
+
+Deep dives into the platform core:
+-   **[Price Monitoring & Notifications](docs/PRICE_MONITORING_SYSTEM.md)**: Architecture of the autonomous rate pulse and parity bot.
+-   **[Database Architecture](docs/DATABASE_ARCHITECTURE_GUIDE.md)**: M2M relationship scaling and Pricing DNA.
+-   **[Discovery Engine](DISCOVERY_ENGINE.md)**: Vector-based semantic hotel mapping.
+
 ## 🚀 Getting Started
 
 ### Prerequisites

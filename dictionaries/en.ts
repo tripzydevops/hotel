@@ -103,6 +103,8 @@ export const en = {
     nextScanNote: "Manual scans reset the scheduled countdown.",
     limitReached: "Hotel Limit Reached",
     liveMarketRate: "Live Market Rate",
+    sentimentScore: "Sentiment Score",
+    rateParity: "Rate Parity",
   },
   hotelDetails: {
     overview: "Overview",

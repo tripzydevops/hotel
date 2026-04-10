@@ -389,6 +389,38 @@ async def get_dashboard_logic(
                     ari = (price_info["current_price"] / market_avg) * 100
                     value_pillar.update(synthesize_value_score(ari))
 
+            # AGENT_LOGIC: Calculate Overall Sentiment Score (Average of pillars)
+            if sentiment:
+                valid_pillars = [p["rating"] for p in sentiment if p.get("rating") is not None]
+                if valid_pillars:
+                    hotel_data["overall_sentiment_score"] = round(sum(valid_pillars) / len(valid_pillars), 1)
+                else:
+                    hotel_data["overall_sentiment_score"] = 0.0
+            
+            # AGENT_LOGIC: Calculate Rate Parity Score
+            price_info = hotel_data.get("price_info")
+            if price_info and price_info.get("current_price") and price_info.get("offers"):
+                target_price = price_info["current_price"]
+                offers = price_info["offers"]
+                
+                # Find the lowest price among all offers (OTAs)
+                ota_prices = [of.get("price") for of in offers if of.get("price") is not None]
+                
+                if ota_prices:
+                    cheapest_ota = min(ota_prices)
+                    # Parity score: 100% if we are equal or cheaper than cheapest OTA
+                    if target_price <= cheapest_ota:
+                        hotel_data["parity_score"] = 100
+                    else:
+                        # Penalty for being more expensive
+                        # e.g. if we are 110 and ota is 100, score is 90%
+                        parity_ratio = (cheapest_ota / target_price) * 100
+                        hotel_data["parity_score"] = round(max(0, parity_ratio))
+                else:
+                    hotel_data["parity_score"] = 100 # No competition found
+            else:
+                hotel_data["parity_score"] = None # Unknown
+
         # 6. Final Aggregation
         target_hotel = next(
             (h for h in enriched_hotels if h.get("is_target_hotel")), None
@@ -486,7 +518,11 @@ async def get_dashboard_logic(
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "profile": user_profile,
             "user_settings": user_settings,
-            "market_insight": synthetic_narrative, # Changed from market_insight to synthetic_narrative
+            "market_insight": synthetic_narrative,
+            "agg_metrics": {
+                "avg_rating": float(target_hotel.get("overall_sentiment_score") or 0.0) if target_hotel else 0.0,
+                "rate_parity_score": int(target_hotel.get("parity_score") or 0) if target_hotel else 0
+            }
         }
 
     except Exception as e:

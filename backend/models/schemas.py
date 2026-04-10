@@ -556,6 +556,9 @@ class AdminSettings(BaseModel):
     signup_enabled: bool
     default_currency: str
     system_alert_message: Optional[str] = None
+    scan_interval_hours: int = 24
+    last_global_scan_at: Optional[datetime] = None
+    next_global_scan_at: Optional[datetime] = None
     updated_at: datetime
 
     class Config:
@@ -567,6 +570,9 @@ class AdminSettingsUpdate(BaseModel):
     signup_enabled: Optional[bool] = None
     default_currency: Optional[str] = None
     system_alert_message: Optional[str] = None
+    scan_interval_hours: Optional[int] = None
+    last_global_scan_at: Optional[datetime] = None
+    next_global_scan_at: Optional[datetime] = None
 
 
 # ===== Membership Plan Models =====
