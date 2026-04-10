@@ -79,7 +79,7 @@ async def get_dashboard_logic(
         )
 
     try:
-        # [FIX] Sequential Data Fetching for Stability
+        # AGENT_FIX: Sequential Data Fetching for Stability
         # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
         
@@ -99,7 +99,7 @@ async def get_dashboard_logic(
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
         
         # 6. Hotels (Bulk Fetch via Many-to-Many Association)
-        # KAİZEN: Join with user_hotels to support multi-user property tracking.
+        # AGENT_LOGIC: Join with user_hotels to support multi-user property tracking.
         res = db.table("user_hotels").select("*, hotel:hotels(*)").eq("user_id", str(user_id)).execute()
         all_associations = res.data or []
         
@@ -138,7 +138,7 @@ async def get_dashboard_logic(
             sessions_res.data if sessions_res and hasattr(sessions_res, "data") else []
         )
 
-        # [FIX] Scan History Query (Mapping via Hotel IDs)
+        # AGENT_FIX: Scan History Query (Mapping via Hotel IDs)
         # The price_logs table does not contain a user_id column.
         # We fetch the latest 10 logs across all the user's active hotels.
         scan_history = []
@@ -157,7 +157,7 @@ async def get_dashboard_logic(
         # to ensure the UI tiles don't look broken/desynchronized.
         if not all_hotels:
             logger.info(f"Dashboard: No hotels found for {user_id}, returning metadata only.")
-            # [KAIZEN] Direct field assignment avoids typing.MutableMapping.update errors in strict linters
+            # AGENT_LOGIC: Direct field assignment avoids typing.MutableMapping.update errors in strict linters
             fallback_data["profile"] = user_profile
             fallback_data["user_settings"] = user_settings
             fallback_data["unread_alerts_count"] = unread_count
@@ -218,7 +218,7 @@ async def get_dashboard_logic(
             price_info = None
             if current_log:
                 try:
-                    # [NEW] Use Strict Source Routing for Dashboard Prices
+                    # AGENT_FEATURE: Use Strict Source Routing for Dashboard Prices
                     # This ensures the 'standard' price in dashboard matches the analysis selection.
                     target_room = h.get("room_type_standard") or "Standard"
                     curr_p, matched_name, confidence = get_price_for_room(current_log, target_room, {})
@@ -255,7 +255,7 @@ async def get_dashboard_logic(
                     logger.warning(f"Price processing error: {e}")
 
             # Sentiment Processing
-            # [FIX] Sentiment Fallback (Global Pulse)
+            # AGENT_FIX: Sentiment Fallback (Global Pulse)
             # If the user's specific hotel record is missing sentiment (e.g. newly re-added),
             # we try the global directory first, then fallback to ANY history share the same serp_api_id.
             raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown") or []
@@ -264,7 +264,7 @@ async def get_dashboard_logic(
                 sid = h["serp_api_id"]
                 logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
                 try:
-                    # [KAIZEN] Multi-Tenant Recovery: Scan across ANY hotel records for this property.
+                    # AGENT_LOGIC: Multi-Tenant Recovery: Scan across ANY hotel records for this property.
                     # Since hotels are shared, we just need ANY record that has the data.
                     # We query by serp_api_id directly in the sentiment_history table or hotel_directory.
                     # First check directories
@@ -289,7 +289,7 @@ async def get_dashboard_logic(
                     logger.error(f"[GlobalPulse/Dashboard] Recovery failed for {sid}: {e}")
             item_sentiment = normalize_sentiment(raw_breakdown)
 
-            # [FIX] Resilient Metadata Merging
+            # AGENT_FIX: Resilient Metadata Merging
             # Ensure static metadata (rating, reviews, stars) falls back to master directory
             # if the user's specific hotel record is incomplete.
             review_count = h.get("review_count") or dir_data.get("review_count")
@@ -302,7 +302,7 @@ async def get_dashboard_logic(
             images = h.get("images") or dir_data.get("images") or []
             reviews = h.get("reviews") or dir_data.get("reviews") or []
 
-            # [PRO-FALLBACK] Cross-User Recovery for Rating & Review Count
+            # AGENT_LOGIC: Cross-User Recovery for Rating & Review Count (Pro Fallback)
             # If still missing after directory check, we search global data.
             if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
@@ -408,7 +408,7 @@ async def get_dashboard_logic(
             if len(recent_searches) >= 10:
                 break
 
-        # [KAIZEN] Use profile next_scan_at as source of truth
+        # AGENT_LOGIC: Use profile next_scan_at as source of truth
         # This aligns the Dashboard UI with the actual backend scheduler.
         next_scan_at = (
             core_profile_res.data.get("next_scan_at")
@@ -447,7 +447,7 @@ async def get_dashboard_logic(
         comp_limit = 5  # Default comparison limit for dashboard UI
         if target_hotel and market_avg > 0:
             try:
-                # [KAIZEN] Standardized top-level imports used here
+                # AGENT_LOGIC: Standardized top-level imports used here
 
                 target_price = target_hotel.get("price_info", {}).get("current_price")
                 if target_price and market_avg > 0 and market_avg_rating > 0:
@@ -455,7 +455,7 @@ async def get_dashboard_logic(
                     target_rating = float(target_hotel.get("rating") or 0.0)
                     sent_index = (target_rating / market_avg_rating) * 100
                     
-                    # [FIX] Match signature in analysis_service.py
+                    # AGENT_FIX: Match signature in analysis_service.py
                     synthetic_narrative = generate_synthetic_narrative(
                         ari=ari,
                         sent_index=sent_index,
@@ -523,7 +523,7 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
             .in_("id", hotel_ids)
             .execute()
         )
-        # [ROBUST] Programmatic filtering
+        # AGENT_LOGIC: Programmatic filtering (Robust)
         hotels_data = [h for h in (res.data or []) if not h.get("deleted_at")]
         hotel_name_map = {h["id"]: h["name"] for h in hotels_data}
 

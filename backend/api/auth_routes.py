@@ -8,9 +8,8 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# EXPLANATION: Routing Normalization (Regression Fix)
-# Removed "/api" prefix from APIRouter to prevent doubled paths 
-# (e.g., /api/api/auth/...) when registered centrally in main.py.
+# Routing Normalization
+# Prefix is registered centrally in main.py.
 router = APIRouter(tags=["Authentication"])
 
 @router.get("/auth/user", include_in_schema=True)

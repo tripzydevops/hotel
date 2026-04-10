@@ -54,20 +54,16 @@ async def check_scheduled_scan(
     """Lazy cron workaround for Vercel free tier."""
     user_id = current_user.id
 
-    # EXPLANATION: Frontend-Triggered Scheduler
-    # This endpoint allows the frontend to 'tick' the scheduler when the user
-    # visits the app, ensuring scans run even without a persistent cron.
-    if not db:
-        return {"triggered": False, "reason": "DB_UNAVAILABLE"}
-
     try:
+        # Frontend-Triggered Scheduler
+        # This endpoint allows the frontend to 'tick' the scheduler when the user
+        # visits the app, ensuring scans run even without a persistent cron.
+        if not db:
+            return {"triggered": False, "reason": "DB_UNAVAILABLE"}
+
         uid = str(user_id)
 
-        # FIX: Sequential queries — the old asyncio.gather + lambda approach ran 4
-        # concurrent Supabase queries on the same client object across threads,
-        # which is NOT thread-safe and was silently failing, causing all scans
-        # to return triggered:false while the UI still showed "Scan triggered!".
-
+        # Sequential queries for thread safety
         # 1. Settings Check
         settings_res = db.table("settings").select("*").eq("user_id", uid).execute()
         if not settings_res.data:
@@ -85,7 +81,7 @@ async def check_scheduled_scan(
             .eq("user_id", uid)
             .execute()
         )
-        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+        # Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
         hotels = [h for h in (res.data or []) if not h.get("deleted_at")]
         if not hotels:
             return {"triggered": False, "reason": "NO_HOTELS"}
@@ -111,8 +107,7 @@ async def check_scheduled_scan(
         # 4. Due Check (skipped entirely when force=True)
         should_run = force
         if not should_run:
-            # KAİZEN: Use next_scan_at from profiles as source of truth.
-            # This aligns the 'Lazy Cron' with the background GitHub Action scheduler.
+            # Use next_scan_at from profiles as source of truth.
             profile_res = db.table("profiles").select("next_scan_at").eq("id", uid).execute()
             if profile_res.data:
                 nxt = profile_res.data[0].get("next_scan_at")
@@ -165,10 +160,8 @@ async def check_scheduled_scan(
         return {"triggered": False, "reason": str(e)}
 
 
-# EXPLANATION: GET a single scan session by ID.
-# The ScanSessionModal polls this to get live reasoning_trace and status
-# updates. Without this, the Agent Mesh steps and Reasoning Timeline
-# stay stale after the modal opens.
+# GET a single scan session by ID.
+# Live status updates.
 @router.get("/sessions/{session_id}", response_model=ScanSession)
 async def get_session(
     session_id: UUID, 

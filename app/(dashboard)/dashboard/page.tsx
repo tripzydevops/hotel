@@ -267,10 +267,8 @@ export default function Dashboard() {
             {loading || isRefreshing ? (
               <>
                 {/* 
-                  EXPLANATION: Scan UX Synchronization
-                  Instead of a hardcoded 4 skeletons, we match the skeleton count 
-                  to the actual number of hotels to prevent "multiplicity" flickering 
-                  and visual jitter during the scan refresh.
+                  Skeleton tiles for loading state.
+                  Matches count of current hotels to minimize layout shift.
                 */}
                 {[...Array(data?.competitors?.length ? data.competitors.length + 1 : 3)].map((_, i) => (
                   <SkeletonTile key={i} large={i === 0 && !!data?.target_hotel} />

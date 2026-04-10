@@ -15,23 +15,19 @@ from supabase import Client
 from backend.models.schemas import ScanOptions, MonitorResult
 from backend.utils.logger import get_logger
 
-# EXPLANATION: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 # from backend.agents.scraper_agent import ScraperAgent
 # from backend.agents.analyst_agent import AnalystAgent
 # from backend.agents.notifier_agent import NotifierAgent
 
 
-# EXPLANATION: Dedicated Scheduler Logging
-# We use a separate logger and file handler for the scheduler to make
-# background execution easily auditable without cluttering main logs.
+# Dedicated Scheduler Logging
 def get_scheduler_logger():
     s_logger = logging.getLogger("scheduler")
     if not s_logger.handlers:
         from logging.handlers import RotatingFileHandler
 
-        # EXPLANATION: Environment-Aware Log Path
-        # The VM uses a fixed path; GitHub Actions and local dev use a relative path.
+        # Environment-Aware Log Path
         # This prevents crashes when the scheduler runs outside the VM.
         vm_path = "/home/tripzydevops/hotel/scheduler.log"
         local_path = os.path.abspath(
@@ -76,7 +72,7 @@ async def trigger_monitor_logic(
     Enterprise users have unlimited background agent cycles.
     """
 
-    # [M2M] Reach hotels via user_hotels table for Multi-User/Many-to-Many compatibility
+    # Reach hotels via user_hotels table for Multi-User/Many-to-Many compatibility
     hotel_mappings_query = (
         db.table("user_hotels")
         .select("hotel_id, is_target, pricing_dna, preferred_currency, fixed_check_in, fixed_check_out, default_adults, hotels(*)")
@@ -86,6 +82,7 @@ async def trigger_monitor_logic(
     # Filter by specific hotel IDs if provided in options
     if options and options.hotel_ids:
         hotel_id_strs = [str(hid) for hid in options.hotel_ids]
+        hotel_id_strs = [str(hid) for hid in options.hotel_ids]
         hotel_mappings_query = hotel_mappings_query.in_("hotel_id", hotel_id_strs)
         
     mappings_res = hotel_mappings_query.execute()
@@ -94,7 +91,7 @@ async def trigger_monitor_logic(
     for mapping in (mappings_res.data or []):
         if mapping.get("hotels"):
             h_data = mapping["hotels"]
-            # [ROBUST] Filter soft-deleted hotels
+            # Filter soft-deleted hotels
             if h_data.get("deleted_at"):
                 continue
             # Override specialized settings from user_hotels association
@@ -146,7 +143,7 @@ async def trigger_monitor_logic(
                 reason = access.get("reason", "No Active Subscription")
                 logger.warning(f"Manual scan blocked for {user_id}: {reason}")
                 
-                # [KAIZEN] Log lock to session trace if possible
+                # Log lock to session trace if possible
                 # Note: session_id is not yet defined in this scope
 
                 return MonitorResult(
@@ -156,10 +153,9 @@ async def trigger_monitor_logic(
                     errors=[f"SCAN_LOCKED: {reason}"],
                 )
 
-            # EXPLANATION: Unified Daily Manual Scan Limits
-            # Enforces specific daily quotas requested by the user:
+            # Unified Daily Manual Scan Limits
+            # Enforces specific daily quotas:
             # Trial (3), Starter (5), Pro (8), Enterprise (10)
-            # This ensures stable SerpApi costs while allowing priority users higher flexibility.
             limits = access.get("limits", {})
             daily_limit = limits.get("monthly_scan_limit", 3)  # Using column as daily quota
             
@@ -234,7 +230,7 @@ async def trigger_monitor_logic(
             session_id = session_result.data[0]["id"]
             logger.info(f"Created scan session: {session_id}")
             
-            # [KAIZEN] Post-creation reasoning trace for the 18:00 cutoff
+            # Post-creation reasoning trace for the 18:00 cutoff
             if (not options or not options.check_in or str(options.check_in) == str(date.today())) and datetime.now().hour >= 18:
                 try:
                     db.table("scan_sessions").update({
@@ -257,7 +253,7 @@ async def trigger_monitor_logic(
         skip_intelligence=options.skip_intelligence if options else False,
     )
 
-    # 3.5 [KAIZEN] Sync Scheduler (Anti-Drift)
+    # Sync Scheduler (Anti-Drift)
     # When a user triggers a manual scan, we advance their 'next_scan_at' 
     # to avoid a scheduled scan triggering immediately after.
     try:
@@ -277,8 +273,8 @@ async def trigger_monitor_logic(
         logger.warning(f"Failed to sync next_scan_at during manual trigger: {sync_e}")
 
     # 4. Background Execution (Direct via BackgroundTasks)
-    # EXPLANATION: Lean Serverless Execution
-    # Redis/Celery dependency has been removed to avoid Upstash free-tier limits.
+    # Lean Serverless Execution
+    # Redis/Celery dependency has been removed.
     # We now exclusively use FastAPI's BackgroundTasks for in-process execution.
     try:
         if background_tasks is not None:
@@ -345,7 +341,7 @@ async def run_monitor_background(
         threshold = 2.0
         settings = {}
         try:
-            # [KAIZEN] Ensure we fetch settings specifically for this user context
+            # Ensure we fetch settings specifically for this user context
             settings_res = (
                 db.table("settings")
                 .select("*")
@@ -395,7 +391,7 @@ async def run_monitor_background(
                 }).eq("id", str(session_id)).execute()
             
             # Launch AI phase (Background task within the background task)
-            # EXPLANATION: We use create_task to allow the main orchestrator to "finish"
+            # We use create_task to allow the main orchestrator to "finish"
             # basic reporting/alerts while AI chews on the data.
             async def intel_task_wrapper():
                 try:
@@ -418,7 +414,7 @@ async def run_monitor_background(
         # 5. Phase 3: Notifier Agent
         if analysis_summary.get("alerts"):
             try:
-                # [KAIZEN] Re-fetch settings if not available from earlier phase
+                # Re-fetch settings if not available from earlier phase
                 if not settings:
                     settings_res = (
                         db.table("settings")
@@ -437,7 +433,7 @@ async def run_monitor_background(
 
         # 6. Finalize Session moved to Phase 5 status-aware logic to support background AI
 
-        # 7. [KAIZEN] Final Sync Safety
+        # Final Sync Safety
         # Ensure next_scan_at is pushed forward if this was a manual scan that 
         # somehow missed the trigger update, or a scheduled scan that finished.
         try:
@@ -532,9 +528,7 @@ async def run_scheduler_check_logic():
             return
 
         # 0. Cleanup Zombie Sessions
-        # EXPLANATION: Long-running sessions (likely crashed/stalled) inflate the
-        # "active" scan count and the system-wide error rate stats.
-        # We mark sessions running for > 2 hours as failed to maintain signal integrity.
+        # Cleanup Zombie Sessions: Sessions running for > 2 hours are marked failed.
         try:
             zombie_cutoff = (
                 datetime.now(timezone.utc) - timedelta(hours=2)
@@ -559,14 +553,13 @@ async def run_scheduler_check_logic():
             s_logger.error(f"CRON: Zombie cleanup failed: {str(z_e)}")
 
         # 1. Get all active users with schedules due
-        # KAİZEN: Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
+        # Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
         now_dt = datetime.now(timezone.utc).replace(microsecond=0)
         now_iso = now_dt.isoformat().replace("+00:00", "Z")
         s_logger.info(f"CRON: Checking for scans due before {now_iso}")
 
-        # 1.0 Daily Market Sync (Eyes of Turkey)
-        # EXPLANATION: We trigger a full market event sync once every 24 hours
-        # to refresh fairs and announcements for all users.
+        # Daily Market Sync (Eyes of Turkey)
+        # We trigger a full market event sync once every 24 hours.
         try:
             today_date = date.today().isoformat()
             # Use scan_sessions or a dedicated sync_logs table to track?
@@ -623,7 +616,7 @@ async def run_scheduler_check_logic():
             s_logger.error(f"CRON: Market sync failed: {str(m_e)}")
 
         # 1.1 Fetch a batch of active profiles due for scan
-        # KAİZEN: Use batching (limit 5) to prevent Vercel timeout issues.
+        # Use batching (limit 5) to prevent Vercel timeout issues.
         # This ensures we process a manageable chunk and advance their timestamps
         # before the next cron run picks up the next batch.
         result = (
@@ -713,7 +706,7 @@ async def run_scheduler_check_logic():
         # but it keeps the scan_sessions table clean.
 
         # 2. Process users in parallel with controlled concurrency
-        # [KAIZEN] Controlled Parallelism
+        # Controlled Parallelism
         # We use a semaphore to process 5-10 users at once. This avoids stalling the
         # entire queue if one user's hotels take a long time to scan.
         user_semaphore = asyncio.Semaphore(10)  # Adjust based on server capacity
@@ -764,7 +757,7 @@ async def run_scheduler_check_logic():
                     s_logger.error(f"Error in process_single_user for {user.get('id')}: {u_e}")
 
         # Dispatch batch concurrently
-        # KAİZEN: Process the batch. Even if one fails, others are gathered.
+        # Process the batch. Even if one fails, others are gathered.
         # Since we limited batch to 5, this is safe for a 1-minute cron run.
         tasks = [process_single_user(user) for user in active_due]
         await asyncio.gather(*tasks)
@@ -776,9 +769,7 @@ async def run_scheduler_check_logic():
 
 
 if __name__ == "__main__":
-    # EXPLANATION: CLI Test Mode
-    # Allows manual testing of the scheduler logic from the terminal.
-    # Usage: export PYTHONPATH=$PYTHONPATH:. && python3 backend/services/monitor_service.py
+    # CLI Test Mode: Usage: export PYTHONPATH=$PYTHONPATH:. && python3 backend/services/monitor_service.py
     import asyncio
 
     print("Starting manual scheduler check...")

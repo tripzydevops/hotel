@@ -36,7 +36,7 @@ from typing import List, Dict, Any, Optional
 # =============================================================================
 # TR_MAP — Turkish-to-English Keyword Translation Dictionary
 # =============================================================================
-# EXPLANATION: Google Reviews returns category names in the hotel's locale.
+# Google Reviews returns category names in the hotel's locale.
 # Turkish hotels return names like "Hizmet" (Service), "Temizlik" (Cleanliness).
 # This map normalizes them to English for consistent frontend display.
 #
@@ -132,7 +132,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     if not isinstance(breakdown, list):
         return []
 
-    # EXPLANATION: Initialize all 4 pillars with zero counts.
+    # Initialize all 4 pillars with zero counts.
     # Even if a pillar has no matching categories, it still appears in the output
     # with is_estimated=True so the UI can show it with a fallback value.
     pillars = {
@@ -142,7 +142,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         "Value": {"positive": 0, "negative": 0, "neutral": 0, "total": 0},
     }
 
-    # EXPLANATION: Keyword-to-pillar mapping using substring matching.
+    # Keyword-to-pillar mapping using substring matching.
     # A category like "Oda Temizliği" (Room Cleanliness) will match "temizlik"
     # and be routed to the Cleanliness pillar. The first match wins (break).
     mappings = {
@@ -260,7 +260,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
     found_pillars = set()
 
-    # EXPLANATION: Iterate through every raw category from Google Reviews
+    # Iterate through every raw category from Google Reviews
     # and accumulate its counts into the matching pillar.
     for item in breakdown:
         name = item.get("name", "").lower()
@@ -276,7 +276,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
                 pillars[pillar]["neutral"] += neu
                 pillars[pillar]["total"] += total
 
-                # EXPLANATION: Keep the best description for each pillar.
+                # Keep the best description for each pillar.
                 # "Best" = from the category with the most total mentions,
                 # since that's likely the most representative description.
                 current_description = item.get("description") or item.get("summary")
@@ -290,7 +290,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
                 found_pillars.add(pillar)
                 break
 
-    # EXPLANATION: Calculate a baseline rating from found pillars.
+    # Calculate a baseline rating from found pillars.
     # This is used as a fallback for pillars that had zero matching categories.
     # Example: if Cleanliness=4.2 and Service=4.0 are found but Location is not,
     # Location gets baseline (4.1) minus a small penalty (0.2) = 3.9
@@ -307,7 +307,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
     baseline = round(total_found_rating / num_found, 1) if num_found > 0 else 4.0
 
-    # EXPLANATION: Build the final output list. Always returns exactly 4 items
+    # Build the final output list. Always returns exactly 4 items
     # in fixed order so the UI can render them consistently.
     for name in ["Cleanliness", "Service", "Location", "Value"]:
         stats = pillars[name]
@@ -316,7 +316,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         neu = stats["neutral"]
         total = stats["total"]
 
-        # EXPLANATION: Rating calculation uses weighted scoring:
+        # Rating calculation uses weighted scoring:
         # positive=5 stars, neutral=3 stars, negative=1 star, then averaged.
         if total > 0:
             rating = (pos * 5 + neu * 3 + neg * 1) / total
@@ -335,7 +335,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
                 "total_mentioned": total,
                 "description": stats.get("description"),
                 "is_estimated": total
-                == 0,  # EXPLANATION: UI shows a "~" indicator for estimated pillars
+                == 0,  # UI shows a "~" indicator for estimated pillars
             }
         )
 
@@ -358,7 +358,7 @@ def translate_breakdown(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     translated = []
     for item in breakdown:
         name = item.get("name", "")
-        # EXPLANATION: Try exact match first, then substring match against TR_MAP.
+        # Try exact match first, then substring match against TR_MAP.
         # This handles both "hizmet" (exact) and "Otel Hizmeti" (substring).
         label = name
         for tr_key, en_val in TR_MAP.items():
@@ -398,7 +398,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return []
 
     mentions = []
-    # EXPLANATION: Sort by total_mentioned descending so the most-discussed
+    # Sort by total_mentioned descending so the most-discussed
     # categories appear first in the UI keyword cloud.
     sorted_items = sorted(
         breakdown, key=lambda x: int(x.get("total_mentioned") or 0), reverse=True
@@ -414,7 +414,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         if total == 0:
             continue
 
-        # EXPLANATION: Simple winner-takes-all sentiment classification.
+        # Simple winner-takes-all sentiment classification.
         # The count returned is the winning sentiment's count, not total.
         sentiment = "neutral"
         if pos > neg and pos > neu:
@@ -422,7 +422,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         elif neg > pos and neg > neu:
             sentiment = "negative"
 
-        # EXPLANATION: Translate Turkish category names to English for display.
+        # Translate Turkish category names to English for display.
         display_keyword = name
         for tr_key, en_val in TR_MAP.items():
             if tr_key == name.lower() or tr_key in name.lower():
@@ -442,7 +442,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             }
         )
 
-    return mentions[:15]  # EXPLANATION: Cap at 15 to avoid UI clutter
+    return mentions[:15]  # Cap at 15 to avoid UI clutter
 
 
 def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
@@ -468,7 +468,7 @@ def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
         Dict matching the sentiment breakdown item format, with "synthetic": True
         flag so the frontend can optionally style it differently.
     """
-    # EXPLANATION: Return zeroed-out entry if ARI is missing or invalid.
+    # Return zeroed-out entry if ARI is missing or invalid.
     # The UI will show this pillar as "N/A" or "Insufficient Data".
     if ari is None or ari <= 0:
         return {
@@ -480,7 +480,7 @@ def synthesize_value_score(ari: Optional[float]) -> Dict[str, Any]:
             "rating": 0,
         }
 
-    # EXPLANATION: Linear formula mapping price-to-market ratio to a 1-5 score.
+    # Linear formula mapping price-to-market ratio to a 1-5 score.
     # Cheaper than market = higher value score, more expensive = lower.
     score = max(1.0, min(5.0, 4.0 + (100 - ari) / 25))
 
@@ -525,12 +525,12 @@ def merge_sentiment_breakdowns(
     Returns:
         Merged list sorted by total_mentioned (most discussed first)
     """
-    # EXPLANATION: primary_map acts as the reconciliation registry.
+    # primary_map acts as the reconciliation registry.
     # Key = normalized English category name, Value = accumulated stats.
     primary_map: Dict[str, Dict[str, Any]] = {}
 
     # ── Phase 1: Load existing data into the map ──
-    # EXPLANATION: We normalize existing category names to English first,
+    # We normalize existing category names to English first,
     # because previous scans might have stored them in Turkish.
     for item in existing:
         raw_name = item.get("name") or ""
@@ -541,7 +541,7 @@ def merge_sentiment_breakdowns(
                 break
 
         if normalized_name not in primary_map:
-            # EXPLANATION: Clone item data to avoid mutating the original list.
+            # Clone item data to avoid mutating the original list.
             primary_map[normalized_name] = {
                 "name": normalized_name,
                 "positive": int(item.get("positive") or 0),
@@ -551,7 +551,7 @@ def merge_sentiment_breakdowns(
                 "rating": float(item.get("rating") or 0),
             }
         else:
-            # EXPLANATION: Handle duplicates within existing data itself.
+            # Handle duplicates within existing data itself.
             # This can happen from previous bad merges or data corruption.
             entry = primary_map[normalized_name]
             entry["positive"] += int(item.get("positive") or 0)
@@ -560,7 +560,7 @@ def merge_sentiment_breakdowns(
             entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
 
     # ── Phase 2: Merge new scan data into the map ──
-    # EXPLANATION: For each new category, either accumulate into existing
+    # For each new category, either accumulate into existing
     # entry or create a new one if the category wasn't seen before.
     for item in new:
         raw_name = item.get("name") or ""
@@ -571,14 +571,14 @@ def merge_sentiment_breakdowns(
                 break
 
         if normalized_name in primary_map:
-            # EXPLANATION: Category exists — accumulate counts cumulatively.
+            # Category exists — accumulate counts cumulatively.
             entry = primary_map[normalized_name]
             entry["positive"] += int(item.get("positive") or 0)
             entry["negative"] += int(item.get("negative") or 0)
             entry["neutral"] += int(item.get("neutral") or 0)
             entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
 
-            # EXPLANATION: Smart Content Merge — prefer newer descriptions
+            # Smart Content Merge — prefer newer descriptions
             # since they reflect the latest scan's AI-generated summaries.
             # Only overwrite if the new scan actually provides one.
             if item.get("description"):
@@ -586,7 +586,7 @@ def merge_sentiment_breakdowns(
             if item.get("summary"):
                 entry["summary"] = item["summary"]
 
-            # EXPLANATION: Recalculate rating from accumulated counts.
+            # Recalculate rating from accumulated counts.
             # This is more accurate than averaging old and new ratings
             # because it weights by actual mention volume.
             new_rating = float(item.get("rating") or 0)
@@ -595,7 +595,7 @@ def merge_sentiment_breakdowns(
                     entry["positive"] * 5 + entry["neutral"] * 3 + entry["negative"] * 1
                 ) / entry["total_mentioned"]
         else:
-            # EXPLANATION: Brand new category not seen in existing data.
+            # Brand new category not seen in existing data.
             # Insert it directly into the map.
             primary_map[normalized_name] = {
                 "name": normalized_name,
@@ -609,7 +609,7 @@ def merge_sentiment_breakdowns(
             }
 
     # ── Phase 3: Finalize and sort ──
-    # EXPLANATION: Round ratings to 1 decimal place for clean UI display.
+    # Round ratings to 1 decimal place for clean UI display.
     # Sort by total_mentioned descending so the most-discussed categories
     # appear first in the UI breakdown view.
     merged_list = list(primary_map.values())

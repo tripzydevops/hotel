@@ -1,9 +1,6 @@
-# EXPLANATION: Auth Protocol Divergence (InsForge Compatibility)
-# ARCHITECTURE NOTE (2026-03-29):
-# InsForge is NOT compatible with supabase-py's auth.get_user() which calls
-# /auth/v1/user (GoTrue path). InsForge returns a 0-byte body at that path.
-# Instead, we call InsForge's REST API directly: GET /api/auth/sessions/current
-# This ensures we get actual session data rather than a silent failure.
+# Auth Protocol implementation (InsForge Compatibility)
+# InsForge uses a direct REST API for session verification at /api/auth/sessions/current.
+# This ensures compatibility with the remote infrastructure.
 
 import os
 import traceback
@@ -16,7 +13,7 @@ from backend.utils.logger import get_logger
 import httpx
 from types import SimpleNamespace
 
-# EXPLANATION: Module-level logger replaces raw print() for structured output
+# Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
@@ -40,9 +37,7 @@ async def _verify_token_via_insforge(token: str) -> dict:
         "Content-Type": "application/json",
     }
     
-    # EXPLANATION: Direct Session Verification
-    # We bypass the client libraries during verification to handle InsForge's
-    # custom REST auth layer. This fixed the "Invalid Session" loops.
+    # Direct Session Verification via REST API.
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(url, headers=headers)
     
@@ -138,22 +133,22 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
 
         user_id = getattr(user, "id", None)
 
-        # EXPLANATION: User Verification Logic (Fail-Open)
+        # User Verification Logic (Fail-Open)
         # We perform a multi-table check:
         # 1. 'profiles' (legacy) for roles.
         # 2. 'user_profiles' (modern) for subscription and verification status.
         # Check Account Status
         status = "active"
-        is_verified = True # V24 FAIL-SAFE: Default to True if InsForge session is valid
+        is_verified = True # Default to True if InsForge session is valid
         user_role = "authenticated"
 
         email = getattr(user, 'email', 'No Email')
-        logger.info(f"AUDIT: Checking verification for {user_id} ({email})")
+        logger.info(f"Checking verification for {user_id} ({email})")
         
         # Diagnostic: Log SUPABASE connection details
         try:
             active_url = str(db.supabase_url) if hasattr(db, 'supabase_url') else "Unknown"
-            logger.info(f"AUDIT: Supabase Client Target URL: {active_url}")
+            logger.info(f"Supabase Client Target URL: {active_url}")
         except:
             pass
 
@@ -169,7 +164,7 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
             logger.info(f"DB PROFILE CHECK for {user_id}: {res.data}")
             if res.data:
                 user_role = res.data.get("role", "authenticated")
-                logger.info(f"AUDIT: Found legacy profile role: {user_role}")
+                logger.info(f"Found legacy profile role: {user_role}")
             
             # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
             res2 = (
@@ -189,18 +184,13 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
                 is_verified_val = res2.data.get("is_verified")
                 if is_verified_val is False:
                     is_verified = False
-                    logger.warning(f"AUDIT: User {user_id} EXPLICITLY NOT VERIFIED in database.")
+                    logger.warning(f"User {user_id} explicitly not verified in database.")
                 
                 user_role = res2.data.get("role") or user_role
-                logger.info(f"AUDIT: Found user_profile: role={user_role}, status={status}, is_verified_val={is_verified_val}")
+                logger.info(f"Found user_profile: role={user_role}, status={status}, is_verified_val={is_verified_val}")
             else:
-                # EXPLANATION: Auth-Gate Self-Healing (Resilience)
-                # A missing user_profiles row means the cleanup script will
-                # treat ALL of this user's hotels as unprotected orphans.
-                # We create the profile NOW, at the auth gate, so every
-                # downstream route can rely on its existence. This prevents
-                # user data from being accidentally purged by late-night cron jobs.
-                logger.info(f"AUDIT: No user_profile found for {user_id}, triggering self-healing...")
+                # Ensure a row exists in user_profiles to prevent downstream data orphans.
+                logger.info(f"No user_profile found for {user_id}, triggering initialization...")
                 try:
                     from backend.services.profile_service import get_enriched_profile_logic
                     healed_profile = await get_enriched_profile_logic(user_id, None, db)
@@ -210,16 +200,16 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
                         if is_verified_val is False:
                             is_verified = False
                         user_role = healed_profile.get("role") or user_role
-                        logger.info(f"AUDIT: Self-healed profile for {user_id}: role={user_role}, status={status}")
+                        logger.info(f"Self-healed profile for {user_id}: role={user_role}, status={status}")
                 except Exception as heal_e:
-                    logger.error(f"AUDIT: Self-healing failed for {user_id}: {heal_e}")
+                    logger.error(f"Self-healing failed for {user_id}: {heal_e}")
                     # Non-fatal: user can still proceed with session defaults
 
         except Exception as status_e:
-            logger.error(f"AUDIT: Verification check error for {user_id}: {status_e}")
+            logger.error(f"Verification check error for {user_id}: {status_e}")
             logger.error(traceback.format_exc())
 
-        # [POLICY] Enforce Admin Verification
+        # Enforce Admin Verification
         is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"]
         logger.info(f"AUTH GATE RESULT: is_verified={is_verified}, is_admin={is_admin}, role={user_role}")
         

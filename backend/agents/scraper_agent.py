@@ -10,11 +10,10 @@ from backend.utils.room_normalizer import RoomTypeNormalizer
 
 class ScraperAgent:
     """
-    Agent responsible for high-speed data acquisition from SerpApi.
-    2026 Strategy: Decoupled from monolith for independent scaling.
+    Agent responsible for data acquisition from SerpApi.
     """
 
-    # KAİZEN: Global Concurrency Control
+    # Global Concurrency Control
     # This semaphore is shared across all instances of ScraperAgent in this process.
     # It ensures that even if we process multiple users in parallel, the total 
     # number of concurrent SerpApi requests remains within safe limits.
@@ -90,9 +89,9 @@ class ScraperAgent:
 
     async def _check_global_cache(self, serp_api_id: str, check_in: date) -> Optional[Dict[str, Any]]:
         """
-        KAİZEN: Cross-User Shared Cache (GlobalPulse)
+        Cross-User Shared Cache
         Searches price_logs for ANY hotel that shares the same serp_api_id.
-        Verification logic: Data must be within 12 hours.
+        Verification logic: Data must be within 3 hours.
         """
         if not serp_api_id or serp_api_id == "None":
             return None
@@ -105,9 +104,9 @@ class ScraperAgent:
             if not sharing_hotel_ids:
                 return None
 
-            # GlobalPulse Strategy: Check if anyone else has scanned this hotel in the last 3 hours.
+            # Check if anyone else has scanned this hotel in the last 3 hours.
             # This is our cross-user cache and pooling layer to handle duplicates.
-            # [FIX] Use UTC-aware datetime for comparison to prevent timezone drift.
+            # Use UTC-aware datetime for comparison to prevent timezone drift.
             three_hours_ago = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
             
             logs_res = (
@@ -124,17 +123,14 @@ class ScraperAgent:
             if logs_res.data:
                 log = logs_res.data[0]
                 
-                # KAİZEN: Forced Full Intelligence Rule
-                # If the cache hit lacks room types but we know this is a tokenized property,
-                # we bypass the cache to ensure we get a fresh deep scan.
                 cached_rooms = log.get("room_types", [])
                 cached_offers = log.get("parity_offers", [])
                 
+                # Bypass cache if it lacks deep data (rooms/offers).
                 if not cached_rooms or not cached_offers:
-                    print(f"[GlobalPulse] BYPASS for {serp_api_id}: Cache lacks deep data (Rooms: {len(cached_rooms)}, Offers: {len(cached_offers)})")
                     return None
 
-                print(f"[GlobalPulse] HIT for {serp_api_id} on {check_in}")
+                print(f"[Cache Hit] {serp_api_id} on {check_in}")
                 return {
                     "price": float(log["price"]),
                     "currency": log.get("currency", "USD"),
@@ -144,10 +140,10 @@ class ScraperAgent:
                     "room_types": cached_rooms,
                     "metadata": log.get("metadata", {}),
                     "recorded_at": log["recorded_at"],
-                    "source": "global_pulse"
+                    "source": "global_cache"
                 }
         except Exception as e:
-            print(f"[GlobalPulse] Cache lookup error: {e}")
+            print(f"[Cache] Lookup error: {e}")
             
         return None
 
@@ -208,7 +204,7 @@ class ScraperAgent:
 
                     adults = options.adults if options and options.adults else (hotel.get("default_adults") or 2)
 
-                    # 1. GlobalPulse Check
+                    # 1. Global Cache Check
                     price_data = None
                     if not options or not options.skip_cache:
                         price_data = await self._check_global_cache(str(serp_api_id), check_in)
@@ -219,9 +215,7 @@ class ScraperAgent:
                         )
                     else:
                         await self.log_reasoning(session_id, "Cache", "MISS: Fetching fresh from SerpApi.", "info")
-                        # 2. Fetch from Provider
-                        # KAİZEN: SerpApi Priority
-                        # We use ProviderFactory but explicitly request SerpApi unless user forced another.
+                        # Fetch from Provider using SerpApi by default.
                         pref = getattr(options, "provider", "serpapi") if options else "serpapi"
                         provider = ProviderFactory.get_provider(prefer=pref)
                         

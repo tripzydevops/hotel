@@ -20,24 +20,22 @@ from backend.utils.sentiment_utils import (
 )
 from backend.utils.logger import get_logger
 
-# [FIX] Added typing-safe import for Google GenAI to satisfy strict linter checks
+# AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
 try:
     from google import genai
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
 
-# EXPLANATION: Module-level logger replaces raw print() for structured output
+# AGENT_LOGIC: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
 
 async def get_sentiment_trends(
     db: Client, hotel_id: str, limit: int = 10
 ) -> Dict[str, Any]:
-    """
-    KAIZEN: Sentiment Trend Engine
-    Analyzes historical sentiment data to determine momentum and stability.
-    """
+    # AGENT_FEATURE: Sentiment Trend Engine
+    # Analyzes historical sentiment data to determine momentum and stability.
     try:
         res = (
             db.table("sentiment_history")
@@ -59,7 +57,7 @@ async def get_sentiment_trends(
         calc_momentum: float = float(ratings[-1] - ratings[0]) if ratings else 0.0
         # Use explicit shadowing for linter type narrowing
         momentum: float = 0.0
-        # [FIX] Corrected indentation for manual math
+        # AGENT_FIX: Corrected indentation for manual math
         momentum = float(int(float(calc_momentum) * 100) / 100.0)
 
         # Stability: Standard deviation (using utility)
@@ -67,7 +65,7 @@ async def get_sentiment_trends(
         raw_stability: float = float(max(0.0, 1.0 - volatility))
         stability: float = 1.0  # 1.0 is perfectly stable
         if isinstance(raw_stability, (int, float)):
-            # [FIX] Manual truncation for stability
+            # AGENT_FIX: Manual truncation for stability
             stability = float(int(float(raw_stability) * 100) / 100.0)
 
         trend = "stable"
@@ -290,7 +288,7 @@ def get_genai_client():
             api_key = os.getenv("GOOGLE_API_KEY")
             if api_key:
                 from google import genai
-                # [KAIZEN] Using modern genai.Client
+                # AGENT_FEATURE: Using modern genai.Client
                 _genai_client = genai.Client(api_key=api_key)
         except Exception as e:
             logger.error(f"[AI] Failed to initialize Google GenAI Client: {e}")
@@ -336,7 +334,7 @@ async def stream_narrative_gen(
             yield generate_synthetic_narrative(ari, sent_index, dna_text, str(hotel_name or "Unknown"))
             return
 
-        # [KAIZEN] Using modern interactions API with streaming and Gemini 3
+        # AGENT_FEATURE: Using modern interactions API with streaming and Gemini 3
         # Use asyncio.to_thread to set up the stream without blocking
         stream = await asyncio.to_thread(
             client.interactions.create,
@@ -390,7 +388,7 @@ def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
         if my_s > 0 and my_s < mkt_s * 0.95:
             checklist.append({"pillar": p, "issue": f"{p} is below market.", "action": f"Task: {p} audit."})
     if not checklist: checklist.append({"pillar": "Global", "issue": "Performing well.", "action": "Maintain."})
-    # [FIX] cast(Any, ...) is required here because the IDE's linter environment 
+    # AGENT_FIX: cast(Any, ...) is required here because the IDE's linter environment 
     # incorrectly assumes list.__getitem__ only supports integer indices, not slices.
     return cast(Any, checklist)[:3]
 
@@ -457,7 +455,7 @@ async def perform_market_analysis(
                 })
                 if is_target:
                     target_price = conv
-    # [FIX] Comprehensive Pivot for Daily Prices (Rate Spread Chart)
+    # AGENT_FIX: Comprehensive Pivot for Daily Prices (Rate Spread Chart)
     # Using explicit typing to assist IDE inference
     daily_snapshot_map: Dict[str, Dict[str, Any]] = {}
     
@@ -470,12 +468,12 @@ async def perform_market_analysis(
         logs_slice: List[Dict[str, Any]] = cast(List[Dict[str, Any]], p_logs)[:100]
         
         for p_log in logs_slice:
-            # [KAIZEN] Prioritize check_in_date for actual stay-based analysis
+            # AGENT_FEATURE: Prioritize check_in_date for actual stay-based analysis
             # Current dashboard 'Rate Spread' expects stay dates, not scan times.
             raw_date = p_log.get("check_in_date") or p_log.get("recorded_at")
             if not raw_date or not isinstance(raw_date, str): continue
             
-            # [FIX] Strict date cleaning to avoid "Invalid Date" in frontend
+            # AGENT_FIX: Strict date cleaning to avoid "Invalid Date" in frontend
             clean_date = raw_date.strip()
             if not clean_date: continue
             
@@ -503,7 +501,7 @@ async def perform_market_analysis(
                         "seen_ids": set()
                     }
                 
-                # [KAIZEN] Intraday Event Collection & Detection
+                # AGENT_FEATURE: Intraday Event Collection & Detection
                 # We compare with the previous scan for the same stay date to detect shifts.
                 prev_price = None
                 # Logs are sorted desc by recorded_at, so the 'next' log in the loop 
@@ -566,7 +564,7 @@ async def perform_market_analysis(
         # Calculate daily market average
         d_avg = sum(c_vals) / len(c_vals) if c_vals else 0.0
         
-        # [FIX] Strict Room Type Display
+        # AGENT_FIX: Strict Room Type Display
         # If user is looking at a Premium room type (Suite, Deluxe etc.), we
         # must NOT fall back to market average if target hotel is sold out.
         # Standard requests still use the market average fallback to keep the line consistent.
@@ -610,9 +608,9 @@ async def perform_market_analysis(
     min_h_obj = next((h for h in price_rank_list if h["price"] == market_min), {"name": "N/A"})
     max_h_obj = next((h for h in price_rank_list if h["price"] == market_max), {"name": "N/A"})
     
-    # [NEW] Collect all available room types in the market logs for the dropdown
+    # AGENT_FEATURE: Collect all available room types in the market logs for the dropdown
     # We scan more than just the first log to ensure stability of the dropdown options.
-    # [KAIZEN] Always include core categories to ensure they are selectable in the UI
+    # AGENT_FEATURE: Always include core categories to ensure they are selectable in the UI
     all_room_names = {"Standard", "Deluxe", "Suite"}
     for p_logs in hotel_prices_map.values():
         # Scan up to 30 recent logs for each hotel to capture all room types they've recently offered
@@ -625,7 +623,7 @@ async def perform_market_analysis(
                     if name:
                         all_room_names.add(name)
     
-    # [NEW] Pre-map hotels to the frontend's interface
+    # AGENT_FEATURE: Pre-map hotels to the frontend's interface
     transformed_hotels = [
         {"id": str(h["id"]), "name": h.get("name", "Unknown"), "is_target": str(h["id"]) == target_hotel_id}
         for h in hotels
@@ -643,7 +641,7 @@ async def perform_market_analysis(
     if ari and ari > 110: advisory_keys.append("overpriced")
     if sent_index and sent_index > 105: advisory_keys.append("strong_sentiment")
     
-    # [FIX] Type stability for final return
+    # AGENT_FIX: Type stability for final return
     ari_val: float = float(ari or 100.0)
     sent_val: float = float(sent_index or 100.0)
 
@@ -704,14 +702,14 @@ async def get_market_intelligence_data(
     search_query: Optional[str] = None,
     admin_db: Optional[Client] = None
 ) -> Dict[str, Any]:
-    # [KAIZEN] Analysis Service now utilizes admin_db to bypass RLS for faster intelligence
+    # AGENT_FEATURE: Analysis Service now utilizes admin_db to bypass RLS for faster intelligence
     query_db = admin_db if admin_db else db
-    # EXPLANATION: Many-to-Many Migration (Kaizen 2026)
+    # AGENT_LOGIC: Many-to-Many Migration (Kaizen 2026)
     # Replaced 1:N query (hotels.user_id) with Many-to-Many join via user_hotels table.
     # This allows multiple users to track/share the same hotel entities.
     logger.info(f"[Analysis] Mapping hotels via user_hotels for userId: {user_id}")
     
-    # [FIX] Using join table to fetch shared hotel entities with user-specific overrides
+    # AGENT_FIX: Using join table to fetch shared hotel entities with user-specific overrides
     user_hotels_res = query_db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).execute()
     
     all_hotels = []
@@ -734,12 +732,12 @@ async def get_market_intelligence_data(
 
     hotels = [h for h in all_hotels if not h.get("deleted_at")]
     
-    # [NEW] Apply exclude_hotel_ids filter
+    # AGENT_FEATURE: Apply exclude_hotel_ids filter
     if exclude_hotel_ids:
         to_exclude = set(exclude_hotel_ids.split(","))
         hotels = [h for h in hotels if str(h.get("id")) not in to_exclude]
         
-    # [NEW] Apply search_query filter
+    # AGENT_FEATURE: Apply search_query filter
     if search_query:
         sq = search_query.lower()
         hotels = [h for h in hotels if sq in str(h.get("name", "")).lower() or sq in str(h.get("location", "")).lower()]
@@ -771,7 +769,7 @@ async def get_market_intelligence_data(
         }
 
     h_ids = [str(h["id"]) for h in hotels]
-    # [OPTIMIZED] Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
+    # AGENT_LOGIC: Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
     p_res = query_db.table("price_logs").select("hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor").in_("hotel_id", h_ids).order("recorded_at", desc=True).limit(1000).execute()
     logs = p_res.data or []
     

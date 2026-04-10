@@ -12,7 +12,7 @@ import json
 from sse_starlette.sse import EventSourceResponse
 from backend.services.ai_service import intelligence_service
 
-# EXPLANATION: Routing Normalization (Regression Fix)
+# AGENT_LOGIC: Routing Normalization (Regression Fix)
 # Removed "/api" prefix from APIRouter to avoid doubled paths 
 # (e.g., /api/api/analysis/...) when registered in main.py.
 router = APIRouter(tags=["analysis"])
@@ -28,14 +28,14 @@ async def discover_competitors_v1(
     """
     Autonomous Rival Discovery.
     """
-    # EXPLANATION: AI-Driven Competitor Discovery
+    # AGENT_LOGIC: AI-Driven Competitor Discovery
     # Uses vector search and semantic similarity to automatically identify
     # potential competitors for a newly tracked hotel.
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database service unavailable")
         
-        # [NEW] Ownership Check (Many-to-Many Architecture)
+        # AGENT_FEATURE: Ownership Check (Many-to-Many Architecture)
         from backend.services.analysis_service import check_hotel_ownership
         is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
         if not is_owner:
@@ -50,7 +50,7 @@ async def discover_competitors_v1(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# EXPLANATION: Dual Route Registration
+# AGENT_LOGIC: Dual Route Registration
 # The frontend (lib/api.ts) calls GET /api/analysis/{userId} but the original
 # route was POST /api/analysis/market/{user_id}. Both path and method were
 # mismatched, causing all analysis pages to show "N/A" / empty data.
@@ -72,7 +72,7 @@ async def get_market_intelligence(
     """
     Generates a deep market analysis for the user's city.
     """
-    # EXPLANATION: Thin Route Handler (Refactored)
+    # AGENT_LOGIC: Thin Route Handler (Refactored)
     user_id = current_user.id
     from backend.services.analysis_service import get_market_intelligence_data
 
@@ -137,7 +137,7 @@ async def get_sentiment_history(
     from backend.utils.logger import get_logger
 
     try:
-        # [NEW] Ownership Check
+        # AGENT_FEATURE: Ownership Check
         from backend.services.analysis_service import check_hotel_ownership
         is_owner = await check_hotel_ownership(db, str(current_user.id), str(hotel_id))
         if not is_owner:
@@ -167,7 +167,7 @@ async def get_sentiment_history(
                     "date": record.get("recorded_at")
                     or record.get(
                         "created_at"
-                    ),  # [FIX] Use recorded_at as primary date
+                    ),  # AGENT_FIX: Use recorded_at as primary date
                     "rating": record.get("rating"),
                     "breakdown": normalized,
                 }
@@ -196,7 +196,7 @@ async def debug_analysis_data(
 
         diag: Dict[str, Any] = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
 
-        # [FIX] Migration to Many-to-Many - Fetching hotels via join table for diagnostics
+        # AGENT_FIX: Migration to Many-to-Many - Fetching hotels via join table for diagnostics
         user_hotels_res = (
             db.table("user_hotels")
             .select("hotel_id, hotels(id, name, is_target_hotel, location, serp_api_id)")
@@ -262,7 +262,7 @@ async def debug_analysis_data(
             rt = r.get("room_types") or []
             recent_logs.append(
                 {
-                    # [FIX] Robust cast-slicing for dashboard diagnostics
+                    # AGENT_FIX: Robust cast-slicing for dashboard diagnostics
                     "hotel_id": cast(Any, str(r.get("hotel_id", "?")))[:8],
                     "price": r.get("price"),
                     "currency": r.get("currency"),
@@ -299,7 +299,7 @@ async def debug_analysis_data(
                         "completed_at": cast(Any, str(s.get("completed_at", "?")))[:19]
                         if s.get("completed_at")
                         else None,
-                        # [FIX] cast(Any, ...) for trace slicing compatibility
+                        # AGENT_FIX: cast(Any, ...) for trace slicing compatibility
                         "trace_summary": cast(Any, trace)[-3:]
                         if isinstance(trace, list)
                         else cast(Any, str(trace))[:200],
@@ -346,7 +346,7 @@ async def stream_market_intelligence(
     current_user=Depends(get_current_active_user),
 ):
     """
-    KAIZEN: AI Business Intelligence Stream (SSE)
+    AGENT_FEATURE: AI Business Intelligence Stream (SSE)
     Streams market data followed by real-time generated narratives.
     """
     from backend.services.analysis_service import (
@@ -401,7 +401,7 @@ async def get_market_intelligence_brief(
     current_user=Depends(get_current_active_user),
 ):
     """
-    KAIZEN: Market Intelligence AI Brief.
+    AGENT_FEATURE: Market Intelligence AI Brief.
     Synthesizes market data into actionable insights.
     """
     from backend.services.analysis_service import get_market_intelligence_data

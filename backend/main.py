@@ -51,29 +51,20 @@ from backend.api import (
     auth_routes,
 )
 
-# EXPLANATION: Vercel Dependency & Import Safety
-# The 'monitor_routes' (and by extension 'main.py') imports 'AnalystAgent', which
-# relies on 'google-genai' SDK. If this package is missing in the root 'requirements.txt'
-# (which Vercel uses for builds), the entire backend will crash with a 500 error at startup.
-# We explicitly pinned 'google-genai>=1.0.0' to resolve this.
-# KAİZEN: Always use gemini-3-* models. gemini-1.5-* is legacy.
+# Import Safety: Ensure all required dependencies are installed.
+# Using gemini-3-* models is recommended.
 
 
 # Initialize FastAPI
-# EXPLANATION: Vercel Routing Normalization
-# Per Attempt 12 (Critical Logic Fix): We MUST NOT set root_path="/api"
-# because our routers already include the "/api" prefix. Setting it
-# causes FastAPI to strip "/api" from incoming requests, making them
-# fail to match the registered routes (Double Prefixing Conflict).
-# KAİZEN: redirect_slashes=False prevents 307 redirects for CORS preflights.
+# Routing is configured to avoid double-prefixing with Vercel.
 app = FastAPI(
     title="Hotel Price API",
     description="Sentinel Core Engine - Market Intelligence Platform",
-    version="2026.03 (V23)",
+    version="2026.03",
     # redirect_slashes=True is the default and preferred for link robustness
 )
 
-# SECURITY MIDDLEWARE: Inject standard protection headers
+# Security Headers Middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -91,7 +82,7 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-# DIAGNOSTIC MIDDLEWARE: Log every request path to identify Vercel prefix issues
+# Request Logging Middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     path = request.url.path
@@ -106,7 +97,7 @@ async def log_requests(request: Request, call_next):
 
 
 
-# DIAGNOSTIC: Root Ping
+# Root Health Check
 @app.get("/ping")
 async def root_ping():
     return {
@@ -124,9 +115,8 @@ async def api_ping():
 
 
 # CORS configuration
-# KAİZEN: Ultra-robust manual CORS handling.
-# Standard CORSMiddleware can sometimes be bypassed by other middlewares or return 405 on OPTIONS.
-# This middleware ENSURES headers are set for all Vercel and InsForge origins.
+# Standard CORSMiddleware can sometimes be bypassed or return 405 on OPTIONS.
+# This manual middleware ensures headers are set for all Vercel and InsForge origins.
 @app.middleware("http")
 async def manual_cors_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
@@ -134,14 +124,13 @@ async def manual_cors_middleware(request: Request, call_next):
     else:
         response = await call_next(request)
     
-    # PROD DIAGNOSTICS: Log token presence for auth debugging
+    # Log token presence for auth debugging
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
-        # Log only the first 15 chars of token for safety
         token_hint = f"{auth_header[:15]}..." 
-        logger.info(f"DIAG: Auth Header detected on {request.url.path} | {token_hint}")
+        logger.info(f"Auth header detected on {request.url.path}")
     elif request.url.path.startswith("/api/auth"):
-        logger.info(f"DIAG: No Auth Header on sensitive path: {request.url.path}")
+        logger.info(f"No auth header on sensitive path: {request.url.path}")
 
     origin = request.headers.get("origin")
     if origin and response and (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
@@ -158,18 +147,15 @@ async def manual_cors_middleware(request: Request, call_next):
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-# EXPLANATION: Centralized Error Handler (backend-specialist pattern)
-# Per .agent rules: "Don't expose internal errors to client" and
-# "Implement centralized error handling". Traces are logged server-side only.
+# Centralized Error Handling
+# Internal tracing is logged server-side only to avoid exposure.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
     Global exception handler for all unhandled errors.
     Ensures internal tracing is logged but not exposed to client.
     """
-    # EXPLANATION: Transparent Error Handling
-    # We do NOT want to mask 401, 403, 404, etc. as 500s because it hides
-    # the root cause from the client and makes debugging impossible.
+    # Maintain status codes and details for standard exceptions (401, 403, etc.)
     if hasattr(exc, "status_code"):
         status_code = getattr(exc, "status_code")
         detail = getattr(exc, "detail", str(exc))
@@ -299,10 +285,7 @@ app.include_router(market_routes.router, prefix="/api")
 app.include_router(reports_routes.router, prefix="/api")
 
 # 3. Operational Routes
-# EXPLANATION: Centralized API Routing (Regression Fix)
-# We moved the "/api" prefixing here to prevent "double-prefixing" 
-# bugs where individual routers were also adding "/api".
-# All routes are now registered relative to the root, prefixed here.
+# Centralized API Routing: Registered relative to /api prefix.
 app.include_router(admin_routes.router, prefix="/api")
 app.include_router(monitor_routes.router, prefix="/api")
 app.include_router(monitor_routes.router_legacy, include_in_schema=False, prefix="/api")
@@ -316,7 +299,7 @@ app.include_router(recovery_routes.router, prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     """
-    Diagnostic startup check for system health.
+    Startup health check.
     """
     from backend.services.ai_service import HAS_GENAI
     print("--- STARTUP DIAGNOSTICS ---")
@@ -358,13 +341,9 @@ async def trigger_cron_job(key: str):
 
     db = get_supabase()
     
-    # [ROBUST] Synchronous Batch Processing
-    # We remove BackgroundTasks because Vercel/Serverless may suspend execution
-    # immediately after the response is sent. By running directly, we ensure
-    # that the batch is processed and the GitHub Action trigger tracks actual success.
     try:
-        # We apply a timeout (55s) to stay within Vercel's Pro limit (60s)
-        # while processing the current batch.
+        # Standard maintenance batch processing.
+        # Enforces a 55s timeout to stay within serverless limits.
         await asyncio.wait_for(
             asyncio.gather(
                 run_scheduler_check_logic(),

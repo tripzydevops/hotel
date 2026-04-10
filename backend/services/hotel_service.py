@@ -234,7 +234,7 @@ async def add_hotel_to_account_logic(
         
         if existing_hotel:
             hotel_id = existing_hotel["id"]
-            # [FIX] Update missing metadata if provided in this call
+            # Update missing metadata if provided in this call
             update_fields = {}
             for field in ["serp_api_id", "latitude", "longitude", "address", "phone", "website", "cid", "place_id", "stars"]:
                 if not existing_hotel.get(field) and hotel_data.get(field):
@@ -246,7 +246,7 @@ async def add_hotel_to_account_logic(
                     existing_hotel = upd_res.data[0]
         else:
             # Prepare metadata for NEW master record
-            # KAİZEN: Automatic Token Discovery (Phase 1.1)
+            # Automatic Token Discovery (Phase 1.1)
             # Find matching property in global directory if not provided
             rating = hotel_data.get("rating")
             review_count = hotel_data.get("review_count")
@@ -389,7 +389,7 @@ async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str
     """
     Retrieves a hotel with user-specific overrides from user_hotels.
     """
-    # [FIX] Fetch merged data: Global hotel + User settings
+    # Fetch merged data: Global hotel + User settings
     res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).single().execute()
     
     if not res.data:

@@ -17,9 +17,8 @@ from backend.services.subscription import SubscriptionService
 from backend.utils.security import verify_ownership
 from datetime import datetime, timezone
 
-# EXPLANATION: Routing Normalization (Regression Fix)
-# Removed "/api" prefix from APIRouter to avoid doubled paths 
-# (e.g., /api/api/hotels/...) when registered in main.py.
+# Routing Normalization
+# Prefix is registered centrally in main.py.
 router = APIRouter(tags=["hotels"])
 
 
@@ -33,13 +32,8 @@ async def search_hotel_directory(
     """Search hotel directory (local + live callback). No auth required."""
     if not q or len(q.strip()) < 2:
         return []
-    # EXPLANATION: Unified Hotel Search (Public Access)
-    # This endpoint is public to support the "Add Hotel" discovery flow
-    # without requiring a session for initial searching.
+    # Unified Hotel Search (Public Access)
     return await search_hotel_directory_logic(q, user_id, db, city)
-    # EXPLANATION: Search Route Enhancement
-    # Added 'city' parameter to endpoints to support the frontend's
-    # new smart filtering capability in the Add Hotel modal.
 
 
 @router.get("/hotels", response_model=List[Hotel])
@@ -55,7 +49,7 @@ async def list_hotels(
     if not db:
         return []
         
-    # [FIX] Query via user_hotels mapping to support shared hotel architecture
+    # Query via user_hotels mapping to support shared hotel architecture
     # This join pulls user-specific overrides from user_hotels + master hotel data
     res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).execute()
     data = res.data or []
@@ -112,7 +106,8 @@ async def create_hotel(
     Creates a hotel with plan-based limits, profile self-healing, and
     token discovery via the unified service layer.
 
-    FIX (March 2026): Previously this route did a raw db.table("hotels").insert(),
+    AGENT_FIX: Migration Logic (March 2026)
+    Previously this route did a raw db.table("hotels").insert(),
     which bypassed token discovery and left hotels without property_token/serp_api_id.
     The cleanup script then deleted them as "orphans". Now we delegate to
     add_hotel_to_account_logic which handles enrichment, directory sync, and logging.
@@ -152,7 +147,7 @@ async def update_hotel(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    # [FIX] Use unified service logic for multi-tenant updates
+    # AGENT_FIX: Use unified service logic for multi-tenant updates
     # This ensures settings like 'is_target_hotel' or 'pricing_dna' are 
     # saved to the user_hotels table, not the global shared hotels record.
     return await update_hotel_logic(hotel_id, current_user.id, hotel.model_dump(exclude_unset=True), db)
@@ -164,7 +159,7 @@ async def delete_hotel(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    # [FIX] Soft-delete for unique user association
+    # AGENT_FIX: Soft-delete for unique user association
     # We remove the mapping from user_hotels but keep the master hotel record intact.
     # The 'deleted_at' on the master record is only used by admins or if it was the last user.
     res = db.table("user_hotels").delete().eq("user_id", str(current_user.id)).eq("hotel_id", str(hotel_id)).execute()

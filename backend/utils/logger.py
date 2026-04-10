@@ -25,7 +25,7 @@ import os
 import sys
 
 
-# EXPLANATION: Environment Detection
+# Environment Detection
 # In production (Vercel), LOG_LEVEL defaults to WARNING to reduce noise.
 # Locally, it defaults to DEBUG for maximum visibility during development.
 # Override with LOG_LEVEL=DEBUG in .env for verbose production debugging.
@@ -35,13 +35,13 @@ _IS_PRODUCTION = os.environ.get("VERCEL", "") == "1"
 
 class StructuredFormatter(logging.Formatter):
     """
-    EXPLANATION: Production-Ready Formatter
+    # Production-Ready Formatter
     Outputs logs in a structured format that Vercel and log aggregators can parse.
     Includes timestamp, level, logger name, and message on a single line.
     """
 
     def format(self, record: logging.LogRecord) -> str:
-        # EXPLANATION: Single-Line Structured Output
+        # Single-Line Structured Output
         # Format: [LEVEL] module_name | message
         # This is grep-friendly and works well with Vercel's log viewer.
         level = record.levelname.ljust(8)
@@ -54,7 +54,7 @@ def get_logger(name: str) -> logging.Logger:
     """
     Factory function to create a named logger with consistent configuration.
 
-    EXPLANATION: Module-Level Logger Pattern
+    # Module-Level Logger Pattern
     Each module calls get_logger(__name__) once at module level.
     This gives us per-module filtering and makes log sources traceable.
 
@@ -66,7 +66,7 @@ def get_logger(name: str) -> logging.Logger:
     """
     logger = logging.getLogger(name)
 
-    # EXPLANATION: Prevent Duplicate Handlers
+    # Prevent Duplicate Handlers
     # If the logger already has handlers (e.g., module imported multiple times),
     # we skip adding another one to avoid duplicate log lines.
     if not logger.handlers:
@@ -75,7 +75,7 @@ def get_logger(name: str) -> logging.Logger:
         logger.addHandler(handler)
         logger.setLevel(getattr(logging, _LOG_LEVEL, logging.INFO))
 
-        # EXPLANATION: Propagation Control
+        # Propagation Control
         # We disable propagation to the root logger to prevent duplicate output
         # when FastAPI/uvicorn also configure logging.
         logger.propagate = False

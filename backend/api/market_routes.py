@@ -6,12 +6,12 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/market", tags=["Market Intelligence"])
+router = APIRouter(prefix="/market", tags=["Market Intelligence"])
 
 @router.post("/scrape/tobb")
 async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
     """
-    [Stealth Mode] Triggers the TOBB Fair Calendar Scraper.
+    Triggers the TOBB Fair Calendar Scraper.
     """
     from backend.services.market.tobb_scraper import TOBBScraper
     scraper = TOBBScraper(db)
@@ -25,7 +25,7 @@ async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
 @router.post("/scrape/tga")
 async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
     """
-    [Stealth Mode] Triggers the TGA Activity Scraper.
+    Triggers the TGA Activity Scraper.
     """
     from backend.services.market.tga_scraper import TGAScraper
     scraper = TGAScraper(db)
@@ -57,7 +57,7 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
 @router.post("/scrape/clear")
 async def clear_market_events(db: Client = Depends(get_supabase_rls)):
     """
-    [Dev Tools] Clears all market events from the database.
+    Clears all market events from the database.
     """
     res = db.table("market_events").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
     return {"status": "success", "cleared": len(res.data)}
@@ -78,7 +78,7 @@ async def get_market_events(city: Optional[str] = None, db: Client = Depends(get
     """
     query = db.table("market_events").select("*")
     if city:
-        # KAİZEN: Case-insensitive match for city
+        # Case-insensitive match for city
         query = query.ilike("city", city)
     
     res = query.order("start_date").execute()

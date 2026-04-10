@@ -197,7 +197,7 @@ class NotificationService:
                 "sub": os.getenv("VAPID_SUBJECT", "mailto:admin@rate-sentinel.com")
             }
 
-            # EXPLANATION: JSON Payload for sw.js Compatibility
+            # JSON Payload for sw.js Compatibility
             # sw.js calls event.data.json() and reads .title and .body
             # We must send a JSON string, not plain text.
             payload = json.dumps(

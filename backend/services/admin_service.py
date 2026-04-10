@@ -80,9 +80,8 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         if recent_scans.data:
             api_calls = sum(s.get("hotels_count", 0) for s in recent_scans.data)
 
-        # 5. Scraper Health (Last 24h)
-        # EXPLANATION: Operational Health Index
-        # We calculate health as the percentage of successful or partially successful
+        # Scraper Health (Last 24h)
+        # Calculate health as the percentage of successful or partially successful
         # scans over the last 24 hours. This allows administrators to quickly
         # identify if an external provider (like SerpApi) is experiencing global issues.
         last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()

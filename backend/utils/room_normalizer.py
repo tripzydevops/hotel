@@ -151,24 +151,16 @@ class RoomTypeNormalizer:
         effective_names = cls.CANONICAL_NAMES.copy()
         effective_order = cls.CATEGORY_ORDER.copy()
 
-        # 2. Overlay Database Config (if available)
+        # Overlay Database Config (if available)
         try:
             db_config = ConfigService.get_mappings()
-
-            # Merge Aliases
             if db_config.get("token_map"):
                 effective_tokens.update(db_config["token_map"])
-
-            # Merge Names
             if db_config.get("canonical_names"):
                 effective_names.update(db_config["canonical_names"])
-
-            # Merge Order
             if db_config.get("category_order"):
                 effective_order.update(db_config["category_order"])
-
         except Exception:
-            # If DB fails (e.g. migration not run yet), we just use static defaults
             pass
 
         return {

@@ -21,7 +21,7 @@ class AnalystAgent:
 
     def __init__(self, db: Client, admin_db: Optional[Client] = None):
         self.db = db
-        # [ROBUST] Background persistence requires admin bypass for RLS on query_logs/hotels
+        # Background persistence requires admin bypass for RLS on query_logs/hotels
         self.admin_db = admin_db or get_supabase(admin=True)
         self.adk_agent = MarketIntelligenceAgent()
         self.persistence = ScanPersistenceService(db, admin_db=self.admin_db)
@@ -105,7 +105,7 @@ class AnalystAgent:
         Phase 1: Persists raw scraper data and performs basic heuristic analysis (ARI, basic alerts).
         This must be fast and reliable.
         """
-        # EXPLANATION: Two-Phase Analysis Strategy (Kaizen 2026)
+        # Persistence & Base Analysis
         # We split analysis into two distinct phases to optimize for perceived latency:
         # Phase 1 (Persistence): Saves raw data, runs heuristic alerts (ARI/Parity), and updates DB.
         # Phase 2 (Intelligence): Runs heavy LLM reasoning for strategic market advice.
@@ -167,7 +167,7 @@ class AnalystAgent:
                 self._log_buffer[sid_key].extend(intel_trace)
                 await self._flush_logs(session_id)
 
-            # [KAIZEN 2026] Async Pulse: Refine Pricing DNA after intelligence synthesis
+            # Refine Pricing DNA after intelligence synthesis
             # Only refine for the primary hotel if it's a focused scan
             if scraper_results:
                 primary_hotel_id = str(scraper_results[0].get("hotel_id"))
@@ -181,7 +181,7 @@ class AnalystAgent:
     async def _refine_pricing_dna_for_user(self, user_id: UUID, hotel_id: str):
         """
         Background task to update a user's pricing DNA for a specific property.
-        [TOKEN OPTIMIZATION] Enforces a 7-day (weekly) cooldown period.
+        Enforces a 7-day (weekly) cooldown period.
         """
         try:
             logger.info(f"[AnalystAgent] Checking DNA freshness for User {user_id} -> Hotel {hotel_id}")
@@ -296,7 +296,7 @@ class AnalystAgent:
             serp_ids = [p["serp_api_id"] for p in pulse_data]
 
             # 1. Find all users monitoring these properties (excluding initiator)
-            # KAİZEN: Join with user_hotels to correctly handle many-to-many multitenancy
+            # Join with user_hotels to correctly handle many-to-many multitenancy
             rivals_res = (
                 self.admin_db.table("user_hotels")
                 .select("user_id, hotel_id, role, hotels(id, name, serp_api_id)")

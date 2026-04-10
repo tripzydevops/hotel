@@ -12,9 +12,7 @@ import { useTheme } from "@/lib/theme";
  * Selling point for hotel owners/operators.
  */
 
-/* ===== SCROLL ANIMATION HOOK ===== */
-/* EXPLANATION: Uses IntersectionObserver to trigger fade-in-up animations
-   as sections enter the viewport. Respects prefers-reduced-motion. */
+/* Scroll animation hook for fade-in effects */
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -43,9 +41,7 @@ function useScrollReveal() {
   return { ref, isVisible };
 }
 
-/* ===== ANIMATED COUNTER ===== */
-/* EXPLANATION: Counts up from 0 to target value when visible.
-   Used in the social proof stats bar. */
+/* Animated counter for stats */
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   const { ref, isVisible } = useScrollReveal();
@@ -76,9 +72,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   );
 }
 
-/* ===== SECTION WRAPPER ===== */
-/* EXPLANATION: Reusable wrapper that adds scroll-triggered fade-in-up animation
-   to any section. Keeps animation code DRY. */
+/* Reusable section wrapper for scroll reveals */
 function RevealSection({
   children,
   className = "",
@@ -135,9 +129,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-/* ===== FEATURE ICON COMPONENTS ===== */
-/* EXPLANATION: SVG icons matching Lucide style. Using inline SVGs instead
-   of emojis per ui-ux-pro-max guidelines ("no emoji as icons"). */
+/* Feature icons */
 function IconChart() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -209,10 +201,8 @@ export default function LandingHome() {
     const fetchConfig = async () => {
       try {
         const remoteContent = await api.getLandingConfig(locale);
-        // EXPLANATION: CMS Content Merging Strategy
-        // We prioritize content from the database (CMS) if it exists.
-        // If specific keys are missing in the remote content, the UI components 
-        // below will gracefully fall back to the internationalized dictionaries (`t`).
+        // CMS Content Merging Strategy
+        // Prioritize session-specific or remote content over local fallbacks.
         if (Object.keys(remoteContent).length > 0) {
           // Merge remote with state
           setContent((prev: any) => ({ ...prev, ...remoteContent }));

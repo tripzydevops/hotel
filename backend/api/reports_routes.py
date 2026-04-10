@@ -31,7 +31,7 @@ from backend.services.admin_service import get_reports_logic, export_report_logi
 from backend.models.schemas import BaseModel
 from backend.templates.report_templates import build_deep_ocean_briefing_html, build_admin_report_html
 
-router = APIRouter(prefix="/api/reports", tags=["reports"])
+router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 class BriefingRequest(BaseModel):

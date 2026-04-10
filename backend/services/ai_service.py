@@ -2,7 +2,7 @@ import json
 import os
 from typing import Dict, Any, List, Optional
 
-# [FIX] Added typing-safe import for Google GenAI to satisfy strict linter checks
+# Typing-safe import for Google GenAI to satisfy strict linter checks
 try:
     from google import genai
     from google.genai import types
@@ -26,7 +26,7 @@ class MarketIntelligenceService:
 
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.model_name = "gemini-2.0-flash"  # KAIZEN: Use standard flash model
+        self.model_name = "gemini-2.0-flash"  # Use standard flash model
         self.client = None
         
         if HAS_GENAI and self.api_key:
@@ -42,7 +42,7 @@ class MarketIntelligenceService:
 
     async def generate_market_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        KAIZEN: Market Intelligence Analyst. Summarizes market data into high-level insights.
+        Summarizes market data into high-level insights using Gemini.
         """
         if not self.client:
             return {
@@ -106,8 +106,7 @@ class MarketIntelligenceService:
 
     async def get_embedding(self, text: str) -> Optional[List[float]]:
         """
-        Generates a 768-dimensional vector embedding for the given text.
-        Optimized for Pricing DNA and strategy mapping.
+        Generates a vector embedding for the given text.
         """
         if not self.client:
             return None
