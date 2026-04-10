@@ -34,6 +34,13 @@ async def discover_competitors_v1(
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database service unavailable")
+        
+        # [NEW] Ownership Check (Many-to-Many Architecture)
+        from backend.services.analysis_service import check_hotel_ownership
+        is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+
         from backend.agents.analyst_agent import AnalystAgent
 
         agent = AnalystAgent(db)
@@ -130,6 +137,12 @@ async def get_sentiment_history(
     from backend.utils.logger import get_logger
 
     try:
+        # [NEW] Ownership Check
+        from backend.services.analysis_service import check_hotel_ownership
+        is_owner = await check_hotel_ownership(db, str(current_user.id), str(hotel_id))
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+
         # Fetch history records
         # Note: We filter by hotel_id and limit by days
         res = (
@@ -196,15 +209,7 @@ async def debug_analysis_data(
             if mapping.get("hotels"):
                 hotels.append(mapping["hotels"])
         
-        # Fallback if join table empty (migration period)
-        if not hotels:
-            hotels_res = (
-                db.table("hotels")
-                .select("id, name, is_target_hotel, location, serp_api_id")
-                .eq("user_id", str(user_id))
-                .execute()
-            )
-            hotels = hotels_res.data or []
+        # Legacy fallback removed (hotels table no longer contains user_id)
 
         diag["hotel_count"] = len(hotels)
         diag["hotels"] = [

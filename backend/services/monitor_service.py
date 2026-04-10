@@ -341,10 +341,11 @@ async def run_monitor_background(
         analyst = AnalystAgent(db)
         notifier = NotifierAgent()
 
-        # 2. Get User Settings
+        # 2. Get User Settings (M2M context)
         threshold = 2.0
         settings = {}
         try:
+            # [KAIZEN] Ensure we fetch settings specifically for this user context
             settings_res = (
                 db.table("settings")
                 .select("*")
@@ -417,13 +418,15 @@ async def run_monitor_background(
         # 5. Phase 3: Notifier Agent
         if analysis_summary.get("alerts"):
             try:
-                settings_res = (
-                    db.table("settings")
-                    .select("*")
-                    .eq("user_id", str(user_id))
-                    .execute()
-                )
-                settings = settings_res.data[0] if settings_res.data else None
+                # [KAIZEN] Re-fetch settings if not available from earlier phase
+                if not settings:
+                    settings_res = (
+                        db.table("settings")
+                        .select("*")
+                        .eq("user_id", str(user_id))
+                        .execute()
+                    )
+                    settings = settings_res.data[0] if settings_res.data else None
                 if settings:
                     hotel_name_map = {h["id"]: h["name"] for h in hotels}
                     await notifier.dispatch_alerts(
@@ -580,9 +583,9 @@ async def run_scheduler_check_logic():
             if not last_sync.data:
                 s_logger.info("CRON: Triggering global market intelligence sync (Eyes of Turkey)...")
                 
-                # Create a tracking session
+                # Create a tracking session for GLOBAL sync
                 sync_session = supabase.table("scan_sessions").insert({
-                    "user_id": None, # Global session
+                    "user_id": None, # Global session (system-wide)
                     "session_type": "market_sync",
                     "status": "running",
                     "hotels_count": 0

@@ -164,21 +164,19 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     Why: Ensures that hotel data added by users before the directory feature
     existed becomes shared and searchable by others.
     """
-    # Fetch unique hotels from the main table
+    # Fetch hotels via user_hotels mapping for accurate multitenant directory enrichment
     res = (
-        db.table("hotels")
-        .select("*")
+        db.table("user_hotels")
+        .select("hotel_id, hotels(*)")
         .execute()
     )
     data = res.data or []
-    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
-    hotels_res = [h for h in data if not h.get("deleted_at")]
-    if not hotels_res:
-        return {"status": "success", "count": 0}
-
-    # Extract unique properties
+    
     unique_hotels = {}
-    for h in hotels_res:
+    for assoc in data:
+        h = assoc.get("hotels")
+        if not h or h.get("deleted_at"):
+            continue
         key = f"{h['name'].lower()}|{h.get('location', '').lower()}"
         if key not in unique_hotels:
             unique_hotels[key] = {
@@ -236,6 +234,16 @@ async def add_hotel_to_account_logic(
         
         if existing_hotel:
             hotel_id = existing_hotel["id"]
+            # [FIX] Update missing metadata if provided in this call
+            update_fields = {}
+            for field in ["serp_api_id", "latitude", "longitude", "address", "phone", "website", "cid", "place_id", "stars"]:
+                if not existing_hotel.get(field) and hotel_data.get(field):
+                    update_fields[field] = hotel_data[field]
+            
+            if update_fields:
+                upd_res = db.table("hotels").update(update_fields).eq("id", hotel_id).execute()
+                if upd_res.data:
+                    existing_hotel = upd_res.data[0]
         else:
             # Prepare metadata for NEW master record
             # KAİZEN: Automatic Token Discovery (Phase 1.1)
@@ -309,7 +317,7 @@ async def add_hotel_to_account_logic(
             "is_target": is_target,
             "is_monitored": True,
             "pricing_dna": hotel_data.get("pricing_dna", {}),
-            "preferred_currency": hotel_data.get("preferred_currency", "USD"),
+            "preferred_currency": hotel_data.get("preferred_currency", "TRY"),
             "fixed_check_in": hotel_data.get("fixed_check_in"),
             "fixed_check_out": hotel_data.get("fixed_check_out"),
             "default_adults": hotel_data.get("default_adults", 2)
@@ -348,6 +356,9 @@ async def add_hotel_to_account_logic(
                     "website": existing_hotel.get("website"),
                     "address": existing_hotel.get("address"),
                     "description": existing_hotel.get("description"),
+                    "cid": existing_hotel.get("cid"),
+                    "place_id": existing_hotel.get("place_id"),
+                    "stars": existing_hotel.get("stars"),
                     "last_verified_at": datetime.now().isoformat(),
                 },
                 on_conflict="serp_api_id",

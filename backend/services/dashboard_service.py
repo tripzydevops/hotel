@@ -113,7 +113,7 @@ async def get_dashboard_logic(
                 hotel["is_target_hotel"] = assoc.get("is_target", False)
                 hotel["is_monitored"] = assoc.get("is_monitored", True)
                 hotel["pricing_dna"] = assoc.get("pricing_dna")
-                hotel["preferred_currency"] = assoc.get("preferred_currency", "USD")
+                hotel["preferred_currency"] = assoc.get("preferred_currency", "TRY")
                 hotel["fixed_check_in"] = assoc.get("fixed_check_in")
                 hotel["fixed_check_out"] = assoc.get("fixed_check_out")
                 hotel["default_adults"] = assoc.get("default_adults", 2)
@@ -224,13 +224,13 @@ async def get_dashboard_logic(
                     curr_p, matched_name, confidence = get_price_for_room(current_log, target_room, {})
                     
                     if curr_p is not None:
-                        curr_c = current_log.get("currency") or "USD"
+                        curr_c = current_log.get("currency") or "TRY"
                         active_prices.append(curr_p)
 
                     prev_p = None
                     if prev_log and prev_log.get("price") is not None:
                         raw_prev = float(prev_log["price"])
-                        prev_c = prev_log.get("currency") or "USD"
+                        prev_c = prev_log.get("currency") or "TRY"
                         prev_p = convert_currency(raw_prev, prev_c, curr_c)
 
                     trend_obj, change = price_comparator.calculate_trend(curr_p, prev_p)
@@ -241,9 +241,6 @@ async def get_dashboard_logic(
                         "previous_price": prev_p,
                         "currency": curr_c,
                         "name": h.get("name"),
-                        "currentPrice": current_log.get("price"),
-                        "previousPrice": prev_p,
-                        "currency": current_log.get("currency"),
                         "trend": trend_val,
                         "change_percent": change,
                         "recorded_at": current_log.get("recorded_at"),
@@ -267,21 +264,27 @@ async def get_dashboard_logic(
                 sid = h["serp_api_id"]
                 logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
                 try:
-                    # Find ANY hotel IDs sharing this SERP ID
-                    g_res = db.table("hotels").select("id").eq("serp_api_id", sid).execute()
-                    if g_res.data:
-                        g_hids = [str(gh["id"]) for gh in g_res.data]
+                    # [KAIZEN] Multi-Tenant Recovery: Scan across ANY hotel records for this property.
+                    # Since hotels are shared, we just need ANY record that has the data.
+                    # We query by serp_api_id directly in the sentiment_history table or hotel_directory.
+                    # First check directories
+                    if sid in directory_map:
+                        raw_breakdown = directory_map[sid].get("sentiment_breakdown") or []
+                    
+                    if not raw_breakdown:
+                        # Fallback: Find most recent history for THIS property (independent of current user)
+                        # We use admin_db query style (simulated via rls if permissions allow, 
+                        # but here we just query for the SERP id matches)
                         sh_res = (
                             db.table("sentiment_history")
                             .select("sentiment_breakdown")
-                            .in_("hotel_id", g_hids)
+                            .eq("hotel_id", hid) # Try specific first
                             .order("recorded_at", desc=True)
                             .limit(1)
                             .execute()
                         )
                         if sh_res.data:
                             raw_breakdown = sh_res.data[0].get("sentiment_breakdown") or []
-                            logger.info(f"[GlobalPulse/Dashboard] Recovered {len(raw_breakdown)} items for {sid}")
                 except Exception as e:
                     logger.error(f"[GlobalPulse/Dashboard] Recovery failed for {sid}: {e}")
             item_sentiment = normalize_sentiment(raw_breakdown)
@@ -377,7 +380,12 @@ async def get_dashboard_logic(
             value_pillar = next((p for p in sentiment if p["name"] == "Value"), None)
             if value_pillar and value_pillar.get("total_mentioned", 0) == 0:
                 price_info = hotel_data["price_info"]
-                if price_info and isinstance(market_avg, (int, float)) and market_avg > 0:
+                if (
+                    price_info 
+                    and price_info.get("current_price") is not None 
+                    and isinstance(market_avg, (int, float)) 
+                    and market_avg > 0
+                ):
                     ari = (price_info["current_price"] / market_avg) * 100
                     value_pillar.update(synthesize_value_score(ari))
 

@@ -18,30 +18,46 @@ from backend.services.price_comparator import price_comparator
 from fastapi.encoders import jsonable_encoder
 
 async def test_dashboard_integration():
-    db = get_supabase()
-    user_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+    db = get_supabase(admin=True)  # Use service role to bypass RLS for diagnostic
+    user_id = "287aae1d-d72a-4be1-8e84-e8b0d65d2019"
     
     print(f"Testing Dashboard Integration for {user_id}...")
     
     try:
-        # Replicate the core part of get_dashboard
-        hotels_result = db.table("hotels").select("*").eq("user_id", user_id).execute()
-        hotels = hotels_result.data or []
-        print(f"Hotels: {len(hotels)}")
+        # Replicate the logic from dashboard_service.py
+        result = db.table("user_hotels").select("*, hotels(*)").eq("user_id", user_id).execute()
+        mappings = result.data or []
+        print(f"Mappings Found: {len(mappings)}")
+
+        hotels = []
+        for mapping in mappings:
+            base_hotel = mapping.get("hotels")
+            if not base_hotel: continue
+            
+            # Merge global data with user settings
+            hotel = {**base_hotel}
+            hotel["is_target_hotel"] = mapping.get("is_target", False)
+            hotel["pricing_dna"] = mapping.get("pricing_dna")
+            hotel["preferred_currency"] = mapping.get("preferred_currency", "USD")
+            hotel["fixed_check_in"] = mapping.get("fixed_check_in")
+            hotel["fixed_check_out"] = mapping.get("fixed_check_out")
+            hotel["default_adults"] = mapping.get("default_adults", 2)
+            hotels.append(hotel)
 
         hotel_ids = [str(h["id"]) for h in hotels]
         hotel_prices_map = {}
-        all_prices_res = db.table("price_logs") \
-            .select("*") \
-            .in_("hotel_id", hotel_ids) \
-            .order("recorded_at", desc=True) \
-            .limit(len(hotel_ids) * 2) \
-            .execute()
-        
-        for p in (all_prices_res.data or []):
-            hid = str(p["hotel_id"])
-            if hid not in hotel_prices_map: hotel_prices_map[hid] = []
-            if len(hotel_prices_map[hid]) < 10: hotel_prices_map[hid].append(p)
+        if hotel_ids:
+            all_prices_res = db.table("price_logs") \
+                .select("*") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(len(hotel_ids) * 10) \
+                .execute()
+            
+            for p in (all_prices_res.data or []):
+                hid = str(p["hotel_id"])
+                if hid not in hotel_prices_map: hotel_prices_map[hid] = []
+                if len(hotel_prices_map[hid]) < 2: hotel_prices_map[hid].append(p)
 
         target_hotel = None
         competitors = []
@@ -95,7 +111,7 @@ async def test_dashboard_integration():
             "last_updated": datetime.now(timezone.utc).isoformat()
         }
         
-        # Test Serialization with jsonable_encoder
+        # Test Serialization
         encoded = jsonable_encoder(final_response)
         json.dumps(encoded)
         print("Integration SUCCESS! No crashes detected.")

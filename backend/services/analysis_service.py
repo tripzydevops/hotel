@@ -729,11 +729,8 @@ async def get_market_intelligence_data(
             hotel["user_id_override"] = mapping.get("user_id") # For context if needed
             all_hotels.append(hotel)
             
-    # Fallback to legacy field if join table is empty (graceful migration)
-    if not all_hotels:
-        logger.info("[Analysis] Join table empty, falling back to legacy user_id field")
-        res = query_db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,pricing_dna,deleted_at").eq("user_id", str(user_id)).execute()
-        all_hotels = res.data or []
+    # No legacy fallback - user_id column removed from hotels table.
+    # If no hotels found in user_hotels mappings, returning empty list is correct.
 
     hotels = [h for h in all_hotels if not h.get("deleted_at")]
     
@@ -806,3 +803,21 @@ async def get_market_intelligence_data(
         display_currency=display_currency, room_type=room_type,
         start_date=start_date, end_date=end_date, allowed_room_names_map=allowed_map
     )
+
+async def check_hotel_ownership(db: Client, user_id: str, hotel_id: str, admin_bypass: bool = True) -> bool:
+    """
+    Checks if a user owns a specific hotel via the user_hotels mapping table.
+    """
+    try:
+        # 1. Admin Bypass
+        if admin_bypass:
+            profile_res = db.table("user_profiles").select("role").eq("user_id", str(user_id)).maybe_single().execute()
+            if profile_res.data and profile_res.data.get("role") in ["admin", "market_admin", "market admin"]:
+                return True
+
+        # 2. Many-to-Many Mapping Check
+        res = db.table("user_hotels").select("user_id").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).execute()
+        return len(res.data or []) > 0
+    except Exception as e:
+        logger.error(f"Ownership check failed for hotel {hotel_id}: {e}")
+        return False

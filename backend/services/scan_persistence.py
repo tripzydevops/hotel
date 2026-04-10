@@ -391,11 +391,9 @@ class ScanPersistenceService:
                 }
                 rich_reviews.append(review_obj)
 
-        # [ROBUST] Always use admin_db for metadata to avoid RLS/consistency lag
-        hotel_data = self.admin_db.table("hotels").select("*").eq("id", hotel_id).execute()
-        hotel = hotel_data.data[0] if hotel_data.data else {}
-        
-        # Update hotel last_scanned_at
+        # [ROBUST] Update property-level metadata (Shared across users)
+        # We use admin_db to ensure these updates persist even if RLS would block this user
+        # from updating a shared record (which depends on specific RLS policies).
         self.admin_db.table("hotels").update({
             "last_scanned_at": datetime.now().isoformat()
         }).eq("id", hotel_id).execute()

@@ -223,11 +223,12 @@ class AnalystAgent:
         try:
             serp_ids = [p["serp_api_id"] for p in pulse_data]
 
-            # 1. Find all rivals for all hotel IDs (excluding initiator)
+            # 1. Find all users monitoring these properties (excluding initiator)
+            # KAİZEN: Join with user_hotels to correctly handle many-to-many multitenancy
             rivals_res = (
-                self.admin_db.table("hotels")
-                .select("user_id, id, name, serp_api_id")
-                .in_("serp_api_id", serp_ids)
+                self.admin_db.table("user_hotels")
+                .select("user_id, hotel_id, role, hotels(id, name, serp_api_id)")
+                .filter("hotels.serp_api_id", "in", f"({','.join(serp_ids)})")
                 .neq("user_id", str(initiator_user_id))
                 .execute()
             )
@@ -235,11 +236,26 @@ class AnalystAgent:
             if not rivals_res.data:
                 return
 
+            # Flatten results for easier processing
+            rivals_data = []
+            for item in rivals_res.data:
+                h = item.get("hotels")
+                if h:
+                    rivals_data.append({
+                        "user_id": item["user_id"],
+                        "id": h["id"],
+                        "name": h["name"],
+                        "serp_api_id": h["serp_api_id"]
+                    })
+
+            if not rivals_data:
+                return
+
             pulse_map = {str(p.get("serp_api_id") or ""): p for p in pulse_data}
 
             # 2. Group rival users
             rival_users_map = {}
-            for rival in rivals_res.data:
+            for rival in rivals_data:
                 uid = rival["user_id"]
                 if uid not in rival_users_map:
                     rival_users_map[uid] = []

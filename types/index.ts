@@ -15,7 +15,10 @@ export interface Hotel {
   location?: string;
   user_id: string;
   serp_api_id?: string;
+  latitude?: number;
+  longitude?: number;
   rating?: number;
+  review_count?: number;
   stars?: number;
   image_url?: string;
   property_token?: string;
@@ -48,21 +51,12 @@ export interface Hotel {
     summary?: string;
     serpapi_link?: string;
   }>;
-  guest_mentions?: Array<{
-    text: string;
-    keyword?: string;
-    count: number;
-    sentiment: "positive" | "negative" | "neutral";
-  }>;
   reviews?: Array<{ text: string; sentiment?: string; date?: string }>;
-  pricing_dna_text?: string;
   phone?: string;
   email?: string;
   website?: string;
   address?: string;
   description?: string;
-  cid?: string;
-  place_id?: string;
 }
 
 export interface PriceInfo {
@@ -90,6 +84,25 @@ export interface PricePoint {
 export interface HotelWithPrice extends Hotel {
   price_info?: PriceInfo;
   price_history?: PricePoint[];
+}
+
+export interface UserProfile {
+  user_id: string;
+  display_name?: string;
+  company_name?: string;
+  job_title?: string;
+  phone?: string;
+  avatar_url?: string;
+  timezone?: string;
+  theme_preference?: "light" | "dark" | "system";
+  language_preference?: string;
+  next_scan_at?: string;
+  created_at: string;
+  updated_at: string;
+  plan_type?: string;
+  subscription_status?: string;
+  role?: string;
+  is_verified?: boolean;
 }
 
 export interface Alert {
@@ -164,7 +177,7 @@ export interface DashboardData {
   next_scan_at?: string;
   last_updated: string;
   // BUNDLED DATA (Kaizen Fast-Load)
-  profile?: any;
+  profile?: UserProfile;
   user_settings?: UserSettings;
   market_insight?: string;
 }

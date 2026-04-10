@@ -93,7 +93,7 @@ class UserHotelBase(BaseModel):
     is_target: bool = False
     is_monitored: bool = True
     pricing_dna: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    preferred_currency: Optional[str] = "USD"
+    preferred_currency: Optional[str] = "TRY"
     fixed_check_in: Optional[date] = None
     fixed_check_out: Optional[date] = None
     default_adults: Optional[int] = 2
@@ -127,7 +127,7 @@ class UserHotel(UserHotelBase):
 
 class PriceLogBase(BaseModel):
     price: float = Field(..., gt=0)
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="TRY", max_length=3)
     check_in_date: Optional[date] = None
     source: str = Field(default="serpapi")
     vendor: Optional[str] = Field(
@@ -165,7 +165,7 @@ class SettingsBase(BaseModel):
     push_enabled: bool = False
     push_subscription: Optional[Dict[str, Any]] = None
     notifications_enabled: bool = True
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="TRY", max_length=3)
     dynamic_threshold_enabled: bool = False
     dynamic_threshold_sensitivity: float = Field(default=1.0, ge=0.1, le=5.0)
 
@@ -206,6 +206,9 @@ class UserProfileBase(BaseModel):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     timezone: Optional[str] = "UTC"
+    theme_preference: Optional[str] = "light"
+    language_preference: Optional[str] = "en"
+    next_scan_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -229,6 +232,8 @@ class UserProfile(UserProfileBase):
     role: Optional[str] = "user"
     is_verified: bool = False
     is_admin_bypass: bool = False
+    trial_ends_at: Optional[datetime] = None
+    subscription_end_date: Optional[datetime] = None
 
 
 # ===== Location Models =====
@@ -252,6 +257,7 @@ class AlertBase(BaseModel):
     message: str
     old_price: Optional[float] = None
     new_price: Optional[float] = None
+    currency: Optional[str] = "TRY"
 
 
 class AlertCreate(AlertBase):
@@ -274,7 +280,7 @@ class PriceWithTrend(BaseModel):
 
     current_price: float
     previous_price: Optional[float] = None
-    currency: str = "USD"
+    currency: str = "TRY"
     trend: TrendDirection = TrendDirection.STABLE
     change_percent: float = 0.0
     recorded_at: datetime
@@ -305,7 +311,7 @@ class HotelWithPrice(Hotel):
     is_target: bool = False
     is_monitored: bool = True
     pricing_dna: Optional[Dict[str, Any]] = None
-    preferred_currency: Optional[str] = "USD"
+    preferred_currency: Optional[str] = "TRY"
     fixed_check_in: Optional[date] = None
     fixed_check_out: Optional[date] = None
     default_adults: Optional[int] = 2
@@ -510,7 +516,7 @@ class MarketAnalysis(BaseModel):
     competitive_rank: int = 0
     price_history: List[PricePoint] = []
     competitors: List[HotelWithPrice] = []
-    display_currency: str = "USD"
+    display_currency: str = "TRY"
     # Strategic Indices (100 = Market Average)
     ari: float = 100.0  # Average Rate Index
     mpi: float = 100.0  # Market Penetration Index (Requires Occ)
@@ -538,7 +544,7 @@ class SerpApiHotelPrice(BaseModel):
 
     hotel_name: str
     price: float
-    currency: str = "USD"
+    currency: str = "TRY"
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     source: str = "serpapi"

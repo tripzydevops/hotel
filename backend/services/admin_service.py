@@ -407,13 +407,14 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
         final_users = []
         for uid, udata in users_map.items():
             try:
-                # Optimized count fetch (In production use a view/RPC)
+                # Optimized count: Hotels this user is MAPPED to
                 h_count = (
-                    db.table("hotels")
+                    db.table("user_hotels")
                     .select("id", count="exact")
                     .eq("user_id", uid)
                     .execute()
                     .count
+                    # Logic is correct, count is what we want
                     or 0
                 )
                 s_count = (
@@ -428,8 +429,6 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
                 udata["scan_count"] = s_count
 
                 # EXPLANATION: Plan-Based Quota Logic
-                # Map plan types to their dynamic hotel limits to ensure Admin Panel
-                # Gauges reflect reality.
                 from backend.services.subscription import SubscriptionService
 
                 access = await SubscriptionService.get_user_limits(db, udata)
@@ -644,27 +643,44 @@ async def update_admin_directory_logic(
 
 
 async def get_admin_hotels_logic(db: Client, limit: int = 100) -> List[Dict[str, Any]]:
-    """List all hotels with user info."""
+    """List all registered properties with detailed user ownership info."""
     hotels = db.table("hotels").select("*").limit(limit).execute().data or []
-    users = (
-        db.table("user_profiles").select("user_id, display_name, email").execute().data
-        or []
-    )
-    user_map = {u["user_id"]: u for u in users}
+    
+    # Fetch all mappings to identify who owns what capacity
+    mappings = db.table("user_hotels").select("hotel_id, user_id, is_target").execute().data or []
+    
+    # Fetch all profiles to show human-readable names/emails
+    profiles = db.table("user_profiles").select("user_id, email, display_name").execute().data or []
+    profile_map = {str(p["user_id"]): p for p in profiles}
+
+    # Group mappings by hotel
+    hotel_user_map = {}
+    for m in mappings:
+        hid = str(m["hotel_id"])
+        if hid not in hotel_user_map:
+            hotel_user_map[hid] = []
+        
+        prof = profile_map.get(str(m["user_id"]), {})
+        hotel_user_map[hid].append({
+            "user_id": m["user_id"],
+            "email": prof.get("email"),
+            "display_name": prof.get("display_name"),
+            "is_target": m.get("is_target", False),
+            "role": "target" if m.get("is_target") else "competitor"
+        })
 
     results = []
     for h in hotels:
-        user = user_map.get(h["user_id"], {})
+        hid = str(h["id"])
+        user_list = hotel_user_map.get(hid, [])
         results.append(
             {
                 "id": h["id"],
                 "name": h["name"],
                 "location": h["location"],
-                "user_id": h["user_id"],
-                "user_display": user.get("display_name") or user.get("email"),
+                "user_count": len(user_list),
+                "users": user_list,
                 "serp_api_id": h.get("serp_api_id"),
-                "is_target_hotel": h["is_target_hotel"],
-                "preferred_currency": h.get("preferred_currency"),
                 "created_at": h["created_at"],
             }
         )
@@ -772,11 +788,16 @@ async def export_report_logic(user_id: UUID, format: str, db: Client) -> Any:
     if format != "csv":
         return {"status": "error", "message": "Only CSV supported"}
 
-    hotels = (
-        db.table("hotels").select("id, name").eq("user_id", str(user_id)).execute().data
+    mapping = (
+        db.table("user_hotels").select("hotel_id, hotels(id, name)").eq("user_id", str(user_id)).execute().data
         or []
     )
-    hotel_map = {h["id"]: h["name"] for h in hotels}
+    hotel_map = {}
+    for m in mapping:
+        h = m.get("hotels")
+        if h:
+            hotel_map[str(h["id"])] = h["name"]
+    
     hotel_ids = list(hotel_map.keys())
 
     logs = (
