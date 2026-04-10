@@ -6,6 +6,24 @@ This project successfully transitioned the Hotel Rate Monitor from a single-owne
 ## 2. Problem Statement
 Previously, the database assumed a 1-to-1 relationship between a `user_id` and a `hotel_id`. This created redundant data entries in the `hotels` table when multiple users tracked the same property, making it impossible to share centralized data like reviews, sentiment analysis, and location coordinates across the platform.
 
+### Architecture Evolution
+```mermaid
+graph LR
+    subgraph "Before (1:1 Model)"
+        U1[User A] --- H1[Hotel A-1]
+        U2[User B] --- H2[Hotel A-2]
+        note1["Redundant Metadata"]
+    end
+
+    subgraph "After (M2M Model)"
+        UA[User A] --- UA_H["user_hotels (Link)"]
+        UB[User B] --- UB_H["user_hotels (Link)"]
+        UA_H --- HA[Hotel A (Master)]
+        UB_H --- HA
+        note2["Shared Metadata & Reviews"]
+    end
+```
+
 ## 3. Implemented Solutions
 
 ### 3.1. Relational Restructuring

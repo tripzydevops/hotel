@@ -14,6 +14,39 @@ The system uses a **Normalization Layer** to separate "Hotel Facts" from "User C
     *   `is_target`: Boolean (User-specific target selection).
     *   `pricing_dna`: JSONB (User-specific pricing strategy).
 
+### Relational Model (ERD)
+```mermaid
+erDiagram
+    USERS ||--o{ USER_HOTELS : "monitors"
+    HOTELS ||--o{ USER_HOTELS : "metadata source"
+    HOTELS ||--o{ PRICE_LOGS : "historical data"
+    
+    USERS {
+        uuid id
+        string email
+    }
+    
+    USER_HOTELS {
+        uuid user_id
+        uuid hotel_id
+        bool is_target
+        jsonb pricing_dna
+    }
+    
+    HOTELS {
+        uuid id
+        string serp_api_id
+        jsonb reviews
+        jsonb sentiment
+    }
+
+    PRICE_LOGS {
+        uuid hotel_id
+        float price
+        datetime recorded_at
+    }
+```
+
 ## 2. How Data is Written to Users
 
 ### Scenario 1: Adding a New Hotel
