@@ -28,9 +28,7 @@ export default function SettingsModal({
   const [threshold, setThreshold] = useState(
     settings?.threshold_percent || 2.0,
   );
-  const [frequency, setFrequency] = useState(
-    settings?.check_frequency_minutes ?? 0,
-  );
+
   const [email, setEmail] = useState(settings?.notification_email || "");
   const [enabled, setEnabled] = useState(
     settings?.notifications_enabled ?? true,
@@ -50,7 +48,7 @@ export default function SettingsModal({
   React.useEffect(() => {
     if (settings) {
       setThreshold(settings.threshold_percent || 2.0);
-      setFrequency(settings.check_frequency_minutes ?? 0);
+
       setEmail(settings.notification_email || "");
       setEnabled(settings.notifications_enabled ?? true);
       setPushEnabled(settings.push_enabled ?? false);
@@ -134,7 +132,7 @@ export default function SettingsModal({
       await onSave({
         ...settings,
         threshold_percent: threshold,
-        check_frequency_minutes: frequency,
+
         notification_email: email,
         notifications_enabled: enabled,
         push_enabled: pushEnabled,
@@ -187,32 +185,6 @@ export default function SettingsModal({
                   </h3>
                   
                   <div className="space-y-6">
-                    {/* Frequency */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-semibold text-white/90">
-                        {t("settings.scanFrequency")}
-                      </label>
-                      <div className="relative group">
-                          <select
-                           className="w-full bg-[#0B1F3B] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm appearance-none cursor-pointer transition-all hover:bg-[#15294A]"
-                           value={frequency}
-                           onChange={(e) => setFrequency(parseInt(e.target.value))}
-                         >
-                           <option className="bg-[#0B1F3B] text-white" value="0">{t("settings.realtime")}</option>
-                           <option className="bg-[#0B1F3B] text-white" value="60">{t("settings.hourly")}</option>
-                           <option className="bg-[#0B1F3B] text-white" value="240">{t("settings.every4h")}</option>
-                           <option className="bg-[#0B1F3B] text-white" value="720">{t("settings.every12h")}</option>
-                           <option className="bg-[#0B1F3B] text-white" value="1440">{t("settings.daily")}</option>
-                         </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white/60 transition-colors">
-                          <SettingsIcon className="w-4 h-4 rotate-90" />
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-[var(--text-muted)] italic">
-                        Determines how often the Global Pulse AI scans your competitors.
-                      </p>
-                    </div>
-
                     {/* Threshold */}
                     <div className="space-y-4 p-5 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
                       <div className="flex items-center justify-between">
