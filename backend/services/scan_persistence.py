@@ -50,10 +50,12 @@ class ScanPersistenceService:
         if not hotel_ids:
             return analysis_summary
 
-        # 1. Batch History Lookup
+        # 1. Batch History & Metadata Lookup
         history_map = await self._fetch_history_map(hotel_ids)
+        hotel_metadata = await self._fetch_hotel_metadata_map(hotel_ids)
+        
         if log_reasoning_fn:
-            await log_reasoning_fn(session_id, "Memory", f"Batch history lookup complete for {len(hotel_ids)} properties.", "info")
+            await log_reasoning_fn(session_id, "Memory", f"Batch history & metadata lookup complete for {len(hotel_ids)} properties.", "info")
 
         # Batch collectors
         price_logs_to_insert = []
@@ -76,6 +78,7 @@ class ScanPersistenceService:
                 user_id=user_id,
                 result=res,
                 history=hotel_history,
+                metadata=hotel_metadata.get(hotel_id, {}),
                 threshold=threshold,
                 options=options,
                 session_id=session_id,
@@ -151,29 +154,44 @@ class ScanPersistenceService:
     async def _fetch_history_map(self, hotel_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
         history_map = {}
         try:
-            res = (
-                self.admin_db.table("price_logs")
-                .select("hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata")
-                .in_("hotel_id", hotel_ids)
-                .order("recorded_at", desc=True)
-                .limit(len(hotel_ids) * 5)
+            res = self.admin_db.table("price_logs") \
+                .select("hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata") \
+                .in_("hotel_id", hotel_ids) \
+                .order("recorded_at", desc=True) \
+                .limit(len(hotel_ids) * 5) \
                 .execute()
-            )
-            for entry in (res.data or []):
-                hid = entry.get("hotel_id")
+            
+            for item in (res.data or []):
+                hid = item["hotel_id"]
                 if hid not in history_map:
                     history_map[hid] = []
-                if len(history_map[hid]) < 5:
-                    history_map[hid].append(entry)
+                history_map[hid].append(item)
         except Exception as e:
-            logger.warning(f"History fetch failed: {e}")
+            logger.error(f"Failed to fetch history map: {e}")
         return history_map
+
+    async def _fetch_hotel_metadata_map(self, hotel_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+        metadata_map = {}
+        try:
+            res = self.admin_db.table("hotels") \
+                .select("id, name, min_price_floor") \
+                .in_("id", hotel_ids) \
+                .execute()
+            
+            for hotel in (res.data or []):
+                metadata_map[str(hotel["id"])] = hotel
+        except Exception as e:
+            logger.error(f"Failed to fetch hotel metadata: {e}")
+        return metadata_map
+
+
 
     async def _process_hotel_entry(
         self,
         user_id: UUID,
         result: Dict[str, Any],
         history: List[Dict[str, Any]],
+        metadata: Dict[str, Any],
         threshold: float,
         options: Optional[ScanOptions],
         session_id: Optional[UUID],
@@ -186,22 +204,57 @@ class ScanPersistenceService:
         raw_price = price_data.get("price")
         current_price = float(raw_price) if raw_price is not None else 0.0
         currency = str(price_data.get("currency", "TRY"))
+        hotel_name = metadata.get("name", "")
         
-        # 1. Price Validation (Kaizen 2026: 30% Sanity Check)
+        # 1. Price Validation (Kaizen 2026: Tiered Sanity Check)
         is_valid = True
-        avg_baseline = 0.0
-        recent_valid = [float(h["price"]) for h in history if h.get("price") is not None and float(h["price"]) > 0]
-        if recent_valid and current_price > 0:
-            avg_baseline = sum(recent_valid) / len(recent_valid)
-            # REJECT if price deviates by more than 30% from verified baseline
-            lower_bound = avg_baseline * 0.7
-            upper_bound = avg_baseline * 1.3
+        
+        # A. Minimum Floor Safeguard (User Insight 2026)
+        if currency == "TRY" and current_price > 0:
+            # 1. Check manual floor from DB
+            floor = float(metadata.get("min_price_floor") or 0)
             
-            if current_price < lower_bound or current_price > upper_bound:
+            # 2. Heuristic for Brands (e.g. Ramada > 3000)
+            if floor == 0:
+                brand_floors = {
+                    "ramada": 3000.0,
+                    "hilton": 3000.0,
+                    "sheraton": 3000.0,
+                    "marriott": 3000.0,
+                    "wyndham": 3000.0,
+                    "holiday inn": 3000.0
+                }
+                lower_name = hotel_name.lower()
+                for brand, brand_floor in brand_floors.items():
+                    if brand in lower_name:
+                        floor = brand_floor
+                        break
+            
+            # 3. Global absolute minimum
+            if floor == 0:
+                floor = 200.0
+                
+            if current_price < floor:
                 if log_reasoning_fn:
-                    await log_reasoning_fn(session_id, "Safeguard", f"Rejected suspicious price {current_price} (Avg: {avg_baseline:.2f}). Deviation > 30%.", "warning")
+                    await log_reasoning_fn(session_id, "Safeguard", f"Rejected unrealistic price {current_price} TRY for '{hotel_name}'. Floor is {floor} TRY.", "warning")
                 current_price = 0.0
                 is_valid = False
+
+        # B. 30% Variance Safeguard
+        if is_valid and current_price > 0:
+            avg_baseline = 0.0
+            recent_valid = [float(h["price"]) for h in history if h.get("price") is not None and float(h["price"]) > 0]
+            if recent_valid:
+                avg_baseline = sum(recent_valid) / len(recent_valid)
+                # REJECT if price deviates by more than 30% from verified baseline
+                lower_bound = avg_baseline * 0.7
+                upper_bound = avg_baseline * 1.3
+                
+                if current_price < lower_bound or current_price > upper_bound:
+                    if log_reasoning_fn:
+                        await log_reasoning_fn(session_id, "Safeguard", f"Rejected suspicious price {current_price} (Avg: {avg_baseline:.2f}). Deviation > 30%.", "warning")
+                    current_price = 0.0
+                    is_valid = False
 
         # Normalization
         target_currency = getattr(options, "currency", "TRY") if options else "TRY"
