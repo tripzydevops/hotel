@@ -112,15 +112,19 @@ class SubscriptionService:
 
         limit = access["limits"].get("hotel_limit", 5)
 
-        # Count current usage (not soft-deleted)
-        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
+        # Count current usage via Many-to-Many associations
+        # [KAİZEN] Query user_hotels join table to support multi-user property tracking.
         res = (
-            db.table("hotels")
-            .select("id, deleted_at")
+            db.table("user_hotels")
+            .select("id, hotel:hotels(deleted_at)")
             .eq("user_id", user_id)
             .execute()
         )
-        current_count = len([h for h in (res.data or []) if not h.get("deleted_at")])
+        # Filter out associations where the underlying global hotel record is soft-deleted
+        current_count = len([
+            a for a in (res.data or []) 
+            if a.get("hotel") and not a["hotel"].get("deleted_at")
+        ])
 
         if current_count >= limit:
             return (

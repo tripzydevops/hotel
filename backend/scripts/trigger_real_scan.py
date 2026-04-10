@@ -112,5 +112,14 @@ async def main():
     else:
         print("❌ Verification Failed: No recent logs found. Check script errors.")
 
+    print("\n🔍 GRANULAR REVIEW VERIFICATION: Checking 'hotel_reviews' table...")
+    recent_reviews_res = db.table("hotel_reviews").select("*").in_("hotel_id", HOTEL_IDS).order("recorded_at", desc=True).limit(10).execute()
+    if recent_reviews_res.data:
+        print(f"✅ Success! Found {len(recent_reviews_res.data)} granular reviews in 'hotel_reviews' table.")
+        for rev in recent_reviews_res.data[:3]:
+            print(f"   - [{rev['hotel_id']}] {rev['author']}: {str(rev['text'])[:50]}...")
+    else:
+        print("⚠️  No granular reviews found. This is expected if the deep scan didn't return fresh review objects, or if the scraper was cached.")
+
 if __name__ == "__main__":
     asyncio.run(main())

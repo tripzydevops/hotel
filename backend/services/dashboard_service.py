@@ -98,16 +98,27 @@ async def get_dashboard_logic(
         # 5. Scan History (Metadata only for counts/status)
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
         
-        # 6. Hotels (Bulk Fetch)
-        # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
-        res = db.table("hotels").select("*").eq("user_id", str(user_id)).execute()
-        all_hotels_raw = res.data or []
-        hotels_data = [h for h in all_hotels_raw if not h.get("deleted_at")]
+        # 6. Hotels (Bulk Fetch via Many-to-Many Association)
+        # KAİZEN: Join with user_hotels to support multi-user property tracking.
+        res = db.table("user_hotels").select("*, hotel:hotels(*)").eq("user_id", str(user_id)).execute()
+        all_associations = res.data or []
         
-        # Mocking hotels_res structure for compatibility with subsequent code
-        from types import SimpleNamespace
-        hotels_res = SimpleNamespace(data=hotels_data)
-        
+        all_hotels = []
+        for assoc in all_associations:
+            hotel = assoc.get("hotel")
+            if hotel and not hotel.get("deleted_at"):
+                # Inject user-specific association data into the hotel object
+                # for backward compatibility and per-user customization.
+                hotel["user_id"] = assoc.get("user_id")
+                hotel["is_target_hotel"] = assoc.get("is_target", False)
+                hotel["is_monitored"] = assoc.get("is_monitored", True)
+                hotel["pricing_dna"] = assoc.get("pricing_dna")
+                hotel["preferred_currency"] = assoc.get("preferred_currency", "USD")
+                hotel["fixed_check_in"] = assoc.get("fixed_check_in")
+                hotel["fixed_check_out"] = assoc.get("fixed_check_out")
+                hotel["default_adults"] = assoc.get("default_adults", 2)
+                all_hotels.append(hotel)
+
         # 7. Core Profile (for next_scan_at)
         core_profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).maybe_single().execute()
 
@@ -126,9 +137,6 @@ async def get_dashboard_logic(
         recent_sessions = (
             sessions_res.data if sessions_res and hasattr(sessions_res, "data") else []
         )
-        all_hotels = (
-            hotels_res.data if hotels_res and hasattr(hotels_res, "data") else []
-        )
 
         # [FIX] Scan History Query (Mapping via Hotel IDs)
         # The price_logs table does not contain a user_id column.
@@ -145,8 +153,6 @@ async def get_dashboard_logic(
                 .execute()
             )
             scan_history = hist_res.data or []
-
-        # [KAIZEN] Resilient Fallback
         # If no hotels are found, we still return sessions, searches, and profile
         # to ensure the UI tiles don't look broken/desynchronized.
         if not all_hotels:

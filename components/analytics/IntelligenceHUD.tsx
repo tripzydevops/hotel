@@ -4,15 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Target, TrendingUp, AlertTriangle, Cpu, Command } from 'lucide-react';
 
-interface CommandBrief {
+interface IntelligenceBrief {
   summary: string;
-  tactical_actions: string[];
+  strategic_actions: string[];
   market_sentiment: string;
-  threat_level: 'Low' | 'Moderate' | 'Critical' | 'Unknown';
+  market_stability: 'Optimal' | 'Moderate' | 'Volatile' | 'Unknown';
 }
 
-export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
-  const [brief, setBrief] = useState<CommandBrief | null>(null);
+export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
+  const [brief, setBrief] = useState<IntelligenceBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(true);
 
@@ -20,7 +20,7 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     const fetchBrief = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/v1/analysis/command-brief/${hotelId}`);
+        const response = await fetch(`/api/v1/analysis/intelligence-brief/${hotelId}`);
         const data = await response.json();
         setBrief(data);
       } catch (error) {
@@ -34,10 +34,10 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     if (hotelId) fetchBrief();
   }, [hotelId]);
 
-  const threatColors = {
-    Low: 'border-emerald-500 text-emerald-400 bg-emerald-500/10',
+  const stabilityColors = {
+    Optimal: 'border-emerald-500 text-emerald-400 bg-emerald-500/10',
     Moderate: 'border-amber-500 text-amber-400 bg-amber-500/10',
-    Critical: 'border-rose-500 text-rose-400 bg-rose-500/10',
+    Volatile: 'border-rose-500 text-rose-400 bg-rose-500/10',
     Unknown: 'border-slate-500 text-slate-400 bg-slate-500/10'
   };
 
@@ -53,7 +53,7 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
             <Command className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="font-bold tracking-widest text-white uppercase text-sm">Strategic Command AI</h3>
+            <h3 className="font-bold tracking-widest text-white uppercase text-sm">Market Intelligence</h3>
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
               <span className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">System {loading ? 'Processing' : 'Active'}</span>
@@ -62,14 +62,14 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
         </div>
         
         <AnimatePresence>
-          {brief?.threat_level && (
+          {brief?.market_stability && (
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${threatColors[brief.threat_level]}`}
+              className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${stabilityColors[brief.market_stability]}`}
             >
               <Shield className="h-3 w-3" />
-              Threat Level: {brief.threat_level}
+              Market Stability: {brief.market_stability}
             </motion.div>
           )}
         </AnimatePresence>
@@ -95,9 +95,9 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
           </div>
 
           <div className="space-y-4">
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">Tactical Field Directives</span>
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">Strategic Insights</span>
             <div className="space-y-3">
-              {(loading ? Array(3).fill(null) : brief?.tactical_actions)?.map((action, i) => (
+              {(loading ? Array(3).fill(null) : brief?.strategic_actions)?.map((action, i) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
@@ -144,28 +144,17 @@ export const CommandHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center gap-2 mb-2 text-rose-400">
                 <AlertTriangle className="h-3 w-3" />
-                <span className="text-[9px] font-bold uppercase tracking-tighter">KAIZEN ALERT</span>
+                <span className="text-[9px] font-bold uppercase tracking-tighter">DATA ALERT</span>
               </div>
               <p className="text-[10px] text-slate-500 italic">
-                Strategic brief generated via Gemini 3.1 Neural Array. Actions are advisory.
+                AI-generated advisory based on current market trends.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Cyber Scanners */}
-      {isScanning && (
-        <motion.div 
-          className="absolute inset-0 z-20 pointer-events-none"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="h-full w-full relative">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-cyan-400/50 shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-scan-y" />
-          </div>
-        </motion.div>
-      )}
+      {/* Scan overlay disabled per user request */}
 
       <style jsx>{`
         @keyframes scan-y {

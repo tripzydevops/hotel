@@ -27,7 +27,6 @@ class TrendDirection(str, Enum):
 
 class HotelBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
-    is_target_hotel: bool = False
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
     latitude: Optional[float] = None
@@ -37,14 +36,9 @@ class HotelBase(BaseModel):
     stars: Optional[float] = None
     image_url: Optional[str] = None
     property_token: Optional[str] = None
-    preferred_currency: Optional[str] = Field(default="USD", max_length=3)
-    fixed_check_in: Optional[date] = None
-    fixed_check_out: Optional[date] = None
-    default_adults: Optional[int] = 2
     amenities: Optional[List[Any]] = Field(default_factory=list)
     images: Optional[List[Any]] = Field(default_factory=list)
     sentiment_breakdown: Optional[List[Dict[str, Any]]] = None
-    pricing_dna: Optional[str] = None
     sentiment_embedding: Optional[List[float]] = None
     embedding_status: Optional[str] = "current"
     reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
@@ -75,13 +69,8 @@ class HotelCreate(HotelBase):
 
 class HotelUpdate(BaseModel):
     name: Optional[str] = None
-    is_target_hotel: Optional[bool] = None
     serp_api_id: Optional[str] = None
     location: Optional[str] = None
-    preferred_currency: Optional[str] = None
-    fixed_check_in: Optional[date] = None
-    fixed_check_out: Optional[date] = None
-    default_adults: Optional[int] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
@@ -93,9 +82,44 @@ class HotelUpdate(BaseModel):
 
 class Hotel(HotelBase):
     id: UUID
-    user_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+# ===== User-Hotel Association Models =====
+
+
+class UserHotelBase(BaseModel):
+    is_target: bool = False
+    is_monitored: bool = True
+    pricing_dna: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    preferred_currency: Optional[str] = "USD"
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = 2
+
+
+class UserHotelCreate(UserHotelBase):
+    user_id: UUID
+    hotel_id: UUID
+
+
+class UserHotelUpdate(BaseModel):
+    is_target: Optional[bool] = None
+    is_monitored: Optional[bool] = None
+    pricing_dna: Optional[Dict[str, Any]] = None
+    preferred_currency: Optional[str] = None
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = None
+
+
+class UserHotel(UserHotelBase):
+    id: UUID
+    user_id: UUID
+    hotel_id: UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 # ===== Price Log Models =====
@@ -271,10 +295,20 @@ class PricePoint(BaseModel):
 
 
 class HotelWithPrice(Hotel):
-    """Hotel data enriched with latest price info."""
+    """Hotel data enriched with latest price info and user association context."""
 
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
+    
+    # Association fields (from join table)
+    user_id: Optional[UUID] = None
+    is_target: bool = False
+    is_monitored: bool = True
+    pricing_dna: Optional[Dict[str, Any]] = None
+    preferred_currency: Optional[str] = "USD"
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = 2
 
 
 class QueryLog(BaseModel):

@@ -706,11 +706,35 @@ async def get_market_intelligence_data(
 ) -> Dict[str, Any]:
     # [KAIZEN] Analysis Service now utilizes admin_db to bypass RLS for faster intelligence
     query_db = admin_db if admin_db else db
-    # [ROBUST] Programaatic filtering to avoid Supabase client version ambiguity with .is_("null")
-    logger.info(f"[Analysis] Fetching hotels for user_id: {user_id}")
-    # [OPTIMIZED] Fetch only required fields for analysis
-    res = query_db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,pricing_dna,deleted_at").eq("user_id", str(user_id)).execute()
-    all_hotels = res.data or []
+    # EXPLANATION: Many-to-Many Migration (Kaizen 2026)
+    # Replaced 1:N query (hotels.user_id) with Many-to-Many join via user_hotels table.
+    # This allows multiple users to track/share the same hotel entities.
+    logger.info(f"[Analysis] Mapping hotels via user_hotels for userId: {user_id}")
+    
+    # [FIX] Using join table to fetch shared hotel entities with user-specific overrides
+    user_hotels_res = query_db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).execute()
+    
+    all_hotels = []
+    for mapping in (user_hotels_res.data or []):
+        hotel = mapping.get("hotels")
+        if hotel:
+            # Inject user-specific overrides from user_hotels mapping table
+            # These override the global defaults in the 'hotels' table
+            hotel["is_target_hotel"] = mapping.get("is_target", False)
+            hotel["pricing_dna"] = mapping.get("pricing_dna") or hotel.get("pricing_dna")
+            hotel["preferred_currency"] = mapping.get("preferred_currency")
+            hotel["fixed_check_in"] = mapping.get("fixed_check_in")
+            hotel["fixed_check_out"] = mapping.get("fixed_check_out")
+            hotel["default_adults"] = mapping.get("default_adults")
+            hotel["user_id_override"] = mapping.get("user_id") # For context if needed
+            all_hotels.append(hotel)
+            
+    # Fallback to legacy field if join table is empty (graceful migration)
+    if not all_hotels:
+        logger.info("[Analysis] Join table empty, falling back to legacy user_id field")
+        res = query_db.table("hotels").select("id,name,user_id,is_target_hotel,location,rating,pricing_dna,deleted_at").eq("user_id", str(user_id)).execute()
+        all_hotels = res.data or []
+
     hotels = [h for h in all_hotels if not h.get("deleted_at")]
     
     # [NEW] Apply exclude_hotel_ids filter
@@ -746,7 +770,7 @@ async def get_market_intelligence_data(
             "price_history": [],
             "daily_prices": [],
             "advisory_keys": [],
-            "recommendation": f"DEBUG: user_id={user_id} | raw={len(all_hotels)} | check hotels_table mapping"
+            "recommendation": f"DEBUG: user_id={user_id} | raw={len(hotels)} | check hotels_table mapping"
         }
 
     h_ids = [str(h["id"]) for h in hotels]

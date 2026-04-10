@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 import json
 from sse_starlette.sse import EventSourceResponse
-from backend.services.ai_service import ai_commander
+from backend.services.ai_service import intelligence_service
 
 # EXPLANATION: Routing Normalization (Regression Fix)
 # Removed "/api" prefix from APIRouter to avoid doubled paths 
@@ -183,20 +183,34 @@ async def debug_analysis_data(
 
         diag: Dict[str, Any] = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
 
-        # 1. Hotels for this user
-        hotels_res = (
-            db.table("hotels")
-            .select("id, name, is_target_hotel, location, serp_api_id")
+        # [FIX] Migration to Many-to-Many - Fetching hotels via join table for diagnostics
+        user_hotels_res = (
+            db.table("user_hotels")
+            .select("hotel_id, hotels(id, name, is_target_hotel, location, serp_api_id)")
             .eq("user_id", str(user_id))
             .execute()
         )
-        hotels = hotels_res.data or []
+        
+        hotels = []
+        for mapping in (user_hotels_res.data or []):
+            if mapping.get("hotels"):
+                hotels.append(mapping["hotels"])
+        
+        # Fallback if join table empty (migration period)
+        if not hotels:
+            hotels_res = (
+                db.table("hotels")
+                .select("id, name, is_target_hotel, location, serp_api_id")
+                .eq("user_id", str(user_id))
+                .execute()
+            )
+            hotels = hotels_res.data or []
+
         diag["hotel_count"] = len(hotels)
         diag["hotels"] = [
             {
-                # [FIX] cast(Any, ...) to bypass slicing-blind linter for str
-                "id": cast(Any, str(h["id"]))[:8],
-                "name": cast(Any, h.get("name", "?"))[:30],
+                "id": str(h["id"])[:8],
+                "name": str(h.get("name", "?"))[:30],
                 "is_target": h.get("is_target_hotel"),
                 "has_serp_id": bool(h.get("serp_api_id")),
             }
@@ -374,31 +388,30 @@ async def stream_market_intelligence(
 
     return EventSourceResponse(event_generator())
 
-@router.get("/v1/analysis/command-brief/{hotel_id}")
-async def get_ai_command_brief(
+@router.get("/v1/analysis/intelligence-brief/{hotel_id}")
+async def get_market_intelligence_brief(
     hotel_id: str,
     db: Client = Depends(get_supabase_rls),
     admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     """
-    KAIZEN: Strategic Command AI Brief.
-    Synthesizes market data into actionable intelligence.
+    KAIZEN: Market Intelligence AI Brief.
+    Synthesizes market data into actionable insights.
     """
     from backend.services.analysis_service import get_market_intelligence_data
 
     try:
         # 1. Fetch the raw market intelligence data
-        # We use default params for simplicity in the brief
         analysis_data = await get_market_intelligence_data(
             db=db,
             user_id=str(current_user.id),
             admin_db=admin_db,
         )
 
-        # 2. Generate the AI brief
-        brief = await ai_commander.generate_command_brief(analysis_data)
+        # 2. Generate the intelligence brief
+        brief = await intelligence_service.generate_market_brief(analysis_data)
 
         return brief
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Command Brief failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Market Intelligence Brief failed: {str(e)}")

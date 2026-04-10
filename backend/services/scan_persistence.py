@@ -187,15 +187,19 @@ class ScanPersistenceService:
         current_price = float(raw_price) if raw_price is not None else 0.0
         currency = str(price_data.get("currency", "TRY"))
         
-        # 1. Price Validation
+        # 1. Price Validation (Kaizen 2026: 30% Sanity Check)
         is_valid = True
         avg_baseline = 0.0
         recent_valid = [float(h["price"]) for h in history if h.get("price") is not None and float(h["price"]) > 0]
         if recent_valid and current_price > 0:
             avg_baseline = sum(recent_valid) / len(recent_valid)
-            if current_price < (avg_baseline * 0.5):
+            # REJECT if price deviates by more than 30% from verified baseline
+            lower_bound = avg_baseline * 0.7
+            upper_bound = avg_baseline * 1.3
+            
+            if current_price < lower_bound or current_price > upper_bound:
                 if log_reasoning_fn:
-                    await log_reasoning_fn(session_id, "Safeguard", f"Rejected suspicious price {current_price} (Avg: {avg_baseline:.2f}).", "warning")
+                    await log_reasoning_fn(session_id, "Safeguard", f"Rejected suspicious price {current_price} (Avg: {avg_baseline:.2f}). Deviation > 30%.", "warning")
                 current_price = 0.0
                 is_valid = False
 

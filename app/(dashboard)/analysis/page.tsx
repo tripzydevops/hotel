@@ -23,7 +23,7 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
-import { CommandHUD } from "@/components/analytics/CommandHUD";
+import { IntelligenceHUD } from "@/components/analytics/IntelligenceHUD";
 import DiscoveryShard from "@/components/features/analysis/DiscoveryShard";
 import AnalysisFilters from "@/components/features/analysis/AnalysisFilters";
 import RateIntelligenceGrid from "@/components/features/analysis/RateIntelligenceGrid";
@@ -345,9 +345,9 @@ export default function AnalysisPage() {
           <SentimentBreakdown items={data?.sentiment_breakdown} />
         </div> */}
 
-        {/* Strategic Command AI HUD */}
+        {/* Market Intelligence AI Hub */}
         <div className="mb-12 cursor-pointer">
-          <CommandHUD hotelId={data?.target_hotel?.id || "default"} />
+          <IntelligenceHUD hotelId={data?.target_hotel?.id || "default"} />
         </div>
 
         {/* Global KPI Cards */}

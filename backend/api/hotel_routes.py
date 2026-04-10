@@ -8,6 +8,8 @@ from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegi
 from backend.services.hotel_service import (
     search_hotel_directory_logic,
     add_hotel_to_account_logic,
+    get_hotel_logic,
+    update_hotel_logic,
 )
 from backend.services.location_service import LocationService
 from backend.services.profile_service import get_enriched_profile_logic
@@ -52,18 +54,26 @@ async def list_hotels(
     user_id = current_user.id
     if not db:
         return []
-    # EXPLANATION: User Property List (Soft-Delete Aware)
-    # Powers the sidebar and dashboard selector. By default, it hides
-    # archived hotels to prevent cluttering the UI.
-    query = db.table("hotels").select("*").eq("user_id", str(user_id))
-    result = query.execute()
-    data = result.data or []
-
-    if include_deleted:
-        return data
-
-    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
-    return [h for h in data if not h.get("deleted_at")]
+        
+    # [FIX] Query via user_hotels mapping to support shared hotel architecture
+    # This join pulls user-specific overrides from user_hotels + master hotel data
+    res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).execute()
+    data = res.data or []
+    
+    all_hotels = []
+    for mapping in data:
+        hotel = mapping.get("hotels")
+        if hotel and (include_deleted or not hotel.get("deleted_at")):
+            # Inject user-specific overrides
+            hotel["is_target_hotel"] = mapping.get("is_target", False)
+            hotel["pricing_dna"] = mapping.get("pricing_dna")
+            hotel["preferred_currency"] = mapping.get("preferred_currency", "USD")
+            hotel["fixed_check_in"] = mapping.get("fixed_check_in")
+            hotel["fixed_check_out"] = mapping.get("fixed_check_out")
+            hotel["default_adults"] = mapping.get("default_adults", 2)
+            all_hotels.append(hotel)
+            
+    return all_hotels
 
 
 @router.get("/locations", response_model=List[LocationRegistry])
@@ -123,27 +133,9 @@ async def create_hotel(
     if not can_add:
         raise HTTPException(status_code=403, detail=reason)
 
-    # STEP 2: Duplicate Detection (fast-path before service layer)
-    if hotel.serp_api_id:
-        dup = (
-            db.table("hotels")
-            .select("*")
-            .eq("user_id", str(user_id))
-            .eq("serp_api_id", hotel.serp_api_id)
-            .execute()
-        )
-        if dup.data:
-            return dup.data[0]
-
-    # STEP 3: Target Hotel Toggle (only one target per user)
-    if hotel.is_target_hotel:
-        db.table("hotels").update({"is_target_hotel": False}).eq(
-            "user_id", str(user_id)
-        ).eq("is_target_hotel", True).execute()
-
-    # STEP 4: Normalize and delegate to service layer
-    # The service layer handles: token discovery from hotel_directory,
-    # property_token/serp_api_id enrichment, db insert, logging, and directory sync.
+    # STEP 2: Normalize and delegate to service layer
+    # The service layer handles: duplicate detection, target hotel toggling,
+    # token discovery from hotel_directory, and user association via user_hotels.
     hotel_data = hotel.model_dump()
     hotel_data["name"] = hotel_data["name"].title().strip()
     if hotel_data.get("location"):
@@ -160,35 +152,10 @@ async def update_hotel(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    # KAIZEN: Ownership Verification for specific resource
-    try:
-        current_res = (
-            db.table("hotels")
-            .select("user_id")
-            .eq("id", str(hotel_id))
-            .single()
-            .execute()
-        )
-        if not current_res.data:
-            raise HTTPException(status_code=404, detail="Hotel not found")
-        verify_ownership(current_res.data["user_id"], current_user)
-    except HTTPException as he:
-        raise he
-    except Exception:
-        raise HTTPException(status_code=500, detail="Ownership check failed")
-
-    update_data = {k: v for k, v in hotel.model_dump().items() if v is not None}
-    if not update_data:
-        return None
-
-    if update_data.get("is_target_hotel"):
-        uid = current_res.data["user_id"]
-        db.table("hotels").update({"is_target_hotel": False}).eq(
-            "user_id", uid
-        ).execute()
-
-    result = db.table("hotels").update(update_data).eq("id", str(hotel_id)).execute()
-    return result.data[0] if result.data else None
+    # [FIX] Use unified service logic for multi-tenant updates
+    # This ensures settings like 'is_target_hotel' or 'pricing_dna' are 
+    # saved to the user_hotels table, not the global shared hotels record.
+    return await update_hotel_logic(hotel_id, current_user.id, hotel.model_dump(exclude_unset=True), db)
 
 
 @router.delete("/hotels/{hotel_id}")
@@ -197,26 +164,12 @@ async def delete_hotel(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    # KAIZEN: Ownership Verification
-    try:
-        current_res = (
-            db.table("hotels")
-            .select("user_id")
-            .eq("id", str(hotel_id))
-            .single()
-            .execute()
-        )
-        if not current_res.data:
-            raise HTTPException(status_code=404, detail="Hotel not found")
-        verify_ownership(current_res.data["user_id"], current_user)
-    except HTTPException as he:
-        raise he
-    except Exception:
-        raise HTTPException(status_code=500, detail="Ownership check failed")
-
-    # EXPLANATION: Accidental Deletion Prevention
-    # Instead of a hard DELETE, we set 'deleted_at'. This preserves
-    # historical price_logs and allows for easy data recovery if needed.
-    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    db.table("hotels").update({"deleted_at": now_iso}).eq("id", str(hotel_id)).execute()
-    return {"status": "archived", "message": "Hotel successfully archived"}
+    # [FIX] Soft-delete for unique user association
+    # We remove the mapping from user_hotels but keep the master hotel record intact.
+    # The 'deleted_at' on the master record is only used by admins or if it was the last user.
+    res = db.table("user_hotels").delete().eq("user_id", str(current_user.id)).eq("hotel_id", str(hotel_id)).execute()
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Hotel association not found")
+        
+    return {"status": "removed", "message": "Hotel successfully removed from your account"}

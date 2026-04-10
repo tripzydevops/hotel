@@ -76,22 +76,36 @@ async def trigger_monitor_logic(
     Enterprise users have unlimited background agent cycles.
     """
 
-    # Get all hotels for user (filtering soft-deleted in-memory)
-    query = (
-        db.table("hotels")
-        .select("*")
+    # [M2M] Reach hotels via user_hotels table for Multi-User/Many-to-Many compatibility
+    hotel_mappings_query = (
+        db.table("user_hotels")
+        .select("hotel_id, is_target, pricing_dna, preferred_currency, fixed_check_in, fixed_check_out, default_adults, hotels(*)")
         .eq("user_id", str(user_id))
     )
     
     # Filter by specific hotel IDs if provided in options
     if options and options.hotel_ids:
         hotel_id_strs = [str(hid) for hid in options.hotel_ids]
-        query = query.in_("id", hotel_id_strs)
+        hotel_mappings_query = hotel_mappings_query.in_("hotel_id", hotel_id_strs)
         
-    hotels_result = query.execute()
-    data = hotels_result.data or []
-    # [ROBUST] Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
-    hotels = [h for h in data if not h.get("deleted_at")]
+    mappings_res = hotel_mappings_query.execute()
+    
+    hotels = []
+    for mapping in (mappings_res.data or []):
+        if mapping.get("hotels"):
+            h_data = mapping["hotels"]
+            # [ROBUST] Filter soft-deleted hotels
+            if h_data.get("deleted_at"):
+                continue
+            # Override specialized settings from user_hotels association
+            h_data["is_target_hotel"] = mapping.get("is_target", False)
+            h_data["pricing_dna"] = mapping.get("pricing_dna")
+            h_data["preferred_currency"] = mapping.get("preferred_currency", "USD")
+            h_data["fixed_check_in"] = mapping.get("fixed_check_in")
+            h_data["fixed_check_out"] = mapping.get("fixed_check_out")
+            h_data["default_adults"] = mapping.get("default_adults", 2)
+            
+            hotels.append(h_data)
 
     if not hotels:
         return MonitorResult(hotels_checked=0, prices_updated=0, alerts_generated=0)
@@ -133,11 +147,7 @@ async def trigger_monitor_logic(
                 logger.warning(f"Manual scan blocked for {user_id}: {reason}")
                 
                 # [KAIZEN] Log lock to session trace if possible
-                try:
-                    # session_id might not be defined yet in this scope
-                    pass 
-                except Exception:
-                    pass
+                # Note: session_id is not yet defined in this scope
 
                 return MonitorResult(
                     hotels_checked=0,
@@ -230,11 +240,12 @@ async def trigger_monitor_logic(
                     db.table("scan_sessions").update({
                         "reasoning_trace": [{"step": "Monitor", "level": "info", "message": "Advanced check-in to tomorrow due to 18:00 cutoff for Google Travel reliability.", "timestamp": datetime.now().timestamp()}]
                     }).eq("id", str(session_id)).execute()
-                except: pass
+                except (Exception) as e:
+                    logger.debug(f"Failed to update reasoning trace cutoff: {str(e)}")
         else:
             logger.error("Session creation returned no data. Scan will run without history trail.")
-    except Exception as e:
-        logger.error(f"CRITICAL: Session creation failed: {e}. Attempting to proceed with silent scan.")
+    except (Exception) as e:
+        logger.error(f"CRITICAL: Session creation failed: {str(e)}. Attempting to proceed with silent scan.")
 
     # Normalized Options for Background task
     normalized_options = ScanOptions(
@@ -279,8 +290,8 @@ async def trigger_monitor_logic(
                     db.table("scan_sessions").update(
                         {"reasoning_trace": [trace_msg]}
                     ).eq("id", str(session_id)).execute()
-                except Exception:
-                    pass
+                except (Exception) as trace_update_e:
+                    logger.debug(f"Could not update reasoning trace: {str(trace_update_e)}")
 
             # Lazy import
             from backend.services.monitor_service import run_monitor_background
@@ -343,8 +354,8 @@ async def run_monitor_background(
             if settings_res.data:
                 settings = settings_res.data[0]
                 threshold = settings.get("threshold_percent", 2.0)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to fetch user settings: {e}")
 
         # 3. Phase 1: Scraper Agent
         logger.info(f"Starting ScraperAgent for {len(hotels)} hotels...")
@@ -443,8 +454,8 @@ async def run_monitor_background(
                         nxt_dt = datetime.fromisoformat(nxt.replace("Z", "+00:00"))
                         if nxt_dt > now_utc:
                             is_due = False
-                    except Exception:
-                        pass
+                    except (Exception) as parse_e:
+                        logger.debug(f"Failed to parse next_scan_at: {str(parse_e)}")
                 
                 if is_due:
                     # [FIX] Prefer settings.check_frequency_minutes as source of truth
@@ -487,8 +498,8 @@ async def run_monitor_background(
                         "completed_at": datetime.now().isoformat(),
                     }
                 ).eq("id", str(session_id)).execute()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to record system failure in session trace: {e}")
 
 
 async def run_scheduler_check_logic():
@@ -541,8 +552,8 @@ async def run_scheduler_check_logic():
                 supabase.table("scan_sessions").update(
                     {"status": "failed", "completed_at": datetime.now().isoformat()}
                 ).in_("id", z_ids).execute()
-        except Exception as z_e:
-            s_logger.error(f"CRON: Zombie cleanup failed: {z_e}")
+        except (Exception) as z_e:
+            s_logger.error(f"CRON: Zombie cleanup failed: {str(z_e)}")
 
         # 1. Get all active users with schedules due
         # KAİZEN: Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
@@ -605,8 +616,8 @@ async def run_scheduler_check_logic():
                 s_logger.info(f"CRON: Market sync complete. Status: {status}")
             else:
                 s_logger.info("CRON: Market sync already completed for today.")
-        except Exception as m_e:
-            s_logger.error(f"CRON: Market sync failed: {m_e}")
+        except (Exception) as m_e:
+            s_logger.error(f"CRON: Market sync failed: {str(m_e)}")
 
         # 1.1 Fetch a batch of active profiles due for scan
         # KAİZEN: Use batching (limit 5) to prevent Vercel timeout issues.
@@ -645,8 +656,8 @@ async def run_scheduler_check_logic():
                 }).eq("id", user_id).execute()
                 
                 s_logger.info(f"CRON: Pre-locked user {user_id} to next scan at {next_run_iso}")
-            except Exception as lock_e:
-                s_logger.error(f"CRON: Failed to pre-lock user {user['id']}: {lock_e}")
+            except (Exception) as lock_e:
+                s_logger.error(f"CRON: Failed to pre-lock user {user['id']}: {str(lock_e)}")
 
         # 1.2 Fetch actual user settings for frequency override
         due_ids = [u["id"] for u in active_due]
@@ -660,15 +671,31 @@ async def run_scheduler_check_logic():
             s["user_id"]: s["check_frequency_minutes"] for s in settings_res.data or []
         }
 
-        # 1.3 Pool all hotels (filtering soft-deleted in-memory)
+        # 1.3 Pool all hotels via M2M join (filtering soft-deleted in-memory)
         res = (
-            supabase.table("hotels")
-            .select("*")
+            supabase.table("user_hotels")
+            .select("user_id, hotel_id, is_target, pricing_dna, preferred_currency, fixed_check_in, fixed_check_out, default_adults, hotels(*)")
             .in_("user_id", due_ids)
             .execute()
         )
-        # [ROBUST] Programmatic filtering
-        all_hotels = [h for h in (res.data or []) if not h.get("deleted_at")]
+        
+        all_hotels = []
+        for mapping in (res.data or []):
+            if mapping.get("hotels"):
+                h_data = mapping["hotels"]
+                if h_data.get("deleted_at"):
+                    continue
+                h_data["user_id"] = mapping["user_id"] # Inject for grouping below
+                
+                # Override specialized settings from user_hotels association
+                h_data["is_target_hotel"] = mapping.get("is_target", False)
+                h_data["pricing_dna"] = mapping.get("pricing_dna")
+                h_data["preferred_currency"] = mapping.get("preferred_currency", "USD")
+                h_data["fixed_check_in"] = mapping.get("fixed_check_in")
+                h_data["fixed_check_out"] = mapping.get("fixed_check_out")
+                h_data["default_adults"] = mapping.get("default_adults", 2)
+                
+                all_hotels.append(h_data)
 
         # Group hotels by user for processing
         user_hotels_map = {}

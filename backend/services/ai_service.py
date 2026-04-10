@@ -18,10 +18,10 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-class AICommanderService:
+class MarketIntelligenceService:
     """
-    Strategic Command AI Service.
-    Uses Gemini to synthesize market data into actionable intelligence.
+    Market Intelligence Service.
+    Uses Gemini to synthesize market data into actionable insights.
     """
 
     def __init__(self):
@@ -36,18 +36,18 @@ class AICommanderService:
                 logger.error(f"Failed to initialize GenAI client: {e}")
         else:
             if not self.api_key:
-                logger.warning("AI_COMMANDER: GEMINI_API_KEY not found in environment.")
+                logger.warning("[AI] GEMINI_API_KEY not found in environment.")
             if not HAS_GENAI:
-                logger.warning("AI_COMMANDER: google-genai library not available.")
+                logger.warning("[AI] google-genai library not available.")
 
-    async def generate_command_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_market_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        KAIZEN: AI Strategist. Summarizes market data into high-level commands.
+        KAIZEN: Market Intelligence Analyst. Summarizes market data into high-level insights.
         """
         if not self.client:
             return {
-                "brief": "AI Command Brief is currently unavailable (check API configuration).",
-                "recommendations": [
+                "brief": "Market Intelligence Brief is currently unavailable (check API configuration).",
+                "strategic_actions": [
                     "Manual Review Required",
                     "Verify GEMINI_API_KEY environment variable",
                 ],
@@ -55,7 +55,6 @@ class AICommanderService:
             }
 
         # Prepare context from market data
-        # We limit the data to avoid token bloat and focus on key metrics
         context = {
             "hotel_id": market_data.get("hotel_id"),
             "market_average": market_data.get("market_average"),
@@ -70,13 +69,13 @@ class AICommanderService:
         }
 
         prompt = f"""
-        System: You are 'Antigravity Commander', an elite AI Revenue Manager.
-        Task: Analyze the following hotel market data and provide a concise Strategic Command Brief.
+        System: You are an expert Hotel Revenue Strategy Consultant.
+        Task: Analyze the following hotel market data and provide a concise Market Intelligence Brief.
         Respond in strict JSON format with the following keys:
         - summary: A one-sentence high-level strategic summary.
-        - tactical_actions: A list of 3 specific, actionable steps to increase RevPAR.
+        - strategic_actions: A list of 3 specific, actionable steps to increase RevPAR.
         - market_sentiment: A short narrative about how the market perceives this hotel relative to competitors.
-        - threat_level: 'Low', 'Moderate', or 'Critical'.
+        - market_stability: 'Optimal', 'Moderate', or 'Volatile'.
 
         Data:
         {json.dumps(context, indent=2)}
@@ -97,13 +96,13 @@ class AICommanderService:
             
             return json.loads(response_text)
         except Exception as e:
-            logger.error(f"Failed to generate AI command brief: {e}")
+            logger.error(f"Failed to generate intelligence brief: {e}")
             return {
-                "summary": "Strategic analysis engine encountered a recursive anomaly.",
-                "tactical_actions": ["Review market logs manually", "Sync database state"],
-                "sentiment_narrative": "Inconclusive due to processing error.",
-                "threat_level": "Unknown"
+                "summary": "Market intelligence engine encountered a processing error.",
+                "strategic_actions": ["Review market logs manually", "Verify data integrity"],
+                "market_sentiment": "Inconclusive due to processing error.",
+                "market_stability": "Unknown"
             }
 
 # Singleton instance
-ai_commander = AICommanderService()
+intelligence_service = MarketIntelligenceService()

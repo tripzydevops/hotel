@@ -167,7 +167,7 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     # Fetch unique hotels from the main table
     res = (
         db.table("hotels")
-        .select("*, is_target_hotel, pricing_dna, location, logo_url")
+        .select("*")
         .execute()
     )
     data = res.data or []
@@ -206,153 +206,230 @@ async def add_hotel_to_account_logic(
     hotel_data: Dict[str, Any], user_id: UUID, db: Client
 ) -> Dict[str, Any]:
     """
-    Associates a hotel with a user account.
+    Associates a hotel with a user account using a Many-to-Many pattern.
 
-    Why: Separates the API routing from the core business logic of hotel
-    association, allowing for validation and side-effects (like logging).
+    Why: Allows multiple accounts to monitor the same property while maintaining
+    a single 'source of truth' in the hotels table. Prevents duplicates for the same user.
     """
     try:
-        # KAİZEN: Automatic Token Discovery (Phase 1.1)
-        # If the incoming hotel_data is missing a serp_api_id, we attempt to
-        # find a matching property in our global directory before inserting.
         serp_api_id = hotel_data.get("serp_api_id")
+        name = hotel_data.get("name")
+        location = hotel_data.get("location")
 
-        # Prepare metadata defaults
-        rating = hotel_data.get("rating")
-        review_count = hotel_data.get("review_count")
-        image_url = hotel_data.get("image_url")
-        phone = hotel_data.get("phone")
-        email = hotel_data.get("email")
-        website = hotel_data.get("website")
-        address = hotel_data.get("address")
-        description = hotel_data.get("description")
-        cid = hotel_data.get("cid")
-        place_id = hotel_data.get("place_id")
+        if not name:
+            raise HTTPException(status_code=400, detail="Hotel name is required")
 
-        if not serp_api_id or not phone:
-            name = hotel_data.get("name")
-            location = hotel_data.get("location")
-            if name:
-                # 1. First check local directory
-                dir_res = (
-                    db.table("hotel_directory")
-                    .select("*")
-                    .eq("name", name)
-                    .eq("location", location)
-                    .execute()
-                )
-                if dir_res.data:
-                    d = dir_res.data[0]
-                    serp_api_id = serp_api_id or d.get("serp_api_id")
-                    rating = rating or d.get("rating")
-                    review_count = review_count or d.get("review_count")
-                    image_url = image_url or d.get("image_url")
-                    phone = phone or d.get("phone")
-                    email = email or d.get("email")
-                    website = website or d.get("website")
-                    address = address or d.get("address")
-                    description = description or d.get("description")
-                    cid = cid or d.get("cid")
-                    place_id = place_id or d.get("place_id")
-                    
-                # 2. DataForSEO Enrichment (DEPRECATED - DEFAULT OFF)
-                # KAİZEN: Removed automatic third-party enrichment to respect data fidelity and cost control.
-                # Only re-enable if explicitly requested by the user.
-                """
-                if not phone or not website or not address:
-                    try:
-                        enrich_data = await dataforseo_client.get_hotel_details(name, location or "")
-                        if enrich_data:
-                            phone = phone or enrich_data.get("phone")
-                            website = website or enrich_data.get("website")
-                            address = address or enrich_data.get("address")
-                            rating = rating or enrich_data.get("rating")
-                            review_count = review_count or enrich_data.get("review_count")
-                            cid = cid or enrich_data.get("cid")
-                            place_id = place_id or enrich_data.get("place_id")
-                            # Add coordinates if missing
-                            hotel_data["latitude"] = hotel_data.get("latitude") or enrich_data.get("latitude")
-                            hotel_data["longitude"] = hotel_data.get("longitude") or enrich_data.get("longitude")
-                    except Exception as e:
-                        print(f"DataForSEO Enrichment Error: {e}")
-                """
-                pass
-        # [FIX] Extract property_token if directory match found
-        property_token = hotel_data.get("property_token")
-        if 'd' in locals() and d:
-            property_token = property_token or d.get("property_token")
-            serp_api_id = serp_api_id or d.get("serp_api_id")
+        # 1. Attempt to find existing master hotel record
+        # Priority: serp_api_id > (name + location)
+        existing_hotel = None
+        if serp_api_id:
+            h_res = db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
+            if h_res.data:
+                existing_hotel = h_res.data[0]
+        
+        if not existing_hotel:
+            h_res = db.table("hotels").select("*").eq("name", name).eq("location", location).execute()
+            if h_res.data:
+                existing_hotel = h_res.data[0]
 
-        # Prepare data for insertion
-        data = {
+        hotel_id = None
+        
+        if existing_hotel:
+            hotel_id = existing_hotel["id"]
+        else:
+            # Prepare metadata for NEW master record
+            # KAİZEN: Automatic Token Discovery (Phase 1.1)
+            # Find matching property in global directory if not provided
+            rating = hotel_data.get("rating")
+            review_count = hotel_data.get("review_count")
+            image_url = hotel_data.get("image_url")
+            phone = hotel_data.get("phone")
+            email = hotel_data.get("email")
+            website = hotel_data.get("website")
+            address = hotel_data.get("address")
+            description = hotel_data.get("description")
+            cid = hotel_data.get("cid")
+            place_id = hotel_data.get("place_id")
+            property_token = hotel_data.get("property_token")
+
+            dir_res = db.table("hotel_directory").select("*").eq("name", name).eq("location", location).execute()
+            if dir_res.data:
+                d = dir_res.data[0]
+                serp_api_id = serp_api_id or d.get("serp_api_id")
+                rating = rating or d.get("rating")
+                review_count = review_count or d.get("review_count")
+                image_url = image_url or d.get("image_url")
+                phone = phone or d.get("phone")
+                email = email or d.get("email")
+                website = website or d.get("website")
+                address = address or d.get("address")
+                description = description or d.get("description")
+                cid = cid or d.get("cid")
+                place_id = place_id or d.get("place_id")
+                property_token = property_token or d.get("property_token")
+
+            new_hotel_data = {
+                "name": name,
+                "location": location,
+                "serp_api_id": serp_api_id,
+                "property_token": property_token,
+                "rating": rating,
+                "review_count": review_count,
+                "image_url": image_url,
+                "phone": phone,
+                "email": email,
+                "website": website,
+                "address": address,
+                "description": description,
+                "cid": cid,
+                "place_id": place_id,
+                "sentiment_breakdown": hotel_data.get("sentiment_breakdown"),
+                "reviews": hotel_data.get("reviews"),
+                "latitude": hotel_data.get("latitude"),
+                "longitude": hotel_data.get("longitude"),
+                "stars": hotel_data.get("stars"),
+            }
+            
+            insert_res = db.table("hotels").insert(new_hotel_data).execute()
+            if not insert_res.data:
+                raise HTTPException(status_code=500, detail="Failed to create hotel record")
+            existing_hotel = insert_res.data[0]
+            hotel_id = existing_hotel["id"]
+
+        # 2. Add/Verify Association in user_hotels
+        # Handle Target Toggle (User Specific)
+        is_target = hotel_data.get("is_target_hotel", False)
+        if is_target:
+            db.table("user_hotels").update({"is_target": False}).eq("user_id", str(user_id)).execute()
+
+        # We use upsert to ensure (user_id, hotel_id) uniqueness is respected
+        assoc_data = {
             "user_id": str(user_id),
-            "name": hotel_data.get("name"),
-            "location": hotel_data.get("location"),
-            "is_target_hotel": hotel_data.get("is_target_hotel", False),
-            "serp_api_id": serp_api_id,
-            "property_token": property_token,  # [FIX] Added property_token
+            "hotel_id": hotel_id,
+            "is_target": is_target,
+            "is_monitored": True,
+            "pricing_dna": hotel_data.get("pricing_dna", {}),
             "preferred_currency": hotel_data.get("preferred_currency", "USD"),
-            "rating": rating,
-            "review_count": review_count,
-            "image_url": image_url,
-            "phone": phone,
-            "email": email,
-            "website": website,
-            "address": address,
-            "description": description,
-            "cid": cid,
-            "place_id": place_id,
-            "sentiment_breakdown": (hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None)) if isinstance(hotel_data.get("sentiment_breakdown") or (d.get("sentiment_breakdown") if 'd' in locals() else None), list) else None,
-            "reviews": (hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None)) if isinstance(hotel_data.get("reviews") or (d.get("reviews") if 'd' in locals() else None), list) else None,
+            "fixed_check_in": hotel_data.get("fixed_check_in"),
+            "fixed_check_out": hotel_data.get("fixed_check_out"),
+            "default_adults": hotel_data.get("default_adults", 2)
         }
+        
+        # Check if relation already exists to avoid redundant upsert
+        rel_existing = db.table("user_hotels").select("*").eq("user_id", str(user_id)).eq("hotel_id", hotel_id).execute()
+        
+        if not rel_existing.data:
+            db.table("user_hotels").insert(assoc_data).execute()
+        else:
+            # Update existing association with new settings if provided
+            update_data = {}
+            for key in ["is_target", "pricing_dna", "preferred_currency", "fixed_check_in", "fixed_check_out", "default_adults"]:
+                val = hotel_data.get(key if key != "is_target" else "is_target_hotel")
+                if val is not None:
+                    update_data[key] = val
+            
+            if update_data:
+                db.table("user_hotels").update(update_data).eq("id", rel_existing.data[0]["id"]).execute()
 
-        # Insert into user's hotels list
-        result = db.table("hotels").insert(data).execute()
+        # Update hotel_directory for collaborative growth
+        try:
+            db.table("hotel_directory").upsert(
+                {
+                    "name": existing_hotel["name"],
+                    "location": existing_hotel.get("location"),
+                    "serp_api_id": existing_hotel.get("serp_api_id"),
+                    "latitude": existing_hotel.get("latitude"),
+                    "longitude": existing_hotel.get("longitude"),
+                    "rating": existing_hotel.get("rating"),
+                    "review_count": existing_hotel.get("review_count"),
+                    "image_url": existing_hotel.get("image_url"),
+                    "phone": existing_hotel.get("phone"),
+                    "email": existing_hotel.get("email"),
+                    "website": existing_hotel.get("website"),
+                    "address": existing_hotel.get("address"),
+                    "description": existing_hotel.get("description"),
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+                on_conflict="serp_api_id",
+            ).execute()
+        except Exception as e:
+            print(f"Directory Auto-Sync Warning: {e}")
 
-        if result.data:
-            await log_query(
-                db=db,
-                user_id=user_id,
-                hotel_name=data["name"],
-                location=data.get("location"),
-                action_type="add_to_account",
-                api_key_suffix=serpapi_client.last_used_key_suffix,
-            )
+        # Log action
+        await log_query(
+            db=db,
+            user_id=user_id,
+            hotel_name=existing_hotel["name"],
+            location=existing_hotel.get("location"),
+            action_type="add_to_account",
+            api_key_suffix=serpapi_client.last_used_key_suffix,
+        )
 
-            # EXPLANATION: Collaborative Data Growth
-            # When a user tracks a new property, we capture its latest signature
-            # (coordinates, images, ratings) and share it with the global directory.
-            try:
-                db.table("hotel_directory").upsert(
-                    {
-                        "name": data["name"],
-                        "location": data.get("location"),
-                        "serp_api_id": data.get("serp_api_id"),
-                        "latitude": hotel_data.get("latitude"),
-                        "longitude": hotel_data.get("longitude"),
-                        "rating": data.get("rating"),
-                        "stars": hotel_data.get("stars"),
-                        "review_count": data.get("review_count"),
-                        "image_url": data.get("image_url"),
-                        "phone": data.get("phone"),
-                        "email": data.get("email"),
-                        "website": data.get("website"),
-                        "address": data.get("address"),
-                        "description": data.get("description"),
-                        "cid": data.get("cid"),
-                        "place_id": data.get("place_id"),
-                        "sentiment_breakdown": data.get("sentiment_breakdown"),
-                        "reviews": data.get("reviews"),
-                        "last_verified_at": datetime.now().isoformat(),
-                    },
-                    on_conflict="serp_api_id",
-                ).execute()
-            except Exception as e:
-                print(f"Directory Auto-Sync Warning: {e}")
+        return existing_hotel
 
-            return result.data[0]
-
-        return {"error": "Failed to add hotel"}
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
         print(f"Add Hotel Logic Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str, Any]:
+    """
+    Retrieves a hotel with user-specific overrides from user_hotels.
+    """
+    # [FIX] Fetch merged data: Global hotel + User settings
+    res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).single().execute()
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Hotel mapping for this user not found")
+        
+    mapping = res.data
+    hotel = mapping.get("hotels")
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Master hotel record not found")
+        
+    # Inject user overrides
+    hotel["is_target_hotel"] = mapping.get("is_target", False)
+    hotel["pricing_dna"] = mapping.get("pricing_dna")
+    hotel["preferred_currency"] = mapping.get("preferred_currency", "USD")
+    hotel["fixed_check_in"] = mapping.get("fixed_check_in")
+    hotel["fixed_check_out"] = mapping.get("fixed_check_out")
+    hotel["default_adults"] = mapping.get("default_adults", 2)
+    
+    return hotel
+
+
+async def update_hotel_logic(hotel_id: UUID, user_id: UUID, update_data: Dict[str, Any], db: Client) -> Dict[str, Any]:
+    """
+    Updates user-specific hotel settings in user_hotels mappings.
+    If 'is_target_hotel' is set, it clears other targets for this user.
+    """
+    # 1. Verify mapping exists
+    mapping_res = db.table("user_hotels").select("id").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).single().execute()
+    if not mapping_res.data:
+        raise HTTPException(status_code=404, detail="Hotel association not found")
+    
+    assoc_id = mapping_res.data["id"]
+
+    # 2. Handle Target Toggle (User Specific)
+    if update_data.get("is_target_hotel") is True:
+        db.table("user_hotels").update({"is_target": False}).eq("user_id", str(user_id)).execute()
+        update_data["is_target"] = True
+    elif "is_target_hotel" in update_data:
+        update_data["is_target"] = update_data["is_target_hotel"]
+
+    # 3. Filter only supported override fields for user_hotels
+    # These match the columns in the 'user_hotels' table
+    supported_fields = [
+        "is_target", "pricing_dna", "preferred_currency", 
+        "fixed_check_in", "fixed_check_out", "default_adults",
+        "is_monitored"
+    ]
+    db_update = {k: v for k, v in update_data.items() if k in supported_fields}
+    
+    if db_update:
+        db.table("user_hotels").update(db_update).eq("id", assoc_id).execute()
+
+    # 4. Return the fully re-hydrated hotel object
+    return await get_hotel_logic(hotel_id, user_id, db)
