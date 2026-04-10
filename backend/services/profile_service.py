@@ -27,8 +27,7 @@ async def get_enriched_profile_logic(
     from backend.utils.db import get_supabase_client
     admin_db = get_supabase_client(admin=True)
     if not admin_db:
-        print("[Profile] Admin access unavailable")
-        return base_data or {}
+        print("[Profile] Admin access unavailable, proceeding with basic DB connection")
 
     # 1. Fetch base metadata if not provided
     if base_data is None:
@@ -203,10 +202,15 @@ async def get_enriched_profile_logic(
         profile_result["is_verified"] = base_data.get("is_verified", False) if base_data else False
 
     # Ensure timestamps exist for model validation
-    if "created_at" not in profile_result:
-        profile_result["created_at"] = datetime.now(timezone.utc).isoformat()
-    if "updated_at" not in profile_result:
-        profile_result["updated_at"] = datetime.now(timezone.utc).isoformat()
+    # BUGFIX: Check for None values too, not just missing keys.
+    # Some user_profiles rows have NULL created_at/updated_at in the database,
+    # which causes Pydantic validation to fail with a 500 since UserProfile
+    # requires non-optional datetime fields.
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if not profile_result.get("created_at"):
+        profile_result["created_at"] = now_iso
+    if not profile_result.get("updated_at"):
+        profile_result["updated_at"] = now_iso
     
     # KAIZEN: Convert datetime objects to ISO strings for Pydantic consistency
     for key in ["created_at", "updated_at"]:

@@ -135,4 +135,3 @@ class ProviderFactory:
                 logger.error(f"SerpApi Status report error: {e}")
 
         return report
-t

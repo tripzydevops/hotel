@@ -38,7 +38,6 @@ async def get_profile(
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
-        raise HTTPException(status_code=503, detail="Database unavailable")
 
     # KAIZEN: Enforce ownership to prevent ID harvesting
     verify_ownership(user_id, current_user)
@@ -265,10 +264,6 @@ async def update_settings(
                 )
             else:
                 raise e
-
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Failed to update settings")
-    return result.data[0]
 
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to update settings")
