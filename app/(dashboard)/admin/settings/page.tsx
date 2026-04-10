@@ -30,13 +30,14 @@ export default function AdminSettingsPage() {
   };
 
   const handleSave = async () => {
+    if (!settings) return;
     try {
       setSaving(true);
       const updated = await api.updateAdminSettings({
         maintenance_mode: settings.maintenance_mode,
         signup_enabled: settings.signup_enabled,
         default_currency: settings.default_currency,
-        system_alert_message: settings.system_alert_message || null,
+        system_alert_message: settings.system_alert_message || undefined,
         scan_interval_hours: settings.scan_interval_hours
       });
       setSettings(updated);
@@ -54,6 +55,14 @@ export default function AdminSettingsPage() {
             <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)]" />
         </div>
      );
+  }
+
+  if (!settings) {
+      return (
+          <div className="flex items-center justify-center h-96 text-[var(--text-muted)]">
+              Failed to load settings.
+          </div>
+      );
   }
 
   return (

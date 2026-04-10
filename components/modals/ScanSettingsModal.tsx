@@ -82,7 +82,7 @@ export default function ScanSettingsModal({
       setCheckOut(tomorrowStr);
     }
     if (initialValues?.adults) setAdults(initialValues.adults);
-  }, [isOpen, initialValues]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, initialValues]);
 
   // Auto-advance checkout when user picks a check-in >= current checkout
   const handleCheckInChange = (newCheckIn: string) => {
