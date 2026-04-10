@@ -47,10 +47,30 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
 
       // Determine category based on keyword
       let category = "Problem Area";
-      if (["temizlik", "banyo", "oda", "hijyen", "uyku", "yatak"].some(k => keyword.includes(k))) category = "Cleanliness Issue";
-      else if (["hizmet", "personel", "ilgi", "reception", "kahvaltı", "servis"].some(k => keyword.includes(k))) category = "Service Issue";
-      else if (["konum", "market", "yer", "ulaşım"].some(k => keyword.includes(k))) category = "Location Issue";
-      else if (["fiyat", "pahalı", "değer", "kalite", "maliyet"].some(k => keyword.includes(k))) category = "Value Issue";
+      if (
+        ["temizlik", "banyo", "oda", "hijyen", "uyku", "yatak", "cleanliness", "bathroom", "room", "hygiene", "sleep", "bed"].some(
+          (k) => keyword.includes(k)
+        )
+      )
+        category = "Cleanliness Issue";
+      else if (
+        ["hizmet", "personel", "ilgi", "reception", "kahvaltı", "servis", "service", "staff", "welcoming", "dining"].some((k) =>
+          keyword.includes(k)
+        )
+      )
+        category = "Service Issue";
+      else if (
+        ["konum", "market", "yer", "ulaşım", "location", "neighborhood", "parking", "view"].some((k) =>
+          keyword.includes(k)
+        )
+      )
+        category = "Location Issue";
+      else if (
+        ["fiyat", "pahalı", "değer", "kalite", "maliyet", "price", "value", "cost", "quality"].some((k) =>
+          keyword.includes(k)
+        )
+      )
+        category = "Value Issue";
 
       weaknesses.push({
         category: category,

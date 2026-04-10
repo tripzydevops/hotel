@@ -101,10 +101,10 @@ export default function SentimentBattlefield({
     if (hotel.guest_mentions && hotel.guest_mentions.length > 0) {
         const target = pillarName.toLowerCase();
         const aliases: Record<string, string[]> = {
-            cleanliness: ["temizlik", "clean", "room", "cleanliness", "odalar", "oda"],
-            service: ["hizmet", "staff", "personel", "service"],
-            location: ["konum", "neighborhood", "mevki", "location"],
-            value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "cost", "money"],
+            cleanliness: ["temizlik", "clean", "room", "cleanliness", "housekeeping", "hygiene", "banyo", "bathroom", "bed", "yatak", "sleep", "uyku"],
+            service: ["hizmet", "staff", "personel", "service", "reception", "resepsiyon", "breakfast", "kahvaltı", "dining", "yemek"],
+            location: ["konum", "neighborhood", "mevki", "location", "transport", "view", "manzara", "garden", "bahçe"],
+            value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "cost", "money", "affordable", "para"],
         };
 
         const relevantMentions = hotel.guest_mentions?.filter((m: any) => {

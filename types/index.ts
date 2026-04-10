@@ -8,6 +8,14 @@ export type TrendDirection = "up" | "down" | "stable";
 // Alert types for notifications
 export type AlertType = "threshold_breach" | "competitor_undercut" | "pulse_alert" | string;
 
+export interface GuestMention {
+  keyword: string;
+  raw_keyword?: string;
+  count: number;
+  sentiment: "positive" | "negative" | "neutral" | string;
+  text?: string;
+}
+
 export interface Hotel {
   id: string;
   name: string;
@@ -51,6 +59,7 @@ export interface Hotel {
     summary?: string;
     serpapi_link?: string;
   }>;
+  guest_mentions?: GuestMention[];
   reviews?: Array<{ text: string; sentiment?: string; date?: string }>;
   phone?: string;
   email?: string;

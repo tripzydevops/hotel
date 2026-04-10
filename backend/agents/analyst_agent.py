@@ -166,10 +166,82 @@ class AnalystAgent:
                     self._log_buffer[sid_key] = []
                 self._log_buffer[sid_key].extend(intel_trace)
                 await self._flush_logs(session_id)
+
+            # [KAIZEN 2026] Async Pulse: Refine Pricing DNA after intelligence synthesis
+            # Only refine for the primary hotel if it's a focused scan
+            if scraper_results:
+                primary_hotel_id = str(scraper_results[0].get("hotel_id"))
+                if primary_hotel_id:
+                    asyncio.create_task(self._refine_pricing_dna_for_user(user_id, primary_hotel_id))
         except Exception as e:
             logger.error(f"[AnalystAgent] Intelligence Error: {e}")
             await self.log_reasoning(session_id, "Market Intel", f"[Error] Strategic analysis failed: {str(e)}")
             await self._flush_logs(session_id)
+
+    async def _refine_pricing_dna_for_user(self, user_id: UUID, hotel_id: str):
+        """
+        Background task to update a user's pricing DNA for a specific property.
+        [TOKEN OPTIMIZATION] Enforces a 7-day (weekly) cooldown period.
+        """
+        try:
+            logger.info(f"[AnalystAgent] Checking DNA freshness for User {user_id} -> Hotel {hotel_id}")
+            
+            # 0. Check for existing profile and cooldown
+            mapping_res = self.admin_db.table("user_hotels")\
+                .select("updated_at, pricing_dna")\
+                .eq("user_id", str(user_id))\
+                .eq("hotel_id", str(hotel_id))\
+                .single()\
+                .execute()
+            
+            if mapping_res.data:
+                updated_at_str = mapping_res.data.get("updated_at")
+                if updated_at_str and mapping_res.data.get("pricing_dna"):
+                    updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+                    if datetime.now(updated_at.tzinfo) - updated_at < timedelta(days=7):
+                        logger.info(f"[AnalystAgent] DNA for {hotel_id} is still strategically fresh (updated {updated_at_str}). Skipping refinement.")
+                        return
+
+            logger.info(f"[AnalystAgent] Refining Pricing DNA for User {user_id} -> Hotel {hotel_id}")
+            
+            # 1. Fetch history (30d)
+            thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+            
+            # Fetch prices and sentiment in parallel
+            p_task = self.admin_db.table("price_logs").select("price, recorded_at").eq("hotel_id", hotel_id).gte("recorded_at", thirty_days_ago).order("recorded_at", desc=True).execute()
+            s_task = self.admin_db.table("sentiment_history").select("rating, recorded_at").eq("hotel_id", hotel_id).gte("recorded_at", thirty_days_ago).order("recorded_at", desc=True).execute()
+            
+            p_res, s_res = await asyncio.gather(asyncio.to_thread(lambda: p_task), asyncio.to_thread(lambda: s_task))
+            
+            history = {
+                "prices": p_res.data or [],
+                "sentiment": s_res.data or []
+            }
+
+            if not history["prices"]:
+                return
+
+            # 2. Synthesize
+            dna = await self.adk_agent.synthesize_pricing_dna(history)
+            embedding = await self.adk_agent.generate_strategy_embedding(dna)
+
+            # 3. Apply to Mapping
+            update_data = {
+                "pricing_dna": dna,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            if embedding:
+                update_data["personality_embedding"] = embedding
+
+            self.admin_db.table("user_hotels")\
+                .update(update_data)\
+                .eq("user_id", str(user_id))\
+                .eq("hotel_id", str(hotel_id))\
+                .execute()
+                
+            logger.info(f"[AnalystAgent] Successfully refined DNA for {hotel_id}")
+        except Exception as e:
+            logger.error(f"[AnalystAgent] DNA Refinement failed: {e}")
 
     async def analyze_results(
         self,

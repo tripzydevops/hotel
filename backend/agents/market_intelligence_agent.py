@@ -1,6 +1,8 @@
 import time
-from typing import List, Dict, Any, cast
+import asyncio
+from typing import List, Dict, Any, cast, Optional
 from backend.services.analysis_service import get_genai_client
+from backend.services.ai_service import intelligence_service
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -134,3 +136,56 @@ class MarketIntelligenceAgent:
             "final_report": "Heuristic analysis complete. No major strategic shifts detected beyond direct price alerts.",
             "agentic": False
         }
+
+    async def synthesize_pricing_dna(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
+        """
+        client = get_genai_client()
+        if not client:
+            return {"strategy": "Default", "last_updated": None}
+
+        prompt = f"""
+        You are a Strategic Revenue Architect. Analyze the following 30-day history for a hotel and define its 'Pricing DNA'.
+        
+        DATA: {history}
+        
+        GOALS:
+        1. Identify the 'Strategy Archetype' (e.g. Volume Leader, Yield Seeker, Benchmark Follower).
+        2. Determine 'Pricing Elasticity' based on sentiment vs price shifts.
+        3. Define a 'Strategic Narrative' (2 sentences).
+        
+        OUTPUT JSON:
+        {{
+          "archetype": "str",
+          "narrative": "str",
+          "volatility_tolerance": "high/medium/low",
+          "competitive_posture": "aggressive/neutral/passive",
+          "dna_version": "1.0"
+        }}
+        """
+
+        try:
+            interaction = await asyncio.to_thread(
+                client.interactions.create,
+                model=self.model,
+                input=prompt,
+                config={'response_mime_type': 'application/json'}
+            )
+            import json
+            dna = json.loads(interaction.outputs[-1].text)
+            dna["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            return dna
+        except Exception as e:
+            logger.error(f"[MarketIntelligenceAgent] DNA Synthesis Error: {e}")
+            return {"strategy": "Error", "error": str(e)}
+
+    async def generate_strategy_embedding(self, dna: Dict[str, Any]) -> Optional[List[float]]:
+        """
+        Converts the Pricing DNA narrative into a vector embedding for retrieval grounding.
+        """
+        narrative = dna.get("narrative", "")
+        archetype = dna.get("archetype", "")
+        text_to_embed = f"Hotel Strategy: {archetype}. Perspective: {narrative}"
+        
+        return await intelligence_service.get_embedding(text_to_embed)

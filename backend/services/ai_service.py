@@ -104,5 +104,24 @@ class MarketIntelligenceService:
                 "market_stability": "Unknown"
             }
 
+    async def get_embedding(self, text: str) -> Optional[List[float]]:
+        """
+        Generates a 768-dimensional vector embedding for the given text.
+        Optimized for Pricing DNA and strategy mapping.
+        """
+        if not self.client:
+            return None
+        
+        try:
+            # Using text-embedding-004 which is standard for current Gemini applications
+            result = self.client.models.embed_content(
+                model="text-embedding-004",
+                contents=text
+            )
+            return result.embeddings[0].values
+        except Exception as e:
+            logger.error(f"[AI] Embedding failed: {e}")
+            return None
+
 # Singleton instance
 intelligence_service = MarketIntelligenceService()
