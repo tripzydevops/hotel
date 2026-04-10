@@ -57,6 +57,8 @@ export interface Hotel {
   website?: string;
   address?: string;
   description?: string;
+  cid?: string;
+  place_id?: string;
 }
 
 export interface PriceInfo {

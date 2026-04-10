@@ -35,6 +35,8 @@ export interface Database {
           website: string | null;
           address: string | null;
           description: string | null;
+          cid: string | null;
+          place_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -59,6 +61,8 @@ export interface Database {
           website?: string | null;
           address?: string | null;
           description?: string | null;
+          cid?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -83,6 +87,8 @@ export interface Database {
           website?: string | null;
           address?: string | null;
           description?: string | null;
+          cid?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
