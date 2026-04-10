@@ -211,23 +211,8 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
-            {!isRefreshing && (
-              <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
-                  {t("dashboard.nextScheduledScan")}
-                </span>
-                <span className="text-xs font-black text-[#F6C344] tabular-nums">
-                  {data?.next_scan_at ? (
-                    new Date(data.next_scan_at).toLocaleTimeString(locale, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  ) : (
-                    t("common.pending")
-                  )}
-                </span>
-              </div>
-            )}
+            {!isRefreshing && <div className="hidden md:flex flex-col items-end mr-2" />}
+
             <button
               onClick={() => handleRefresh(data)}
               disabled={isRefreshing}

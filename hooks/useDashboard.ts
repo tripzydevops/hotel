@@ -16,26 +16,6 @@ export function useDashboard(
   const queryClient = useQueryClient();
   const [isPolling, setIsPolling] = useState(false);
 
-  // --- Composed Hooks ---
-  // PERFORMANCE: We disable these independent fetches on initial load 
-  // if we don't have dashboard data yet, because the dashboard response 
-  // bundle will seed their caches automatically.
-  const hasDashboardData = !!queryClient.getQueryData(["dashboard", userId]);
-  
-  const {
-    settings,
-    updateSettings,
-    loading: settingsLoading,
-    error: settingsError,
-  } = useSettings(userId, !!userId);
-
-  const {
-    profile,
-    setProfile,
-    loading: profileLoading,
-    error: profileError,
-  } = useProfile(userId, !!userId);
-
   // --- Queries ---
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", userId],
@@ -48,17 +28,39 @@ export function useDashboard(
     refetchInterval: isPolling ? 3000 : false,
   });
 
+  const isLoadingDashboard = dashboardQuery.isLoading;
+
+  // PERFORMANCE: We disable these independent fetches if the dashboard 
+  // response bundle (which includes profile/settings) is already in cache
+  // or if the main bundle is currently being fetched.
+  const hasDashboardData = !!queryClient.getQueryData(["dashboard", userId]);
+  
+  const {
+    settings,
+    updateSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useSettings(userId, !!userId && !hasDashboardData && !isLoadingDashboard);
+
+  const {
+    profile,
+    setProfile,
+    loading: profileLoading,
+    error: profileError,
+  } = useProfile(userId, !!userId && !hasDashboardData && !isLoadingDashboard);
+
   // EXPLANATION: Fast-Load Cache Seeding
   // When the bundled dashboard data arrives, we manually seed the React Query
   // cache for Profile and Settings. This prevents the individual hooks from
   // triggering redundant API calls, significantly speeding up the initial load.
   useEffect(() => {
-    if (dashboardQuery.data) {
-      if (dashboardQuery.data.profile) {
-        queryClient.setQueryData(["profile", userId], dashboardQuery.data.profile);
+    const data = dashboardQuery.data;
+    if (data) {
+      if (data.profile) {
+        queryClient.setQueryData(["profile", userId], data.profile);
       }
-      if (dashboardQuery.data.user_settings) {
-        queryClient.setQueryData(["settings", userId], dashboardQuery.data.user_settings);
+      if (data.user_settings) {
+        queryClient.setQueryData(["settings", userId], data.user_settings);
       }
     }
   }, [dashboardQuery.data, queryClient, userId]);

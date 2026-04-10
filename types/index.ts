@@ -187,7 +187,6 @@ export interface DashboardData {
   recent_sessions: any[];
   unread_alerts_count: number;
   comparison_limit?: number;
-  next_scan_at?: string;
   last_updated: string;
   // BUNDLED DATA (Kaizen Fast-Load)
   profile?: UserProfile;
