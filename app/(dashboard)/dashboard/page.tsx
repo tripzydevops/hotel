@@ -211,7 +211,12 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
-            {!isRefreshing && <div className="hidden md:flex flex-col items-end mr-2" />}
+            {!isRefreshing && (
+              <div className="hidden md:flex items-center gap-2 mr-4 bg-[var(--optimal-green)]/5 px-4 py-2 rounded-full border border-[var(--optimal-green)]/10 animate-pulse">
+                <div className="w-2 h-2 rounded-full bg-[var(--optimal-green)] shadow-[0_0_8px_var(--optimal-green)]" />
+                <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-[0.2em]">{t("dashboard.synchronized")}</span>
+              </div>
+            )}
 
             <button
               onClick={() => handleRefresh(data)}
@@ -226,7 +231,7 @@ export default function Dashboard() {
                   className={`w-4 h-4 text-[var(--soft-gold)] ${isRefreshing ? "animate-spin" : ""}`}
                 />
                 <span className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-widest">
-                  {isRefreshing ? t("common.scanning") : t("common.scanNow")}
+                   {isRefreshing ? t("common.scanning") : t("common.refreshData")}
                 </span>
               </div>
             </button>

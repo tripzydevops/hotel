@@ -435,6 +435,12 @@ export default function HotelTile(props: HotelTileProps) {
                  {t("intradayStory.via")} {vendor}
                </span>
              )}
+             {lastUpdated && !isTarget && (
+               <div className="flex items-center gap-1.5 mt-3 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-60 group-hover/card:opacity-100 transition-opacity">
+                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] animate-pulse" />
+                 {t("dashboard.marketSynchronized")}: {lastUpdated}
+               </div>
+             )}
           </div>
         </div>
       </div>
@@ -447,7 +453,7 @@ export default function HotelTile(props: HotelTileProps) {
             <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{previousPrice ? formatPrice(previousPrice) : "—"}</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-1 tracking-tighter">{t("dashboard.updated")}</p>
+            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-1 tracking-tighter">{t("dashboard.synchronized")}</p>
             <p className="text-sm font-bold text-[var(--text-primary)] opacity-80">{lastUpdated || t("intradayStory.justNow")}</p>
           </div>
         </div>

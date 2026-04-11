@@ -15,6 +15,7 @@ export const en = {
     cancel: "Cancel",
     scanNow: "Scan Now",
     scanning: "Scanning...",
+    refreshData: "Refresh Market Data",
     addHotel: "Add Hotel",
     myHotel: "My Hotel",
     competitor: "Competitor",
@@ -105,6 +106,8 @@ export const en = {
     liveMarketRate: "Live Market Rate",
     sentimentScore: "Sentiment Score",
     rateParity: "Rate Parity",
+    marketSynchronized: "Market Synchronized",
+    synchronized: "Synchronized",
   },
   hotelDetails: {
     overview: "Overview",

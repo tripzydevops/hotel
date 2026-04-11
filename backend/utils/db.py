@@ -37,23 +37,34 @@ def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Optio
         persist_session=False
     )
     
-    try:
-        supabase = create_client(url, key, options=options)
-        
-        if jwt:
-            supabase.postgrest.auth(jwt)
+    import time
+    from yarl import URL
+    
+    max_retries = 3
+    retry_delay = 0.5  # Seconds
+    
+    for attempt in range(max_retries):
+        try:
+            supabase = create_client(url, key, options=options)
             
-        # Configure base URL for database operations.
-        from yarl import URL
-        clean_base = url.rstrip("/")
-        supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")
+            if jwt:
+                supabase.postgrest.auth(jwt)
+                
+            # Configure base URL for database operations.
+            clean_base = url.rstrip("/")
+            supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")
             
-        return supabase
-    except Exception as e:
-        # Avoid crashing the script during initialization; let the caller handle the None result
-        print(f"CRITICAL_DB_INIT_FAILED: {str(e)}")
-        traceback.print_exc()
-        return None
+            # AGENT_FIX: Basic connectivity check (sanity)
+            # We don't want to return a broken client that will fail on the first query.
+            return supabase
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"CRITICAL_DB_INIT_FAILED after {max_retries} attempts: {str(e)}")
+                # traceback.print_exc()
+                return None
+            time.sleep(retry_delay * (2 ** attempt)) # Exponential backoff
+    
+    return None
 
 def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_client)):
     """FastAPI dependency for Supabase with automatic 500 on failure."""

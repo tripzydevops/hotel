@@ -15,6 +15,7 @@ export const tr = {
     cancel: "İptal",
     scanNow: "Şimdi Tara",
     scanning: "Taranıyor...",
+    refreshData: "Piyasa Verilerini Yenile",
     addHotel: "Otel Ekle",
     myHotel: "Benim Otelim",
     competitor: "Rakip",
@@ -105,6 +106,8 @@ export const tr = {
     liveMarketRate: "Güncel Piyasa Oranı",
     sentimentScore: "Misafir Memnuniyet Puanı",
     rateParity: "Fiyat Paritesi",
+    marketSynchronized: "Piyasa Senkronize Edildi",
+    synchronized: "Senkronize Edildi",
   },
   hotelDetails: {
     overview: "Genel Bakış",

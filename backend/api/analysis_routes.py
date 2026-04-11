@@ -106,6 +106,12 @@ async def discover_competitors_trigger(
 ):
     """Trigger Ghost Competitor Discovery."""
     try:
+        # AGENT_FEATURE: Ownership Check
+        from backend.services.analysis_service import check_hotel_ownership
+        is_owner = await check_hotel_ownership(db, str(current_user.id), str(hotel_id))
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+
         from backend.agents.analyst_agent import AnalystAgent
 
         analyst = AnalystAgent(db)
@@ -118,6 +124,9 @@ async def discover_competitors_trigger(
         if not serp_api_id:
             raise HTTPException(400, "Hotel has no SerpApi ID for discovery")
         return await analyst.discover_rivals(str(hotel_id), limit=5)
+    except HTTPException as he:
+        # Re-raise standard HTTP exceptions
+        raise he
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -403,8 +412,27 @@ async def get_market_intelligence_brief(
     """
     AGENT_FEATURE: Market Intelligence AI Brief.
     Synthesizes market data into actionable insights.
+    Caches results for 5 minutes per user/hotel combo to reduce AI overhead.
     """
     from backend.services.analysis_service import get_market_intelligence_data
+    from backend.utils.logger import get_logger
+    import time
+
+    # AGENT_FIX: Memory Cache for Serverless Context
+    # Since Vercel instances are ephemeral, we use a simple dict. 
+    # It protects against immediate double-refreshes.
+    global _brief_cache
+    if "_brief_cache" not in globals():
+        globals()["_brief_cache"] = {}
+    
+    cache_key = f"{current_user.id}_{hotel_id}"
+    now = time.time()
+    
+    if cache_key in globals()["_brief_cache"]:
+        cached_data, expiry = globals()["_brief_cache"][cache_key]
+        if now < expiry:
+            get_logger(__name__).info(f"Serving cached intelligence brief for {hotel_id}")
+            return cached_data
 
     try:
         # 1. Fetch the raw market intelligence data
@@ -417,6 +445,10 @@ async def get_market_intelligence_brief(
         # 2. Generate the intelligence brief
         brief = await intelligence_service.generate_market_brief(analysis_data)
 
+        # 3. Store in cache (300 seconds)
+        globals()["_brief_cache"][cache_key] = (brief, now + 300)
+
         return brief
     except Exception as e:
+        get_logger(__name__).error(f"Market Intelligence Brief failed: {e}")
         raise HTTPException(status_code=500, detail=f"Market Intelligence Brief failed: {str(e)}")
