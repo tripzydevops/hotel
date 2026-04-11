@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request
 from typing import List, Optional
 from uuid import UUID
 from supabase import Client
-from backend.utils.db import get_supabase
+from backend.utils.db import get_supabase, try_acquire_lock
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
 from backend.services.monitor_service import (
@@ -62,6 +62,12 @@ async def check_scheduled_scan(
             return {"triggered": False, "reason": "DB_UNAVAILABLE"}
 
         uid = str(user_id)
+
+        # ATOMIC LOCK: Prevent multiple concurrent scheduler ticks
+        # We lock for 30 seconds - enough for the 'who is due' logic to complete.
+        if not force:
+            if not try_acquire_lock(db, "global_scheduler_tick", expire_seconds=30):
+                return {"triggered": False, "reason": "LOCK_HELD"}
 
         # Sequential queries for thread safety
         # 1. Settings Check

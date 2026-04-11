@@ -78,3 +78,18 @@ def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_clie
 
 # Alias for backward compatibility with existing code (Functions and Dependencies)
 get_supabase = get_supabase_client
+
+def try_acquire_lock(db: Any, lock_key: str, expire_seconds: int = 60) -> bool:
+    """
+    Attempts to acquire a distributed lock via PostgreSQL RPC.
+    Returns True if acquired, False otherwise.
+    """
+    try:
+        res = db.rpc("try_acquire_lock", {
+            "p_lock_key": lock_key,
+            "p_expire_seconds": expire_seconds
+        }).execute()
+        return bool(res.data)
+    except Exception as e:
+        print(f"Lock acquisition error: {e}")
+        return False
