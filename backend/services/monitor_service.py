@@ -12,7 +12,7 @@ from typing import List, Dict, Any, Optional, Set
 from uuid import UUID
 from fastapi import BackgroundTasks
 from supabase import Client
-from backend.models.schemas import ScanOptions, MonitorResult
+from backend.models.schemas import ScanOptions, MonitorResult, SCAN_PULSE_INTERVAL_MINUTES, SCAN_PULSE_INTERVAL_HOURS
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.utils.logger import get_logger
 
@@ -55,6 +55,28 @@ def get_scheduler_logger():
         s_logger.setLevel(logging.INFO)
         s_logger.propagate = False
     return s_logger
+
+
+async def record_system_pulse(
+    db: Client,
+    action_type: str,
+    status: str = "success",
+    status_detail: Optional[str] = None
+):
+    """
+    Logs a system event (pulse or mesh activity) to query_logs for feed visibility.
+    """
+    try:
+        db.table("query_logs").insert({
+            "user_id": "00000000-0000-0000-0000-000000000000", # System User
+            "action_type": action_type,
+            "status": status,
+            "status_detail": status_detail,
+            "hotel_name": "System Mesh" if action_type == "mesh_activity" else "Antigravity OS",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
+    except Exception as e:
+        logger.debug(f"Pulse recording failed: {e}")
 
 
 async def trigger_monitor_logic(
@@ -258,15 +280,7 @@ async def trigger_monitor_logic(
     # When a user triggers a manual scan, we advance their 'next_scan_at' 
     # to avoid a scheduled scan triggering immediately after.
     try:
-        freq = (
-            (profile_data.get("scan_frequency_minutes") or 1440)
-            if not is_admin else 1440
-        )
-        # If we have settings, they override the profile default
-        settings_check = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
-        if settings_check.data:
-            freq = settings_check.data[0].get("check_frequency_minutes") or freq
-            
+        freq = SCAN_PULSE_INTERVAL_MINUTES # Standard 4-hour system pulse
         new_next = (datetime.now(timezone.utc) + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
         db.table("profiles").update({"next_scan_at": new_next}).eq("id", str(user_id)).execute()
         logger.info(f"Manual scan: Advanced next_scan_at for {user_id} to {new_next}")
@@ -438,15 +452,12 @@ async def run_monitor_background(
         # Ensure next_scan_at is pushed forward if this was a manual scan that 
         # somehow missed the trigger update, or a scheduled scan that finished.
         try:
-            # FIX: Fetch both profile and settings to ensure frequency consistency
-            profile_res = db.table("profiles").select("next_scan_at, scan_frequency_minutes").eq("id", str(user_id)).execute()
-            settings_res = db.table("settings").select("check_frequency_minutes").eq("user_id", str(user_id)).execute()
+            profile_res = db.table("profiles").select("next_scan_at").eq("id", str(user_id)).execute()
             
             if profile_res.data:
                 prof = profile_res.data[0]
                 nxt = prof.get("next_scan_at")
                 
-                # If next_scan_at is in the past or missing, force advance it
                 now_utc = datetime.now(timezone.utc)
                 is_due = True
                 if nxt:
@@ -454,25 +465,20 @@ async def run_monitor_background(
                         nxt_dt = datetime.fromisoformat(nxt.replace("Z", "+00:00"))
                         if nxt_dt > now_utc:
                             is_due = False
-                    except (Exception) as parse_e:
-                        logger.debug(f"Failed to parse next_scan_at: {str(parse_e)}")
+                    except (Exception):
+                        is_due = True
                 
                 if is_due:
-                    # [FIX] Prefer settings.check_frequency_minutes as source of truth
-                    freq = 1440
-                    if settings_res.data and settings_res.data[0].get("check_frequency_minutes"):
-                        freq = settings_res.data[0].get("check_frequency_minutes")
-                    elif prof.get("scan_frequency_minutes"):
-                        freq = prof.get("scan_frequency_minutes")
-                        
+                    freq = 240 # Unified 4-hour heartbeat
                     new_nxt = (now_utc + timedelta(minutes=freq)).isoformat().replace("+00:00", "Z")
-                    # Use upsert for profile sync safety to handle missing records
                     db.table("profiles").upsert({
                         "id": str(user_id),
-                        "next_scan_at": new_nxt,
-                        "scan_frequency_minutes": freq
+                        "next_scan_at": new_nxt
                     }).execute()
                     logger.info(f"Background: Force-advanced next_scan_at for {user_id} to {new_nxt}")
+
+            # Record Mesh Activity for visible feed update
+            await record_system_pulse(db, "mesh_activity")
         except Exception as fe:
             logger.warning(f"Background: Final sync safety failed: {fe}")
 
@@ -513,10 +519,9 @@ async def run_scheduler_check_logic():
     - Ensures scans are dispatched to Celery workers for asynchronous processing.
 
     FLOW:
-    1. Identifies active users whose 'next_scan_at' timestamp is in the past.
-    2. Calculates the 'next_run' interval based on user settings (default: 24h).
-    3. Updates 'next_scan_at' immediately to act as a soft-lock (preventing duplicate dispatches).
-    4. Dispatches the scan task to the Redis/Celery queue for VM-side execution.
+    1. Triggers the System Heartbeat which checks the global pulse (default: 4h).
+    2. Orchestrates DataForSEO result collection and processing.
+    3. Cleans up any stalled or zombie scan sessions.
     """
     s_logger = get_scheduler_logger()
     s_logger.info("CRON: Starting scheduler check...")
@@ -528,14 +533,31 @@ async def run_scheduler_check_logic():
             logger.error("CRON: Database unavailable")
             return
 
-        # 1. RUN SYSTEM HEARTBEAT (Hotel-Centric)
+        # 1. RUN SYSTEM PULSE (5-minute heartbeat for UI 'Alive' feeling)
+        try:
+            five_mins_ago = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+            recent_pulse = (
+                supabase.table("query_logs")
+                .select("id")
+                .eq("action_type", "system_pulse")
+                .gt("created_at", five_mins_ago)
+                .limit(1)
+                .execute()
+            )
+            if not recent_pulse.data:
+                await record_system_pulse(supabase, "system_pulse")
+                s_logger.info("CRON: Emitted system heartbeat pulse.")
+        except Exception as p_e:
+            s_logger.debug(f"Pulse emission skipped: {p_e}")
+
+        # 1.5 RUN SYSTEM HEARTBEAT (New Global 4h Standard)
+        # This function handles its own timing checks via admin_settings table.
         await run_system_heartbeat(supabase)
         
-        # 2. PROCESS COMPLETED TASKS
+        # 2. PROCESS COMPLETED TASKS (DataForSEO result collector)
         await process_system_scans(supabase)
 
         # 3. Cleanup Zombie Sessions
-        # Cleanup Zombie Sessions: Sessions running for > 2 hours are marked failed.
         try:
             zombie_cutoff = (
                 datetime.now(timezone.utc) - timedelta(hours=2)
@@ -559,18 +581,10 @@ async def run_scheduler_check_logic():
         except (Exception) as z_e:
             s_logger.error(f"CRON: Zombie cleanup failed: {str(z_e)}")
 
-        # 1. Get all active users with schedules due
-        # Robust ISO format for Supabase comparison (YYYY-MM-DDTHH:MM:SSZ)
-        now_dt = datetime.now(timezone.utc).replace(microsecond=0)
-        now_iso = now_dt.isoformat().replace("+00:00", "Z")
-        s_logger.info(f"CRON: Checking for scans due before {now_iso}")
-
-        # Daily Market Sync (Eyes of Turkey)
-        # We trigger a full market event sync once every 24 hours.
+        # 4. DAILY MARKET SYNC (Eyes of Turkey)
+        # Maintained once per 24 hours for regional intelligence.
         try:
             today_date = date.today().isoformat()
-            # Use scan_sessions or a dedicated sync_logs table to track?
-            # We'll use a specific session_type 'market_sync' for simplicity.
             last_sync = (
                 supabase.table("scan_sessions")
                 .select("id")
@@ -583,9 +597,8 @@ async def run_scheduler_check_logic():
             if not last_sync.data:
                 s_logger.info("CRON: Triggering global market intelligence sync (Eyes of Turkey)...")
                 
-                # Create a tracking session for GLOBAL sync
                 sync_session = supabase.table("scan_sessions").insert({
-                    "user_id": None, # Global session (system-wide)
+                    "user_id": None,
                     "session_type": "market_sync",
                     "status": "running",
                     "hotels_count": 0
@@ -593,14 +606,12 @@ async def run_scheduler_check_logic():
                 
                 sync_id = sync_session.data[0]["id"] if sync_session.data else None
                 
-                # Run scrapers
                 from backend.services.market.tobb_scraper import TOBBScraper
                 from backend.services.market.tga_scraper import TGAScraper
                 
                 tobb = TOBBScraper(supabase)
                 tga = TGAScraper(supabase)
                 
-                # We run them sequentially to avoid Supabase connection pressure
                 tobb_res = await tobb.scrape_to_supabase()
                 tga_res = await tga.scrape_to_supabase()
                 
@@ -610,10 +621,7 @@ async def run_scheduler_check_logic():
                     supabase.table("scan_sessions").update({
                         "status": status,
                         "completed_at": datetime.now().isoformat(),
-                        "reasoning_trace": [
-                            f"TOBB: {tobb_res}",
-                            f"TGA: {tga_res}"
-                        ]
+                        "reasoning_trace": [f"TOBB: {tobb_res}", f"TGA: {tga_res}"]
                     }).eq("id", sync_id).execute()
                 
                 s_logger.info(f"CRON: Market sync complete. Status: {status}")
@@ -622,105 +630,7 @@ async def run_scheduler_check_logic():
         except (Exception) as m_e:
             s_logger.error(f"CRON: Market sync failed: {str(m_e)}")
 
-        # 1.1 Fetch a batch of active profiles due for scan
-        # Use batching (limit 5) to prevent Vercel timeout issues.
-        # This ensures we process a manageable chunk and advance their timestamps
-        # before the next cron run picks up the next batch.
-        result = (
-            supabase.table("profiles")
-            .select("id, next_scan_at, scan_frequency_minutes, subscription_status")
-            .lte("next_scan_at", now_iso)
-            .in_("subscription_status", ["active", "trial"])
-            .order("next_scan_at", desc=False) # Process oldest first
-            .limit(5)
-            .execute()
-        )
-
-        active_due = result.data or []
-        s_logger.info(f"CRON: Selected batch of {len(active_due)} profiles due for scan.")
-
-        if not active_due:
-            return
-
-        # 1.1.5 IMMEDIATE PROACTIVE LOCKING
-        # Before we do ANYTHING expensive (like fetching hotels or starting scans),
-        # we advance the next_scan_at for these users. This ensures that even if 
-        # the function times out, they won't be picked up again immediately.
-        # This prevents the 'stuck in the past' loop when Vercel kills the process.
-        for user in active_due:
-            try:
-                user_id = user["id"]
-                freq = user.get("scan_frequency_minutes") or 1440
-                next_run_dt = now_dt + timedelta(minutes=freq)
-                next_run_iso = next_run_dt.isoformat().replace("+00:00", "Z")
-                
-                supabase.table("profiles").update({
-                    "next_scan_at": next_run_iso
-                }).eq("id", user_id).execute()
-                
-                s_logger.info(f"CRON: Pre-locked user {user_id} to next scan at {next_run_iso}")
-            except (Exception) as lock_e:
-                s_logger.error(f"CRON: Failed to pre-lock user {user['id']}: {str(lock_e)}")
-
-        # 1.2 Fetch actual user settings for frequency override
-        due_ids = [u["id"] for u in active_due]
-        settings_res = (
-            supabase.table("settings")
-            .select("user_id, check_frequency_minutes")
-            .in_("user_id", due_ids)
-            .execute()
-        )
-        settings_map = {
-            s["user_id"]: s["check_frequency_minutes"] for s in settings_res.data or []
-        }
-
-        # 1.3 Pool all hotels via M2M join (filtering soft-deleted in-memory)
-        res = (
-            supabase.table("user_hotels")
-            .select("user_id, hotel_id, is_target, pricing_dna, preferred_currency, fixed_check_in, fixed_check_out, default_adults, hotels(*)")
-            .in_("user_id", due_ids)
-            .execute()
-        )
-        
-        all_hotels = []
-        for mapping in (res.data or []):
-            if mapping.get("hotels"):
-                h_data = mapping["hotels"]
-                if h_data.get("deleted_at"):
-                    continue
-                h_data["user_id"] = mapping["user_id"] # Inject for grouping below
-                
-                # Override specialized settings from user_hotels association
-                h_data["is_target_hotel"] = mapping.get("is_target", False)
-                h_data["pricing_dna"] = mapping.get("pricing_dna")
-                h_data["preferred_currency"] = mapping.get("preferred_currency", "USD")
-                h_data["fixed_check_in"] = mapping.get("fixed_check_in")
-                h_data["fixed_check_out"] = mapping.get("fixed_check_out")
-                h_data["default_adults"] = mapping.get("default_adults", 2)
-                
-                all_hotels.append(h_data)
-
-        # Group hotels by user for processing
-        user_hotels_map = {}
-        for h in all_hotels:
-            uid = h["user_id"]
-            if uid not in user_hotels_map:
-                user_hotels_map[uid] = []
-            user_hotels_map[uid].append(h)
-
-        # 1.4 Cleanup zombies (already in batch, but as a secondary safety)
-        # We don't want to run the expensive zombie cleanup every time if we can avoid it,
-        # but it keeps the scan_sessions table clean.
-
-        # 2. FINISHED: Consolidate logic. 
-        # We no longer run per-user scans here. 
-        # Instead, run_system_heartbeat handles background global monitoring for ALL active hotels.
-        # This reduces DataForSEO costs by 80%+.
-        s_logger.info("CRON: Per-user scheduled scanning is now handled by Global System Heartbeat.")
-
-    except Exception as e:
-        s_logger.critical(f"CRON ERROR: {e}")
-        s_logger.error(traceback.format_exc())
+        s_logger.info("CRON: Global system cycle check complete.")
 
     except Exception as e:
         s_logger.critical(f"CRON ERROR: {e}")
@@ -741,7 +651,8 @@ async def run_system_heartbeat(db: Client):
             return
 
         settings = settings_res.data[0]
-        interval = settings.get("scan_interval_hours", 24)
+        # Transitioning to new 4 hour system-wide standard
+        interval = SCAN_PULSE_INTERVAL_HOURS
         last_scan = settings.get("last_global_scan_at")
         
         now = datetime.now(timezone.utc)
@@ -798,6 +709,20 @@ async def run_system_heartbeat(db: Client):
             return
 
         s_logger.info(f"Heartbeat: Submitting {len(criteria_groups)} unique search tasks (from {len(monitored_res.data)} monitored records)...")
+        # 4. Create a Global Scan Session for visibility
+        session_id = None
+        try:
+            session_result = db.table("scan_sessions").insert({
+                "user_id": "00000000-0000-0000-0000-000000000000", # System User
+                "session_type": "scheduled_pulse",
+                "hotels_count": len(criteria_groups),
+                "status": "processing",
+            }).execute()
+            if session_result.data:
+                session_id = session_result.data[0]["id"]
+                s_logger.info(f"Heartbeat: Created system session {session_id}")
+        except Exception as e:
+            s_logger.error(f"Heartbeat: Failed to create session record: {e}")
 
         # 4. Prepare DataForSEO Tasks (Today -> Tomorrow, 2 Adults)
         check_in = date.today().strftime("%Y-%m-%d")
@@ -815,7 +740,7 @@ async def run_system_heartbeat(db: Client):
                 "check_out": check_out,
                 "adults": 2,
                 "currency": "TRY",
-                "tag": str(primary_id) # Critical: use tag to identify results
+                "tag": f"{session_id}|{primary_id}" if session_id else str(primary_id)
             })
 
         batch_size = 100
@@ -863,8 +788,18 @@ async def process_system_scans(db: Client):
                 if not result or result.get("status") != "success":
                     continue
 
-                # Use tag (h_id) passed during submission
-                h_id = result.get("tag")
+                # Composite tag parsing: session_id|h_id
+                tag_raw = result.get("tag", "")
+                h_id = tag_raw
+                session_id = None
+                
+                if tag_raw and "|" in tag_raw:
+                    try:
+                        session_id_str, h_id = tag_raw.split("|", 1)
+                        session_id = session_id_str # Keep as string for DB
+                    except Exception:
+                        h_id = tag_raw
+
                 price = result.get("price")
                 currency = result.get("currency")
                 
@@ -916,7 +851,19 @@ async def process_system_scans(db: Client):
 
                         # 4. Trigger per-user notifications for this specific entity
                         await _trigger_heartbeat_notifications(db, target_id, price, currency)
-                        
+
+                        # 5. Log activity to session for visibility if session_id is present
+                        if session_id:
+                            try:
+                                db.table("query_logs").insert({
+                                    "session_id": session_id,
+                                    "hotel_name": h_name,
+                                    "status": "success",
+                                    "message": f"Pulse detected price: {price} {currency}",
+                                    "created_at": datetime.now(timezone.utc).isoformat()
+                                }).execute()
+                            except Exception as log_e:
+                                s_logger.error(f"Failed to log session activity: {log_e}")
                     s_logger.info(f"Task Processor: Updated {len(matching_hotels.data)} variations sharing token '{serp_id or h_name}' to {price} {currency}")
 
                 except Exception as e:

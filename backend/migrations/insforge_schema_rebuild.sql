@@ -254,19 +254,17 @@ ADD COLUMN IF NOT EXISTS manual_scans_per_day INTEGER DEFAULT 0,
 INSERT INTO tier_configs (
         plan_type,
         max_hotels,
-        can_scan_hourly,
         max_history_days,
         manual_scans_per_day,
         sentiment_analysis_enabled
     )
-VALUES ('starter', 5, FALSE, 30, 0, FALSE),
-    ('pro', 25, TRUE, 90, 0, TRUE),
+VALUES ('starter', 5, 30, 0, FALSE),
+    ('pro', 25, 90, 0, TRUE),
     -- Pro gets auto-scan but NO manual scan
-    ('enterprise', 100, TRUE, 365, 1, TRUE) -- Enterprise gets 1 manual scan/day + auto-scan
+    ('enterprise', 100, 365, 1, TRUE) -- Enterprise gets 1 manual scan/day + auto-scan
     ON CONFLICT (plan_type) DO
 UPDATE
 SET max_hotels = EXCLUDED.max_hotels,
-    can_scan_hourly = EXCLUDED.can_scan_hourly,
     max_history_days = EXCLUDED.max_history_days,
     manual_scans_per_day = EXCLUDED.manual_scans_per_day,
     sentiment_analysis_enabled = EXCLUDED.sentiment_analysis_enabled;-- Migration 006: Fix Embedding Dimensions (768 -> 3072)
@@ -645,9 +643,6 @@ CREATE TABLE IF NOT EXISTS membership_plans (
     price_monthly NUMERIC(10, 2) NOT NULL DEFAULT 0,
     hotel_limit INTEGER NOT NULL DEFAULT 1,
     monthly_scan_limit INTEGER NOT NULL DEFAULT 100,
-    scan_frequency_limit TEXT DEFAULT 'daily' CHECK (
-        scan_frequency_limit IN ('hourly', 'daily', 'weekly')
-    ),
     features JSONB DEFAULT '[]'::jsonb,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -658,7 +653,6 @@ INSERT INTO membership_plans (
         price_monthly,
         hotel_limit,
         monthly_scan_limit,
-        scan_frequency_limit,
         features
     )
 VALUES (
@@ -666,32 +660,28 @@ VALUES (
         0,
         1,
         100,
-        'daily',
-        '["1 Hotel Monitor", "Daily Scans", "Email Alerts"]'
+        '["1 Hotel Monitor", "Global Pulse Sync", "Email Alerts"]'
     ),
     (
         'Starter',
         29,
         5,
         500,
-        'daily',
-        '["5 Hotel Monitors", "Daily Scans", "Email & Push Alerts", "Basic Reports"]'
+        '["5 Hotel Monitors", "Global Pulse Sync", "Email & Push Alerts", "Basic Reports"]'
     ),
     (
         'Pro',
         99,
         25,
         2500,
-        'hourly',
-        '["25 Hotel Monitors", "Hourly Scans", "All Alert Types", "Advanced Analytics", "Priority Support"]'
+        '["25 Hotel Monitors", "Global Pulse Sync", "All Alert Types", "Advanced Analytics", "Priority Support"]'
     ),
     (
         'Enterprise',
         299,
         100,
         10000,
-        'hourly',
-        '["100+ Hotel Monitors", "Hourly High-Frequency", "Dedicated Account Manager", "Custom Integrations"]'
+        '["100+ Hotel Monitors", "Global Pulse Sync", "Dedicated Account Manager", "Custom Integrations"]'
     ) ON CONFLICT (name) DO NOTHING;
 -- Enable RLS
 ALTER TABLE membership_plans ENABLE ROW LEVEL SECURITY;
@@ -717,19 +707,16 @@ ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMP WITH TIME ZONE DEFAULT (NO
 CREATE TABLE IF NOT EXISTS tier_configs (
     plan_type TEXT PRIMARY KEY,
     max_hotels INTEGER NOT NULL,
-    can_scan_hourly BOOLEAN DEFAULT FALSE,
     max_history_days INTEGER DEFAULT 7
 );
 -- Seed Tiers
 INSERT INTO tier_configs (
         plan_type,
         max_hotels,
-        can_scan_hourly,
         max_history_days
     )
-VALUES ('starter', 10, FALSE, 30),
-    ('pro', 50, TRUE, 365) ON CONFLICT (plan_type) DO
+VALUES ('starter', 10, 30),
+    ('pro', 50, 365) ON CONFLICT (plan_type) DO
 UPDATE
 SET max_hotels = EXCLUDED.max_hotels,
-    can_scan_hourly = EXCLUDED.can_scan_hourly,
     max_history_days = EXCLUDED.max_history_days;

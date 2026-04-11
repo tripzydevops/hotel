@@ -5,6 +5,7 @@ from supabase import Client
 from backend.utils.db import get_supabase, try_acquire_lock
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
+from backend.services import monitor_service
 from backend.services.monitor_service import (
     trigger_monitor_logic,
     run_monitor_background,
@@ -51,118 +52,80 @@ async def check_scheduled_scan(
     db: Optional[Client] = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
-    """Lazy cron workaround for Vercel free tier."""
+    """
+    Lazy cron workaround for Vercel. 
+    1. If force=True, scans all of this user's hotels immediately.
+    2. If force=False, triggers the Global Heartbeat (4-hour system scan).
+    """
     user_id = current_user.id
 
+    if not db:
+        return {"triggered": False, "reason": "DB_UNAVAILABLE"}
+
+    # ATOMIC LOCK: Prevent multiple concurrent scheduler ticks
+    # Use a global lock for pulses, or per-user lock for force scans
+    lock_name = f"scan_lock_{user_id}" if force else "global_scheduler_tick"
+    if not try_acquire_lock(db, lock_name, expire_seconds=60):
+        return {"triggered": False, "reason": "LOCK_HELD"}
+
+    if not force:
+        # TRIGGER GLOBAL SYSTEM HEARTBEAT
+        # This handles the 4-hour interval logic for EVERYONE.
+        background_tasks.add_task(monitor_service.run_system_heartbeat, db)
+        background_tasks.add_task(monitor_service.process_system_scans, db)
+        return {"triggered": True, "type": "heartbeat_pulse"}
+
+    # FORCE SCAN FOR CURRENT USER
     try:
-        # Frontend-Triggered Scheduler
-        # This endpoint allows the frontend to 'tick' the scheduler when the user
-        # visits the app, ensuring scans run even without a persistent cron.
-        if not db:
-            return {"triggered": False, "reason": "DB_UNAVAILABLE"}
-
         uid = str(user_id)
-
-        # ATOMIC LOCK: Prevent multiple concurrent scheduler ticks
-        # We lock for 30 seconds - enough for the 'who is due' logic to complete.
-        if not force:
-            if not try_acquire_lock(db, "global_scheduler_tick", expire_seconds=30):
-                return {"triggered": False, "reason": "LOCK_HELD"}
-
-        # Sequential queries for thread safety
-        # 1. Settings Check
-        settings_res = db.table("settings").select("*").eq("user_id", uid).execute()
-        if not settings_res.data:
-            return {"triggered": False, "reason": "NO_SETTINGS"}
-
-        settings = settings_res.data[0]
-        freq_minutes = settings.get("check_frequency_minutes", 0)
-        if not force and freq_minutes <= 0:
-            return {"triggered": False, "reason": "MANUAL_ONLY"}
-
-        # 2. Hotels Check
-        res = (
-            db.table("hotels")
-            .select("*")
+        # Fetch monitored hotels for this user
+        monitored_res = (
+            db.table("user_hotels")
+            .select("hotel_id, hotels(*)")
             .eq("user_id", uid)
+            .eq("is_monitored", True)
             .execute()
         )
-        # Programmatic filtering to avoid Supabase client version ambiguity with .is_("null")
-        hotels = [h for h in (res.data or []) if not h.get("deleted_at")]
-        if not hotels:
-            return {"triggered": False, "reason": "NO_HOTELS"}
+        
+        hotels_data = []
+        for item in (monitored_res.data or []):
+            if item.get("hotels"):
+                hotels_data.append(item["hotels"])
 
-        # 3. Pending/Running Check (Anti-Collision — skipped when force=True)
-        if not force:
-            pending_res = (
+        if not hotels_data:
+            return {"triggered": False, "reason": "NO_MONITORED_HOTELS"}
+
+        # Create a session for tracking
+        session_id = None
+        try:
+            session_result = (
                 db.table("scan_sessions")
-                .select("created_at")
-                .eq("user_id", uid)
-                .in_("status", ["pending", "running"])
-                .order("created_at", desc=True)
-                .limit(1)
+                .insert({
+                    "user_id": uid,
+                    "session_type": "manual",
+                    "hotels_count": len(hotels_data),
+                    "status": "pending",
+                })
                 .execute()
             )
-            if pending_res.data:
-                pending_time = datetime.fromisoformat(
-                    pending_res.data[0]["created_at"].replace("Z", "+00:00")
-                )
-                if (datetime.now(timezone.utc) - pending_time).total_seconds() < 3600:
-                    return {"triggered": False, "reason": "ALREADY_PENDING"}
+            if session_result.data:
+                session_id = session_result.data[0]["id"]
+        except Exception as e:
+            print(f"[TriggerScan] Session create failed: {e}")
 
-        # 4. Due Check (skipped entirely when force=True)
-        should_run = force
-        if not should_run:
-            # Use next_scan_at from profiles as source of truth.
-            profile_res = db.table("profiles").select("next_scan_at").eq("id", uid).execute()
-            if profile_res.data:
-                nxt = profile_res.data[0].get("next_scan_at")
-                if not nxt:
-                    should_run = True  # New profile, never scanned
-                else:
-                    try:
-                        nxt_dt = datetime.fromisoformat(nxt.replace("Z", "+00:00"))
-                        if datetime.now(timezone.utc) >= nxt_dt:
-                            should_run = True
-                    except Exception:
-                        should_run = True
-            else:
-                should_run = True
+        background_tasks.add_task(
+            run_monitor_background,
+            user_id=user_id,
+            hotels=hotels_data,
+            options=None,
+            db=db,
+            session_id=session_id,
+        )
 
-        if should_run:
-            session_id = None
-            try:
-                session_result = (
-                    db.table("scan_sessions")
-                    .insert(
-                        {
-                            "user_id": uid,
-                            "session_type": "manual" if force else "scheduled",
-                            "hotels_count": len(hotels),
-                            "status": "pending",
-                        }
-                    )
-                    .execute()
-                )
-                if session_result.data:
-                    session_id = session_result.data[0]["id"]
-                    print(f"[TriggerScan] Created session {session_id} for {uid}")
-            except Exception as e:
-                print(f"[TriggerScan] Session create failed: {e}")
+        return {"triggered": True, "type": "force_scan", "session_id": session_id}
 
-            background_tasks.add_task(
-                run_monitor_background,
-                user_id=user_id,
-                hotels=hotels,
-                options=None,
-                db=db,
-                session_id=session_id,
-            )
-            return {"triggered": True, "session_id": session_id}
-
-        return {"triggered": False, "reason": "NOT_DUE"}
     except Exception as e:
-        print(f"[TriggerScan] Unhandled error: {e}")
+        print(f"[TriggerScan] Error: {e}")
         return {"triggered": False, "reason": str(e)}
 
 

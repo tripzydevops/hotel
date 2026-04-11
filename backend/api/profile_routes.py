@@ -82,7 +82,7 @@ async def get_settings(
     current_user=Depends(get_current_active_user),
 ):
     """
-    Retrieves user-specific application settings (alert thresholds, scan frequency).
+    Retrieves user-specific application settings (alert thresholds, notifications).
     If no settings exist, it initializes them with safe defaults.
     """
     user_id = current_user.id
@@ -93,14 +93,12 @@ async def get_settings(
     verify_ownership(user_id, current_user)
 
     # EXPLANATION: Application Configuration
-    # Handles persistence of user preferences, including parity alert sensitivity
-    # and automatic scan frequency (e.g., Every 4 hours).
+    # Handles persistence of user preferences, including parity alert sensitivity.
     now = datetime.now(timezone.utc)
     # ... logic remains same ...
     safe_defaults = {
         "user_id": str(user_id),
         "threshold_percent": 2.0,
-        "check_frequency_minutes": 144,
         "notifications_enabled": True,
         "push_enabled": False,
         "currency": "USD",
@@ -113,11 +111,10 @@ async def get_settings(
         if not db:
             return safe_defaults
         result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-        if not result.data:
+        if result.data:
             insert_data = {
                 "user_id": str(user_id),
                 "threshold_percent": 2.0,
-                "check_frequency_minutes": 1440,
                 "notifications_enabled": True,
                 "push_enabled": False,
                 "currency": "USD",
@@ -157,9 +154,6 @@ async def update_settings(
         return {
             "user_id": str(user_id),
             "threshold_percent": settings.threshold_percent or 2.0,
-            "check_frequency_minutes": settings.check_frequency_minutes
-            if settings.check_frequency_minutes is not None
-            else 144,
             "notifications_enabled": settings.notifications_enabled
             if settings.notifications_enabled is not None
             else True,
@@ -194,32 +188,6 @@ async def update_settings(
                 .eq("user_id", str(user_id))
                 .execute()
             )
-            
-            # 3.5 [KAIZEN] Initialize/Update next_scan_at in profiles
-            # We check both the existing settings and the profile table to ensure 
-            # they are perfectly in sync, even if a previous partially-failed save 
-            # left the database in a desynchronized state.
-            
-            # Fetch current profile frequency to detect out-of-sync states
-            profile_state = db.table("profiles").select("scan_frequency_minutes").eq("id", str(user_id)).maybe_single().execute()
-            current_profile_freq = profile_state.data.get("scan_frequency_minutes") if profile_state.data else None
-            
-            existing_freq = existing.data[0].get("check_frequency_minutes") if existing.data else None
-            new_freq = update_data.get("check_frequency_minutes")
-
-            # Update if frequency changed OR if tables are out of sync
-            if new_freq is not None and (new_freq != existing_freq or new_freq != current_profile_freq):
-                try:
-                    new_next = (datetime.now(timezone.utc) + timedelta(minutes=new_freq)).isoformat().replace("+00:00", "Z")
-                    # Use upsert to handle cases where the profile record might be missing or needs initialization
-                    db.table("profiles").upsert({
-                        "id": str(user_id),
-                        "next_scan_at": new_next,
-                        "scan_frequency_minutes": new_freq
-                    }).execute()
-                    print(f"[Settings] Updated scan schedule for {user_id} to {new_next} (Frequency: {new_freq}m)")
-                except Exception as sync_e:
-                    print(f"[Settings] Profile sync failed: {sync_e}")
         except Exception as e:
             # If update fails (e.g. column missing), try fallback without push_subscription
             if "push_subscription" in update_data:
@@ -245,15 +213,6 @@ async def update_settings(
                 .insert({"user_id": str(user_id), **update_data})
                 .execute()
             )
-            
-            # Initialize schedule for new settings
-            new_freq = update_data.get("check_frequency_minutes", 1440)
-            new_next = (datetime.now(timezone.utc) + timedelta(minutes=new_freq)).isoformat().replace("+00:00", "Z")
-            db.table("profiles").upsert({
-                "id": str(user_id),
-                "next_scan_at": new_next,
-                "scan_frequency_minutes": new_freq
-            }).execute()
         except Exception as e:
             if "push_subscription" in update_data:
                 del update_data["push_subscription"]

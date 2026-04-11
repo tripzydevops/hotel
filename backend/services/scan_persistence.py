@@ -35,7 +35,8 @@ class ScanPersistenceService:
         settings: Optional[Dict[str, Any]] = None,
         options: Optional[ScanOptions] = None,
         session_id: Optional[UUID] = None,
-        log_reasoning_fn = None  # Optional callback for logging reasoning
+        log_reasoning_fn = None,  # Optional callback for logging reasoning
+        action_type: str = "monitor"
     ) -> Dict[str, Any]:
         """
         Executes the persistence pipeline for a batch of scraper results.
@@ -82,7 +83,8 @@ class ScanPersistenceService:
                 threshold=threshold,
                 options=options,
                 session_id=session_id,
-                log_reasoning_fn=log_reasoning_fn
+                log_reasoning_fn=log_reasoning_fn,
+                action_type=action_type
             )
             
             if processed.get("price_log"):
@@ -195,7 +197,8 @@ class ScanPersistenceService:
         threshold: float,
         options: Optional[ScanOptions],
         session_id: Optional[UUID],
-        log_reasoning_fn
+        log_reasoning_fn,
+        action_type: str = "monitor"
     ) -> Dict[str, Any]:
         hotel_id = result.get("hotel_id")
         price_data = cast(Dict[str, Any], result.get("price_data") or {})
@@ -466,6 +469,7 @@ class ScanPersistenceService:
                 "check_in_date": price_log["check_in_date"],
                 "room_types": price_log["room_types"],
                 "sentiment_summary": meta_update.get("sentiment_breakdown"),
+                "action_type": action_type,
                 "created_at": datetime.now(timezone.utc).isoformat()
             },
             "sentiment_history": sentiment_history,

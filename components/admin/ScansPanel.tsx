@@ -229,9 +229,9 @@ const ScansPanel = () => {
                           </div>
                         </td>
                         <td className="p-5">
-                          <span className="text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/5 px-2 py-1 rounded border border-[var(--soft-gold)]/10">
-                            EVERY {Math.round(item.scan_frequency_minutes / 60)}
-                            H
+                          <span className="text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/5 px-2 py-1 rounded border border-[var(--soft-gold)]/10 flex items-center gap-1.5 w-fit">
+                            <RefreshCw className="w-3 h-3 animate-[spin_4s_linear_infinite]" />
+                            4H Pulse
                           </span>
                         </td>
                         <td className="p-5">

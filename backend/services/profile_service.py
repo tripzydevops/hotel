@@ -70,7 +70,6 @@ async def get_enriched_profile_logic(
                             admin_db.table("settings").upsert({
                                 "user_id": user_id_str,
                                 "threshold_percent": 1.0,
-                                "check_frequency_minutes": 1440,
                                 "notifications_enabled": True,
                                 "currency": "TRY",
                                 "created_at": datetime.now(timezone.utc).isoformat(),

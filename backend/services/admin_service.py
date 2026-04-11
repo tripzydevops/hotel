@@ -311,25 +311,6 @@ async def admin_update_user_logic(
                 db.table("profiles").update(sub_update).eq("id", user_id_str).execute()
 
         # 2. Update Settings Fields
-        if updates.check_frequency_minutes is not None:
-            db.table("settings").update(
-                {"check_frequency_minutes": updates.check_frequency_minutes}
-            ).eq("user_id", user_id_str).execute()
-            
-            # KAİZEN: Synchronize next_scan_at in profiles if frequency changed
-            try:
-                now_dt = datetime.now(timezone.utc).replace(microsecond=0)
-                next_run = (
-                    (now_dt + timedelta(minutes=updates.check_frequency_minutes))
-                    .isoformat()
-                    .replace("+00:00", "Z")
-                )
-                db.table("profiles").update({"next_scan_at": next_run}).eq(
-                    "id", user_id_str
-                ).execute()
-                print(f"[Admin] Synced next_scan_at for {user_id_str} to {next_run}")
-            except Exception as e:
-                print(f"[Admin] Profile frequency sync failed: {e}")
 
         # 3. Update Auth Fields (Requires Admin Bypass)
         from backend.utils.db import get_supabase_client
@@ -370,7 +351,7 @@ async def get_admin_users_logic(db: Client) -> List[AdminUser]:
         profiles_res = db.table("user_profiles").select("*").execute()
         profiles_data = profiles_res.data or []
 
-        db.table("settings").select("user_id, check_frequency_minutes").execute()
+        # profiles_res = db.table("user_profiles").select("*").execute()
 
         sub_res = (
             db.table("profiles").select("id, plan_type, subscription_status").execute()
@@ -478,8 +459,8 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
         # 3. Add to Profiles (for subscription lookup)
         now = datetime.now(timezone.utc)
         trial_end = (now + timedelta(days=15)).isoformat().replace("+00:00", "Z")
-        # Initialize next scan for 24h from now (matching daily default)
-        next_scan = (now + timedelta(days=1)).isoformat().replace("+00:00", "Z")
+        # Initialize next scan for immediate inclusion in next global pulse
+        next_scan = now.isoformat().replace("+00:00", "Z")
         
         admin_db.table("profiles").insert(
             {
@@ -496,7 +477,6 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
             {
                 "user_id": str(new_user.id),
                 "threshold_percent": 2.0,
-                "check_frequency_minutes": 1440,  # Daily default
                 "notifications_enabled": True,
                 "push_enabled": False,
                 "currency": "TRY",
@@ -1414,32 +1394,27 @@ async def get_admin_market_intelligence_logic(
 
 async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
     """
-    Fetch all users who have scheduled scans (next_scan_at set in profiles).
-
-    EXPLANATION: Scheduler Queue for Admin Panel
-    The ScansPanel 'Upcoming Queue' tab calls /api/admin/scheduler/queue but this
-    endpoint was never implemented. This function queries the profiles table for
-    users with next_scan_at set, enriches with frequency from settings, hotel
-    names from hotels table, and display name from user_profiles.
+    Fetch status of the pulse queue.
+    Shows users and their proximity to the next 4-hour heartbeat.
     """
     try:
+        from backend.services.monitor_service import MONITOR_PULSE_HOURS
         now = datetime.now(timezone.utc)
-
-        # 1. Fetch all profiles that have a next_scan_at (these are scheduled users)
+        
+        # 1. Fetch all profiles with a next_scan_at
         profiles_res = (
             db.table("profiles")
-            .select("id, next_scan_at, scan_frequency_minutes")
+            .select("id, next_scan_at")
             .not_.is_("next_scan_at", "null")
             .execute()
         )
         profiles = profiles_res.data or []
-
         if not profiles:
             return []
 
         user_ids = [p["id"] for p in profiles]
 
-        # 2. Fetch display names from user_profiles
+        # 2. Fetch display names
         names_res = (
             db.table("user_profiles")
             .select("user_id, display_name, email")
@@ -1451,94 +1426,37 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
             for n in (names_res.data or [])
         }
 
-        # 3. Fetch settings for check_frequency_minutes (authoritative source)
-        settings_res = (
-            db.table("settings")
-            .select("user_id, check_frequency_minutes")
-            .in_("user_id", user_ids)
-            .execute()
-        )
-        settings_map = {
-            s["user_id"]: s.get("check_frequency_minutes", 0)
-            for s in (settings_res.data or [])
-        }
+        # 3. Fetch hotel mapping
+        mapping_res = db.table("user_hotels").select("user_id, hotel_id").in_("user_id", user_ids).execute()
+        hotel_counts = {}
+        for m in (mapping_res.data or []):
+            uid = m["user_id"]
+            hotel_counts[uid] = hotel_counts.get(uid, 0) + 1
 
-        # 4. Fetch hotel names per user
-        hotels_res = (
-            db.table("hotels")
-            .select("user_id, name")
-            .in_("user_id", user_ids)
-            .execute()
-        )
-        hotels_map: Dict[str, List[str]] = {}
-        for h in hotels_res.data or []:
-            uid = h["user_id"]
-            if uid not in hotels_map:
-                hotels_map[uid] = []
-            hotels_map[uid].append(h["name"])
-
-        # 5. Fetch last completed scan per user for last_scan_at
-        last_scan_map: Dict[str, str] = {}
-        for uid in user_ids:
-            try:
-                scan_res = (
-                    db.table("scan_sessions")
-                    .select("completed_at")
-                    .eq("user_id", uid)
-                    .eq("status", "completed")
-                    .order("completed_at", desc=True)
-                    .limit(1)
-                    .execute()
-                )
-                if scan_res.data:
-                    last_scan_map[uid] = scan_res.data[0]["completed_at"]
-            except Exception:
-                pass
-
-        # 6. Build queue entries
         queue = []
         for p in profiles:
             uid = p["id"]
             next_scan = p.get("next_scan_at")
-            if not next_scan:
-                continue
-
-            # Determine frequency: settings is authoritative, fallback to profiles
-            freq = settings_map.get(uid, p.get("scan_frequency_minutes", 0))
-            if not freq or freq <= 0:
-                continue  # Not actually scheduled
-
-            # Determine status
+            
             try:
                 next_dt = datetime.fromisoformat(next_scan.replace("Z", "+00:00"))
                 status = "overdue" if next_dt <= now else "pending"
             except Exception:
                 status = "pending"
 
-            hotels_list = hotels_map.get(uid, [])
+            queue.append({
+                "user_id": uid,
+                "user_name": names_map.get(uid, "Unknown"),
+                "pulse_interval_hours": MONITOR_PULSE_HOURS,
+                "next_scan_at": next_scan,
+                "status": status,
+                "hotel_count": hotel_counts.get(uid, 0)
+            })
 
-            queue.append(
-                {
-                    "user_id": uid,
-                    "user_name": names_map.get(uid, "Unknown"),
-                    "scan_frequency_minutes": freq,
-                    "last_scan_at": last_scan_map.get(uid),
-                    "next_scan_at": next_scan,
-                    "status": status,
-                    "hotel_count": len(hotels_list),
-                    "hotels": hotels_list[:5],  # Limit to first 5 names for display
-                }
-            )
-
-        # Sort: overdue first, then by next_scan_at ascending
-        queue.sort(
-            key=lambda x: (0 if x["status"] == "overdue" else 1, x["next_scan_at"])
-        )
-
+        queue.sort(key=lambda x: (0 if x["status"] == "overdue" else 1, x["next_scan_at"]))
         return queue
     except Exception as e:
         print(f"Admin Scheduler Queue Error: {e}")
-        traceback.print_exc()
         return []
 
 

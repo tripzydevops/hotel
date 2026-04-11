@@ -405,22 +405,15 @@ const UserManagementPanel = () => {
                       </div>
                     </td>
                     <td className="p-5 text-center">
-                      {u.scan_frequency_minutes &&
-                        u.scan_frequency_minutes > 0 ? (
-                        <div className="flex flex-col items-center gap-1 group/sync relative">
-                          <div className="flex items-center gap-1.5 text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/10 px-2 py-1 rounded border border-[var(--soft-gold)]/20">
-                            <RefreshCw className="w-3 h-3" />
-                            {Math.round(u.scan_frequency_minutes / 60)}H
-                          </div>
-                          <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
-                            Cloud Sync Active
-                          </span>
+                      <div className="flex flex-col items-center gap-1 group/sync relative">
+                        <div className="flex items-center gap-1.5 text-[var(--soft-gold)] font-black text-[10px] bg-[var(--soft-gold)]/10 px-2 py-1 rounded border border-[var(--soft-gold)]/20 shadow-sm shadow-[var(--soft-gold)]/10">
+                          <RefreshCw className="w-3 h-3 animate-[spin_4s_linear_infinite]" />
+                          4H PULSE
                         </div>
-                      ) : (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] border border-white/5 px-2 py-1 rounded opacity-30 italic">
-                          Manual_Only
+                        <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
+                          Autonomous
                         </span>
-                      )}
+                      </div>
                     </td>
                     <td className="p-5">
                       <div className="flex flex-col text-[var(--text-muted)]">
@@ -569,24 +562,12 @@ const UserManagementPanel = () => {
 
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
-                  Sync Frequency
+                  Monitoring Cadence
                 </label>
-                <select
-                  value={editUserForm.check_frequency_minutes}
-                  onChange={(e) =>
-                    setEditUserForm({
-                      ...editUserForm,
-                      check_frequency_minutes: parseInt(e.target.value),
-                    })
-                  }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
-                >
-                  <option value={0}>MANUAL_ONLY</option>
-                  <option value={60}>HOURLY_SYNC</option>
-                  <option value={360}>QUARTER_DAY_SYNC</option>
-                  <option value={720}>HALF_DAY_SYNC</option>
-                  <option value={1440}>DAILY_SYNC</option>
-                </select>
+                <div className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
+                  <RefreshCw className="w-3 h-3" />
+                  System Pulse: 4 Hours (Autonomous)
+                </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">

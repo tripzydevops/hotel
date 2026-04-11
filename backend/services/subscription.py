@@ -8,25 +8,21 @@ DEFAULT_TIERS = {
     "trial": {
         "hotel_limit": 9999,
         "ui_comparison_limit": 15,
-        "can_scan_hourly": True,
         "history_days": 9999,
     },
     "starter": {
         "hotel_limit": 20,
         "ui_comparison_limit": 5,
-        "can_scan_hourly": False,
         "history_days": 30,
     },
     "pro": {
         "hotel_limit": 100,
         "ui_comparison_limit": 10,
-        "can_scan_hourly": True,
         "history_days": 365,
     },
     "enterprise": {
         "hotel_limit": 9999,
         "ui_comparison_limit": 15,
-        "can_scan_hourly": True,
         "history_days": 9999,
     },
 }

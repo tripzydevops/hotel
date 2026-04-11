@@ -9,6 +9,11 @@ from datetime import datetime, date, timezone
 from uuid import UUID
 from enum import Enum
 
+# SYSTEM STANDARDS: All scans follow a unified 4-hour interval pulse.
+# Individual user-selectable frequencies have been removed.
+SCAN_PULSE_INTERVAL_MINUTES = 240
+SCAN_PULSE_INTERVAL_HOURS = 4
+
 
 class AlertType(str, Enum):
     THRESHOLD_BREACH = "threshold_breach"
@@ -159,7 +164,6 @@ class PriceLog(PriceLogBase):
 
 class SettingsBase(BaseModel):
     threshold_percent: float = Field(default=2.0, ge=0, le=100)
-    check_frequency_minutes: int = Field(default=144, ge=0)
     notification_email: Optional[str] = None
     whatsapp_number: Optional[str] = None
     push_enabled: bool = False
@@ -176,7 +180,6 @@ class SettingsCreate(SettingsBase):
 
 class SettingsUpdate(BaseModel):
     threshold_percent: Optional[float] = None
-    check_frequency_minutes: Optional[int] = None
     notification_email: Optional[str] = None
     whatsapp_number: Optional[str] = None
     push_enabled: Optional[bool] = None
@@ -208,7 +211,6 @@ class UserProfileBase(BaseModel):
     timezone: Optional[str] = "UTC"
     theme_preference: Optional[str] = "light"
     language_preference: Optional[str] = "en"
-    next_scan_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -382,7 +384,6 @@ class DashboardResponse(BaseModel):
     recent_sessions: List[ScanSession] = []
     unread_alerts_count: int = 0
     comparison_limit: int = 5
-    next_scan_at: Optional[datetime] = None
     last_updated: Optional[datetime] = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
@@ -447,7 +448,6 @@ class AdminUserUpdate(BaseModel):
     timezone: Optional[str] = None
     plan_type: Optional[str] = None
     subscription_status: Optional[str] = None
-    check_frequency_minutes: Optional[int] = None
     is_verified: Optional[bool] = None
 
 
@@ -465,9 +465,6 @@ class AdminUser(BaseModel):
     last_active: Optional[datetime] = None
     plan_type: Optional[str] = "trial"
     subscription_status: Optional[str] = "trial"
-    scan_frequency_minutes: Optional[int] = 0
-    max_hotels: int = 5  # Derived from plan
-    next_scan_at: Optional[datetime] = None
     is_verified: bool = False
 
 
@@ -499,9 +496,7 @@ class AdminDataResponse(BaseModel):
 class SchedulerQueueEntry(BaseModel):
     user_id: UUID
     user_name: Optional[str] = "Unknown"
-    scan_frequency_minutes: int
     last_scan_at: Optional[datetime] = None
-    next_scan_at: datetime
     status: str = "pending"  # pending, overdue, running
     hotel_count: int = 0
     hotels: List[str] = []
@@ -556,7 +551,7 @@ class AdminSettings(BaseModel):
     signup_enabled: bool
     default_currency: str
     system_alert_message: Optional[str] = None
-    scan_interval_hours: int = 24
+    scan_interval_hours: int = 4
     last_global_scan_at: Optional[datetime] = None
     next_global_scan_at: Optional[datetime] = None
     updated_at: datetime
@@ -582,7 +577,6 @@ class PlanBase(BaseModel):
     name: str
     price_monthly: float
     hotel_limit: int
-    scan_frequency_limit: str = "daily"  # hourly, daily, weekly
     monthly_scan_limit: int = 100
     features: List[str] = []
     is_active: bool = True
@@ -596,7 +590,6 @@ class PlanUpdate(BaseModel):
     name: Optional[str] = None
     price_monthly: Optional[float] = None
     hotel_limit: Optional[int] = None
-    scan_frequency_limit: Optional[str] = None
     monthly_scan_limit: Optional[int] = None
     features: Optional[List[str]] = None
     is_active: Optional[bool] = None
