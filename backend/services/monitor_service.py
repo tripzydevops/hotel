@@ -713,7 +713,7 @@ async def run_system_heartbeat(db: Client):
         session_id = None
         try:
             session_result = db.table("scan_sessions").insert({
-                "user_id": "00000000-0000-0000-0000-000000000000", # System User
+                "user_id": None, # System user is NULL to avoid FK constraints
                 "session_type": "scheduled_pulse",
                 "hotels_count": len(criteria_groups),
                 "status": "processing",
@@ -721,8 +721,12 @@ async def run_system_heartbeat(db: Client):
             if session_result.data:
                 session_id = session_result.data[0]["id"]
                 s_logger.info(f"Heartbeat: Created system session {session_id}")
+            else:
+                s_logger.error("Heartbeat: Session created but no data returned.")
+                return 
         except Exception as e:
             s_logger.error(f"Heartbeat: Failed to create session record: {e}")
+            return
 
         # 4. Prepare DataForSEO Tasks (Today -> Tomorrow, 2 Adults)
         check_in = date.today().strftime("%Y-%m-%d")
