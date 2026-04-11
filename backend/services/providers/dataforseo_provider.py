@@ -232,28 +232,41 @@ class DataForSEOProvider(HotelDataProvider):
                 )
                 res_json = response.json()
                 
-                if res_json.get("status_code") == 20000 and res_json.get("tasks"):
-                    task = res_json["tasks"][0]
-                    if task.get("result"):
-                        result = task["result"][0]
-                        items = result.get("items", [])
-                        if items:
-                            target = items[0]
-                            return {
-                                "price": target.get("price", 0.0),
-                                "currency": target.get("currency", "TRY"),
-                                "vendor": target.get("vendor", "Direct"),
-                                "property_token": target.get("hotel_identifier"),
-                                "market_offers": target.get("vendors") or target.get("market_offers") or [],
-                                "rating": target.get("rating", {}).get("value", 0.0),
-                                "reviews": target.get("rating", {}).get("votes_count", 0),
-                                "tag": task.get("tag"), # Add tag for mapping
-                                "status": "success"
-                            }
+                status_code = res_json.get("status_code")
+                if status_code != 20000:
+                    logger.warning(f"DataForSEO Task GET failed for {task_id}: {res_json.get('status_message')} (Code: {status_code})")
+                    return None
+
+                tasks = res_json.get("tasks", [])
+                if not tasks:
+                    logger.warning(f"DataForSEO Task GET returned no tasks for {task_id}")
+                    return None
                 
-                return None
+                task = tasks[0]
+                # Some tasks might be marked as completed but have 'result' as null if no hotels found
+                if not task.get("result"):
+                    logger.info(f"DataForSEO Task {task_id} completed but had no result data (likely no matches for keyword).")
+                    return {"status": "empty", "tag": task.get("tag")}
+
+                result = task["result"][0]
+                items = result.get("items", [])
+                if not items:
+                    return {"status": "empty", "tag": task.get("tag")}
+
+                target = items[0]
+                return {
+                    "price": target.get("price", 0.0),
+                    "currency": target.get("currency", "TRY"),
+                    "vendor": target.get("vendor", "Direct"),
+                    "property_token": target.get("hotel_identifier"),
+                    "market_offers": target.get("vendors") or target.get("market_offers") or [],
+                    "rating": target.get("rating", {}).get("value", 0.0),
+                    "reviews": target.get("rating", {}).get("votes_count", 0),
+                    "tag": task.get("tag"), 
+                    "status": "success"
+                }
         except Exception as e:
-            logger.error(f"DataForSEO fetch_task_results error: {e}")
+            logger.error(f"DataForSEO fetch_task_results error for task {task_id}: {e}")
             return None
 
     async def get_completed_tasks(self) -> List[str]:

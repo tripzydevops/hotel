@@ -667,7 +667,7 @@ async def run_system_heartbeat(db: Client):
             except Exception:
                 is_due = True
         
-        if not is_due:
+        if not is_due and not getattr(db, "_force_heartbeat", False):
             # next_scan_at usually set by the updater, but check if we should update UI info
             return
 
@@ -790,6 +790,7 @@ async def process_system_scans(db: Client):
                 # 2. Fetch full results
                 result = await dataforseo_provider.fetch_task_results(tid)
                 if not result or result.get("status") != "success":
+                    s_logger.warning(f"Task Processor: API result failed for task {tid}. Status: {result.get('status') if result else 'None'}")
                     continue
 
                 # Composite tag parsing: session_id|h_id
@@ -808,6 +809,7 @@ async def process_system_scans(db: Client):
                 currency = result.get("currency")
                 
                 if not price or not h_id:
+                    s_logger.warning(f"Task Processor: Skipping task {tid} due to missing data. Price: {price}, Tag: {tag_raw}")
                     continue
 
                 # 3. Update Hotels and History
@@ -815,6 +817,7 @@ async def process_system_scans(db: Client):
                     # 3. Get the hotel info to find siblings sharing the same property token
                     primary_res = db.table("hotels").select("name, location, serp_api_id").eq("id", h_id).single().execute()
                     if not primary_res.data:
+                        s_logger.warning(f"Task Processor: Hotel ID {h_id} not found in database for task {tid}")
                         continue
                     
                     hotel_ref = primary_res.data
