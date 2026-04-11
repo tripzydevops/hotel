@@ -726,7 +726,7 @@ async def run_system_heartbeat(db: Client):
         # 3. Fetch all unique monitored hotels
         monitored_res = (
             db.table("user_hotels")
-            .select("hotel_id, hotels(name, location, serp_api_id)")
+            .select("hotel_id, hotels(name, location, serp_api_id, property_token)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -795,16 +795,28 @@ async def run_system_heartbeat(db: Client):
             raw_location = h_data["location"]
             normalized_location = _normalize_location_for_api(raw_location)
             
-            task_params.append({
+            # Build task payload - use hotel_identifier (property_token) when
+            # available for exact-match results, otherwise fall back to keyword search
+            task_payload = {
                 "location_name": normalized_location,
-                "keyword": h_data["name"],
                 "language_name": "English",  # Required by DataForSEO API
                 "check_in": check_in,
                 "check_out": check_out,
                 "adults": 2,
                 "currency": "TRY",
                 "tag": f"{session_id}|{primary_id}" if session_id else str(primary_id)
-            })
+            }
+            
+            prop_token = h_data.get("property_token")
+            if prop_token:
+                # Exact hotel lookup via unique identifier - preferred method
+                task_payload["hotel_identifier"] = prop_token
+            else:
+                # Fallback: keyword search by hotel name (may return multiple results)
+                task_payload["keyword"] = h_data["name"]
+                s_logger.warning(f"Heartbeat: Hotel '{h_data['name']}' has no property_token, using keyword search")
+            
+            task_params.append(task_payload)
 
         batch_size = 100
         total_tasks_posted = 0
