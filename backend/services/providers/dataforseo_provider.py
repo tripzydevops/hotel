@@ -251,7 +251,7 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.get(
-                    f"{self.api_url}/business_data/google/hotel_searches/task_get/advanced/{task_id}"
+                    f"{self.api_url}/business_data/google/hotel_searches/task_get/{task_id}"
                 )
                 res_json = response.json()
                 
@@ -277,15 +277,23 @@ class DataForSEOProvider(HotelDataProvider):
                     return {"status": "empty", "tag": task.get("tag")}
 
                 target = items[0]
+                # hotel_searches response uses nested objects:
+                #   prices: { price, currency, check_in, check_out, ... }
+                #   reviews: { value, votes_count, ... }
+                prices_data = target.get("prices") or {}
+                reviews_data = target.get("reviews") or {}
+                
                 return {
-                    "price": target.get("price", 0.0),
-                    "currency": target.get("currency", "TRY"),
-                    "vendor": target.get("vendor", "Direct"),
+                    "price": prices_data.get("price", 0.0),
+                    "currency": prices_data.get("currency", "USD"),
+                    "vendor": "Google",  # hotel_searches doesn't specify OTA vendors at this level
                     "property_token": target.get("hotel_identifier"),
-                    "market_offers": target.get("vendors") or target.get("market_offers") or [],
-                    "rating": target.get("rating", {}).get("value", 0.0),
-                    "reviews": target.get("rating", {}).get("votes_count", 0),
-                    "tag": task.get("tag"), 
+                    "hotel_name": target.get("title"),
+                    "stars": target.get("stars"),
+                    "rating": reviews_data.get("value", 0.0),
+                    "reviews": reviews_data.get("votes_count", 0),
+                    "tag": task.get("tag"),
+                    "items": items,  # Include all items so caller can process multiple hotels
                     "status": "success"
                 }
         except Exception as e:
