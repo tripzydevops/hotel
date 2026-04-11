@@ -192,7 +192,11 @@ class DataForSEOProvider(HotelDataProvider):
     async def post_price_tasks(self, task_params: List[Dict[str, Any]]) -> Optional[List[str]]:
         """
         Submits multiple hotel search tasks to DataForSEO.
-        Returns a list of Task IDs.
+        Returns a list of Task IDs for successfully accepted tasks only.
+        
+        IMPORTANT: The top-level status_code (20000) only means the API received
+        the request. Individual tasks may still be rejected with per-task errors
+        like 40501 (Invalid Field). We must check each task's status_code.
         """
         if not self.login or not self.password or not task_params:
             return None
@@ -207,11 +211,30 @@ class DataForSEOProvider(HotelDataProvider):
                 )
                 res_json = response.json()
                 
-                if res_json.get("status_code") == 20000:
-                    return [task.get("id") for task in res_json.get("tasks", []) if task.get("id")]
+                if res_json.get("status_code") != 20000:
+                    logger.error(f"DataForSEO Task POST Failed: {res_json.get('status_message')}")
+                    return None
                 
-                logger.error(f"DataForSEO Task POST Failed: {res_json.get('status_message')}")
-                return None
+                # Check each task individually - status 20100 = "Task Created"
+                accepted_ids = []
+                rejected_count = 0
+                for task in res_json.get("tasks", []):
+                    task_status = task.get("status_code")
+                    if task_status == 20100:
+                        task_id = task.get("id")
+                        if task_id:
+                            accepted_ids.append(task_id)
+                    else:
+                        rejected_count += 1
+                        logger.warning(
+                            f"DataForSEO task rejected: {task_status} - {task.get('status_message')} "
+                            f"(keyword: {task.get('data', {}).get('keyword', 'unknown')})"
+                        )
+                
+                if rejected_count > 0:
+                    logger.warning(f"DataForSEO: {rejected_count}/{len(res_json.get('tasks', []))} tasks were rejected")
+                
+                return accepted_ids if accepted_ids else None
         except Exception as e:
             logger.error(f"DataForSEO post_price_tasks error: {e}")
             return None
@@ -272,6 +295,21 @@ class DataForSEOProvider(HotelDataProvider):
     async def get_completed_tasks(self) -> List[str]:
         """
         Utility to find all tasks that are currently finished and ready for fetching.
+        
+        IMPORTANT: The tasks_ready endpoint returns a wrapper structure:
+        {
+          "tasks": [
+            {
+              "id": "wrapper-meta-id",      // NOT a fetchable task ID
+              "result_count": N,
+              "result": [                    // Actual ready task IDs are HERE
+                { "id": "real-task-id-1", "tag": "...", ... },
+                { "id": "real-task-id-2", "tag": "...", ... }
+              ]
+            }
+          ]
+        }
+        We must extract IDs from result[], NOT from the wrapper tasks[].
         """
         if not self.login or not self.password:
             return []
@@ -282,11 +320,24 @@ class DataForSEOProvider(HotelDataProvider):
                 response = await client.get(f"{self.api_url}/business_data/google/hotel_searches/tasks_ready")
                 res_json = response.json()
                 
-                if res_json.get("status_code") == 20000 and res_json.get("tasks"):
-                    # Extract IDs from the tasks_ready endpoint
-                    # The structure usually contains nested task items with 'id'
-                    return [t.get("id") for t in res_json.get("tasks", []) if t.get("id")]
-                return []
+                if res_json.get("status_code") != 20000:
+                    logger.warning(f"DataForSEO tasks_ready failed: {res_json.get('status_message')}")
+                    return []
+                
+                ready_ids = []
+                for wrapper_task in res_json.get("tasks", []):
+                    result_count = wrapper_task.get("result_count", 0)
+                    results = wrapper_task.get("result")
+                    
+                    if result_count > 0 and results:
+                        for item in results:
+                            task_id = item.get("id")
+                            if task_id:
+                                ready_ids.append(task_id)
+                
+                if ready_ids:
+                    logger.info(f"DataForSEO: Found {len(ready_ids)} ready tasks")
+                return ready_ids
         except Exception as e:
             logger.error(f"DataForSEO get_completed_tasks error: {e}")
             return []

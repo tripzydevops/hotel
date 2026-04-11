@@ -7,6 +7,7 @@ import os
 import asyncio
 import logging
 import traceback
+import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Set
 from uuid import UUID
@@ -17,6 +18,55 @@ from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# ===== Location Normalization for DataForSEO API =====
+# DataForSEO requires very specific location_name formats:
+# - Country must use official API name (e.g., "Turkiye" not "Turkey")
+# - No spaces after commas: "City,Country" not "City, Country"  
+# - ASCII characters only: "Balikesir" not "Balıkesir"
+# - language_name field is mandatory
+
+# Map of common country name variations to DataForSEO-accepted names
+_COUNTRY_NAME_MAP = {
+    "turkey": "Turkiye",
+    "türkiye": "Turkiye",
+}
+
+# Turkish special character transliteration
+_TURKISH_CHAR_MAP = str.maketrans({
+    'ı': 'i', 'İ': 'I',
+    'ğ': 'g', 'Ğ': 'G',
+    'ü': 'u', 'Ü': 'U',
+    'ş': 's', 'Ş': 'S',
+    'ö': 'o', 'Ö': 'O',
+    'ç': 'c', 'Ç': 'C',
+})
+
+def _normalize_location_for_api(location: str) -> str:
+    """
+    Normalizes a location string from the database to DataForSEO API format.
+    Examples:
+        "Balıkesir, Turkey"  -> "Balikesir,Turkiye"
+        "Istanbul, Turkey"   -> "Istanbul,Turkiye"
+        "Turkey"             -> "Turkiye"
+    """
+    if not location:
+        return location
+    
+    # Step 1: Transliterate Turkish special characters to ASCII
+    normalized = location.translate(_TURKISH_CHAR_MAP)
+    
+    # Step 2: Split by comma and clean up parts
+    parts = [p.strip() for p in normalized.split(",")]
+    
+    # Step 3: Apply country name mapping to the last part (assumed to be country)
+    if parts:
+        country = parts[-1].lower()
+        if country in _COUNTRY_NAME_MAP:
+            parts[-1] = _COUNTRY_NAME_MAP[country]
+    
+    # Step 4: Rejoin WITHOUT spaces after commas (DataForSEO requirement)
+    return ",".join(parts)
 # from backend.agents.scraper_agent import ScraperAgent
 # from backend.agents.analyst_agent import AnalystAgent
 # from backend.agents.notifier_agent import NotifierAgent
@@ -737,9 +787,18 @@ async def run_system_heartbeat(db: Client):
             h_data = criteria_data[key]
             # Use the first ID as the primary reference tag
             primary_id = h_ids[0]
+            
+            # Normalize location for DataForSEO API compatibility:
+            # - "Turkey" must be "Turkiye" (official API name)
+            # - No spaces after commas: "City,Country" not "City, Country"
+            # - ASCII only: "Balıkesir" -> "Balikesir" (special chars break API)
+            raw_location = h_data["location"]
+            normalized_location = _normalize_location_for_api(raw_location)
+            
             task_params.append({
-                "location_name": h_data["location"],
+                "location_name": normalized_location,
                 "keyword": h_data["name"],
+                "language_name": "English",  # Required by DataForSEO API
                 "check_in": check_in,
                 "check_out": check_out,
                 "adults": 2,
