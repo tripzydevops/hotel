@@ -212,6 +212,13 @@ class DataForSEOProvider(HotelDataProvider):
 
         auth = (self.login, self.password)
         
+        # Map extraction_depth to limit in payload mapping
+        for task in task_params:
+            if "extraction_depth" in task:
+                task["limit"] = task.pop("extraction_depth")
+            elif "limit" not in task:
+                task["limit"] = 100
+        
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(

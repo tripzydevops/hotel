@@ -49,7 +49,11 @@ async def update_room_type_catalog(
             continue
 
         hotel_context = hotel_map.get(hotel_id, {})
-        room_types = result.get("room_types") or []
+        # Support both top-level (raw provider) and nested (ScraperAgent) formats
+        room_types = result.get("room_types")
+        if not room_types and "price_data" in result:
+            room_types = result.get("price_data", {}).get("room_types")
+            
         if not isinstance(room_types, list) or not room_types:
             continue
 

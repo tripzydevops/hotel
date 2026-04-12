@@ -726,7 +726,7 @@ async def run_system_heartbeat(db: Client):
         # 3. Fetch all unique monitored hotels
         monitored_res = (
             db.table("user_hotels")
-            .select("hotel_id, hotels(name, location, serp_api_id, property_token)")
+            .select("hotel_id, hotels(name, location, property_token)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -735,7 +735,7 @@ async def run_system_heartbeat(db: Client):
             s_logger.info("Heartbeat: No monitored hotels found.")
             return
 
-        # Deduplicate by Unique Token (serp_api_id) to save credits
+        # Deduplicate by Unique Token (property_token) to save credits
         criteria_groups = {} # token -> [list_of_ids]
         criteria_data = {}   # token -> hotel_metadata
         
@@ -743,10 +743,10 @@ async def run_system_heartbeat(db: Client):
             h = item.get("hotels")
             if not h: continue
             
-            # Use serp_api_id as the primary unique key
-            token = h.get("serp_api_id")
+            # Use property_token as the primary unique key
+            token = h.get("property_token")
             if not token:
-                # Fallback to name/location only if serp_api_id is missing
+                # Fallback to name/location only if property_token is missing
                 token = f"{h['name'].lower().strip()}|{h['location'].lower().strip()}"
             
             if token not in criteria_groups:
@@ -796,8 +796,6 @@ async def run_system_heartbeat(db: Client):
             normalized_location = _normalize_location_for_api(raw_location)
             
             # Build task payload - use hotel_identifier for exact-match results.
-            # Both serp_api_id and property_token are Google hotel identifiers
-            # and work interchangeably with DataForSEO's hotel_identifier field.
             task_payload = {
                 "location_name": normalized_location,
                 "language_name": "English",  # Required by DataForSEO API
@@ -808,8 +806,7 @@ async def run_system_heartbeat(db: Client):
                 "tag": f"{session_id}|{primary_id}" if session_id else str(primary_id)
             }
             
-            # Priority: serp_api_id > property_token > keyword fallback
-            unique_id = h_data.get("serp_api_id") or h_data.get("property_token")
+            unique_id = h_data.get("property_token")
             if unique_id:
                 # Exact hotel lookup via unique identifier - preferred method
                 task_payload["hotel_identifier"] = unique_id
@@ -857,6 +854,10 @@ async def process_system_scans(db: Client):
             return
 
         s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
+        
+        from backend.services.room_type_service import update_room_type_catalog
+        catalog_results = []
+        catalog_hotels = []
 
         for tid in completed_ids:
             try:
@@ -895,19 +896,19 @@ async def process_system_scans(db: Client):
                 # 3. Update Hotels and History
                 try:
                     # 3. Get the hotel info to find siblings sharing the same property token
-                    primary_res = db.table("hotels").select("name, location, serp_api_id, description, amenities").eq("id", h_id).single().execute()
+                    primary_res = db.table("hotels").select("name, location, property_token, description, amenities").eq("id", h_id).single().execute()
                     if not primary_res.data:
                         s_logger.warning(f"Task Processor: Hotel ID {h_id} not found in database for task {tid}")
                         continue
                     
                     hotel_ref = primary_res.data
-                    serp_id = hotel_ref.get("serp_api_id")
+                    prop_token = hotel_ref.get("property_token")
                     h_name = hotel_ref["name"]
                     h_location = hotel_ref["location"]
 
-                    if serp_id:
+                    if prop_token:
                         # Priority 1: Match all variations sharing the same unique Token
-                        matching_hotels = db.table("hotels").select("id, current_price").eq("serp_api_id", serp_id).execute()
+                        matching_hotels = db.table("hotels").select("id, current_price").eq("property_token", prop_token).execute()
                     else:
                         # Fallback: Match by name/location
                         matching_hotels = db.table("hotels").select("id, current_price").eq("name", h_name).eq("location", h_location).execute()
@@ -955,10 +956,10 @@ async def process_system_scans(db: Client):
                             "hotel_id": target_id,
                             "price": price,
                             "currency": currency,
-                            "parity_offers": result.get("offers", []),
+                            "parity_offers": result.get("parity_offers") or result.get("offers", []),
                             "room_types": result.get("room_types", []),
-                            "check_in_date": datetime.now(timezone.utc).date().isoformat(),
-                            "check_out_date": (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat(),
+                            "check_in_date": result.get("check_in") or datetime.now(timezone.utc).date().isoformat(),
+                            "check_out_date": result.get("check_out") or (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat(),
                             "source": "System Heartbeat (Deduplicated)",
                             "recorded_at": datetime.now(timezone.utc).isoformat()
                         }).execute()
@@ -978,7 +979,12 @@ async def process_system_scans(db: Client):
                                 }).execute()
                             except Exception as log_e:
                                 s_logger.error(f"Failed to log session activity: {log_e}")
-                    s_logger.info(f"Task Processor: Updated {len(matching_hotels.data)} variations sharing token '{serp_id or h_name}' to {price} {currency}")
+                    s_logger.info(f"Task Processor: Updated {len(matching_hotels.data)} variations sharing token '{prop_token or h_name}' to {price} {currency}")
+                    
+                    # 6. Add to catalog update queue
+                    result["hotel_id"] = h_id
+                    catalog_results.append(result)
+                    catalog_hotels.append(hotel_ref)
 
                 except Exception as e:
                     s_logger.error(f"Failed to sync hotel results for {h_id}: {e}")
@@ -988,6 +994,14 @@ async def process_system_scans(db: Client):
 
     except Exception as e:
         s_logger.error(f"Task Processor General Failure: {e}")
+    finally:
+        # Finalize catalog update after processing all tasks
+        if catalog_results:
+            try:
+                s_logger.info(f"Task Processor: Syncing room type catalog for {len(catalog_results)} hotels...")
+                await update_room_type_catalog(db, catalog_results, catalog_hotels)
+            except Exception as catalog_e:
+                s_logger.error(f"Task Processor: Catalog sync failed: {catalog_e}")
 
 async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, initiator_id: Optional[UUID] = None):
     """
@@ -999,14 +1013,13 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
         notifier = NotifierAgent()
 
         # 1. Find all users who monitor this hotel
-        query = db.table("user_hotels").select("user_id, hotel_id, hotels(name, serp_api_id)").eq("hotel_id", hotel_id).eq("is_monitored", True)
+        query = db.table("user_hotels").select("user_id, hotel_id, hotels(name, property_token)").eq("hotel_id", hotel_id).eq("is_monitored", True)
         users_res = query.execute()
         if not users_res.data:
             return
 
         hotel_data = users_res.data[0].get("hotels", {})
         hotel_name = hotel_data.get("name", "Unknown Hotel")
-        serp_id = hotel_data.get("serp_api_id")
 
         # 2. For each user, check their individual threshold
         user_ids = [u["user_id"] for u in users_res.data]
