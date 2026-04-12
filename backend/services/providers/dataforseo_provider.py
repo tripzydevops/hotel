@@ -266,15 +266,18 @@ class DataForSEOProvider(HotelDataProvider):
                     return None
                 
                 task = tasks[0]
+                task_data = task.get("data", {})
+                task_tag = task_data.get("tag", task.get("tag"))
+
                 # Some tasks might be marked as completed but have 'result' as null if no hotels found
                 if not task.get("result"):
                     logger.info(f"DataForSEO Task {task_id} completed but had no result data (likely no matches for keyword).")
-                    return {"status": "empty", "tag": task.get("tag")}
+                    return {"status": "empty", "tag": task_tag}
 
                 result = task["result"][0]
                 items = result.get("items", [])
                 if not items:
-                    return {"status": "empty", "tag": task.get("tag")}
+                    return {"status": "empty", "tag": task_tag}
 
                 target = items[0]
                 # hotel_searches response uses nested objects:
@@ -292,7 +295,7 @@ class DataForSEOProvider(HotelDataProvider):
                     "stars": target.get("stars"),
                     "rating": reviews_data.get("value", 0.0),
                     "reviews": reviews_data.get("votes_count", 0),
-                    "tag": task.get("tag"),
+                    "tag": task_tag,
                     "items": items,  # Include all items so caller can process multiple hotels
                     "status": "success"
                 }

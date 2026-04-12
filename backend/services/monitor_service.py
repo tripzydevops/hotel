@@ -795,8 +795,9 @@ async def run_system_heartbeat(db: Client):
             raw_location = h_data["location"]
             normalized_location = _normalize_location_for_api(raw_location)
             
-            # Build task payload - use hotel_identifier (property_token) when
-            # available for exact-match results, otherwise fall back to keyword search
+            # Build task payload - use hotel_identifier for exact-match results.
+            # Both serp_api_id and property_token are Google hotel identifiers
+            # and work interchangeably with DataForSEO's hotel_identifier field.
             task_payload = {
                 "location_name": normalized_location,
                 "language_name": "English",  # Required by DataForSEO API
@@ -807,14 +808,15 @@ async def run_system_heartbeat(db: Client):
                 "tag": f"{session_id}|{primary_id}" if session_id else str(primary_id)
             }
             
-            prop_token = h_data.get("property_token")
-            if prop_token:
+            # Priority: serp_api_id > property_token > keyword fallback
+            unique_id = h_data.get("serp_api_id") or h_data.get("property_token")
+            if unique_id:
                 # Exact hotel lookup via unique identifier - preferred method
-                task_payload["hotel_identifier"] = prop_token
+                task_payload["hotel_identifier"] = unique_id
             else:
-                # Fallback: keyword search by hotel name (may return multiple results)
+                # Last resort: keyword search by hotel name (may return multiple results)
                 task_payload["keyword"] = h_data["name"]
-                s_logger.warning(f"Heartbeat: Hotel '{h_data['name']}' has no property_token, using keyword search")
+                s_logger.warning(f"Heartbeat: Hotel '{h_data['name']}' has no unique identifier, using keyword search")
             
             task_params.append(task_payload)
 
