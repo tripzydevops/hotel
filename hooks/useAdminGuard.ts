@@ -15,8 +15,10 @@ export function useAdminGuard() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        // 1. Check basic authentication session
-        const { data: authUser } = await insforge.auth.getCurrentUser();
+        // 1. Check basic authentication session with automatic refresh
+        const { data: sessionData } = await insforge.auth.refreshSession();
+        // In this version, refreshSession returns the user directly in data if it exists
+        const authUser = sessionData; 
         
         if (!authUser?.user) {
           console.warn("[AdminGuard] No active session, redirecting to login");
@@ -25,11 +27,23 @@ export function useAdminGuard() {
         }
 
         // 2. Fetch enriched profile for role verification
-        // This is critical since 'role' and 'subscription_status' live in the DB, not JWT
-        const profile = await api.getProfile().catch(err => {
-          console.error("[AdminGuard] Failed to fetch profile metadata:", err);
-          return null;
-        });
+        let profile = null;
+        try {
+          profile = await api.getProfile();
+        } catch (err: any) {
+          console.error("[AdminGuard] Profile fetch failed:", err);
+          
+          // CRITICAL: If the token is expired/invalid, we MUST redirect to login
+          // and not rely on the email whitelist with a stale session.
+          if (err.message?.includes("Invalid or expired session token") || err.message?.includes("401")) {
+             console.warn("[AdminGuard] Session invalid, clearing and redirecting.");
+             await insforge.auth.signOut();
+             router.push("/login");
+             return;
+          }
+          // For other errors (500, network), we fallback to email whitelist for safety
+          profile = null;
+        }
 
         const combinedUser = { ...authUser, profile };
         setUser(combinedUser);

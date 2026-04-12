@@ -53,7 +53,7 @@ class ApiClient {
    * session checks. This prevents 401 errors caused by concurrent session
    * initialization race conditions.
    */
-  private async getToken(): Promise<string | null> {
+  private async getToken(forceRefresh = false): Promise<string | null> {
     try {
       // 1. Memoized Import
       if (!this.insforgeInstance) {
@@ -63,15 +63,21 @@ class ApiClient {
 
       // 2. Session Lock (Single Inflight Promise)
       // If a check is already underway, await the same promise.
-      if (!this.inflightSessionPromise) {
-        this.inflightSessionPromise = this.insforgeInstance.auth.getCurrentUser()
+      if (!this.inflightSessionPromise || forceRefresh) {
+        // Use refreshSession() as it correctly triggers background token refresh
+        this.inflightSessionPromise = this.insforgeInstance.auth.refreshSession()
           .finally(() => {
             this.inflightSessionPromise = null;
           });
       }
       
-      const userResult = await this.inflightSessionPromise;
+      const { data } = await this.inflightSessionPromise;
       
+      // Prefer token from the refreshSession result
+      if (data?.accessToken) {
+        return data.accessToken;
+      }
+
       // 3. Fallback: Check headers directly if session result is valid
       const headers = this.insforgeInstance.getHttpClient().getHeaders();
       const authHeader = (headers as any)["Authorization"];
@@ -86,11 +92,12 @@ class ApiClient {
   private async fetch<T>(
     endpoint: string,
     options?: RequestInit & { authenticated?: boolean },
+    retryCount = 0
   ): Promise<T> {
     const shouldAuthenticate = options?.authenticated !== false;
 
     // Get session token safely
-    const token = shouldAuthenticate ? await this.getToken() : null;
+    const token = shouldAuthenticate ? await this.getToken(retryCount > 0) : null;
     
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -104,15 +111,18 @@ class ApiClient {
     }
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`[ApiClient] Requesting ${endpoint}...`);
-
+    
     const response = await fetch(fullUrl, {
       ...options,
       cache: "no-store",
       headers,
     });
 
-    console.log(`[ApiClient] Response [${response.status}] ${endpoint}`);
+    // Handle session expiration with a single retry
+    if (response.status === 401 && shouldAuthenticate && retryCount < 1) {
+      console.log(`[ApiClient] [401_RETRY] ${endpoint}`);
+      return this.fetch<T>(endpoint, options, retryCount + 1);
+    }
 
     if (!response.ok) {
       let errorMessage = response.statusText;
