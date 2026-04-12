@@ -47,9 +47,11 @@ class DataForSEOProvider(HotelDataProvider):
         
         try:
             # Using LIVE endpoint for immediate response
+            # Location code 2792 is Turkey, which we combine with the city string in the keyword
             post_data = [{
-                "location_name": location,
-                "keyword": hotel_name,
+                "location_code": 2792,
+                "language_code": "en",
+                "keyword": f"{hotel_name} {location}",
                 "check_in": check_in.strftime("%Y-%m-%d"),
                 "check_out": check_out.strftime("%Y-%m-%d"),
                 "currency": currency,
@@ -65,8 +67,8 @@ class DataForSEOProvider(HotelDataProvider):
                 res_json = response.json()
                 
                 if res_json.get("status_code") != 20000:
-                    logger.error(f"DataForSEO Live Search Failed: {res_json.get('status_message')}")
-                    return {"status": "error", "error": res_json.get("status_message")}
+                    logger.error(f"DataForSEO Live Search Failed: {res_json.get('status_message')} - Task: {res_json.get('tasks', [{}])[0].get('status_message')}")
+                    return {"status": "error", "error": f"{res_json.get('status_message')} - {res_json.get('tasks', [{}])[0].get('status_message')}"}
 
                 task = res_json.get("tasks", [{}])[0]
                 if not task.get("result"):
@@ -83,19 +85,27 @@ class DataForSEOProvider(HotelDataProvider):
                 property_token = target.get("hotel_identifier")
                 
                 # Capture OTA prices (Market Offers)
-                # Some versions of the API return 'vendors', others 'market_offers'
                 market_offers = target.get("vendors") or target.get("market_offers") or []
                 
+                prices = target.get("prices", {})
+                price_val = prices.get("price", 0.0)
+                if not isinstance(price_val, (int, float)):
+                    price_val = 0.0
+
                 return {
-                    "price": target.get("price", 0.0),
-                    "currency": currency,
+                    "price": float(price_val),
+                    "currency": prices.get("currency", currency),
                     "source": "DataForSEO",
                     "vendor": target.get("vendor", "Direct"),
-                    "url": f"https://www.google.com/search?q={hotel_name}",
-                    "rating": target.get("rating", {}).get("value", 0.0),
-                    "reviews": target.get("rating", {}).get("votes_count", 0),
+                    "url": target.get("check_url", f"https://www.google.com/search?q={hotel_name}"),
+                    "rating": target.get("reviews", {}).get("value", 0.0),
+                    "review_count": target.get("reviews", {}).get("votes_count", 0),
+                    "stars": target.get("stars", 0),
+                    "images": target.get("overview_images", []),
+                    "latitude": target.get("location", {}).get("latitude"),
+                    "longitude": target.get("location", {}).get("longitude"),
                     "property_token": property_token,
-                    "market_offers": market_offers,
+                    "offers": market_offers,
                     "status": "success"
                 }
 

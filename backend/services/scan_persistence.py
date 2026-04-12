@@ -299,8 +299,7 @@ class ScanPersistenceService:
         # 4. Metadata & Sentiment
         meta_update = {
             "last_scan": datetime.now(timezone.utc).isoformat(),
-            "vendor_source": price_data.get("vendor", "Provider"),
-            "preferred_currency": currency,
+            "vendor_source": price_data.get("vendor", "Provider")
         }
         
         # Only update the 'live' price if we have a fresh, valid one

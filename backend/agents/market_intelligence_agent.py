@@ -65,7 +65,7 @@ class MarketIntelligenceAgent:
             
             REQUIRED JSON STRUCTURE:
             {{
-              "reasoning_trace": [{"step": "str", "message": "str"}],
+              "reasoning_trace": [{{"step": "str", "message": "str"}}],
               "final_report": "CONCISE SUMMARY WITH ALL CAPS HEADERS"
             }}
             """
@@ -74,8 +74,7 @@ class MarketIntelligenceAgent:
             interaction = await asyncio.to_thread(
                 client.interactions.create,
                 model=self.model,
-                input=prompt,
-                config={'response_mime_type': 'application/json'}
+                input=prompt
             )
 
             if not interaction or not interaction.outputs:
@@ -169,8 +168,7 @@ class MarketIntelligenceAgent:
             interaction = await asyncio.to_thread(
                 client.interactions.create,
                 model=self.model,
-                input=prompt,
-                config={'response_mime_type': 'application/json'}
+                input=prompt
             )
             import json
             dna = json.loads(interaction.outputs[-1].text)
