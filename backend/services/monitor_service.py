@@ -896,7 +896,7 @@ async def process_system_scans(db: Client):
                 # 3. Update Hotels and History
                 try:
                     # 3. Get the hotel info to find siblings sharing the same property token
-                    primary_res = db.table("hotels").select("name, location, property_token, description, amenities").eq("id", h_id).single().execute()
+                    primary_res = db.table("hotels").select("id, name, location, property_token, description, amenities").eq("id", h_id).single().execute()
                     if not primary_res.data:
                         s_logger.warning(f"Task Processor: Hotel ID {h_id} not found in database for task {tid}")
                         continue
@@ -939,17 +939,31 @@ async def process_system_scans(db: Client):
                         # Update the hotel record
                         db.table("hotels").update(update_data).eq("id", target_id).execute()
 
-                        # ENRICHMENT: If hotel is missing description or amenities, fetch full info once
-                        if p_token and (not hotel_ref.get("description") or not hotel_ref.get("amenities")):
+                        # ENRICHMENT: Trigger deep-fetch if metadata is missing
+                        # This ensures Pulse scans grow the database profile for new hotels
+                        has_metadata = hotel_ref.get("description") and hotel_ref.get("amenities")
+                        has_token = hotel_ref.get("property_token") or result.get("property_token")
+                        
+                        if has_token and not has_metadata:
                             try:
-                                s_logger.info(f"Task Processor: Enriching rich data for {h_name} using token {p_token}")
-                                rich_info = await dataforseo_provider.fetch_hotel_info(p_token)
+                                token_to_use = hotel_ref.get("property_token") or result.get("property_token")
+                                s_logger.info(f"Task Processor: Enriching deep metadata for {h_name} [Token: {token_to_use}]")
+                                
+                                # fetch_hotel_info is the deep 'Market Sync' equivalent for a single property
+                                rich_info = await dataforseo_provider.fetch_hotel_info(token_to_use)
                                 if rich_info:
                                     # Filter None values to avoid overwriting existing data with nulls
                                     clean_rich = {k: v for k, v in rich_info.items() if v is not None}
-                                    db.table("hotels").update(clean_rich).eq("id", target_id).execute()
+                                    
+                                    # Update all variants sharing this token
+                                    if prop_token:
+                                        db.table("hotels").update(clean_rich).eq("property_token", prop_token).execute()
+                                    else:
+                                        db.table("hotels").update(clean_rich).eq("id", target_id).execute()
+                                        
+                                    s_logger.info(f"Task Processor: Deep enrichment successful for {h_name}")
                             except Exception as re:
-                                s_logger.warning(f"Task Processor: Failed to enrich {h_name}: {re}")
+                                s_logger.warning(f"Task Processor: Enrichment attempt failed for {h_name}: {re}")
 
                         # Insert history with full snapshot
                         db.table("price_logs").insert({
@@ -974,7 +988,7 @@ async def process_system_scans(db: Client):
                                     "session_id": session_id,
                                     "hotel_name": h_name,
                                     "status": "success",
-                                    "message": f"Pulse detected price: {price} {currency}",
+                                    "status_detail": f"Pulse detected price: {price} {currency}",
                                     "created_at": datetime.now(timezone.utc).isoformat()
                                 }).execute()
                             except Exception as log_e:

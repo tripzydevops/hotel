@@ -303,10 +303,33 @@ class DataForSEOProvider(HotelDataProvider):
                 reviews_data = target.get("reviews") or {}
                 
                 # Capture all OTA offers/vendors
+                # DataForSEO Google Hotels Search usually puts offers in target['vendors']
+                # or nested inside target['prices']['items']
                 market_offers = target.get("vendors") or target.get("market_offers") or []
                 
+                # If offers list is empty, dive into prices.items which often contains the OTA list
+                if not market_offers and "items" in prices_data:
+                    for p_item in prices_data["items"]:
+                        offer = {
+                            "vendor": p_item.get("source"),
+                            "price": p_item.get("price"),
+                            "currency": p_item.get("currency"),
+                            "url": p_item.get("url"),
+                            "is_official": p_item.get("is_official", False)
+                        }
+                        market_offers.append(offer)
+
                 # Check for sub_items (sometimes contains room types or secondary listings)
                 room_types = target.get("sub_items", [])
+                
+                # Deduce room types from prices items if available (extracting unique names)
+                if not room_types and "items" in prices_data:
+                    seen_rooms = set()
+                    for p_item in prices_data["items"]:
+                        r_name = p_item.get("name") # Some providers put room name here
+                        if r_name and r_name not in seen_rooms:
+                            room_types.append({"name": r_name, "price": p_item.get("price")})
+                            seen_rooms.add(r_name)
 
                 return {
                     "price": prices_data.get("price", 0.0),
@@ -319,6 +342,8 @@ class DataForSEOProvider(HotelDataProvider):
                     "reviews": reviews_data.get("votes_count", 0),
                     "offers": market_offers,
                     "room_types": room_types,
+                    "check_in": prices_data.get("check_in"),
+                    "check_out": prices_data.get("check_out"),
                     "tag": task_tag,
                     "items": items,
                     "status": "success"
