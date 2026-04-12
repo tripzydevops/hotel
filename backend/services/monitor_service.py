@@ -615,7 +615,7 @@ async def run_scheduler_check_logic():
             zombies = (
                 supabase.table("scan_sessions")
                 .select("id")
-                .in_("status", ["pending", "running"])
+                .in_("status", ["pending", "running", "processing"])
                 .lt("created_at", zombie_cutoff)
                 .execute()
             )
@@ -885,10 +885,17 @@ async def process_system_scans(db: Client):
                     s_logger.warning(f"Task Processor: Skipping task {tid} due to missing data. Price: {price}, Tag: {tag_raw}")
                     continue
 
+                # UUID Validation for h_id
+                try:
+                    UUID(h_id)
+                except ValueError:
+                    s_logger.warning(f"Task Processor: Skipping task {tid} due to invalid hotel UUID in tag: {h_id}")
+                    continue
+
                 # 3. Update Hotels and History
                 try:
                     # 3. Get the hotel info to find siblings sharing the same property token
-                    primary_res = db.table("hotels").select("name, location, serp_api_id").eq("id", h_id).single().execute()
+                    primary_res = db.table("hotels").select("name, location, serp_api_id, description, amenities").eq("id", h_id).single().execute()
                     if not primary_res.data:
                         s_logger.warning(f"Task Processor: Hotel ID {h_id} not found in database for task {tid}")
                         continue
@@ -912,19 +919,46 @@ async def process_system_scans(db: Client):
                         target_id = h_obj["id"]
                         prev_price_val = h_obj.get("current_price")
                         
-                        # Update each entity
-                        db.table("hotels").update({
+                        # Prepare update payload with rich data
+                        update_data = {
                             "current_price": price,
                             "previous_price": prev_price_val,
                             "last_scanned_at": datetime.now(timezone.utc).isoformat(),
-                            "last_scan": datetime.now(timezone.utc).isoformat()
-                        }).eq("id", target_id).execute()
+                            "last_scan": datetime.now(timezone.utc).isoformat(),
+                            "rating": result.get("rating"),
+                            "stars": result.get("stars"),
+                            "review_count": result.get("reviews")
+                        }
+                        
+                        # Capture property token for future rich lookups if found
+                        p_token = result.get("property_token")
+                        if p_token:
+                            update_data["property_token"] = p_token
 
-                        # Insert history for each
+                        # Update the hotel record
+                        db.table("hotels").update(update_data).eq("id", target_id).execute()
+
+                        # ENRICHMENT: If hotel is missing description or amenities, fetch full info once
+                        if p_token and (not hotel_ref.get("description") or not hotel_ref.get("amenities")):
+                            try:
+                                s_logger.info(f"Task Processor: Enriching rich data for {h_name} using token {p_token}")
+                                rich_info = await dataforseo_provider.fetch_hotel_info(p_token)
+                                if rich_info:
+                                    # Filter None values to avoid overwriting existing data with nulls
+                                    clean_rich = {k: v for k, v in rich_info.items() if v is not None}
+                                    db.table("hotels").update(clean_rich).eq("id", target_id).execute()
+                            except Exception as re:
+                                s_logger.warning(f"Task Processor: Failed to enrich {h_name}: {re}")
+
+                        # Insert history with full snapshot
                         db.table("price_logs").insert({
                             "hotel_id": target_id,
                             "price": price,
                             "currency": currency,
+                            "parity_offers": result.get("offers", []),
+                            "room_types": result.get("room_types", []),
+                            "check_in_date": datetime.now(timezone.utc).date().isoformat(),
+                            "check_out_date": (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat(),
                             "source": "System Heartbeat (Deduplicated)",
                             "recorded_at": datetime.now(timezone.utc).isoformat()
                         }).execute()
@@ -1026,8 +1060,7 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
                     "message": alert_msg,
                     "old_price": prev_price,
                     "new_price": current_price,
-                    "currency": currency,
-                    "metadata": {"pct": change_pct}
+                    "currency": currency
                 }).execute()
 
                 # Dispatch notification

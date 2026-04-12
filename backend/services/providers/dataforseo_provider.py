@@ -47,7 +47,6 @@ class DataForSEOProvider(HotelDataProvider):
         
         try:
             # Using LIVE endpoint for immediate response
-            # Location code 2792 is Turkey, which we combine with the city string in the keyword
             post_data = [{
                 "location_code": 2792,
                 "language_code": "en",
@@ -296,17 +295,25 @@ class DataForSEOProvider(HotelDataProvider):
                 prices_data = target.get("prices") or {}
                 reviews_data = target.get("reviews") or {}
                 
+                # Capture all OTA offers/vendors
+                market_offers = target.get("vendors") or target.get("market_offers") or []
+                
+                # Check for sub_items (sometimes contains room types or secondary listings)
+                room_types = target.get("sub_items", [])
+
                 return {
                     "price": prices_data.get("price", 0.0),
                     "currency": prices_data.get("currency", "USD"),
-                    "vendor": "Google",  # hotel_searches doesn't specify OTA vendors at this level
+                    "vendor": "Google aggregate",
                     "property_token": target.get("hotel_identifier"),
                     "hotel_name": target.get("title"),
                     "stars": target.get("stars"),
                     "rating": reviews_data.get("value", 0.0),
                     "reviews": reviews_data.get("votes_count", 0),
+                    "offers": market_offers,
+                    "room_types": room_types,
                     "tag": task_tag,
-                    "items": items,  # Include all items so caller can process multiple hotels
+                    "items": items,
                     "status": "success"
                 }
         except Exception as e:
