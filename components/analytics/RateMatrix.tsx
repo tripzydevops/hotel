@@ -7,6 +7,9 @@ import {
   Filter,
   ChevronDown,
   Building2,
+  TrendingUp,
+  Zap,
+  Globe,
 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 
@@ -35,6 +38,7 @@ export default function RateMatrix({
   // State for selected OTAs
   const [selectedOTAs, setSelectedOTAs] = useState<string[]>([]);
   const [showOTAFilter, setShowOTAFilter] = useState(false);
+  const [showAllOTAs, setShowAllOTAs] = useState(false);
 
   // Filtered hotels (Competitors + Target)
   const displayedHotels = useMemo(() => {
@@ -92,11 +96,35 @@ export default function RateMatrix({
 
   // Use selected OTAs or default to first 6
   const displayedOTAs = useMemo(() => {
+    if (showAllOTAs) {
+      return allOTAs;
+    }
     if (selectedOTAs.length > 0) {
       return selectedOTAs;
     }
     return allOTAs.slice(0, DEFAULT_OTA_COUNT);
-  }, [selectedOTAs, allOTAs]);
+  }, [selectedOTAs, allOTAs, showAllOTAs]);
+
+  // Calculate market averages per OTA for yield analysis
+  const otaAverages = useMemo(() => {
+    const averages: Record<string, number> = {};
+    
+    allOTAs.forEach(ota => {
+      const prices: number[] = [];
+      competitors.forEach(comp => {
+        const offer = comp.price_info?.offers?.find(
+          o => o.vendor?.toLowerCase() === ota.toLowerCase()
+        );
+        if (offer?.price) prices.push(offer.price);
+      });
+      
+      if (prices.length > 0) {
+        averages[ota.toLowerCase()] = prices.reduce((a, b) => a + b, 0) / prices.length;
+      }
+    });
+    
+    return averages;
+  }, [allOTAs, competitors]);
 
   const formatPrice = (price?: number) => {
     if (!price) return "—";
@@ -323,6 +351,19 @@ export default function RateMatrix({
               </div>
             )}
           </div>
+
+          {/* Show All OTAs Toggle */}
+          <button
+            onClick={() => setShowAllOTAs(!showAllOTAs)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
+              showAllOTAs
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+            }`}
+          >
+            <Globe className="w-3 h-3" />
+            {showAllOTAs ? "All OTAs Active" : "Show All OTAs"}
+          </button>
         </div>
       </div>
 
@@ -396,6 +437,7 @@ export default function RateMatrix({
                           price={offer?.price}
                           target={targetPrice}
                           formatPrice={formatPrice}
+                          marketAvg={otaAverages[ota.toLowerCase()]}
                         />
                       </td>
                     );
@@ -434,31 +476,43 @@ function ParityStatus({
   target,
   formatPrice,
   label,
+  marketAvg,
 }: {
   price?: number;
   target: number;
   formatPrice: (p: number) => string;
   label?: string;
+  marketAvg?: number;
 }) {
   if (!price) return <span className="text-slate-700">—</span>;
 
   const isUndercut = price < target;
   const gapPercent = target > 0 ? ((target - price) / target) * 100 : 0;
+  
+  // Parity High Severity: Competitor is significantly cheaper than us
   const isHighSeverity = gapPercent > 10;
+  
+  // Yield Opportunity: We are significantly higher than the market average (5%+) 
+  // but still "competitive" (e.g. not the highest on the chart, though this is a simplified check)
+  const isYieldOpportunity = marketAvg && target > marketAvg * 1.05 && price === target;
 
   return (
     <div
-      className={`inline-flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition-all duration-500 ${
+      className={`inline-flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition-all duration-500 relative group/cell ${
         isHighSeverity
-          ? "bg-rose-600/20 text-rose-400 border-rose-500/50 shadow-[0_0_20px_rgba(225,29,72,0.4)] animate-pulse"
-          : isUndercut
-            ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-            : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
+          ? "bg-rose-600/20 text-rose-400 border-rose-500/60 shadow-[0_0_25px_rgba(225,29,72,0.5)] animate-[pulse_1s_ease-in-out_infinite] scale-105 z-10"
+          : isYieldOpportunity
+            ? "bg-amber-400/10 text-amber-400 border-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+            : isUndercut
+              ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+              : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
       }`}
     >
       <div className="flex items-center gap-1.5 text-xs font-black">
         {isHighSeverity ? (
-          <AlertTriangle className="w-3.5 h-3.5" />
+          <Zap className="w-3.5 h-3.5 fill-current animate-bounce" />
+        ) : isYieldOpportunity ? (
+          <TrendingUp className="w-3.5 h-3.5" />
         ) : isUndercut ? (
           <AlertTriangle className="w-3 h-3 opacity-70" />
         ) : (
@@ -466,10 +520,20 @@ function ParityStatus({
         )}
         <span className="tracking-tighter">{formatPrice(price)}</span>
       </div>
-      {(label || isHighSeverity) && (
-        <span className={`text-[7px] uppercase font-black tracking-[0.2em] mt-0.5 ${isHighSeverity ? "text-rose-300" : "opacity-50"}`}>
-          {isHighSeverity ? "Critical Gap" : label}
+      
+      {(label || isHighSeverity || isYieldOpportunity) && (
+        <span className={`text-[7px] uppercase font-black tracking-[0.2em] mt-0.5 ${
+          isHighSeverity ? "text-rose-300" : isYieldOpportunity ? "text-amber-300" : "opacity-50"
+        }`}>
+          {isHighSeverity ? "Aggressive Undercut" : isYieldOpportunity ? "Yield Peak" : label}
         </span>
+      )}
+
+      {/* Hover Detail */}
+      {marketAvg && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-black/90 text-[8px] text-slate-300 opacity-0 group-hover/cell:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">
+          Market Avg: {formatPrice(marketAvg)}
+        </div>
       )}
     </div>
   );
