@@ -4,7 +4,7 @@ from uuid import UUID
 from supabase import Client
 from backend.utils.db import get_supabase, try_acquire_lock
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
-from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession, ScanTask
+from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
 from backend.services import monitor_service
 from backend.services.monitor_service import (
     trigger_monitor_logic,

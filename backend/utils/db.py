@@ -1,6 +1,6 @@
 # Supabase/PostgREST Database Utility
 import os
-# from yarl import URL # Removed for Vercel portability
+from yarl import URL # Required for PostgREST base_url joinpath compatibility
 from typing import Optional, Any
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
@@ -50,7 +50,8 @@ def get_supabase_client(jwt: Optional[str] = None, admin: bool = False) -> Optio
             if jwt:
                 supabase.postgrest.auth(jwt)
                 
-            # Configure base URL for database operations.
+            # Configure base URL for database operations (InsForge compatibility override)
+            # PostgREST client requires a yarl.URL object for joinpath support.
             clean_base = url.rstrip("/")
             supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")
             

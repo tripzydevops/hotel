@@ -111,7 +111,7 @@ async def get_settings(
         if not db:
             return safe_defaults
         result = db.table("settings").select("*").eq("user_id", str(user_id)).execute()
-        if result.data:
+        if not result or not result.data:
             insert_data = {
                 "user_id": str(user_id),
                 "threshold_percent": 2.0,
