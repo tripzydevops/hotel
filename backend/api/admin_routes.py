@@ -49,6 +49,9 @@ from backend.services.admin_service import (
     get_admin_providers_logic,
     trigger_all_overdue_logic,
     cleanup_empty_scans_logic,
+    get_admin_batches_logic,
+    get_admin_batch_details_logic,
+    rescan_batch_task_logic,
 )
 from backend.services.provider_factory import ProviderFactory
 import os
@@ -482,3 +485,41 @@ async def cleanup_empty_scans(
     Administrative cleanup: Removes scans that failed or have no results.
     """
     return await cleanup_empty_scans_logic(db)
+
+
+@router.get("/batches")
+async def get_admin_batches(
+    limit: int = 50,
+    db: Client = Depends(get_supabase),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Lists live extraction batches for monitoring system load.
+    """
+    return await get_admin_batches_logic(db, limit)
+
+
+@router.get("/batches/{batch_id}")
+async def get_admin_batch_details(
+    batch_id: str,
+    db: Client = Depends(get_supabase),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Fetches fine-grained task data for a specific extraction batch.
+    Used for diagnosing specific scraping failures.
+    """
+    return await get_admin_batch_details_logic(db, batch_id)
+
+
+@router.post("/tasks/{task_id}/rescan")
+async def rescan_batch_task(
+    task_id: str,
+    db: Client = Depends(get_supabase),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Manually retries a failed extraction task by resetting its state.
+    """
+    return await rescan_batch_task_logic(db, task_id)
+

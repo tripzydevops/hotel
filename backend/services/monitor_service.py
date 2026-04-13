@@ -759,75 +759,27 @@ async def run_system_heartbeat(db: Client):
             return
 
         s_logger.info(f"Heartbeat: Submitting {len(criteria_groups)} unique search tasks (from {len(monitored_res.data)} monitored records)...")
-        # 4. Create a Global Scan Session for visibility
-        session_id = None
-        try:
-            session_result = db.table("scan_sessions").insert({
-                "user_id": None, # System user is NULL to avoid FK constraints
-                "session_type": "scheduled_pulse",
-                "hotels_count": len(criteria_groups),
-                "status": "processing",
-            }).execute()
-            if session_result.data:
-                session_id = session_result.data[0]["id"]
-                s_logger.info(f"Heartbeat: Created system session {session_id}")
-            else:
-                s_logger.error("Heartbeat: Session created but no data returned.")
-                return 
-        except Exception as e:
-            s_logger.error(f"Heartbeat: Failed to create session record: {e}")
-            return
-
-        # 4. Prepare DataForSEO Tasks (Today -> Tomorrow, 2 Adults)
+        
+        # 4. Use the optimized batch submission logic
+        # We prepare the list of hotel_ids (using the primary variant for each identity)
+        target_hotel_ids = [h_ids[0] for h_ids in criteria_groups.values()]
+        
+        # Determine scan window (Today -> Tomorrow)
         check_in = date.today().strftime("%Y-%m-%d")
         check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
         
-        task_params = []
-        for key, h_ids in criteria_groups.items():
-            h_data = criteria_data[key]
-            # Use the first ID as the primary reference tag
-            primary_id = h_ids[0]
-            
-            # Normalize location for DataForSEO API compatibility:
-            # - "Turkey" must be "Turkiye" (official API name)
-            # - No spaces after commas: "City,Country" not "City, Country"
-            # - ASCII only: "Balıkesir" -> "Balikesir" (special chars break API)
-            raw_location = h_data["location"]
-            normalized_location = _normalize_location_for_api(raw_location)
-            
-            # Build task payload - use hotel_identifier for exact-match results.
-            task_payload = {
-                "location_name": normalized_location,
-                "language_name": "English",  # Required by DataForSEO API
-                "check_in": check_in,
-                "check_out": check_out,
-                "adults": 2,
-                "currency": "TRY",
-                "tag": f"{session_id}|{primary_id}" if session_id else str(primary_id)
-            }
-            
-            unique_id = h_data.get("property_token")
-            if unique_id:
-                # Exact hotel lookup via unique identifier - preferred method
-                task_payload["hotel_identifier"] = unique_id
-            else:
-                # Last resort: keyword search by hotel name (may return multiple results)
-                task_payload["keyword"] = h_data["name"]
-                s_logger.warning(f"Heartbeat: Hotel '{h_data['name']}' has no unique identifier, using keyword search")
-            
-            task_params.append(task_payload)
+        # Register and Post the Batch
+        success_count = await dataforseo_provider.submit_hotel_scan_batch(
+            db=db,
+            hotel_ids=target_hotel_ids,
+            check_in=check_in,
+            check_out=check_out,
+            batch_type="scheduled_pulse"
+        )
 
-        batch_size = 100
-        total_tasks_posted = 0
-        for i in range(0, len(task_params), batch_size):
-            batch = task_params[i : i + batch_size]
-            task_ids = await dataforseo_provider.post_price_tasks(batch)
-            if task_ids:
-                total_tasks_posted += len(task_ids)
+        s_logger.info(f"Heartbeat: Successfully posted {success_count}/{len(target_hotel_ids)} tracking units via Batch Processor.")
 
-        s_logger.info(f"Heartbeat: Successfully posted {total_tasks_posted} scanning tasks.")
-
-        # 5. Update Admin Settings
+        # 7. Update Admin Settings
         next_scan = now + timedelta(hours=interval)
         try:
             db.table("admin_settings").update({
@@ -847,6 +799,8 @@ async def process_system_scans(db: Client):
     Uses 'tag' from results to map back to hotel_id.
     """
     s_logger = get_scheduler_logger()
+    catalog_results = []
+    catalog_hotels = []
     try:
         # 1. Get completed task IDs
         completed_ids = await dataforseo_provider.get_completed_tasks()
@@ -856,8 +810,6 @@ async def process_system_scans(db: Client):
         s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
         
         from backend.services.room_type_service import update_room_type_catalog
-        catalog_results = []
-        catalog_hotels = []
 
         for tid in completed_ids:
             try:
@@ -867,23 +819,37 @@ async def process_system_scans(db: Client):
                     s_logger.warning(f"Task Processor: API result failed for task {tid}. Status: {result.get('status') if result else 'None'}")
                     continue
 
-                # Composite tag parsing: session_id|h_id
+                # Kaizen: Tag contains scan_task_id (new) or session_id|hotel_id (old)
                 tag_raw = result.get("tag", "")
-                h_id = tag_raw
-                session_id = None
-                
-                if tag_raw and "|" in tag_raw:
+                scan_task_id = None
+                h_id = None
+                batch_id = None
+
+                if "|" in tag_raw:
                     try:
-                        session_id_str, h_id = tag_raw.split("|", 1)
-                        session_id = session_id_str # Keep as string for DB
-                    except Exception:
-                        h_id = tag_raw
+                        _, h_id = tag_raw.split("|", 1)
+                    except: h_id = tag_raw
+                else:
+                    scan_task_id = tag_raw
+
+                # 3. Resolve metadata from scan_tasks if applicable
+                if scan_task_id:
+                    task_res = db.table("scan_tasks").select("*").eq("id", scan_task_id).execute()
+                    if task_res.data:
+                        scan_task = task_res.data[0]
+                        h_id = scan_task["hotel_id"]
+                        batch_id = scan_task["batch_id"]
+                        
+                        if scan_task["status"] == "completed":
+                            continue # Already handled
 
                 price = result.get("price")
                 currency = result.get("currency")
                 
                 if not price or not h_id:
-                    s_logger.warning(f"Task Processor: Skipping task {tid} due to missing data. Price: {price}, Tag: {tag_raw}")
+                    if scan_task_id:
+                        db.table("scan_tasks").update({"status": "failed", "error_message": "No price found"}).eq("id", scan_task_id).execute()
+                        if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
                     continue
 
                 # UUID Validation for h_id
@@ -893,122 +859,24 @@ async def process_system_scans(db: Client):
                     s_logger.warning(f"Task Processor: Skipping task {tid} due to invalid hotel UUID in tag: {h_id}")
                     continue
 
-                # 3. Update Hotels and History
-                try:
-                    # 3. Get the hotel info to find siblings sharing the same property token
-                    primary_res = db.table("hotels").select("id, name, location, property_token, description, amenities").eq("id", h_id).single().execute()
-                    if not primary_res.data:
-                        s_logger.warning(f"Task Processor: Hotel ID {h_id} not found in database for task {tid}")
-                        continue
-                    
-                    hotel_ref = primary_res.data
-                    prop_token = hotel_ref.get("property_token")
-                    h_name = hotel_ref["name"]
-                    h_location = hotel_ref["location"]
-
-                    if prop_token:
-                        # Priority 1: Match all variations sharing the same unique Token
-                        matching_hotels = db.table("hotels").select("id, current_price").eq("property_token", prop_token).execute()
-                    else:
-                        # Fallback: Match by name/location
-                        matching_hotels = db.table("hotels").select("id, current_price").eq("name", h_name).eq("location", h_location).execute()
-                    
-                    if not matching_hotels.data:
-                        continue
-
-                    for h_obj in matching_hotels.data:
-                        target_id = h_obj["id"]
-                        prev_price_val = h_obj.get("current_price")
-                        
-                        # Prepare update payload with rich data
-                        update_data = {
-                            "current_price": price,
-                            "previous_price": prev_price_val,
-                            "last_scanned_at": datetime.now(timezone.utc).isoformat(),
-                            "last_scan": datetime.now(timezone.utc).isoformat(),
-                            "rating": result.get("rating"),
-                            "stars": result.get("stars"),
-                            "review_count": result.get("reviews")
-                        }
-                        
-                        # Capture property token for future rich lookups if found
-                        p_token = result.get("property_token")
-                        if p_token:
-                            update_data["property_token"] = p_token
-
-                        # Update the hotel record
-                        db.table("hotels").update(update_data).eq("id", target_id).execute()
-
-                        # ENRICHMENT: Trigger deep-fetch if metadata is missing
-                        # This ensures Pulse scans grow the database profile for new hotels
-                        has_metadata = hotel_ref.get("description") and hotel_ref.get("amenities")
-                        has_token = hotel_ref.get("property_token") or result.get("property_token")
-                        
-                        if has_token and not has_metadata:
-                            try:
-                                token_to_use = hotel_ref.get("property_token") or result.get("property_token")
-                                s_logger.info(f"Task Processor: Enriching deep metadata for {h_name} [Token: {token_to_use}]")
-                                
-                                # fetch_hotel_info is the deep 'Market Sync' equivalent for a single property
-                                rich_info = await dataforseo_provider.fetch_hotel_info(token_to_use)
-                                if rich_info:
-                                    # Filter None values to avoid overwriting existing data with nulls
-                                    clean_rich = {k: v for k, v in rich_info.items() if v is not None}
-                                    
-                                    # Update all variants sharing this token
-                                    if prop_token:
-                                        db.table("hotels").update(clean_rich).eq("property_token", prop_token).execute()
-                                    else:
-                                        db.table("hotels").update(clean_rich).eq("id", target_id).execute()
-                                        
-                                    s_logger.info(f"Task Processor: Deep enrichment successful for {h_name}")
-                            except Exception as re:
-                                s_logger.warning(f"Task Processor: Enrichment attempt failed for {h_name}: {re}")
-
-                        # Insert history with full snapshot
-                        db.table("price_logs").insert({
-                            "hotel_id": target_id,
-                            "price": price,
-                            "currency": currency,
-                            "parity_offers": result.get("parity_offers") or result.get("offers", []),
-                            "room_types": result.get("room_types", []),
-                            "check_in_date": result.get("check_in") or datetime.now(timezone.utc).date().isoformat(),
-                            "check_out_date": result.get("check_out") or (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat(),
-                            "source": "System Heartbeat (Deduplicated)",
-                            "recorded_at": datetime.now(timezone.utc).isoformat()
-                        }).execute()
-
-                        # 4. Trigger per-user notifications for this specific entity
-                        await _trigger_heartbeat_notifications(db, target_id, price, currency)
-
-                        # 5. Log activity to session for visibility if session_id is present
-                        if session_id:
-                            try:
-                                db.table("query_logs").insert({
-                                    "session_id": session_id,
-                                    "hotel_name": h_name,
-                                    "status": "success",
-                                    "status_detail": f"Pulse detected price: {price} {currency}",
-                                    "created_at": datetime.now(timezone.utc).isoformat()
-                                }).execute()
-                            except Exception as log_e:
-                                s_logger.error(f"Failed to log session activity: {log_e}")
-                    s_logger.info(f"Task Processor: Updated {len(matching_hotels.data)} variations sharing token '{prop_token or h_name}' to {price} {currency}")
-                    
-                    # 6. Add to catalog update queue
-                    result["hotel_id"] = h_id
+                # 4. Perform synchronized update
+                success = await sync_extraction_result(db, h_id, result, scan_task_id=scan_task_id, batch_id=batch_id, source="Polling")
+                
+                if success:
                     catalog_results.append(result)
-                    catalog_hotels.append(hotel_ref)
+                    catalog_hotels.append(h_id)
 
-                except Exception as e:
-                    s_logger.error(f"Failed to sync hotel results for {h_id}: {e}")
+                    # Update scan task status if applicable
+                    if scan_task_id:
+                        db.table("scan_tasks").update({"status": "completed"}).eq("id", scan_task_id).execute()
+                        if batch_id: db.rpc("increment_batch_success", {"b_id": batch_id}).execute()
 
-            except Exception as item_e:
-                s_logger.error(f"Task Processor: Error processing task {tid}: {item_e}")
+            except Exception as te:
+                s_logger.error(f"Task Processor: Error processing task {tid}: {te}")
+                if scan_task_id:
+                    db.table("scan_tasks").update({"status": "failed", "error_message": str(te)}).eq("id", scan_task_id).execute()
+                    if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
 
-    except Exception as e:
-        s_logger.error(f"Task Processor General Failure: {e}")
-    finally:
         # Finalize catalog update after processing all tasks
         if catalog_results:
             try:
@@ -1016,6 +884,9 @@ async def process_system_scans(db: Client):
                 await update_room_type_catalog(db, catalog_results, catalog_hotels)
             except Exception as catalog_e:
                 s_logger.error(f"Task Processor: Catalog sync failed: {catalog_e}")
+
+    except Exception as e:
+        s_logger.error(f"Task Processor General Failure: {e}")
 
 async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, initiator_id: Optional[UUID] = None):
     """
@@ -1096,6 +967,102 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
 
     except Exception as e:
         logger.error(f"Heartbeat Notifier Error for hotel {hotel_id}: {e}")
+
+
+async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, Any], scan_task_id: Optional[str] = None, batch_id: Optional[str] = None, source: str = "System"):
+    """
+    Unified logic to update a hotel and its variations with a new extraction result.
+    Updates prices, logs history, triggers notifications, and increments batch status.
+    """
+    from backend.utils.logger import get_logger
+    logger = get_logger(__name__)
+    
+    try:
+        # 1. Validation
+        try:
+            from uuid import UUID
+            UUID(hotel_id)
+        except ValueError:
+            logger.warning(f"Sync: Invalid hotel UUID: {hotel_id}")
+            return False
+
+        price = result.get("price")
+        currency = result.get("currency", "TRY")
+        
+        if not price or float(price) <= 0:
+            if scan_task_id:
+                db.table("scan_tasks").update({"status": "failed", "error_message": "Invalid price"}).eq("id", scan_task_id).execute()
+                if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
+            return False
+
+        # 2. Get hotel variation context
+        primary_res = db.table("hotels").select("id, name, location, property_token, description, amenities").eq("id", hotel_id).single().execute()
+        if not primary_res.data:
+            logger.warning(f"Sync: Hotel {hotel_id} not found.")
+            return False
+            
+        hotel_ref = primary_res.data
+        prop_token = hotel_ref.get("property_token")
+        h_name = hotel_ref["name"]
+        h_location = hotel_ref["location"]
+
+        # 3. Find variations sharing the same identity
+        if prop_token:
+            matching_hotels = db.table("hotels").select("id, last_price").eq("property_token", prop_token).execute()
+        else:
+            matching_hotels = db.table("hotels").select("id, last_price").eq("name", h_name).eq("location", h_location).execute()
+        
+        if not matching_hotels.data:
+            matching_hotels.data = [{"id": hotel_id, "last_price": 0}]
+
+        for h_obj in matching_hotels.data:
+            target_id = h_obj["id"]
+            
+            # 4. Update Hotel record
+            update_data = {
+                "last_price": float(price),
+                "currency": currency,
+                "last_scan_at": datetime.now(timezone.utc).isoformat(),
+                "status": "active"
+            }
+            
+            # Rich data if present
+            if result.get("rating"): update_data["rating"] = result.get("rating")
+            if result.get("stars"): update_data["stars"] = result.get("stars")
+            if result.get("reviews"): update_data["review_count"] = result.get("reviews")
+            if result.get("property_token"): update_data["property_token"] = result.get("property_token")
+
+            db.table("hotels").update(update_data).eq("id", target_id).execute()
+
+            # 5. Log Price History
+            db.table("price_logs").insert({
+                "hotel_id": target_id,
+                "price": float(price),
+                "currency": currency,
+                "parity_offers": result.get("parity_offers") or result.get("offers", []),
+                "room_types": result.get("room_types", []),
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+                "source": f"DataForSEO_{source}"
+            }).execute()
+
+            # 6. Trigger Notifications
+            await _trigger_heartbeat_notifications(db, target_id, float(price), currency)
+
+        # 7. Update Task/Batch status
+        if scan_task_id:
+            db.table("scan_tasks").update({"status": "completed"}).eq("id", scan_task_id).execute()
+            if batch_id: db.rpc("increment_batch_success", {"b_id": batch_id}).execute()
+            
+        return True
+
+    except Exception as e:
+        logger.error(f"Sync Failure: {e}")
+        if scan_task_id:
+            try:
+                db.table("scan_tasks").update({"status": "failed", "error_message": str(e)}).eq("id", scan_task_id).execute()
+                if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
+            except: pass
+        return False
 
 
 if __name__ == "__main__":

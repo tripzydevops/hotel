@@ -691,6 +691,22 @@ class ApiClient {
       method: "DELETE",
     });
   }
+
+  // ===== Batch monitoring (Stitch) =====
+
+  async getAdminBatches(limit = 50) {
+    return this.fetch<any[]>(`/api/admin/batches?limit=${limit}`);
+  }
+
+  async getAdminBatchDetails(batchId: string) {
+    return this.fetch<any>(`/api/admin/batches/${batchId}`);
+  }
+
+  async rescanBatchTask(taskId: string) {
+    return this.fetch<any>(`/api/admin/tasks/${taskId}/rescan`, {
+      method: "POST",
+    });
+  }
 }
 
 export const api = new ApiClient();

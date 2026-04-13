@@ -48,9 +48,9 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             # Using LIVE endpoint for immediate response
             post_data = [{
-                "location_code": 2792,
+                "location_name": location,
                 "language_code": "en",
-                "keyword": f"{hotel_name} {location}",
+                "keyword": hotel_name,
                 "check_in": check_in.strftime("%Y-%m-%d"),
                 "check_out": check_out.strftime("%Y-%m-%d"),
                 "currency": currency,
@@ -59,6 +59,7 @@ class DataForSEOProvider(HotelDataProvider):
             }]
 
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                # Use standard live search to get hotel list and identifiers
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_searches/live",
                     json=post_data
@@ -85,11 +86,56 @@ class DataForSEOProvider(HotelDataProvider):
                 
                 # Capture OTA prices (Market Offers)
                 market_offers = target.get("vendors") or target.get("market_offers") or []
+                room_types = target.get("room_types") or []
                 
-                prices = target.get("prices", {})
+                # ENRICHMENT STRATEGY:
+                # If search results lack detailed vendors/room_types, fetch them from the advanced Info endpoint
+                if property_token and (not market_offers or len(market_offers) < 2):
+                    logger.info(f"Triggering DataForSEO enrichment for token: {property_token}")
+                    try:
+                        # Adults parameter is used in fetch_hotel_info as well
+                        info_result = await self.fetch_hotel_info(
+                            hotel_identifier=property_token,
+                            check_in=check_in,
+                            check_out=check_out,
+                            currency=currency,
+                            adults=adults
+                        )
+                        
+                        if info_result and info_result.get("status") == "success":
+                            # Use enriched data if it has more vendors
+                            new_offers = info_result.get("offers") or []
+                            if len(new_offers) >= len(market_offers):
+                                market_offers = new_offers
+                                room_types = info_result.get("room_types") or room_types
+                                logger.info(f"DataForSEO enrichment successful: found {len(market_offers)} vendors")
+                    except Exception as e:
+                        logger.error(f"DataForSEO enrichment failed: {str(e)}")
+
+                # Safety check for prices object
+                prices = target.get("prices") or {}
+                
+                # Enrich market_offers from prices items if available (fallback)
+                price_items = prices.get("items") or []
+                if not market_offers and price_items:
+                    for p_item in price_items:
+                        if not p_item: continue
+                        offer = {
+                            "vendor": p_item.get("source"),
+                            "price": p_item.get("price"),
+                            "currency": p_item.get("currency"),
+                            "url": p_item.get("url"),
+                            "is_official": p_item.get("is_official", False)
+                        }
+                        market_offers.append(offer)
+
                 price_val = prices.get("price", 0.0)
                 if not isinstance(price_val, (int, float)):
                     price_val = 0.0
+
+                # Safety checks for nested structures
+                reviews = target.get("reviews") or {}
+                location = target.get("location") or {}
 
                 return {
                     "price": float(price_val),
@@ -97,31 +143,53 @@ class DataForSEOProvider(HotelDataProvider):
                     "source": "DataForSEO",
                     "vendor": target.get("vendor", "Direct"),
                     "url": target.get("check_url", f"https://www.google.com/search?q={hotel_name}"),
-                    "rating": target.get("reviews", {}).get("value", 0.0),
-                    "review_count": target.get("reviews", {}).get("votes_count", 0),
+                    "offers": market_offers,
+                    "room_types": room_types,
+                    "rating": reviews.get("value", 0.0),
+                    "review_count": reviews.get("votes_count", 0),
                     "stars": target.get("stars", 0),
                     "images": target.get("overview_images", []),
-                    "latitude": target.get("location", {}).get("latitude"),
-                    "longitude": target.get("location", {}).get("longitude"),
-                    "property_token": property_token,
-                    "offers": market_offers,
+                    "latitude": location.get("latitude"),
+                    "longitude": location.get("longitude"),
+                    "hotel_identifier": property_token,
                     "status": "success"
                 }
-
         except Exception as e:
             logger.error(f"DataForSEO Provider fetch_price Error: {e}")
             return {"status": "error", "error": str(e)}
 
-    async def fetch_hotel_info(self, hotel_identifier: str) -> Optional[Dict[str, Any]]:
+    async def fetch_hotel_info(
+        self, 
+        hotel_identifier: str,
+        check_in: Optional[date] = None,
+        check_out: Optional[date] = None,
+        currency: str = "USD",
+        adults: int = 1
+    ) -> Optional[Dict[str, Any]]:
         """
         Retrieves detailed hotel information (amenities, images, sentiment) 
-        using the DataForSEO Google Hotels Info Live API.
+        and optionally real-time pricing using the DataForSEO Google Hotels Info Live API.
         """
         if not self.login or not self.password or not hotel_identifier:
             return None
 
         auth = (self.login, self.password)
-        post_data = [{"hotel_identifier": hotel_identifier, "language_name": "English"}]
+        
+        # Base request
+        item = {
+            "hotel_identifier": hotel_identifier,
+            "language_name": "English",
+            "currency": currency,
+            "adults": adults
+        }
+        
+        # Include dates if provided for pricing enrichment
+        if check_in:
+            item["check_in"] = check_in.strftime("%Y-%m-%d")
+        if check_out:
+            item["check_out"] = check_out.strftime("%Y-%m-%d")
+
+        post_data = [item]
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
@@ -137,12 +205,14 @@ class DataForSEOProvider(HotelDataProvider):
                         result = task["result"][0]
                         
                         # Map DataForSEO fields to internal schema
-                        contact = result.get("contact_info", {})
-                        location = result.get("location_info", {})
+                        contact = result.get("contact_info") or {}
+                        location = result.get("location_info") or {}
+                        rating = result.get("rating") or {}
                         
                         return {
-                            "rating": result.get("rating", {}).get("value"),
-                            "review_count": result.get("rating", {}).get("votes_count"),
+                            "status": "success",
+                            "rating": rating.get("value"),
+                            "review_count": rating.get("votes_count"),
                             "stars": result.get("stars"),
                             "amenities": result.get("amenities"),
                             "images": result.get("images"),
@@ -158,6 +228,8 @@ class DataForSEOProvider(HotelDataProvider):
                             "website": contact.get("url") or contact.get("website"),
                             "cid": result.get("cid"),
                             "place_id": result.get("place_id"),
+                            "offers": result.get("vendors") or result.get("market_offers") or [],
+                            "room_types": result.get("room_types") or []
                         }
                 
                 logger.warning(f"DataForSEO Hotel Info failed: {res_json.get('status_message')}")
@@ -250,7 +322,8 @@ class DataForSEOProvider(HotelDataProvider):
                 if rejected_count > 0:
                     logger.warning(f"DataForSEO: {rejected_count}/{len(res_json.get('tasks', []))} tasks were rejected")
                 
-                return accepted_ids if accepted_ids else None
+                # Return the full task list for more detailed tracking
+                return res_json.get("tasks", []) if accepted_ids else None
         except Exception as e:
             logger.error(f"DataForSEO post_price_tasks error: {e}")
             return None

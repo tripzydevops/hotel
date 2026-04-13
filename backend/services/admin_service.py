@@ -1553,3 +1553,84 @@ async def cleanup_empty_scans_logic(db: Client) -> Dict[str, Any]:
     except Exception as e:
         print(f"Cleanup Empty Scans Error: {e}")
         return {"error": str(e)}
+
+
+async def get_admin_batches_logic(db: Client, limit: int = 50) -> List[Dict[str, Any]]:
+    """
+    Fetch live extraction batches for monitoring.
+    Includes success/failure counts and progress percentage.
+    """
+    try:
+        # EXPLANATION: Batch Monitoring
+        # Providing visibility into individual 'Live Extraction' clusters.
+        # This helps admins track the throughput of their scraper nodes.
+        res = db.table("scan_batches")\
+            .select("*, hotels(name)")\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .execute()
+        
+        batches = res.data or []
+        for b in batches:
+            total = b.get("total_tasks") or 0
+            success = b.get("success_count") or 0
+            failed = b.get("failure_count") or 0
+            
+            if total > 0:
+                b["progress"] = round(((success + failed) / total) * 100, 1)
+            else:
+                b["progress"] = 0
+                
+        return batches
+    except Exception as e:
+        print(f"Admin Batches Logic Error: {e}")
+        return []
+
+
+async def get_admin_batch_details_logic(db: Client, batch_id: str) -> Dict[str, Any]:
+    """
+    Fetch all tasks associated with a specific batch.
+    Includes deep details for diagnostics.
+    """
+    try:
+        # 1. Get batch metadata
+        batch_res = db.table("scan_batches").select("*, hotels(name)").eq("id", batch_id).single().execute()
+        batch = batch_res.data
+        
+        # 2. Get tasks
+        tasks_res = db.table("scan_tasks")\
+            .select("*, hotels(name)")\
+            .eq("batch_id", batch_id)\
+            .order("created_at", desc=False)\
+            .execute()
+        
+        return {
+            "batch": batch,
+            "tasks": tasks_res.data or []
+        }
+    except Exception as e:
+        print(f"Admin Batch Details Logic Error: {e}")
+        return {"error": str(e)}
+
+
+async def rescan_batch_task_logic(db: Client, task_id: str) -> Dict[str, Any]:
+    """
+    Resets a failed task to 'pending' to trigger a retry.
+    Useful for manual recovery of failed individual extraction tasks.
+    """
+    try:
+        # EXPLANATION: Granular Task Recovery
+        # Resets individual task states to allow the monitor service 
+        # to pick them up again in the next extraction cycle.
+        db.table("scan_tasks").update({
+            "status": "pending",
+            "error_message": None,
+            "started_at": None,
+            "completed_at": None
+        }).eq("id", task_id).execute()
+        
+        return {"status": "success", "message": "Task reset to pending for retry."}
+    except Exception as e:
+        print(f"Rescan Task Logic Error: {e}")
+        return {"error": str(e)}
+

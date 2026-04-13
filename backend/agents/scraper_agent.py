@@ -243,7 +243,8 @@ class ScraperAgent:
                                 if current_data and current_data.get("status") == "success":
                                     # If DataForSEO found pricing, we accept it. 
                                     # If it's a "deep" result with rooms, even better.
-                                    price_val = current_data.get("price", 0)
+                                    price_val = current_data.get("price")
+                                    if price_val is None: price_val = 0
                                     if price_val > 0 or current_data.get("room_types"):
                                         price_data = current_data
                                         await self.log_reasoning(
