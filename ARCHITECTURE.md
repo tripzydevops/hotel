@@ -38,8 +38,8 @@ graph TD
 Acts purely as the application orchestrator. Responsible for:
 
 - Environment loading and configuration.
-- Global exception handling.
-- Middleware (CORS).
+- Global exception handling: Scrubs all 500+ errors to prevent leakage of internal system traces.
+- Middleware (Manual CORS & Security headers).
 - Router registration.
 
 ### 2. API Routing Layer (`backend/api/`)
