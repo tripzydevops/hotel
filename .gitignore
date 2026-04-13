@@ -122,4 +122,6 @@ scheduler_errors.log*
 .qwen
 .roo
 .trae
-.windsurf
+# Local Agent Data & Temporary Scripts
+.gemini/
+scratch/

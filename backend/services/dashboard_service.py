@@ -98,6 +98,17 @@ async def get_dashboard_logic(
         # 5. Scan History (Metadata only for counts/status)
         sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
         
+        # 5.5 Active Scans Count
+        # Fetching count of pending or running sessions specifically for the dashboard indicator.
+        active_scans_res = (
+            db.table("scan_sessions")
+            .select("id", count="exact")
+            .eq("user_id", str(user_id))
+            .in_("status", ["pending", "running"])
+            .execute()
+        )
+        active_scans_count = active_scans_res.count if active_scans_res and hasattr(active_scans_res, "count") else 0
+        
         # 6. Hotels (Bulk Fetch via Many-to-Many Association)
         # AGENT_LOGIC: Join with user_hotels to support multi-user property tracking.
         res = db.table("user_hotels").select("*, hotel:hotels(*)").eq("user_id", str(user_id)).execute()
@@ -462,6 +473,10 @@ async def get_dashboard_logic(
             except Exception as e:
                 logger.warning(f"Narrative generation failed: {e}")
 
+        # Calculate authoritative last sync time from price logs
+        sync_times = [p.get("recorded_at") for p in (all_prices_res.data or []) if p.get("recorded_at")]
+        last_sync = max(sync_times) if sync_times else datetime.now(timezone.utc).isoformat()
+
         return {
             "target_hotel": target_hotel,
             "competitors": competitors,
@@ -469,8 +484,9 @@ async def get_dashboard_logic(
             "scan_history": scan_history,
             "recent_sessions": recent_sessions,
             "unread_alerts_count": unread_count,
+            "active_scans": active_scans_count,
             "comparison_limit": comp_limit,
-            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "last_updated": last_sync,
             "profile": user_profile,
             "user_settings": user_settings,
             "market_insight": synthetic_narrative,

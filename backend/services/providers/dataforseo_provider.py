@@ -1,19 +1,67 @@
 import os
+import uuid
 import asyncio
 import httpx
 import json
 from datetime import date, datetime
 from typing import Dict, Any, Optional, List
+import traceback
+from supabase import Client
 from backend.services.data_provider_interface import HotelDataProvider
 from backend.utils.logger import get_logger
+import unicodedata
 
 logger = get_logger(__name__)
+
+# DataForSEO requires very specific location_name formats:
+# - Country must use official API name (e.g., "Turkiye" not "Turkey")
+# - No spaces after commas: "City,Country" not "City, Country"  
+# - ASCII characters only: "Balikesir" not "Balıkesir"
+# - language_name field is mandatory
+
+_COUNTRY_NAME_MAP = {
+    "turkey": "Turkiye",
+    "türkiye": "Turkiye",
+}
+
+_TURKISH_CHAR_MAP = str.maketrans({
+    'ı': 'i', 'İ': 'I',
+    'ğ': 'g', 'Ğ': 'G',
+    'ü': 'u', 'Ü': 'U',
+    'ş': 's', 'Ş': 'S',
+    'ö': 'o', 'Ö': 'O',
+    'ç': 'c', 'Ç': 'C',
+})
 
 class DataForSEOProvider(HotelDataProvider):
     """
     DataForSEO Google Hotels API Provider.
     Uses HTTP Basic Authentication.
     """
+
+    def _normalize_location(self, location: str) -> str:
+        """Normalizes location for DataForSEO API."""
+        if not location: return ""
+        
+        # 1. Transliterate Turkish characters
+        loc = location.translate(_TURKISH_CHAR_MAP)
+        
+        # 2. General ASCII normalization
+        loc = "".join(
+            c for c in unicodedata.normalize('NFD', loc)
+            if unicodedata.category(c) != 'Mn'
+        )
+        
+        # 3. Handle Country Aliases
+        for variant, official in _COUNTRY_NAME_MAP.items():
+            if variant in loc.lower():
+                import re
+                loc = re.sub(re.escape(variant), official, loc, flags=re.IGNORECASE)
+        
+        # 4. Remove spaces after commas
+        loc = ",".join([s.strip() for s in loc.split(",")])
+        
+        return loc
 
     def __init__(self):
         self.login = os.getenv("DATAFORSEO_LOGIN")
@@ -58,101 +106,25 @@ class DataForSEOProvider(HotelDataProvider):
                 "limit": 1
             }]
 
+            # [KAIZEN] Removed Live Queue usage to optimize cost (81% savings)
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                # Use standard live search to get hotel list and identifiers
+                # Use Standard/Priority Task POST instead of Live
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_searches/live",
+                    f"{self.api_url}/business_data/google/hotel_searches/task_post",
                     json=post_data
                 )
                 res_json = response.json()
                 
                 if res_json.get("status_code") != 20000:
-                    logger.error(f"DataForSEO Live Search Failed: {res_json.get('status_message')} - Task: {res_json.get('tasks', [{}])[0].get('status_message')}")
-                    return {"status": "error", "error": f"{res_json.get('status_message')} - {res_json.get('tasks', [{}])[0].get('status_message')}"}
+                    logger.error(f"DataForSEO Task POST Failed: {res_json.get('status_message')}")
+                    return {"status": "error", "error": f"{res_json.get('status_message')}"}
 
                 task = res_json.get("tasks", [{}])[0]
-                if not task.get("result"):
-                    return {"status": "empty", "message": "No results found"}
-                
-                items = task["result"][0].get("items", [])
-                print(f"DEBUG: Task result items count: {len(items)}")
-                if not items:
-                    print(f"DEBUG: Full task result: {json.dumps(task['result'][0], indent=2)}")
-                    return {"status": "empty", "message": "No items in search result"}
-                
-                target = items[0]
-                # DataForSEO identifier for detailed info fetch later
-                property_token = target.get("hotel_identifier")
-                
-                # Capture OTA prices (Market Offers)
-                market_offers = target.get("vendors") or target.get("market_offers") or []
-                room_types = target.get("room_types") or []
-                
-                # ENRICHMENT STRATEGY:
-                # If search results lack detailed vendors/room_types, fetch them from the advanced Info endpoint
-                if property_token and (not market_offers or len(market_offers) < 2):
-                    logger.info(f"Triggering DataForSEO enrichment for token: {property_token}")
-                    try:
-                        # Adults parameter is used in fetch_hotel_info as well
-                        info_result = await self.fetch_hotel_info(
-                            hotel_identifier=property_token,
-                            check_in=check_in,
-                            check_out=check_out,
-                            currency=currency,
-                            adults=adults
-                        )
-                        
-                        if info_result and info_result.get("status") == "success":
-                            # Use enriched data if it has more vendors
-                            new_offers = info_result.get("offers") or []
-                            if len(new_offers) >= len(market_offers):
-                                market_offers = new_offers
-                                room_types = info_result.get("room_types") or room_types
-                                logger.info(f"DataForSEO enrichment successful: found {len(market_offers)} vendors")
-                    except Exception as e:
-                        logger.error(f"DataForSEO enrichment failed: {str(e)}")
-
-                # Safety check for prices object
-                prices = target.get("prices") or {}
-                
-                # Enrich market_offers from prices items if available (fallback)
-                price_items = prices.get("items") or []
-                if not market_offers and price_items:
-                    for p_item in price_items:
-                        if not p_item: continue
-                        offer = {
-                            "vendor": p_item.get("source"),
-                            "price": p_item.get("price"),
-                            "currency": p_item.get("currency"),
-                            "url": p_item.get("url"),
-                            "is_official": p_item.get("is_official", False)
-                        }
-                        market_offers.append(offer)
-
-                price_val = prices.get("price", 0.0)
-                if not isinstance(price_val, (int, float)):
-                    price_val = 0.0
-
-                # Safety checks for nested structures
-                reviews = target.get("reviews") or {}
-                location = target.get("location") or {}
-
+                # Note: fetch_price now returns a 'pending' status because it moved to async
                 return {
-                    "price": float(price_val),
-                    "currency": prices.get("currency", currency),
-                    "source": "DataForSEO",
-                    "vendor": target.get("vendor", "Direct"),
-                    "url": target.get("check_url", f"https://www.google.com/search?q={hotel_name}"),
-                    "offers": market_offers,
-                    "room_types": room_types,
-                    "rating": reviews.get("value", 0.0),
-                    "review_count": reviews.get("votes_count", 0),
-                    "stars": target.get("stars", 0),
-                    "images": target.get("overview_images", []),
-                    "latitude": location.get("latitude"),
-                    "longitude": location.get("longitude"),
-                    "hotel_identifier": property_token,
-                    "status": "success"
+                    "status": "pending",
+                    "task_id": task.get("id"),
+                    "message": "Task submitted to standard queue. Poll fetch_task_results later."
                 }
         except Exception as e:
             logger.error(f"DataForSEO Provider fetch_price Error: {e}")
@@ -193,44 +165,20 @@ class DataForSEOProvider(HotelDataProvider):
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                # [KAIZEN] Use Task POST instead of Live for Hotel Info
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/live/advanced",
+                    f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=post_data
                 )
                 res_json = response.json()
 
-                if res_json.get("status_code") == 20000 and res_json.get("tasks"):
+                if res_json.get("status_code") == 20100 or (res_json.get("status_code") == 20000 and res_json.get("tasks")):
                     task = res_json["tasks"][0]
-                    if task.get("result"):
-                        result = task["result"][0]
-                        
-                        # Map DataForSEO fields to internal schema
-                        contact = result.get("contact_info") or {}
-                        location = result.get("location_info") or {}
-                        rating = result.get("rating") or {}
-                        
-                        return {
-                            "status": "success",
-                            "rating": rating.get("value"),
-                            "review_count": rating.get("votes_count"),
-                            "stars": result.get("stars"),
-                            "amenities": result.get("amenities"),
-                            "images": result.get("images"),
-                            "image_url": result.get("images", [None])[0] if result.get("images") else None,
-                            "location": location.get("address"),
-                            "address": location.get("address"),
-                            "latitude": location.get("latitude"),
-                            "longitude": location.get("longitude"),
-                            "reviews_breakdown": result.get("reviews_breakdown"),
-                            "description": result.get("description"),
-                            "phone": contact.get("phone"),
-                            "email": contact.get("email"),
-                            "website": contact.get("url") or contact.get("website"),
-                            "cid": result.get("cid"),
-                            "place_id": result.get("place_id"),
-                            "offers": result.get("vendors") or result.get("market_offers") or [],
-                            "room_types": result.get("room_types") or []
-                        }
+                    return {
+                        "status": "pending",
+                        "task_id": task.get("id"),
+                        "message": "Hotel Information task submitted to queue."
+                    }
                 
                 logger.warning(f"DataForSEO Hotel Info failed: {res_json.get('status_message')}")
                 return None
@@ -270,7 +218,7 @@ class DataForSEOProvider(HotelDataProvider):
 
     # ===== Task API (Async) Implementation =====
 
-    async def post_price_tasks(self, task_params: List[Dict[str, Any]]) -> Optional[List[str]]:
+    async def post_price_tasks(self, task_params: List[Dict[str, Any]]) -> Optional[List[Dict[str, Any]]]:
         """
         Submits multiple hotel search tasks to DataForSEO.
         Returns a list of Task IDs for successfully accepted tasks only.
@@ -327,6 +275,118 @@ class DataForSEOProvider(HotelDataProvider):
         except Exception as e:
             logger.error(f"DataForSEO post_price_tasks error: {e}")
             return None
+
+    async def submit_hotel_scan_batch(
+        self,
+        db: Client,
+        hotel_ids: List[str],
+        check_in: str,
+        check_out: str,
+        batch_type: str = "scheduled_pulse"
+    ) -> int:
+        """
+        High-level batch submission for the system heartbeat.
+        Prepares keywords based on hotel names/locations, posts tasks,
+        and registers them in the monitor_tasks table.
+        """
+        if not hotel_ids:
+            return 0
+
+        # 1. Fetch hotel metadata for keywords
+        try:
+            hotels_res = db.table("hotels").select("id, name, location, property_token") \
+                .in_("id", hotel_ids) \
+                .execute()
+            
+            hotel_map = {str(h["id"]): h for h in (hotels_res.data or [])}
+        except Exception as e:
+            logger.error(f"BatchSubmit: Failed to fetch metadata: {e}")
+            return 0
+
+        # 2. Prepare Task Params
+        task_params = []
+        hotel_task_map = {} # Maps internal UUID to hotel_id for later matching
+        
+        for hid in hotel_ids:
+            hotel = hotel_map.get(str(hid))
+            if not hotel:
+                continue
+            
+            # [KAIZEN 2026] Use property_token for pinpoint accuracy if available
+            keyword = hotel.get("property_token")
+            if not keyword:
+                keyword = f"{hotel['name']} {hotel['location']}"
+            
+            loc = hotel.get("location") or "Turkiye"
+            normalized_loc = self._normalize_location(loc)
+
+            # Create a unique tag for this specific hotel scan
+            scan_task_uuid = str(uuid.uuid4())
+            hotel_task_map[scan_task_uuid] = hid
+            
+            task_params.append({
+                "keyword": keyword,
+                "location_name": normalized_loc,
+                "language_name": "English", # standard for hotel searches
+                "check_in": check_in,
+                "check_out": check_out,
+                "currency": "TRY",
+                "tag": scan_task_uuid
+            })
+
+        if not task_params:
+            return 0
+
+        # 3. Post to DataForSEO in Chunks (DataForSEO limit is 100 per POST)
+        CHUNK_SIZE = 100
+        all_tasks = []
+        
+        for i in range(0, len(task_params), CHUNK_SIZE):
+            chunk = task_params[i:i + CHUNK_SIZE]
+            logger.info(f"Posting scan chunk {i//CHUNK_SIZE + 1} ({len(chunk)} hotels)")
+            chunk_tasks = await self.post_price_tasks(chunk)
+            if chunk_tasks:
+                all_tasks.extend(chunk_tasks)
+
+        if not all_tasks:
+            return 0
+
+        tasks = all_tasks
+
+        # 4. Register in scan_tasks for persistence pipeline
+        try:
+            # Create a batch record for tracking
+            batch_res = db.table("scan_batches").insert({
+                "total_tasks": len(tasks),
+                "status": "processing",
+                "type": batch_type
+            }).execute()
+            batch_id = batch_res.data[0]["id"] if batch_res.data else None
+
+            scan_tasks = []
+            for t in tasks:
+                if t.get("status_code") == 20100:
+                    # Retrieve our generated UUID from 'tag'
+                    # Warning: DataForSEO API returns the original request data inside 'data' field
+                    req_data = t.get("data", {})
+                    tag = req_data.get("tag")
+                    
+                    if tag and tag in hotel_task_map:
+                        scan_tasks.append({
+                            "id": tag, # We reuse our generated UUID as DB primary key
+                            "external_task_id": t["id"],
+                            "hotel_id": hotel_task_map[tag],
+                            "batch_id": batch_id,
+                            "status": "pending"
+                        })
+            
+            if scan_tasks:
+                db.table("scan_tasks").insert(scan_tasks).execute()
+                return len(scan_tasks)
+        except Exception as e:
+            logger.error(f"BatchSubmit: Failed to register tasks/batch in DB: {e}")
+        
+        return 0
 
     async def fetch_task_results(self, task_id: str) -> Optional[Dict[str, Any]]:
         """

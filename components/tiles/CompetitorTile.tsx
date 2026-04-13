@@ -55,6 +55,7 @@ interface CompetitorTileProps {
   cid?: string;
   placeId?: string;
   lastUpdated?: string;
+  isScanning?: boolean;
 }
 
 export default function CompetitorTile(props: CompetitorTileProps) {

@@ -108,6 +108,9 @@ export const en = {
     rateParity: "Rate Parity",
     marketSynchronized: "Market Synchronized",
     synchronized: "Synchronized",
+    activeScans: "{count} Active Scans",
+    priceDiscoveryActive: "Price Discovery Active",
+    dataUpdated: "Data Updated",
   },
   hotelDetails: {
     overview: "Overview",

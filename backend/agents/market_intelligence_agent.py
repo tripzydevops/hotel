@@ -53,19 +53,21 @@ class MarketIntelligenceAgent:
         # 3. Agentic Execution with Gemini 3 (using Interactions API)
         try:
             prompt = f"""
-            You are a Senior Hotel Revenue Analyst. Analyze this market dataset and provide strategic reasoning.
+            You are a Senior Hotel Revenue Architect. Analyze this market dataset and provide strategic reasoning.
             
             GOALS:
             1. Identify price anomalies (> {threshold}%).
-            2. Extract pricing power signals from guest sentiment.
-            3. Formulate a recovery or yields maximization strategy.
+            2. Identify the 'Behavioral Rival': Which tracked hotel has the highest correlation or most aggressive reaction to the primary hotel's price shifts?
+            3. Acknowledge VOLATILITY: Mention if we are using a 'Smart Threshold' to suppress noise.
+            4. Extract pricing power signals from guest sentiment.
             
             DATA: {summary}
-            VOLATILITY: {volatility}%
+            VOLATILITY: {volatility}% (Threshold Adjusted: {threshold}%)
             
             REQUIRED JSON STRUCTURE:
             {{
               "reasoning_trace": [{{"step": "str", "message": "str"}}],
+              "behavioral_rival": {{"name": "str", "reason": "str"}},
               "final_report": "CONCISE SUMMARY WITH ALL CAPS HEADERS"
             }}
             """
@@ -92,6 +94,7 @@ class MarketIntelligenceAgent:
 
             return {
                 "reasoning": trace,
+                "behavioral_rival": raw_data.get("behavioral_rival"),
                 "final_report": raw_data.get("final_report", ""),
                 "agentic": True
             }

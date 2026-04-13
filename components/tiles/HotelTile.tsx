@@ -21,6 +21,7 @@ import {
 import { useModalContext } from "@/components/ui/ModalContext";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
+import { ScanStatusIndicator } from "@/components/features/dashboard/ScanStatusIndicator";
 
 import TrendChart from "@/components/analytics/TrendChart";
 import { getStarRating, formatCurrency, formatDate, calculateNights } from "@/lib/utils";
@@ -73,6 +74,7 @@ export interface HotelTileProps {
   description?: string;
   cid?: string;
   placeId?: string;
+  isScanning?: boolean;
 }
 
 export default function HotelTile(props: HotelTileProps) {
@@ -115,6 +117,7 @@ export default function HotelTile(props: HotelTileProps) {
     description,
     cid,
     placeId,
+    isScanning = false,
   } = props;
 
   const { openIntradayModal } = useModalContext();
@@ -281,6 +284,17 @@ export default function HotelTile(props: HotelTileProps) {
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {t("common.estimated") || "ESTIMATED"}
                 </span>
+              )}
+
+              {/* Real-time Scan Status */}
+              {isScanning && (
+                <div className="ml-auto sm:ml-0">
+                  <ScanStatusIndicator 
+                    status="active" 
+                    size="sm" 
+                    showLabel={true} 
+                  />
+                </div>
               )}
             </div>
             <h2

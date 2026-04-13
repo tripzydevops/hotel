@@ -108,6 +108,9 @@ export const tr = {
     rateParity: "Fiyat Paritesi",
     marketSynchronized: "Piyasa Senkronize Edildi",
     synchronized: "Senkronize Edildi",
+    activeScans: "{count} Aktif Tarama",
+    priceDiscoveryActive: "Fiyat Keşfi Aktif",
+    dataUpdated: "Veriler Güncellendi",
   },
   hotelDetails: {
     overview: "Genel Bakış",

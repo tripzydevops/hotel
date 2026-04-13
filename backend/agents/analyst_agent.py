@@ -147,12 +147,24 @@ class AnalystAgent:
         logger.info(f"[AnalystAgent] Starting Market Intelligence for Session {session_id}")
         try:
             volatility = analysis_summary.get("volatility_avg", 0.0)
-            intel_res = await self.adk_agent.run_analysis(scraper_results, threshold, volatility=volatility)
+            smart_threshold = analysis_summary.get("smart_threshold", threshold)
+            
+            # Pass the adjusted threshold to the AI Agent for context
+            intel_res = await self.adk_agent.run_analysis(scraper_results, smart_threshold, volatility=volatility)
             intel_trace = intel_res.get("reasoning") or []
             final_report = intel_res.get("final_report")
+            behavioral_rival = intel_res.get("behavioral_rival")
             
+            import time
+            if behavioral_rival:
+                intel_trace.insert(0, {
+                    "step": "Behavioral Discovery",
+                    "level": "info",
+                    "message": f"Identified Behavioral Rival: {behavioral_rival.get('name')} - {behavioral_rival.get('reason')}",
+                    "timestamp": time.time()
+                })
+
             if final_report:
-                import time
                 intel_trace.append({
                     "step": "Strategic Report",
                     "level": "success",

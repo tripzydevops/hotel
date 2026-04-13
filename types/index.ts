@@ -196,6 +196,7 @@ export interface DashboardData {
     avg_rating: number;
     rate_parity_score: number;
   };
+  active_scans?: number;
 }
 
 export interface ScanOptions {

@@ -7,7 +7,6 @@ import os
 import asyncio
 import logging
 import traceback
-import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Set
 from uuid import UUID
@@ -19,54 +18,6 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ===== Location Normalization for DataForSEO API =====
-# DataForSEO requires very specific location_name formats:
-# - Country must use official API name (e.g., "Turkiye" not "Turkey")
-# - No spaces after commas: "City,Country" not "City, Country"  
-# - ASCII characters only: "Balikesir" not "Balıkesir"
-# - language_name field is mandatory
-
-# Map of common country name variations to DataForSEO-accepted names
-_COUNTRY_NAME_MAP = {
-    "turkey": "Turkiye",
-    "türkiye": "Turkiye",
-}
-
-# Turkish special character transliteration
-_TURKISH_CHAR_MAP = str.maketrans({
-    'ı': 'i', 'İ': 'I',
-    'ğ': 'g', 'Ğ': 'G',
-    'ü': 'u', 'Ü': 'U',
-    'ş': 's', 'Ş': 'S',
-    'ö': 'o', 'Ö': 'O',
-    'ç': 'c', 'Ç': 'C',
-})
-
-def _normalize_location_for_api(location: str) -> str:
-    """
-    Normalizes a location string from the database to DataForSEO API format.
-    Examples:
-        "Balıkesir, Turkey"  -> "Balikesir,Turkiye"
-        "Istanbul, Turkey"   -> "Istanbul,Turkiye"
-        "Turkey"             -> "Turkiye"
-    """
-    if not location:
-        return location
-    
-    # Step 1: Transliterate Turkish special characters to ASCII
-    normalized = location.translate(_TURKISH_CHAR_MAP)
-    
-    # Step 2: Split by comma and clean up parts
-    parts = [p.strip() for p in normalized.split(",")]
-    
-    # Step 3: Apply country name mapping to the last part (assumed to be country)
-    if parts:
-        country = parts[-1].lower()
-        if country in _COUNTRY_NAME_MAP:
-            parts[-1] = _COUNTRY_NAME_MAP[country]
-    
-    # Step 4: Rejoin WITHOUT spaces after commas (DataForSEO requirement)
-    return ",".join(parts)
 # from backend.agents.scraper_agent import ScraperAgent
 # from backend.agents.analyst_agent import AnalystAgent
 # from backend.agents.notifier_agent import NotifierAgent
@@ -600,6 +551,31 @@ async def run_scheduler_check_logic():
         except Exception as p_e:
             s_logger.debug(f"Pulse emission skipped: {p_e}")
 
+        # 1.1 INITIALIZE STALE PROFILES (Self-Healing)
+        # Ensure any user with monitored hotels has a next_scan_at assigned.
+        # This prevents new users or manually cleared profiles from being 'stuck'.
+        try:
+            stale_profiles = supabase.table("profiles")\
+                .select("id")\
+                .is_("next_scan_at", "null")\
+                .execute()
+            
+            if stale_profiles.data:
+                for p in stale_profiles.data:
+                    # Only assign if they actually have monitored hotels
+                    h_count = supabase.table("user_hotels")\
+                        .select("id", count="exact")\
+                        .eq("user_id", p["id"])\
+                        .eq("is_monitored", True)\
+                        .execute()
+                    
+                    if h_count.count and h_count.count > 0:
+                        initial_nxt = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat().replace("+00:00", "Z")
+                        supabase.table("profiles").update({"next_scan_at": initial_nxt}).eq("id", p["id"]).execute()
+                        s_logger.info(f"CRON: Initialized next_scan_at for user {p['id']}")
+        except Exception as sh_e:
+            s_logger.warning(f"CRON: Self-healing failed: {sh_e}")
+
         # 1.5 RUN SYSTEM HEARTBEAT (New Global 4h Standard)
         # This function handles its own timing checks via admin_settings table.
         await run_system_heartbeat(supabase)
@@ -607,8 +583,9 @@ async def run_scheduler_check_logic():
         # 2. PROCESS COMPLETED TASKS (DataForSEO result collector)
         await process_system_scans(supabase)
 
-        # 3. Cleanup Zombie Sessions
+        # 3. Cleanup Zombie Sessions and Tasks
         try:
+            # 3.1. Cleanup sessions (2-hour cutoff)
             zombie_cutoff = (
                 datetime.now(timezone.utc) - timedelta(hours=2)
             ).isoformat()
@@ -628,8 +605,34 @@ async def run_scheduler_check_logic():
                 supabase.table("scan_sessions").update(
                     {"status": "failed", "completed_at": datetime.now().isoformat()}
                 ).in_("id", z_ids).execute()
+
+            # 3.2. Cleanup stale scan_tasks (12-hour cutoff)
+            task_stale_cutoff = (
+                datetime.now(timezone.utc) - timedelta(hours=12)
+            ).isoformat()
+            stale_tasks = (
+                supabase.table("scan_tasks")
+                .select("id, batch_id")
+                .eq("status", "pending")
+                .lt("created_at", task_stale_cutoff)
+                .execute()
+            )
+
+            if stale_tasks.data:
+                st_ids = [tk["id"] for tk in stale_tasks.data]
+                s_logger.warning(
+                    f"CRON: Cleaning up {len(st_ids)} stale scan_tasks (abandoned): {st_ids}"
+                )
+                supabase.table("scan_tasks").update(
+                    {"status": "failed", "error_message": "Abandoned: No response from provider after 12h"}
+                ).in_("id", st_ids).execute()
+                
+                # Also increment failure count for their batches
+                batch_ids = list(set([tk["batch_id"] for tk in stale_tasks.data if tk.get("batch_id")]))
+                for b_id in batch_ids:
+                    supabase.rpc("increment_batch_failures", {"b_id": b_id}).execute()
         except (Exception) as z_e:
-            s_logger.error(f"CRON: Zombie cleanup failed: {str(z_e)}")
+            s_logger.error(f"CRON: Stale cleanup failed: {str(z_e)}")
 
         # 4. DAILY MARKET SYNC (Eyes of Turkey)
         # Maintained once per 24 hours for regional intelligence.
@@ -800,7 +803,8 @@ async def process_system_scans(db: Client):
     """
     s_logger = get_scheduler_logger()
     catalog_results = []
-    catalog_hotels = []
+    catalog_hotels = [] # Will store full hotel objects
+    processed_hotel_ids = set()
     try:
         # 1. Get completed task IDs
         completed_ids = await dataforseo_provider.get_completed_tasks()
@@ -864,7 +868,13 @@ async def process_system_scans(db: Client):
                 
                 if success:
                     catalog_results.append(result)
-                    catalog_hotels.append(h_id)
+                    # We need the hotel metadata for embeddings. 
+                    # sync_extraction_result already fetched it, but we'll fetch once for catalog if not already there.
+                    if h_id not in processed_hotel_ids:
+                        h_res = db.table("hotels").select("id, name, location, stars").eq("id", h_id).execute()
+                        if h_res.data:
+                            catalog_hotels.append(h_res.data[0])
+                            processed_hotel_ids.add(h_id)
 
                     # Update scan task status if applicable
                     if scan_task_id:

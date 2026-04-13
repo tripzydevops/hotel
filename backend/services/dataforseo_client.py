@@ -43,7 +43,7 @@ class DataForSEOClient:
         if not self.login or not self.password:
             return None
 
-        endpoint = f"{self.base_url}/business_data/google/hotel_info/live"
+        endpoint = f"{self.base_url}/business_data/google/hotel_info/task_post"
         
         # DataForSEO requires a specific payload format
         payload = [{
@@ -62,9 +62,13 @@ class DataForSEOClient:
                 
                 if response.status_code == 200:
                     data = response.json()
-                    if data.get("tasks") and data["tasks"][0].get("result"):
-                        result = data["tasks"][0]["result"][0]
-                        return self._map_result(result)
+                    if data.get("status_code") == 20100 and data.get("tasks"):
+                        task = data["tasks"][0]
+                        return {
+                            "status": "pending",
+                            "task_id": task.get("id"),
+                            "message": "Metadata enrichment task submitted."
+                        }
                 else:
                     logger.error(f"DataForSEO error: {response.status_code} - {response.text}")
         except Exception as e:

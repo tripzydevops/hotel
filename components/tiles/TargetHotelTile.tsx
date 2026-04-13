@@ -48,6 +48,7 @@ interface TargetHotelTileProps {
   description?: string;
   cid?: string;
   placeId?: string;
+  isScanning?: boolean;
 }
 
 /**

@@ -139,6 +139,8 @@ class PriceLogBase(BaseModel):
         default=None, description="The specific booking site (e.g. Booking.com)"
     )
     offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    parity_offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    market_offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     search_rank: Optional[int] = None
     serp_api_id: Optional[str] = Field(
@@ -292,6 +294,8 @@ class PriceWithTrend(BaseModel):
     adults: Optional[int] = None
     room_types: List[Dict[str, Any]] = []
     offers: List[Dict[str, Any]] = []
+    parity_offers: List[Dict[str, Any]] = []
+    market_offers: List[Dict[str, Any]] = []
     search_rank: Optional[int] = None
     serp_api_id: Optional[str] = None
 

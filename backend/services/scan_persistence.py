@@ -151,6 +151,14 @@ class ScanPersistenceService:
             await self._process_embeddings(embedding_queue, session_id, log_reasoning_fn)
 
         analysis_summary["volatility_avg"] = sum(volatilities) / len(volatilities) if volatilities else 0.0
+        
+        # KAİZEN: Report the adjusted threshold used for this session
+        if volatilities:
+            from backend.services.predictive_service import predictive_service
+            analysis_summary["smart_threshold"] = predictive_service.get_smart_threshold(threshold, analysis_summary["volatility_avg"])
+        else:
+            analysis_summary["smart_threshold"] = threshold
+
         return analysis_summary
 
     async def _fetch_history_map(self, hotel_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
