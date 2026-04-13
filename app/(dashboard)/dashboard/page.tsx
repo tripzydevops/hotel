@@ -111,7 +111,6 @@ export default function Dashboard() {
     error,
     isRefreshing,
     fetchData,
-    handleScan,
     handleAddHotel,
     handleDeleteHotel,
     updateSettings,
@@ -137,13 +136,10 @@ export default function Dashboard() {
     handleOpenDetails,
     handleOpenSession,
     handleEditHotel,
-    handleRefresh,
     handleReSearch,
     reSearchName,
     reSearchLocation,
-    isScanSettingsOpen,
     selectedSession,
-    scanDefaults,
     hotelToEdit,
     isEditHotelOpen,
     isSessionModalOpen,
@@ -153,10 +149,6 @@ export default function Dashboard() {
 
   const handleSaveSettings = async (settings: UserSettings) => {
     await updateSettings(settings);
-    // Refresh modals defaults if needed
-    if (data) {
-      handleRefresh(data);
-    }
   };
 
   // Memoized derived values to prevent recalculation on every render
@@ -278,23 +270,6 @@ export default function Dashboard() {
               t={t}
             />
 
-            <button
-              onClick={() => handleRefresh(data)}
-              disabled={isRefreshing}
-              className={`
-                group relative p-[1px] rounded-xl transition-all active:scale-95 bg-[var(--glass-bg-accent)] hover:shadow-lg
-                ${isRefreshing ? "opacity-75 cursor-wait" : "hover:scale-105"}
-              `}
-            >
-              <div className="bg-[var(--deep-ocean)]/40 backdrop-blur-md hover:bg-[var(--glass-bg-accent)] px-6 py-2.5 rounded-[11px] flex items-center gap-3 transition-colors border border-[var(--glass-border)]">
-                <RefreshCw
-                  className={`w-4 h-4 text-[var(--soft-gold)] ${isRefreshing ? "animate-spin" : ""}`}
-                />
-                <span className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-widest">
-                   {isRefreshing ? t("common.scanning") : t("common.refreshData")}
-                </span>
-              </div>
-            </button>
 
             <button
               onClick={() => setIsAddHotelOpen(true)}

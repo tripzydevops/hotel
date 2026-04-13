@@ -22,16 +22,6 @@ interface ModalContextType {
   setIsSessionModalOpen: (open: boolean) => void;
   selectedSession: ScanSession | null;
   setSelectedSession: (session: ScanSession | null) => void;
-  isScanSettingsOpen: boolean;
-  setIsScanSettingsOpen: (open: boolean) => void;
-  scanDefaults:
-  | { checkIn?: string; checkOut?: string; adults?: number }
-  | undefined;
-  setScanDefaults: (
-    defaults:
-      | { checkIn?: string; checkOut?: string; adults?: number }
-      | undefined,
-  ) => void;
   isDetailsModalOpen: boolean;
   setIsDetailsModalOpen: (open: boolean) => void;
   selectedHotelForDetails: Hotel | null;
@@ -52,7 +42,6 @@ interface ModalContextType {
   handleOpenDetails: (hotel: Hotel, data: DashboardData | null) => void;
   handleOpenSession: (session: ScanSession) => void;
   handleEditHotel: (id: string, data: DashboardData | null) => void;
-  handleRefresh: (data: DashboardData | null) => void;
   handleReSearch: (name: string, location?: string) => void;
 }
 
@@ -73,10 +62,6 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     null,
   );
 
-  const [isScanSettingsOpen, setIsScanSettingsOpen] = useState(false);
-  const [scanDefaults, setScanDefaults] = useState<
-    { checkIn?: string; checkOut?: string; adults?: number } | undefined
-  >(undefined);
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedHotelForDetails, setSelectedHotelForDetails] =
@@ -133,41 +118,6 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const handleRefresh = (data: DashboardData | null) => {
-    // Only set defaults if they are current or future
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (data?.target_hotel?.price_info?.check_in) {
-      const checkInDate = new Date(data.target_hotel.price_info.check_in);
-      if (checkInDate >= today) {
-        // Validate that checkOut is strictly after checkIn; fix if not
-        const storedCheckOut = data.target_hotel.price_info.check_out;
-        const checkOutDate = storedCheckOut ? new Date(storedCheckOut) : null;
-        const minCheckOut = new Date(checkInDate);
-        minCheckOut.setDate(minCheckOut.getDate() + 1);
-        const validCheckOut =
-          checkOutDate && checkOutDate > checkInDate
-            ? storedCheckOut
-            : [
-              minCheckOut.getFullYear(),
-              String(minCheckOut.getMonth() + 1).padStart(2, "0"),
-              String(minCheckOut.getDate()).padStart(2, "0"),
-            ].join("-");
-        setScanDefaults({
-          checkIn: data.target_hotel.price_info.check_in,
-          checkOut: validCheckOut,
-          adults: data.target_hotel.price_info.adults,
-        });
-      } else {
-        // Clear old dates to use "Today" default
-        setScanDefaults(undefined);
-      }
-    } else {
-      setScanDefaults(undefined);
-    }
-    setIsScanSettingsOpen(true);
-  };
   const handleReSearch = (name: string, location?: string) => {
     setReSearchName(name);
     setReSearchLocation(location || "");
@@ -200,10 +150,6 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       setIsSessionModalOpen,
       selectedSession,
       setSelectedSession,
-      isScanSettingsOpen,
-      setIsScanSettingsOpen,
-      scanDefaults,
-      setScanDefaults,
       isDetailsModalOpen,
       setIsDetailsModalOpen,
       selectedHotelForDetails,
@@ -222,7 +168,6 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       handleOpenDetails,
       handleOpenSession,
       handleEditHotel,
-      handleRefresh,
       handleReSearch,
     }),
     [
@@ -235,8 +180,6 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       hotelToEdit,
       isSessionModalOpen,
       selectedSession,
-      isScanSettingsOpen,
-      scanDefaults,
       isDetailsModalOpen,
       selectedHotelForDetails,
       reSearchName,

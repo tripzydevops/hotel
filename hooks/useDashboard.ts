@@ -14,7 +14,6 @@ export function useDashboard(
 ) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isPolling, setIsPolling] = useState(false);
 
   // --- Queries ---
   const dashboardQuery = useQuery({
@@ -25,7 +24,7 @@ export function useDashboard(
     // When a scan is manually triggered, we set `isPolling` to true.
     // This enables `refetchInterval` to auto-fetch data every 3 seconds.
     // This ensures the UI updates automatically when the background scan completes.
-    refetchInterval: isPolling ? 3000 : false,
+    refetchInterval: false,
   });
 
   const isLoadingDashboard = dashboardQuery.isLoading;
@@ -66,26 +65,6 @@ export function useDashboard(
   }, [dashboardQuery.data, queryClient, userId]);
 
   // --- Mutations ---
-  const scanMutation = useMutation({
-    mutationFn: (options: ScanOptions) => api.triggerMonitor(options),
-    onSuccess: () => {
-      // Immediate invalidation to clear/refresh data
-      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
-      queryClient.invalidateQueries({ queryKey: ["recent_sessions", userId] });
-
-      // EXPLANATION: Async Update Handling
-      // The backend scan runs asynchronously. To reflect the new data without
-      // a manual page refresh, we enable polling for a fixed duration (20s).
-      // This gives the backend enough time to finish the scan.
-      setIsPolling(true);
-      setTimeout(() => setIsPolling(false), 20000);
-      toast.success(t("dashboard.scanStarted") || "Scan started successfully");
-    },
-    onError: (error) => {
-      console.error("Scan failed:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to start scan");
-    },
-  });
 
 
   const addHotelMutation = useMutation({
@@ -173,9 +152,6 @@ export function useDashboard(
         ? String(profileError)
         : null;
 
-  const handleScan = async (options: ScanOptions) => {
-    return scanMutation.mutateAsync(options);
-  };
 
   const handleAddHotel = async (
     name: string,
@@ -212,9 +188,8 @@ export function useDashboard(
     profile,
     loading,
     error,
-    isRefreshing: dashboardQuery.isRefetching || scanMutation.isPending,
+    isRefreshing: dashboardQuery.isRefetching,
     fetchData,
-    handleScan,
     handleAddHotel,
     handleDeleteHotel,
     updateSettings,

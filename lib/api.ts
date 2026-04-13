@@ -150,19 +150,6 @@ class ApiClient {
     return this.fetch<DashboardData>(`/api/dashboard`);
   }
 
-  async triggerMonitor(
-    options?: {
-      check_in?: string;
-      check_out?: string;
-      adults?: number;
-      currency?: string;
-    },
-  ): Promise<MonitorResult> {
-    return this.fetch<MonitorResult>(`/api/monitor`, {
-      method: "POST",
-      body: options ? JSON.stringify(options) : undefined,
-    });
-  }
 
   async getActiveTasks(): Promise<string[]> {
     return this.fetch<string[]>(`/api/monitor/active-tasks`);
@@ -328,18 +315,6 @@ class ApiClient {
     document.body.removeChild(a);
   }
 
-  async checkScheduledScan(
-    force: boolean = false,
-  ): Promise<{ triggered: boolean; session_id?: string; reason?: string }> {
-    const params = force ? "?force=true" : "";
-    return this.fetch<{
-      triggered: boolean;
-      session_id?: string;
-      reason?: string;
-    }>(`/api/trigger-scan${params}`, {
-      method: "POST",
-    });
-  }
 
   async updateProfile(profile: {
     display_name?: string;

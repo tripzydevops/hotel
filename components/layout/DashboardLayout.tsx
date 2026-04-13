@@ -21,9 +21,6 @@ const ScanSessionModal = lazy(
   () => import("@/components/modals/ScanSessionModal"),
 );
 const AlertsModal = lazy(() => import("@/components/modals/AlertsModal"));
-const ScanSettingsModal = lazy(
-  () => import("@/components/modals/ScanSettingsModal"),
-);
 const EditHotelModal = lazy(() => import("@/components/modals/EditHotelModal"));
 const SubscriptionModal = lazy(
   () => import("@/components/modals/SubscriptionModal"),
@@ -53,7 +50,6 @@ export default function DashboardLayout({
     userSettings,
     profile,
     handleAddHotel,
-    handleScan,
     fetchData,
     updateSettings,
     setProfile,
@@ -77,9 +73,6 @@ export default function DashboardLayout({
     isSessionModalOpen,
     setIsSessionModalOpen,
     selectedSession,
-    isScanSettingsOpen,
-    setIsScanSettingsOpen,
-    scanDefaults,
     isDetailsModalOpen,
     setIsDetailsModalOpen,
     selectedHotelForDetails,
@@ -256,22 +249,6 @@ export default function DashboardLayout({
           session={selectedSession}
         />
 
-        <ScanSettingsModal
-          isOpen={isScanSettingsOpen}
-          onClose={() => setIsScanSettingsOpen(false)}
-          onScan={async (options) => {
-            await handleScan(options);
-          }}
-          onUpgrade={() => {
-            setIsScanSettingsOpen(false);
-            setIsBillingOpen(true);
-          }}
-          initialValues={scanDefaults}
-          userPlan={
-            profile?.role === "admin" ? "enterprise" : profile?.plan_type
-          }
-          dailyLimitReached={false} // This logic might need to be more robust
-        />
 
         {hotelToEdit && (
           <EditHotelModal

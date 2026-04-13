@@ -108,7 +108,7 @@ export default function UserMenu({
                   <div className="p-2 bg-[var(--glass-bg-accent)] rounded-xl group-hover:bg-[var(--soft-gold)]/20 group-hover:text-[var(--soft-gold)] transition-colors">
                     <Settings className="w-3.5 h-3.5" />
                   </div>
-                  Scan Settings
+                  System Settings
                 </button>
                 <button
                   onClick={() => {
