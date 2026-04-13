@@ -38,7 +38,7 @@ async def _verify_token_via_insforge(token: str) -> dict:
     }
     
     # Direct Session Verification via REST API.
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(timeout=15.0, verify=False) as client:
         resp = await client.get(url, headers=headers)
     
     if resp.status_code != 200:

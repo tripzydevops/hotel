@@ -3,10 +3,10 @@ from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime, timezone
 from backend.utils.db import get_supabase_client
-from backend.services.dataforseo import dataforseo_provider
+from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.services.monitor_service import sync_extraction_result
 from backend.services.room_type_service import update_room_type_catalog
-from postgrest import Client
+from supabase import Client
 
 router = APIRouter(prefix="/webhooks/dataforseo", tags=["webhooks"])
 logger = logging.getLogger(__name__)
