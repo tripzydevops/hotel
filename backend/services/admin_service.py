@@ -268,8 +268,8 @@ async def reload_api_keys_logic() -> Dict[str, Any]:
             "current_status": serpapi_client.get_key_status(),
         }
     except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"status": "error", "message": str(e)}
+        raise HTTPException(
+            status_code=500, detail=str(e)
         )
 
 
@@ -759,7 +759,7 @@ async def get_reports_logic(user_id: UUID, db: Client) -> JSONResponse:
             )
         )
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def export_report_logic(user_id: UUID, format: str, db: Client) -> Any:

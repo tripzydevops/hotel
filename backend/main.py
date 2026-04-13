@@ -151,15 +151,20 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Centralized Error Handling
 # Internal tracing is logged server-side only to avoid exposure.
 @app.exception_handler(Exception)
+@app.exception_handler(HTTPException)
 async def global_exception_handler(request: Request, exc: Exception):
     """
     Global exception handler for all unhandled errors.
     Ensures internal tracing is logged but not exposed to client.
     """
-    # Maintain status codes and details for standard exceptions (401, 403, etc.)
     if hasattr(exc, "status_code"):
         status_code = getattr(exc, "status_code")
         detail = getattr(exc, "detail", str(exc))
+        
+        if status_code >= 500:
+            print(f"CRITICAL HTTP 500 on {request.url.path}: {str(detail)}")
+            detail = "Internal Server Error"
+            
         return JSONResponse(
             status_code=status_code,
             content={"detail": str(detail)}
@@ -168,10 +173,9 @@ async def global_exception_handler(request: Request, exc: Exception):
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
 
-    # EXPLANATION: Debug-Friendly Error Response
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"},
+        content={"detail": "Internal Server Error"},
     )
 
 
@@ -189,10 +193,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def db_health():
     import os
     return {
-        "resolved_url": "https://pa5riyqv.eu-central.insforge.app",
         "env_url": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
         "key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
     }
+
 
 @app.get("/api/health")
 async def health_check():

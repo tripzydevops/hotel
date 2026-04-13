@@ -12,28 +12,8 @@
   ],
   "rewrites": [
     {
-      "source": "/api/health",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/api/landing/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/api/auth/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/index.py"
-    },
-    {
-      "source": "/auth/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/auth/v1/$1"
-    },
-    {
-      "source": "/rest/v1/(.*)",
-      "destination": "https://pa5riyqv.eu-central.insforge.app/rest/v1/$1"
     }
   ],
   "headers": [
@@ -47,40 +27,6 @@
         {
           "key": "Cache-Control",
           "value": "no-store, max-age=0"
-        }
-      ]
-    },
-    {
-      "source": "/auth/v1/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey"
-        }
-      ]
-    },
-    {
-      "source": "/rest/v1/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey, Prefer"
         }
       ]
     }

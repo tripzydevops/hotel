@@ -61,8 +61,39 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // REMOVED: Duplicate rewrites() — vercel.json handles all rewrites
-  // and takes precedence on Vercel. Having both caused unpredictable routing.
+  // Proxy auth and rest endpoints to InsForge using environment variables
+  async rewrites() {
+    return [
+      {
+        source: "/auth/v1/:path*",
+        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/:path*`,
+      },
+      {
+        source: "/rest/v1/:path*",
+        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/:path*`,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/auth/v1/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey" },
+        ],
+      },
+      {
+        source: "/rest/v1/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey, Prefer" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
