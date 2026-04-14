@@ -32,7 +32,6 @@ class TrendDirection(str, Enum):
 
 class HotelBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
-    serp_api_id: Optional[str] = None
     location: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
@@ -74,7 +73,6 @@ class HotelCreate(HotelBase):
 
 class HotelUpdate(BaseModel):
     name: Optional[str] = None
-    serp_api_id: Optional[str] = None
     location: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -143,7 +141,7 @@ class PriceLogBase(BaseModel):
     market_offers: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     room_types: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     search_rank: Optional[int] = None
-    serp_api_id: Optional[str] = Field(
+    property_token: Optional[str] = Field(
         default=None, description="Global ID for deduplication across users"
     )
     session_id: Optional[UUID] = Field(
@@ -297,7 +295,7 @@ class PriceWithTrend(BaseModel):
     parity_offers: List[Dict[str, Any]] = []
     market_offers: List[Dict[str, Any]] = []
     search_rank: Optional[int] = None
-    serp_api_id: Optional[str] = None
+    property_token: Optional[str] = None
 
 
 class PricePoint(BaseModel):
@@ -336,7 +334,7 @@ class QueryLog(BaseModel):
     session_id: Optional[UUID] = None
     check_in_date: Optional[date] = None
     adults: Optional[int] = 2
-    serp_api_id: Optional[str] = None
+    property_token: Optional[str] = None
     api_key_suffix: Optional[str] = None
 
     class Config:
@@ -476,7 +474,7 @@ class AdminDirectoryEntry(BaseModel):
     id: Any  # Can be UUID string or int depending on DB
     name: str
     location: str
-    serp_api_id: Optional[str] = None
+    property_token: Optional[str] = None
     created_at: datetime
 
 

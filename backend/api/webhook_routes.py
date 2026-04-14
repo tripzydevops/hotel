@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from backend.utils.db import get_supabase_client
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.services.monitor_service import sync_extraction_result
-from backend.services.room_type_service import update_room_type_catalog
 from supabase import Client
 
 router = APIRouter(prefix="/webhooks/dataforseo", tags=["webhooks"])
@@ -82,12 +81,6 @@ async def handle_task_completed(request: Request, db: Client = Depends(get_supab
         )
 
         if success:
-            # 6. Update room type catalog (Prices, Amenities, etc)
-            try:
-                await update_room_type_catalog(db, [result], [h_id])
-            except Exception as catalog_e:
-                logger.error(f"Webhook: Room catalog sync failed: {catalog_e}")
-            
             return {"status": "success"}
         else:
             return {"status": "error", "reason": "sync_failed"}

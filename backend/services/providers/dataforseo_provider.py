@@ -9,7 +9,9 @@ import traceback
 from supabase import Client
 from backend.services.data_provider_interface import HotelDataProvider
 from backend.utils.logger import get_logger
+from backend.utils.helpers import convert_currency, normalize_room_name
 import unicodedata
+import re
 
 logger = get_logger(__name__)
 
@@ -62,6 +64,39 @@ class DataForSEOProvider(HotelDataProvider):
         loc = ",".join([s.strip() for s in loc.split(",")])
         
         return loc
+
+    def _normalize_room_name(self, name: str) -> Dict[str, Any]:
+        """
+        Cleans room names and extracts metadata attributes.
+        Returns a dict: {'name': cleaned_name, 'attributes': {...}}
+        """
+        if not name:
+            return {"name": "Standard Room", "attributes": {}}
+
+        original = name.lower()
+        attributes = {
+            "is_refundable": True,
+            "has_breakfast": False,
+            "has_wifi": True, # Usually standard now
+            "bed_type": None
+        }
+
+        # Check for non-refundable
+        if any(x in original for x in ["non-refundable", "non refundable", "n/r"]):
+            attributes["is_refundable"] = False
+        
+        # Check for breakfast
+        if any(x in original for x in ["breakfast", "kahvalti", "bb", "half board", "full board"]):
+            attributes["has_breakfast"] = True
+
+        # 2. Cleaning using global helper
+        cleaned = normalize_room_name(name)
+
+        return {
+            "name": cleaned,
+            "original_name": name,
+            "attributes": attributes
+        }
 
     def __init__(self):
         self.login = os.getenv("DATAFORSEO_LOGIN")
@@ -133,39 +168,27 @@ class DataForSEOProvider(HotelDataProvider):
     async def fetch_hotel_info(
         self, 
         hotel_identifier: str,
-        check_in: Optional[date] = None,
-        check_out: Optional[date] = None,
         currency: str = "USD",
         adults: int = 1
     ) -> Optional[Dict[str, Any]]:
         """
-        Retrieves detailed hotel information (amenities, images, sentiment) 
-        and optionally real-time pricing using the DataForSEO Google Hotels Info Live API.
+        Submits a task to the DataForSEO Google Hotels Info endpoint.
+        Standard method: POST task, then GET results later.
         """
         if not self.login or not self.password or not hotel_identifier:
             return None
 
         auth = (self.login, self.password)
         
-        # Base request
-        item = {
+        post_data = [{
             "hotel_identifier": hotel_identifier,
             "language_name": "English",
             "currency": currency,
             "adults": adults
-        }
-        
-        # Include dates if provided for pricing enrichment
-        if check_in:
-            item["check_in"] = check_in.strftime("%Y-%m-%d")
-        if check_out:
-            item["check_out"] = check_out.strftime("%Y-%m-%d")
-
-        post_data = [item]
+        }]
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                # [KAIZEN] Use Task POST instead of Live for Hotel Info
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=post_data
@@ -177,44 +200,16 @@ class DataForSEOProvider(HotelDataProvider):
                     return {
                         "status": "pending",
                         "task_id": task.get("id"),
-                        "message": "Hotel Information task submitted to queue."
+                        "message": "Hotel Information task submitted."
                     }
                 
-                logger.warning(f"DataForSEO Hotel Info failed: {res_json.get('status_message')}")
+                logger.warning(f"DataForSEO Hotel Info POST failed: {res_json.get('status_message')}")
                 return None
 
         except Exception as e:
             logger.error(f"DataForSEO fetch_hotel_info error: {e}")
             return None
 
-    async def get_hotel_metadata(self, name: str, location: str) -> Optional[Dict[str, Any]]:
-        """
-        High-level helper to get full hotel metadata by name and location.
-        Performs a search first to get the identifier, then fetches full info.
-        """
-        try:
-            from datetime import date, timedelta
-            # 1. Search to get property_token (identifier)
-            search_data = await self.fetch_price(
-                hotel_name=name,
-                location=location,
-                # Use today's date for a dummy search to find the hotel
-                check_in=date.today(),
-                check_out=date.today() + timedelta(days=1),
-            )
-            
-            token = search_data.get("property_token") if isinstance(search_data, dict) else None
-            
-            if not token:
-                logger.info(f"Metadata Discovery: No property token found for {name} via price search.")
-                return None
-                
-            # 2. Get full info from the token
-            return await self.fetch_hotel_info(token)
-            
-        except Exception as e:
-            logger.error(f"get_hotel_metadata error: {e}")
-            return None
 
     # ===== Task API (Async) Implementation =====
 
@@ -357,9 +352,8 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             # Create a batch record for tracking
             batch_res = db.table("scan_batches").insert({
-                "total_tasks": len(tasks),
-                "status": "processing",
-                "type": batch_type
+                "total_count": len(tasks),
+                "status": "processing"
             }).execute()
             batch_id = batch_res.data[0]["id"] if batch_res.data else None
 
@@ -389,150 +383,136 @@ class DataForSEOProvider(HotelDataProvider):
         return 0
 
     async def fetch_task_results(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieves results for a specific completed task.
-        """
+        """Retrieves results for price search tasks."""
+        return await self._fetch_results_generic(task_id, "hotel_searches")
+
+    async def fetch_hotel_info_results(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves results for rich metadata (hotel_info) tasks."""
+        raw = await self._fetch_results_generic(task_id, "hotel_info")
+        if not raw or raw.get("status") != "success":
+            return raw
+            
+        # Transform hotel_info specific fields
+        items = raw.get("items", [])
+        if not items: return raw
+        
+        target = items[0]
+        return {
+            "status": "success",
+            "name": target.get("title"),
+            "description": target.get("description"),
+            "stars": target.get("stars"),
+            "rating": target.get("rating", {}).get("value"),
+            "amenities": target.get("amenities"),
+            "check_in": target.get("check_in_time"),
+            "check_out": target.get("check_out_time"),
+            "property_token": target.get("hotel_identifier"),
+            "raw_data": target
+        }
+
+    async def _fetch_results_generic(self, task_id: str, endpoint: str) -> Optional[Dict[str, Any]]:
+        """Internal helper for GET results."""
         if not self.login or not self.password or not task_id:
             return None
 
         auth = (self.login, self.password)
-        
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                response = await client.get(
-                    f"{self.api_url}/business_data/google/hotel_searches/task_get/{task_id}"
-                )
+                response = await client.get(f"{self.api_url}/business_data/google/{endpoint}/task_get/{task_id}")
                 res_json = response.json()
                 
-                status_code = res_json.get("status_code")
-                if status_code != 20000:
-                    logger.warning(f"DataForSEO Task GET failed for {task_id}: {res_json.get('status_message')} (Code: {status_code})")
+                if res_json.get("status_code") != 20000:
                     return None
 
                 tasks = res_json.get("tasks", [])
                 if not tasks:
-                    logger.warning(f"DataForSEO Task GET returned no tasks for {task_id}")
                     return None
-                
+                    
                 task = tasks[0]
-                task_data = task.get("data", {})
-                task_tag = task_data.get("tag", task.get("tag"))
-
-                # Some tasks might be marked as completed but have 'result' as null if no hotels found
                 if not task.get("result"):
-                    logger.info(f"DataForSEO Task {task_id} completed but had no result data (likely no matches for keyword).")
-                    return {"status": "empty", "tag": task_tag}
+                    return {"status": "empty"}
 
                 result = task["result"][0]
                 items = result.get("items", [])
-                if not items:
-                    return {"status": "empty", "tag": task_tag}
-
-                target = items[0]
-                # hotel_searches response uses nested objects:
-                #   prices: { price, currency, check_in, check_out, ... }
-                #   reviews: { value, votes_count, ... }
-                prices_data = target.get("prices") or {}
-                reviews_data = target.get("reviews") or {}
                 
-                # Capture all OTA offers/vendors
-                # DataForSEO Google Hotels Search usually puts offers in target['vendors']
-                # or nested inside target['prices']['items']
-                market_offers = target.get("vendors") or target.get("market_offers") or []
-                
-                # If offers list is empty, dive into prices.items which often contains the OTA list
-                if not market_offers and "items" in prices_data:
-                    for p_item in prices_data["items"]:
-                        offer = {
-                            "vendor": p_item.get("source"),
-                            "price": p_item.get("price"),
-                            "currency": p_item.get("currency"),
-                            "url": p_item.get("url"),
-                            "is_official": p_item.get("is_official", False)
-                        }
-                        market_offers.append(offer)
+                # Default parsing for prices
+                if endpoint == "hotel_searches" and items:
+                    target = items[0]
+                    prices_data = target.get("prices", {})
+                    reviews_data = target.get("reviews", {})
+                    
+                    # Normalize room types if present
+                    room_types_raw = target.get("room_types", [])
+                    normalized_rooms = []
+                    for rt in room_types_raw:
+                        normalized_rooms.append(self._normalize_room_name(rt))
 
-                # Check for sub_items (sometimes contains room types or secondary listings)
-                room_types = target.get("sub_items", [])
+                    return {
+                        "status": "success",
+                        "price": prices_data.get("price", 0.0),
+                        "currency": prices_data.get("currency", "USD"),
+                        "property_token": target.get("hotel_identifier"),
+                        "hotel_name": target.get("title"),
+                        "stars": target.get("stars"),
+                        "rating": reviews_data.get("value", 0.0),
+                        "reviews": reviews_data.get("votes_count", 0),
+                        "room_types": normalized_rooms,
+                        "tag": task.get("data", {}).get("tag"),
+                        "items": items
+                    }
                 
-                # Deduce room types from prices items if available (extracting unique names)
-                if not room_types and "items" in prices_data:
-                    seen_rooms = set()
-                    for p_item in prices_data["items"]:
-                        r_name = p_item.get("name") # Some providers put room name here
-                        if r_name and r_name not in seen_rooms:
-                            room_types.append({"name": r_name, "price": p_item.get("price")})
-                            seen_rooms.add(r_name)
-
-                return {
-                    "price": prices_data.get("price", 0.0),
-                    "currency": prices_data.get("currency", "USD"),
-                    "vendor": "Google aggregate",
-                    "property_token": target.get("hotel_identifier"),
-                    "hotel_name": target.get("title"),
-                    "stars": target.get("stars"),
-                    "rating": reviews_data.get("value", 0.0),
-                    "reviews": reviews_data.get("votes_count", 0),
-                    "offers": market_offers,
-                    "room_types": room_types,
-                    "check_in": prices_data.get("check_in"),
-                    "check_out": prices_data.get("check_out"),
-                    "tag": task_tag,
-                    "items": items,
-                    "status": "success"
-                }
+                return {"status": "success", "items": items, "tag": task.get("data", {}).get("tag")}
         except Exception as e:
-            logger.error(f"DataForSEO fetch_task_results error for task {task_id}: {e}")
+            logger.error(f"DataForSEO GET error ({endpoint}): {e}")
             return None
+
+    async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Implementation of abstract method from HotelDataProvider.
+        Attempts to fetch from searches first, then info.
+        """
+        # 1. Try hotel_searches (most common for pricing)
+        res = await self.fetch_task_results(task_id)
+        if res and res.get("status") == "success":
+            return res
+        
+        # 2. Try hotel_info
+        res_info = await self.fetch_hotel_info_results(task_id)
+        if res_info and res_info.get("status") == "success":
+            return res_info
+            
+        return res or res_info
 
     async def get_completed_tasks(self) -> List[str]:
         """
-        Utility to find all tasks that are currently finished and ready for fetching.
-        
-        IMPORTANT: The tasks_ready endpoint returns a wrapper structure:
-        {
-          "tasks": [
-            {
-              "id": "wrapper-meta-id",      // NOT a fetchable task ID
-              "result_count": N,
-              "result": [                    // Actual ready task IDs are HERE
-                { "id": "real-task-id-1", "tag": "...", ... },
-                { "id": "real-task-id-2", "tag": "...", ... }
-              ]
-            }
-          ]
-        }
-        We must extract IDs from result[], NOT from the wrapper tasks[].
+        Returns a list of Task IDs that are ready for retrieval.
+        Used by the monitor_service process_system_scans.
         """
-        if not self.login or not self.password:
-            return []
+        return await self.get_ready_price_tasks()
 
+    async def get_ready_price_tasks(self) -> List[str]:
+        return await self._get_ready_tasks_generic("hotel_searches")
+
+    async def get_ready_info_tasks(self) -> List[str]:
+        return await self._get_ready_tasks_generic("hotel_info")
+
+    async def _get_ready_tasks_generic(self, endpoint: str) -> List[str]:
+        if not self.login or not self.password: return []
         auth = (self.login, self.password)
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                response = await client.get(f"{self.api_url}/business_data/google/hotel_searches/tasks_ready")
+                response = await client.get(f"{self.api_url}/business_data/google/{endpoint}/tasks_ready")
                 res_json = response.json()
-                
-                if res_json.get("status_code") != 20000:
-                    logger.warning(f"DataForSEO tasks_ready failed: {res_json.get('status_message')}")
-                    return []
+                if res_json.get("status_code") != 20000: return []
                 
                 ready_ids = []
-                for wrapper_task in res_json.get("tasks", []):
-                    result_count = wrapper_task.get("result_count", 0)
-                    results = wrapper_task.get("result")
-                    
-                    if result_count > 0 and results:
-                        for item in results:
-                            task_id = item.get("id")
-                            if task_id:
-                                ready_ids.append(task_id)
-                
-                if ready_ids:
-                    logger.info(f"DataForSEO: Found {len(ready_ids)} ready tasks")
+                for wrapper in res_json.get("tasks", []):
+                    results = wrapper.get("result")
+                    if results:
+                        ready_ids.extend([item.get("id") for item in results if item.get("id")])
                 return ready_ids
         except Exception as e:
-            logger.error(f"DataForSEO get_completed_tasks error: {e}")
+            logger.error(f"DataForSEO ready check error ({endpoint}): {e}")
             return []
 
 # Singleton instance for system-wide use

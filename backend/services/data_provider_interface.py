@@ -40,3 +40,11 @@ class HotelDataProvider(ABC):
     def get_provider_name(self) -> str:
         """Return the unique name of this provider"""
         pass
+
+    @abstractmethod
+    async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve results for a previously submitted task.
+        Used for async workflows to polling or handling postbacks.
+        """
+        pass

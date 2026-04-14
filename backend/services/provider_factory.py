@@ -1,7 +1,6 @@
 import os
 from typing import List
 from .data_provider_interface import HotelDataProvider
-from .providers.serpapi_provider import SerpApiProvider
 from .providers.dataforseo_provider import DataForSEOProvider
 from backend.utils.logger import get_logger
 
@@ -16,7 +15,6 @@ class ProviderFactory:
         """
         Returns list of active providers in order of priority.
         1. DataForSEO (Primary - Multi-vendor pricing, TRY support)
-        2. SerpApi (Fallback - High fidelity fallback)
         """
         if not cls._providers:
             cls._register_providers()
@@ -27,7 +25,7 @@ class ProviderFactory:
     def get_provider(cls, prefer: str = "dataforseo") -> HotelDataProvider:
         """
         Get the most appropriate provider.
-        Defaults to DataForSEO. Falls back to SerpApi if DataForSEO is not configured.
+        Defaults to DataForSEO.
         """
         if not cls._providers:
             cls._register_providers()
@@ -41,32 +39,18 @@ class ProviderFactory:
         if cls._providers:
             return cls._providers[0]
 
-        raise Exception("No providers configured! Check your .env parameters (DATAFORSEO_LOGIN, SERPAPI_API_KEY).")
+        raise Exception("No providers configured! Check your .env parameters (DATAFORSEO_LOGIN, DATAFORSEO_PASSWORD).")
 
     @classmethod
     def _register_providers(cls):
         # Force clear to prevent zombie instances in persistent processes
         cls._providers = []
 
-        # 1. DataForSEO (Primary - New Default)
+        # 1. DataForSEO (Primary)
         df_login = os.getenv("DATAFORSEO_LOGIN")
         df_pass = os.getenv("DATAFORSEO_PASSWORD")
         if df_login and df_pass:
             cls._providers.append(DataForSEOProvider())
-
-        # 2. SerpApi (Fallback)
-        serp_keys = []
-        primary = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
-        if primary:
-            serp_keys.append(primary)
-
-        # Check for numbered backup keys (up to 10)
-        for i in range(2, 11):
-            if os.getenv(f"SERPAPI_API_KEY_{i}"):
-                serp_keys.append(os.getenv(f"SERPAPI_API_KEY_{i}"))
-
-        if serp_keys:
-            cls._providers.append(SerpApiProvider())
 
     @classmethod
     def get_status_report(cls) -> List[dict]:
@@ -87,51 +71,16 @@ class ProviderFactory:
         if df_provider:
             report.append(
                 {
-                    "name": "DataForSEO (Live UI/API)",
+                    "name": "DataForSEO (Task-based)",
                     "type": "Hotel Prices & Meta",
                     "enabled": True,
                     "priority": 1,
                     "limit": "Unlimited (Credit-based)",
-                    "refresh": "Real-time",
-                    "latency": "Fast (Live)",
+                    "refresh": "Background (100-limit batches)",
+                    "latency": "Variable (Async Task)",
                     "health": "Active" if df_provider.login else "Error",
                 }
             )
 
-        # 2. SerpApi status (Fallback)
-        serp_provider = next(
-            (p for p in cls._providers if isinstance(p, SerpApiProvider)), None
-        )
-        if serp_provider:
-            from backend.services.serpapi_client import serpapi_client
-            try:
-                detailed = serpapi_client.get_status()
-                keys_info = detailed.get("keys_status", [])
-                mgr = serpapi_client._key_manager
-
-                for i, info in enumerate(keys_info):
-                    k = mgr._keys[i] if i < len(mgr._keys) else None
-                    name = f"SerpApi Key {i + 1} (FallbackTier)"
-                    
-                    health = "Ready"
-                    if i == detailed.get("current_key_index", 0) - 1:
-                        health = "Active"
-                    elif info.get("is_exhausted"):
-                        health = "Exhausted"
-
-                    report.append(
-                        {
-                            "name": name,
-                            "type": "Hotel Prices",
-                            "enabled": True,
-                            "priority": 2 + i,
-                            "limit": "250/mo",
-                            "refresh": mgr._renewal_info.get(k, "Pending") if k else "Unknown",
-                            "latency": "Fallback",
-                            "health": health,
-                        }
-                    )
-            except Exception as e:
-                logger.error(f"SerpApi Status report error: {e}")
-
         return report
+

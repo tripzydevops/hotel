@@ -65,3 +65,15 @@ async def log_query(
         db.table("query_logs").insert(log_data).execute()
     except Exception as e:
         print(f"Error logging query: {e}")
+
+
+def normalize_room_name(name: str) -> str:
+    """Standardize room names for cataloging and comparison."""
+    import re
+    if not name:
+        return "Standard Room"
+    name = name.lower().strip()
+    name = re.sub(r'\s*-\s*', ' ', name)
+    name = re.sub(r'\(.*?\)', '', name)
+    name = re.sub(r'\s+', ' ', name).title()
+    return name

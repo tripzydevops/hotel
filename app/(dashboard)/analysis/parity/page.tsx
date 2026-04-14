@@ -9,14 +9,12 @@ import ParityStats from "@/components/analytics/ParityStats";
 import RateMatrix from "@/components/analytics/RateMatrix";
 import ViolatingChannels from "@/components/analytics/ViolatingChannels";
 import { motion } from "framer-motion";
-import { useModalContext } from "@/components/ui/ModalContext";
 import { api } from "@/lib/api";
 import { useState } from "react";
 
 export default function ParityPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
-  const { handleRefresh } = useModalContext();
   const [isExporting, setIsExporting] = useState(false);
   // Fetch real-time dashboard data including competitors and target hotel
   const { data, profile, loading, isRefreshing } = useDashboard(userId, t);
@@ -52,14 +50,6 @@ export default function ParityPage() {
           >
             {isExporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export
-          </button>
-          <button
-            onClick={() => handleRefresh(data)}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? "Scanning..." : "Start Monitor"}
           </button>
         </div>
       </div>

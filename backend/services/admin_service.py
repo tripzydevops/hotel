@@ -24,7 +24,6 @@ from backend.models.schemas import (
     PlanCreate,
     PlanUpdate,
 )
-from backend.services.serpapi_client import serpapi_client, MANUAL_RENEWAL_OVERRIDES, CREDIT_LIMITS
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 import csv
@@ -146,77 +145,7 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         raise HTTPException(status_code=500, detail=f"Admin Data Error: {str(e)}")
 
 
-async def get_api_key_status_logic(db: Client) -> Dict[str, Any]:
-    """Get status of SerpApi keys for monitoring quota usage."""
-    try:
-        status = await serpapi_client.get_key_status()
-
-        # Calculate monthly usage from scan_sessions
-        now = datetime.now()
-        first_of_month = datetime(now.year, now.month, 1).isoformat()
-
-        usage_res = (
-            db.table("scan_sessions")
-            .select("id", count="exact")
-            .gte("created_at", first_of_month)
-            .in_("status", ["completed", "partial"])
-            .execute()
-        )
-        monthly_usage = usage_res.count if usage_res.count is not None else 0
-
-        status["quota_per_key"] = 250
-        status["quota_period"] = "monthly"
-        status["monthly_usage"] = monthly_usage
-
-        # EXPLANATION: Persistent Usage Tracking (Kaizen 2026)
-        # Instead of in-memory counters, we derive usage from query_logs.
-        # This survives restarts and correctly maps to the last renewal cycle.
-        keys_list = status.get("keys_status", [])
-        for entry in keys_list:
-            suffix = entry["key_suffix"].replace("...", "")
-            renew_str = MANUAL_RENEWAL_OVERRIDES.get(suffix)
-            now = datetime.now()
-            
-            # Determine cycle start (standard Logic: day of renewal)
-            if renew_str and renew_str not in ["Unknown", "Monthly Reset"]:
-                try:
-                    renew_day = int(renew_str.split("-")[2])
-                    if now.day >= renew_day:
-                        cycle_start = now.replace(day=renew_day, hour=0, minute=0, second=0)
-                    else:
-                        last_month = (now.replace(day=1) - timedelta(days=1))
-                        cycle_start = last_month.replace(day=min(renew_day, 28), hour=0, minute=0, second=0)
-                except:
-                    cycle_start = now.replace(day=1, hour=0, minute=0, second=0)
-            else:
-                cycle_start = now.replace(day=1, hour=0, minute=0, second=0)
-
-            try:
-                # Query DB for logs tagged with this specific key
-                usage_res = db.table("query_logs").select("id", count="exact")\
-                    .eq("api_key_suffix", suffix)\
-                    .gte("created_at", cycle_start.isoformat())\
-                    .execute()
-                
-                db_usage = usage_res.count or 0
-                entry["usage"] = db_usage
-                
-                # Update limits and calculations
-                limit = CREDIT_LIMITS.get(suffix, 250)
-                entry["limit"] = f"{limit}/mo"
-                entry["searches_left"] = max(0, limit - db_usage)
-                entry["refresh_date"] = renew_str or "Unknown"
-            except Exception as e:
-                print(f"Admin: Failed to aggregate logs for {suffix}: {e}")
-
-        status["keys_status"] = keys_list
-        status["quota_per_key"] = 250
-        status["quota_period"] = "monthly"
-        status["monthly_usage"] = sum(k.get("usage", 0) for k in keys_list)
-        return status
-    except Exception as e:
-        print(f"API Key Status Error: {e}")
-        return {"error": str(e), "total_keys": 0, "active_keys": 0}
+# get_api_key_status_logic was removed as we migrated to DataForSEO
 
 
 async def get_admin_providers_logic() -> List[Dict[str, Any]]:
@@ -236,41 +165,7 @@ async def get_admin_providers_logic() -> List[Dict[str, Any]]:
         return []
 
 
-async def force_rotate_api_key_logic() -> Dict[str, Any]:
-    """Force rotate to next API key."""
-    try:
-        success = serpapi_client._key_manager.rotate_key("manual_rotation")
-        return {
-            "status": "success" if success else "failed",
-            "message": "Rotated to next key" if success else "No available keys",
-            "current_status": await serpapi_client.get_key_status(),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-async def reset_api_keys_logic() -> Dict[str, Any]:
-    """Reset all API keys."""
-    try:
-        serpapi_client._key_manager.reset_all()
-        return {"status": "success", "message": "All keys reset"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-async def reload_api_keys_logic() -> Dict[str, Any]:
-    """Reload API keys from env."""
-    try:
-        reload_result = serpapi_client.reload()
-        return {
-            "message": f"Reloaded keys. Found {reload_result.get('total_keys', 0)}.",
-            "total_keys": reload_result.get("total_keys", 0),
-            "current_status": serpapi_client.get_key_status(),
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=str(e)
-        )
+# Key rotation/reset/reload logic moved to ProviderFactory level or removed
 
 
 async def admin_update_user_logic(
@@ -575,7 +470,7 @@ async def get_admin_directory_logic(
                 id=item["id"],
                 name=item["name"],
                 location=item["location"] or "Unknown",
-                serp_api_id=item.get("serp_api_id"),
+                property_token=item.get("property_token"),
                 created_at=item["created_at"],
             )
         )
@@ -589,7 +484,7 @@ async def add_admin_directory_entry_logic(entry: dict, db: Client) -> Dict[str, 
             {
                 "name": entry["name"],
                 "location": entry["location"],
-                "serp_api_id": entry.get("serp_api_id"),
+                "property_token": entry.get("property_token"),
             }
         ).execute()
         return {"status": "success"}
@@ -612,7 +507,7 @@ async def update_admin_directory_logic(
     """Update a directory entry."""
     try:
         update_data = {
-            k: v for k, v in updates.items() if k in ["name", "location", "serp_api_id"]
+            k: v for k, v in updates.items() if k in ["name", "location", "property_token"]
         }
         if update_data:
             db.table("hotel_directory").update(update_data).eq("id", entry_id).execute()
@@ -659,7 +554,7 @@ async def get_admin_hotels_logic(db: Client, limit: int = 100) -> List[Dict[str,
                 "location": h["location"],
                 "user_count": len(user_list),
                 "users": user_list,
-                "serp_api_id": h.get("serp_api_id"),
+                "property_token": h.get("property_token"),
                 "created_at": h["created_at"],
             }
         )
@@ -673,7 +568,7 @@ async def update_admin_hotel_logic(
     allowed = [
         "name",
         "location",
-        "serp_api_id",
+        "property_token",
         "is_target_hotel",
         "preferred_currency",
         "rating",

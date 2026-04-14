@@ -14,6 +14,8 @@ from fastapi import BackgroundTasks
 from supabase import Client
 from backend.models.schemas import ScanOptions, MonitorResult, SCAN_PULSE_INTERVAL_MINUTES, SCAN_PULSE_INTERVAL_HOURS
 from backend.services.providers.dataforseo_provider import dataforseo_provider
+from backend.services.scan_persistence import ScanPersistenceService
+from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -382,8 +384,8 @@ async def run_monitor_background(
 
         # 4.5 Room Type Cataloging (Quick)
         try:
-            from backend.services.room_type_service import update_room_type_catalog
-            await update_room_type_catalog(db, scraper_results, hotels)
+            # Shift to the new unified batch persistence in the analyst's persistence handle
+            await analyst.persistence.batch_update_room_type_catalog(scraper_results, hotels)
         except Exception as e:
             logger.warning(f"Room Catalog failure: {e}")
 
@@ -729,7 +731,7 @@ async def run_system_heartbeat(db: Client):
         # 3. Fetch all unique monitored hotels
         monitored_res = (
             db.table("user_hotels")
-            .select("hotel_id, hotels(name, location, property_token)")
+            .select("hotel_id, hotels(name, location, property_token, serp_api_id)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -746,10 +748,13 @@ async def run_system_heartbeat(db: Client):
             h = item.get("hotels")
             if not h: continue
             
-            # Use property_token as the primary unique key
-            token = h.get("property_token")
+            # Use serp_api_id as the primary unique key, then property_token
+            token = h.get("serp_api_id")
             if not token:
-                # Fallback to name/location only if property_token is missing
+                token = h.get("property_token")
+            
+            if not token:
+                # Fallback to name/location only if both identifiers are missing
                 token = f"{h['name'].lower().strip()}|{h['location'].lower().strip()}"
             
             if token not in criteria_groups:
@@ -813,7 +818,8 @@ async def process_system_scans(db: Client):
 
         s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
         
-        from backend.services.room_type_service import update_room_type_catalog
+        # Unified Persistence Layer
+        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
 
         for tid in completed_ids:
             try:
@@ -891,7 +897,7 @@ async def process_system_scans(db: Client):
         if catalog_results:
             try:
                 s_logger.info(f"Task Processor: Syncing room type catalog for {len(catalog_results)} hotels...")
-                await update_room_type_catalog(db, catalog_results, catalog_hotels)
+                await persistence.batch_update_room_type_catalog(catalog_results, catalog_hotels)
             except Exception as catalog_e:
                 s_logger.error(f"Task Processor: Catalog sync failed: {catalog_e}")
 
@@ -1055,7 +1061,17 @@ async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, An
                 "source": f"DataForSEO_{source}"
             }).execute()
 
-            # 6. Trigger Notifications
+            # 6. Update Room Type Catalog (Instant Sync)
+            try:
+                # We reuse the same persistent service architecture
+                persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
+                rooms = result.get("room_types", [])
+                if rooms:
+                    await persistence.update_room_type_catalog(target_id, rooms, hotel_context=hotel_ref)
+            except Exception as catalog_e:
+                logger.warning(f"Sync: Room catalog update skipped for {target_id}: {catalog_e}")
+
+            # 7. Trigger Notifications
             await _trigger_heartbeat_notifications(db, target_id, float(price), currency)
 
         # 7. Update Task/Batch status

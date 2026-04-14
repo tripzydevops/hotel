@@ -17,10 +17,6 @@ from backend.models.schemas import (
 )
 from backend.services.admin_service import (
     get_admin_stats_logic,
-    get_api_key_status_logic,
-    force_rotate_api_key_logic,
-    reset_api_keys_logic,
-    reload_api_keys_logic,
     admin_update_user_logic,
     get_admin_users_logic,
     get_admin_directory_logic,
@@ -108,44 +104,7 @@ async def get_admin_stats(
     return await get_admin_stats_logic(db)
 
 
-@router.get("/api-keys/status")
-async def get_api_key_status(
-    user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)
-):
-    """
-    Checks the validity and remaining quota of configured external API keys.
-    Essential for monitoring budget and operational continuity.
-    """
-    # EXPLANATION: Quota Management
-    # Synchronizes frontend key status with backend-managed rotation.
-    return await get_api_key_status_logic(db)
-
-
-@router.post("/api-keys/rotate")
-async def force_rotate_api_key(user: Any = Depends(get_current_admin_user)):
-    """
-    Manually triggers rotation of API keys if provided.
-    Implements a fallback mechanism to ensure at least one key is always active.
-    """
-    return await force_rotate_api_key_logic()
-
-
-@router.post("/api-keys/reset")
-async def reset_api_keys(user: Any = Depends(get_current_admin_user)):
-    """
-    Clears key usage history. Used for monthly resets or manual maintenance.
-    """
-    return await reset_api_keys_logic()
-
-
-@router.post("/api-keys/reload")
-async def reload_api_keys(
-    user: Any = Depends(get_current_admin_user), db: Client = Depends(get_supabase)
-):
-    """
-    Reloads API keys from environment/vault without restarting the service.
-    """
-    return await reload_api_keys_logic()
+# API Key management routes removed (migrated to DataForSEO)
 
 
 @router.patch("/users/{user_id}")

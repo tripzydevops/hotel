@@ -7,11 +7,11 @@ from uuid import UUID
 from supabase import Client
 
 from backend.models.schemas import ScanOptions
-from backend.utils.helpers import convert_currency, log_query
+from backend.utils.helpers import convert_currency, log_query, normalize_room_name
 from backend.utils.sentiment_utils import merge_sentiment_breakdowns, generate_mentions
 from backend.services.price_comparator import price_comparator
 from backend.services.predictive_service import predictive_service
-from backend.utils.embeddings import get_embedding
+from backend.utils.embeddings import get_embedding, format_room_type_for_embedding
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -160,6 +160,147 @@ class ScanPersistenceService:
             analysis_summary["smart_threshold"] = threshold
 
         return analysis_summary
+
+    async def update_room_type_catalog(self, hotel_id: str, rooms: List[Dict[str, Any]], hotel_context: Optional[Dict[str, Any]] = None):
+        """
+        Normalizes and snapshots room types in a dedicated catalog.
+        Provides a stable profile for each room variation with semantic embeddings.
+        """
+        import uuid
+        
+        # 1. Fetch hotel context if not provided
+        if not hotel_context:
+            try:
+                res = self.admin_db.table("hotels").select("id, name, stars, location").eq("id", hotel_id).maybe_single().execute()
+                hotel_context = res.data or {}
+            except Exception:
+                hotel_context = {}
+
+        valid_upserts = []
+        
+        for room in rooms:
+            original_name = room.get("name")
+            if not original_name:
+                continue
+
+            normalized = normalize_room_name(original_name)
+            room_id = f"room_{hotel_id}_{normalized.replace(' ', '_').lower()}"
+
+            # Prepare for embedding
+            try:
+                # Use standard formatter
+                text = format_room_type_for_embedding(room, hotel_context=hotel_context)
+                embedding = await get_embedding(text)
+            except Exception as e:
+                logger.error(f"Embedding failed for room {original_name}: {e}")
+                embedding = None
+
+            catalog_entry = {
+                "id": room_id,
+                "hotel_id": hotel_id,
+                "original_name": original_name,
+                "normalized_name": normalized,
+                "avg_price": room.get("price"),
+                "currency": room.get("currency", "TRY"),
+                "amenities": room.get("amenities", []),
+                "sqm": room.get("sqm"),
+                "last_seen_at": datetime.now(timezone.utc).isoformat()
+            }
+            if embedding:
+                catalog_entry["embedding"] = embedding
+
+            valid_upserts.append(catalog_entry)
+
+        if valid_upserts:
+            try:
+                self.admin_db.table("room_type_catalog").upsert(valid_upserts, on_conflict="id").execute()
+            except Exception as e:
+                logger.error(f"Batch catalog upsert failed for {hotel_id}: {e}")
+
+    async def batch_update_room_type_catalog(self, scraper_results: List[Dict[str, Any]], hotels: List[Dict[str, Any]]):
+        """
+        Batch process room types from multiple hotels. 
+        Optimized for background scan cycles.
+        """
+        hotel_map = {str(h.get("id")): h for h in hotels}
+        
+        # We group rooms by hotel to use the specialized upsert logic
+        for result in scraper_results:
+            hotel_id = result.get("hotel_id")
+            if not hotel_id:
+                continue
+                
+            rooms = result.get("room_types") or []
+            if not rooms and "price_data" in result:
+                rooms = result.get("price_data", {}).get("room_types") or []
+                
+            if isinstance(rooms, list) and rooms:
+                # If room types are just strings, convert to dicts
+                processed_rooms = []
+                for r in rooms:
+                    if isinstance(r, str):
+                        processed_rooms.append({"name": r})
+                    elif isinstance(r, dict):
+                        processed_rooms.append(r)
+                
+                if processed_rooms:
+                    await self.update_room_type_catalog(
+                        hotel_id, 
+                        processed_rooms, 
+                        hotel_context=hotel_map.get(str(hotel_id))
+                    )
+
+    async def sync_from_external_provider(
+        self,
+        db: Client,
+        hotel_id: str,
+        result: Dict[str, Any],
+        scan_task_id: Optional[str] = None,
+        batch_id: Optional[str] = None,
+        source: str = "System"
+    ) -> Dict[str, Any]:
+        """
+        Tier-2 Sync logic for external data providers (e.g. DataForSEO).
+        Mirrors the monitor logic but targeted at extraction results.
+        """
+        if not result or result.get("status") != "success":
+            return {"status": "skipped", "reason": "invalid_result"}
+
+        price = result.get("price", 0.0)
+        currency = result.get("currency", "USD")
+        
+        # 1. Persist to price_logs
+        log_entry = {
+            "hotel_id": hotel_id,
+            "price": price,
+            "currency": currency,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "check_in_date": str(date.today()), # Default
+            "vendor": result.get("vendor", source),
+            "room_types": result.get("room_types", []),
+            "metadata": {
+                "scan_task_id": scan_task_id,
+                "batch_id": batch_id,
+                "source": source
+            }
+        }
+        
+        try:
+            self.admin_db.table("price_logs").insert(log_entry).execute()
+            
+            # 2. Update Room Type Catalog
+            if result.get("items"):
+                # DataForSEO returns individual items with more detail
+                await self.update_room_type_catalog(hotel_id, result["items"])
+            elif result.get("room_types"):
+                # Fallback to simple strings if no rich items
+                simple_rooms = [{"name": r} for r in result["room_types"]]
+                await self.update_room_type_catalog(hotel_id, simple_rooms)
+
+            return {"status": "success", "price": price}
+        except Exception as e:
+            logger.error(f"Sync persistence failed for {hotel_id}: {e}")
+            return {"status": "error", "error": str(e)}
 
     async def _fetch_history_map(self, hotel_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
         history_map = {}

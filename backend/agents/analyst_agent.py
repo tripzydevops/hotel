@@ -279,7 +279,7 @@ class AnalystAgent:
         for res in scraper_results:
             price_data = res.get("price_data")
             if price_data and isinstance(price_data, dict):
-                sid = price_data.get("property_token") or price_data.get("serp_api_id")
+                sid = price_data.get("serp_api_id") or price_data.get("property_token")
                 if sid:
                     raw_p = price_data.get("price")
                     curr_p = float(raw_p) if raw_p is not None else 0.0

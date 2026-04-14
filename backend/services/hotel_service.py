@@ -8,7 +8,6 @@ from uuid import UUID
 from typing import Optional, List, Dict, Any, cast
 from supabase import Client
 from fastapi import HTTPException
-from backend.services.serpapi_client import serpapi_client
 from backend.services.dataforseo_client import dataforseo_client
 from backend.utils.helpers import log_query
 
@@ -191,6 +190,7 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
             unique_hotels[key] = {
                 "name": h["name"],
                 "location": h.get("location"),
+                "property_token": h.get("property_token"),
                 "serp_api_id": h.get("serp_api_id"),
                 "review_count": h.get("review_count"),
             }
@@ -198,7 +198,7 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     count = 0
     for h_data in unique_hotels.values():
         try:
-            # Persistent check to avoid duplicates in the shared directory
+            # Conflict resolution: serp_api_id is the primary global identifier
             db.table("hotel_directory").upsert(
                 h_data, on_conflict="serp_api_id"
             ).execute()
@@ -220,6 +220,7 @@ async def add_hotel_to_account_logic(
     """
     try:
         serp_api_id = hotel_data.get("serp_api_id")
+        property_token = hotel_data.get("property_token")
         name = hotel_data.get("name")
         location = hotel_data.get("location")
 
@@ -227,10 +228,15 @@ async def add_hotel_to_account_logic(
             raise HTTPException(status_code=400, detail="Hotel name is required")
 
         # 1. Attempt to find existing master hotel record
-        # Priority: serp_api_id > (name + location)
+        # Priority: serp_api_id > property_token > (name + location)
         existing_hotel = None
         if serp_api_id:
             h_res = db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
+            if h_res.data:
+                existing_hotel = h_res.data[0]
+        
+        if not existing_hotel and property_token:
+            h_res = db.table("hotels").select("*").eq("property_token", property_token).execute()
             if h_res.data:
                 existing_hotel = h_res.data[0]
         
@@ -245,7 +251,7 @@ async def add_hotel_to_account_logic(
             hotel_id = existing_hotel["id"]
             # Update missing metadata if provided in this call
             update_fields = {}
-            for field in ["serp_api_id", "latitude", "longitude", "address", "phone", "website", "cid", "place_id", "stars"]:
+            for field in ["serp_api_id", "property_token", "latitude", "longitude", "address", "phone", "website", "cid", "place_id", "stars"]:
                 if not existing_hotel.get(field) and hotel_data.get(field):
                     update_fields[field] = hotel_data[field]
             
@@ -267,12 +273,12 @@ async def add_hotel_to_account_logic(
             description = hotel_data.get("description")
             cid = hotel_data.get("cid")
             place_id = hotel_data.get("place_id")
+            serp_api_id = hotel_data.get("serp_api_id")
             property_token = hotel_data.get("property_token")
 
             dir_res = db.table("hotel_directory").select("*").eq("name", name).eq("location", location).execute()
             if dir_res.data:
                 d = dir_res.data[0]
-                serp_api_id = serp_api_id or d.get("serp_api_id")
                 rating = rating or d.get("rating")
                 review_count = review_count or d.get("review_count")
                 image_url = image_url or d.get("image_url")
@@ -283,6 +289,7 @@ async def add_hotel_to_account_logic(
                 description = description or d.get("description")
                 cid = cid or d.get("cid")
                 place_id = place_id or d.get("place_id")
+                serp_api_id = serp_api_id or d.get("serp_api_id")
                 property_token = property_token or d.get("property_token")
 
             new_hotel_data = {
@@ -354,7 +361,6 @@ async def add_hotel_to_account_logic(
                 {
                     "name": existing_hotel["name"],
                     "location": existing_hotel.get("location"),
-                    "serp_api_id": existing_hotel.get("serp_api_id"),
                     "latitude": existing_hotel.get("latitude"),
                     "longitude": existing_hotel.get("longitude"),
                     "rating": existing_hotel.get("rating"),
@@ -368,6 +374,8 @@ async def add_hotel_to_account_logic(
                     "cid": existing_hotel.get("cid"),
                     "place_id": existing_hotel.get("place_id"),
                     "stars": existing_hotel.get("stars"),
+                    "property_token": existing_hotel.get("property_token"),
+                    "serp_api_id": existing_hotel.get("serp_api_id"),
                     "last_verified_at": datetime.now().isoformat(),
                 },
                 on_conflict="serp_api_id",
@@ -382,7 +390,7 @@ async def add_hotel_to_account_logic(
             hotel_name=existing_hotel["name"],
             location=existing_hotel.get("location"),
             action_type="add_to_account",
-            api_key_suffix=serpapi_client.last_used_key_suffix,
+            api_key_suffix="internal",
         )
 
         return existing_hotel

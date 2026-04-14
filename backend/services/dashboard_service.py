@@ -214,7 +214,7 @@ async def get_dashboard_logic(
         active_prices = []
         for h in all_hotels:
             hid = str(h["id"])
-            token = h.get("property_token") or h.get("serp_api_id")
+            token = h.get("serp_api_id") or h.get("property_token")
             if not token:
                 logger.info(f"Dashboard Service: Hotel {h.get('name')} (ID: {hid}) has no token yet. Showing as pending.")
 
