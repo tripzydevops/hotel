@@ -19,8 +19,13 @@ logger = get_logger(__name__)
 class ScanPersistenceService:
     """
     Unified Tier-1 Service for persisting scan results.
-    Handles price validation, smart continuity, sentiment merging, 
-    threshold enforcement, and batch updates.
+    
+    This service acts as the 'Data Quality Firewall' for the Antigravity OS. 
+    It handles:
+    1. PRICE VALIDATION: Rejects unrealistic or highly-variant prices.
+    2. SMART CONTINUITY: Uses historical fallbacks if a real-time scan fails.
+    3. RESILIENT INSERTION: Handles batch failures with per-item fallbacks (Bypassing RLS via Admin Client).
+    4. CATALOGING: Normalizes and snapshots room types and rich reviews (Sentiment/NLP ready).
     """
 
     def __init__(self, db: Client, admin_db: Optional[Client] = None):
@@ -40,6 +45,15 @@ class ScanPersistenceService:
     ) -> Dict[str, Any]:
         """
         Executes the persistence pipeline for a batch of scraper results.
+        
+        This is the primary entry point for ALL scan data (Manual and System).
+        It orchestrates the flow from raw scraper results -> Validated DB Entries.
+        
+        Pipeline Flow:
+        1. Fetch History Mapping (for variance checks).
+        2. Per-Hotel Logic (Validation -> Normalization -> Fallback).
+        3. Batch Resilient Insertion (Optimized for PostgreSQL performance).
+        4. Secondary Tasks (Embeddings, Review Extraction, Catalog updates).
         """
         analysis_summary = {
             "prices_updated": 0,

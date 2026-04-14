@@ -1,60 +1,48 @@
-# Price Monitoring & Notification System
+# Price Monitoring & Notification System (Architecture 2026)
 
 This document provides a technical overview of the autonomous price monitoring pipeline, detailing the workflow from background execution to user notification.
 
 ## 1. Conceptual Vision: The Data Pulse
 The "Pulse" represents the heartbeat of the platform—a continuous stream of high-fidelity market data that keeps hoteliers ahead of the curve.
 
-![Conceptual Dashboard Mockup](dashboard_mockup.png)
-*Figure 1: Conceptual visualization of the real-time monitoring dashboard.*
+## 2. Pipeline Orchestration: The Asynchronous Mesh
 
-## 2. Pipeline Orchestration
+The system has evolved from a simple linear scraper into an **Asynchronous Agent Mesh** optimized for scale and data integrity.
 
-The system follows a tiered execution model to ensure reliability:
-
-### Stage A: The Shell Trigger (`monitor_service.py`)
-- **Action**: Initiated via GitHub Actions cron or manual dashboard trigger.
+### Stage A: The System Heartbeat (`monitor_service.py`)
+- **Trigger**: Every 4 hours (SCAN_PULSE_INTERVAL_HOURS) via GitHub Action Cron.
 - **Responsibility**:
-    1.  Initialize a `scan_session` in the database to track audit logs.
-    2.  Identify all "Target Hotels" that require a pulse check based on user settings.
-    3.  Hand off logic to the specialized `NotifierAgent`.
+    1.  **Poll Existing Tasks**: Checks for completed external scans from the previous cycle.
+    2.  **Dispatch New Scans**: Identifies properties needing a "Pulse" check and dispatches them in **Batches of 100**.
+    3.  **Persistence**: Offloads raw results to the `ScanPersistenceService`.
 
-### Stage B: The Intelligence Layer (`NotifierAgent`)
-- **Action**: Processes market data and determines parity risks.
+### Stage B: The Provider Interface (`DataForSEOProvider`)
+- **Action**: Converts internal Hotel IDs into optimized search keywords and location tokens.
 - **Responsibility**:
-    - **Price Extraction**: Utilizes a polymorphic extraction logic to pull data from both hydrated `Hotel` models and raw `metadata` payloads (see [Section 3](#3-robust-price-extraction-fix)).
-    - **Comparison**: Benchmarks the current hotel price against its competitors.
-    - **State Management**: Logs the result to the `price_logs` table.
+    - **Normalization**: Transliterates Turkish characters (ı -> i, ş -> s) to satisfy API constraints.
+    - **Async Submission**: Uses `task_post` to submit batch requests without blocking the main event loop.
+    - **Tracking**: Maps DataForSEO Task IDs to internal `scan_task` UUIDs.
 
-## 3. Robust Price Extraction Fix
+### Stage C: The Data Quality Firewall (`ScanPersistenceService`)
+- **Action**: A multi-tiered validation pipeline that filters noise before it hits the production database.
+- **Responsibility**:
+    - **Price Floors**: Rejects unrealistic rates (e.g., < 3000 TRY for a Ramada).
+    - **Variance Checks**: Flags prices deviating by > 30% from the verified 5-day baseline.
+    - **Smart Continuity**: If a scan fails or returns zero, uses the most recent valid historical price to maintain a continuous graph.
 
-A critical bug was identified where the `NotifierAgent` failed to process results from "Manual Scans" due to a mismatch in data structures. The agent now implements a robust extraction strategy:
+## 3. Database Schema: The Storage Backbone
 
-```python
-# Updated robust extraction logic in NotifierAgent
-price = None
-if hasattr(result, 'price_info') and result.price_info:
-    # Direct Hotel model from search
-    price = result.price_info.get('current_price')
-elif isinstance(result, dict) and 'metadata' in result:
-    # Manual scan payload from session results
-    price = result['metadata'].get('current_price')
-```
-
-This fix ensures that whether a scan is automated or triggered by a user, the system consistently captures and logs the price data.
-
-## 4. Database Schema & Tracking
+### `scan_batches` & `scan_tasks`
+Tracks the lifecycle of asynchronous background work.
+- `scan_batches`: High-level container for a pulse check (e.g., "Market Pulse - April 14").
+- `scan_tasks`: Individual units of work mapping a specific hotel to an external provider task.
 
 ### `price_logs`
-Stores time-series price data for all tracked hotels.
-- `hotel_id`: Reference to master property.
-- `price`: Floating point current rate.
-- `recorded_at`: Timestamp of the scan.
+The primary source for all time-series intelligence. 
+- Optimized with a unique index to prevent duplicate entries from overlapping scans.
 
-### `scan_sessions`
-Provides an audit trail for every monitoring cycle.
-- `status`: tracks `pending`, `processing`, or `completed`.
-- `results`: JSONB storage of the final intelligence report.
+### `room_type_catalog`
+A semantic index of normalized room offerings (e.g., "Superior Double Sea View"). Each entry includes a **Vector Embedding** for AI-driven comparison.
 
 ---
-*Document Version 1.1 - April 2026*
+*Document Version 1.2 - April 2026*

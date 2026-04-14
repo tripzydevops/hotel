@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Loader2,
   Eye,
+  EyeOff,
   UserPlus,
   Mail,
   Lock,
@@ -26,6 +27,8 @@ const UserManagementPanel = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [userSuccess, setUserSuccess] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Form States
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -51,10 +54,10 @@ const UserManagementPanel = () => {
   });
   const [userSaveLoading, setUserSaveLoading] = useState(false);
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (q?: string) => {
     setLoading(true);
     try {
-      const data = await api.getAdminUsers();
+      const data = await api.getAdminUsers(q);
       setUsers(data);
     } catch (err: unknown) {
       toast.error(
@@ -67,8 +70,15 @@ const UserManagementPanel = () => {
   }, [toast]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    loadUsers(debouncedSearch);
+  }, [loadUsers, debouncedSearch]);
 
   useEffect(() => {
     if (userToEdit) {
@@ -292,6 +302,37 @@ const UserManagementPanel = () => {
         </form>
       </div>
 
+      {/* Search Bar */}
+      <div className="glass-card p-4 border border-white/5 flex items-center gap-4 bg-white/[0.02]">
+        <div className="flex-1 relative group">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Eye className="w-4 h-4 text-[var(--text-muted)] group-focus-within:text-[var(--soft-gold)] transition-colors" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name, email, or company..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-5 py-3.5 text-sm text-white focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all outline-none"
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 right-4 flex items-center text-[var(--text-muted)] hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <button 
+          onClick={() => loadUsers(searchTerm)}
+          className="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white rounded-xl transition-all border border-white/5 flex items-center gap-2"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Force Refresh
+        </button>
+      </div>
+
       {/* Users Table */}
       <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
         {loading && users.length === 0 ? (
@@ -433,10 +474,10 @@ const UserManagementPanel = () => {
                           onClick={() =>
                             window.open(`/?impersonate=${u.id}`, "_blank")
                           }
-                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
-                          title="Impersonate User"
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95 group/ghost"
+                          title="Enter Ghost Mode (Impersonate)"
                         >
-                          <Eye className="w-4 h-4" />
+                          <EyeOff className="w-4 h-4 group-hover/ghost:scale-110 transition-transform" />
                         </button>
                         <button
                           onClick={() => setUserToEdit(u)}

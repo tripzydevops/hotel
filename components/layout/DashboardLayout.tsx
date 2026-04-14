@@ -3,8 +3,10 @@
 import React, { lazy, Suspense } from "react";
 import Sidebar from "./Sidebar";
 import UserMenu from "./UserMenu";
-import { Bell, Search, Calendar } from "lucide-react";
+import { Bell, Search, Calendar, EyeOff, LogOut, ShieldAlert } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -122,8 +124,56 @@ export default function DashboardLayout({
   const hotelCount =
     (data?.competitors?.length || 0) + (data?.target_hotel ? 1 : 0);
 
+  const handleTerminateImpersonation = async () => {
+    try {
+      await api.terminateImpersonation();
+      window.location.href = "/admin"; // Redirect back to admin
+    } catch (err) {
+      console.error("Failed to terminate impersonation", err);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-transparent transition-colors duration-500">
+      {/* Ghost Mode Indicator */}
+      <AnimatePresence>
+        {profile?.is_impersonating && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            className="fixed top-0 left-0 right-0 z-[100] flex justify-center pointer-events-none"
+          >
+            <div className="bg-red-500/90 backdrop-blur-md border-x border-b border-red-400/30 px-6 py-2 rounded-b-2xl shadow-[0_10px_40px_rgba(239,68,68,0.4)] flex items-center gap-6 pointer-events-auto group">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <EyeOff className="w-4 h-4 text-white animate-pulse" />
+                  <div className="absolute inset-0 bg-white blur-lg opacity-50 animate-pulse" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-tight">
+                    Ghost Mode Active
+                  </span>
+                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-widest">
+                    Impersonating: {profile?.display_name || profile?.email}
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-6 w-[1px] bg-white/20" />
+
+              <button
+                onClick={handleTerminateImpersonation}
+                className="flex items-center gap-2 bg-white text-red-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-xl"
+              >
+                <LogOut className="w-3 h-3" />
+                Stop Session
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Sidebar profile={profile} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

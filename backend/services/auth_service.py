@@ -132,6 +132,66 @@ async def get_current_active_user(request: Request, token: str = Depends(get_tok
         user = await _verify_token_via_insforge(token)
 
         user_id = getattr(user, "id", None)
+        email = getattr(user, 'email', 'No Email')
+        
+        # --- GHOST MODE (IMPERSONATION) LOGIC ---
+        # Allow admins to masquerade as other users using the x-impersonate-user-id header.
+        # This is critical for support/debugging without requiring user credentials.
+        impersonate_id = request.headers.get("x-impersonate-user-id")
+        is_impersonating = False
+        original_admin_id = None
+
+        if impersonate_id and impersonate_id != str(user_id):
+            # 1. Verify that the REAL user (from JWT) is an admin
+            # We check the 'user_profiles' table for role parity.
+            admin_check = (
+                db.table("user_profiles")
+                .select("role")
+                .eq("user_id", str(user_id))
+                .maybe_single()
+                .execute()
+            )
+            is_real_admin = (
+                admin_check.data 
+                and admin_check.data.get("role", "").lower() in ["admin", "market_admin", "market admin"]
+            )
+
+            if is_real_admin:
+                logger.info(f"ADMIN {email} ({user_id}) initiating IMPERSONATION of {impersonate_id}")
+                
+                # Fetch target user profile to "become" them
+                target_res = (
+                    db.table("user_profiles")
+                    .select("user_id, email, display_name")
+                    .eq("user_id", str(impersonate_id))
+                    .maybe_single()
+                    .execute()
+                )
+                
+                if target_res.data:
+                    # Capture original ID for audit
+                    original_admin_id = user_id
+                    
+                    # SWAP IDENTITY
+                    # We update the 'user' namespace object to masquerade as the target.
+                    # This ensures downstream logic (settings, scan filtering) uses the target's ID.
+                    user.id = target_res.data["user_id"]
+                    user.email = target_res.data.get("email")
+                    user.is_impersonating = True
+                    user.real_user_id = original_admin_id
+                    
+                    # Update local variables for the rest of this function's checks
+                    user_id = user.id
+                    email = user.email
+                    is_impersonating = True
+                    logger.info(f"Identity SWAPPED: Now acting as {email} ({user_id})")
+                else:
+                    logger.warning(f"Impersonation failed: Target user {impersonate_id} not found.")
+            else:
+                logger.warning(f"Security Alert: Non-admin {email} attempted impersonation of {impersonate_id}")
+                # We don't raise 401 here to prevent info leakage, just ignore the header.
+        
+        # --- END GHOST MODE logic ---
 
         # User Verification Logic (Fail-Open)
         # We perform a multi-table check:

@@ -8,11 +8,7 @@ const nextConfig: NextConfig = {
   // [REMOVED] Legacy External Proxy. API now handled by local Python backend at api/index.py
   // Enable built-in asset compression (Gzip/Brotli) for static files
   compress: true,
-  experimental: {
-    // optimizePackageImports reduces bundle size by only importing the parts of 
-    // these heavy libraries that are actually used in each page.
-    optimizePackageImports: ["lucide-react", "recharts"],
-  },
+
   images: {
     remotePatterns: [
       {

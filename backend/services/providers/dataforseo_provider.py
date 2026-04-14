@@ -20,6 +20,11 @@ logger = get_logger(__name__)
 # - No spaces after commas: "City,Country" not "City, Country"  
 # - ASCII characters only: "Balikesir" not "Balıkesir"
 # - language_name field is mandatory
+#
+# WHY THIS MATTERS:
+# If the location_name contains non-ASCII characters or extra spaces, DataForSEO
+# might return a 40501 "City not found" error or default to a generic global search
+# which reduces accuracy for local Turkish hotels.
 
 _COUNTRY_NAME_MAP = {
     "turkey": "Turkiye",
@@ -38,11 +43,31 @@ _TURKISH_CHAR_MAP = str.maketrans({
 class DataForSEOProvider(HotelDataProvider):
     """
     DataForSEO Google Hotels API Provider.
-    Uses HTTP Basic Authentication.
+    
+    This provider implements the polymorphic HotelDataProvider interface to 
+    interface with the DataForSEO 'Business Data' API. 
+    
+    Architecture:
+    - Asynchronous: Submits task_post and polls task_get later.
+    - Robust: Normalizes Turkish locations and clean room names.
+    - Cost-Optimized: Uses task-based batching instead of expensive Live endpoints.
     """
 
     def _normalize_location(self, location: str) -> str:
-        """Normalizes location for DataForSEO API."""
+        """
+        Normalizes location for DataForSEO API.
+        
+        This method performs four critical transformations:
+        1. Transliterates Turkish-specific characters (ı, ğ, ü, ş, ö, ç) to ASCII.
+        2. Normalizes non-spacing marks (accents).
+        3. Maps common country variations (e.g., Turkey -> Turkiye) to API-supported names.
+        4. Removes trailing/leading spaces from comma-separated location parts.
+        
+        Args:
+            location: The raw location string (e.g., "İstanbul, Türkiye")
+        Returns:
+            A sanitized string ready for the 'location_name' API field.
+        """
         if not location: return ""
         
         # 1. Transliterate Turkish characters
@@ -129,7 +154,8 @@ class DataForSEOProvider(HotelDataProvider):
         auth = (self.login, self.password)
         
         try:
-            # Using LIVE endpoint for immediate response
+            # Prepare task payload for DataForSEO.
+            # We use the 'keyword' based approach which is most reliable for specific hotels.
             post_data = [{
                 "location_name": location,
                 "language_code": "en",
@@ -281,8 +307,22 @@ class DataForSEOProvider(HotelDataProvider):
     ) -> int:
         """
         High-level batch submission for the system heartbeat.
-        Prepares keywords based on hotel names/locations, posts tasks,
-        and registers them in the monitor_tasks table.
+        
+        This method is the core of the background scanning system. It:
+        1. Resolves hotel IDs into names/locations/tokens.
+        2. Generates internal UUIDs for each scan task (used as 'tag' in DataForSEO).
+        3. Breaks hotels into chunks of 100 (API limit) and posts them.
+        4. Registers a 'scan_batch' in the database for UI tracking.
+        5. Persists individual 'scan_tasks' cross-linking our UUID to DataForSEO task IDs.
+        
+        Args:
+            db: Supabase client (usually service role for background).
+            hotel_ids: List of hotel IDs to scan.
+            check_in/out: Date strings in ISO format.
+            batch_type: Metadata label for the batch.
+            
+        Returns:
+            The number of successfully submitted and registered tasks.
         """
         if not hotel_ids:
             return 0

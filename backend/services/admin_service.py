@@ -230,20 +230,20 @@ async def admin_update_user_logic(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_admin_users_logic(db: Client) -> List[AdminUser]:
+async def get_admin_users_logic(db: Client, q: Optional[str] = None) -> List[AdminUser]:
     """
     Fetch all users with enriched metadata (hotel/scan counts, plans).
-
-    Reminder Note: This operation bypasses normal RLS to provide an
-    aggregated system-wide view.
+    Supports optional search query 'q'.
     """
-    # EXPLANATION: Admin User Management
-    # Aggregates data from Auth, Profiles, and Settings to create a comprehensive
-    # user view for the Admin Dashboard. This manual join is necessary because
-    # user data is split across multiple tables (Supabase Auth vs Public Profiles).
     try:
-        # Fetch profiles, settings, and subscription info
-        profiles_res = db.table("user_profiles").select("*").execute()
+        # 1. Fetch profiles based on search query
+        query = db.table("user_profiles").select("*")
+        if q:
+            # Multi-field search using OR logic
+            # Note: ilike is used for PostgreSQL case-insensitive search
+            query = query.or_(f"email.ilike.%{q}%,display_name.ilike.%{q}%,company_name.ilike.%{q}%")
+        
+        profiles_res = query.execute()
         profiles_data = profiles_res.data or []
 
         # profiles_res = db.table("user_profiles").select("*").execute()

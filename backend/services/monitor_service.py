@@ -1,6 +1,14 @@
 """
 Monitor Service.
 Orchestrates the asynchronous background AI Agent-Mesh for price monitoring.
+
+Architecture Overview:
+1. Heartbeat Polling: Every 4 hours, a GitHub Action (or manual trigger) calls 
+   'process_system_scans' to find hotels needing a pulse check.
+2. Async Batching: Hotels are dispatched to DataForSEO in batches of 100.
+3. Task Persistence: Each external DataForSEO task is mapped to an internal 'scan_task' UUID.
+4. Results Retrieval: A separate loop in 'process_system_scans' checks for completed
+   external tasks and persists results via 'ScanPersistenceService'.
 """
 
 import os
@@ -803,8 +811,18 @@ async def run_system_heartbeat(db: Client):
 
 async def process_system_scans(db: Client):
     """
-    Checks for completed DataForSEO tasks and updates hotel prices.
-    Uses 'tag' from results to map back to hotel_id.
+    The System Heartbeat. Called by the scheduler to maintain the 'Pulse'.
+    
+    This method performs three critical sub-routines:
+    1. CHECK READY TASKS: Queries DataForSEO for any background tasks that 
+       have finished processing.
+    2. PERSIST RESULTS: Retrieves data for ready tasks and saves them to 
+       'price_logs' and 'scan_tasks'.
+    3. SUBMIT NEW SCANS: Identifies hotels that haven't been scanned in 
+       > 4 hours (SCAN_PULSE_INTERVAL_HOURS) and submits them as new tasks.
+    
+    Returns:
+        A summary dictionary of submitted/processed counts.
     """
     s_logger = get_scheduler_logger()
     catalog_results = []

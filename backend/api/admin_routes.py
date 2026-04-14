@@ -125,13 +125,15 @@ async def admin_update_user(
 
 @router.get("/users", response_model=List[AdminUser])
 async def get_admin_users(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    q: Optional[str] = None,
+    db: Client = Depends(get_supabase),
+    admin=Depends(get_current_admin_user),
 ):
     """
     Lists all users in the system with their roles and subscription status.
     Provides the core user management view for Tripzy admins.
     """
-    return await get_admin_users_logic(db)
+    return await get_admin_users_logic(db, q=q)
 
 
 @router.get("/directory", response_model=List[AdminDirectoryEntry])

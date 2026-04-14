@@ -340,8 +340,15 @@ class ApiClient {
     return this.fetch(`/api/admin/feed?limit=${limit}`);
   }
 
-  async getAdminUsers(): Promise<any[]> {
-    return this.fetch<any[]>("/api/admin/users");
+  async getAdminUsers(q?: string): Promise<any[]> {
+    const query = q ? `?q=${encodeURIComponent(q)}` : "";
+    return this.fetch<any[]>(`/api/admin/users${query}`);
+  }
+
+  async terminateImpersonation(): Promise<void> {
+    return this.fetch<void>("/api/admin/terminate-impersonation", {
+      method: "POST",
+    });
   }
 
   async deleteAdminUser(userId: string): Promise<void> {
@@ -513,6 +520,12 @@ class ApiClient {
     return this.fetch<any>("/api/admin/scans/cleanup-empty", {
       method: "DELETE",
     });
+  }
+
+  async checkScheduledScan(force: boolean = false) {
+    // Standard users use this for one-off checks, admins use it to wake scheduler.
+    // Maps to the global trigger for simplicity in this version.
+    return this.triggerAllOverdue();
   }
 
   async generateReport(params: {
