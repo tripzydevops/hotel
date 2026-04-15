@@ -3,7 +3,7 @@ import uuid
 import asyncio
 import httpx
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Dict, Any, Optional, List
 import traceback
 from supabase import Client
@@ -82,7 +82,6 @@ class DataForSEOProvider(HotelDataProvider):
         # 3. Handle Country Aliases
         for variant, official in _COUNTRY_NAME_MAP.items():
             if variant in loc.lower():
-                import re
                 loc = re.sub(re.escape(variant), official, loc, flags=re.IGNORECASE)
         
         # 4. Remove spaces after commas
@@ -123,6 +122,52 @@ class DataForSEOProvider(HotelDataProvider):
             "attributes": attributes
         }
 
+    def _normalize_sentiment_breakdown(self, breakdown: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Standardizes DataForSEO reviews_breakdown to internal SentimentBreakdown schema.
+        
+        KAIZEN: Implements the confirmed 'Dynamic Extension' strategy.
+        - Core categories ('Cleanliness', 'Service', etc.) are mapped to schema keys.
+        - Unknown categories are preserved with snake_case normalization.
+        """
+        if not breakdown:
+            return []
+            
+        # Standard mapping for common Google categories
+        CORE_MAPPING = {
+            "Cleanliness": "cleanliness",
+            "Service": "service",
+            "Location": "location",
+            "Value": "value",
+            "Rooms": "rooms",
+            "Dining": "dining",
+            "Facilities": "facilities",
+        }
+        
+        normalized = []
+        for category, score in breakdown.items():
+            if not isinstance(score, (int, float)):
+                continue
+                
+            internal_key = CORE_MAPPING.get(category, category.lower().replace(" ", "_"))
+            
+            # Simple sentiment inference if none provided
+            sentiment = "neutral"
+            if score >= 4.0:
+                sentiment = "positive"
+            elif score < 3.0:
+                sentiment = "negative"
+                
+            normalized.append({
+                "category": internal_key,
+                "display_name": category,
+                "rating": round(float(score), 1),
+                "sentiment": sentiment,
+                "total_mentioned": 0 # Not provided by info/advanced currently
+            })
+            
+        return normalized
+
     def __init__(self):
         self.login = os.getenv("DATAFORSEO_LOGIN")
         self.password = os.getenv("DATAFORSEO_PASSWORD")
@@ -133,6 +178,158 @@ class DataForSEOProvider(HotelDataProvider):
 
     def get_provider_name(self) -> str:
         return "DataForSEO"
+
+    def _parse_advanced_hotel_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extracts high-fidelity metadata and sentiment from hotel_info/advanced response.
+        """
+        info = data.get("hotel_info", {})
+        reviews = data.get("reviews", {})
+        
+        # 1. Normalize Sentiment Breakdown
+        sentiment_breakdown = []
+        raw_sentiment = reviews.get("sentiment") or {}
+        
+        if not raw_sentiment and reviews.get("review_mentions"):
+            for mention in reviews.get("review_mentions", []):
+                name = mention.get("title", "Other")
+                pos = mention.get("positive_count", 0)
+                neg = mention.get("negative_count", 0)
+                if pos + neg > 0:
+                    sentiment_breakdown.append({
+                        "name": self._normalize_sentiment_name(name),
+                        "positive": pos,
+                        "negative": neg,
+                        "total": pos + neg
+                    })
+        else:
+            for category, stats in raw_sentiment.items():
+                pos = stats.get("positive", 0)
+                neg = stats.get("negative", 0)
+                if pos + neg > 0:
+                    sentiment_breakdown.append({
+                        "name": self._normalize_sentiment_name(category),
+                        "positive": pos,
+                        "negative": neg,
+                        "total": pos + neg
+                    })
+
+        # 2. Enrich Room Catalog (High Detail)
+        room_catalog = []
+        items = data.get("items", [])
+        for item in items:
+            if item.get("type") == "hotel_item":
+                image_url = None
+                if item.get("images"):
+                    image_url = item["images"][0]
+                
+                room_catalog.append({
+                    "name": item.get("title"),
+                    "price": item.get("price_raw") or item.get("price"),
+                    "currency": item.get("currency"),
+                    "source": item.get("source"),
+                    "url": item.get("url"),
+                    "capacity": item.get("capacity"),
+                    "features": item.get("features"),
+                    "image_url": image_url
+                })
+
+        # 3. Amenities normalization
+        amenities = [a.get("amenity") for a in info.get("amenities", []) if a.get("amenity")]
+
+        # Fallback Rating Logic
+        rating = reviews.get("average_rating")
+        if not rating and info.get("rating"):
+            rating = info["rating"].get("value")
+            
+        reviews_count = reviews.get("reviews_count")
+        if not reviews_count and info.get("rating"):
+            reviews_count = info["rating"].get("votes_count")
+
+        return {
+            "name": info.get("title"),
+            "stars": info.get("stars"),
+            "rating": rating,
+            "reviews_count": reviews_count,
+            "description": info.get("description"),
+            "amenities": amenities,
+            "check_in_time": info.get("check_in_time"),
+            "check_out_time": info.get("check_out_time"),
+            "phone": info.get("phone"),
+            "website": info.get("website"),
+            "address": info.get("address"),
+            "latitude": info.get("latitude"),
+            "longitude": info.get("longitude"),
+            "sentiment_breakdown": sentiment_breakdown,
+            "room_catalog": room_catalog,
+            "room_types": [r["name"] for r in room_catalog if r.get("name")],
+            "best_price": info.get("prices", {}).get("price"),
+            "currency": info.get("prices", {}).get("currency"),
+            "rating_distribution": info.get("rating", {}).get("rating_distribution"),
+            "raw_data": data # Full result block
+        }
+
+    def _normalize_sentiment_name(self, name: str) -> str:
+        """
+        Normalizes localized category names (e.g. Turkish) to English.
+        """
+        from backend.utils.sentiment_utils import TR_MAP
+        clean_name = name.strip().title()
+        return TR_MAP.get(clean_name, clean_name)
+
+    async def get_hotel_details_advanced(
+        self,
+        hotel_id_on_provider: str,
+        location_name: str,
+        language_code: str = "en",
+        check_in: str = None,
+        check_out: str = None,
+        adults: int = 2,
+        currency: str = "TRY"
+    ) -> Dict[str, Any]:
+        """
+        Deep scan using hotel_info/advanced.
+        Provides detailed sentiment and enriched metadata.
+        """
+        payload = [
+            {
+                "hotel_id": hotel_id_on_provider,
+                "location_name": location_name,
+                "language_code": language_code,
+                "check_in": check_in,
+                "check_out": check_out,
+                "adults": adults,
+                "currency": currency,
+            }
+        ]
+
+        logger.info(f"DataForSEO Advanced Request: {hotel_id_on_provider} in {location_name}")
+        
+        try:
+            # Note: Using the base provider's POST method which handles auth and retries
+            # The tool mcp_dataforseo_serp_organic_live_advanced is Google specific,
+            # so we use raw HTTP for the specialized hotel endpoints.
+            from backend.services.providers.dataforseo_provider import DataForSEOProvider
+            
+            # This is a bit recursive since we are in the class, 
+            # but we assume the standard pattern for shared API clients.
+            endpoint = "https://api.dataforseo.com/v3/business_data/google/hotel_info/advanced/live"
+            
+            # Use task-based async fetch if available, else standard requests
+            # For this execution, we use the provider's established session.
+            response = await self._post_v3_request(endpoint, payload)
+            
+            if response and response.get("tasks"):
+                task = response["tasks"][0]
+                if task.get("result"):
+                    result = task["result"][0]
+                    return self._parse_advanced_hotel_info(result)
+            
+            return {"status": "error", "message": "No data returned from Advanced API"}
+            
+        except Exception as e:
+            logger.error(f"Advanced scan failed: {e}")
+            return {"status": "error", "message": str(e)}
 
     async def fetch_price(
         self,
@@ -157,7 +354,7 @@ class DataForSEOProvider(HotelDataProvider):
             # Prepare task payload for DataForSEO.
             # We use the 'keyword' based approach which is most reliable for specific hotels.
             post_data = [{
-                "location_name": location,
+                "location_name": self._normalize_location(location),
                 "language_code": "en",
                 "keyword": hotel_name,
                 "check_in": check_in.strftime("%Y-%m-%d"),
@@ -167,9 +364,7 @@ class DataForSEOProvider(HotelDataProvider):
                 "limit": 1
             }]
 
-            # [KAIZEN] Removed Live Queue usage to optimize cost (81% savings)
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                # Use Standard/Priority Task POST instead of Live
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_searches/task_post",
                     json=post_data
@@ -181,7 +376,6 @@ class DataForSEOProvider(HotelDataProvider):
                     return {"status": "error", "error": f"{res_json.get('status_message')}"}
 
                 task = res_json.get("tasks", [{}])[0]
-                # Note: fetch_price now returns a 'pending' status because it moved to async
                 return {
                     "status": "pending",
                     "task_id": task.get("id"),
@@ -216,7 +410,7 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/task_post",
+                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
                     json=post_data
                 )
                 res_json = response.json()
@@ -240,31 +434,27 @@ class DataForSEOProvider(HotelDataProvider):
     # ===== Task API (Async) Implementation =====
 
     async def post_price_tasks(self, task_params: List[Dict[str, Any]]) -> Optional[List[Dict[str, Any]]]:
-        """
-        Submits multiple hotel search tasks to DataForSEO.
-        Returns a list of Task IDs for successfully accepted tasks only.
-        
-        IMPORTANT: The top-level status_code (20000) only means the API received
-        the request. Individual tasks may still be rejected with per-task errors
-        like 40501 (Invalid Field). We must check each task's status_code.
-        """
+        """Submits multiple hotel search tasks to DataForSEO."""
         if not self.login or not self.password or not task_params:
             return None
 
         auth = (self.login, self.password)
         
         # Map extraction_depth to limit in payload mapping
-        for task in task_params:
+        modified_params = []
+        for t in task_params:
+            task = t.copy()
             if "extraction_depth" in task:
                 task["limit"] = task.pop("extraction_depth")
             elif "limit" not in task:
                 task["limit"] = 100
+            modified_params.append(task)
         
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_searches/task_post",
-                    json=task_params
+                    json=modified_params
                 )
                 res_json = response.json()
                 
@@ -272,30 +462,26 @@ class DataForSEOProvider(HotelDataProvider):
                     logger.error(f"DataForSEO Task POST Failed: {res_json.get('status_message')}")
                     return None
                 
-                # Check each task individually - status 20100 = "Task Created"
-                accepted_ids = []
-                rejected_count = 0
-                for task in res_json.get("tasks", []):
-                    task_status = task.get("status_code")
-                    if task_status == 20100:
-                        task_id = task.get("id")
-                        if task_id:
-                            accepted_ids.append(task_id)
-                    else:
-                        rejected_count += 1
-                        logger.warning(
-                            f"DataForSEO task rejected: {task_status} - {task.get('status_message')} "
-                            f"(keyword: {task.get('data', {}).get('keyword', 'unknown')})"
-                        )
-                
-                if rejected_count > 0:
-                    logger.warning(f"DataForSEO: {rejected_count}/{len(res_json.get('tasks', []))} tasks were rejected")
-                
-                # Return the full task list for more detailed tracking
-                return res_json.get("tasks", []) if accepted_ids else None
+                return res_json.get("tasks", [])
         except Exception as e:
             logger.error(f"DataForSEO post_price_tasks error: {e}")
             return None
+
+    async def post_info_tasks(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Batch posts hotel metadata tasks to DataForSEO."""
+        if not self.login or not self.password: return []
+        auth = (self.login, self.password)
+        try:
+            async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
+                    json=tasks
+                )
+                res_json = response.json()
+                return res_json.get("tasks", [])
+        except Exception as e:
+            logger.error(f"DataForSEO info POST error: {e}")
+            return []
 
     async def submit_hotel_scan_batch(
         self,
@@ -303,152 +489,134 @@ class DataForSEOProvider(HotelDataProvider):
         hotel_ids: List[str],
         check_in: str,
         check_out: str,
-        batch_type: str = "scheduled_pulse"
+        batch_type: str = "scheduled_pulse",
+        deep_scan: bool = False
     ) -> int:
         """
         High-level batch submission for the system heartbeat.
-        
-        This method is the core of the background scanning system. It:
-        1. Resolves hotel IDs into names/locations/tokens.
-        2. Generates internal UUIDs for each scan task (used as 'tag' in DataForSEO).
-        3. Breaks hotels into chunks of 100 (API limit) and posts them.
-        4. Registers a 'scan_batch' in the database for UI tracking.
-        5. Persists individual 'scan_tasks' cross-linking our UUID to DataForSEO task IDs.
-        
-        Args:
-            db: Supabase client (usually service role for background).
-            hotel_ids: List of hotel IDs to scan.
-            check_in/out: Date strings in ISO format.
-            batch_type: Metadata label for the batch.
-            
-        Returns:
-            The number of successfully submitted and registered tasks.
+        If deep_scan=True, it submits both Pricing AND Metadata/Sentiment tasks.
         """
         if not hotel_ids:
             return 0
 
         # 1. Fetch hotel metadata for keywords
         try:
-            hotels_res = db.table("hotels").select("id, name, location, property_token") \
+            hotels_res = db.table("hotels").select("id, name, location, property_token, serp_api_id") \
                 .in_("id", hotel_ids) \
                 .execute()
             
-            hotel_map = {str(h["id"]): h for h in (hotels_res.data or [])}
+            hotels = hotels_res.data or []
         except Exception as e:
             logger.error(f"BatchSubmit: Failed to fetch metadata: {e}")
             return 0
 
-        # 2. Prepare Task Params
-        task_params = []
-        hotel_task_map = {} # Maps internal UUID to hotel_id for later matching
+        hotel_task_map = {}
+        price_task_params = []
+        info_task_params = []
         
-        for hid in hotel_ids:
-            hotel = hotel_map.get(str(hid))
-            if not hotel:
-                continue
+        for hotel in hotels:
+            hid = str(hotel.get("id"))
             
-            # [KAIZEN 2026] Use property_token for pinpoint accuracy if available
-            keyword = hotel.get("property_token")
+            # [KAIZEN 2026] Prioritize serp_api_id (Google Hotel ID) for absolute accuracy
+            keyword = hotel.get("serp_api_id")
+            if not keyword:
+                keyword = hotel.get("property_token")
+            
             if not keyword:
                 keyword = f"{hotel['name']} {hotel['location']}"
             
             loc = hotel.get("location") or "Turkiye"
             normalized_loc = self._normalize_location(loc)
 
-            # Create a unique tag for this specific hotel scan
-            scan_task_uuid = str(uuid.uuid4())
-            hotel_task_map[scan_task_uuid] = hid
-            
-            task_params.append({
+            # Price Task (Always submitted)
+            price_uuid = str(uuid.uuid4())
+            hotel_task_map[price_uuid] = hid
+            price_task_params.append({
                 "keyword": keyword,
                 "location_name": normalized_loc,
-                "language_name": "English", # standard for hotel searches
+                "language_name": "English",
                 "check_in": check_in,
                 "check_out": check_out,
                 "currency": "TRY",
-                "tag": scan_task_uuid
+                "tag": price_uuid
             })
 
-        if not task_params:
-            return 0
+            # Info Task (Only if deep_scan)
+            if deep_scan:
+                info_uuid = str(uuid.uuid4())
+                hotel_task_map[info_uuid] = hid
+                
+                # Correct key for hotel_info is 'hotel_identifier', not 'keyword'
+                # unless we are doing a keyword search, but with property_token it must be hotel_identifier.
+                info_task_params.append({
+                    "hotel_identifier": keyword if (hotel.get("serp_api_id") or hotel.get("property_token")) else None,
+                    "keyword": None if (hotel.get("serp_api_id") or hotel.get("property_token")) else keyword,
+                    "location_name": normalized_loc,
+                    "language_name": "English",
+                    "tag": info_uuid
+                })
 
-        # 3. Post to DataForSEO in Chunks (DataForSEO limit is 100 per POST)
         CHUNK_SIZE = 100
-        all_tasks = []
+        total_submitted = 0
         
-        for i in range(0, len(task_params), CHUNK_SIZE):
-            chunk = task_params[i:i + CHUNK_SIZE]
-            logger.info(f"Posting scan chunk {i//CHUNK_SIZE + 1} ({len(chunk)} hotels)")
-            chunk_tasks = await self.post_price_tasks(chunk)
-            if chunk_tasks:
-                all_tasks.extend(chunk_tasks)
+        # Prices
+        for i in range(0, len(price_task_params), CHUNK_SIZE):
+            chunk = price_task_params[i:i + CHUNK_SIZE]
+            res = await self.post_price_tasks(chunk)
+            if res:
+                total_submitted += await self._register_scan_tasks(db, res, hotel_task_map, "price_search")
 
-        if not all_tasks:
-            return 0
+        # Info
+        if info_task_params:
+            for i in range(0, len(info_task_params), CHUNK_SIZE):
+                chunk = info_task_params[i:i + CHUNK_SIZE]
+                res = await self.post_info_tasks(chunk)
+                if res:
+                    total_submitted += await self._register_scan_tasks(db, res, hotel_task_map, "hotel_info")
 
-        tasks = all_tasks
+        return total_submitted
 
-        # 4. Register in scan_tasks for persistence pipeline
+    async def _register_scan_tasks(self, db: Client, tasks: List[Dict[str, Any]], mapping: Dict[str, str], task_type: str) -> int:
+        """Helper to register external tasks into internal scan_tasks table."""
         try:
-            # Create a batch record for tracking
             batch_res = db.table("scan_batches").insert({
                 "total_count": len(tasks),
-                "status": "processing"
+                "status": "processing",
+                "batch_type": task_type
             }).execute()
             batch_id = batch_res.data[0]["id"] if batch_res.data else None
 
             scan_tasks = []
             for t in tasks:
                 if t.get("status_code") == 20100:
-                    # Retrieve our generated UUID from 'tag'
-                    # Warning: DataForSEO API returns the original request data inside 'data' field
                     req_data = t.get("data", {})
                     tag = req_data.get("tag")
-                    
-                    if tag and tag in hotel_task_map:
+                    if tag and tag in mapping:
                         scan_tasks.append({
-                            "id": tag, # We reuse our generated UUID as DB primary key
+                            "id": tag,
                             "external_task_id": t["id"],
-                            "hotel_id": hotel_task_map[tag],
+                            "hotel_id": mapping[tag],
                             "batch_id": batch_id,
-                            "status": "pending"
+                            "status": "pending",
+                            "task_type": task_type
                         })
             
             if scan_tasks:
                 db.table("scan_tasks").insert(scan_tasks).execute()
                 return len(scan_tasks)
+            return 0
         except Exception as e:
-            logger.error(f"BatchSubmit: Failed to register tasks/batch in DB: {e}")
-        
-        return 0
+            logger.error(f"Failed to register scan tasks: {e}")
+            return 0
 
     async def fetch_task_results(self, task_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves results for price search tasks."""
         return await self._fetch_results_generic(task_id, "hotel_searches")
 
     async def fetch_hotel_info_results(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves results for rich metadata (hotel_info) tasks."""
-        raw = await self._fetch_results_generic(task_id, "hotel_info")
-        if not raw or raw.get("status") != "success":
-            return raw
-            
-        # Transform hotel_info specific fields
-        items = raw.get("items", [])
-        if not items: return raw
-        
-        target = items[0]
-        return {
-            "status": "success",
-            "name": target.get("title"),
-            "description": target.get("description"),
-            "stars": target.get("stars"),
-            "rating": target.get("rating", {}).get("value"),
-            "amenities": target.get("amenities"),
-            "check_in": target.get("check_in_time"),
-            "check_out": target.get("check_out_time"),
-            "property_token": target.get("hotel_identifier"),
-            "raw_data": target
-        }
+        """Retrieves results for rich metadata (hotel_info) tasks from advanced endpoint."""
+        raw = await self._fetch_results_generic(task_id, "hotel_info/advanced")
+        return raw
 
     async def _fetch_results_generic(self, task_id: str, endpoint: str) -> Optional[Dict[str, Any]]:
         """Internal helper for GET results."""
@@ -465,30 +633,46 @@ class DataForSEOProvider(HotelDataProvider):
                     return None
 
                 tasks = res_json.get("tasks", [])
-                if not tasks:
-                    return None
+                if not tasks: return None
                     
                 task = tasks[0]
-                if not task.get("result"):
-                    return {"status": "empty"}
+                if not task.get("result"): return {"status": "empty"}
 
                 result = task["result"][0]
                 items = result.get("items", [])
                 
-                # Default parsing for prices
-                if endpoint == "hotel_searches" and items:
+                if (endpoint == "hotel_searches" or endpoint == "hotel_search") and items:
                     target = items[0]
                     prices_data = target.get("prices", {})
                     reviews_data = target.get("reviews", {})
                     
-                    # Normalize room types if present
+                    # Room Types Extraction
                     room_types_raw = target.get("room_types", [])
-                    normalized_rooms = []
-                    for rt in room_types_raw:
-                        normalized_rooms.append(self._normalize_room_name(rt))
+                    normalized_rooms = [self._normalize_room_name(rt) for rt in room_types_raw]
+
+                    # OTA Parity / All Prices
+                    raw_prices = prices_data.get("items", []) or []
+                    PRIORITY_OTAS = ["Booking.com", "Expedia", "Agoda", "Hotels.com", "Airbnb", "Otelz.com", "Jolly Tur"]
+                    
+                    def ota_priority(item):
+                        # DataForSEO might use 'source' or 'vendor'
+                        source = item.get("source") or item.get("vendor") or ""
+                        try:
+                            for idx, prio in enumerate(PRIORITY_OTAS):
+                                if prio.lower() in source.lower():
+                                    return idx
+                            return 999
+                        except Exception:
+                            return 999
+                    
+                    sorted_prices = sorted(raw_prices, key=ota_priority)
+                    
+                    # Sentiment Fallback
+                    search_sentiment = target.get("reviews_breakdown", {}).get("sentiment", [])
 
                     return {
                         "status": "success",
+                        "task_type": "price_search",
                         "price": prices_data.get("price", 0.0),
                         "currency": prices_data.get("currency", "USD"),
                         "property_token": target.get("hotel_identifier"),
@@ -498,7 +682,21 @@ class DataForSEOProvider(HotelDataProvider):
                         "reviews": reviews_data.get("votes_count", 0),
                         "room_types": normalized_rooms,
                         "tag": task.get("data", {}).get("tag"),
+                        "all_prices": sorted_prices,
+                        "parity_offers": sorted_prices,
+                        "sentiment_breakdown": search_sentiment,
+                        "raw_data": target, # Full raw item for archival
                         "items": items
+                    }
+                
+                if "hotel_info" in endpoint and items:
+                    # Unified Parsing for Advanced Hotel Info
+                    parsed = self._parse_advanced_hotel_info(result)
+                    return {
+                        "status": "success",
+                        "task_type": "hotel_info",
+                        "tag": task.get("data", {}).get("tag"),
+                        **parsed
                     }
                 
                 return {"status": "success", "items": items, "tag": task.get("data", {}).get("tag")}
@@ -507,53 +705,44 @@ class DataForSEOProvider(HotelDataProvider):
             return None
 
     async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Implementation of abstract method from HotelDataProvider.
-        Attempts to fetch from searches first, then info.
-        """
-        # 1. Try hotel_searches (most common for pricing)
+        """Implementation of abstract method from HotelDataProvider."""
         res = await self.fetch_task_results(task_id)
-        if res and res.get("status") == "success":
-            return res
+        if res and res.get("status") == "success": return res
         
-        # 2. Try hotel_info
         res_info = await self.fetch_hotel_info_results(task_id)
-        if res_info and res_info.get("status") == "success":
-            return res_info
+        if res_info and res_info.get("status") == "success": return res_info
             
         return res or res_info
 
     async def get_completed_tasks(self) -> List[str]:
-        """
-        Returns a list of Task IDs that are ready for retrieval.
-        Used by the monitor_service process_system_scans.
-        """
-        return await self.get_ready_price_tasks()
-
-    async def get_ready_price_tasks(self) -> List[str]:
-        return await self._get_ready_tasks_generic("hotel_searches")
-
-    async def get_ready_info_tasks(self) -> List[str]:
-        return await self._get_ready_tasks_generic("hotel_info")
+        """Returns a list of Task IDs that are ready for retrieval across all endpoints."""
+        tasks = await asyncio.gather(
+            self._get_ready_tasks_generic("hotel_searches"),
+            self._get_ready_tasks_generic("hotel_info/advanced"),
+            return_exceptions=True
+        )
+        
+        all_ids = []
+        for res in tasks:
+            if isinstance(res, list):
+                all_ids.extend(res)
+        return all_ids
 
     async def _get_ready_tasks_generic(self, endpoint: str) -> List[str]:
+        """Internal helper for pooling ready tasks."""
         if not self.login or not self.password: return []
         auth = (self.login, self.password)
         try:
-            async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+            async with httpx.AsyncClient(auth=auth, timeout=30.0) as client:
                 response = await client.get(f"{self.api_url}/business_data/google/{endpoint}/tasks_ready")
                 res_json = response.json()
-                if res_json.get("status_code") != 20000: return []
-                
-                ready_ids = []
-                for wrapper in res_json.get("tasks", []):
-                    results = wrapper.get("result")
-                    if results:
-                        ready_ids.extend([item.get("id") for item in results if item.get("id")])
-                return ready_ids
+                if res_json.get("status_code") == 20000:
+                    return [t.get("id") for t in res_json.get("tasks", []) if t.get("id")]
+                return []
         except Exception as e:
-            logger.error(f"DataForSEO ready check error ({endpoint}): {e}")
+            logger.error(f"DataForSEO ready tasks error ({endpoint}): {e}")
             return []
 
-# Singleton instance for system-wide use
+# Global instance for service usage
 dataforseo_provider = DataForSEOProvider()
+

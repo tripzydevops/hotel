@@ -78,16 +78,25 @@ async def record_system_pulse(
     Logs a system event (pulse or mesh activity) to query_logs for feed visibility.
     """
     try:
-        db.table("query_logs").insert({
-            "user_id": "00000000-0000-0000-0000-000000000000", # System User
+        res = db.table("query_logs").insert({
+            "user_id": None, # System records have no owner
             "action_type": action_type,
             "status": status,
             "status_detail": status_detail,
             "hotel_name": "System Mesh" if action_type == "mesh_activity" else "Antigravity OS",
             "created_at": datetime.now(timezone.utc).isoformat()
         }).execute()
+        
+        # KAİZEN: Handle silent Failures
+        # postgrest-py execute() returns an object that might have 'error' populated
+        # but doesn't necessarily raise an exception.
+        if hasattr(res, "error") and res.error:
+            logger.error(f"Pulse recording failed (PostgREST Error): {res.error}")
+        elif not res.data:
+            logger.warning(f"Pulse recording returned no data for {action_type}")
+            
     except Exception as e:
-        logger.debug(f"Pulse recording failed: {e}")
+        logger.error(f"Pulse recording exception: {e}", exc_info=True)
 
 
 async def trigger_monitor_logic(
@@ -737,15 +746,26 @@ async def run_system_heartbeat(db: Client):
         s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
 
         # 3. Fetch all unique monitored hotels
+        # 1. Update Admin Settings immediately (Optimistic Locking)
+        # This prevents the 5-minute scheduler loop from retrying if this execution is slow.
+        next_scan = now + timedelta(hours=interval)
+        try:
+            db.table("admin_settings").update({
+                "last_global_scan_at": now.isoformat(),
+                "next_global_scan_at": next_scan.isoformat()
+            }).eq("id", settings["id"]).execute()
+        except Exception as e:
+            s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp (pre-submission): {e}")
+
+        # 2. Get monitored hotels
         monitored_res = (
             db.table("user_hotels")
             .select("hotel_id, hotels(name, location, property_token, serp_api_id)")
             .eq("is_monitored", True)
             .execute()
         )
-
         if not monitored_res.data:
-            s_logger.info("Heartbeat: No monitored hotels found.")
+            s_logger.info("Scheduler: No monitored hotels found.")
             return
 
         # Deduplicate by Unique Token (property_token) to save credits
@@ -777,33 +797,24 @@ async def run_system_heartbeat(db: Client):
         s_logger.info(f"Heartbeat: Submitting {len(criteria_groups)} unique search tasks (from {len(monitored_res.data)} monitored records)...")
         
         # 4. Use the optimized batch submission logic
-        # We prepare the list of hotel_ids (using the primary variant for each identity)
         target_hotel_ids = [h_ids[0] for h_ids in criteria_groups.values()]
         
-        # Determine scan window (Today -> Tomorrow)
         check_in = date.today().strftime("%Y-%m-%d")
         check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
         
-        # Register and Post the Batch
         success_count = await dataforseo_provider.submit_hotel_scan_batch(
             db=db,
             hotel_ids=target_hotel_ids,
             check_in=check_in,
             check_out=check_out,
-            batch_type="scheduled_pulse"
+            batch_type="scheduled_pulse",
+            deep_scan=True
         )
 
-        s_logger.info(f"Heartbeat: Successfully posted {success_count}/{len(target_hotel_ids)} tracking units via Batch Processor.")
-
-        # 7. Update Admin Settings
-        next_scan = now + timedelta(hours=interval)
-        try:
-            db.table("admin_settings").update({
-                "last_global_scan_at": now.isoformat(),
-                "next_global_scan_at": next_scan.isoformat()
-            }).eq("id", settings["id"]).execute()
-        except Exception as e:
-            s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
+        s_logger.info(f"Heartbeat: Successfully posted {success_count}/{len(target_hotel_ids)} tracking units.")
+        
+        # 5. [VECTORIZED] Trigger high-speed processing of any ready tasks
+        await process_system_scans(db)
 
     except Exception as e:
         s_logger.error(f"Heartbeat Failure: {e}")
@@ -811,23 +822,9 @@ async def run_system_heartbeat(db: Client):
 
 async def process_system_scans(db: Client):
     """
-    The System Heartbeat. Called by the scheduler to maintain the 'Pulse'.
-    
-    This method performs three critical sub-routines:
-    1. CHECK READY TASKS: Queries DataForSEO for any background tasks that 
-       have finished processing.
-    2. PERSIST RESULTS: Retrieves data for ready tasks and saves them to 
-       'price_logs' and 'scan_tasks'.
-    3. SUBMIT NEW SCANS: Identifies hotels that haven't been scanned in 
-       > 4 hours (SCAN_PULSE_INTERVAL_HOURS) and submits them as new tasks.
-    
-    Returns:
-        A summary dictionary of submitted/processed counts.
+    The System Heartbeat Processor. Optimized for Batch Syncing.
     """
     s_logger = get_scheduler_logger()
-    catalog_results = []
-    catalog_hotels = [] # Will store full hotel objects
-    processed_hotel_ids = set()
     try:
         # 1. Get completed task IDs
         completed_ids = await dataforseo_provider.get_completed_tasks()
@@ -836,91 +833,60 @@ async def process_system_scans(db: Client):
 
         s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
         
-        # Unified Persistence Layer
-        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
-
+        # 2. Extract Task IDs and resolve Metadata in BULK
+        task_id_to_metadata = {} # tag -> {hotel_id, batch_id}
+        tags_to_resolve = []
         for tid in completed_ids:
-            try:
-                # 2. Fetch full results
-                result = await dataforseo_provider.fetch_task_results(tid)
-                if not result or result.get("status") != "success":
-                    s_logger.warning(f"Task Processor: API result failed for task {tid}. Status: {result.get('status') if result else 'None'}")
-                    continue
+            # We assume tag is the scan_task_id (UUID)
+            tags_to_resolve.append(tid)
 
-                # Kaizen: Tag contains scan_task_id (new) or session_id|hotel_id (old)
-                tag_raw = result.get("tag", "")
-                scan_task_id = None
-                h_id = None
-                batch_id = None
+        if tags_to_resolve:
+            tasks_res = db.table("scan_tasks").select("id, hotel_id, batch_id").in_("id", tags_to_resolve).execute()
+            for t in (tasks_res.data or []):
+                task_id_to_metadata[t["id"]] = t
 
-                if "|" in tag_raw:
-                    try:
-                        _, h_id = tag_raw.split("|", 1)
-                    except: h_id = tag_raw
-                else:
-                    scan_task_id = tag_raw
+        # Collector Buffer for Batch Processing
+        batch_results = [] # List of {hotel_id, result, scan_task_id, batch_id}
+        
+        # Parallel fetch for all completed tasks from DataForSEO
+        # polymorphic get_task_result handles both hotel_searches and hotel_info
+        fetch_tasks = [dataforseo_provider.get_task_result(tid) for tid in completed_ids]
+        all_results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
-                # 3. Resolve metadata from scan_tasks if applicable
-                if scan_task_id:
-                    task_res = db.table("scan_tasks").select("*").eq("id", scan_task_id).execute()
-                    if task_res.data:
-                        scan_task = task_res.data[0]
-                        h_id = scan_task["hotel_id"]
-                        batch_id = scan_task["batch_id"]
-                        
-                        if scan_task["status"] == "completed":
-                            continue # Already handled
-
-                price = result.get("price")
-                currency = result.get("currency")
+        for i, result in enumerate(all_results):
+            tid = completed_ids[i]
+            if isinstance(result, Exception):
+                s_logger.error(f"Task Processor: Error fetching task {tid}: {result}")
+                continue
                 
-                if not price or not h_id:
-                    if scan_task_id:
-                        db.table("scan_tasks").update({"status": "failed", "error_message": "No price found"}).eq("id", scan_task_id).execute()
-                        if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
-                    continue
+            if not result or result.get("status") != "success":
+                continue
 
-                # UUID Validation for h_id
-                try:
-                    UUID(h_id)
-                except ValueError:
-                    s_logger.warning(f"Task Processor: Skipping task {tid} due to invalid hotel UUID in tag: {h_id}")
-                    continue
+            tag_raw = result.get("tag", tid) # Fallback to tid if tag missing
+            meta = task_id_to_metadata.get(tag_raw)
+            
+            if not meta:
+                # Last resort: if not in metadata map, we can't sync it reliably
+                continue
 
-                # 4. Perform synchronized update
-                success = await sync_extraction_result(db, h_id, result, scan_task_id=scan_task_id, batch_id=batch_id, source="Polling")
-                
-                if success:
-                    catalog_results.append(result)
-                    # We need the hotel metadata for embeddings. 
-                    # sync_extraction_result already fetched it, but we'll fetch once for catalog if not already there.
-                    if h_id not in processed_hotel_ids:
-                        h_res = db.table("hotels").select("id, name, location, stars").eq("id", h_id).execute()
-                        if h_res.data:
-                            catalog_hotels.append(h_res.data[0])
-                            processed_hotel_ids.add(h_id)
+            batch_results.append({
+                "hotel_id": meta["hotel_id"],
+                "result": result,
+                "scan_task_id": meta["id"],
+                "batch_id": meta.get("batch_id")
+            })
 
-                    # Update scan task status if applicable
-                    if scan_task_id:
-                        db.table("scan_tasks").update({"status": "completed"}).eq("id", scan_task_id).execute()
-                        if batch_id: db.rpc("increment_batch_success", {"b_id": batch_id}).execute()
-
-            except Exception as te:
-                s_logger.error(f"Task Processor: Error processing task {tid}: {te}")
-                if scan_task_id:
-                    db.table("scan_tasks").update({"status": "failed", "error_message": str(te)}).eq("id", scan_task_id).execute()
-                    if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
-
-        # Finalize catalog update after processing all tasks
-        if catalog_results:
-            try:
-                s_logger.info(f"Task Processor: Syncing room type catalog for {len(catalog_results)} hotels...")
-                await persistence.batch_update_room_type_catalog(catalog_results, catalog_hotels)
-            except Exception as catalog_e:
-                s_logger.error(f"Task Processor: Catalog sync failed: {catalog_e}")
+        if batch_results:
+            s_logger.info(f"Task Processor: Syncing {len(batch_results)} results in vectorized batch...")
+            success = await sync_extraction_results_batch(db, batch_results)
+            if success:
+                s_logger.info(f"Task Processor: Successfully synced {len(batch_results)} results.")
+            else:
+                s_logger.error("Task Processor: Batch sync failed.")
 
     except Exception as e:
         s_logger.error(f"Task Processor General Failure: {e}")
+
 
 async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, initiator_id: Optional[UUID] = None):
     """
@@ -1030,7 +996,7 @@ async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, An
             return False
 
         # 2. Get hotel variation context
-        primary_res = db.table("hotels").select("id, name, location, property_token, description, amenities").eq("id", hotel_id).single().execute()
+        primary_res = db.table("hotels").select("id, name, location, property_token").eq("id", hotel_id).single().execute()
         if not primary_res.data:
             logger.warning(f"Sync: Hotel {hotel_id} not found.")
             return False
@@ -1042,54 +1008,29 @@ async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, An
 
         # 3. Find variations sharing the same identity
         if prop_token:
-            matching_hotels = db.table("hotels").select("id, last_price").eq("property_token", prop_token).execute()
+            matching_hotels = db.table("hotels").select("id").eq("property_token", prop_token).execute()
         else:
-            matching_hotels = db.table("hotels").select("id, last_price").eq("name", h_name).eq("location", h_location).execute()
+            matching_hotels = db.table("hotels").select("id").eq("name", h_name).eq("location", h_location).execute()
         
-        if not matching_hotels.data:
-            matching_hotels.data = [{"id": hotel_id, "last_price": 0}]
+        target_ids = [h["id"] for h in matching_hotels.data] if matching_hotels.data else [hotel_id]
 
-        for h_obj in matching_hotels.data:
-            target_id = h_obj["id"]
+        # 4. Use ScanPersistenceService for "Whole Package" persistence
+        from backend.services.scan_persistence import ScanPersistenceService
+        from backend.utils.db import get_supabase
+        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
+        
+        for target_id in target_ids:
+            # This call now handles: Price Logs (Parity/Market), Hotel Metadata, Sentiment History, and Room Catalog
+            await persistence.sync_from_external_provider(
+                db=db,
+                hotel_id=target_id,
+                result=result,
+                scan_task_id=scan_task_id,
+                batch_id=batch_id,
+                source=source
+            )
             
-            # 4. Update Hotel record
-            update_data = {
-                "last_price": float(price),
-                "currency": currency,
-                "last_scan_at": datetime.now(timezone.utc).isoformat(),
-                "status": "active"
-            }
-            
-            # Rich data if present
-            if result.get("rating"): update_data["rating"] = result.get("rating")
-            if result.get("stars"): update_data["stars"] = result.get("stars")
-            if result.get("reviews"): update_data["review_count"] = result.get("reviews")
-            if result.get("property_token"): update_data["property_token"] = result.get("property_token")
-
-            db.table("hotels").update(update_data).eq("id", target_id).execute()
-
-            # 5. Log Price History
-            db.table("price_logs").insert({
-                "hotel_id": target_id,
-                "price": float(price),
-                "currency": currency,
-                "parity_offers": result.get("parity_offers") or result.get("offers", []),
-                "room_types": result.get("room_types", []),
-                "recorded_at": datetime.now(timezone.utc).isoformat(),
-                "source": f"DataForSEO_{source}"
-            }).execute()
-
-            # 6. Update Room Type Catalog (Instant Sync)
-            try:
-                # We reuse the same persistent service architecture
-                persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
-                rooms = result.get("room_types", [])
-                if rooms:
-                    await persistence.update_room_type_catalog(target_id, rooms, hotel_context=hotel_ref)
-            except Exception as catalog_e:
-                logger.warning(f"Sync: Room catalog update skipped for {target_id}: {catalog_e}")
-
-            # 7. Trigger Notifications
+            # 5. Trigger Notifications (Heartbeat)
             await _trigger_heartbeat_notifications(db, target_id, float(price), currency)
 
         # 7. Update Task/Batch status
@@ -1107,6 +1048,224 @@ async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, An
                 if batch_id: db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
             except: pass
         return False
+
+
+async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, Any]]):
+    """
+    High-Performance Batch Sync. 
+    Processes multiple extraction results in minimal database roundtrips.
+    """
+    from backend.utils.logger import get_logger
+    logger = get_logger(__name__)
+    
+    if not batch_items:
+        return True
+
+    try:
+        # 1. Collect all Hotel IDs and validate
+        h_ids = []
+        hotel_updates = []
+        price_logs = []
+        sentiment_history = []
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        # AGGREGATOR: Group results by hotel_id and MERGE them
+        # This handles when both pricing and info tasks return in the same batch
+        hotel_data_map = {} # hotel_id -> {merged_result, task_ids[]}
+        raw_archives = [] # List of {id, raw_results} for bulk update
+        completed_task_ids = [item["scan_task_id"] for item in batch_items if item.get("scan_task_id")]
+
+        for item in batch_items:
+            hid = str(item["hotel_id"])
+            h_ids.append(hid)
+            
+            res = item.get("result", {})
+            if not res or res.get("status") != "success":
+                continue
+
+            # Store Raw JSON for archival
+            if item.get("scan_task_id") and res.get("raw_data"):
+                raw_archives.append({
+                    "id": item["scan_task_id"],
+                    "raw_results": res["raw_data"]
+                })
+
+            if hid not in hotel_data_map:
+                hotel_data_map[hid] = {
+                    "res": res,
+                    "task_ids": [item.get("scan_task_id")]
+                }
+            else:
+                # Merge logic: favor non-empty lists/dicts
+                existing = hotel_data_map[hid]["res"]
+                merged = existing.copy()
+                for key, val in res.items():
+                    if val and (not merged.get(key) or (isinstance(val, list) and len(val) > len(merged.get(key, [])))):
+                        merged[key] = val
+                
+                hotel_data_map[hid]["res"] = merged
+                hotel_data_map[hid]["task_ids"].append(item.get("scan_task_id"))
+
+        # 2. Bulk Fetch Hotel Context (Tokens/Metadata)
+        hotels_res = db.table("hotels").select("id, name, location, property_token").in_("id", h_ids).execute()
+        if not hotels_res.data:
+            logger.warning(f"Batch Sync: No hotel records found for IDs {h_ids}")
+            return False
+        
+        logger.info(f"Batch Sync: Found {len(hotels_res.data)} hotels for sync.")
+        hotel_lookup = {str(h["id"]): h for h in hotels_res.data}
+        tokens = list(set([h["property_token"] for h in hotels_res.data if h.get("property_token")]))
+        
+        # 3. Find all variations sharing same tokens/names
+        variations_res = []
+        if tokens:
+            v_res = db.table("hotels").select("id, property_token, name, location").in_("property_token", tokens).execute()
+            variations_res = v_res.data or []
+        
+        # 4. Prepare Bulk Updates
+        hotel_updates = []
+        price_logs = []
+        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
+        
+        now_ts = datetime.now(timezone.utc).isoformat()
+        processed_variations = set()
+        
+        for hid, h_data in hotel_data_map.items():
+            h_ref = hotel_lookup.get(hid)
+            if not h_ref: continue
+            
+            res_data = h_data["res"]
+            price = float(res_data.get("price", 0))
+            currency = res_data.get("currency", "TRY")
+            
+            # Identify all targets for this specific result (primary + variations)
+            token = h_ref.get("property_token")
+            targets = [v for v in variations_res if v.get("property_token") == token] if token else [h_ref]
+            
+            for target in targets:
+                target_id = target["id"]
+                if target_id in processed_variations: continue
+                processed_variations.add(target_id)
+
+                # 1. Update Core Hotel Record
+                upd = {
+                    "id": target_id,
+                    "current_price": price if price > 0 else None,
+                    "name": target.get("name"),
+                    "location": target.get("location"),
+                    "last_scanned_at": now_ts
+                }
+
+                # Map all available metadata frommerged results
+                if res_data.get("rating"): upd["rating"] = res_data.get("rating")
+                if res_data.get("stars"): upd["stars"] = res_data.get("stars")
+                if res_data.get("reviews"): upd["review_count"] = res_data.get("reviews")
+                if res_data.get("reviews_count"): upd["review_count"] = res_data.get("reviews_count")
+                if res_data.get("description"): upd["description"] = res_data.get("description")
+                if res_data.get("amenities"): upd["amenities"] = res_data.get("amenities")
+                if res_data.get("check_in_time"): upd["check_in_time"] = res_data.get("check_in_time")
+                if res_data.get("check_out_time"): upd["check_out_time"] = res_data.get("check_out_time")
+                if res_data.get("sentiment_breakdown"): upd["sentiment_breakdown"] = res_data.get("sentiment_breakdown")
+                if res_data.get("room_types"): upd["room_types"] = res_data.get("room_types")
+
+                hotel_updates.append(upd)
+
+                # Price Log Entry (Only if we have a price)
+                if price > 0:
+                    price_logs.append({
+                        "hotel_id": target_id,
+                        "price": price,
+                        "currency": currency,
+                        "parity_offers": res_data.get("parity_offers") or res_data.get("offers", []),
+                        "market_offers": res_data.get("all_prices") or res_data.get("market_offers", []),
+                        "room_types": res_data.get("room_types", []),
+                        "recorded_at": now_ts,
+                        "source": "DataForSEO_Batch"
+                    })
+
+                # Sentiment History
+                if res_data.get("sentiment_breakdown"):
+                    sentiment_history.append({
+                        "hotel_id": target_id,
+                        "rating": res_data.get("rating"),
+                        "review_count": res_data.get("reviews") or res_data.get("reviews_count"),
+                        "sentiment_breakdown": res_data.get("sentiment_breakdown"),
+                        "recorded_at": now_ts
+                    })
+
+        # 5. Execute Bulk DB Operations
+        if hotel_updates:
+            db.table("hotels").upsert(hotel_updates).execute()
+            logger.info(f"Batch Sync: Updated {len(hotel_updates)} hotel records.")
+
+        if price_logs:
+            db.table("price_logs").insert(price_logs).execute()
+            logger.info(f"Batch Sync: Inserted {len(price_logs)} price history logs.")
+
+        if sentiment_history:
+            db.table("sentiment_history").insert(sentiment_history).execute()
+            logger.info(f"Batch Sync: Inserted {len(sentiment_history)} sentiment history entries.")
+
+        # 6. Update Task Statuses
+        if completed_task_ids:
+            # Perform atomic status update
+            db.table("scan_tasks").update({"status": "completed"}).in_("id", completed_task_ids).execute()
+            
+            # Perform bulk archival of raw results
+            if raw_archives:
+                db.table("scan_tasks").upsert(raw_archives).execute()
+                logger.info(f"Batch Sync: Archived {len(raw_archives)} raw result documents.")
+            
+            # Update batch progress using RPC or fallback
+            batch_ids = list(set([item["batch_id"] for item in batch_items if item.get("batch_id")]))
+            for bid in batch_ids:
+                try:
+                    db.rpc("increment_batch_success", {"b_id": bid}).execute()
+                except Exception as rpc_err:
+                    logger.warning(f"Batch Sync: RPC increment_batch_success failed (might not exist): {rpc_err}")
+
+        # 7. [VECTORIZED] Concurrently trigger room catalog updates and notification checks
+        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
+        post_sync_tasks = []
+        
+        # Prepare Batch Catalog Sync
+        scraper_results_for_catalog = []
+        for hid, h_data in hotel_data_map.items():
+            res_data = h_data["res"]
+            rooms = res_data.get("room_types", [])
+            if rooms:
+                scraper_results_for_catalog.append({
+                    "hotel_id": hid,
+                    "room_types": rooms
+                })
+        
+        if scraper_results_for_catalog:
+            hotels_context = list(hotel_lookup.values())
+            # Use high-performance vectorized batch update
+            post_sync_tasks.append(persistence.batch_update_room_type_catalog(scraper_results_for_catalog, hotels_context))
+
+        # Individual Notification Checks
+        for hid, h_data in hotel_data_map.items():
+            h_ref = hotel_lookup.get(hid)
+            res_data = h_data["res"]
+            if h_ref:
+                price = float(res_data.get("price", 0))
+                currency = res_data.get("currency", "TRY")
+                if price > 0:
+                    post_sync_tasks.append(_trigger_heartbeat_notifications(db, hid, price, currency))
+
+        if post_sync_tasks:
+            # We use return_exceptions=True to ensure one failure doesn't stop others
+            await asyncio.gather(*post_sync_tasks, return_exceptions=True)
+            logger.info(f"Batch Sync: Completed {len(post_sync_tasks)} post-sync operations (rooms/notifs).")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Batch Sync Failure: {e}")
+        # traceback.print_exc()
+        return False
+
 
 
 if __name__ == "__main__":
