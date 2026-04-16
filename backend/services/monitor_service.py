@@ -841,9 +841,18 @@ async def process_system_scans(db: Client):
             tags_to_resolve.append(tid)
 
         if tags_to_resolve:
-            tasks_res = db.table("scan_tasks").select("id, hotel_id, batch_id").in_("id", tags_to_resolve).execute()
+            # We search for either our internal ID or the provider's task ID
+            tags_quoted = [f'"{t}"' for t in tags_to_resolve]
+            tasks_res = db.table("scan_tasks")\
+                .select("id, external_task_id, hotel_id, batch_id")\
+                .or_(f"id.in.({','.join(tags_quoted)}),external_task_id.in.({','.join(tags_quoted)})")\
+                .execute()
+            
             for t in (tasks_res.data or []):
+                # Map by both IDs to ensure resolution
                 task_id_to_metadata[t["id"]] = t
+                if t.get("external_task_id"):
+                    task_id_to_metadata[t["external_task_id"]] = t
 
         # Collector Buffer for Batch Processing
         batch_results = [] # List of {hotel_id, result, scan_task_id, batch_id}
@@ -1100,7 +1109,9 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 existing = hotel_data_map[hid]["res"]
                 merged = existing.copy()
                 for key, val in res.items():
-                    if val and (not merged.get(key) or (isinstance(val, list) and len(val) > len(merged.get(key, [])))):
+                    # Allow 0 for numeric fields (price), otherwise favor non-empty
+                    is_valid_zero = (key == "price" and val == 0)
+                    if (val or is_valid_zero) and (not merged.get(key) or (isinstance(val, list) and len(val) > len(merged.get(key, [])))):
                         merged[key] = val
                 
                 hotel_data_map[hid]["res"] = merged
@@ -1150,7 +1161,7 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 # 1. Update Core Hotel Record
                 upd = {
                     "id": target_id,
-                    "current_price": price if price > 0 else None,
+                    "current_price": price,
                     "name": target.get("name"),
                     "location": target.get("location"),
                     "last_scanned_at": now_ts
@@ -1170,8 +1181,8 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
 
                 hotel_updates.append(upd)
 
-                # Price Log Entry (Only if we have a price)
-                if price > 0:
+                # Price Log Entry (Always log if we have a successful scan, even if price is 0)
+                if price >= 0:
                     price_logs.append({
                         "hotel_id": target_id,
                         "price": price,

@@ -4,7 +4,7 @@
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",
-      "computedHash": "d31e234f0c90694a670222cdd1dafa853e051d7066beda389f1097c22dadd461"
+      "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
     },
     "gemini-api-dev": {
       "source": "google-gemini/gemini-skills",
@@ -19,12 +19,22 @@
     "insforge": {
       "source": "insforge/agent-skills",
       "sourceType": "github",
-      "computedHash": "755ba8fc441514afdf7120211a019765b6a5f53df1edd6c0f185b09eb89a7f85"
+      "computedHash": "f8b94c0722ae6eba0b2fa83dbdaf2cef06dd59474c0630061f240c248b4d10c5"
     },
     "insforge-cli": {
       "source": "insforge/agent-skills",
       "sourceType": "github",
-      "computedHash": "ccd4ce17dd3e473a075722d2bb4badc3dc508ea96971a96cb2a3034a5053336e"
+      "computedHash": "9eefd32f8ed7195969d5fac788baa7ef99b452892e5ea9b00eb65e08a3ebece6"
+    },
+    "insforge-debug": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "computedHash": "f1f20f82cba657771767c563480f07efd3ab633566ccdcfccebce26039bbfce2"
+    },
+    "insforge-integrations": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "computedHash": "421b6eb1091930a437c223aae1d6547f3ee4d2e5cfef45e41a3e2b32a2c27f7e"
     }
   }
 }

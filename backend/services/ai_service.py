@@ -26,7 +26,7 @@ class MarketIntelligenceService:
 
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.model_name = "gemini-2.0-flash"  # Use standard flash model
+        self.model_name = "models/gemini-3-flash-preview"
         self.client = None
         
         if HAS_GENAI and self.api_key:
@@ -82,13 +82,16 @@ class MarketIntelligenceService:
         """
 
         try:
-            interaction = self.client.interactions.create(
+            response = self.client.models.generate_content(
                 model=self.model_name,
-                input=prompt
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
             )
             
-            response_text = interaction.outputs[-1].text
-            # Clean up potential markdown formatting if Gemini includes it
+            response_text = response.text
+            # Clean up potential markdown formatting if Gemini includes it (fallback)
             if "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
             elif "```" in response_text:
@@ -112,9 +115,9 @@ class MarketIntelligenceService:
             return None
         
         try:
-            # Using text-embedding-004 which is standard for current Gemini applications
+            # Using text-embedding-004 with models/ prefix
             result = self.client.models.embed_content(
-                model="text-embedding-004",
+                model="models/text-embedding-004",
                 contents=text
             )
             return result.embeddings[0].values

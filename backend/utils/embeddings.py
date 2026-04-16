@@ -28,43 +28,53 @@ def get_genai_client():
     return _client
 
 
-async def get_embedding(text: str, model: str = "gemini-embedding-001") -> List[float]:
+async def get_embedding(text: str, model: str = "models/text-embedding-004") -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
     KAİZEN: Always use stable embedding models. As per project 'gemini-api-dev' skill, 
-    Gemini 3 models are the standard. DO NOT use legacy gemini-1.5.
+    Gemini 3 models are the standard. DO NOT use legacy models.
+    """
+    embeddings = await get_embeddings_batch([text], model=model)
+    return embeddings[0]
+
+
+async def get_embeddings_batch(
+    texts: List[str], model: str = "models/text-embedding-004"
+) -> List[List[float]]:
+    """
+    Generates multiple semantic embeddings in batches using the modern GenAI SDK.
+    This prevents API timeouts and payload limit issues for large datasets.
     """
     client = get_genai_client()
-    if not client:
-        print(
-            "[Embedding] Warning: Gemini Client not initialized. Returning dummy zeros."
-        )
-        return [0.0] * 768
+    if not client or not texts:
+        return [[0.0] * 768 for _ in texts]
 
     try:
-        # EXPLANATION: Modern SDK Migration
-        # We use the official 'google-genai' SDK as per the gemini-api-dev skill.
-        result = client.models.embed_content(
-            model=model,
-            contents=text,
-            config={
-                "task_type": "RETRIEVAL_DOCUMENT",
-                "title": "Hotel Metadata",
-                "output_dimensionality": 768,
-            },
-        )
+        all_embeddings = []
+        chunk_size = 100  # API usually limits batches, 100 is safe
 
-        if not result or not result.embeddings:
-            return [0.0] * 768
+        for i in range(0, len(texts), chunk_size):
+            chunk = texts[i : i + chunk_size]
+            result = client.models.embed_content(
+                model=model,
+                contents=chunk,
+                config={
+                    "task_type": "RETRIEVAL_DOCUMENT",
+                    "output_dimensionality": 768,
+                },
+            )
 
-        # EXPLANATION: Dimensionality Match
-        # By setting output_dimensionality=768 in the config, we avoid manual slicing
-        # and ensure the vector perfectly fits the database schema.
-        embedding = result.embeddings[0].values
-        return embedding
+            if not result or not result.embeddings:
+                print(f"[Embedding] Warning: Embedding failed for chunk starting at {i}")
+                all_embeddings.extend([[0.0] * 768 for _ in chunk])
+                continue
+
+            all_embeddings.extend([emb.values for emb in result.embeddings])
+
+        return all_embeddings
     except Exception as e:
-        print(f"[Embedding] Error generating embedding with modern SDK: {e}")
-        return [0.0] * 768
+        print(f"[Embedding] Batch error with chunking: {e}")
+        return [[0.0] * 768 for _ in texts]
 
 
 def format_hotel_for_embedding(hotel: dict) -> str:

@@ -216,8 +216,12 @@ class ScanPersistenceService:
                 "normalized_name": normalized,
                 "avg_price": room.get("price"),
                 "currency": room.get("currency", "TRY"),
-                "amenities": room.get("amenities", []),
+                "amenities": room.get("features") or room.get("amenities", []),
                 "sqm": room.get("sqm"),
+                "capacity": room.get("capacity"),
+                "image_url": room.get("image_url"),
+                "source": room.get("source"),
+                "url": room.get("url"),
                 "last_seen_at": datetime.now(timezone.utc).isoformat()
             }
             if embedding:
@@ -227,18 +231,23 @@ class ScanPersistenceService:
 
         if valid_upserts:
             try:
+                # Filter out None values
+                valid_upserts = [{k: v for k, v in r.items() if v is not None} for r in valid_upserts]
                 self.admin_db.table("room_type_catalog").upsert(valid_upserts, on_conflict="id").execute()
             except Exception as e:
                 logger.error(f"Batch catalog upsert failed for {hotel_id}: {e}")
 
     async def batch_update_room_type_catalog(self, scraper_results: List[Dict[str, Any]], hotels: List[Dict[str, Any]]):
         """
-        Batch process room types from multiple hotels. 
-        Optimized for background scan cycles.
+        Batch process room types from multiple hotels with vectorized embedding generation. 
+        KAİZEN: Single-shot embedding call for the entire scan batch.
         """
+        from backend.utils.embeddings import get_embeddings_batch
+        
         hotel_map = {str(h.get("id")): h for h in hotels}
         
-        # We group rooms by hotel to use the specialized upsert logic
+        rooms_to_embed = [] # List of tuples: (hotel_id, room_dict, formatted_text)
+        
         for result in scraper_results:
             hotel_id = result.get("hotel_id")
             if not hotel_id:
@@ -249,20 +258,57 @@ class ScanPersistenceService:
                 rooms = result.get("price_data", {}).get("room_types") or []
                 
             if isinstance(rooms, list) and rooms:
-                # If room types are just strings, convert to dicts
-                processed_rooms = []
+                hotel_ctx = hotel_map.get(str(hotel_id))
                 for r in rooms:
-                    if isinstance(r, str):
-                        processed_rooms.append({"name": r})
-                    elif isinstance(r, dict):
-                        processed_rooms.append(r)
-                
-                if processed_rooms:
-                    await self.update_room_type_catalog(
-                        hotel_id, 
-                        processed_rooms, 
-                        hotel_context=hotel_map.get(str(hotel_id))
-                    )
+                    room_dict = {"name": r} if isinstance(r, str) else r
+                    if not room_dict.get("name"):
+                        continue
+                    
+                    text = format_room_type_for_embedding(room_dict, hotel_context=hotel_ctx)
+                    rooms_to_embed.append((hotel_id, room_dict, text))
+
+        if not rooms_to_embed:
+            return
+
+        # 1. Vectorized Embedding Retrieval
+        texts = [t[2] for t in rooms_to_embed]
+        embeddings = await get_embeddings_batch(texts)
+        
+        # 2. Prepare UPSERT payloads
+        valid_upserts = []
+        for i, (hotel_id, room, text) in enumerate(rooms_to_embed):
+            normalized = normalize_room_name(room["name"])
+            room_id = f"room_{hotel_id}_{normalized.replace(' ', '_').lower()}"
+            
+            catalog_entry = {
+                "id": room_id,
+                "hotel_id": hotel_id,
+                "original_name": room["name"],
+                "normalized_name": normalized,
+                "avg_price": room.get("price"),
+                "currency": room.get("currency", "TRY"),
+                "amenities": room.get("features") or room.get("amenities", []),
+                "sqm": room.get("sqm"),
+                "capacity": room.get("capacity"),
+                "image_url": room.get("image_url"),
+                "source": room.get("source"),
+                "url": room.get("url"),
+                "last_seen_at": datetime.now(timezone.utc).isoformat(),
+                "embedding": embeddings[i]
+            }
+            # Remove None values
+            payload = {k: v for k, v in catalog_entry.items() if v is not None}
+            valid_upserts.append(payload)
+
+        # 3. Resilient Bulk Persistence
+        if valid_upserts:
+            try:
+                # Use standard pagination if batch is huge? 
+                # For now .upsert() handles large lists well.
+                self.admin_db.table("room_type_catalog").upsert(valid_upserts, on_conflict="id").execute()
+                logger.info(f"[Catalog] Vectorized sync complete for {len(valid_upserts)} rooms.")
+            except Exception as e:
+                logger.error(f"Batch catalog upsert failed: {e}")
 
     async def sync_from_external_provider(
         self,
@@ -292,6 +338,8 @@ class ScanPersistenceService:
             "check_in_date": str(date.today()), # Default
             "vendor": result.get("vendor", source),
             "room_types": result.get("room_types", []),
+            "parity_offers": result.get("parity_offers", []),
+            "market_offers": result.get("all_prices", []),
             "metadata": {
                 "scan_task_id": scan_task_id,
                 "batch_id": batch_id,
@@ -300,11 +348,59 @@ class ScanPersistenceService:
         }
         
         try:
+            # 1. Log Price Entry
             self.admin_db.table("price_logs").insert(log_entry).execute()
             
-            # 2. Update Room Type Catalog
-            if result.get("items"):
-                # DataForSEO returns individual items with more detail
+            # 2. Update Hotel Metadata (Whole Package)
+            # Fetch existing sentiment for Smart Memory merge
+            try:
+                existing_res = self.admin_db.table("hotels").select("sentiment_breakdown").eq("id", hotel_id).maybe_single().execute()
+                existing_sentiment = (existing_res.data or {}).get("sentiment_breakdown") or []
+            except Exception:
+                existing_sentiment = []
+
+            from backend.utils.sentiment_utils import merge_sentiment_breakdowns
+            new_sentiment = result.get("sentiment_breakdown") or []
+            merged_sentiment = merge_sentiment_breakdowns(existing_sentiment, new_sentiment)
+
+            hotel_update = {
+                "rating": result.get("rating"),
+                "review_count": result.get("reviews_count") or result.get("reviews"),
+                "stars": result.get("stars"),
+                "description": result.get("description"),
+                "amenities": result.get("amenities"),
+                "check_in_time": result.get("check_in_time"),
+                "check_out_time": result.get("check_out_time"),
+                "sentiment_breakdown": merged_sentiment,
+                "room_types": result.get("room_types")
+            }
+            # Add phone, website etc if present
+            for field in ["phone", "website", "address", "latitude", "longitude"]:
+                if result.get(field):
+                    hotel_update[field] = result[field]
+
+            # Filter out None values to avoid overwriting existing data with null
+            hotel_update = {k: v for k, v in hotel_update.items() if v is not None}
+            if hotel_update:
+                self.admin_db.table("hotels").update(hotel_update).eq("id", hotel_id).execute()
+
+            # 3. Log Sentiment History
+            if result.get("sentiment_breakdown"):
+                sentiment_entry = {
+                    "hotel_id": hotel_id,
+                    "rating": result.get("rating"),
+                    "review_count": result.get("reviews_count") or result.get("reviews"),
+                    "sentiment_breakdown": result.get("sentiment_breakdown"),
+                    "recorded_at": datetime.now(timezone.utc).isoformat()
+                }
+                self.admin_db.table("sentiment_history").insert(sentiment_entry).execute()
+
+            # 4. Update Room Type Catalog
+            if result.get("room_catalog"):
+                # DataForSEO Advanced returns detailed room catalog
+                await self.update_room_type_catalog(hotel_id, result["room_catalog"])
+            elif result.get("items"):
+                # DataForSEO returns individual items with more detail (OTA info etc)
                 await self.update_room_type_catalog(hotel_id, result["items"])
             elif result.get("room_types"):
                 # Fallback to simple strings if no rich items
@@ -508,7 +604,7 @@ class ScanPersistenceService:
             except Exception:
                 is_stale = True # Fallback to update if parsing fails
         
-        static_fields = ["description", "amenities", "images", "phone", "website", "address", "stars", "latitude", "longitude", "room_types"]
+        static_fields = ["description", "amenities", "images", "phone", "website", "address", "stars", "latitude", "longitude", "room_types", "check_in_time", "check_out_time"]
         for field in static_fields:
             new_val = price_data.get(field)
             if not new_val:
@@ -577,6 +673,7 @@ class ScanPersistenceService:
             "room_types": current_room_types,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "is_deep_scan": result.get("is_deep_scan", False),
+            "market_offers": price_data.get("all_prices", []),
             "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)}
         }
 
@@ -587,6 +684,7 @@ class ScanPersistenceService:
                 "rating": meta_update.get("rating"),
                 "review_count": meta_update.get("review_count"),
                 "sentiment_breakdown": meta_update.get("sentiment_breakdown"),
+                "recorded_at": datetime.now(timezone.utc).isoformat()
             }
 
         # EXPLANATION: Normalizing Scraped Reviews (Kaizen 2026)

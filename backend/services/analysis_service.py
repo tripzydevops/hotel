@@ -23,6 +23,7 @@ from backend.utils.logger import get_logger
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
 try:
     from google import genai
+    from google.genai import types
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
@@ -334,22 +335,17 @@ async def stream_narrative_gen(
             yield generate_synthetic_narrative(ari, sent_index, dna_text, str(hotel_name or "Unknown"))
             return
 
-        # AGENT_FEATURE: Using modern interactions API with streaming and Gemini 3
-        # Use asyncio.to_thread to set up the stream without blocking
-        stream = await asyncio.to_thread(
-            client.interactions.create,
-            model="gemini-3-flash-preview",
-            input=prompt,
-            stream=True
-        )
-
-        for chunk in stream:
-            if chunk.event_type == "content.delta":
-                if chunk.delta.type == "text" and hasattr(chunk.delta, "text"):
-                    yield chunk.delta.text
-                    await asyncio.sleep(0.01)  # Throttling for smoother UI flow
-            elif chunk.event_type == "interaction.complete":
-                break
+        # AGENT_FEATURE: Using modern GenerateContent API with streaming and Gemini 3.1
+        for chunk in client.models.generate_content_stream(
+            model="models/gemini-3-flash-preview",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+            )
+        ):
+            if chunk.text:
+                yield chunk.text
+                await asyncio.sleep(0.01)  # Throttling for smoother UI flow
 
     except Exception as e:
         logger.error(f"[SSE] AI Narrative failed: {e}")

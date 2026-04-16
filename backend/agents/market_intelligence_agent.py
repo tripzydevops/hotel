@@ -1,4 +1,5 @@
 import time
+import json
 import asyncio
 from typing import List, Dict, Any, cast, Optional
 from backend.services.analysis_service import get_genai_client
@@ -72,21 +73,26 @@ class MarketIntelligenceAgent:
             }}
             """
 
-            # [KAIZEN] Offloading to thread to keep event loop live
-            interaction = await asyncio.to_thread(
-                client.interactions.create,
+            # [KAIZEN] Using generate_content API (interactions API is deprecated)
+            response = await asyncio.to_thread(
+                client.models.generate_content,
                 model=self.model,
-                input=prompt
+                contents=prompt
             )
 
-            if not interaction or not interaction.outputs:
-                raise ValueError("No output from Gemini interactions")
+            if not response or not response.text:
+                raise ValueError("No output from Gemini generate_content")
 
-            import json
-            raw_data = json.loads(interaction.outputs[-1].text)
+            raw_text = response.text
+            # Clean markdown fencing if present
+            if "```json" in raw_text:
+                raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in raw_text:
+                raw_text = raw_text.split("```")[1].split("```")[0].strip()
+
+            raw_data = json.loads(raw_text)
             
             trace = raw_data.get("reasoning_trace", [])
-            import time
             now = time.time()
             for i, item in enumerate(trace):
                 item["level"] = item.get("level", "info")
@@ -168,13 +174,17 @@ class MarketIntelligenceAgent:
         """
 
         try:
-            interaction = await asyncio.to_thread(
-                client.interactions.create,
+            response = await asyncio.to_thread(
+                client.models.generate_content,
                 model=self.model,
-                input=prompt
+                contents=prompt
             )
-            import json
-            dna = json.loads(interaction.outputs[-1].text)
+            raw_text = response.text
+            if "```json" in raw_text:
+                raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in raw_text:
+                raw_text = raw_text.split("```")[1].split("```")[0].strip()
+            dna = json.loads(raw_text)
             dna["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             return dna
         except Exception as e:

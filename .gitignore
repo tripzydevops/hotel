@@ -125,3 +125,6 @@ scheduler_errors.log*
 # Local Agent Data & Temporary Scripts
 .gemini/
 scratch/
+
+# InsForge & AI agent skills
+.windsurf

@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from backend.utils.db import get_supabase
 from backend.utils.embeddings import get_genai_client, format_hotel_for_embedding
 
-async def get_embeddings_batch(texts: list[str], model: str = "gemini-embedding-001"):
+async def get_embeddings_batch(texts: list[str], model: str = "text-embedding-004"):
     client = get_genai_client()
     if not client:
         return [[0.0] * 768 for _ in texts]

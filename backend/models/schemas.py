@@ -53,6 +53,8 @@ class HotelBase(BaseModel):
     website: Optional[str] = None
     address: Optional[str] = None
     description: Optional[str] = None
+    check_in_time: Optional[str] = None
+    check_out_time: Optional[str] = None
     cid: Optional[str] = None
     place_id: Optional[str] = None
     
@@ -403,6 +405,7 @@ class ScanOptions(BaseModel):
     hotel_ids: Optional[List[UUID]] = None
     skip_intelligence: bool = Field(default=False, description="If True, skip AI Intelligence generation to save tokens.")
     skip_cache: bool = Field(default=False, description="If True, skip GlobalPulse cache and fetch fresh from SerpApi.")
+    deep_scan: bool = Field(default=False, description="If True, fetch rich metadata and sentiment using DataForSEO hotel_info.")
 
 
 class MonitorResult(BaseModel):

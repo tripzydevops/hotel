@@ -50,6 +50,7 @@ from backend.api import (
     recovery_routes,
     auth_routes,
     webhook_routes,
+    hotel_webhook,
 )
 
 # Import Safety: Ensure all required dependencies are installed.
@@ -301,6 +302,7 @@ app.include_router(pulse_routes.router, prefix="/api")
 app.include_router(execution_routes.router, prefix="/api")
 app.include_router(recovery_routes.router, prefix="/api")
 app.include_router(webhook_routes.router, prefix="/api")
+app.include_router(hotel_webhook.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():

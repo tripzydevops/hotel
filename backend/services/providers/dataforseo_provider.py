@@ -474,14 +474,52 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
+                    f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=tasks
                 )
+                if response.status_code != 200 or response.json().get("status_code") != 20100:
+                    logger.error(f"DataForSEO info POST error: {response.status_code} - {response.text}")
                 res_json = response.json()
                 return res_json.get("tasks", [])
         except Exception as e:
-            logger.error(f"DataForSEO info POST error: {e}")
+            logger.error(f"DataForSEO info POST exception: {e}")
             return []
+
+    async def post_hotel_tokens(self, property_tokens: List[str], location_name: Optional[str] = "Turkiye") -> Optional[List[str]]:
+        """
+        POSTs property tokens to DataForSEO Google Hotels endpoint.
+        Returns ONLY the task IDs from the API response.
+        """
+        if not self.login or not self.password or not property_tokens:
+            return None
+
+        auth = (self.login, self.password)
+        tasks = [
+            {
+                "hotel_identifier": token,
+                "location_name": self._normalize_location(location_name),
+                "language_name": "English"
+            }
+            for token in property_tokens
+        ]
+
+        try:
+            async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.api_url}/business_data/google/hotel_info/task_post",
+                    json=tasks
+                )
+                res_json = response.json()
+                
+                # DataForSEO returns 20100 for successful completion or submission
+                if res_json.get("status_code") not in [20000, 20100]:
+                    logger.error(f"DataForSEO post_hotel_tokens Failed: {res_json.get('status_message')}")
+                    return None
+                
+                return [t.get("id") for t in res_json.get("tasks", []) if t.get("id")]
+        except Exception as e:
+            logger.error(f"DataForSEO post_hotel_tokens error: {e}")
+            return None
 
     async def submit_hotel_scan_batch(
         self,
@@ -636,7 +674,13 @@ class DataForSEOProvider(HotelDataProvider):
                 if not tasks: return None
                     
                 task = tasks[0]
-                if not task.get("result"): return {"status": "empty"}
+                if not task.get("result"): 
+                    return {
+                        "status": "success", 
+                        "items": [], 
+                        "tag": (task.get("data") or {}).get("tag"),
+                        "task_type": "price_search" if "hotel_searches" in endpoint else "hotel_info"
+                    }
 
                 result = task["result"][0]
                 items = result.get("items", [])
@@ -681,7 +725,7 @@ class DataForSEOProvider(HotelDataProvider):
                         "rating": reviews_data.get("value", 0.0),
                         "reviews": reviews_data.get("votes_count", 0),
                         "room_types": normalized_rooms,
-                        "tag": task.get("data", {}).get("tag"),
+                        "tag": (task.get("data") or {}).get("tag"),
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,
                         "sentiment_breakdown": search_sentiment,
@@ -695,11 +739,11 @@ class DataForSEOProvider(HotelDataProvider):
                     return {
                         "status": "success",
                         "task_type": "hotel_info",
-                        "tag": task.get("data", {}).get("tag"),
+                        "tag": (task.get("data") or {}).get("tag"),
                         **parsed
                     }
                 
-                return {"status": "success", "items": items, "tag": task.get("data", {}).get("tag")}
+                return {"status": "success", "items": items, "tag": (task.get("data") or {}).get("tag")}
         except Exception as e:
             logger.error(f"DataForSEO GET error ({endpoint}): {e}")
             return None
