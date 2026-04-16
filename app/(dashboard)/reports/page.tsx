@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Hotel, Competitor, Analysis, ScanSession, MarketAnalysis as MarketAnalysisData } from "@/types";
+import { Hotel, ScanSession, MarketAnalysis as MarketAnalysisData } from "@/types";
 import MarketIntelligenceHub from "@/components/market/MarketAnalysis";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { insforge } from "@/lib/insforge";

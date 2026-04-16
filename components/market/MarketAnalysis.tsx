@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Target, TrendingUp, Sparkles, Activity, Shield, PieChart as PieIcon, BarChart3, Swords } from 'lucide-react';
-import { Hotel, Competitor, Analysis, MarketIntelligence } from '@/types';
+import { Hotel, MarketAnalysis as MarketAnalysisData } from '@/types';
 
 interface MarketAnalysisProps {
   targetHotel: Hotel | null;
-  competitors: Competitor[];
-  analysis: Analysis | null;
+  competitors: Hotel[];
+  analysis: MarketAnalysisData | null;
 }
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
