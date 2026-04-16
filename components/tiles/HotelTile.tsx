@@ -21,7 +21,6 @@ import {
 import { useModalContext } from "@/components/ui/ModalContext";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
-import { ScanStatusIndicator } from "@/components/features/dashboard/ScanStatusIndicator";
 
 import TrendChart from "@/components/analytics/TrendChart";
 import { getStarRating, formatCurrency, formatDate, calculateNights } from "@/lib/utils";
@@ -288,12 +287,9 @@ export default function HotelTile(props: HotelTileProps) {
 
               {/* Real-time Scan Status */}
               {isScanning && (
-                <div className="ml-auto sm:ml-0">
-                  <ScanStatusIndicator 
-                    status="active" 
-                    size="sm" 
-                    showLabel={true} 
-                  />
+                <div className="ml-auto sm:ml-0 flex items-center gap-2 text-[10px] font-bold text-[var(--optimal-green)] bg-[var(--optimal-green)]/15 px-3 py-1 rounded-lg border border-[var(--optimal-green)]/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] animate-pulse" />
+                  {t("common.scanning") || "SCANNING..."}
                 </div>
               )}
             </div>
