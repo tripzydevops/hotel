@@ -24,7 +24,7 @@ export function useDashboard(
     // When a scan is manually triggered, we set `isPolling` to true.
     // This enables `refetchInterval` to auto-fetch data every 3 seconds.
     // This ensures the UI updates automatically when the background scan completes.
-    refetchInterval: false,
+
   });
 
   const isLoadingDashboard = dashboardQuery.isLoading;

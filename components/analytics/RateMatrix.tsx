@@ -13,7 +13,6 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
-import { useActiveScans } from "@/hooks/useActiveScans";
 import { useAuth } from "@/hooks/useAuth";
 
 interface RateMatrixProps {
@@ -32,7 +31,6 @@ export default function RateMatrix({
   userPlan = "trial",
 }: RateMatrixProps) {
   const { userId } = useAuth();
-  const activeScans = useActiveScans(userId);
 
   const targetPrice = targetHotel?.price_info?.current_price || 0;
   const currency = targetHotel?.price_info?.currency || "TRY";
@@ -427,14 +425,6 @@ export default function RateMatrix({
                       <p className="text-[9px] text-slate-500 uppercase tracking-tighter">
                         {isTarget ? "My Hotel" : "Competitor"}
                       </p>
-                      {activeScans.activeHotelIds.includes(comp.id) && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <RefreshCcw className="w-2.5 h-2.5 text-blue-400 animate-spin" />
-                          <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest animate-pulse">
-                            Updating...
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </td>
                   <td className="py-5 text-center font-bold text-white bg-[#0A1629]/30 border-l border-r border-white/5">

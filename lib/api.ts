@@ -151,9 +151,6 @@ class ApiClient {
   }
 
 
-  async getActiveTasks(): Promise<string[]> {
-    return this.fetch<string[]>(`/api/monitor/active-tasks`);
-  }
 
   async getAlerts(unreadOnly = false): Promise<Alert[]> {
     return this.fetch<Alert[]>(

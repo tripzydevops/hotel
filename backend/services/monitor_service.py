@@ -28,9 +28,9 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# from backend.agents.scraper_agent import ScraperAgent
-# from backend.agents.analyst_agent import AnalystAgent
-# from backend.agents.notifier_agent import NotifierAgent
+from backend.agents.scraper_agent import ScraperAgent
+from backend.agents.analyst_agent import AnalystAgent
+from backend.agents.notifier_agent import NotifierAgent
 
 
 # Dedicated Scheduler Logging
@@ -479,7 +479,7 @@ async def process_system_scans(db: Client):
         s_logger.error(f"Task Processor General Failure: {e}")
 
 
-async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, initiator_id: Optional[UUID] = None):
+async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_price: float, currency: str, parity_offers: Optional[List[Dict]] = None, initiator_id: Optional[UUID] = None):
     """
     Finds all users monitoring this hotel and triggers alerts if price drops/changes.
     If initiator_id is provided, those alerts are marked as 'market_pulse' for others.
@@ -501,6 +501,47 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
         user_ids = [u["user_id"] for u in users_res.data]
         settings_res = db.table("settings").select("*").in_("user_id", user_ids).execute()
         settings_map = {str(s["user_id"]): s for s in settings_res.data}
+        
+        # 3. Detect Parity Breach / OTA Overcut
+        parity_alert = None
+        if parity_offers:
+            # Find direct price and lowest OTA
+            direct_price = None
+            lowest_ota = None
+            min_ota_price = float('inf')
+            
+            for offer in parity_offers:
+                is_direct = offer.get("is_direct", False)
+                price_val = float(offer.get("price", 0))
+                if price_val <= 0: continue
+                
+                if is_direct:
+                    direct_price = price_val
+                else:
+                    if price_val < min_ota_price:
+                        min_ota_price = price_val
+                        lowest_ota = offer.get("source", "OTA")
+            
+            # If OTA is undercutting direct rate (by > 1% to avoid noise)
+            if direct_price and min_ota_price < (direct_price * 0.99):
+                displacement = ((direct_price - min_ota_price) / direct_price) * 100
+                parity_alert = {
+                    "alert_type": "parity_breach",
+                    "displacement": displacement,
+                    "culprit": lowest_ota,
+                    "ota_price": min_ota_price,
+                    "direct_price": direct_price
+                }
+            elif not direct_price and min_ota_price < (current_price * 0.95):
+                # If we don't have a direct flag but OTA is 5% lower than 'primary' detected price
+                displacement = ((current_price - min_ota_price) / current_price) * 100
+                parity_alert = {
+                    "alert_type": "ota_overcut",
+                    "displacement": displacement,
+                    "culprit": lowest_ota,
+                    "ota_price": min_ota_price,
+                    "direct_price": current_price
+                }
 
         for user_id_str in user_ids:
             user_id = UUID(user_id_str)
@@ -528,20 +569,21 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
             prev_price = float(history_res.data[1]["price"])
             change_pct = ((current_price - prev_price) / max(prev_price, 1)) * 100
 
+            # Determine Global Pulse Status (applicable to all alert types)
+            # System Heartbeat (initiator_id is None) OR cross-user notification
+            is_global = (initiator_id is None) or (str(initiator_id) != user_id_str)
+            prefix = "Global Pulse: " if is_global else ""
+
+            # A. Handle Price Shift Alert
             if abs(change_pct) >= threshold:
-                # If triggered by someone else, it's a pulse. If global, it's a heartbeat/drop.
-                is_manual_initiator = initiator_id and str(initiator_id) == user_id_str
-                
-                if initiator_id and not is_manual_initiator:
+                # If triggered by someone else OR system, it's a pulse
+                if is_global and (initiator_id is not None):
                     alert_type = "market_pulse"
-                    prefix = "Global Pulse: "
                 else:
                     alert_type = "price_drop" if change_pct < 0 else "price_spike"
-                    prefix = ""
 
                 alert_msg = f"{prefix}{hotel_name} rate shifted {abs(change_pct):.1f}% to {current_price} {currency}"
                 
-                # Record alert
                 alert_res = db.table("alerts").insert({
                     "user_id": str(user_id),
                     "hotel_id": hotel_id,
@@ -549,12 +591,35 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
                     "message": alert_msg,
                     "old_price": prev_price,
                     "new_price": current_price,
-                    "currency": currency
+                    "currency": currency,
+                    "is_global_pulse": is_global
                 }).execute()
 
                 # Dispatch notification
                 if alert_res.data:
                     await notifier.dispatch_alerts([alert_res.data[0]], settings, {hotel_id: hotel_name})
+
+            # B. Handle Parity Breach Alert (Independent of threshold_percent)
+            if parity_alert:
+                parity_msg = f"{prefix}Parity Breach: {parity_alert['culprit']} is undercutting {hotel_name} by {parity_alert['displacement']:.1f}% (${parity_alert['ota_price']} vs ${parity_alert['direct_price']})"
+                
+                p_alert_res = db.table("alerts").insert({
+                    "user_id": str(user_id),
+                    "hotel_id": hotel_id,
+                    "alert_type": parity_alert["alert_type"],
+                    "message": parity_msg,
+                    "old_price": parity_alert["direct_price"],
+                    "new_price": parity_alert["ota_price"],
+                    "currency": currency,
+                    "is_global_pulse": is_global,
+                    "metadata": {"culprit": parity_alert["culprit"], "displacement": parity_alert["displacement"]}
+                }).execute()
+                
+                if p_alert_res.data:
+                    await notifier.dispatch_alerts([p_alert_res.data[0]], settings, {hotel_id: hotel_name})
+
+
+
 
     except Exception as e:
         logger.error(f"Heartbeat Notifier Error for hotel {hotel_id}: {e}")
@@ -622,7 +687,10 @@ async def sync_extraction_result(db: Client, hotel_id: str, result: Dict[str, An
             )
             
             # 5. Trigger Notifications (Heartbeat)
-            await _trigger_heartbeat_notifications(db, target_id, float(price), currency)
+            await _trigger_heartbeat_notifications(
+                db, target_id, float(price), currency, 
+                parity_offers=result.get("parity_offers") or result.get("offers")
+            )
 
         # 7. Update Task/Batch status
         if scan_task_id:
@@ -845,7 +913,10 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 price = float(res_data.get("price", 0))
                 currency = res_data.get("currency", "TRY")
                 if price > 0:
-                    post_sync_tasks.append(_trigger_heartbeat_notifications(db, hid, price, currency))
+                    post_sync_tasks.append(_trigger_heartbeat_notifications(
+                        db, hid, price, currency,
+                        parity_offers=res_data.get("parity_offers") or res_data.get("offers")
+                    ))
 
         if post_sync_tasks:
             # We use return_exceptions=True to ensure one failure doesn't stop others

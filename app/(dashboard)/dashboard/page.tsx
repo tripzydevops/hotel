@@ -8,8 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import BentoGrid from "@/components/ui/BentoGrid";
 import TargetHotelTile from "@/components/tiles/TargetHotelTile";
 import CompetitorTile from "@/components/tiles/CompetitorTile";
-import { useActiveScans } from "@/hooks/useActiveScans";
-import { ScanStatusIndicator } from "@/components/features/dashboard/ScanStatusIndicator";
 import { RefreshCw, Plus, Zap, Cpu, Info, Smile, ArrowLeftRight, Activity, CheckCircle2, Clock } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -39,55 +37,31 @@ import { formatDateTime } from "@/lib/utils";
 // --- Components ---
 
 const MarketDataStatus = ({ 
-  isScanning, 
-  activeScans = 0, 
   lastUpdate,
   t 
 }: { 
-  isScanning: boolean; 
-  activeScans?: number; 
   lastUpdate?: string;
   t: any;
 }) => {
   return (
     <div className="hidden md:flex items-center gap-3 bg-[var(--deep-ocean)]/40 px-4 py-2 rounded-2xl border border-[var(--glass-border)] backdrop-blur-md">
-      {isScanning ? (
-        <>
-          <div className="relative">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--soft-gold)] animate-ping absolute inset-0" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--soft-gold)] relative shadow-[0_0_10px_var(--soft-gold)]" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[0.1em] leading-tight">
-              {activeScans > 0 ? t("dashboard.activeScans", { count: activeScans }) : t("dashboard.priceDiscoveryActive")}
+      <div className="w-2.5 h-2.5 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_var(--optimal-green)]" />
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-[0.1em] leading-tight">
+            {t("dashboard.marketSynchronized")}
+          </span>
+          <CheckCircle2 className="w-3 h-3 text-[var(--optimal-green)]" />
+        </div>
+        {lastUpdate && (
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Clock className="w-3 h-3 text-[var(--text-muted)]" />
+            <span className="text-[9px] text-[var(--text-muted)] font-medium">
+              {t("dashboard.dataUpdated")}: {lastUpdate}
             </span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Activity className="w-3 h-3 text-[var(--soft-gold)]/60" />
-              <span className="text-[9px] text-[var(--text-muted)] font-medium">Real-time optimization</span>
-            </div>
           </div>
-        </>
-      ) : (
-        <>
-          <div className="w-2.5 h-2.5 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_var(--optimal-green)]" />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-[0.1em] leading-tight">
-                {t("dashboard.marketSynchronized")}
-              </span>
-              <CheckCircle2 className="w-3 h-3 text-[var(--optimal-green)]" />
-            </div>
-            {lastUpdate && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <Clock className="w-3 h-3 text-[var(--text-muted)]" />
-                <span className="text-[9px] text-[var(--text-muted)] font-medium">
-                  {t("dashboard.dataUpdated")}: {lastUpdate}
-                </span>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -117,7 +91,6 @@ export default function Dashboard() {
     setProfile,
   } = useDashboard(userId, t);
 
-  const { activeHotelIds, isAnyScanActive } = useActiveScans(userId);
 
   // Removed: Lazy scan check on dashboard load. Scans are now handled by GitHub Action schedule or Manual user trigger.
 
@@ -264,8 +237,6 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
           <div className="flex items-center gap-3">
             <MarketDataStatus 
-              isScanning={isAnyScanActive || (data?.active_scans ?? 0) > 0}
-              activeScans={Math.max(activeHotelIds.length, data?.active_scans || 0)}
               lastUpdate={data?.last_updated ? formatDateTime(data.last_updated) : undefined}
               t={t}
             />
@@ -359,7 +330,6 @@ export default function Dashboard() {
                       description={data.target_hotel.description}
                       cid={data.target_hotel.cid}
                       placeId={data.target_hotel.place_id}
-                      isScanning={activeHotelIds.includes(data.target_hotel.id)}
                     />
                   </motion.div>
                 )}
@@ -500,7 +470,6 @@ export default function Dashboard() {
                             description={competitor.description}
                             cid={competitor.cid}
                             placeId={competitor.place_id}
-                            isScanning={activeHotelIds.includes(competitor.id)}
                           />
                         </motion.div>
                       );
