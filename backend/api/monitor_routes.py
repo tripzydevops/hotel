@@ -72,3 +72,14 @@ async def delete_log(
     except Exception as e:
         print(f"Error deleting log: {e}")
         return {"status": "error", "detail": str(e)}
+
+
+@router.get("/active-tasks", response_model=List)
+async def honey_pot_tasks(request: Request):
+    """
+    Honey Pot route to identify and log rogue services pinging the system.
+    Returns empty list to stop 404 spam.
+    """
+    print(f"\n[IDENTIFIED] Rogue pinger caught! IP: {request.client.host} | User-Agent: {request.headers.get('user-agent')}\n")
+    return []
+

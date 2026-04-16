@@ -1,5 +1,11 @@
 import json
 import os
+from dotenv import load_dotenv
+
+# Load environment variables explicitly for the service
+load_dotenv()
+load_dotenv(".env.local", override=True)
+
 from typing import Dict, Any, List, Optional
 
 # Typing-safe import for Google GenAI to satisfy strict linter checks
@@ -25,7 +31,9 @@ class MarketIntelligenceService:
     """
 
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.environ.get("GEMINI_API_KEY")
+        print(f"[AI-INFO] Gemini Key detected: {bool(self.api_key)}")
+
         self.model_name = "models/gemini-3-flash-preview"
         self.client = None
         
