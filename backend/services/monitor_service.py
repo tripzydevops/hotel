@@ -375,6 +375,13 @@ async def run_system_heartbeat(db: Client):
         
         check_in = date.today().strftime("%Y-%m-%d")
         check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Construct Pingback URL
+        vercel_domain = os.environ.get("VERCEL_DOMAIN")
+        pingback_url = None
+        if vercel_domain:
+            pingback_url = f"https://{vercel_domain}/api/hotel-webhook"
+            s_logger.info(f"Heartbeat: Using pingback_url: {pingback_url}")
         
         success_count = await dataforseo_provider.submit_hotel_scan_batch(
             db=db,
@@ -382,7 +389,8 @@ async def run_system_heartbeat(db: Client):
             check_in=check_in,
             check_out=check_out,
             batch_type="scheduled_pulse",
-            deep_scan=True
+            deep_scan=True,
+            pingback_url=pingback_url
         )
 
         s_logger.info(f"Heartbeat: Successfully posted {success_count}/{len(target_hotel_ids)} tracking units.")

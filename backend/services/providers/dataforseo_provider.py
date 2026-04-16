@@ -444,7 +444,7 @@ class DataForSEOProvider(HotelDataProvider):
 
     # ===== Task API (Async) Implementation =====
 
-    async def post_price_tasks(self, task_params: List[Dict[str, Any]]) -> Optional[List[Dict[str, Any]]]:
+    async def post_price_tasks(self, task_params: List[Dict[str, Any]], pingback_url: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
         """Submits multiple hotel search tasks to DataForSEO."""
         if not self.login or not self.password or not task_params:
             return None
@@ -459,6 +459,8 @@ class DataForSEOProvider(HotelDataProvider):
                 task["limit"] = task.pop("extraction_depth")
             elif "limit" not in task:
                 task["limit"] = 100
+            if pingback_url:
+                task["pingback_url"] = pingback_url
             modified_params.append(task)
         
         try:
@@ -478,10 +480,12 @@ class DataForSEOProvider(HotelDataProvider):
             logger.error(f"DataForSEO post_price_tasks error: {e}")
             return None
 
-    async def post_info_tasks(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def post_info_tasks(self, tasks: List[Dict[str, Any]], pingback_url: Optional[str] = None) -> List[Dict[str, Any]]:
         """Batch posts hotel metadata tasks to DataForSEO."""
         if not self.login or not self.password: return []
         auth = (self.login, self.password)
+        if pingback_url:
+            for t in tasks: t["pingback_url"] = pingback_url
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
@@ -539,7 +543,8 @@ class DataForSEOProvider(HotelDataProvider):
         check_in: str,
         check_out: str,
         batch_type: str = "scheduled_pulse",
-        deep_scan: bool = False
+        deep_scan: bool = False,
+        pingback_url: Optional[str] = None
     ) -> int:
         """
         High-level batch submission for the system heartbeat.
@@ -611,7 +616,7 @@ class DataForSEOProvider(HotelDataProvider):
         # Prices
         for i in range(0, len(price_task_params), CHUNK_SIZE):
             chunk = price_task_params[i:i + CHUNK_SIZE]
-            res = await self.post_price_tasks(chunk)
+            res = await self.post_price_tasks(chunk, pingback_url=pingback_url)
             if res:
                 total_submitted += await self._register_scan_tasks(db, res, hotel_task_map, "price_search")
 
@@ -619,7 +624,7 @@ class DataForSEOProvider(HotelDataProvider):
         if info_task_params:
             for i in range(0, len(info_task_params), CHUNK_SIZE):
                 chunk = info_task_params[i:i + CHUNK_SIZE]
-                res = await self.post_info_tasks(chunk)
+                res = await self.post_info_tasks(chunk, pingback_url=pingback_url)
                 if res:
                     total_submitted += await self._register_scan_tasks(db, res, hotel_task_map, "hotel_info")
 
