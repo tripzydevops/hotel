@@ -237,6 +237,10 @@ class DataForSEOProvider(HotelDataProvider):
         # 3. Amenities normalization
         amenities = [a.get("amenity") for a in info.get("amenities", []) if a.get("amenity")]
 
+        # 4. Extract Hotel Images
+        hotel_images = info.get("images", [])
+        image_url = hotel_images[0] if hotel_images else None
+
         # Fallback Rating Logic
         rating = reviews.get("average_rating")
         if not rating and info.get("rating"):
@@ -246,6 +250,11 @@ class DataForSEOProvider(HotelDataProvider):
         if not reviews_count and info.get("rating"):
             reviews_count = info["rating"].get("votes_count")
 
+        # Rating Distribution
+        rating_distribution = info.get("rating", {}).get("rating_distribution")
+        if not rating_distribution:
+            rating_distribution = reviews.get("rating_distribution")
+
         return {
             "name": info.get("title"),
             "stars": info.get("stars"),
@@ -253,6 +262,8 @@ class DataForSEOProvider(HotelDataProvider):
             "reviews_count": reviews_count,
             "description": info.get("description"),
             "amenities": amenities,
+            "image_url": image_url,
+            "images": hotel_images,
             "check_in_time": info.get("check_in_time"),
             "check_out_time": info.get("check_out_time"),
             "phone": info.get("phone"),
@@ -265,7 +276,7 @@ class DataForSEOProvider(HotelDataProvider):
             "room_types": [r["name"] for r in room_catalog if r.get("name")],
             "best_price": info.get("prices", {}).get("price"),
             "currency": info.get("prices", {}).get("currency"),
-            "rating_distribution": info.get("rating", {}).get("rating_distribution"),
+            "rating_distribution": rating_distribution,
             "raw_data": data # Full result block
         }
 

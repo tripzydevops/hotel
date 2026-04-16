@@ -6,42 +6,11 @@ from backend.utils.db import get_supabase, try_acquire_lock
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
 from backend.services import monitor_service
-from backend.services.monitor_service import (
-    trigger_monitor_logic,
-    run_monitor_background,
-)
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/monitor", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
 router_legacy = APIRouter(tags=["monitor"])
-
-
-@router.get("/active-tasks", response_model=List[str])
-async def get_active_tasks(
-    db: Client = Depends(get_supabase_rls),
-    current_user=Depends(get_current_active_user),
-):
-    """
-    Returns a list of hotel IDs that currently have a 'pending' scan task.
-    Used for real-time UI indicators (e.g. ScanStatusIndicator).
-    """
-    try:
-        # We query scan_tasks where status is pending for the given user.
-        # Note: We filter by user_id to ensure RLS and privacy.
-        result = (
-            db.table("scan_tasks")
-            .select("hotel_id")
-            .eq("status", "pending")
-            .eq("user_id", str(current_user.id))
-            .execute()
-        )
-        # Return unique hotel IDs
-        hotel_ids = list(set([item["hotel_id"] for item in (result.data or [])]))
-        return hotel_ids
-    except Exception as e:
-        print(f"Error fetching active tasks: {e}")
-        return []
 
 
 

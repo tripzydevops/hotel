@@ -58,8 +58,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { Hotel, Competitor, Analysis, ScanSession, MarketAnalysis as MarketAnalysisData } from "@/types";
+import MarketIntelligenceHub from "@/components/market/MarketAnalysis";
 import { useModalContext } from "@/components/ui/ModalContext";
-import { ScanSession, MarketAnalysis } from "@/types";
 import { insforge } from "@/lib/insforge";
 import dynamic from "next/dynamic";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
@@ -110,13 +111,6 @@ const KEYWORD_TRANSLATIONS: Record<string, string> = {
   personel: "Staff", sessizlik: "Quietness", konfor: "Comfort", banyo: "Bathroom",
 };
 
-/* ── Category aliases for multi-language matching ── */
-const CATEGORY_ALIASES: Record<string, string[]> = {
-  cleanliness: ["temizlik", "clean", "room", "cleanliness", "oda", "odalar"],
-  service: ["hizmet", "staff", "personel", "service"],
-  location: ["konum", "neighborhood", "mevki", "location"],
-  value: ["değer", "fiyat", "price", "comfort", "kalite", "value", "fiyat/performans", "cost", "money"],
-};
 
 /**
  * ParityHealthSection - Intelligence Layer Pillar
@@ -382,52 +376,6 @@ function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; 
   );
 }
 
-/**
- * getCategoryScore - Multi-layered score resolver
- * Attempts to find a score for a specific category using:
- * 1. Current breakdown (live data)
- * 2. Guest mentions (weighted keyword average)
- */
-function getCategoryScore(hotel: any, category: string): number {
-  if (!hotel?.sentiment_breakdown) return 0;
-  const target = category.toLowerCase();
-  const aliases = CATEGORY_ALIASES[target] || [];
-
-  const item = hotel.sentiment_breakdown.find((s: any) => {
-    const name = (s.name || s.category || "").toLowerCase().trim();
-    if (name === target) return true;
-    return aliases.some((alias) => name.includes(alias));
-  });
-
-  if (!item) {
-    // Fallback: guest_mentions weighted average
-    if (hotel.guest_mentions?.length > 0) {
-      const relevant = hotel.guest_mentions.filter((m: any) => {
-        const text = (m.keyword || m.text || "").toLowerCase();
-        return aliases.some((alias) => text.includes(alias));
-      });
-      if (relevant.length > 0) {
-        let weightedSum = 0;
-        let totalCount = 0;
-        relevant.forEach((m: any) => {
-          const count = Number(m.count) || 1;
-          totalCount += count;
-          const score = m.sentiment === "positive" ? 5 : m.sentiment === "negative" ? 1 : 3;
-          weightedSum += score * count;
-        });
-        if (totalCount > 0) return weightedSum / totalCount;
-      }
-    }
-    return 0;
-  }
-
-  if (item.rating !== undefined && item.rating !== null) return Number(item.rating);
-  const pos = Number(item.positive) || 0;
-  const neu = Number(item.neutral) || 0;
-  const neg = Number(item.negative) || 0;
-  const total = pos + neu + neg;
-  return total > 0 ? (pos * 5 + neu * 3 + neg * 1) / total : 0;
-}
 
 // ═══════════════════════════════════════════════════════
 // ──── KPI CARD COMPONENT ────
@@ -517,237 +465,6 @@ function KpiCard({
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// ──── EXPERIENCE BAR COMPONENT ────
-// ═══════════════════════════════════════════════════════
-function ExperienceBar({
-  category,
-  myScore,
-  marketAvg,
-  leaderScore,
-  leaderName,
-  t,
-}: {
-  category: string;
-  myScore: number;
-  marketAvg: number;
-  leaderScore: number;
-  leaderName?: string;
-  t: (key: string) => string;
-}) {
-  const categoryKey = category.toLowerCase();
-  const localizedCategory =
-    t(`sentiment.${categoryKey}`) !== `sentiment.${categoryKey}`
-      ? t(`sentiment.${categoryKey}`)
-      : category;
-
-  const diff = myScore - marketAvg;
-  const isAhead = diff > 0.1;
-  const isBehind = diff < -0.1;
-
-  return (
-    <div className="flex flex-col">
-      <div className="flex justify-between items-end mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-white/80">{localizedCategory}</span>
-          {isAhead && (
-            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-              +{diff.toFixed(1)}
-            </span>
-          )}
-          {isBehind && (
-            <span className="text-[9px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-              {diff.toFixed(1)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-lg font-black text-white/90">
-            {myScore > 0 ? myScore.toFixed(1) : "N/A"}
-          </span>
-          <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
-        </div>
-      </div>
-
-      {/* My Hotel bar */}
-      <div className="h-[6px] bg-white/[0.06] rounded-full overflow-hidden relative">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${(Math.max(myScore, 0.5) / 5) * 100}%` }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-        />
-      </div>
-
-      {/* Comparison rows */}
-      <div className="mt-2 space-y-1">
-        {leaderName && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-500 w-20 truncate font-medium">
-              {leaderName}
-            </span>
-            <div className="flex-1 h-[3px] bg-white/[0.04] rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(leaderScore / 5) * 100}%` }}
-                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
-                className="h-full bg-gradient-to-r from-amber-500/60 to-amber-400/40 rounded-full"
-              />
-            </div>
-            <span className="text-[10px] text-amber-400/80 font-bold w-7 text-right">
-              {leaderScore.toFixed(1)}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-500 w-20 font-medium">
-            {t("sentiment.avgComp") !== "sentiment.avgComp" ? t("sentiment.avgComp") : "Market Avg"}
-          </span>
-          <div className="flex-1 h-[3px] bg-white/[0.04] rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(marketAvg / 5) * 100}%` }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
-              className="h-full bg-gradient-to-r from-gray-500/40 to-gray-400/30 rounded-full"
-            />
-          </div>
-          <span className="text-[10px] text-gray-400 w-7 text-right">
-            {marketAvg.toFixed(1)}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-// ──── COMPETITIVE BATTLEFIELD TABLE ────
-// ═══════════════════════════════════════════════════════
-function CompetitiveBattlefield({
-  targetHotel,
-  competitors,
-  currency,
-  t,
-}: {
-  targetHotel: any;
-  competitors: any[];
-  currency: string;
-  t: (key: string) => string;
-}) {
-  const categories = ["cleanliness", "service", "location", "value"];
-
-  const getWeakestCategory = (hotel: any) => {
-    let weakest = { category: "", score: Infinity };
-    for (const cat of categories) {
-      const score = getCategoryScore(hotel, cat);
-      if (score > 0 && score < weakest.score) {
-        weakest = { category: cat, score };
-      }
-    }
-    return weakest;
-  };
-
-  const myScores: Record<string, number> = {};
-  categories.forEach((c) => {
-    myScores[c] = getCategoryScore(targetHotel, c);
-  });
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left">
-        <thead>
-          <tr className="border-b border-white/[0.06]">
-            <th className="px-4 py-3 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-              {t("sentiment.competitor") !== "sentiment.competitor" ? t("sentiment.competitor") : "Competitor"}
-            </th>
-            <th className="px-4 py-3 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-              Rating
-            </th>
-            <th className="px-4 py-3 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-              Price
-            </th>
-            <th className="px-4 py-3 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-              {t("reports.weakestArea") !== "reports.weakestArea" ? t("reports.weakestArea") : "Weakest Area"}
-            </th>
-            <th className="px-4 py-3 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">
-              {t("reports.yourEdge") !== "reports.yourEdge" ? t("reports.yourEdge") : "Your Edge"}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/[0.04]">
-          {competitors.map((comp: any) => {
-            const weak = getWeakestCategory(comp);
-            const myScoreInWeakArea = myScores[weak.category] || 0;
-            const edge = myScoreInWeakArea - weak.score;
-            const localizedCat =
-              t(`sentiment.${weak.category}`) !== `sentiment.${weak.category}`
-                ? t(`sentiment.${weak.category}`)
-                : weak.category;
-
-            return (
-              <tr
-                key={comp.id}
-                className="hover:bg-white/[0.02] transition-colors"
-              >
-                <td className="px-4 py-3">
-                  <span className="text-sm font-bold text-white/90 line-clamp-1">
-                    {comp.name}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-sm font-black ${(comp.rating || 0) >= 4.0
-                      ? "text-emerald-400"
-                      : (comp.rating || 0) >= 3.5
-                        ? "text-amber-400"
-                        : "text-red-400"
-                      }`}
-                  >
-                    {(comp.rating || 0).toFixed(1)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm font-bold text-white/80">
-                    {comp.price_info?.current_price
-                      ? `${getCurrencySymbol(currency)}${comp.price_info.current_price.toLocaleString()}`
-                      : "N/A"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {weak.category ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded capitalize">
-                        {localizedCat}
-                      </span>
-                      <span className="text-[10px] text-gray-500 font-bold">
-                        ({weak.score.toFixed(1)})
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-500">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {edge > 0 ? (
-                    <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">
-                      +{edge.toFixed(1)}
-                    </span>
-                  ) : edge < 0 ? (
-                    <span className="text-xs font-black text-red-400 bg-red-500/10 px-2 py-1 rounded-lg">
-                      {edge.toFixed(1)}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-500">—</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 // ═══════════════════════════════════════════════════════
 // ──── MAIN REPORTS PAGE ────
@@ -1727,6 +1444,18 @@ export default function ReportsPage() {
           </motion.div>
         )}
 
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* ── SECTION: MARKET INTELLIGENCE HUB ──         */}
+        {/* ═══════════════════════════════════════════════ */}
+        {targetHotel && (
+          <MarketIntelligenceHub
+            targetHotel={targetHotel}
+            competitors={competitors}
+            analysis={analysis}
+          />
+        )}
+
         {/* ═══════════════════════════════════════════════ */}
         {/* ── SECTION 2: STRATEGIC MAP ──                 */}
         {/* ═══════════════════════════════════════════════ */}
@@ -1762,157 +1491,6 @@ export default function ReportsPage() {
               targetRating={strategicMap.targetRating}
               marketRating={strategicMap.marketRating}
               compact
-            />
-          </motion.div>
-        )}
-
-        {/* ═══════════════════════════════════════════════ */}
-        {/* ── SECTION 3: CHARTS (Market Position + Trend) */}
-        {/* ═══════════════════════════════════════════════ */}
-        {analysis && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-            {/* Market Position */}
-            <motion.div
-              variants={fadeInUp}
-              initial="hidden"
-              animate="visible"
-              className="lg:col-span-1 glass-card p-6 flex flex-col"
-            >
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
-                  {t("reports.marketPosition")}
-                </h3>
-                <p className="text-xs text-[var(--text-muted)] mt-1">
-                  {t("reports.positionDesc")}
-                </p>
-              </div>
-              <div className="flex-1 min-h-[250px]">
-                <MarketPositionChart
-                  data={{
-                    min: analysis.market_min,
-                    avg: analysis.market_average,
-                    max: analysis.market_max,
-                    myPrice: analysis.target_price || null,
-                  }}
-                  currency={analysis.display_currency || currency || "USD"}
-                />
-              </div>
-            </motion.div>
-
-            {/* Price Trend */}
-            <motion.div
-              variants={fadeInUp}
-              initial="hidden"
-              animate="visible"
-              className="lg:col-span-2 glass-card p-6 flex flex-col"
-            >
-              <div className="mb-6 flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-[var(--soft-gold)]" />
-                    {t("reports.priceVelocity")}
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">
-                    {t("reports.velocityDesc")}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-black text-white">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency:
-                        analysis.display_currency || currency || "USD",
-                      minimumFractionDigits: 0,
-                    }).format(analysis.target_price || 0)}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">
-                    {t("hotelDetails.current")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex-1 min-h-[250px]">
-                <PriceTrendChart
-                  history={analysis.price_history}
-                  currency={
-                    analysis.display_currency || currency || "USD"
-                  }
-                />
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════ */}
-        {/* ── SECTION 4: EXPERIENCE SCORECARD ──          */}
-        {/* ═══════════════════════════════════════════════ */}
-        {hasSentiment && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="glass-card p-6 md:p-8 mb-10 border border-white/[0.06]"
-            role="region"
-            aria-label="Experience Scorecard"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Radar className="w-4 h-4 text-blue-400" />
-                </div>
-                Experience Scorecard
-              </h3>
-              {leader?.isTarget && (
-                <div className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/15">
-                  <Trophy className="w-3 h-3" />
-                  Market Leader
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-              {["Cleanliness", "Service", "Location", "Value"].map((cat) => (
-                <ExperienceBar
-                  key={cat}
-                  category={cat}
-                  myScore={getCategoryScore(targetHotel, cat.toLowerCase())}
-                  leaderScore={leader ? getCategoryScore(leader, cat.toLowerCase()) : 0}
-                  marketAvg={marketAvgRating || 3}
-                  leaderName={leader?.name}
-                  t={t}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ═══════════════════════════════════════════════ */}
-        {/* ── SECTION 5: COMPETITIVE BATTLEFIELD ──       */}
-        {/* ═══════════════════════════════════════════════ */}
-        {competitors.length > 0 && hasSentiment && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="glass-card mb-10 border border-white/[0.06] overflow-hidden"
-          >
-            <div className="p-6 border-b border-white/[0.06]">
-              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <Swords className="w-4 h-4 text-red-400" />
-                </div>
-                Competitive Battlefield
-              </h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1 ml-11">
-                Each competitor&apos;s weakest area &amp; your advantage
-              </p>
-            </div>
-
-            <CompetitiveBattlefield
-              targetHotel={targetHotel}
-              competitors={competitors}
-              currency={currency}
-              t={t}
             />
           </motion.div>
         )}

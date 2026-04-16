@@ -135,6 +135,7 @@ export default function HotelDetailsModal({
           {activeTab === "overview" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Live Rates Box */}
                 <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-6 rounded-xl shadow-inner-glow relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-2 opacity-10">
                     <Building2 className="w-12 h-12" />
@@ -160,7 +161,36 @@ export default function HotelDetailsModal({
                   </div>
                 </div>
 
-                {/* Additional Quick Stats or Intel could go here */}
+                {/* Rating Distribution Box */}
+                {hotel.rating_distribution && hotel.rating_distribution.length > 0 && (
+                  <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-6 rounded-xl shadow-inner-glow">
+                    <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4">
+                      {t("hotelDetails.ratingDistribution") || "Rating Distribution"}
+                    </h3>
+                    <div className="space-y-2">
+                      {hotel.rating_distribution.sort((a,b) => b.rating - a.rating).map((dist) => {
+                        const maxCount = Math.max(...(hotel.rating_distribution?.map(d => d.count) || [1]));
+                        const percentage = (dist.count / maxCount) * 100;
+                        return (
+                          <div key={dist.rating} className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-[var(--text-primary)] w-4 italic">
+                              {dist.rating}★
+                            </span>
+                            <div className="flex-1 h-1.5 bg-[var(--deep-ocean-accent)] rounded-full overflow-hidden border border-[var(--glass-border)]">
+                              <div 
+                                className="h-full bg-gradient-to-r from-[var(--soft-gold)] to-[var(--soft-gold)]/50 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right tabular-nums">
+                              {dist.count}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* New Contact & Description Section */}

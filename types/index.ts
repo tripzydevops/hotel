@@ -29,6 +29,10 @@ export interface Hotel {
   review_count?: number;
   stars?: number;
   image_url?: string;
+  rating_distribution?: Array<{
+    rating: number;
+    count: number;
+  }>;
   property_token?: string;
   preferred_currency?: string;
   fixed_check_in?: string; // "YYYY-MM-DD"
@@ -406,4 +410,17 @@ export interface AdminSettings {
   scan_interval_hours: number;
   last_global_scan_at?: string;
   next_global_scan_at?: string;
+}
+
+export interface MarketIntelligence {
+  voice_share: Array<{
+    name: string;
+    review_volume: number;
+    percentage: number;
+  }>;
+  sentiment_benchmark: Array<{
+    pillar: string;
+    hotel_score: number;
+    comp_avg: number;
+  }>;
 }
