@@ -543,32 +543,49 @@ async def _trigger_heartbeat_notifications(db: Client, hotel_id: str, current_pr
                     "direct_price": current_price
                 }
 
+        # 4. Get price history for baseline comparison
+        history_res = db.table("price_logs")\
+            .select("price")\
+            .eq("hotel_id", hotel_id)\
+            .order("recorded_at", desc=True)\
+            .limit(2)\
+            .execute()
+        
+        if len(history_res.data) < 2:
+            return
+
+        prev_price = float(history_res.data[1]["price"])
+        change_pct = ((current_price - prev_price) / max(prev_price, 1)) * 100
+
+        # 5. Create ONE master Global Pulse record (user_id = None)
+        # This ensures the public 100-hotel feed is populated even if no user monitors it.
+        if abs(change_pct) > 0.1 or parity_alert:
+            pulse_type = "market_pulse"
+            if parity_alert:
+                pulse_msg = f"Global Pulse: Parity Breach detected for {hotel_name} at ${parity_alert['ota_price']} (Direct: ${parity_alert['direct_price']})"
+            else:
+                pulse_msg = f"Global Pulse: {hotel_name} price shifted {abs(change_pct):.1f}% to {current_price} {currency}"
+            
+            db.table("alerts").insert({
+                "user_id": None,
+                "hotel_id": hotel_id,
+                "alert_type": pulse_type,
+                "message": pulse_msg,
+                "old_price": prev_price,
+                "new_price": current_price,
+                "currency": currency,
+                "is_global_pulse": True
+            }).execute()
+
+        # 6. For each user, check their individual threshold
         for user_id_str in user_ids:
             user_id = UUID(user_id_str)
             settings = settings_map.get(user_id_str)
             if not settings or not settings.get("notifications_enabled"):
                 continue
 
-            # Skip initiator if strictly heartbeat-only (not used for manual triggers)
-            # Actually, we want manual triggers to notify the initiator TOO, but system heartbeats notify everyone.
-            
             threshold = settings.get("threshold_percent", 2.0)
             
-            # Fetch last baseline from history (index 1 is previous, index 0 is current)
-            # Get price history for threshold comparison
-            history_res = db.table("price_logs")\
-                .select("price")\
-                .eq("hotel_id", hotel_id)\
-                .order("recorded_at", desc=True)\
-                .limit(2)\
-                .execute()
-            
-            if len(history_res.data) < 2:
-                continue
-            
-            prev_price = float(history_res.data[1]["price"])
-            change_pct = ((current_price - prev_price) / max(prev_price, 1)) * 100
-
             # Determine Global Pulse Status (applicable to all alert types)
             # System Heartbeat (initiator_id is None) OR cross-user notification
             is_global = (initiator_id is None) or (str(initiator_id) != user_id_str)

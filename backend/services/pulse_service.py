@@ -101,11 +101,12 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
             pulse_alerts_res = (
                 db.table("alerts")
                 .select("id", count="exact")
-                .ilike("message", "%Global Pulse%")
+                .eq("is_global_pulse", True)
+                .is_("user_id", "null")
                 .gte("created_at", cutoff_24h)
                 .execute()
             )
-            # Each pulse alert represents at least 1 cache-served result
+            # Each master pulse alert represents a discovery that benefited the network
             cache_hits_24h = pulse_alerts_res.count or 0
         except Exception:
             pass

@@ -508,12 +508,14 @@ async def get_dashboard_logic(
 async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
     """
     Fetches anonymized recent price drops discovered by the Global Pulse network.
+    Uses the is_global_pulse flag for reliable filtering.
     """
     try:
         res = (
             db.table("alerts")
             .select("hotel_id, message, old_price, new_price, created_at")
-            .ilike("message", "%Global Pulse%")
+            .eq("is_global_pulse", True)
+            .is_("user_id", "null")
             .order("created_at", desc=True)
             .limit(limit)
             .execute()
@@ -538,15 +540,19 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
         for a in raw_alerts:
             pct = 0
             if a["old_price"] and a["old_price"] > 0:
-                pct = round(
-                    ((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1
-                )
+                # Calculate change percentage based on price shift
+                # This works for both price drops and parity breaches (using direct/OTA prices)
+                if a["old_price"] > a["new_price"]:
+                    pct = round(((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1)
+                else:
+                    # In case of increases or complex shifts, just show absolute difference pct
+                    pct = round((abs(a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1)
 
             wins.append(
                 {
                     "hotel_name": hotel_name_map.get(a["hotel_id"], "A shared hotel"),
                     "reduction": f"{pct}%",
-                    "message": a["message"].replace("[Global Pulse] ", ""),
+                    "message": a["message"].replace("Global Pulse: ", ""),
                     "timestamp": a["created_at"],
                 }
             )
