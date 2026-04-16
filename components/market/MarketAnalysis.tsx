@@ -7,7 +7,7 @@ import { Hotel, MarketAnalysis as MarketAnalysisData } from '@/types';
 interface MarketAnalysisProps {
   targetHotel: Hotel | null;
   competitors: Hotel[];
-  analysis: MarketAnalysisData | null;
+  analysis: any; // Allow flexibility for different analysis data structures (streamed vs static)
 }
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -61,7 +61,8 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
   ].map(item => ({ ...item, percentage: totalReviews > 0 ? (item.value / totalReviews) * 100 : 0 }));
 
   // 2. Data Prep: Yield Dynamics (Price vs Market Avg)
-  const yieldData = analysis?.price_history || [];
+  // Support both price_history (static) and daily_prices (streamed)
+  const yieldData = analysis?.price_history || analysis?.daily_prices || [];
 
   // 3. Data Prep: Sentiment Benchmark (Radar)
   const pillars = ['Cleanliness', 'Service', 'Location', 'Value'];
