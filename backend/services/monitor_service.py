@@ -102,31 +102,20 @@ async def record_system_pulse(
 
 
 
-async def run_scheduler_check_logic():
+async def run_scheduler_check_logic(db: Optional[Client] = None):
     """
-    [CRITICAL BACKGROUND LOGIC]
-    Core engine for the persistent background scheduler.
-
-    FEATURE OVERVIEW:
-    - Resolves 'Lazy Cron' by running independently of frontend traffic.
-    - Uses a multi-layered trigger (VM Cron + GitHub Actions).
-    - Ensures scans are dispatched to Celery workers for asynchronous processing.
-
-    FLOW:
-    1. Triggers the System Heartbeat which checks the global pulse (default: 4h).
-    2. Orchestrates DataForSEO result collection and processing.
-    3. Cleans up any stalled or zombie scan sessions.
+    Main entry point for the autonomous scheduler.
+    Performs heartbeat checks, data processing, and cleanup.
     """
     s_logger = get_scheduler_logger()
     s_logger.info("CRON: Starting scheduler check...")
-    from backend.utils.db import get_supabase
+
+    supabase = db or get_supabase(admin = True)
+    if not supabase:
+        s_logger.error("CRON: Could not initialize Supabase.")
+        return
 
     try:
-        supabase = get_supabase(admin=True)
-        if not supabase:
-            logger.error("CRON: Database unavailable")
-            return
-
         # 1. RUN SYSTEM PULSE (5-minute heartbeat for UI 'Alive' feeling)
         try:
             five_mins_ago = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
@@ -171,10 +160,17 @@ async def run_scheduler_check_logic():
 
         # 1.5 RUN SYSTEM HEARTBEAT (New Global 4h Standard)
         # This function handles its own timing checks via admin_settings table.
-        await run_system_heartbeat(supabase)
+        try:
+            await run_system_heartbeat(supabase)
+        except Exception as h_e:
+            s_logger.error(f"CRON: Heartbeat submission error: {h_e}")
         
         # 2. PROCESS COMPLETED TASKS (DataForSEO result collector)
-        await process_system_scans(supabase)
+        # Always run this as a safety net for webhooks.
+        try:
+            await process_system_scans(supabase)
+        except Exception as s_e:
+            s_logger.error(f"CRON: Result collection error: {s_e}")
 
         # 3. Cleanup Zombie Sessions and Tasks
         try:
@@ -381,7 +377,7 @@ async def run_system_heartbeat(db: Client):
         pingback_url = None
         if vercel_domain:
             pingback_url = f"https://{vercel_domain}/api/hotel-webhook"
-            s_logger.info(f"Heartbeat: Using pingback_url: {pingback_url}")
+            s_logger.info(f"Heartbeat: Using explicit pingback_url: {pingback_url}")
         
         success_count = await dataforseo_provider.submit_hotel_scan_batch(
             db=db,

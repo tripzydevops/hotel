@@ -1,35 +1,33 @@
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request, BackgroundTasks
 from backend.utils.logger import get_logger
+from backend.utils.db import get_supabase_client
+from backend.services.monitor_service import process_system_scans
 
 # Initialize router without prefix here, prefix will be added in main.app
 router = APIRouter(tags=["webhooks"])
 logger = get_logger(__name__)
 
 @router.post("/hotel-webhook")
-async def hotel_webhook_handler(request: Request):
+async def hotel_webhook_handler(request: Request, background_tasks: BackgroundTasks):
     """
-    Serverless API route for hotel webhooks.
-    Parses incoming JSON, logs it, and returns 200 OK.
-    No database or external logic included as requested.
+    DataForSEO Pingback handler.
+    When a task is ready, DataForSEO sends a POST with the task ID.
     """
     try:
-        # Parse the incoming JSON body
         payload = await request.json()
+        task_id = payload.get("id")
         
-        # Print the entire payload to server logs
-        print("--- HOTEL WEBHOOK PAYLOAD START ---")
-        print(payload)
-        print("--- HOTEL WEBHOOK PAYLOAD END ---")
+        logger.info(f"Received DataForSEO pingback for task: {task_id}")
         
-        # Log via configured logger as well
-        logger.info(f"Received hotel webhook payload: {payload}")
+        # We trigger process_system_scans in the background to ensure fast response to DataForSEO
+        # If no task_id is present, it will still attempt to sync all pending tasks (safety net)
+        db = get_supabase_client(admin=True)
+        background_tasks.add_task(process_system_scans, db)
         
-        return {"status": "success", "message": "Webhook received"}
+        return {"status": "success", "message": "Ingestion triggered"}
         
     except Exception as e:
-        # If parsing fails or any other error occurs
-        print(f"ERROR: Failed to process hotel webhook: {str(e)}")
         logger.error(f"Hotel webhook error: {str(e)}")
-        # Still return a response but could be 400 if strictly JSON is expected
-        # For simplicity and to ensure "immediately return 200" we return 200 or handle error
+        # Return 200 even on error to stop DataForSEO retries if we've logged it
         return {"status": "error", "message": str(e)}
+
