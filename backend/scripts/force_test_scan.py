@@ -13,7 +13,7 @@ async def force_scan():
     print("🚀 Initiating Force Test Scan...")
     
     # Set VERCEL_DOMAIN for webhook pingback
-    os.environ['VERCEL_DOMAIN'] = 'www.hotelplustr.com'
+    os.environ['VERCEL_DOMAIN'] = 'hotel-delta-green.vercel.app'
     
     # Setup Admin DB Client
     db = get_supabase(admin=True)
@@ -26,7 +26,8 @@ async def force_scan():
     
     # Call the autonomous logic directly
     print("📡 Pitching the task to DataForSEO...")
-    await run_scheduler_check_logic()
+    # Force the scheduler logic using our pre-configured forced client
+    await run_scheduler_check_logic(db=db)
     
     print("-" * 30)
     print(f"✅ SUCCESS: System check cycle triggered.")
