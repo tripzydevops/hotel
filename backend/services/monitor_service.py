@@ -192,7 +192,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                     f"CRON: Cleaning up {len(z_ids)} zombie sessions: {z_ids}"
                 )
                 supabase.table("scan_sessions").update(
-                    {"status": "failed", "completed_at": datetime.now().isoformat()}
+                    {"status": "failed", "completed_at": datetime.now(timezone.utc).isoformat()}
                 ).in_("id", z_ids).execute()
 
             # 3.2. Cleanup stale scan_tasks (12-hour cutoff)
@@ -262,7 +262,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 if sync_id:
                     supabase.table("scan_sessions").update({
                         "status": status,
-                        "completed_at": datetime.now().isoformat(),
+                        "completed_at": datetime.now(timezone.utc).isoformat(),
                         "reasoning_trace": [f"TOBB: {tobb_res}", f"TGA: {tga_res}"]
                     }).eq("id", sync_id).execute()
                 
@@ -373,11 +373,12 @@ async def run_system_heartbeat(db: Client):
         check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
 
         # Construct Pingback URL
-        vercel_domain = os.environ.get("VERCEL_DOMAIN")
+        api_domain = os.environ.get("API_BACKEND_DOMAIN") or os.environ.get("VERCEL_DOMAIN")
         pingback_url = None
-        if vercel_domain:
-            pingback_url = f"https://{vercel_domain}/api/hotel-webhook"
-            s_logger.info(f"Heartbeat: Using explicit pingback_url: {pingback_url}")
+        if api_domain:
+            pingback_url = f"https://{api_domain}/api/hotel-webhook"
+            source = "API_BACKEND_DOMAIN" if os.environ.get("API_BACKEND_DOMAIN") else "VERCEL_DOMAIN"
+            s_logger.info(f"Heartbeat: Using explicit pingback_url ({source}): {pingback_url}")
         
         success_count = await dataforseo_provider.submit_hotel_scan_batch(
             db=db,
@@ -873,12 +874,12 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
             logger.info(f"Batch Sync: Updated {len(hotel_updates)} hotel records.")
 
         if price_logs:
-            try:
-                # Use upsert to handle potential duplicates based on unique constraints
-                db.table("price_logs").upsert(price_logs).execute()
+            # Use upsert to handle potential duplicates based on unique constraints
+            res = db.table("price_logs").upsert(price_logs).execute()
+            if hasattr(res, 'error') and res.error:
+                logger.warning(f"Batch Sync: Price log persistence failed: {res.error}")
+            else:
                 logger.info(f"Batch Sync: Persisted {len(price_logs)} price history logs.")
-            except Exception as pl_err:
-                logger.warning(f"Batch Sync: Price log persistence partial failure or conflict: {pl_err}")
 
         if sentiment_history:
             db.table("sentiment_history").insert(sentiment_history).execute()
