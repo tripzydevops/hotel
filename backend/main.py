@@ -35,7 +35,7 @@ load_dotenv(".env.local", override=True)
 
 # Log API key awareness (masked)
 g_key = os.environ.get("GEMINI_API_KEY")
-masked_g_key = f"{g_key[:4]}...{g_key[-4:]}" if g_key and len(g_key) > 8 else "NOT-SET"
+masked_g_key = "LOADED_SUCCESSFULLY" if g_key else "NOT-SET"
 logger.info(f"System Startup: GEMINI_API_KEY is {masked_g_key}")
 
 # from backend.api import ...
