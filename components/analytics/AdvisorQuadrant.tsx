@@ -113,39 +113,39 @@ export default function AdvisorQuadrant({
           )}
 
           {/* Background Grid & Labels */}
-          <div className="absolute inset-4 top-10 flex flex-col pointer-events-none opacity-25">
-            <div className="flex-1 flex border-b border-white/10">
-              <div className="flex-1 border-r border-white/10 flex items-center justify-center">
-                <div className="text-[8px] font-black uppercase tracking-widest text-red-400/80 -rotate-45">
-                  Danger
-                </div>
-              </div>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-[8px] font-black uppercase tracking-widest text-[var(--soft-gold)] -rotate-45">
-                  Premium
-                </div>
+          <div className="absolute inset-4 top-10 grid grid-cols-2 grid-rows-2 pointer-events-none opacity-20">
+            {/* Top-Left: Danger Zone (High Price, Low Sentiment) */}
+            <div className="border-r border-b border-white/5 bg-red-500/10 flex items-center justify-center">
+              <div className="text-[8px] font-black uppercase tracking-widest text-red-400/80 -rotate-45">
+                Danger
               </div>
             </div>
-            <div className="flex-1 flex">
-              <div className="flex-1 border-r border-white/10 flex items-center justify-center">
-                <div className="text-[8px] font-black uppercase tracking-widest text-[var(--optimal-green)] -rotate-45">
-                  Budget
-                </div>
+            {/* Top-Right: Premium King (High Price, High Sentiment) */}
+            <div className="border-b border-white/5 bg-blue-500/10 flex items-center justify-center">
+              <div className="text-[8px] font-black uppercase tracking-widest text-blue-400 -rotate-45">
+                Premium
               </div>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-[8px] font-black uppercase tracking-widest text-blue-400 -rotate-45">
-                  Value
-                </div>
+            </div>
+            {/* Bottom-Left: Economy (Low Price, Low Sentiment) */}
+            <div className="border-r border-white/5 bg-gray-500/10 flex items-center justify-center">
+              <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 -rotate-45">
+                Economy
+              </div>
+            </div>
+            {/* Bottom-Right: Value Leader (Low Price, High Sentiment) */}
+            <div className="bg-emerald-500/10 flex items-center justify-center">
+              <div className="text-[8px] font-black uppercase tracking-widest text-emerald-400 -rotate-45">
+                Value
               </div>
             </div>
           </div>
 
           {/* Axis Labels */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em]">
-            {t("strategicMap.priceIndex")}
+            {t("strategicMap.valueIndex")}
           </div>
           <div className="absolute left-1 top-1/2 -rotate-90 -translate-y-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em] whitespace-nowrap">
-            {t("strategicMap.valueIndex")}
+            {t("strategicMap.priceIndex")}
           </div>
 
           {/* Crosshair lines */}

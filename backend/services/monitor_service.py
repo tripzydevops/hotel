@@ -23,6 +23,7 @@ from supabase import Client
 from backend.models.schemas import ScanOptions, MonitorResult, SCAN_PULSE_INTERVAL_MINUTES, SCAN_PULSE_INTERVAL_HOURS
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.services.scan_persistence import ScanPersistenceService
+from backend.services.location_service import LocationService
 from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger
 
@@ -115,6 +116,14 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
         s_logger.error("CRON: Could not initialize Supabase.")
         return
 
+    # 0. RESOLVE UNRECOGNIZED LOCATIONS
+    # This pre-scan phase maps human-readable hotel locations to DataForSEO location_codes.
+    try:
+        loc_service = LocationService(supabase)
+        await loc_service.resolve_hotel_locations()
+    except Exception as rl_e:
+        s_logger.warning(f"CRON: Location resolution phase had issues: {rl_e}")
+
     try:
         # 1. RUN SYSTEM PULSE (5-minute heartbeat for UI 'Alive' feeling)
         try:
@@ -195,9 +204,9 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                     {"status": "failed", "completed_at": datetime.now(timezone.utc).isoformat()}
                 ).in_("id", z_ids).execute()
 
-            # 3.2. Cleanup stale scan_tasks (12-hour cutoff)
+            # 3.2. Cleanup stale scan_tasks (6-hour cutoff)
             task_stale_cutoff = (
-                datetime.now(timezone.utc) - timedelta(hours=12)
+                datetime.now(timezone.utc) - timedelta(hours=6)
             ).isoformat()
             stale_tasks = (
                 supabase.table("scan_tasks")
@@ -213,7 +222,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                     f"CRON: Cleaning up {len(st_ids)} stale scan_tasks (abandoned): {st_ids}"
                 )
                 supabase.table("scan_tasks").update(
-                    {"status": "failed", "error_message": "Abandoned: No response from provider after 12h"}
+                    {"status": "failed", "error_message": "Abandoned: No response from provider after 6h"}
                 ).in_("id", st_ids).execute()
                 
                 # Also increment failure count for their batches
@@ -435,6 +444,7 @@ async def process_system_scans(db: Client):
 
         # Collector Buffer for Batch Processing
         batch_results = [] # List of {hotel_id, result, scan_task_id, batch_id}
+        tasks_to_fail = []
         
         # Parallel fetch for all completed tasks from DataForSEO
         # polymorphic get_task_result handles both hotel_searches and hotel_info
@@ -443,18 +453,20 @@ async def process_system_scans(db: Client):
 
         for i, result in enumerate(all_results):
             tid = completed_ids[i]
-            if isinstance(result, Exception):
-                s_logger.error(f"Task Processor: Error fetching task {tid}: {result}")
-                continue
-                
-            if not result or result.get("status") != "success":
+            meta = task_id_to_metadata.get(tid)
+            
+            if isinstance(result, Exception) or not result or result.get("status") != "success":
+                s_logger.error(f"Task Processor: Error fetching/failed task {tid}: {result}")
+                if meta:
+                    tasks_to_fail.append(meta)
                 continue
 
             tag_raw = result.get("tag", tid) # Fallback to tid if tag missing
-            meta = task_id_to_metadata.get(tag_raw)
+            # If meta wasn't found by tid, try tag_raw
+            if not meta:
+                meta = task_id_to_metadata.get(tag_raw)
             
             if not meta:
-                # Last resort: if not in metadata map, we can't sync it reliably
                 continue
 
             batch_results.append({
@@ -463,6 +475,17 @@ async def process_system_scans(db: Client):
                 "scan_task_id": meta["id"],
                 "batch_id": meta.get("batch_id")
             })
+
+        # Process Failures
+        if tasks_to_fail:
+            from collections import Counter
+            fail_task_ids = [t["id"] for t in tasks_to_fail]
+            db.table("scan_tasks").update({"status": "failed"}).in_("id", fail_task_ids).execute()
+            
+            batch_fail_counts = Counter([t["batch_id"] for t in tasks_to_fail if t.get("batch_id")])
+            for bid, count in batch_fail_counts.items():
+                db.rpc("increment_batch_failures", {"b_id": str(bid), "p_count": count}).execute()
+            s_logger.info(f"Task Processor: Marked {len(tasks_to_fail)} tasks as failed.")
 
         if batch_results:
             s_logger.info(f"Task Processor: Syncing {len(batch_results)} results in vectorized batch...")
@@ -842,6 +865,8 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 if res_data.get("check_out_time"): upd["check_out_time"] = res_data.get("check_out_time")
                 if res_data.get("sentiment_breakdown"): upd["sentiment_breakdown"] = res_data.get("sentiment_breakdown")
                 if res_data.get("room_types"): upd["room_types"] = res_data.get("room_types")
+                if res_data.get("latitude"): upd["latitude"] = res_data.get("latitude")
+                if res_data.get("longitude"): upd["longitude"] = res_data.get("longitude")
 
                 hotel_updates.append(upd)
 
@@ -895,13 +920,14 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 db.table("scan_tasks").upsert(raw_archives).execute()
                 logger.info(f"Batch Sync: Archived {len(raw_archives)} raw result documents.")
             
-            # Update batch progress using RPC or fallback
-            batch_ids = list(set([item["batch_id"] for item in batch_items if item.get("batch_id")]))
-            for bid in batch_ids:
+            # Update batch progress using RPC with correct counts
+            from collections import Counter
+            batch_counts = Counter([item["batch_id"] for item in batch_items if item.get("batch_id")])
+            for bid, count in batch_counts.items():
                 try:
-                    db.rpc("increment_batch_success", {"b_id": bid}).execute()
+                    db.rpc("increment_batch_success", {"b_id": str(bid), "p_count": count}).execute()
                 except Exception as rpc_err:
-                    logger.warning(f"Batch Sync: RPC increment_batch_success failed (might not exist): {rpc_err}")
+                    logger.warning(f"Batch Sync: RPC increment_batch_success failed for {bid}: {rpc_err}")
 
         # 7. [VECTORIZED] Concurrently trigger room catalog updates and notification checks
         persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))

@@ -66,7 +66,7 @@ async def main():
         check_out=check_out.isoformat(),
         currency="TRY",
         skip_cache=True, 
-        is_deep_scan=True 
+        deep_scan=True 
     )
 
     # 7. PHASE 1: ScraperAgent (Fetch)

@@ -176,6 +176,69 @@ class DataForSEOProvider(HotelDataProvider):
         if not self.login or not self.password:
             logger.warning("DataForSEO credentials missing from environment.")
 
+    async def _post_v3_request(self, endpoint: str, payload: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Handles authentication and POST request for v3 API."""
+        if not self.login or not self.password:
+            return None
+
+        auth = (self.login, self.password)
+        try:
+            async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                response = await client.post(endpoint, json=payload)
+                if response.status_code == 200:
+                    return response.json()
+                logger.error(f"DataForSEO error: {response.status_code} - {response.text}")
+        except Exception as e:
+            logger.error(f"DataForSEO request failed: {e}")
+        return None
+
+    async def search_location(self, location_name: str) -> Optional[int]:
+        """
+        Search for a location_code based on a string (e.g. 'San Francisco, CA').
+        Returns the most relevant location_code.
+        """
+        # Normalize for DataForSEO (Turkish characters, Turkiye mapping, comma spacing)
+        sanitized_name = self._normalize_location(location_name)
+        
+        endpoint = f"{self.api_url}/serp/google/locations"
+        payload = [{"location_name": sanitized_name, "limit": 1}]
+        
+        response = await self._post_v3_request(endpoint, payload)
+        if response and response.get("tasks"):
+            for task in response["tasks"]:
+                if task.get("result"):
+                    for item in task["result"]:
+                        if item.get("location_code"):
+                            return int(item["location_code"])
+        
+        # Fallback recursive logic: try parts of the location
+        if "," in sanitized_name:
+            parts = sanitized_name.split(",")
+            # 1. Try first part (usually the city or district)
+            city_only = parts[0]
+            payload = [{"location_name": city_only, "limit": 1}]
+            response = await self._post_v3_request(endpoint, payload)
+            if response and response.get("tasks"):
+                for task in response["tasks"]:
+                    if task.get("result"):
+                        for item in task["result"]:
+                            if item.get("location_code"):
+                                return int(item["location_code"])
+            
+            # 2. Try second part if first part failed (likely the province/state if first was a district)
+            if len(parts) > 1:
+                province_only = parts[1]
+                payload = [{"location_name": province_only, "limit": 1}]
+                response = await self._post_v3_request(endpoint, payload)
+                if response and response.get("tasks"):
+                    for task in response["tasks"]:
+                        if task.get("result"):
+                            for item in task["result"]:
+                                if item.get("location_code"):
+                                    return int(item["location_code"])
+        
+        return None
+
     def get_provider_name(self) -> str:
         return "DataForSEO"
 
@@ -327,7 +390,6 @@ class DataForSEOProvider(HotelDataProvider):
             endpoint = "https://api.dataforseo.com/v3/business_data/google/hotel_info/advanced/live"
             
             # Use task-based async fetch if available, else standard requests
-            # For this execution, we use the provider's established session.
             response = await self._post_v3_request(endpoint, payload)
             
             if response and response.get("tasks"):
@@ -555,7 +617,7 @@ class DataForSEOProvider(HotelDataProvider):
 
         # 1. Fetch hotel metadata for keywords
         try:
-            hotels_res = db.table("hotels").select("id, name, location, property_token, serp_api_id") \
+            hotels_res = db.table("hotels").select("id, name, location, property_token, serp_api_id, location_code, latitude, longitude") \
                 .in_("id", hotel_ids) \
                 .execute()
             
@@ -581,11 +643,12 @@ class DataForSEOProvider(HotelDataProvider):
             
             loc = hotel.get("location") or "Turkiye"
             normalized_loc = self._normalize_location(loc)
+            location_code = hotel.get("location_code")
 
             # Price Task (Always submitted)
             price_uuid = str(uuid.uuid4())
             hotel_task_map[price_uuid] = hid
-            price_task_params.append({
+            price_task = {
                 "keyword": keyword,
                 "location_name": normalized_loc,
                 "language_name": "English",
@@ -593,7 +656,13 @@ class DataForSEOProvider(HotelDataProvider):
                 "check_out": check_out,
                 "currency": "TRY",
                 "tag": price_uuid
-            })
+            }
+            if location_code:
+                price_task["location_code"] = location_code
+            if hotel.get("latitude") and hotel.get("longitude"):
+                price_task["location_coordinate"] = f"{hotel['latitude']},{hotel['longitude']},50"
+            
+            price_task_params.append(price_task)
 
             # Info Task (Only if deep_scan)
             if deep_scan:
@@ -602,13 +671,19 @@ class DataForSEOProvider(HotelDataProvider):
                 
                 # Correct key for hotel_info is 'hotel_identifier', not 'keyword'
                 # unless we are doing a keyword search, but with property_token it must be hotel_identifier.
-                info_task_params.append({
+                info_task = {
                     "hotel_identifier": keyword if (hotel.get("serp_api_id") or hotel.get("property_token")) else None,
                     "keyword": None if (hotel.get("serp_api_id") or hotel.get("property_token")) else keyword,
                     "location_name": normalized_loc,
                     "language_name": "English",
                     "tag": info_uuid
-                })
+                }
+                if location_code:
+                    info_task["location_code"] = location_code
+                if hotel.get("latitude") and hotel.get("longitude"):
+                    info_task["location_coordinate"] = f"{hotel['latitude']},{hotel['longitude']},50"
+                
+                info_task_params.append(info_task)
 
         CHUNK_SIZE = 100
         total_submitted = 0
@@ -668,9 +743,14 @@ class DataForSEOProvider(HotelDataProvider):
         return await self._fetch_results_generic(task_id, "hotel_searches")
 
     async def fetch_hotel_info_results(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves results for rich metadata (hotel_info) tasks from advanced endpoint."""
+        """Retrieves results for rich metadata (hotel_info) tasks from either advanced or standard endpoint."""
+        # Try advanced first
         raw = await self._fetch_results_generic(task_id, "hotel_info/advanced")
-        return raw
+        if raw and raw.get("status") == "success" and raw.get("items"):
+            return raw
+            
+        # Fallback to standard
+        return await self._fetch_results_generic(task_id, "hotel_info")
 
     async def _fetch_results_generic(self, task_id: str, endpoint: str) -> Optional[Dict[str, Any]]:
         """Internal helper for GET results."""
@@ -778,6 +858,7 @@ class DataForSEOProvider(HotelDataProvider):
         """Returns a list of Task IDs that are ready for retrieval across all endpoints."""
         tasks = await asyncio.gather(
             self._get_ready_tasks_generic("hotel_searches"),
+            self._get_ready_tasks_generic("hotel_info"),
             self._get_ready_tasks_generic("hotel_info/advanced"),
             return_exceptions=True
         )

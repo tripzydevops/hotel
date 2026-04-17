@@ -6,9 +6,18 @@ import {
   CircleMarker,
   Popup,
   Tooltip,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
+
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center[0], center[1], map]);
+  return null;
+}
 
 // Fix for Leaflet icons in Next.js
 import L from "leaflet";
@@ -62,6 +71,7 @@ const HeatmapMap = ({ hotels }: HeatmapMapProps) => {
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
+        <MapUpdater center={[centerLat, centerLon]} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -69,7 +79,7 @@ const HeatmapMap = ({ hotels }: HeatmapMapProps) => {
 
         {validHotels.map((h) => {
           const isTarget = h.is_target_hotel;
-          const price = h.price || 0;
+          const price = h.latest_price || 0;
 
           // Simple color scale: Target = Blue, Others = Red/Orange/Green based on price?
           // Let's just do Target = Blue, Compset = Red for now.
