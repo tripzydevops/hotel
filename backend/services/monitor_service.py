@@ -877,8 +877,12 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
             logger.info(f"Batch Sync: Updated {len(hotel_updates)} hotel records.")
 
         if price_logs:
-            db.table("price_logs").insert(price_logs).execute()
-            logger.info(f"Batch Sync: Inserted {len(price_logs)} price history logs.")
+            try:
+                # Use upsert to handle potential duplicates based on unique constraints
+                db.table("price_logs").upsert(price_logs).execute()
+                logger.info(f"Batch Sync: Persisted {len(price_logs)} price history logs.")
+            except Exception as pl_err:
+                logger.warning(f"Batch Sync: Price log persistence partial failure or conflict: {pl_err}")
 
         if sentiment_history:
             db.table("sentiment_history").insert(sentiment_history).execute()
@@ -939,6 +943,43 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
             # We use return_exceptions=True to ensure one failure doesn't stop others
             await asyncio.gather(*post_sync_tasks, return_exceptions=True)
             logger.info(f"Batch Sync: Completed {len(post_sync_tasks)} post-sync operations (rooms/notifs).")
+
+        # 8. GENERATE MARKET INTELLIGENCE BRIEFING
+        # Collect results for AI analysis
+        try:
+            from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
+            import uuid
+            
+            agent = MarketIntelligenceAgent()
+            analysis_results = []
+            analysis_hotel_ids = []
+            
+            for hid, h_data in hotel_data_map.items():
+                h_ref = hotel_lookup.get(hid)
+                if h_ref:
+                    res_copy = h_data["res"].copy()
+                    res_copy["hotel_id"] = hid
+                    res_copy["hotel_name"] = h_ref.get("name")
+                    res_copy["hotel_location"] = h_ref.get("location")
+                    analysis_results.append(res_copy)
+                    analysis_hotel_ids.append(hid)
+            
+            if analysis_results:
+                logger.info(f"Batch Sync: Triggering Agentic Intelligence for {len(analysis_results)} hotel updates...")
+                intelligence = await agent.run_analysis(analysis_results)
+                
+                report_title = f"System Market Briefing - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                db.table("reports").insert({
+                    "id": str(uuid.uuid4()),
+                    "title": report_title,
+                    "report_type": "briefing",
+                    "hotel_ids": analysis_hotel_ids,
+                    "report_data": intelligence, # Stores {analysis, trace}
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }).execute()
+                logger.info(f"Batch Sync: Successfully saved Agentic Briefing: {report_title}")
+        except Exception as ai_e:
+            logger.error(f"Batch Sync: Agentic Reporting failed: {ai_e}")
 
         return True
 

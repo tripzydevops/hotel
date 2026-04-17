@@ -32,34 +32,40 @@ class MarketIntelligenceService:
 
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY")
-        print(f"[AI-INFO] Gemini Key detected: {bool(self.api_key)}")
-
-        self.model_name = "models/gemini-3-flash-preview"
+        self.model_name = "models/gemini-2.0-flash-exp" # Using stable 2.0 flash
         self.client = None
+        self.sdk_available = False
         
+        masked_key = f"{self.api_key[:4]}...{self.api_key[-4:]}" if self.api_key and len(self.api_key) > 8 else "NOT-SET"
+        logger.info(f"[AI] Initializing Intelligence Service. Key: {masked_key}")
+
         if HAS_GENAI and self.api_key:
             try:
                 self.client = genai.Client(api_key=self.api_key)
+                self.sdk_available = True
             except Exception as e:
-                logger.error(f"Failed to initialize GenAI client: {e}")
+                logger.error(f"[AI] Failed to initialize GenAI client: {e}")
         else:
             if not self.api_key:
-                logger.warning("[AI] GEMINI_API_KEY not found in environment.")
+                logger.warning("[AI] GEMINI_API_KEY missing - running in Safe Mode.")
             if not HAS_GENAI:
-                logger.warning("[AI] google-genai library not available.")
+                logger.warning("[AI] google-genai SDK not found - running in Safe Mode.")
 
     async def generate_market_brief(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Summarizes market data into high-level insights using Gemini.
         """
-        if not self.client:
+        if not self.sdk_available or not self.client:
             return {
-                "brief": "Market Intelligence Brief is currently unavailable (check API configuration).",
+                "summary": "AI Synthesis is currently in Safe Mode.",
                 "strategic_actions": [
-                    "Manual Review Required",
-                    "Verify GEMINI_API_KEY environment variable",
+                    "Perform manual data verification",
+                    "Configure GEMINI_API_KEY for automated insights",
+                    "Check system connectivity"
                 ],
-                "status": "offline",
+                "market_sentiment": "Sentiment analysis unavailable in Safe Mode.",
+                "market_stability": "Unknown",
+                "status": "safe_mode"
             }
 
         # Prepare context from market data
@@ -107,19 +113,59 @@ class MarketIntelligenceService:
             
             return json.loads(response_text)
         except Exception as e:
-            logger.error(f"Failed to generate intelligence brief: {e}")
+            logger.error(f"[AI] Intelligence briefing synthesis failed: {e}")
             return {
-                "summary": "Market intelligence engine encountered a processing error.",
-                "strategic_actions": ["Review market logs manually", "Verify data integrity"],
-                "market_sentiment": "Inconclusive due to processing error.",
+                "summary": "An error occurred during insight synthesis.",
+                "strategic_actions": ["Review raw market parity logs"],
+                "market_sentiment": "Unavailable",
                 "market_stability": "Unknown"
             }
+
+    async def generate_city_briefing(self, city_data: Dict[str, Any]) -> str:
+        """
+        Generates a city-level market briefing in Markdown format.
+        """
+        if not self.sdk_available or not self.client:
+            return f"# Market Briefing: {city_data.get('city', 'Unknown City')}\n\n*Briefing unavailable in Safe Mode.*"
+
+        prompt = f"""
+        System: You are an expert Hotel Market Analyst.
+        Task: Generate a comprehensive, professional Market Briefing for the city of {city_data.get('city')}.
+        Format: Markdown.
+        
+        Data points to include from the provided context:
+        - Total hotel count: {city_data.get('summary', {}).get('hotel_count')}
+        - Average price: ${city_data.get('summary', {}).get('avg_price')}
+        - Market Range: ${city_data.get('summary', {}).get('price_range', [0,0])[0]} - ${city_data.get('summary', {}).get('price_range', [0,0])[1]}
+        - Competitor summary: {len(city_data.get('competitors', []))} active competitors tracked.
+        
+        Briefing sections:
+        1. Market Overview
+        2. Pricing Dynamics
+        3. Strategic Opportunities
+        4. Competitive Landscape
+        5. Outlook
+        
+        Keep it professional, data-driven, and actionable.
+        Data:
+        {json.dumps(city_data, indent=2)}
+        """
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            logger.error(f"[AI] City briefing failed: {e}")
+            return f"# {city_data.get('city', 'Market')} Briefing\n\nError synthesizing briefing text."
 
     async def get_embedding(self, text: str) -> Optional[List[float]]:
         """
         Generates a vector embedding for the given text.
         """
-        if not self.client:
+        if not self.sdk_available or not self.client:
             return None
         
         try:

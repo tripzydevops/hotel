@@ -606,3 +606,7 @@ class MembershipPlan(PlanBase):
 
     class Config:
         from_attributes = True
+
+class MarketBriefingRequest(BaseModel):
+    city: str
+    user_id: Optional[str] = None

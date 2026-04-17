@@ -628,9 +628,9 @@ async def get_reports_logic(user_id: UUID, db: Client) -> JSONResponse:
         # 2. Fetch Agentic Briefings (Phase 4 saved reports)
         briefings_res = (
             db.table("reports")
-            .select("id, title, report_type, created_at")
+            .select("id, title, report_type, created_at, created_by")
             .eq("report_type", "briefing")
-            .eq("created_by", str(user_id))
+            .or_(f"created_by.eq.{user_id},created_by.is.null")
             .order("created_at", desc=True)
             .limit(50)
             .execute()
@@ -1259,10 +1259,29 @@ async def get_admin_market_intelligence_logic(
                     }
                 )
 
+        # EXPLANATION: Latest Agentic Briefing
+        # Fetches the absolute latest system-wide briefing for immediate display in the dashboard.
+        latest_briefing = None
+        try:
+            lb_res = (
+                db.table("reports")
+                .select("report_data, created_at")
+                .eq("report_type", "briefing")
+                .is_("created_by", "null")
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if lb_res.data:
+                latest_briefing = lb_res.data[0]
+        except Exception as lb_e:
+            print(f"Failed to fetch latest briefing: {lb_e}")
+
         return {
             "hotels": hotels_out,
             "visibility": visibility_data,
             "network": {"nodes": nodes, "links": links},
+            "latest_briefing": latest_briefing,
             "summary": {
                 "hotel_count": total_count,
                 "avg_price": avg_price,

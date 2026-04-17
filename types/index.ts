@@ -258,6 +258,10 @@ export interface MarketIntelligenceResponse {
       label?: string;
     }>;
   };
+  latest_briefing?: {
+    report_data: string;
+    created_at: string;
+  };
 }
 
 export interface AdminUser {
@@ -393,12 +397,10 @@ export interface MarketAnalysis {
 export interface Report {
   id: string;
   title: string;
-  report_type: "single" | "comparison";
+  report_type: "single" | "comparison" | "briefing";
   created_at: string;
-  report_data?: {
-    hotels: unknown[];
-    ai_insights: string[];
-  };
+  created_by?: string | null;
+  report_data?: any;
 }
 
 export interface AdminSettings {

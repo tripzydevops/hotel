@@ -19,6 +19,10 @@ from backend.utils.sentiment_utils import (
     calculate_stability,
 )
 from backend.utils.logger import get_logger
+from backend.services.ai_service import intelligence_service
+
+# AGENT_LOGIC: Module-level logger replaces raw print() for structured output
+logger = get_logger(__name__)
 
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
 try:
@@ -27,6 +31,9 @@ try:
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
+
+import time
+import json
 
 # AGENT_LOGIC: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
@@ -288,12 +295,190 @@ def get_genai_client():
         try:
             api_key = os.getenv("GOOGLE_API_KEY")
             if api_key:
-                from google import genai
-                # AGENT_FEATURE: Using modern genai.Client
+                # AGENT_FEATURE: Using modern genai.Client (google-genai SDK)
                 _genai_client = genai.Client(api_key=api_key)
+            else:
+                logger.warning("[AI] GOOGLE_API_KEY not found in environment.")
         except Exception as e:
             logger.error(f"[AI] Failed to initialize Google GenAI Client: {e}")
     return _genai_client
+
+
+def _clean_json_output(raw_text: str) -> str:
+    """Cleans markdown JSON fencing from LLM output."""
+    if "```json" in raw_text:
+        return raw_text.split("```json")[1].split("```")[0].strip()
+    elif "```" in raw_text:
+        return raw_text.split("```")[1].split("```")[0].strip()
+    return raw_text.strip()
+
+
+async def run_market_intelligence(
+    scraper_results: List[Dict[str, Any]], 
+    threshold: float = 2.0,
+    volatility: float = 0.0,
+    model: str = "gemini-3-flash-preview"
+) -> Dict[str, Any]:
+    """
+    Core AI logic for market anomaly detection and strategic reasoning.
+    Uses Gemini 3 agentic reasoning traces.
+    """
+    # 1. Prepare data summary
+    summary = []
+    for res in scraper_results:
+        if res.get("status") == "success":
+            pd = cast(Dict[str, Any], res.get("price_data") or {})
+            reviews_list = cast(List[Dict[str, Any]], pd.get("reviews", []))
+            summary.append({
+                "hotel_id": res.get("hotel_id"),
+                "hotel_name": res.get("hotel_name", "Unknown"),
+                "current_price": pd.get("price"),
+                "prev_price": pd.get("previous_price"),
+                "reviews": reviews_list[0:3]
+            })
+
+    if not summary:
+        return {"reasoning": [], "final_report": "No valid data to analyze.", "agentic": False}
+
+    client = get_genai_client()
+    if not client:
+        return run_heuristic_market_fallback(summary, threshold, volatility)
+
+    try:
+        prompt = f"""
+        You are a Senior Hotel Revenue Architect. Analyze this market dataset and provide strategic reasoning.
+        
+        GOALS:
+        1. Identify price anomalies (> {threshold}%).
+        2. Identify the 'Behavioral Rival': Which tracked hotel has the highest correlation or most aggressive reaction to the primary hotel's price shifts?
+        3. Acknowledge VOLATILITY: Mention if we are using a 'Smart Threshold' to suppress noise.
+        4. Extract pricing power signals from guest sentiment.
+        
+        DATA: {summary}
+        VOLATILITY: {volatility}% (Threshold Adjusted: {threshold}%)
+        
+        REQUIRED JSON STRUCTURE:
+        {{
+          "reasoning_trace": [{{"step": "str", "message": "str", "level": "info/warning/error"}}],
+          "behavioral_rival": {{"name": "str", "reason": "str"}},
+          "final_report": "CONCISE SUMMARY WITH ALL CAPS HEADERS"
+        }}
+        """
+
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model=model,
+            contents=prompt
+        )
+
+        if not response or not response.text:
+            raise ValueError("No output from Gemini generate_content")
+
+        raw_data = json.loads(_clean_json_output(response.text))
+        
+        trace = raw_data.get("reasoning_trace", [])
+        now = time.time()
+        for i, item in enumerate(trace):
+            item["level"] = item.get("level", "info")
+            item["timestamp"] = now + (i * 0.1)
+
+        return {
+            "reasoning": trace,
+            "behavioral_rival": raw_data.get("behavioral_rival"),
+            "final_report": raw_data.get("final_report", ""),
+            "agentic": True
+        }
+
+    except Exception as e:
+        logger.error(f"[AI] Market Intelligence Error: {e}")
+        return run_heuristic_market_fallback(summary, threshold, volatility)
+
+
+def run_heuristic_market_fallback(summary: List[Dict[str, Any]], threshold: float, volatility: float) -> Dict[str, Any]:
+    """Fallback logic for market intelligence."""
+    now = time.time()
+    reasoning = [{
+        "step": "Market Intel",
+        "level": "info",
+        "message": f"Heuristic fallback: Scanning {len(summary)} properties (Volatility: {volatility}%).",
+        "timestamp": now
+    }]
+
+    for idx, s in enumerate(summary):
+        try:
+            cp = float(s.get("current_price") or 0.0)
+            pp = float(s.get("prev_price") or 0.0)
+        except (ValueError, TypeError):
+            continue
+
+        if pp > 0:
+            change = abs((cp - pp) / pp) * 100
+            if change > threshold:
+                reasoning.append({
+                    "step": "Anomaly Detection",
+                    "level": "warning",
+                    "message": f"Breach for {s['hotel_name']}: {change:.1f}% change exceeds {threshold}% threshold.",
+                    "timestamp": now + (idx + 1) * 0.1
+                })
+
+    return {
+        "reasoning": reasoning, 
+        "final_report": "Heuristic analysis complete. No major strategic shifts detected beyond direct price alerts.",
+        "agentic": False
+    }
+
+
+async def synthesize_pricing_dna(history: List[Dict[str, Any]], model: str = "gemini-3-flash-preview") -> Dict[str, Any]:
+    """
+    Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
+    """
+    client = get_genai_client()
+    if not client:
+        return {"strategy": "Default", "last_updated": None}
+
+    prompt = f"""
+    You are a Strategic Revenue Architect. Analyze the following 30-day history for a hotel and define its 'Pricing DNA'.
+    
+    DATA: {history}
+    
+    GOALS:
+    1. Identify the 'Strategy Archetype' (e.g. Volume Leader, Yield Seeker, Benchmark Follower).
+    2. Determine 'Pricing Elasticity' based on sentiment vs price shifts.
+    3. Define a 'Strategic Narrative' (2 sentences).
+    
+    OUTPUT JSON:
+    {{
+      "archetype": "str",
+      "narrative": "str",
+      "volatility_tolerance": "high/medium/low",
+      "competitive_posture": "aggressive/neutral/passive",
+      "dna_version": "1.0"
+    }}
+    """
+
+    try:
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model=model,
+            contents=prompt
+        )
+        dna = json.loads(_clean_json_output(response.text))
+        dna["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        return dna
+    except Exception as e:
+        logger.error(f"[AI] DNA Synthesis Error: {e}")
+        return {"strategy": "Error", "error": str(e)}
+
+
+async def generate_strategy_embedding(dna: Dict[str, Any]) -> Optional[List[float]]:
+    """
+    Converts the Pricing DNA narrative into a vector embedding for retrieval grounding.
+    """
+    narrative = dna.get("narrative", "")
+    archetype = dna.get("archetype", "")
+    text_to_embed = f"Hotel Strategy: {archetype}. Perspective: {narrative}"
+    
+    return await intelligence_service.get_embedding(text_to_embed)
 
 
 async def stream_narrative_gen(
