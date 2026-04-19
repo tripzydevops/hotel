@@ -309,6 +309,13 @@ async def run_system_heartbeat(db: Client):
         now = datetime.now(timezone.utc)
         
         # 2. Check overlap
+        # EXPLANATION OF FIX: 
+        # Previously, there was a timezone mismatch because InsForge returns timestamps 
+        # ending with "Z" (e.g. 2026-04-19T13:42:51Z), and Python's datetime.fromisoformat() 
+        # in standard libraries prior to 3.11 doesn't parse 'Z' natively. 
+        # We explicitly replace 'Z' with '+00:00' to ensure it converts properly into a 
+        # timezone-aware UTC datetime. This prevents false positive overlap checks which
+        # previously caused the system to skip scheduled background scans.
         is_due = True
         if last_scan:
             try:
@@ -416,10 +423,29 @@ async def process_system_scans(db: Client):
     try:
         # 1. Get completed task IDs
         completed_ids = await dataforseo_provider.get_completed_tasks()
+        
+        # [RECOVERY] If tasks_ready is skipping some, check old pending tasks directly
+        # [FIX 2026-04-19] Only attempt recovery on tasks older than 3 minutes
+        # to avoid race condition where freshly submitted tasks get permanently failed
+        recovery_cutoff = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
+        pending_res = db.table("scan_tasks")\
+            .select("external_task_id, created_at")\
+            .eq("status", "pending")\
+            .not_.is_("external_task_id", "null")\
+            .lt("created_at", recovery_cutoff)\
+            .limit(100)\
+            .execute()
+        
+        if pending_res.data:
+            pending_external_ids = [t["external_task_id"] for t in pending_res.data]
+            # Merge with completed_ids (de-duplicate)
+            completed_ids = list(set(completed_ids + pending_external_ids))
+            s_logger.info(f"Task Processor: Added {len(pending_external_ids)} recovery candidates (>{3}min old).")
+
         if not completed_ids:
             return
 
-        s_logger.info(f"Task Processor: Found {len(completed_ids)} completed scanning tasks.")
+        s_logger.info(f"Task Processor: Found {len(completed_ids)} items to check (including recovery candidates).")
         
         # 2. Extract Task IDs and resolve Metadata in BULK
         task_id_to_metadata = {} # tag -> {hotel_id, batch_id}
@@ -431,8 +457,10 @@ async def process_system_scans(db: Client):
         if tags_to_resolve:
             # We search for either our internal ID or the provider's task ID
             tags_quoted = [f'"{t}"' for t in tags_to_resolve]
+            # [KAIZEN 2026] Included hotel:hotels(name, property_token) for identity verification
+            # [FIX 5] Also select task_type for type-aware endpoint routing
             tasks_res = db.table("scan_tasks")\
-                .select("id, external_task_id, hotel_id, batch_id")\
+                .select("id, external_task_id, hotel_id, batch_id, task_type, created_at, hotel:hotels(name, property_token)")\
                 .or_(f"id.in.({','.join(tags_quoted)}),external_task_id.in.({','.join(tags_quoted)})")\
                 .execute()
             
@@ -442,23 +470,57 @@ async def process_system_scans(db: Client):
                 if t.get("external_task_id"):
                     task_id_to_metadata[t["external_task_id"]] = t
 
+
         # Collector Buffer for Batch Processing
         batch_results = [] # List of {hotel_id, result, scan_task_id, batch_id}
         tasks_to_fail = []
         
         # Parallel fetch for all completed tasks from DataForSEO
-        # polymorphic get_task_result handles both hotel_searches and hotel_info
-        fetch_tasks = [dataforseo_provider.get_task_result(tid) for tid in completed_ids]
+        # [KAIZEN 2026] Now passes target_token and target_name to enforce identity-aware extraction
+        fetch_tasks = []
+        for tid in completed_ids:
+            meta = task_id_to_metadata.get(tid)
+            token = None
+            name = None
+            if meta and meta.get("hotel"):
+                token = meta["hotel"].get("property_token")
+                name = meta["hotel"].get("name")
+            
+            # [FIX 5] Pass task_type for type-aware endpoint routing
+            fetch_tasks.append(dataforseo_provider.get_task_result(
+                tid, target_token=token, target_name=name,
+                task_type=meta.get("task_type") if meta else None
+            ))
+            
         all_results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
+        # [FIX 2026-04-19] Track "not ready" tasks separately from real failures
+        tasks_not_ready = []
+        now_utc = datetime.now(timezone.utc)
+        PERMANENT_FAIL_MINUTES = 30  # Only permanently fail after 30 minutes
+        
         for i, result in enumerate(all_results):
             tid = completed_ids[i]
             meta = task_id_to_metadata.get(tid)
             
             if isinstance(result, Exception) or not result or result.get("status") != "success":
-                s_logger.error(f"Task Processor: Error fetching/failed task {tid}: {result}")
                 if meta:
-                    tasks_to_fail.append(meta)
+                    # Check task age before marking as permanent failure
+                    task_created = meta.get("created_at") or meta.get("id")  # fallback
+                    task_age_minutes = 0
+                    try:
+                        if isinstance(meta.get("created_at"), str):
+                            created_dt = datetime.fromisoformat(meta["created_at"].replace("Z", "+00:00"))
+                            task_age_minutes = (now_utc - created_dt).total_seconds() / 60
+                    except Exception:
+                        task_age_minutes = 999  # If we can't parse, assume old
+                    
+                    if task_age_minutes >= PERMANENT_FAIL_MINUTES:
+                        s_logger.error(f"Task Processor: Permanently failing stale task {tid} (age: {task_age_minutes:.0f}min): {result}")
+                        tasks_to_fail.append(meta)
+                    else:
+                        s_logger.info(f"Task Processor: Task {tid} not ready yet (age: {task_age_minutes:.0f}min) — will retry later.")
+                        tasks_not_ready.append(meta)
                 continue
 
             tag_raw = result.get("tag", tid) # Fallback to tid if tag missing
@@ -792,13 +854,18 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                     "task_ids": [item.get("scan_task_id")]
                 }
             else:
-                # Merge logic: favor non-empty lists/dicts
+                # [FIX 4] Smart merge logic: NEVER let price=0 overwrite a valid positive price
                 existing = hotel_data_map[hid]["res"]
                 merged = existing.copy()
                 for key, val in res.items():
-                    # Allow 0 for numeric fields (price), otherwise favor non-empty
-                    is_valid_zero = (key == "price" and val == 0)
-                    if (val or is_valid_zero) and (not merged.get(key) or (isinstance(val, list) and len(val) > len(merged.get(key, [])))):
+                    if key == "price":
+                        # Only upgrade price: keep the highest positive price
+                        new_price = float(val) if val else 0
+                        old_price = float(merged.get("price", 0) or 0)
+                        if new_price > 0 and new_price > old_price:
+                            merged[key] = new_price
+                        # else: keep existing (never downgrade to 0)
+                    elif val and (not merged.get(key) or (isinstance(val, list) and len(val) > len(merged.get(key, [])))):
                         merged[key] = val
                 
                 hotel_data_map[hid]["res"] = merged
@@ -833,7 +900,7 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
             if not h_ref: continue
             
             res_data = h_data["res"]
-            price = float(res_data.get("price", 0))
+            price = float(res_data.get("price") or 0)
             currency = res_data.get("currency", "TRY")
             
             # Identify all targets for this specific result (primary + variations)
@@ -845,16 +912,18 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 if target_id in processed_variations: continue
                 processed_variations.add(target_id)
 
-                # 1. Update Core Hotel Record
+                # [FIX 6] Only include current_price if we have a real positive number
+                # This prevents hotel_info-only results from zeroing out valid prices
                 upd = {
                     "id": target_id,
-                    "current_price": price,
                     "name": target.get("name"),
                     "location": target.get("location"),
                     "last_scanned_at": now_ts
                 }
+                if price > 0:
+                    upd["current_price"] = price
 
-                # Map all available metadata frommerged results
+                # Map all available metadata from merged results
                 if res_data.get("rating"): upd["rating"] = res_data.get("rating")
                 if res_data.get("stars"): upd["stars"] = res_data.get("stars")
                 if res_data.get("reviews"): upd["review_count"] = res_data.get("reviews")
@@ -864,21 +933,55 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 if res_data.get("check_in_time"): upd["check_in_time"] = res_data.get("check_in_time")
                 if res_data.get("check_out_time"): upd["check_out_time"] = res_data.get("check_out_time")
                 if res_data.get("sentiment_breakdown"): upd["sentiment_breakdown"] = res_data.get("sentiment_breakdown")
-                if res_data.get("room_types"): upd["room_types"] = res_data.get("room_types")
                 if res_data.get("latitude"): upd["latitude"] = res_data.get("latitude")
                 if res_data.get("longitude"): upd["longitude"] = res_data.get("longitude")
+                if res_data.get("phone"): upd["phone"] = res_data.get("phone")
+                if res_data.get("website"): upd["website"] = res_data.get("website")
+                if res_data.get("address"): upd["address"] = res_data.get("address")
+                if res_data.get("image_url"): upd["image_url"] = res_data.get("image_url")
+                if res_data.get("rating_distribution"): upd["rating_distribution"] = res_data.get("rating_distribution")
+                
+                # Rich data: room_types from room_catalog names or ota_prices room info
+                room_types = res_data.get("room_types") or []
+                room_catalog = res_data.get("room_catalog") or []
+                if room_catalog:
+                    upd["room_types"] = room_catalog  # Full room catalog with prices
+                elif room_types:
+                    upd["room_types"] = room_types
+                
+                # Guest mentions (raw review sentiment mentions)
+                if res_data.get("guest_mentions"):
+                    upd["guest_mentions"] = res_data.get("guest_mentions")
+                
+                # Reviews column: store other_sites_reviews + OTA summary
+                reviews_data = {}
+                if res_data.get("other_sites_reviews"):
+                    reviews_data["other_sites_reviews"] = res_data["other_sites_reviews"]
+                if res_data.get("ota_prices"):
+                    reviews_data["ota_count"] = len(res_data["ota_prices"])
+                    reviews_data["ota_min_price"] = min((p.get("price") or 9999999) for p in res_data["ota_prices"])
+                    reviews_data["ota_sources"] = [p.get("source") for p in res_data["ota_prices"] if p.get("source")]
+                if reviews_data:
+                    upd["reviews"] = reviews_data
+                
+                # Images
+                if res_data.get("images"):
+                    upd["images"] = res_data["images"]
 
                 hotel_updates.append(upd)
 
-                # Price Log Entry (Always log if we have a successful scan, even if price is 0)
-                if price >= 0:
+                # Price Log Entry — only log if we have a real positive price
+                if price > 0:
+                    # Build OTA offers for price log
+                    ota_offers = res_data.get("ota_prices") or []
+                    
                     price_logs.append({
                         "hotel_id": target_id,
                         "price": price,
                         "currency": currency,
-                        "parity_offers": res_data.get("parity_offers") or res_data.get("offers", []),
+                        "parity_offers": ota_offers if ota_offers else (res_data.get("parity_offers") or res_data.get("offers", [])),
                         "market_offers": res_data.get("all_prices") or res_data.get("market_offers", []),
-                        "room_types": res_data.get("room_types", []),
+                        "room_types": room_catalog if room_catalog else room_types,
                         "recorded_at": now_ts,
                         "source": "DataForSEO_Batch"
                     })
