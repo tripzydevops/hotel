@@ -193,7 +193,6 @@ export interface Database {
           theme_preference: string;
           language_preference: string;
           phone: string | null;
-          next_scan_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -205,7 +204,6 @@ export interface Database {
           theme_preference?: string;
           language_preference?: string;
           phone?: string | null;
-          next_scan_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -217,7 +215,6 @@ export interface Database {
           theme_preference?: string;
           language_preference?: string;
           phone?: string | null;
-          next_scan_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

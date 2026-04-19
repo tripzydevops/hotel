@@ -379,7 +379,7 @@ export default function HotelDetailsModal({
                           className="group hover:bg-[var(--glass-bg-accent)] transition-all cursor-default"
                         >
                           <td className="p-4 font-black text-[var(--text-primary)]">
-                            {offer.vendor || "Unknown Source"}
+                            {offer.vendor || offer.source || "Unknown Source"}
                           </td>
                           <td className="p-4 text-right text-[var(--soft-gold)] font-black text-sm italic">
                             {new Intl.NumberFormat("en-US", {

@@ -367,7 +367,7 @@ async def trigger_cron_job(key: str):
         )
         return {"status": "success", "message": "Batch processed and maintenance complete"}
     except asyncio.TimeoutError:
-        logger.warning("CRON: Batch processing timed out after 55s, but next_scan_at locks should prevent duplicate runs.")
+        logger.warning("CRON: Batch processing timed out after 55s, but locks should prevent duplicate runs.")
         return {"status": "timeout", "message": "Processing partially completed (timeout)"}
     except Exception as e:
         logger.error(f"CRON ERROR: {str(e)}")

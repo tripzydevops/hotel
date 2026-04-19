@@ -143,29 +143,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
             s_logger.debug(f"Pulse emission skipped: {p_e}")
 
         # 1.1 INITIALIZE STALE PROFILES (Self-Healing)
-        # Ensure any user with monitored hotels has a next_scan_at assigned.
-        # This prevents new users or manually cleared profiles from being 'stuck'.
-        try:
-            stale_profiles = supabase.table("profiles")\
-                .select("id")\
-                .is_("next_scan_at", "null")\
-                .execute()
-            
-            if stale_profiles.data:
-                for p in stale_profiles.data:
-                    # Only assign if they actually have monitored hotels
-                    h_count = supabase.table("user_hotels")\
-                        .select("id", count="exact")\
-                        .eq("user_id", p["id"])\
-                        .eq("is_monitored", True)\
-                        .execute()
-                    
-                    if h_count.count and h_count.count > 0:
-                        initial_nxt = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat().replace("+00:00", "Z")
-                        supabase.table("profiles").update({"next_scan_at": initial_nxt}).eq("id", p["id"]).execute()
-                        s_logger.info(f"CRON: Initialized next_scan_at for user {p['id']}")
-        except Exception as sh_e:
-            s_logger.warning(f"CRON: Self-healing failed: {sh_e}")
+        # REMOVED: next_scan_at is deprecated
 
         # 1.5 RUN SYSTEM HEARTBEAT (New Global 4h Standard)
         # This function handles its own timing checks via admin_settings table.
@@ -326,7 +304,6 @@ async def run_system_heartbeat(db: Client):
                 is_due = True
         
         if not is_due and not getattr(db, "_force_heartbeat", False):
-            # next_scan_at usually set by the updater, but check if we should update UI info
             return
 
         s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")

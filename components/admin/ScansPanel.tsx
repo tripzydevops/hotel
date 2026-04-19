@@ -262,7 +262,6 @@ const ScansPanel = () => {
                     <th className="p-5">User Profile</th>
                     <th className="p-5">Frequency</th>
                     <th className="p-5">System Priority</th>
-                    <th className="p-5">Next Execution</th>
                     <th className="p-5 text-right">Monitored Assets</th>
                     <th className="p-5 text-right">Control</th>
                   </tr>
@@ -300,24 +299,6 @@ const ScansPanel = () => {
                           >
                             {item.status}
                           </span>
-                        </td>
-                        <td className="p-5 text-white">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold tabular-nums">
-                              {new Date(item.next_scan_at).toLocaleTimeString(
-                                [],
-                                { hour: "2-digit", minute: "2-digit" },
-                              )}
-                            </span>
-                            <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-tight">
-                              {formatDistanceToNow(
-                                new Date(item.next_scan_at),
-                                {
-                                  addSuffix: true,
-                                },
-                              )}
-                            </span>
-                          </div>
                         </td>
                         <td className="p-5 text-right text-white">
                           <div className="flex flex-col items-end gap-0.5">

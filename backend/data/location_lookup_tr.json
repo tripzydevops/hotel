@@ -1,0 +1,422 @@
+{
+  "adana": {
+    "code": 1012761,
+    "type": "City",
+    "full_name": "Adana,Adana,Turkiye"
+  },
+  "afyonkarahisar": {
+    "code": 1012762,
+    "type": "City",
+    "full_name": "Afyonkarahisar,Afyonkarahisar,Turkiye"
+  },
+  "ankara": {
+    "code": 1012763,
+    "type": "City",
+    "full_name": "Ankara,Ankara,Turkiye"
+  },
+  "antalya": {
+    "code": 1012764,
+    "type": "City",
+    "full_name": "Antalya,Antalya,Turkiye"
+  },
+  "aydin": {
+    "code": 1012765,
+    "type": "City",
+    "full_name": "Aydin,Aydin,Turkiye"
+  },
+  "balikesir": {
+    "code": 1012766,
+    "type": "City",
+    "full_name": "Balikesir,Balikesir,Turkiye"
+  },
+  "bandirma": {
+    "code": 1012767,
+    "type": "City",
+    "full_name": "Bandirma,Balikesir,Turkiye"
+  },
+  "bolu": {
+    "code": 1012768,
+    "type": "City",
+    "full_name": "Bolu,Bolu,Turkiye"
+  },
+  "bursa": {
+    "code": 1012769,
+    "type": "City",
+    "full_name": "Bursa,Bursa,Turkiye"
+  },
+  "canakkale": {
+    "code": 1012770,
+    "type": "City",
+    "full_name": "Canakkale,Canakkale,Turkiye"
+  },
+  "diyarbakir": {
+    "code": 1012771,
+    "type": "City",
+    "full_name": "Diyarbakir,Diyarbakir,Turkiye"
+  },
+  "elazig": {
+    "code": 1012773,
+    "type": "City",
+    "full_name": "Elazig,Elazig,Turkiye"
+  },
+  "erzincan": {
+    "code": 1012774,
+    "type": "City",
+    "full_name": "Erzincan,Erzincan,Turkiye"
+  },
+  "erzurum": {
+    "code": 1012775,
+    "type": "City",
+    "full_name": "Erzurum,Erzurum,Turkiye"
+  },
+  "eskisehir": {
+    "code": 1012776,
+    "type": "City",
+    "full_name": "Eskisehir,Eskisehir,Turkiye"
+  },
+  "gaziantep": {
+    "code": 1012777,
+    "type": "City",
+    "full_name": "Gaziantep,Gaziantep,Turkiye"
+  },
+  "iskenderun": {
+    "code": 1012779,
+    "type": "City",
+    "full_name": "Iskenderun,Hatay,Turkiye"
+  },
+  "isparta": {
+    "code": 1012780,
+    "type": "City",
+    "full_name": "Isparta,Isparta,Turkiye"
+  },
+  "turkiye": {
+    "code": 2792,
+    "type": "Country",
+    "full_name": "Turkiye"
+  },
+  "agri": {
+    "code": 21054,
+    "type": "Province",
+    "full_name": "Agri,Turkiye"
+  },
+  "hatay": {
+    "code": 21067,
+    "type": "Province",
+    "full_name": "Hatay,Turkiye"
+  },
+  "mersin": {
+    "code": 21068,
+    "type": "Province",
+    "full_name": "Mersin,Turkiye"
+  },
+  "istanbul": {
+    "code": 21069,
+    "type": "Province",
+    "full_name": "Istanbul,Turkiye"
+  },
+  "izmir": {
+    "code": 21070,
+    "type": "Province",
+    "full_name": "Izmir,Turkiye"
+  },
+  "kars": {
+    "code": 21071,
+    "type": "Province",
+    "full_name": "Kars,Turkiye"
+  },
+  "kastamonu": {
+    "code": 21072,
+    "type": "Province",
+    "full_name": "Kastamonu,Turkiye"
+  },
+  "kayseri": {
+    "code": 21073,
+    "type": "Province",
+    "full_name": "Kayseri,Turkiye"
+  },
+  "kocaeli": {
+    "code": 21074,
+    "type": "Province",
+    "full_name": "Kocaeli,Turkiye"
+  },
+  "konya": {
+    "code": 21075,
+    "type": "Province",
+    "full_name": "Konya,Turkiye"
+  },
+  "kutahya": {
+    "code": 21076,
+    "type": "Province",
+    "full_name": "Kutahya,Turkiye"
+  },
+  "malatya": {
+    "code": 21077,
+    "type": "Province",
+    "full_name": "Malatya,Turkiye"
+  },
+  "manisa": {
+    "code": 21078,
+    "type": "Province",
+    "full_name": "Manisa,Turkiye"
+  },
+  "kahramanmaras": {
+    "code": 21079,
+    "type": "Province",
+    "full_name": "Kahramanmaras,Turkiye"
+  },
+  "mugla": {
+    "code": 21080,
+    "type": "Province",
+    "full_name": "Mugla,Turkiye"
+  },
+  "mus": {
+    "code": 21081,
+    "type": "Province",
+    "full_name": "Mus,Turkiye"
+  },
+  "nevsehir": {
+    "code": 21082,
+    "type": "Province",
+    "full_name": "Nevsehir,Turkiye"
+  },
+  "nigde": {
+    "code": 21083,
+    "type": "Province",
+    "full_name": "Nigde,Turkiye"
+  },
+  "sakarya": {
+    "code": 21084,
+    "type": "Province",
+    "full_name": "Sakarya,Turkiye"
+  },
+  "samsun": {
+    "code": 21085,
+    "type": "Province",
+    "full_name": "Samsun,Turkiye"
+  },
+  "sivas": {
+    "code": 21086,
+    "type": "Province",
+    "full_name": "Sivas,Turkiye"
+  },
+  "tekirdag": {
+    "code": 21087,
+    "type": "Province",
+    "full_name": "Tekirdag,Turkiye"
+  },
+  "trabzon": {
+    "code": 21088,
+    "type": "Province",
+    "full_name": "Trabzon,Turkiye"
+  },
+  "sanliurfa": {
+    "code": 21089,
+    "type": "Province",
+    "full_name": "Sanliurfa,Turkiye"
+  },
+  "van": {
+    "code": 21090,
+    "type": "Province",
+    "full_name": "Van,Turkiye"
+  },
+  "zonguldak": {
+    "code": 21091,
+    "type": "Province",
+    "full_name": "Zonguldak,Turkiye"
+  },
+  "karaman": {
+    "code": 21092,
+    "type": "Province",
+    "full_name": "Karaman,Turkiye"
+  },
+  "kirikkale": {
+    "code": 21093,
+    "type": "Province",
+    "full_name": "Kirikkale,Turkiye"
+  },
+  "yalova": {
+    "code": 21094,
+    "type": "Province",
+    "full_name": "Yalova,Turkiye"
+  },
+  "tokat": {
+    "code": 21249,
+    "type": "Province",
+    "full_name": "Tokat,Turkiye"
+  },
+  "yozgat": {
+    "code": 21257,
+    "type": "Province",
+    "full_name": "Yozgat,Turkiye"
+  },
+  "adiyaman": {
+    "code": 21354,
+    "type": "Province",
+    "full_name": "Adiyaman,Turkiye"
+  },
+  "amasya": {
+    "code": 21355,
+    "type": "Province",
+    "full_name": "Amasya,Turkiye"
+  },
+  "artvin": {
+    "code": 21356,
+    "type": "Province",
+    "full_name": "Artvin,Turkiye"
+  },
+  "bilecik": {
+    "code": 21357,
+    "type": "Province",
+    "full_name": "Bilecik,Turkiye"
+  },
+  "bingol": {
+    "code": 21358,
+    "type": "Province",
+    "full_name": "Bingol,Turkiye"
+  },
+  "bitlis": {
+    "code": 21359,
+    "type": "Province",
+    "full_name": "Bitlis,Turkiye"
+  },
+  "burdur": {
+    "code": 21360,
+    "type": "Province",
+    "full_name": "Burdur,Turkiye"
+  },
+  "cankiri": {
+    "code": 21361,
+    "type": "Province",
+    "full_name": "Cankiri,Turkiye"
+  },
+  "corum": {
+    "code": 21362,
+    "type": "Province",
+    "full_name": "Corum,Turkiye"
+  },
+  "denizli": {
+    "code": 21363,
+    "type": "Province",
+    "full_name": "Denizli,Turkiye"
+  },
+  "edirne": {
+    "code": 21364,
+    "type": "Province",
+    "full_name": "Edirne,Turkiye"
+  },
+  "giresun": {
+    "code": 21365,
+    "type": "Province",
+    "full_name": "Giresun,Turkiye"
+  },
+  "gumushane": {
+    "code": 21366,
+    "type": "Province",
+    "full_name": "Gumushane,Turkiye"
+  },
+  "hakkari": {
+    "code": 21367,
+    "type": "Province",
+    "full_name": "Hakkari,Turkiye"
+  },
+  "kirklareli": {
+    "code": 21368,
+    "type": "Province",
+    "full_name": "Kirklareli,Turkiye"
+  },
+  "kirsehir": {
+    "code": 21369,
+    "type": "Province",
+    "full_name": "Kirsehir,Turkiye"
+  },
+  "mardin": {
+    "code": 21370,
+    "type": "Province",
+    "full_name": "Mardin,Turkiye"
+  },
+  "ordu": {
+    "code": 21371,
+    "type": "Province",
+    "full_name": "Ordu,Turkiye"
+  },
+  "rize": {
+    "code": 21372,
+    "type": "Province",
+    "full_name": "Rize,Turkiye"
+  },
+  "siirt": {
+    "code": 21373,
+    "type": "Province",
+    "full_name": "Siirt,Turkiye"
+  },
+  "sinop": {
+    "code": 21374,
+    "type": "Province",
+    "full_name": "Sinop,Turkiye"
+  },
+  "tunceli": {
+    "code": 21375,
+    "type": "Province",
+    "full_name": "Tunceli,Turkiye"
+  },
+  "usak": {
+    "code": 21376,
+    "type": "Province",
+    "full_name": "Usak,Turkiye"
+  },
+  "aksaray": {
+    "code": 21377,
+    "type": "Province",
+    "full_name": "Aksaray,Turkiye"
+  },
+  "bayburt": {
+    "code": 21378,
+    "type": "Province",
+    "full_name": "Bayburt,Turkiye"
+  },
+  "batman": {
+    "code": 21379,
+    "type": "Province",
+    "full_name": "Batman,Turkiye"
+  },
+  "sirnak": {
+    "code": 21380,
+    "type": "Province",
+    "full_name": "Sirnak,Turkiye"
+  },
+  "bartin": {
+    "code": 21381,
+    "type": "Province",
+    "full_name": "Bartin,Turkiye"
+  },
+  "ardahan": {
+    "code": 21382,
+    "type": "Province",
+    "full_name": "Ardahan,Turkiye"
+  },
+  "igdir": {
+    "code": 21383,
+    "type": "Province",
+    "full_name": "Igdir,Turkiye"
+  },
+  "osmaniye": {
+    "code": 21384,
+    "type": "Province",
+    "full_name": "Osmaniye,Turkiye"
+  },
+  "duzce": {
+    "code": 21577,
+    "type": "Province",
+    "full_name": "Duzce,Turkiye"
+  },
+  "karabuk": {
+    "code": 21578,
+    "type": "Province",
+    "full_name": "Karabuk,Turkiye"
+  },
+  "kilis": {
+    "code": 21579,
+    "type": "Province",
+    "full_name": "Kilis,Turkiye"
+  }
+}

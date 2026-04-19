@@ -87,7 +87,7 @@ export interface PriceInfo {
   check_in?: string; // ISO Date "YYYY-MM-DD"
   check_out?: string; // ISO Date "YYYY-MM-DD"
   adults?: number;
-  offers?: { vendor?: string; price?: number }[];
+  offers?: { vendor?: string; source?: string; price?: number }[];
   room_types?: { name?: string; price?: number; currency?: string }[];
   is_estimated?: boolean;
 }
@@ -113,7 +113,6 @@ export interface UserProfile {
   timezone?: string;
   theme_preference?: "light" | "dark" | "system";
   language_preference?: string;
-  next_scan_at?: string;
   created_at: string;
   updated_at: string;
   plan_type?: string;
@@ -280,7 +279,6 @@ export interface AdminUser {
   subscription_status?: "active" | "trial" | "past_due" | "canceled";
   current_period_end?: string;
   scan_frequency_minutes?: number;
-  next_scan_at?: string;
   is_verified?: boolean;
 }
 

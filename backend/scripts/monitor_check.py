@@ -16,16 +16,15 @@ async def check_state():
     now = datetime.now(timezone.utc)
     print(f"Current UTC Time: {now.isoformat()}")
 
-    # 1. Check Profiles Due for Scan
-    print("\n--- Users Due for Scan ---")
+    # 1. Check Profiles Due for Scan (Deprecated due to removal of next_scan_at)
+    print("\n--- Users (Profile Table) ---")
     try:
-        now_iso = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-        res = db.table("profiles").select("id, next_scan_at, subscription_status").lte("next_scan_at", now_iso).execute()
+        res = db.table("profiles").select("id, subscription_status").limit(5).execute()
         if res.data:
             for p in res.data:
-                print(f"User: {p['id']} | Next Scan: {p['next_scan_at']} | Status: {p['subscription_status']}")
+                print(f"User: {p['id']} | Status: {p['subscription_status']}")
         else:
-            print("No users currently due for scan.")
+            print("No users found.")
     except Exception as e:
         print(f"Error fetching profiles: {e}")
 

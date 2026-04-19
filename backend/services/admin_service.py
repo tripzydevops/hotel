@@ -354,16 +354,12 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
         # 3. Add to Profiles (for subscription lookup)
         now = datetime.now(timezone.utc)
         trial_end = (now + timedelta(days=15)).isoformat().replace("+00:00", "Z")
-        # Initialize next scan for immediate inclusion in next global pulse
-        next_scan = now.isoformat().replace("+00:00", "Z")
-        
         admin_db.table("profiles").insert(
             {
                 "id": str(new_user.id),
                 "plan_type": user.plan_type,
                 "subscription_status": user.subscription_status,
-                "current_period_end": trial_end if user.subscription_status == "trial" else None,
-                "next_scan_at": next_scan
+                "current_period_end": trial_end if user.subscription_status == "trial" else None
             }
         ).execute()
 
@@ -1315,11 +1311,10 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
         from backend.services.monitor_service import MONITOR_PULSE_HOURS
         now = datetime.now(timezone.utc)
         
-        # 1. Fetch all profiles with a next_scan_at
+        # 1. Fetch all profiles
         profiles_res = (
             db.table("profiles")
-            .select("id, next_scan_at")
-            .not_.is_("next_scan_at", "null")
+            .select("id")
             .execute()
         )
         profiles = profiles_res.data or []
@@ -1350,24 +1345,18 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
         queue = []
         for p in profiles:
             uid = p["id"]
-            next_scan = p.get("next_scan_at")
             
-            try:
-                next_dt = datetime.fromisoformat(next_scan.replace("Z", "+00:00"))
-                status = "overdue" if next_dt <= now else "pending"
-            except Exception:
-                status = "pending"
+            status = "active" if hotel_counts.get(uid, 0) > 0 else "inactive"
 
             queue.append({
                 "user_id": uid,
                 "user_name": names_map.get(uid, "Unknown"),
                 "pulse_interval_hours": MONITOR_PULSE_HOURS,
-                "next_scan_at": next_scan,
                 "status": status,
                 "hotel_count": hotel_counts.get(uid, 0)
             })
 
-        queue.sort(key=lambda x: (0 if x["status"] == "overdue" else 1, x["next_scan_at"]))
+        queue.sort(key=lambda x: x["hotel_count"], reverse=True)
         return queue
     except Exception as e:
         print(f"Admin Scheduler Queue Error: {e}")
