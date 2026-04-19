@@ -357,6 +357,18 @@ export default function HotelTile(props: HotelTileProps) {
               >
                 <Zap className="w-5 h-5 fill-current" />
               </button>
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(id);
+                  }}
+                  className="p-3 rounded-2xl transition-all shadow-xl bg-[var(--alert-red)]/10 text-[var(--alert-red)] border-2 border-[var(--alert-red)]/20 hover:bg-[var(--alert-red)]/20 hover:scale-110 active:scale-95"
+                  title={t("common.delete")}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
             </>
           ) : (
             <div className="flex flex-col gap-2">
