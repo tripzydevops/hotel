@@ -10,6 +10,7 @@ from backend.agents.notifier_agent import NotifierAgent
 from backend.utils.embeddings import format_hotel_for_embedding, get_embedding
 from backend.services.scan_persistence import ScanPersistenceService
 from backend.utils.db import get_supabase
+from backend.services.analysis_service import get_market_intelligence_data
 
 logger = logging.getLogger(__name__)
 
@@ -375,10 +376,95 @@ class AnalystAgent:
     ) -> Dict[str, Any]:
         """
         Narrative generation (Deep Think) logic.
-        (Note: Keeping this method in AnalystAgent as it is highly interpretive, 
-        but data fetching could be moved if it grows further).
+        Provides a comprehensive data block for PDF generation.
         """
-        # For brevity in this refactor, I'll keep the core structure but it should
-        # eventually use high-reasoning prompts as documented in the original file.
-        # Implementation omitted for space but preserved conceptually.
-        return {"status": "briefing_generation_active", "hotel_id": target_hotel_id}
+        try:
+            # 1. Fetch Hotel Objects
+            target_h = self.db.table("hotels").select("*").eq("id", target_hotel_id).execute()
+            if not target_h.data:
+                return {"error": f"Target hotel {target_hotel_id} not found."}
+            target_data = target_h.data[0]
+
+            rival_data = None
+            if rival_hotel_id:
+                rival_h = self.db.table("hotels").select("*").eq("id", rival_hotel_id).execute()
+                if rival_h.data:
+                    rival_data = rival_h.data[0]
+
+            # 2. Get Intelligence Metrics
+            # Calculate range
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            intel_res = await get_market_intelligence_data(
+                user_id=user_id,
+                target_hotel_id=target_hotel_id,
+                start_date=start_date.strftime("%Y-%m-%d"),
+                end_date=end_date.strftime("%Y-%m-%d")
+            )
+
+            if "error" in intel_res:
+                return intel_res
+
+            metrics = intel_res.get("analysis", {})
+            
+            # 3. Augment Metrics for Report Requirements
+            # If ARI or Sentiment index is missing, use defaults or calculate if possible
+            ari = metrics.get("ari")
+            if ari is None: ari = 100.0
+            
+            sent_index = metrics.get("sent_index") or 100.0
+            
+            # 4. Generate Qualitative Narrative (Verdicts)
+            title = "STABLE"
+            verdict = "Your pricing is currently aligned with the market average."
+            
+            if ari > 105:
+                title = "PREMIUM POSITIONING"
+                verdict = "You are currently pricing at a premium compared to the market. Guest sentiment remains strong, supporting this strategy."
+            elif ari < 95:
+                title = "AGGRESSIVE CAPTURE"
+                verdict = "Your rates are significantly below market average. While this may drive occupancy, review your ADR strategy to avoid revenue leakage."
+            
+            if sent_index < 90:
+                verdict += " WARNING: Declining sentiment detected. Immediate attention to service quality required."
+
+            narrative = f"""
+### {title}
+{verdict}
+
+Our analysis of the last {days} days indicates a {metrics.get('market_average', 0)} {target_data.get('preferred_currency', 'TRY')} market baseline. 
+Your Average Rate Index (ARI) of {ari:.1f} suggests a { 'premium' if ari > 100 else 'discounted' } stance.
+            """.strip()
+
+            # 5. Final Package
+            return {
+                "target": {
+                    "id": target_data.get("id"),
+                    "name": target_data.get("name"),
+                    "preferred_currency": target_data.get("preferred_currency", "TRY"),
+                    "rating": target_data.get("rating"),
+                    "review_count": target_data.get("review_count"),
+                },
+                "rival": {
+                    "id": rival_data.get("id"),
+                    "name": rival_data.get("name"),
+                } if rival_data else None,
+                "metrics": {
+                    "market_avg_price": metrics.get("market_average", 0),
+                    "target_price": metrics.get("target_price", 0),
+                    "ari": ari,
+                    "gri": metrics.get("sentiment_snapshot", target_data.get("rating") or 0.0),
+                    "parity_leaks_count": len([o for o in metrics.get("price_rank", []) if o.get("is_target") and o.get("offers")]),
+                    "sentiment_snapshot": "Robust guest praise in Service & Cleanliness." if sent_index > 100 else "Neutral feedback observed.",
+                },
+                "narrative_raw": narrative,
+                "context": {
+                    "report_type": report_type,
+                    "analysis_days": days,
+                    "generated_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            logger.error(f"[AnalystAgent] Briefing error: {e}")
+            return {"error": f"Failed to generate briefing: {str(e)}"}

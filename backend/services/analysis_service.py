@@ -625,17 +625,18 @@ async def perform_market_analysis(
             p_log = prices_for_h[0]
             lead_cur = p_log.get("currency") or "USD"
             price_val, match_name, match_score = get_price_for_room(p_log, room_type, allowed_room_names_map)
-            if price_val is not None:
+            if price_val is not None and price_val > 0:
                 conv = convert_currency(price_val, lead_cur, display_currency)
-                if conv > 0: current_prices.append(conv)
-                price_rank_list.append({
-                    "id": hid, "name": h.get("name"), "price": conv, "rank": 0, "is_target": is_target,
-                    "rating": h.get("rating"), "review_count": h.get("review_count"),
-                    "matched_room_name": match_name, "match_score": match_score,
-                    "offers": p_log.get("parity_offers") or [],
-                })
-                if is_target:
-                    target_price = conv
+                if conv > 0:
+                    current_prices.append(conv)
+                    price_rank_list.append({
+                        "id": hid, "name": h.get("name"), "price": conv, "rank": 0, "is_target": is_target,
+                        "rating": h.get("rating"), "review_count": h.get("review_count"),
+                        "matched_room_name": match_name, "match_score": match_score,
+                        "offers": p_log.get("parity_offers") or [],
+                    })
+                    if is_target:
+                        target_price = conv
     # AGENT_FIX: Comprehensive Pivot for Daily Prices (Rate Spread Chart)
     # Using explicit typing to assist IDE inference
     daily_snapshot_map: Dict[str, Dict[str, Any]] = {}
@@ -669,18 +670,19 @@ async def perform_market_analysis(
                 continue
             
             p_val, _, _ = get_price_for_room(p_log, room_type, allowed_room_names_map)
-            if p_val is not None:
+            if p_val is not None and float(p_val) > 0:
                 conv_p = convert_currency(float(p_val), p_log.get("currency") or "USD", display_currency)
                 
-                if date_key not in daily_snapshot_map:
-                    daily_snapshot_map[date_key] = {
-                        "date": date_key, 
-                        "check_out_date": p_log.get("check_out_date"),
-                        "target_price": 0.0,
-                        "target_intraday_events": [],
-                        "comp_prices_map": {}, # Map hid -> comp price object for easy updates
-                        "seen_ids": set()
-                    }
+                if conv_p > 0:
+                    if date_key not in daily_snapshot_map:
+                        daily_snapshot_map[date_key] = {
+                            "date": date_key, 
+                            "check_out_date": p_log.get("check_out_date"),
+                            "target_price": 0.0,
+                            "target_intraday_events": [],
+                            "comp_prices_map": {}, # Map hid -> comp price object for easy updates
+                            "seen_ids": set()
+                        }
                 
                 # AGENT_FEATURE: Intraday Event Collection & Detection
                 # We compare with the previous scan for the same stay date to detect shifts.

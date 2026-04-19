@@ -245,47 +245,152 @@ class DataForSEOProvider(HotelDataProvider):
     def _parse_advanced_hotel_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Extracts high-fidelity metadata and sentiment from hotel_info/advanced response.
+        
+        ACTUAL API structure (result[0] level):
+          - about: {description, sub_descriptions, check_in_time, check_out_time, amenities, popular_amenities, ...}
+          - reviews: {value, votes_count, mentions, rating_distribution, other_sites_reviews}
+          - prices: {price, currency, check_in, check_out, items: [{type, title, price, currency, source_url, ...}]}
+          - overview_images: [url, ...]
+          - title, stars, stars_description, address, phone, location: {latitude, longitude, ...}
+        
+        FALLBACK: Also handles legacy nested structure (data.hotel_info, data.reviews)
         """
-        info = data.get("hotel_info", {})
-        reviews = data.get("reviews", {})
+        # === Detect response shape ===
+        # New shape: top-level keys (about, reviews dict with 'value', prices with 'items')
+        # Legacy shape: hotel_info, reviews dict with 'average_rating'
+        is_top_level = bool(data.get("about") or (isinstance(data.get("reviews"), dict) and "value" in (data.get("reviews") or {})))
         
-        # 1. Normalize Sentiment Breakdown
-        sentiment_breakdown = []
-        raw_sentiment = reviews.get("sentiment") or {}
-        
-        if not raw_sentiment and reviews.get("review_mentions"):
-            for mention in reviews.get("review_mentions", []):
-                name = mention.get("title", "Other")
-                pos = mention.get("positive_count", 0)
-                neg = mention.get("negative_count", 0)
-                if pos + neg > 0:
-                    sentiment_breakdown.append({
-                        "name": self._normalize_sentiment_name(name),
-                        "positive": pos,
-                        "negative": neg,
-                        "total": pos + neg
-                    })
+        if is_top_level:
+            about = data.get("about", {})
+            reviews_obj = data.get("reviews", {})
+            prices_obj = data.get("prices", {})
+            location_obj = data.get("location", {})
         else:
-            for category, stats in raw_sentiment.items():
-                pos = stats.get("positive", 0)
-                neg = stats.get("negative", 0)
-                if pos + neg > 0:
-                    sentiment_breakdown.append({
-                        "name": self._normalize_sentiment_name(category),
-                        "positive": pos,
-                        "negative": neg,
-                        "total": pos + neg
-                    })
+            # Legacy fallback
+            about = data.get("hotel_info", {})
+            reviews_obj = data.get("reviews", {})
+            prices_obj = about.get("prices", {})
+            location_obj = {}
 
-        # 2. Enrich Room Catalog (High Detail)
+        # === 1. Core Metadata ===
+        title = data.get("title") or about.get("title") or about.get("name")
+        stars = data.get("stars") or about.get("stars")
+        description = about.get("description")
+        address = data.get("address") or about.get("full_address") or about.get("address")
+        phone = data.get("phone") or about.get("phone")
+        website = about.get("url") or about.get("website")
+        check_in_time = about.get("check_in_time")
+        check_out_time = about.get("check_out_time")
+        
+        # Coordinates
+        latitude = location_obj.get("latitude") or about.get("latitude")
+        longitude = location_obj.get("longitude") or about.get("longitude")
+
+        # === 2. Rating & Reviews ===
+        if is_top_level:
+            rating = reviews_obj.get("value")
+            reviews_count = reviews_obj.get("votes_count")
+        else:
+            rating = reviews_obj.get("average_rating")
+            if not rating and about.get("rating"):
+                rating = about["rating"].get("value")
+            reviews_count = reviews_obj.get("reviews_count")
+            if not reviews_count and about.get("rating"):
+                reviews_count = about["rating"].get("votes_count")
+
+        # Rating Distribution
+        rating_distribution = reviews_obj.get("rating_distribution")
+        if not rating_distribution and isinstance(about.get("rating"), dict):
+            rating_distribution = about["rating"].get("rating_distribution")
+
+        # === 3. Review Mentions → Sentiment Breakdown ===
+        sentiment_breakdown = []
+        mentions_raw = reviews_obj.get("mentions") or reviews_obj.get("review_mentions") or []
+        
+        for mention in mentions_raw:
+            name = mention.get("title") or mention.get("name", "Other")
+            pos = mention.get("positive_count", 0)
+            neg = mention.get("negative_count", 0)
+            total = pos + neg
+            if total > 0:
+                sentiment_breakdown.append({
+                    "name": self._normalize_sentiment_name(name),
+                    "positive": pos,
+                    "negative": neg,
+                    "total": total
+                })
+        
+        # Fallback to sentiment dict if no mentions
+        if not sentiment_breakdown:
+            raw_sentiment = reviews_obj.get("sentiment") or {}
+            for category, stats in raw_sentiment.items():
+                if isinstance(stats, dict):
+                    pos = stats.get("positive", 0)
+                    neg = stats.get("negative", 0)
+                    if pos + neg > 0:
+                        sentiment_breakdown.append({
+                            "name": self._normalize_sentiment_name(category),
+                            "positive": pos,
+                            "negative": neg,
+                            "total": pos + neg
+                        })
+
+        # Guest Mentions (raw for storage)
+        guest_mentions = mentions_raw if mentions_raw else None
+
+        # === 4. Other Sites Reviews (Booking.com, Tripadvisor, etc.) ===
+        other_sites_reviews = reviews_obj.get("other_sites_reviews") or []
+
+        # === 5. Amenities ===
+        amenities = []
+        raw_amenities = about.get("amenities") or about.get("popular_amenities") or []
+        if isinstance(raw_amenities, list):
+            for group in raw_amenities:
+                if isinstance(group, dict):
+                    # Grouped format: {category: "Pool", items: ["Indoor pool", ...]}
+                    cat_name = group.get("category") or group.get("title", "")
+                    items = group.get("items") or group.get("amenities") or []
+                    if items and isinstance(items, list):
+                        for it in items:
+                            if isinstance(it, str):
+                                amenities.append(it)
+                            elif isinstance(it, dict):
+                                amenities.append(it.get("amenity") or it.get("title") or str(it))
+                    elif cat_name:
+                        amenities.append(cat_name)
+                elif isinstance(group, str):
+                    amenities.append(group)
+        
+        # Fallback legacy flat format
+        if not amenities and isinstance(about.get("amenities"), list):
+            amenities = [a.get("amenity") for a in about["amenities"] if isinstance(a, dict) and a.get("amenity")]
+
+        # === 6. OTA Price Items ===
+        ota_prices = []
+        price_items = prices_obj.get("items") or []
+        for pi in price_items:
+            if isinstance(pi, dict):
+                ota_prices.append({
+                    "source": pi.get("title") or pi.get("source"),
+                    "price": pi.get("price"),
+                    "currency": pi.get("currency"),
+                    "url": pi.get("source_url") or pi.get("url"),
+                    "type": pi.get("type", "hotel_info_price")
+                })
+
+        # === 7. Images ===
+        overview_images = data.get("overview_images") or []
+        hotel_images = about.get("images") or overview_images or []
+        image_url = hotel_images[0] if hotel_images else None
+
+        # === 8. Room Catalog (from items array if present) ===
         room_catalog = []
-        items = data.get("items", [])
+        items = data.get("items") or []
         for item in items:
-            if item.get("type") == "hotel_item":
-                image_url = None
+            if isinstance(item, dict) and item.get("type") == "hotel_item":
+                img = None
                 if item.get("images"):
-                    image_url = item["images"][0]
-                
+                    img = item["images"][0]
                 room_catalog.append({
                     "name": item.get("title"),
                     "price": item.get("price_raw") or item.get("price"),
@@ -294,53 +399,47 @@ class DataForSEOProvider(HotelDataProvider):
                     "url": item.get("url"),
                     "capacity": item.get("capacity"),
                     "features": item.get("features"),
-                    "image_url": image_url
+                    "image_url": img
                 })
 
-        # 3. Amenities normalization
-        amenities = [a.get("amenity") for a in info.get("amenities", []) if a.get("amenity")]
+        # === 9. Best Price from prices object ===
+        best_price = prices_obj.get("price")
+        currency = prices_obj.get("currency")
 
-        # 4. Extract Hotel Images
-        hotel_images = info.get("images", [])
-        image_url = hotel_images[0] if hotel_images else None
-
-        # Fallback Rating Logic
-        rating = reviews.get("average_rating")
-        if not rating and info.get("rating"):
-            rating = info["rating"].get("value")
-            
-        reviews_count = reviews.get("reviews_count")
-        if not reviews_count and info.get("rating"):
-            reviews_count = info["rating"].get("votes_count")
-
-        # Rating Distribution
-        rating_distribution = info.get("rating", {}).get("rating_distribution")
-        if not rating_distribution:
-            rating_distribution = reviews.get("rating_distribution")
+        logger.info(
+            f"DataForSEO AdvancedParser: title={title}, stars={stars}, rating={rating}, "
+            f"reviews={reviews_count}, amenities={len(amenities)}, "
+            f"ota_prices={len(ota_prices)}, mentions={len(sentiment_breakdown)}, "
+            f"rooms={len(room_catalog)}, images={len(hotel_images)}, "
+            f"other_site_reviews={len(other_sites_reviews)}"
+        )
 
         return {
-            "name": info.get("title"),
-            "stars": info.get("stars"),
+            "name": title,
+            "stars": stars,
             "rating": rating,
             "reviews_count": reviews_count,
-            "description": info.get("description"),
+            "description": description,
             "amenities": amenities,
             "image_url": image_url,
             "images": hotel_images,
-            "check_in_time": info.get("check_in_time"),
-            "check_out_time": info.get("check_out_time"),
-            "phone": info.get("phone"),
-            "website": info.get("website"),
-            "address": info.get("address"),
-            "latitude": info.get("latitude"),
-            "longitude": info.get("longitude"),
+            "check_in_time": check_in_time,
+            "check_out_time": check_out_time,
+            "phone": phone,
+            "website": website,
+            "address": address,
+            "latitude": latitude,
+            "longitude": longitude,
             "sentiment_breakdown": sentiment_breakdown,
+            "guest_mentions": guest_mentions,
+            "other_sites_reviews": other_sites_reviews,
+            "ota_prices": ota_prices,
             "room_catalog": room_catalog,
             "room_types": [r["name"] for r in room_catalog if r.get("name")],
-            "best_price": info.get("prices", {}).get("price"),
-            "currency": info.get("prices", {}).get("currency"),
+            "best_price": best_price,
+            "currency": currency,
             "rating_distribution": rating_distribution,
-            "raw_data": data # Full result block
+            "raw_data": data
         }
 
     def _normalize_sentiment_name(self, name: str) -> str:
@@ -554,7 +653,7 @@ class DataForSEOProvider(HotelDataProvider):
                     f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=tasks
                 )
-                if response.status_code != 200 or response.json().get("status_code") != 20100:
+                if response.status_code != 200 or response.json().get("status_code") not in [20000, 20100]:
                     logger.error(f"DataForSEO info POST error: {response.status_code} - {response.text}")
                 res_json = response.json()
                 return res_json.get("tasks", [])
@@ -648,8 +747,14 @@ class DataForSEOProvider(HotelDataProvider):
             # Price Task (Always submitted)
             price_uuid = str(uuid.uuid4())
             hotel_task_map[price_uuid] = hid
+            
+            # [KAIZEN 2026] Use hotel_identifier for targeted property pricing
+            # This forces the API to return the specific hotel rather than searching for neighbors
+            is_targeted = bool(hotel.get("serp_api_id") or hotel.get("property_token"))
+            
             price_task = {
-                "keyword": keyword,
+                "hotel_identifier": keyword if is_targeted else None,
+                "keyword": None if is_targeted else keyword,
                 "location_name": normalized_loc,
                 "language_name": "English",
                 "check_in": check_in,
@@ -676,6 +781,9 @@ class DataForSEOProvider(HotelDataProvider):
                     "keyword": None if (hotel.get("serp_api_id") or hotel.get("property_token")) else keyword,
                     "location_name": normalized_loc,
                     "language_name": "English",
+                    "check_in": check_in,
+                    "check_out": check_out,
+                    "currency": "TRY",
                     "tag": info_uuid
                 }
                 if location_code:
@@ -738,9 +846,9 @@ class DataForSEOProvider(HotelDataProvider):
             logger.error(f"Failed to register scan tasks: {e}")
             return 0
 
-    async def fetch_task_results(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves results for price search tasks."""
-        return await self._fetch_results_generic(task_id, "hotel_searches")
+    async def fetch_task_results(self, task_id: str, target_token: Optional[str] = None, target_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Retrieves results for price search tasks with identity matching."""
+        return await self._fetch_results_generic(task_id, "hotel_searches", target_token=target_token, target_name=target_name)
 
     async def fetch_hotel_info_results(self, task_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves results for rich metadata (hotel_info) tasks from either advanced or standard endpoint."""
@@ -752,15 +860,27 @@ class DataForSEOProvider(HotelDataProvider):
         # Fallback to standard
         return await self._fetch_results_generic(task_id, "hotel_info")
 
-    async def _fetch_results_generic(self, task_id: str, endpoint: str) -> Optional[Dict[str, Any]]:
-        """Internal helper for GET results."""
+    async def _fetch_results_generic(self, task_id: str, endpoint: str, target_token: Optional[str] = None, target_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Internal helper for GET results with Identity Verification logic."""
         if not self.login or not self.password or not task_id:
             return None
 
         auth = (self.login, self.password)
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
-                response = await client.get(f"{self.api_url}/business_data/google/{endpoint}/task_get/{task_id}")
+                # [FIX 2026-04-19] DataForSEO URL pattern:
+                #   POST: hotel_info/task_post
+                #   GET:  hotel_info/task_get/advanced/{id}
+                # The method (advanced/html) goes AFTER task_get, not before it.
+                # For hotel_searches, the pattern is: hotel_searches/task_get/{id}
+                if "/" in endpoint:
+                    # e.g. "hotel_info/advanced" → base="hotel_info", method="advanced"
+                    base, method = endpoint.rsplit("/", 1)
+                    url = f"{self.api_url}/business_data/google/{base}/task_get/{method}/{task_id}"
+                else:
+                    url = f"{self.api_url}/business_data/google/{endpoint}/task_get/{task_id}"
+                
+                response = await client.get(url)
                 res_json = response.json()
                 
                 if res_json.get("status_code") != 20000:
@@ -782,7 +902,48 @@ class DataForSEOProvider(HotelDataProvider):
                 items = result.get("items", [])
                 
                 if (endpoint == "hotel_searches" or endpoint == "hotel_search") and items:
-                    target = items[0]
+                    # [KAIZEN 2026] IDENTITY ENFORCEMENT
+                    # We no longer take items[0]. We find the item that MATCHES our target.
+                    target = None
+                    
+                    if target_token:
+                        # Priority 1: Exact Token Match
+                        for item in items:
+                            if item.get("hotel_identifier") == target_token:
+                                target = item
+                                break
+                    
+                    if not target and target_name:
+                        # Priority 2: Fuzzy Name Match
+                        from difflib import SequenceMatcher
+                        best_score = 0
+                        
+                        # Normalize target name for comparison
+                        norm_target = self._normalize_location(target_name).lower()
+                        
+                        for item in items:
+                            raw_title = item.get("title", "")
+                            # Normalize title for robust comparison
+                            norm_title = self._normalize_location(raw_title).lower()
+                            
+                            score = SequenceMatcher(None, norm_target, norm_title).ratio()
+                            
+                            # Promotion: If one is a substring of the other and they are reasonably similar
+                            is_substring = (norm_target in norm_title or norm_title in norm_target)
+                            
+                            if (is_substring and score > 0.60) or score > 0.75:
+                                if score > best_score:
+                                    target = item
+                                    best_score = score
+                    
+                    # Fallback: If no identity context provided, take items[0] (backward compatibility)
+                    if not target and not target_token and not target_name:
+                        target = items[0]
+                    
+                    if not target:
+                        logger.warning(f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} results. Skipping to prevent leakage.")
+                        return None
+
                     prices_data = target.get("prices", {})
                     reviews_data = target.get("reviews", {})
                     
@@ -795,7 +956,6 @@ class DataForSEOProvider(HotelDataProvider):
                     PRIORITY_OTAS = ["Booking.com", "Expedia", "Agoda", "Hotels.com", "Airbnb", "Otelz.com", "Jolly Tur"]
                     
                     def ota_priority(item):
-                        # DataForSEO might use 'source' or 'vendor'
                         source = item.get("source") or item.get("vendor") or ""
                         try:
                             for idx, prio in enumerate(PRIORITY_OTAS):
@@ -810,10 +970,11 @@ class DataForSEOProvider(HotelDataProvider):
                     # Sentiment Fallback
                     search_sentiment = target.get("reviews_breakdown", {}).get("sentiment", [])
 
-                    return {
+                    # [FIX 3] Only emit price if API actually returned one (not None/0)
+                    raw_price = prices_data.get("price")
+                    result_dict = {
                         "status": "success",
                         "task_type": "price_search",
-                        "price": prices_data.get("price", 0.0),
                         "currency": prices_data.get("currency", "USD"),
                         "property_token": target.get("hotel_identifier"),
                         "hotel_name": target.get("title"),
@@ -825,41 +986,120 @@ class DataForSEOProvider(HotelDataProvider):
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,
                         "sentiment_breakdown": search_sentiment,
-                        "raw_data": target, # Full raw item for archival
+                        "raw_data": target,
                         "items": items
                     }
+                    # Only include price if it's a real positive number
+                    if raw_price and float(raw_price) > 0:
+                        result_dict["price"] = float(raw_price)
+                    return result_dict
                 
-                if "hotel_info" in endpoint and items:
-                    # Unified Parsing for Advanced Hotel Info
-                    parsed = self._parse_advanced_hotel_info(result)
-                    return {
+                if "hotel_info" in endpoint:
+                    # [FIX 2026-04-19] hotel_info/advanced has TWO response shapes:
+                    # Shape A: result has 'items' array containing hotel objects (identity matching needed)
+                    # Shape B: result itself IS the hotel data (about, reviews, prices at top level)
+                    #          This happens when hotel_identifier is used. items may be empty or
+                    #          contain room type objects, NOT hotel identity objects.
+                    
+                    # Detect Shape B: result itself has rich data (about/reviews/prices)
+                    has_direct_data = bool(
+                        result.get("about") or 
+                        result.get("reviews") or 
+                        result.get("prices") or
+                        result.get("title")
+                    )
+                    
+                    if has_direct_data:
+                        # Shape B: Parse result directly — it IS the hotel data
+                        logger.info(f"DataForSEO hotel_info: Direct result shape detected (keys: {list(result.keys())[:8]})")
+                        parsed = self._parse_advanced_hotel_info(result)
+                    elif items:
+                        # Shape A: items array contains hotel objects, need identity matching
+                        # [KAIZEN 2026] IDENTITY ENFORCEMENT for Hotel Info
+                        target = None
+                        if target_token:
+                            for item in items:
+                                if item.get("hotel_identifier") == target_token:
+                                    target = item
+                                    break
+                        
+                        if not target and target_name:
+                            from difflib import SequenceMatcher
+                            best_score = 0
+                            norm_target = self._normalize_location(target_name).lower()
+                            for item in items:
+                                norm_title = self._normalize_location(item.get("title", "")).lower()
+                                score = SequenceMatcher(None, norm_target, norm_title).ratio()
+                                
+                                is_substring = (norm_target in norm_title or norm_title in norm_target)
+                                if (is_substring and score > 0.60) or score > 0.75:
+                                    if score > best_score:
+                                        target = item
+                                        best_score = score
+                        
+                        if not target and not target_token and not target_name:
+                            target = items[0]
+                            
+                        if not target:
+                            logger.warning(f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} info results. Blocking metadata update.")
+                            return None
+
+                        # Try the item first; if it doesn't have hotel_info, use the result object.
+                        if target.get("hotel_info") or target.get("about") or target.get("reviews"):
+                            parsed = self._parse_advanced_hotel_info(target)
+                        else:
+                            parsed = self._parse_advanced_hotel_info(result)
+                    else:
+                        # No items and no direct data — empty result
+                        logger.warning(f"DataForSEO hotel_info: Empty result (no items, no direct data)")
+                        return {"status": "success", "items": [], "task_type": "hotel_info", "tag": (task.get("data") or {}).get("tag")}
+                    
+                    # [FIX 3] hotel_info results must NOT include price field
+                    # This prevents the merge logic from overwriting valid prices with 0
+                    info_result = {
                         "status": "success",
                         "task_type": "hotel_info",
                         "tag": (task.get("data") or {}).get("tag"),
                         **parsed
                     }
+                    # Remove any price/best_price that defaulted to None/0
+                    # hotel_info should NEVER set pricing — that's price_search's job
+                    info_result.pop("price", None)
+                    info_result.pop("best_price", None)
+                    return info_result
                 
                 return {"status": "success", "items": items, "tag": (task.get("data") or {}).get("tag")}
         except Exception as e:
             logger.error(f"DataForSEO GET error ({endpoint}): {e}")
             return None
 
-    async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Implementation of abstract method from HotelDataProvider."""
-        res = await self.fetch_task_results(task_id)
-        if res and res.get("status") == "success": return res
+    async def get_task_result(self, task_id: str, target_token: Optional[str] = None, target_name: Optional[str] = None, task_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Implementation of abstract method from HotelDataProvider.
         
-        res_info = await self.fetch_hotel_info_results(task_id)
-        if res_info and res_info.get("status") == "success": return res_info
-            
-        return res or res_info
+        [FIX 1] Task-type-aware routing: uses task_type from scan_tasks table
+        to call the correct endpoint directly, instead of brute-forcing all three.
+        This eliminates wasted API calls and prevents cross-endpoint data contamination.
+        """
+        if task_type == "hotel_info":
+            # [FIX 2026-04-19] Tasks are posted to hotel_info/task_post.
+            # Results are fetched from hotel_info/task_get/advanced/{id}.
+            # The "advanced" method gets structured data; no separate "advanced" post endpoint.
+            res = await self._fetch_results_generic(task_id, "hotel_info/advanced", target_token=target_token, target_name=target_name)
+            return res if res and res.get("status") == "success" else None
+        else:
+            # Default: price_search via hotel_searches
+            res = await self.fetch_task_results(task_id, target_token=target_token, target_name=target_name)
+            return res if res and res.get("status") == "success" else None
 
     async def get_completed_tasks(self) -> List[str]:
         """Returns a list of Task IDs that are ready for retrieval across all endpoints."""
         tasks = await asyncio.gather(
             self._get_ready_tasks_generic("hotel_searches"),
             self._get_ready_tasks_generic("hotel_info"),
-            self._get_ready_tasks_generic("hotel_info/advanced"),
+            # [FIX 2026-04-19] Removed "hotel_info/advanced" — it's NOT a separate
+            # tasks_ready endpoint. All hotel_info tasks appear in hotel_info/tasks_ready.
+            # The "advanced" part is only the GET method: hotel_info/task_get/advanced/{id}
             return_exceptions=True
         )
         
