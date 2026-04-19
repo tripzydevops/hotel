@@ -372,6 +372,18 @@ export default function HotelTile(props: HotelTileProps) {
                   <Building2 className="w-4 h-4" />
                 </button>
               )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(id);
+                  }}
+                  className="p-2 rounded-xl transition-all bg-[var(--alert-red)]/10 text-[var(--alert-red)] hover:bg-[var(--alert-red)]/20 border-2 border-[var(--alert-red)]/20 hover:scale-105 active:scale-95 shadow-sm"
+                  title={t("common.delete")}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={handleIntradayClick}
                 className="p-2 rounded-xl transition-all bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border-2 border-[var(--optimal-green)]/20 hover:bg-[var(--optimal-green)]/20 hover:scale-105 active:scale-95"
