@@ -6,8 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "echo \"No tests yet\" && exit 0"
+     "lint": "eslint",
+    "test": "echo \"No tests yet\" && exit 0",
+    "ai": "gemini",
+    "gemini": "gemini"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -36,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "@google/gemini-cli": "^0.38.2",
     "@supabase/mcp-server-supabase": "^0.6.3",
     "@supabase/supabase-js": "^2.45.4",
     "@types/leaflet": "^1.9.12",

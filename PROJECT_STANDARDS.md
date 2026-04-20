@@ -3,12 +3,14 @@
 This document serves as the "Source of Truth" for the project's architecture and technology stack to prevent the regression to experimental versions and ensure production stability.
 
 ## 1. Core Technology Stack (Locked)
+> [!IMPORTANT]
+> **DO NOT USE ANY EXPERIMENTAL OR UNSTABLE VERSIONS OF ANYTHING.** This is a non-negotiable requirement for production stability.
 
 | Component | Stable Version | Rationale |
 | :--- | :--- | :--- |
-| **Next.js** | `^15.x` | Required for compatibility with InsForge middleware and stable Vercel builds. |
+| **Next.js** | `15.1.11` | Required for compatibility with InsForge middleware and stable Vercel builds. |
 | **Tailwind CSS** | `3.4.14` (Locked) | Prevents `ScannerOptions` errors and ensures PostCSS pipeline stability. **Do not upgrade.** |
-| **React** | `19.0.x` | Standard minor version for the current feature set. Avoid `19.2.x` until peer dependencies align. |
+| **React** | `19.0.x` | Stable concurrent features. |
 | **Node.js** | `>=20.0.0` | Production runtime standard. |
 
 ## 2. Configuration Standards

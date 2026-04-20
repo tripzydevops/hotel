@@ -15,7 +15,9 @@
             "root": ".",
             "pythonVersion": "3.11",
             "extraPaths": [
-                "."
+                ".",
+                "backend",
+                "backend/api"
             ]
         }
     ],
