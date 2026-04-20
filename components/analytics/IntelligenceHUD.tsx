@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Target, TrendingUp, AlertTriangle, Cpu, Command } from 'lucide-react';
 
+import { useI18n } from '@/lib/i18n';
+
 interface IntelligenceBrief {
   summary: string;
   strategic_actions: string[];
@@ -12,6 +14,7 @@ interface IntelligenceBrief {
 }
 
 export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
+  const { t } = useI18n();
   const [brief, setBrief] = useState<IntelligenceBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(true);
@@ -53,10 +56,10 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
             <Command className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="font-bold tracking-widest text-white uppercase text-sm">Market Intelligence</h3>
+            <h3 className="font-bold tracking-widest text-white uppercase text-sm">{t('analysis.title')}</h3>
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
-              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">System {loading ? 'Processing' : 'Active'}</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">{t('analysis.system')} {loading ? t('analysis.processing') : t('analysis.active')}</span>
             </div>
           </div>
         </div>
@@ -69,7 +72,7 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
               className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${stabilityColors[brief.market_stability]}`}
             >
               <Shield className="h-3 w-3" />
-              Market Stability: {brief.market_stability}
+              {t('analysis.stability')}: {t(`analysis.${brief.market_stability.toLowerCase()}` as any)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -79,7 +82,7 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
         {/* Main Status */}
         <div className="lg:col-span-2 space-y-6">
           <div className="space-y-2">
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">Objective Summary</span>
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">{t('analysis.objectiveSummary')}</span>
             <div className="relative min-h-[60px]">
               {loading ? (
                 <div className="space-y-2">
@@ -95,9 +98,9 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
           </div>
 
           <div className="space-y-4">
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">Strategic Insights</span>
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">{t('analysis.strategicInsights')}</span>
             <div className="space-y-3">
-              {(loading ? Array(3).fill(null) : brief?.strategic_actions)?.map((action, i) => (
+              {(loading ? Array(3).fill(null) : brief?.strategic_actions)?.map((action: string | null, i: number) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
@@ -123,14 +126,14 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
         <div className="rounded-xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm space-y-4">
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-cyan-400" />
-            <span className="text-[10px] font-bold text-white uppercase tracking-wider">Field Intel</span>
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{t('analysis.fieldIntel')}</span>
           </div>
           
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[9px] text-slate-500 uppercase">Market Sentiment</span>
-                <span className="text-[9px] text-cyan-400">Analysis 98%</span>
+                <span className="text-[9px] text-slate-500 uppercase">{t('analysis.marketSentiment')}</span>
+                <span className="text-[9px] text-cyan-400">{t('analysis.analysisConfidence')} 98%</span>
               </div>
               {loading ? (
                 <div className="h-10 w-full bg-slate-800 rounded animate-pulse" />
@@ -144,10 +147,10 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center gap-2 mb-2 text-rose-400">
                 <AlertTriangle className="h-3 w-3" />
-                <span className="text-[9px] font-bold uppercase tracking-tighter">DATA ALERT</span>
+                <span className="text-[9px] font-bold uppercase tracking-tighter">{t('analysis.dataAlert')}</span>
               </div>
               <p className="text-[10px] text-slate-500 italic">
-                AI-generated advisory based on current market trends.
+                {t('analysis.aiAdvisoryNote')}
               </p>
             </div>
           </div>

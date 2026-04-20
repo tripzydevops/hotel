@@ -119,13 +119,12 @@ export default function AnalysisPage() {
       if (!token) {
         setLoading(false);
         setError({
-          title: "Session Expired",
-          message: "Your authorization token has timed out. Please log back in to continue your analysis.",
+          title: t("analysis.errors.sessionExpired.title"),
+          message: t("analysis.errors.sessionExpired.message"),
           action: {
-            label: "Log In",
+            label: t("common.signIn"),
             onClick: () => router.push("/login"),
-            icon: "login",
-          }
+          },
         });
         return;
       }
@@ -173,13 +172,12 @@ export default function AnalysisPage() {
         if (!data) {
           setLoading(false);
           setError({
-            title: "Analysis Error",
-            message: "We encountered a problem synchronizing your market data. This may be due to a connection timeout or an expired session.",
+            title: t("analysis.errors.analysisError.title"),
+            message: t("analysis.errors.analysisError.message"),
             action: {
-              label: "Try Again",
-              onClick: () => loadData(),
-              icon: "retry",
-            }
+              label: t("common.retry"),
+              onClick: () => window.location.reload(),
+            },
           });
         }
       };
@@ -191,13 +189,12 @@ export default function AnalysisPage() {
       console.error("Failed to connect to analysis stream:", error);
       setLoading(false);
       setError({
-        title: "Connection Failed",
-        message: error.message || "An unexpected error occurred while connecting to the intelligence engine.",
+        title: t("analysis.errors.connectionFailed.title"),
+        message: error.message || t("analysis.errors.connectionFailed.message"),
         action: {
-          label: "Retry Connection",
-          onClick: () => loadData(),
-          icon: "retry",
-        }
+          label: t("common.retry"),
+          onClick: () => window.location.reload(),
+        },
       });
     }
   }, [
@@ -382,7 +379,7 @@ export default function AnalysisPage() {
             highlight
             hoverData={{
               type: "info",
-              description: "The ideal price to achieve maximum occupancy and revenue based on current market data and competitive positioning.",
+              description: t("analysis.targetPriceDesc"),
             }}
           />
           <KPICard
@@ -406,7 +403,7 @@ export default function AnalysisPage() {
             index={3}
             title={t("analysis.marketPosition")}
             value={data?.competitive_rank != null ? `#${data.competitive_rank}` : "N/A"}
-            subtitle={`of ${data?.total_hotels ?? 0} hotels`}
+            subtitle={t("analysis.ofHotels", { count: data?.total_hotels ?? 0 })}
             icon={<TrendingUp className="w-5 h-5" />}
             hoverData={{
               type: "ranking",
@@ -416,26 +413,26 @@ export default function AnalysisPage() {
           />
           <KPICard
             index={4}
-            title="Avg Rate Index (ARI)"
+            title={t("analysis.ari.title")}
             value={data?.ari ? `${data.ari}%` : "100%"}
-            subtitle="Market Rate Competitiveness"
+            subtitle={t("analysis.ari.subtitle")}
             icon={<Target className="w-5 h-5" />}
             trend={data?.ari > 100 ? "up" : "down"}
             hoverData={{
               type: "info",
-              description: t("reports.ariDesc"),
+              description: t("analysis.ari.description"),
             }}
           />
           <KPICard
             index={5}
-            title="Sentiment Index"
+            title={t("analysis.sentiment.title")}
             value={data?.sentiment_index ? `${data.sentiment_index}%` : "100%"}
-            subtitle="Reputation vs Market"
+            subtitle={t("analysis.sentiment.subtitle")}
             icon={<Zap className="w-5 h-5" />}
             trend={data?.sentiment_index > 100 ? "up" : "down"}
             hoverData={{
               type: "info",
-              description: t("reports.sentimentDesc"),
+              description: t("analysis.sentiment.description"),
             }}
           />
         </div>
@@ -514,7 +511,7 @@ export default function AnalysisPage() {
                         {t(`analysis.advisory.${key}` as any)}{" "}
                       </span>
                     ))
-                    : `"${data?.advisory_msg || "Analyzing market context..."}"`}
+                    : `"${data?.advisory_msg || t("analysis.analyzingContext")}"`}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
                   <div className="flex -space-x-2">
@@ -556,17 +553,17 @@ export default function AnalysisPage() {
                       : "bg-[var(--alert-red)]/20 text-[var(--alert-red)]"
                     }`}
                 >
-                  #{data.market_rank} of {data.price_rank_list.length}
+                  {t("common.xOfY", { current: data.market_rank, total: data.price_rank_list.length })}
                 </div>
                 <span className="text-xs text-[var(--text-muted)]">
                   {data.market_rank === 1
-                    ? "You're the cheapest in the market!"
+                    ? t("analysis.ranking.cheapest")
                     : data.market_rank <= 2
-                      ? "Excellent competitive position"
+                      ? t("analysis.ranking.excellent")
                       : data.market_rank <=
                         Math.ceil(data.price_rank_list.length / 2)
-                        ? "Mid-range pricing"
-                        : "Premium pricing tier"}
+                        ? t("analysis.ranking.midRange")
+                        : t("analysis.ranking.premium")}
                 </span>
               </div>
             )}
@@ -631,7 +628,7 @@ export default function AnalysisPage() {
                         <div className="absolute -top-10 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap min-w-[80px]">
                           <div className="relative px-2 py-1 rounded-md bg-[var(--bg-secondary)] border border-[var(--glass-border)] text-[var(--text-primary)] shadow-xl z-[60]">
                             <div className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
-                              Competitor
+                              {t("common.competitor")}
                             </div>
                             <div className="font-bold text-[10px] leading-tight mb-0.5 max-w-[120px] truncate">
                               {comp.name}
@@ -671,7 +668,7 @@ export default function AnalysisPage() {
                   <div className="absolute -top-[50px] whitespace-nowrap pointer-events-auto z-40">
                     <div className="relative px-2 py-1 bg-gradient-to-b from-[var(--soft-gold)] to-[var(--soft-gold)]/90 text-[#0f172a] rounded-md shadow-xl border border-[var(--glass-border)] flex flex-col items-center gap-0.5">
                       <span className="text-[7px] font-black uppercase tracking-widest opacity-80 leading-none">
-                        You
+                        {t("common.you")}
                       </span>
                       <span className="text-xs font-black leading-none tracking-tight">
                         {CURRENCY_SYMBOLS[currency]}
@@ -689,19 +686,19 @@ export default function AnalysisPage() {
                 <div className="flex flex-col items-start gap-1">
                   <div className="h-4 w-[1px] bg-[var(--glass-border)] ml-2 mb-1" />
                   <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-wider bg-[var(--optimal-green)]/10 px-2 py-1 rounded">
-                    Cheapest
+                    {t("analysis.cheapestLabel")}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="h-4 w-[1px] bg-[var(--glass-border)] mb-1" />
                   <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider bg-[var(--glass-bg)] px-2 py-1 rounded">
-                    Mid-Range
+                    {t("analysis.midRangeLabel")}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <div className="h-4 w-[1px] bg-[var(--glass-border)] mr-2 mb-1" />
                   <span className="text-[10px] font-black text-[var(--alert-red)] uppercase tracking-wider bg-[var(--alert-red)]/10 px-2 py-1 rounded">
-                    Premium
+                    {t("analysis.premiumLabel")}
                   </span>
                 </div>
               </div>
@@ -721,7 +718,7 @@ export default function AnalysisPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
-                  Gap to Median
+                  {t("analysis.gapToMedian")}
                 </span>
                 <span className="text-xl font-black text-[var(--text-primary)]">
                   {data?.target_price != null && data?.market_avg != null
@@ -825,6 +822,7 @@ function KPICard({
   trend?: "up" | "down";
   hoverData?: HoverData;
 }) {
+  const { t } = useI18n();
   const symbol = hoverData?.currency
     ? CURRENCY_SYMBOLS[hoverData.currency] || "$"
     : "$";
@@ -854,7 +852,7 @@ function KPICard({
           <div
             className={`text-[10px] font-black uppercase px-2 py-1 rounded-md bg-[var(--glass-bg-subtle)] ${trend === "up" ? "text-[var(--alert-red)]" : "text-[var(--optimal-green)]"}`}
           >
-            {trend === "up" ? "High" : "Low"}
+            {trend === "up" ? t("common.high") : t("common.low")}
           </div>
         )}
       </div>
@@ -872,8 +870,7 @@ function KPICard({
             {hoverData.type === "ranking" && hoverData.priceRankList && (
               <>
                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
-                  Price Leaderboard
+                  {t("analysis.priceLeaderboard")}
                 </div>
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 thin-scrollbar">
                   {hoverData.priceRankList.map((item) => (
@@ -910,23 +907,22 @@ function KPICard({
             {hoverData.type === "average" && (
               <>
                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
-                  Market Comparison
+                  {t("analysis.marketComparison")}
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                    <span className="text-xs text-white/60 font-medium italic">Base Metric</span>
+                    <span className="text-xs text-white/60 font-medium italic">{t("analysis.baseMetric")}</span>
                     <span className="text-[10px] font-black text-[var(--text-muted)] tracking-wider">ARI INDEX</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70 font-medium">Your Current Rate</span>
+                    <span className="text-xs text-white/70 font-medium">{t("analysis.targetPrice")}</span>
                     <span className="text-base font-black text-[var(--soft-gold)] tabular-nums">
                       {symbol}
                       {Math.round(hoverData.targetPrice || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70 font-medium">Market Average</span>
+                    <span className="text-xs text-white/70 font-medium">{t("common.average")}</span>
                     <span className="text-base font-black text-white tabular-nums">
                       {symbol}
                       {Math.round(hoverData.marketAvg || 0).toLocaleString()}
@@ -934,7 +930,7 @@ function KPICard({
                   </div>
                   {hoverData.targetPrice && hoverData.marketAvg && (
                     <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-2">
-                      <span className="text-xs text-white/90 font-bold uppercase tracking-tighter">Performance</span>
+                      <span className="text-xs text-white/90 font-bold uppercase tracking-tighter">{t("common.performance")}</span>
                       <span
                         className={`text-sm font-black px-2.5 py-1 rounded-lg ${hoverData.targetPrice > hoverData.marketAvg ? "bg-[var(--alert-red)]/10 text-[var(--alert-red)] border border-[var(--alert-red)]/20" : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"}`}
                       >
@@ -944,7 +940,7 @@ function KPICard({
                             hoverData.marketAvg) *
                           100
                         )?.toFixed(1)}
-                        % {hoverData.targetPrice > hoverData.marketAvg ? "Above" : "Below"}
+                        % {hoverData.targetPrice > hoverData.marketAvg ? t("common.above") : t("common.below")}
                       </span>
                     </div>
                   )}
@@ -955,14 +951,14 @@ function KPICard({
               <>
                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
-                  Price Range Analysis
+                  {t("analysis.priceRangeAnalysis")}
                 </div>
                 <div className="space-y-4">
                   {hoverData.minHotel && (
                     <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--optimal-green)]/10 border border-[var(--optimal-green)]/20 shadow-inner">
                       <div className="flex flex-col">
                         <span className="text-[9px] text-[var(--optimal-green)] uppercase font-black tracking-widest mb-1">
-                          Market Minimum
+                          {t("analysis.marketMinimum")}
                         </span>
                         <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
                           {hoverData.minHotel.name}
@@ -978,7 +974,7 @@ function KPICard({
                     <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--alert-red)]/10 border border-[var(--alert-red)]/20 shadow-inner">
                       <div className="flex flex-col">
                         <span className="text-[9px] text-[var(--alert-red)] uppercase font-black tracking-widest mb-1">
-                          Market Maximum
+                          {t("analysis.marketMaximum")}
                         </span>
                         <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
                           {hoverData.maxHotel.name}
@@ -997,7 +993,7 @@ function KPICard({
               <div className="space-y-4">
                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
-                  Metric Perspective
+                  {t("analysis.metricPerspective")}
                 </div>
                 <div className="text-sm text-white/80 leading-relaxed font-medium p-4 bg-white/5 rounded-2xl border border-white/10 italic">
                   "{hoverData.description}"
