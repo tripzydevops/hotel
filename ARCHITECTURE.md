@@ -62,6 +62,13 @@ Specialized LLM-powered agents:
 - **ScraperAgent:** Multi-provider data extraction.
 - **AnalystAgent:** Vector-based reasoning and parity detection.
 - **NotifierAgent:** Intelligent alerting based on user preferences.
+- **Collaborative Directory Engine:** (Part of `hotel_service.py`) Automatically indexes manually added hotels into the global hotel directory, creating a community-driven marketplace.
+
+## 🗄️ Unified Data Strategy
+The system bridges official and community data through a dual-upsert mechanism:
+- **Official Data**: Uses `serp_api_id` as the primary key for Google-sourced hotels.
+- **Community Data**: Uses a unique constraint on `(name, location)` for user-added properties.
+- **Global Identity**: Every directory entry is assigned a `property_token` (SHA-256 hash of core identifiers) for consistent internal reference across services.
 
 ## ⚙️ Background Operations (Redis-Free)
 

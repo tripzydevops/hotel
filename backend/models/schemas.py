@@ -71,12 +71,13 @@ class HotelBase(BaseModel):
 
 
 class HotelCreate(HotelBase):
-    pass
+    url: Optional[str] = Field(default=None, description="Direct OTA link (Booking, TripAdvisor, Expedia) for identification")
 
 
 class HotelUpdate(BaseModel):
     name: Optional[str] = None
     location: Optional[str] = None
+    url: Optional[str] = Field(default=None, description="Direct OTA link for identification")
     phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None

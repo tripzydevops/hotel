@@ -4,12 +4,14 @@ Handles business logic for hotel management and directory searching.
 """
 
 from datetime import datetime
+import hashlib
 from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import HTTPException
 
 from backend.utils.helpers import log_query
+from backend.utils.url_extractors import extract_hotel_data_from_url
 from supabase import Client
 
 
@@ -204,9 +206,10 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     count = 0
     for h_data in unique_hotels.values():
         try:
-            # Conflict resolution: serp_api_id is the primary global identifier
+            # Conflict resolution: serp_api_id is primary, fallback to name+location for community hotels
+            conflict_target = "serp_api_id" if h_data.get("serp_api_id") else "name,location"
             db.table("hotel_directory").upsert(
-                h_data, on_conflict="serp_api_id"
+                h_data, on_conflict=conflict_target
             ).execute()
             count += 1
         except Exception:
@@ -225,6 +228,27 @@ async def add_hotel_to_account_logic(
     a single 'source of truth' in the hotels table. Prevents duplicates for the same user.
     """
     try:
+        # STEP 0: URL-Based Identification (Phase 1.1 Override)
+        # If a URL is provided, we use it to strictly identify the hotel.
+        url = hotel_data.get("url")
+        if url:
+            extracted = extract_hotel_data_from_url(url)
+            if not extracted:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid or unsupported OTA URL. Please provide a link from Booking.com, TripAdvisor, or Expedia."
+                )
+
+            # Store the identification in hotel_data so later logic finds it
+            # Priority mapping to serp_api_id
+            if extracted["vendor"] == "Booking.com":
+                hotel_data["serp_api_id"] = f"booking:{extracted['hotel_id']}"
+            elif extracted["vendor"] == "TripAdvisor":
+                hotel_data["serp_api_id"] = f"tripadvisor:{extracted['hotel_id']}"
+                # If location_id is available, we could use it for broader matching
+            elif extracted["vendor"] == "Expedia":
+                hotel_data["serp_api_id"] = f"expedia:{extracted['hotel_id']}"
+
         serp_api_id = hotel_data.get("serp_api_id")
         property_token = hotel_data.get("property_token")
         name = hotel_data.get("name")
@@ -311,13 +335,26 @@ async def add_hotel_to_account_logic(
             serp_api_id = hotel_data.get("serp_api_id")
             property_token = hotel_data.get("property_token")
 
-            dir_res = (
-                db.table("hotel_directory")
-                .select("*")
-                .eq("name", name)
-                .eq("location", location)
-                .execute()
-            )
+            # Directory Lookup (Phase 1.1)
+            # Try matching by serp_api_id first if available from URL extraction
+            dir_res = None
+            if serp_api_id:
+                dir_res = (
+                    db.table("hotel_directory")
+                    .select("*")
+                    .eq("serp_api_id", serp_api_id)
+                    .execute()
+                )
+
+            # Fallback to name + location if no serp_api_id match
+            if not dir_res or not dir_res.data:
+                dir_res = (
+                    db.table("hotel_directory")
+                    .select("*")
+                    .eq("name", name)
+                    .eq("location", location)
+                    .execute()
+                )
             if dir_res.data:
                 d = dir_res.data[0]
                 rating = rating or d.get("rating")
@@ -417,28 +454,41 @@ async def add_hotel_to_account_logic(
 
         # Update hotel_directory for collaborative growth
         try:
+            dir_data = {
+                "name": existing_hotel["name"],
+                "location": existing_hotel.get("location"),
+                "latitude": existing_hotel.get("latitude"),
+                "longitude": existing_hotel.get("longitude"),
+                "rating": existing_hotel.get("rating"),
+                "review_count": existing_hotel.get("review_count"),
+                "image_url": existing_hotel.get("image_url"),
+                "phone": existing_hotel.get("phone"),
+                "email": existing_hotel.get("email"),
+                "website": existing_hotel.get("website"),
+                "address": existing_hotel.get("address"),
+                "description": existing_hotel.get("description"),
+                "cid": existing_hotel.get("cid"),
+                "place_id": existing_hotel.get("place_id"),
+                "stars": existing_hotel.get("stars"),
+                "serp_api_id": existing_hotel.get("serp_api_id"),
+                "last_verified_at": datetime.now().isoformat(),
+            }
+
+            # Handle property_token consistency
+            if not existing_hotel.get("property_token"):
+                token = hashlib.sha256(
+                    f"{existing_hotel['name'].lower().strip()}|{existing_hotel.get('location', '').lower().strip()}".encode()
+                ).hexdigest()
+                dir_data["property_token"] = token
+            else:
+                dir_data["property_token"] = existing_hotel["property_token"]
+
+            # Choose conflict strategy: ID for official, Name+Location for community
+            conflict_target = "serp_api_id" if existing_hotel.get("serp_api_id") else "name,location"
+            
             db.table("hotel_directory").upsert(
-                {
-                    "name": existing_hotel["name"],
-                    "location": existing_hotel.get("location"),
-                    "latitude": existing_hotel.get("latitude"),
-                    "longitude": existing_hotel.get("longitude"),
-                    "rating": existing_hotel.get("rating"),
-                    "review_count": existing_hotel.get("review_count"),
-                    "image_url": existing_hotel.get("image_url"),
-                    "phone": existing_hotel.get("phone"),
-                    "email": existing_hotel.get("email"),
-                    "website": existing_hotel.get("website"),
-                    "address": existing_hotel.get("address"),
-                    "description": existing_hotel.get("description"),
-                    "cid": existing_hotel.get("cid"),
-                    "place_id": existing_hotel.get("place_id"),
-                    "stars": existing_hotel.get("stars"),
-                    "property_token": existing_hotel.get("property_token"),
-                    "serp_api_id": existing_hotel.get("serp_api_id"),
-                    "last_verified_at": datetime.now().isoformat(),
-                },
-                on_conflict="serp_api_id",
+                dir_data,
+                on_conflict=conflict_target,
             ).execute()
         except Exception as e:
             print(f"Directory Auto-Sync Warning: {e}")
