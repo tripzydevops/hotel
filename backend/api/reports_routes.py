@@ -1,35 +1,46 @@
 import io
-from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.concurrency import run_in_threadpool
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.concurrency import run_in_threadpool
+# LINTER FIX: Moved imports to top of file to resolve E402
+from datetime import datetime
+
+from backend.models.schemas import BaseModel
+from backend.services.admin_service import export_report_logic, get_reports_logic
+from backend.services.auth_service import (
+    get_current_active_user,
+    get_current_admin_user,
+    get_supabase_rls,
+)
+from backend.templates.report_templates import (
+    build_admin_report_html,
+    build_deep_ocean_briefing_html,
+)
+from backend.utils.db import get_supabase
+from supabase import Client
+
 try:
     from xhtml2pdf import pisa
 except ImportError:
+
     class MockPisa:
         @staticmethod
         def CreatePDF(html, dest, **kwargs):
-            dest.write(b"PDF generation is disabled in this environment (missing xhtml2pdf)")
-            return type('Obj', (), {'err': False})()
+            dest.write(
+                b"PDF generation is disabled in this environment (missing xhtml2pdf)"
+            )
+            return type("Obj", (), {"err": False})()
+
     pisa = MockPisa()
+
 
 def generate_pdf_bytes(html_content: str) -> bytes:
     """Helper to run synchronous PDF generation in a threadpool."""
     result = io.BytesIO()
     pisa.CreatePDF(html_content, dest=result)
     return result.getvalue()
-
-from datetime import datetime
-from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import (
-    get_current_active_user,
-    get_current_admin_user,
-    get_supabase_rls,
-)
-from backend.services.admin_service import get_reports_logic, export_report_logic
-from backend.models.schemas import BaseModel
-from backend.templates.report_templates import build_deep_ocean_briefing_html, build_admin_report_html
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -247,7 +258,7 @@ async def export_saved_briefing_pdf(
         date_str=created_at,
         middle_cards_html=middle_cards_html,
         narrative=narrative,
-        is_archived=True
+        is_archived=True,
     )
 
     pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
@@ -255,9 +266,7 @@ async def export_saved_briefing_pdf(
     # PERSIST TO CACHE
     try:
         db.storage.from_("reports").upload(
-            storage_path, 
-            pdf_bytes, 
-            file_options={"content-type": "application/pdf"}
+            storage_path, pdf_bytes, file_options={"content-type": "application/pdf"}
         )
     except Exception:
         pass
@@ -331,29 +340,39 @@ async def export_report_pdf(
         except Exception:
             pass
 
-        ai_insights_html = "".join([f'<div class="insight">{insight}</div>' for insight in report_data.get("ai_insights", [])])
-        hotels_html = "".join([f'''
+        ai_insights_html = "".join(
+            [
+                f'<div class="insight">{insight}</div>'
+                for insight in report_data.get("ai_insights", [])
+            ]
+        )
+        hotels_html = "".join(
+            [
+                f"""
             <div class="hotel-card">
-                <h3>{h['hotel'].get('name', 'Unknown Hotel')}</h3>
-                <p>{h['hotel'].get('location', '')}</p>
+                <h3>{h["hotel"].get("name", "Unknown Hotel")}</h3>
+                <p>{h["hotel"].get("location", "")}</p>
                 <table style="width:100%">
                     <tr>
                         <td>
-                            <div class="metric">${h['metrics']['avg_price']}</div>
+                            <div class="metric">${h["metrics"]["avg_price"]}</div>
                             <div class="label">Avg Price</div>
                         </td>
                         <td>
-                            <div class="metric">${h['metrics']['min_price']} - ${h['metrics']['max_price']}</div>
+                            <div class="metric">${h["metrics"]["min_price"]} - ${h["metrics"]["max_price"]}</div>
                             <div class="label">Price Range</div>
                         </td>
                          <td>
-                            <div class="metric">{h['metrics']['data_points']}</div>
+                            <div class="metric">{h["metrics"]["data_points"]}</div>
                             <div class="label">Data Points</div>
                         </td>
                     </tr>
                 </table>
             </div>
-            ''' for h in report_data.get("hotels", [])])
+            """
+                for h in report_data.get("hotels", [])
+            ]
+        )
 
         html_content = build_admin_report_html(
             title=data.get("title", "Market Analysis Report"),
@@ -361,7 +380,7 @@ async def export_report_pdf(
             hotel_count=len(data.get("hotel_ids", [])),
             period_months=str(data.get("period_months")),
             ai_insights_html=ai_insights_html,
-            hotels_html=hotels_html
+            hotels_html=hotels_html,
         )
 
         pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)
@@ -369,9 +388,9 @@ async def export_report_pdf(
         # PERSIST TO CACHE
         try:
             db.storage.from_("reports").upload(
-                storage_path, 
-                pdf_bytes, 
-                file_options={"content-type": "application/pdf"}
+                storage_path,
+                pdf_bytes,
+                file_options={"content-type": "application/pdf"},
             )
         except Exception:
             pass
@@ -401,6 +420,7 @@ async def export_briefing_pdf(
     Regenerates live market pulse with upgraded AI depth and visual styling.
     """
     from backend.agents.analyst_agent import AnalystAgent
+
     agent = AnalystAgent(db)
     briefing = await agent.generate_executive_briefing(
         user_id=current_user.id,
@@ -526,7 +546,7 @@ async def export_briefing_pdf(
         date_str=datetime.now().strftime("%B %Y"),
         middle_cards_html=middle_cards_html,
         narrative=narrative,
-        is_archived=False
+        is_archived=False,
     )
 
     pdf_bytes = await run_in_threadpool(generate_pdf_bytes, html_content)

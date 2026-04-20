@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
 from datetime import date
+from typing import Any, Dict, Optional
 
 
 class HotelDataProvider(ABC):

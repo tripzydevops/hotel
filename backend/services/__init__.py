@@ -1,7 +1,7 @@
 # Backend services package
 from .dataforseo_client import DataForSEOClient, dataforseo_client
-from .price_comparator import PriceComparator, price_comparator
 from .notification_service import NotificationService, notification_service
+from .price_comparator import PriceComparator, price_comparator
 
 __all__ = [
     "DataForSEOClient",

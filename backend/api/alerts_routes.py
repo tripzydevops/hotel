@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
 from typing import List
 from uuid import UUID
-from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+
+from fastapi import APIRouter, Depends
+
 from backend.models.schemas import Alert
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from supabase import Client
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -47,13 +48,17 @@ async def mark_alert_read(
         )
         if not current_res.data:
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Alert not found")
-        
+
         from backend.utils.security import verify_ownership
+
         verify_ownership(current_res.data["user_id"], current_user)
     except Exception as e:
-        if isinstance(e, HTTPException): raise e
+        if isinstance(e, HTTPException):
+            raise e
         from fastapi import HTTPException
+
         raise HTTPException(status_code=500, detail="Ownership check failed")
 
     db.table("alerts").update({"is_read": True}).eq("id", str(alert_id)).execute()
@@ -98,13 +103,17 @@ async def delete_alert(
         )
         if not current_res.data:
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Alert not found")
-        
+
         from backend.utils.security import verify_ownership
+
         verify_ownership(current_res.data["user_id"], current_user)
     except Exception as e:
-        if isinstance(e, HTTPException): raise e
+        if isinstance(e, HTTPException):
+            raise e
         from fastapi import HTTPException
+
         raise HTTPException(status_code=500, detail="Ownership check failed")
 
     db.table("alerts").delete().eq("id", str(alert_id)).execute()

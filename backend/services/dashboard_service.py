@@ -3,26 +3,25 @@ Dashboard Service.
 Aggregates hotel data, pricing history, alerts, and scan status for the user cockpit.
 """
 
-import asyncio
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
-from fastapi import HTTPException
-from supabase import Client
+from datetime import datetime, timezone
+from typing import Any, Dict, List
 
-from backend.utils.logger import get_logger
-from backend.services.price_comparator import price_comparator
-from backend.utils.helpers import convert_currency
-from backend.utils.sentiment_utils import (
-    normalize_sentiment,
-    generate_mentions,
-    translate_breakdown,
-    synthesize_value_score,
-)
+from fastapi import HTTPException
+
 from backend.services.analysis_service import (
     generate_synthetic_narrative,
-    calculate_rate_recommendation,
     get_price_for_room,
 )
+from backend.services.price_comparator import price_comparator
+from backend.utils.helpers import convert_currency
+from backend.utils.logger import get_logger
+from backend.utils.sentiment_utils import (
+    generate_mentions,
+    normalize_sentiment,
+    synthesize_value_score,
+    translate_breakdown,
+)
+from supabase import Client
 
 logger = get_logger(__name__)
 
@@ -82,22 +81,54 @@ async def get_dashboard_logic(
         # AGENT_FIX: Sequential Data Fetching for Stability
         # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
-        
+
         # 1. User Profile
-        profile_res = db.table("user_profiles").select("*").eq("user_id", str(user_id)).maybe_single().execute()
-        
+        profile_res = (
+            db.table("user_profiles")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .maybe_single()
+            .execute()
+        )
+
         # 2. User Settings
-        settings_res = db.table("settings").select("*").eq("user_id", str(user_id)).maybe_single().execute()
-        
+        settings_res = (
+            db.table("settings")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .maybe_single()
+            .execute()
+        )
+
         # 3. Unread Alerts
-        alerts_res = db.table("alerts").select("id", count="exact").eq("user_id", str(user_id)).eq("is_read", False).execute()
-        
+        alerts_res = (
+            db.table("alerts")
+            .select("id", count="exact")
+            .eq("user_id", str(user_id))
+            .eq("is_read", False)
+            .execute()
+        )
+
         # 4. Recent Searches
-        searches_res = db.table("query_logs").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(20).execute()
-        
+        searches_res = (
+            db.table("query_logs")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute()
+        )
+
         # 5. Scan History (Metadata only for counts/status)
-        sessions_res = db.table("scan_sessions").select("*").eq("user_id", str(user_id)).order("created_at", desc=True).limit(5).execute()
-        
+        sessions_res = (
+            db.table("scan_sessions")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .order("created_at", desc=True)
+            .limit(5)
+            .execute()
+        )
+
         # 5.5 Active Scans Count
         # Fetching count of pending or running sessions specifically for the dashboard indicator.
         active_scans_res = (
@@ -107,13 +138,22 @@ async def get_dashboard_logic(
             .in_("status", ["pending", "running"])
             .execute()
         )
-        active_scans_count = active_scans_res.count if active_scans_res and hasattr(active_scans_res, "count") else 0
-        
+        active_scans_count = (
+            active_scans_res.count
+            if active_scans_res and hasattr(active_scans_res, "count")
+            else 0
+        )
+
         # 6. Hotels (Bulk Fetch via Many-to-Many Association)
         # AGENT_LOGIC: Join with user_hotels to support multi-user property tracking.
-        res = db.table("user_hotels").select("*, hotel:hotels(*)").eq("user_id", str(user_id)).execute()
+        res = (
+            db.table("user_hotels")
+            .select("*, hotel:hotels(*)")
+            .eq("user_id", str(user_id))
+            .execute()
+        )
         all_associations = res.data or []
-        
+
         all_hotels = []
         for assoc in all_associations:
             hotel = assoc.get("hotel")
@@ -129,7 +169,6 @@ async def get_dashboard_logic(
                 hotel["fixed_check_out"] = assoc.get("fixed_check_out")
                 hotel["default_adults"] = assoc.get("default_adults", 2)
                 all_hotels.append(hotel)
-
 
         user_profile = (
             profile_res.data if profile_res and hasattr(profile_res, "data") else {}
@@ -165,7 +204,9 @@ async def get_dashboard_logic(
         # If no hotels are found, we still return sessions, searches, and profile
         # to ensure the UI tiles don't look broken/desynchronized.
         if not all_hotels:
-            logger.info(f"Dashboard: No hotels found for {user_id}, returning metadata only.")
+            logger.info(
+                f"Dashboard: No hotels found for {user_id}, returning metadata only."
+            )
             # AGENT_LOGIC: Direct field assignment avoids typing.MutableMapping.update errors in strict linters
             fallback_data["profile"] = user_profile
             fallback_data["user_settings"] = user_settings
@@ -216,7 +257,9 @@ async def get_dashboard_logic(
             hid = str(h["id"])
             token = h.get("serp_api_id") or h.get("property_token")
             if not token:
-                logger.info(f"Dashboard Service: Hotel {h.get('name')} (ID: {hid}) has no token yet. Showing as pending.")
+                logger.info(
+                    f"Dashboard Service: Hotel {h.get('name')} (ID: {hid}) has no token yet. Showing as pending."
+                )
 
             dir_data = directory_map.get(h.get("serp_api_id"), {})
             prices = hotel_prices_map.get(hid, [])
@@ -230,8 +273,10 @@ async def get_dashboard_logic(
                     # AGENT_FEATURE: Use Strict Source Routing for Dashboard Prices
                     # This ensures the 'standard' price in dashboard matches the analysis selection.
                     target_room = h.get("room_type_standard") or "Standard"
-                    curr_p, matched_name, confidence = get_price_for_room(current_log, target_room, {})
-                    
+                    curr_p, matched_name, confidence = get_price_for_room(
+                        current_log, target_room, {}
+                    )
+
                     if curr_p is not None:
                         curr_c = current_log.get("currency") or "TRY"
                         active_prices.append(curr_p)
@@ -255,8 +300,14 @@ async def get_dashboard_logic(
                         "recorded_at": current_log.get("recorded_at"),
                         "vendor": current_log.get("vendor"),
                         "check_in": current_log.get("check_in_date"),
-                        "check_out": current_log.get("scan_sessions", {}).get("check_out_date") if current_log.get("scan_sessions") else None,
-                        "adults": current_log.get("scan_sessions", {}).get("adults") if current_log.get("scan_sessions") else 2,
+                        "check_out": current_log.get("scan_sessions", {}).get(
+                            "check_out_date"
+                        )
+                        if current_log.get("scan_sessions")
+                        else None,
+                        "adults": current_log.get("scan_sessions", {}).get("adults")
+                        if current_log.get("scan_sessions")
+                        else 2,
                         "offers": current_log.get("parity_offers") or [],
                         "room_types": current_log.get("room_types") or [],
                     }
@@ -267,35 +318,47 @@ async def get_dashboard_logic(
             # AGENT_FIX: Sentiment Fallback (Global Pulse)
             # If the user's specific hotel record is missing sentiment (e.g. newly re-added),
             # we try the global directory first, then fallback to ANY history share the same serp_api_id.
-            raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown") or []
-            
+            raw_breakdown = (
+                h.get("sentiment_breakdown")
+                or dir_data.get("sentiment_breakdown")
+                or []
+            )
+
             if not raw_breakdown and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
-                logger.info(f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})")
+                logger.info(
+                    f"[GlobalPulse/Dashboard] Recovering sentiment for {hid} (SERP: {sid})"
+                )
                 try:
                     # AGENT_LOGIC: Multi-Tenant Recovery: Scan across ANY hotel records for this property.
                     # Since hotels are shared, we just need ANY record that has the data.
                     # We query by serp_api_id directly in the sentiment_history table or hotel_directory.
                     # First check directories
                     if sid in directory_map:
-                        raw_breakdown = directory_map[sid].get("sentiment_breakdown") or []
-                    
+                        raw_breakdown = (
+                            directory_map[sid].get("sentiment_breakdown") or []
+                        )
+
                     if not raw_breakdown:
                         # Fallback: Find most recent history for THIS property (independent of current user)
-                        # We use admin_db query style (simulated via rls if permissions allow, 
+                        # We use admin_db query style (simulated via rls if permissions allow,
                         # but here we just query for the SERP id matches)
                         sh_res = (
                             db.table("sentiment_history")
                             .select("sentiment_breakdown")
-                            .eq("hotel_id", hid) # Try specific first
+                            .eq("hotel_id", hid)  # Try specific first
                             .order("recorded_at", desc=True)
                             .limit(1)
                             .execute()
                         )
                         if sh_res.data:
-                            raw_breakdown = sh_res.data[0].get("sentiment_breakdown") or []
+                            raw_breakdown = (
+                                sh_res.data[0].get("sentiment_breakdown") or []
+                            )
                 except Exception as e:
-                    logger.error(f"[GlobalPulse/Dashboard] Recovery failed for {sid}: {e}")
+                    logger.error(
+                        f"[GlobalPulse/Dashboard] Recovery failed for {sid}: {e}"
+                    )
             item_sentiment = normalize_sentiment(raw_breakdown)
 
             # AGENT_FIX: Resilient Metadata Merging
@@ -313,10 +376,20 @@ async def get_dashboard_logic(
 
             # AGENT_LOGIC: Cross-User Recovery for Rating & Review Count (Pro Fallback)
             # If still missing after directory check, we search global data.
-            if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
+            if (
+                rating is None
+                or rating == 0
+                or review_count is None
+                or review_count == 0
+            ) and h.get("serp_api_id"):
                 sid = h["serp_api_id"]
                 try:
-                    g_res = db.table("hotels").select("id, rating, review_count").eq("serp_api_id", sid).execute()
+                    g_res = (
+                        db.table("hotels")
+                        .select("id, rating, review_count")
+                        .eq("serp_api_id", sid)
+                        .execute()
+                    )
                     if g_res.data:
                         # First: try to get review_count directly from any hotel record
                         for gh in g_res.data:
@@ -326,13 +399,22 @@ async def get_dashboard_logic(
                         # Also get rating from hotel records if still missing
                         for gh in g_res.data:
                             if gh.get("rating") and gh["rating"] > 0:
-                                rating = rating if (rating and rating > 0) else gh["rating"]
+                                rating = (
+                                    rating if (rating and rating > 0) else gh["rating"]
+                                )
                                 break
 
                         # If review_count still missing, check sentiment_history
                         if not review_count or review_count == 0:
                             g_hids = [str(gh["id"]) for gh in g_res.data]
-                            gh_res = db.table("sentiment_history").select("rating, review_count").in_("hotel_id", g_hids).order("recorded_at", desc=True).limit(1).execute()
+                            gh_res = (
+                                db.table("sentiment_history")
+                                .select("rating, review_count")
+                                .in_("hotel_id", g_hids)
+                                .order("recorded_at", desc=True)
+                                .limit(1)
+                                .execute()
+                            )
                             if gh_res.data:
                                 sh_rating = gh_res.data[0].get("rating")
                                 sh_rc = gh_res.data[0].get("review_count")
@@ -342,7 +424,9 @@ async def get_dashboard_logic(
                                     review_count = sh_rc
 
                         if rating or review_count:
-                            logger.info(f"[GlobalPulse/ScoreCard] Recovered rating={rating}, reviews={review_count} for {sid}")
+                            logger.info(
+                                f"[GlobalPulse/ScoreCard] Recovered rating={rating}, reviews={review_count} for {sid}"
+                            )
                 except Exception:
                     pass
 
@@ -377,7 +461,9 @@ async def get_dashboard_logic(
             )
 
         # 5. Value Synthesis
-        market_avg: float = sum(active_prices) / len(active_prices) if active_prices else 0.0
+        market_avg: float = (
+            sum(active_prices) / len(active_prices) if active_prices else 0.0
+        )
         market_avg_rating = (
             sum(float(h.get("rating") or 0) for h in enriched_hotels)
             / len(enriched_hotels)
@@ -390,9 +476,9 @@ async def get_dashboard_logic(
             if value_pillar and value_pillar.get("total_mentioned", 0) == 0:
                 price_info = hotel_data["price_info"]
                 if (
-                    price_info 
-                    and price_info.get("current_price") is not None 
-                    and isinstance(market_avg, (int, float)) 
+                    price_info
+                    and price_info.get("current_price") is not None
+                    and isinstance(market_avg, (int, float))
                     and market_avg > 0
                 ):
                     ari = (price_info["current_price"] / market_avg) * 100
@@ -400,21 +486,31 @@ async def get_dashboard_logic(
 
             # AGENT_LOGIC: Calculate Overall Sentiment Score (Average of pillars)
             if sentiment:
-                valid_pillars = [p["rating"] for p in sentiment if p.get("rating") is not None]
+                valid_pillars = [
+                    p["rating"] for p in sentiment if p.get("rating") is not None
+                ]
                 if valid_pillars:
-                    hotel_data["overall_sentiment_score"] = round(sum(valid_pillars) / len(valid_pillars), 1)
+                    hotel_data["overall_sentiment_score"] = round(
+                        sum(valid_pillars) / len(valid_pillars), 1
+                    )
                 else:
                     hotel_data["overall_sentiment_score"] = 0.0
-            
+
             # AGENT_LOGIC: Calculate Rate Parity Score
             price_info = hotel_data.get("price_info")
-            if price_info and price_info.get("current_price") and price_info.get("offers"):
+            if (
+                price_info
+                and price_info.get("current_price")
+                and price_info.get("offers")
+            ):
                 target_price = price_info["current_price"]
                 offers = price_info["offers"]
-                
+
                 # Find the lowest price among all offers (OTAs)
-                ota_prices = [of.get("price") for of in offers if of.get("price") is not None]
-                
+                ota_prices = [
+                    of.get("price") for of in offers if of.get("price") is not None
+                ]
+
                 if ota_prices:
                     cheapest_ota = min(ota_prices)
                     # Parity score: 100% if we are equal or cheaper than cheapest OTA
@@ -426,9 +522,9 @@ async def get_dashboard_logic(
                         parity_ratio = (cheapest_ota / target_price) * 100
                         hotel_data["parity_score"] = round(max(0, parity_ratio))
                 else:
-                    hotel_data["parity_score"] = 100 # No competition found
+                    hotel_data["parity_score"] = 100  # No competition found
             else:
-                hotel_data["parity_score"] = None # Unknown
+                hotel_data["parity_score"] = None  # Unknown
 
         # 6. Final Aggregation
         target_hotel = next(
@@ -449,9 +545,10 @@ async def get_dashboard_logic(
             if len(recent_searches) >= 10:
                 break
 
-
         # 8. Dynamic Market Insight (Sentiment Page bridging)
-        synthetic_narrative = "No strategic narrative available yet. Run a scan to generate AI insights."
+        synthetic_narrative = (
+            "No strategic narrative available yet. Run a scan to generate AI insights."
+        )
         comp_limit = 5  # Default comparison limit for dashboard UI
         if target_hotel and market_avg > 0:
             try:
@@ -462,7 +559,7 @@ async def get_dashboard_logic(
                     ari = (target_price / market_avg) * 100
                     target_rating = float(target_hotel.get("rating") or 0.0)
                     sent_index = (target_rating / market_avg_rating) * 100
-                    
+
                     # AGENT_FIX: Match signature in analysis_service.py
                     synthetic_narrative = generate_synthetic_narrative(
                         ari=ari,
@@ -474,8 +571,14 @@ async def get_dashboard_logic(
                 logger.warning(f"Narrative generation failed: {e}")
 
         # Calculate authoritative last sync time from price logs
-        sync_times = [p.get("recorded_at") for p in (all_prices_res.data or []) if p.get("recorded_at")]
-        last_sync = max(sync_times) if sync_times else datetime.now(timezone.utc).isoformat()
+        sync_times = [
+            p.get("recorded_at")
+            for p in (all_prices_res.data or [])
+            if p.get("recorded_at")
+        ]
+        last_sync = (
+            max(sync_times) if sync_times else datetime.now(timezone.utc).isoformat()
+        )
 
         return {
             "target_hotel": target_hotel,
@@ -491,9 +594,13 @@ async def get_dashboard_logic(
             "user_settings": user_settings,
             "market_insight": synthetic_narrative,
             "agg_metrics": {
-                "avg_rating": float(target_hotel.get("overall_sentiment_score") or 0.0) if target_hotel else 0.0,
-                "rate_parity_score": int(target_hotel.get("parity_score") or 0) if target_hotel else 0
-            }
+                "avg_rating": float(target_hotel.get("overall_sentiment_score") or 0.0)
+                if target_hotel
+                else 0.0,
+                "rate_parity_score": int(target_hotel.get("parity_score") or 0)
+                if target_hotel
+                else 0,
+            },
         }
 
     except Exception as e:
@@ -543,10 +650,14 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
                 # Calculate change percentage based on price shift
                 # This works for both price drops and parity breaches (using direct/OTA prices)
                 if a["old_price"] > a["new_price"]:
-                    pct = round(((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1)
+                    pct = round(
+                        ((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1
+                    )
                 else:
                     # In case of increases or complex shifts, just show absolute difference pct
-                    pct = round((abs(a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1)
+                    pct = round(
+                        (abs(a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1
+                    )
 
             wins.append(
                 {

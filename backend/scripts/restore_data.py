@@ -60,7 +60,7 @@ def restore():
                         for item in batch:
                             try:
                                 db.table(table).insert(item).execute()
-                            except:
+                            except Exception:
                                 pass # Skip bad records but keep going
                     else:
                         print(f"    Batch error in {table}: {batch_error}")

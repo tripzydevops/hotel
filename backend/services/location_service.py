@@ -3,8 +3,9 @@ Location Service for Autonomous Location Discovery.
 Handles tracking and deduplication of countries, cities, and towns.
 """
 
-from typing import List
 from datetime import datetime
+from typing import List
+
 from supabase import Client
 
 
@@ -18,37 +19,41 @@ class LocationService:
         using DataForSEO to increase scan accuracy.
         """
         from backend.services.providers.dataforseo_provider import dataforseo_provider
-        
+
         try:
             # 1. Fetch hotels missing location_code
-            res = self.db.table("hotels") \
-                .select("id, name, location") \
-                .is_("location_code", "null") \
-                .limit(50) \
+            res = (
+                self.db.table("hotels")
+                .select("id, name, location")
+                .is_("location_code", "null")
+                .limit(50)
                 .execute()
-            
+            )
+
             hotels = res.data or []
             if not hotels:
                 return
-            
+
             print(f"Resolving location codes for {len(hotels)} hotels...")
-            
+
             for hotel in hotels:
                 hid = hotel["id"]
                 loc_str = hotel.get("location")
                 if not loc_str:
                     continue
-                
+
                 # Try to resolve via DataForSEO
                 code = await dataforseo_provider.search_location(loc_str)
                 if code:
                     print(f"Resolved '{loc_str}' to code {code} for hotel {hid}")
-                    self.db.table("hotels").update({"location_code": code}).eq("id", hid).execute()
+                    self.db.table("hotels").update({"location_code": code}).eq(
+                        "id", hid
+                    ).execute()
                 else:
                     # Mark as attempted with a special value or just skip
                     # For now, we skip to retry later or manually fix
                     pass
-                    
+
         except Exception as e:
             print(f"Error in resolve_hotel_locations: {e}")
 

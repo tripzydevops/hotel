@@ -1,29 +1,33 @@
-from typing import List, Dict, Any
-from supabase import Client
+from typing import Any, Dict
+
 from backend.services.analysis_service import get_genai_client
 from backend.utils.logger import get_logger
+from supabase import Client
 
 logger = get_logger(__name__)
 
+
 class PriceExplanatoryAgent:
     """
-    Generates natural language 'Strategic Rationals' explaining 
+    Generates natural language 'Strategic Rationals' explaining
     detected demand signals and providing actionable recommendations.
     """
 
     def __init__(self, db: Client):
         self.db = db
 
-    async def generate_rationale(self, compression_data: Dict[str, Any], language: str = "en") -> str:
+    async def generate_rationale(
+        self, compression_data: Dict[str, Any], language: str = "en"
+    ) -> str:
         """
         Uses Gemini 3 to generate a sharp, executive-level pulse card rationale.
         """
         city = compression_data.get("city", "Market")
         score = compression_data.get("compression_score", 0)
         signals = compression_data.get("signals", [])
-        
+
         signal_str = ", ".join([f"{s['name']} ({s['type']})" for s in signals])
-        
+
         # Default heuristic fallback if AI is unavailable or fails
         if language == "tr":
             fallback_msg = f"{city} bölgesinde talep sinyalleri tespit edildi. {score}/10 yoğunluk seviyesi yaklaşan hacmi gösteriyor. Fiyat yapısını gözden geçirin."
@@ -52,7 +56,7 @@ class PriceExplanatoryAgent:
         LANGUAGE: {language}
         
         INSTRUCTIONS:
-        - Respond in the language specified ({'Turkish' if language == 'tr' else 'English'}).
+        - Respond in the language specified ({"Turkish" if language == "tr" else "English"}).
         - Use a sharp, professional, and directive tone.
         - Explain WHY the demand is shifting (e.g., 'Overlap between fair and announcement').
         - Provide a clear recommendation (e.g., 'Lock floor price at +20%' or 'Hold ADR').

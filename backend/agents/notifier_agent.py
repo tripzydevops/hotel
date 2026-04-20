@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from backend.services.notification_service import notification_service
 
 
@@ -18,14 +19,17 @@ class NotifierAgent:
         """Append a message to the internal buffer instead of immediate DB write."""
         if not session_id:
             return
-        
+
         import time
-        self._log_buffer.append({
-            "step": "Notifier",
-            "level": level,
-            "message": message,
-            "timestamp": time.time()
-        })
+
+        self._log_buffer.append(
+            {
+                "step": "Notifier",
+                "level": level,
+                "message": message,
+                "timestamp": time.time(),
+            }
+        )
 
     async def flush_logs(self, session_id):
         """Perform a single batch update to persist all buffered reasoning traces."""
@@ -61,7 +65,7 @@ class NotifierAgent:
                 await self.log_reasoning(
                     session_id,
                     "No threshold breaches detected. Skipping notifications.",
-                    "success"
+                    "success",
                 )
                 await self.flush_logs(session_id)
             return

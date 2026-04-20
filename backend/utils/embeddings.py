@@ -2,6 +2,7 @@ import os
 
 # from google import genai  # Moved to lazy getter
 from typing import List
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,10 +29,12 @@ def get_genai_client():
     return _client
 
 
-async def get_embedding(text: str, model: str = "models/text-embedding-004") -> List[float]:
+async def get_embedding(
+    text: str, model: str = "models/text-embedding-004"
+) -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
-    KAİZEN: Always use stable embedding models. As per project 'gemini-api-dev' skill, 
+    KAİZEN: Always use stable embedding models. As per project 'gemini-api-dev' skill,
     Gemini 3 models are the standard. DO NOT use legacy models.
     """
     embeddings = await get_embeddings_batch([text], model=model)
@@ -65,7 +68,9 @@ async def get_embeddings_batch(
             )
 
             if not result or not result.embeddings:
-                print(f"[Embedding] Warning: Embedding failed for chunk starting at {i}")
+                print(
+                    f"[Embedding] Warning: Embedding failed for chunk starting at {i}"
+                )
                 all_embeddings.extend([[0.0] * 768 for _ in chunk])
                 continue
 

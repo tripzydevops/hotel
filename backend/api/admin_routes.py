@@ -1,56 +1,58 @@
-from fastapi import APIRouter, Depends
-from typing import List, Optional, Any
+import os
+from typing import Any, List, Optional
 from uuid import UUID
-from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_admin_user
+
+from fastapi import APIRouter, Depends
+
 from backend.models.schemas import (
+    AdminDirectoryEntry,
+    AdminLog,
     AdminStats,
     AdminUser,
     AdminUserCreate,
     AdminUserUpdate,
-    AdminDirectoryEntry,
-    AdminLog,
     MembershipPlan,
     PlanCreate,
     PlanUpdate,
 )
 from backend.services.admin_service import (
-    get_admin_stats_logic,
-    admin_update_user_logic,
-    get_admin_users_logic,
-    get_admin_directory_logic,
-    create_admin_user_logic,
-    delete_admin_user_logic,
     add_admin_directory_entry_logic,
+    admin_update_user_logic,
+    cleanup_empty_scans_logic,
+    cleanup_test_data_logic,
+    create_admin_plan_logic,
+    create_admin_user_logic,
     delete_admin_directory_logic,
-    update_admin_directory_logic,
-    get_admin_logs_logic,
+    delete_admin_hotel_logic,
+    delete_admin_plan_logic,
+    delete_admin_user_logic,
+    get_admin_batch_details_logic,
+    get_admin_batches_logic,
+    get_admin_directory_logic,
     get_admin_feed_logic,
     get_admin_hotels_logic,
-    update_admin_hotel_logic,
-    delete_admin_hotel_logic,
-    get_admin_scans_logic,
-    get_admin_scan_details_logic,
-    get_admin_settings_logic,
-    update_admin_settings_logic,
-    get_admin_plans_logic,
-    create_admin_plan_logic,
-    update_admin_plan_logic,
-    delete_admin_plan_logic,
-    sync_hotel_directory_logic,
-    cleanup_test_data_logic,
+    get_admin_logs_logic,
     get_admin_market_intelligence_logic,
-    get_scheduler_queue_logic,
+    get_admin_plans_logic,
     get_admin_providers_logic,
-    trigger_all_overdue_logic,
-    cleanup_empty_scans_logic,
-    get_admin_batches_logic,
-    get_admin_batch_details_logic,
+    get_admin_scan_details_logic,
+    get_admin_scans_logic,
+    get_admin_settings_logic,
+    get_admin_stats_logic,
+    get_admin_users_logic,
+    get_scheduler_queue_logic,
     rescan_batch_task_logic,
+    sync_hotel_directory_logic,
+    trigger_all_overdue_logic,
+    update_admin_directory_logic,
+    update_admin_hotel_logic,
+    update_admin_plan_logic,
+    update_admin_settings_logic,
 )
+from backend.services.auth_service import get_current_admin_user
 from backend.services.provider_factory import ProviderFactory
-import os
+from backend.utils.db import get_supabase
+from supabase import Client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -483,4 +485,3 @@ async def rescan_batch_task(
     Manually retries a failed extraction task by resetting its state.
     """
     return await rescan_batch_task_logic(db, task_id)
-

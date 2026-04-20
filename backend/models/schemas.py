@@ -3,11 +3,12 @@ Pydantic Models for Hotel Rate Monitor
 Provides structured data validation for all API operations.
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Dict, Any
-from datetime import datetime, date, timezone
-from uuid import UUID
+from datetime import date, datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
 
 # SYSTEM STANDARDS: All scans follow a unified 4-hour interval pulse.
 # Individual user-selectable frequencies have been removed.
@@ -46,7 +47,7 @@ class HotelBase(BaseModel):
     sentiment_embedding: Optional[List[float]] = None
     embedding_status: Optional[str] = "current"
     reviews: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
-    
+
     # New Metadata Fields
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -57,7 +58,7 @@ class HotelBase(BaseModel):
     check_out_time: Optional[str] = None
     cid: Optional[str] = None
     place_id: Optional[str] = None
-    
+
     @field_validator("sentiment_breakdown", "reviews", mode="before")
     @classmethod
     def validate_list_or_none(cls, v: Any) -> Optional[List[Dict[str, Any]]]:
@@ -311,7 +312,7 @@ class HotelWithPrice(Hotel):
 
     price_info: Optional[PriceWithTrend] = None
     price_history: List[PricePoint] = []
-    
+
     # Association fields (from join table)
     user_id: Optional[UUID] = None
     is_target: bool = False
@@ -365,10 +366,11 @@ class ScanSession(BaseModel):
             return []
         if isinstance(v, str):
             import json
+
             try:
                 parsed = json.loads(v)
                 return parsed if isinstance(parsed, list) else []
-            except:
+            except Exception:
                 return []
         if isinstance(v, dict):
             return [v]
@@ -403,9 +405,18 @@ class ScanOptions(BaseModel):
     adults: int = Field(default=2, ge=1, le=10)
     currency: Optional[str] = "TRY"
     hotel_ids: Optional[List[UUID]] = None
-    skip_intelligence: bool = Field(default=False, description="If True, skip AI Intelligence generation to save tokens.")
-    skip_cache: bool = Field(default=False, description="If True, skip GlobalPulse cache and fetch fresh from SerpApi.")
-    deep_scan: bool = Field(default=False, description="If True, fetch rich metadata and sentiment using DataForSEO hotel_info.")
+    skip_intelligence: bool = Field(
+        default=False,
+        description="If True, skip AI Intelligence generation to save tokens.",
+    )
+    skip_cache: bool = Field(
+        default=False,
+        description="If True, skip GlobalPulse cache and fetch fresh from SerpApi.",
+    )
+    deep_scan: bool = Field(
+        default=False,
+        description="If True, fetch rich metadata and sentiment using DataForSEO hotel_info.",
+    )
 
 
 class MonitorResult(BaseModel):
@@ -606,6 +617,7 @@ class MembershipPlan(PlanBase):
 
     class Config:
         from_attributes = True
+
 
 class MarketBriefingRequest(BaseModel):
     city: str

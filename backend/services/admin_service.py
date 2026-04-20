@@ -4,30 +4,31 @@ Handles system-wide operations, manual directory syncs, user administration,
 and system-level reporting.
 """
 
+import csv
+import io
 import os
 import traceback
-from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 from uuid import UUID
+
 from fastapi import HTTPException
-from supabase import create_client, Client
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from backend.models.schemas import (
-    AdminStats,
-    AdminUser,
-    AdminUserCreate,
-    AdminUserUpdate,
     AdminDirectoryEntry,
     AdminLog,
     AdminSettings,
     AdminSettingsUpdate,
+    AdminStats,
+    AdminUser,
+    AdminUserCreate,
+    AdminUserUpdate,
     PlanCreate,
     PlanUpdate,
 )
-from fastapi.responses import StreamingResponse, JSONResponse
-from fastapi.encoders import jsonable_encoder
-import csv
-import io
+from supabase import Client
 
 
 async def search_admin_directory_logic(db: Client, q: str) -> List[Dict[str, Any]]:
@@ -209,6 +210,7 @@ async def admin_update_user_logic(
 
         # 3. Update Auth Fields (Requires Admin Bypass)
         from backend.utils.db import get_supabase_client
+
         admin_db = get_supabase_client(admin=True)
         if admin_db:
             try:
@@ -221,7 +223,9 @@ async def admin_update_user_logic(
                     # KAİZEN: Handle cases where user might not exist in Auth but exists in profiles
                     admin_db.auth.admin.update_user_by_id(user_id_str, auth_updates)
             except Exception as auth_err:
-                print(f"[Admin] Auth-side update skipped or failed for {user_id_str}: {auth_err}")
+                print(
+                    f"[Admin] Auth-side update skipped or failed for {user_id_str}: {auth_err}"
+                )
                 # We don't raise here because profile/settings might have succeeded
 
         return {"status": "success", "message": "User updated successfully"}
@@ -241,8 +245,10 @@ async def get_admin_users_logic(db: Client, q: Optional[str] = None) -> List[Adm
         if q:
             # Multi-field search using OR logic
             # Note: ilike is used for PostgreSQL case-insensitive search
-            query = query.or_(f"email.ilike.%{q}%,display_name.ilike.%{q}%,company_name.ilike.%{q}%")
-        
+            query = query.or_(
+                f"email.ilike.%{q}%,display_name.ilike.%{q}%,company_name.ilike.%{q}%"
+            )
+
         profiles_res = query.execute()
         profiles_data = profiles_res.data or []
 
@@ -326,9 +332,12 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
     Requires SERVICE_ROLE_KEY.
     """
     from backend.utils.db import get_supabase_client
+
     admin_db = get_supabase_client(admin=True)
     if not admin_db:
-        raise HTTPException(status_code=500, detail="Admin credentials missing or unreachable")
+        raise HTTPException(
+            status_code=500, detail="Admin credentials missing or unreachable"
+        )
     try:
         res = admin_db.auth.admin.create_user(
             {"email": user.email, "password": user.password, "email_confirm": True}
@@ -347,7 +356,9 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
                 "email": user.email,
                 "plan_type": user.plan_type,
                 "subscription_status": user.subscription_status,
-                "is_verified": user.is_verified if user.is_verified is not None else True,
+                "is_verified": user.is_verified
+                if user.is_verified is not None
+                else True,
             }
         ).execute()
 
@@ -359,7 +370,9 @@ async def create_admin_user_logic(user: AdminUserCreate, db: Client) -> Dict[str
                 "id": str(new_user.id),
                 "plan_type": user.plan_type,
                 "subscription_status": user.subscription_status,
-                "current_period_end": trial_end if user.subscription_status == "trial" else None
+                "current_period_end": trial_end
+                if user.subscription_status == "trial"
+                else None,
             }
         ).execute()
 
@@ -386,9 +399,12 @@ async def delete_admin_user_logic(user_id: str, db: Client) -> Dict[str, Any]:
     Delete a user and cascade delete their data.
     """
     from backend.utils.db import get_supabase_client
+
     admin_db = get_supabase_client(admin=True)
     if not admin_db:
-        raise HTTPException(status_code=500, detail="Admin credentials missing or unreachable")
+        raise HTTPException(
+            status_code=500, detail="Admin credentials missing or unreachable"
+        )
     tables = [
         "hotels",
         "scan_sessions",
@@ -503,7 +519,9 @@ async def update_admin_directory_logic(
     """Update a directory entry."""
     try:
         update_data = {
-            k: v for k, v in updates.items() if k in ["name", "location", "property_token"]
+            k: v
+            for k, v in updates.items()
+            if k in ["name", "location", "property_token"]
         }
         if update_data:
             db.table("hotel_directory").update(update_data).eq("id", entry_id).execute()
@@ -515,12 +533,18 @@ async def update_admin_directory_logic(
 async def get_admin_hotels_logic(db: Client, limit: int = 100) -> List[Dict[str, Any]]:
     """List all registered properties with detailed user ownership info."""
     hotels = db.table("hotels").select("*").limit(limit).execute().data or []
-    
+
     # Fetch all mappings to identify who owns what capacity
-    mappings = db.table("user_hotels").select("hotel_id, user_id, is_target").execute().data or []
-    
+    mappings = (
+        db.table("user_hotels").select("hotel_id, user_id, is_target").execute().data
+        or []
+    )
+
     # Fetch all profiles to show human-readable names/emails
-    profiles = db.table("user_profiles").select("user_id, email, display_name").execute().data or []
+    profiles = (
+        db.table("user_profiles").select("user_id, email, display_name").execute().data
+        or []
+    )
     profile_map = {str(p["user_id"]): p for p in profiles}
 
     # Group mappings by hotel
@@ -529,15 +553,17 @@ async def get_admin_hotels_logic(db: Client, limit: int = 100) -> List[Dict[str,
         hid = str(m["hotel_id"])
         if hid not in hotel_user_map:
             hotel_user_map[hid] = []
-        
+
         prof = profile_map.get(str(m["user_id"]), {})
-        hotel_user_map[hid].append({
-            "user_id": m["user_id"],
-            "email": prof.get("email"),
-            "display_name": prof.get("display_name"),
-            "is_target": m.get("is_target", False),
-            "role": "target" if m.get("is_target") else "competitor"
-        })
+        hotel_user_map[hid].append(
+            {
+                "user_id": m["user_id"],
+                "email": prof.get("email"),
+                "display_name": prof.get("display_name"),
+                "is_target": m.get("is_target", False),
+                "role": "target" if m.get("is_target") else "competitor",
+            }
+        )
 
     results = []
     for h in hotels:
@@ -659,7 +685,11 @@ async def export_report_logic(user_id: UUID, format: str, db: Client) -> Any:
         return {"status": "error", "message": "Only CSV supported"}
 
     mapping = (
-        db.table("user_hotels").select("hotel_id, hotels(id, name)").eq("user_id", str(user_id)).execute().data
+        db.table("user_hotels")
+        .select("hotel_id, hotels(id, name)")
+        .eq("user_id", str(user_id))
+        .execute()
+        .data
         or []
     )
     hotel_map = {}
@@ -667,7 +697,7 @@ async def export_report_logic(user_id: UUID, format: str, db: Client) -> Any:
         h = m.get("hotels")
         if h:
             hotel_map[str(h["id"])] = h["name"]
-    
+
     hotel_ids = list(hotel_map.keys())
 
     logs = (
@@ -1309,14 +1339,11 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
     """
     try:
         from backend.services.monitor_service import MONITOR_PULSE_HOURS
-        now = datetime.now(timezone.utc)
-        
+
+        datetime.now(timezone.utc)
+
         # 1. Fetch all profiles
-        profiles_res = (
-            db.table("profiles")
-            .select("id")
-            .execute()
-        )
+        profiles_res = db.table("profiles").select("id").execute()
         profiles = profiles_res.data or []
         if not profiles:
             return []
@@ -1336,25 +1363,32 @@ async def get_scheduler_queue_logic(db: Client) -> List[Dict[str, Any]]:
         }
 
         # 3. Fetch hotel mapping
-        mapping_res = db.table("user_hotels").select("user_id, hotel_id").in_("user_id", user_ids).execute()
+        mapping_res = (
+            db.table("user_hotels")
+            .select("user_id, hotel_id")
+            .in_("user_id", user_ids)
+            .execute()
+        )
         hotel_counts = {}
-        for m in (mapping_res.data or []):
+        for m in mapping_res.data or []:
             uid = m["user_id"]
             hotel_counts[uid] = hotel_counts.get(uid, 0) + 1
 
         queue = []
         for p in profiles:
             uid = p["id"]
-            
+
             status = "active" if hotel_counts.get(uid, 0) > 0 else "inactive"
 
-            queue.append({
-                "user_id": uid,
-                "user_name": names_map.get(uid, "Unknown"),
-                "pulse_interval_hours": MONITOR_PULSE_HOURS,
-                "status": status,
-                "hotel_count": hotel_counts.get(uid, 0)
-            })
+            queue.append(
+                {
+                    "user_id": uid,
+                    "user_name": names_map.get(uid, "Unknown"),
+                    "pulse_interval_hours": MONITOR_PULSE_HOURS,
+                    "status": status,
+                    "hotel_count": hotel_counts.get(uid, 0),
+                }
+            )
 
         queue.sort(key=lambda x: x["hotel_count"], reverse=True)
         return queue
@@ -1467,23 +1501,25 @@ async def get_admin_batches_logic(db: Client, limit: int = 50) -> List[Dict[str,
         # EXPLANATION: Batch Monitoring
         # Providing visibility into individual 'Live Extraction' clusters.
         # This helps admins track the throughput of their scraper nodes.
-        res = db.table("scan_batches")\
-            .select("*, hotels(name)")\
-            .order("created_at", desc=True)\
-            .limit(limit)\
+        res = (
+            db.table("scan_batches")
+            .select("*, hotels(name)")
+            .order("created_at", desc=True)
+            .limit(limit)
             .execute()
-        
+        )
+
         batches = res.data or []
         for b in batches:
             total = b.get("total_tasks") or 0
             success = b.get("success_count") or 0
             failed = b.get("failure_count") or 0
-            
+
             if total > 0:
                 b["progress"] = round(((success + failed) / total) * 100, 1)
             else:
                 b["progress"] = 0
-                
+
         return batches
     except Exception as e:
         print(f"Admin Batches Logic Error: {e}")
@@ -1497,20 +1533,25 @@ async def get_admin_batch_details_logic(db: Client, batch_id: str) -> Dict[str, 
     """
     try:
         # 1. Get batch metadata
-        batch_res = db.table("scan_batches").select("*, hotels(name)").eq("id", batch_id).single().execute()
-        batch = batch_res.data
-        
-        # 2. Get tasks
-        tasks_res = db.table("scan_tasks")\
-            .select("*, hotels(name)")\
-            .eq("batch_id", batch_id)\
-            .order("created_at", desc=False)\
+        batch_res = (
+            db.table("scan_batches")
+            .select("*, hotels(name)")
+            .eq("id", batch_id)
+            .single()
             .execute()
-        
-        return {
-            "batch": batch,
-            "tasks": tasks_res.data or []
-        }
+        )
+        batch = batch_res.data
+
+        # 2. Get tasks
+        tasks_res = (
+            db.table("scan_tasks")
+            .select("*, hotels(name)")
+            .eq("batch_id", batch_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+
+        return {"batch": batch, "tasks": tasks_res.data or []}
     except Exception as e:
         print(f"Admin Batch Details Logic Error: {e}")
         return {"error": str(e)}
@@ -1523,17 +1564,18 @@ async def rescan_batch_task_logic(db: Client, task_id: str) -> Dict[str, Any]:
     """
     try:
         # EXPLANATION: Granular Task Recovery
-        # Resets individual task states to allow the monitor service 
+        # Resets individual task states to allow the monitor service
         # to pick them up again in the next extraction cycle.
-        db.table("scan_tasks").update({
-            "status": "pending",
-            "error_message": None,
-            "started_at": None,
-            "completed_at": None
-        }).eq("id", task_id).execute()
-        
+        db.table("scan_tasks").update(
+            {
+                "status": "pending",
+                "error_message": None,
+                "started_at": None,
+                "completed_at": None,
+            }
+        ).eq("id", task_id).execute()
+
         return {"status": "success", "message": "Task reset to pending for retry."}
     except Exception as e:
         print(f"Rescan Task Logic Error: {e}")
         return {"error": str(e)}
-

@@ -1,11 +1,11 @@
-import uuid
 from datetime import date
-from typing import Optional, Union
-from supabase import Client # type: ignore
+from typing import Optional
 
-# EXPLANATION: uuid4 is used to generate the required primary key for query_logs 
+# EXPLANATION: uuid4 is used to generate the required primary key for query_logs
 # as the database table lacks an auto-generator.
 from uuid import UUID, uuid4
+
+from supabase import Client  # type: ignore
 
 # Exchange rates to USD (approximate, update periodically or use API)
 EXCHANGE_RATES_TO_USD = {
@@ -47,7 +47,9 @@ async def log_query(
     """Log a search or monitor query for future reporting/analysis."""
     try:
         log_data = {
-            "id": str(uuid4()),  # [FIX] Explicitly provide ID to satisfy NOT NULL constraint
+            "id": str(
+                uuid4()
+            ),  # [FIX] Explicitly provide ID to satisfy NOT NULL constraint
             "user_id": str(user_id) if user_id else None,
             "hotel_name": hotel_name.title().strip(),
             "location": location.title().strip() if location else None,
@@ -70,10 +72,11 @@ async def log_query(
 def normalize_room_name(name: str) -> str:
     """Standardize room names for cataloging and comparison."""
     import re
+
     if not name:
         return "Standard Room"
     name = name.lower().strip()
-    name = re.sub(r'\s*-\s*', ' ', name)
-    name = re.sub(r'\(.*?\)', '', name)
-    name = re.sub(r'\s+', ' ', name).title()
+    name = re.sub(r"\s*-\s*", " ", name)
+    name = re.sub(r"\(.*?\)", "", name)
+    name = re.sub(r"\s+", " ", name).title()
     return name

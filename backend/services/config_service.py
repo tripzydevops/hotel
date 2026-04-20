@@ -1,6 +1,7 @@
-from typing import Dict, Any
-from threading import Lock
 from datetime import datetime, timedelta
+from threading import Lock
+from typing import Any, Dict
+
 from backend.utils.db import get_supabase
 
 

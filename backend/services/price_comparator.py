@@ -3,9 +3,10 @@ Price Comparator Service
 Compares new prices against historical data and generates alerts.
 """
 
-from typing import Optional, List, Tuple
 from datetime import datetime
-from backend.models import TrendDirection, AlertType, PriceWithTrend
+from typing import List, Optional, Tuple
+
+from backend.models import AlertType, PriceWithTrend, TrendDirection
 
 
 class PriceComparator:

@@ -43,4 +43,13 @@ DataForSEO is sensitive to character encoding. To ensure 100% success rates for 
 - **Retry Policy**: If a task fails (e.g., "Invalid Location"), the system marks it as `failed` in `scan_tasks` and attempts a "Fuzzy Search" by stripping property suffixes (e.g., "Hotel", "Resort") in the next cycle.
 
 ---
-*Document Version 1.0 - April 2026*
+## 4. Frontend Data Mapping & Troubleshooting
+
+During the migration from SerpApi to DataForSEO, several adjustments were made to the frontend and types to ensure accurate data reflections:
+
+- **Vendor Name Resolution (`Unknown Source` bug):** 
+  DataForSEO provides OTA sources under the `source` property (unlike SerpApi, which traditionally used `vendor`). The `PriceInfo` interface was expanded to include `source?: string`. The `HotelDetailsModal` component was adjusted to read `offer.vendor || offer.source || "Unknown Source"` ensuring OTA names like Expedia or Booking.com correctly appear in the Market Offers tab.
+- **Copy & Localization Updates:**
+  All instances of "VERIFIED VIA SERPAPI INTELLIGENCE" or similar SerpApi brand mentions were entirely replaced with "DataForSEO". This required updates to hardcoded strings within localisation files (`dictionaries/en.ts` and `dictionaries/tr.ts`).
+
+*Document Version 1.1 - April 2026*

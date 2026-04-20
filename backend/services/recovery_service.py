@@ -2,15 +2,18 @@
 Recovery Service.
 Handles AI-powered dispute generation for parity violations.
 """
+
 import os
-from typing import Optional, Dict, Any
+
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 def get_genai_client():
     try:
         from google import genai
+
         api_key = os.getenv("GOOGLE_API_KEY")
         if api_key:
             return genai.Client(api_key=api_key)
@@ -18,16 +21,17 @@ def get_genai_client():
         logger.warning("google-genai SDK missing")
     return None
 
+
 async def generate_dispute_letter(
     hotel_name: str,
     ota_name: str,
     current_price: float,
     target_price: float,
     currency: str,
-    language: str = "tr"
+    language: str = "tr",
 ) -> str:
     gap = round(target_price - current_price, 2)
-    
+
     prompt = f"""
     You are a professional Revenue Manager at {hotel_name}. 
     We have detected a rate parity violation on {ota_name}.
@@ -64,15 +68,12 @@ async def generate_dispute_letter(
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
         return "AI Service Unavailable. Please configure the GOOGLE_API_KEY."
-    
+
     import httpx
+
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
-        payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
-        }
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
         async with httpx.AsyncClient() as http_client:
             response = await http_client.post(url, json=payload, timeout=15.0)
             response.raise_for_status()
@@ -81,4 +82,3 @@ async def generate_dispute_letter(
     except Exception as e:
         logger.error(f"Dispute generation via HTTP failed: {e}")
         return "Failed to generate dispute letter. Please try again later."
-

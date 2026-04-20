@@ -1,19 +1,25 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional, Dict, Any, List, cast
-from uuid import UUID
-from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls, get_supabase_admin
+import json
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
-from fastapi.responses import JSONResponse
+from typing import Any, Dict, List, Optional, cast
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-import json
+from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
+
 from backend.services.ai_service import intelligence_service
+from backend.services.auth_service import (
+    get_current_active_user,
+    get_supabase_admin,
+    get_supabase_rls,
+)
+from supabase import Client
 
 # AGENT_LOGIC: Routing Normalization (Regression Fix)
-# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# Removed "/api" prefix from APIRouter to avoid doubled paths
 # (e.g., /api/api/analysis/...) when registered in main.py.
 router = APIRouter(tags=["analysis"])
 
@@ -34,12 +40,15 @@ async def discover_competitors_v1(
     try:
         if not db:
             raise HTTPException(status_code=503, detail="Database service unavailable")
-        
+
         # AGENT_FEATURE: Ownership Check (Many-to-Many Architecture)
         from backend.services.analysis_service import check_hotel_ownership
+
         is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
         if not is_owner:
-            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+            raise HTTPException(
+                status_code=403, detail="Unauthorized: You do not own this hotel"
+            )
 
         from backend.agents.analyst_agent import AnalystAgent
 
@@ -108,9 +117,12 @@ async def discover_competitors_trigger(
     try:
         # AGENT_FEATURE: Ownership Check
         from backend.services.analysis_service import check_hotel_ownership
+
         is_owner = await check_hotel_ownership(db, str(current_user.id), str(hotel_id))
         if not is_owner:
-            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+            raise HTTPException(
+                status_code=403, detail="Unauthorized: You do not own this hotel"
+            )
 
         from backend.agents.analyst_agent import AnalystAgent
 
@@ -142,15 +154,18 @@ async def get_sentiment_history(
     Fetches historical sentiment breakdown for a hotel.
     Used for the 6-month trend chart on the Sentiment Analysis page.
     """
-    from backend.utils.sentiment_utils import normalize_sentiment
     from backend.utils.logger import get_logger
+    from backend.utils.sentiment_utils import normalize_sentiment
 
     try:
         # AGENT_FEATURE: Ownership Check
         from backend.services.analysis_service import check_hotel_ownership
+
         is_owner = await check_hotel_ownership(db, str(current_user.id), str(hotel_id))
         if not is_owner:
-            raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
+            raise HTTPException(
+                status_code=403, detail="Unauthorized: You do not own this hotel"
+            )
 
         # Fetch history records
         # Note: We filter by hotel_id and limit by days
@@ -203,21 +218,26 @@ async def debug_analysis_data(
         if not db:
             raise HTTPException(503, "Database unavailable")
 
-        diag: Dict[str, Any] = {"user_id": str(user_id), "timestamp": datetime.utcnow().isoformat()}
+        diag: Dict[str, Any] = {
+            "user_id": str(user_id),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
         # AGENT_FIX: Migration to Many-to-Many - Fetching hotels via join table for diagnostics
         user_hotels_res = (
             db.table("user_hotels")
-            .select("hotel_id, hotels(id, name, is_target_hotel, location, serp_api_id)")
+            .select(
+                "hotel_id, hotels(id, name, is_target_hotel, location, serp_api_id)"
+            )
             .eq("user_id", str(user_id))
             .execute()
         )
-        
+
         hotels = []
-        for mapping in (user_hotels_res.data or []):
+        for mapping in user_hotels_res.data or []:
             if mapping.get("hotels"):
                 hotels.append(mapping["hotels"])
-        
+
         # Legacy fallback removed (hotels table no longer contains user_id)
 
         diag["hotel_count"] = len(hotels)
@@ -286,7 +306,6 @@ async def debug_analysis_data(
                     else [],
                 }
             )
-
 
         # 5. Scan sessions (last 3)
         try:
@@ -391,7 +410,7 @@ async def stream_market_intelligence(
                 target_hotel_name=analysis_data.get("hotel_name", "Target"),
                 analysis_results=analysis_data,
                 locale="en",
-                admin_db=admin_db
+                admin_db=admin_db,
             ):
                 yield {"event": "narrative_chunk", "data": json.dumps({"chunk": chunk})}
 
@@ -401,6 +420,7 @@ async def stream_market_intelligence(
             yield {"event": "error", "data": json.dumps({"detail": str(e)})}
 
     return EventSourceResponse(event_generator())
+
 
 @router.get("/v1/analysis/intelligence-brief/{hotel_id}")
 async def get_market_intelligence_brief(
@@ -414,24 +434,27 @@ async def get_market_intelligence_brief(
     Synthesizes market data into actionable insights.
     Caches results for 5 minutes per user/hotel combo to reduce AI overhead.
     """
-    from backend.services.analysis_service import get_market_intelligence_data
-    from backend.utils.logger import get_logger
     import time
 
+    from backend.services.analysis_service import get_market_intelligence_data
+    from backend.utils.logger import get_logger
+
     # AGENT_FIX: Memory Cache for Serverless Context
-    # Since Vercel instances are ephemeral, we use a simple dict. 
+    # Since Vercel instances are ephemeral, we use a simple dict.
     # It protects against immediate double-refreshes.
     global _brief_cache
     if "_brief_cache" not in globals():
         globals()["_brief_cache"] = {}
-    
+
     cache_key = f"{current_user.id}_{hotel_id}"
     now = time.time()
-    
+
     if cache_key in globals()["_brief_cache"]:
         cached_data, expiry = globals()["_brief_cache"][cache_key]
         if now < expiry:
-            get_logger(__name__).info(f"Serving cached intelligence brief for {hotel_id}")
+            get_logger(__name__).info(
+                f"Serving cached intelligence brief for {hotel_id}"
+            )
             return cached_data
 
     try:
@@ -451,4 +474,6 @@ async def get_market_intelligence_brief(
         return brief
     except Exception as e:
         get_logger(__name__).error(f"Market Intelligence Brief failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Market Intelligence Brief failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Market Intelligence Brief failed: {str(e)}"
+        )

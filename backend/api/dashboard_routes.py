@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
-from uuid import UUID
-from supabase import Client
-from backend.utils.db import get_supabase
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
+from backend.utils.db import get_supabase
+from supabase import Client
 
 # EXPLANATION: Routing Normalization (Regression Fix)
-# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# Removed "/api" prefix from APIRouter to avoid doubled paths
 # (e.g., /api/api/dashboard/...) when registered in main.py.
 router = APIRouter(tags=["dashboard"])
 

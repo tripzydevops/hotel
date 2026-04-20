@@ -1,12 +1,14 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from backend.services.analysis_service import (
-    run_market_intelligence, 
-    synthesize_pricing_dna, 
-    generate_strategy_embedding
+    generate_strategy_embedding,
+    run_market_intelligence,
+    synthesize_pricing_dna,
 )
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
 
 class MarketIntelligenceAgent:
     """
@@ -18,10 +20,10 @@ class MarketIntelligenceAgent:
         self.model = model
 
     async def run_analysis(
-        self, 
-        scraper_results: List[Dict[str, Any]], 
+        self,
+        scraper_results: List[Dict[str, Any]],
         threshold: float = 2.0,
-        volatility: float = 0.0
+        volatility: float = 0.0,
     ) -> Dict[str, Any]:
         """
         Runs the Gemini 3 agentic reasoning flow over current scan results.
@@ -31,17 +33,21 @@ class MarketIntelligenceAgent:
             scraper_results=scraper_results,
             threshold=threshold,
             volatility=volatility,
-            model=self.model
+            model=self.model,
         )
 
-    async def synthesize_pricing_dna(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def synthesize_pricing_dna(
+        self, history: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
         Delegates to AnalysisService.synthesize_pricing_dna.
         """
         return await synthesize_pricing_dna(history=history, model=self.model)
 
-    async def generate_strategy_embedding(self, dna: Dict[str, Any]) -> Optional[List[float]]:
+    async def generate_strategy_embedding(
+        self, dna: Dict[str, Any]
+    ) -> Optional[List[float]]:
         """
         Converts the Pricing DNA narrative into a vector embedding.
         Delegates to AnalysisService.generate_strategy_embedding.

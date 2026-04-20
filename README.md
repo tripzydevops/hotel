@@ -38,8 +38,8 @@ Deep dives into the platform core:
 
 -   Node.js 18+
 -   Python 3.11+
--   Supabase Account
--   SerpApi Key
+-   InsForge Account
+-   DataForSEO Credentials (Login & Password)
 
 ### Installation
 
@@ -72,4 +72,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-02-27 (Redis Removal, Notification Fix & AI Optimization)
+**Last Updated:** 2026-04-19 (DataForSEO Migration & Frontend Optimization)

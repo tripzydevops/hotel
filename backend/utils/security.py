@@ -3,8 +3,9 @@ Security utilities for Hotel Rate Monitor.
 Enforces resource ownership and prevents ID harvesting.
 """
 
-from fastapi import HTTPException
 from typing import Any
+
+from fastapi import HTTPException
 
 
 def verify_ownership(

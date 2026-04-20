@@ -11,11 +11,11 @@ This service queries real-time metrics about the shared intelligence network:
 """
 
 import time
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any
-from supabase import Client
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
 
 from backend.utils.logger import get_logger
+from supabase import Client
 
 logger = get_logger(__name__)
 

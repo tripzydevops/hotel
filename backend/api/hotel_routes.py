@@ -1,21 +1,20 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
-from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
-from backend.utils.db import get_supabase
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegistry
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.services.hotel_service import (
-    search_hotel_directory_logic,
     add_hotel_to_account_logic,
-    get_hotel_logic,
+    search_hotel_directory_logic,
     update_hotel_logic,
 )
 from backend.services.location_service import LocationService
 from backend.services.profile_service import get_enriched_profile_logic
 from backend.services.subscription import SubscriptionService
-from backend.utils.security import verify_ownership
-from datetime import datetime, timezone
+from backend.utils.db import get_supabase
+from supabase import Client
 
 # Routing Normalization
 # Prefix is registered centrally in main.py.
@@ -48,12 +47,17 @@ async def list_hotels(
     user_id = current_user.id
     if not db:
         return []
-        
+
     # Query via user_hotels mapping to support shared hotel architecture
     # This join pulls user-specific overrides from user_hotels + master hotel data
-    res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).execute()
+    res = (
+        db.table("user_hotels")
+        .select("*, hotels(*)")
+        .eq("user_id", str(user_id))
+        .execute()
+    )
     data = res.data or []
-    
+
     all_hotels = []
     for mapping in data:
         hotel = mapping.get("hotels")
@@ -66,7 +70,7 @@ async def list_hotels(
             hotel["fixed_check_out"] = mapping.get("fixed_check_out")
             hotel["default_adults"] = mapping.get("default_adults", 2)
             all_hotels.append(hotel)
-            
+
     return all_hotels
 
 
@@ -77,7 +81,6 @@ async def list_locations(db: Client = Depends(get_supabase)):
         return []
     service = LocationService(db)
     return await service.get_locations()
-
 
 
 @router.get("/hotels/search")
@@ -148,9 +151,11 @@ async def update_hotel(
     current_user=Depends(get_current_active_user),
 ):
     # AGENT_FIX: Use unified service logic for multi-tenant updates
-    # This ensures settings like 'is_target_hotel' or 'pricing_dna' are 
+    # This ensures settings like 'is_target_hotel' or 'pricing_dna' are
     # saved to the user_hotels table, not the global shared hotels record.
-    return await update_hotel_logic(hotel_id, current_user.id, hotel.model_dump(exclude_unset=True), db)
+    return await update_hotel_logic(
+        hotel_id, current_user.id, hotel.model_dump(exclude_unset=True), db
+    )
 
 
 @router.delete("/hotels/{hotel_id}")
@@ -162,9 +167,18 @@ async def delete_hotel(
     # AGENT_FIX: Soft-delete for unique user association
     # We remove the mapping from user_hotels but keep the master hotel record intact.
     # The 'deleted_at' on the master record is only used by admins or if it was the last user.
-    res = db.table("user_hotels").delete().eq("user_id", str(current_user.id)).eq("hotel_id", str(hotel_id)).execute()
-    
+    res = (
+        db.table("user_hotels")
+        .delete()
+        .eq("user_id", str(current_user.id))
+        .eq("hotel_id", str(hotel_id))
+        .execute()
+    )
+
     if not res.data:
         raise HTTPException(status_code=404, detail="Hotel association not found")
-        
-    return {"status": "removed", "message": "Hotel successfully removed from your account"}
+
+    return {
+        "status": "removed",
+        "message": "Hotel successfully removed from your account",
+    }

@@ -30,8 +30,7 @@ IMPORT CHAIN (for debugging):
 =============================================================================
 """
 
-from typing import List, Dict, Any, Optional
-
+from typing import Any, Dict, List, Optional
 
 # =============================================================================
 # TR_MAP — Turkish-to-English Keyword Translation Dictionary
@@ -617,6 +616,7 @@ def merge_sentiment_breakdowns(
         item["rating"] = round(item["rating"], 1)
 
     return sorted(merged_list, key=lambda x: x["total_mentioned"], reverse=True)
+
 
 def calculate_stability(ratings: List[float]) -> float:
     """

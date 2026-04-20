@@ -22,7 +22,7 @@ def merge_locations():
                 # Actually view_file output usually has line numbers or just text
                 # I'll use a simpler way: I'll read the files properly in a script
                 pass
-        except:
+        except Exception:
             continue
 
 if __name__ == "__main__":

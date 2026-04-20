@@ -24,7 +24,6 @@ import logging
 import os
 import sys
 
-
 # Environment Detection
 # In production (Vercel), LOG_LEVEL defaults to WARNING to reduce noise.
 # Locally, it defaults to DEBUG for maximum visibility during development.

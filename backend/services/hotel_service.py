@@ -4,12 +4,13 @@ Handles business logic for hotel management and directory searching.
 """
 
 from datetime import datetime
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
-from typing import Optional, List, Dict, Any, cast
-from supabase import Client
+
 from fastapi import HTTPException
-from backend.services.dataforseo_client import dataforseo_client
+
 from backend.utils.helpers import log_query
+from supabase import Client
 
 
 async def search_hotel_directory_logic(
@@ -51,12 +52,16 @@ async def search_hotel_directory_logic(
 
     # 1. Local Lookup (Primary)
     query = db.table("hotel_directory").select("*")
-    
+
     # EXPLANATION: Smart Location Filtering
     # If a city is selected in the UI, we prioritize results from that location.
     # We treat empty strings or "Select City" values as None.
-    clean_city = city.strip() if city and city.strip() and city.lower() != "select city" else None
-    
+    clean_city = (
+        city.strip()
+        if city and city.strip() and city.lower() != "select city"
+        else None
+    )
+
     if clean_city:
         query = query.ilike("location", f"%{clean_city}%")
 
@@ -85,7 +90,7 @@ async def search_hotel_directory_logic(
             hotel_score = hotel_score + 50
         elif q_normalized in h_name_norm:
             hotel_score = hotel_score + 40
-        
+
         # Word-based score: Boost if ALL words match (position independent)
         matches_all_words = all(w in h_combined for w in q_words)
         if matches_all_words:
@@ -103,48 +108,53 @@ async def search_hotel_directory_logic(
 
     # 2. Live Fallback (Multi-Provider)
     # Only fallback if local results are poor or sparse
-    should_fallback = (not has_good_local or len(local_results) < 5) and len(q_trimmed) >= 4
+    should_fallback = (not has_good_local or len(local_results) < 5) and len(
+        q_trimmed
+    ) >= 4
 
     # Primary sort by score (desc), secondary by name (asc)
     merged_results: List[Dict[str, Any]] = sorted(
-        local_results, 
-        key=lambda x: (-x.get("_search_score", 0), x.get("name", "").lower())
+        local_results,
+        key=lambda x: (-x.get("_search_score", 0), x.get("name", "").lower()),
     )
 
     if should_fallback:
         from backend.services.provider_factory import ProviderFactory
-        
+
         live_query = f"{q_trimmed} Hotel"
         if clean_city:
             live_query += f" {clean_city}"
 
         active_providers = ProviderFactory.get_active_providers()
-        
+
         for provider in active_providers:
             p_name = provider.get_provider_name()
             try:
                 print(f"[Directory Search] Trying {p_name} for '{live_query}'")
                 live_results = await provider.search_hotels(live_query, limit=10)
-                
+
                 if live_results:
                     # Filter and merge live results
                     found_new = False
                     for lr in live_results:
-                        lr_norm = normalize_term(lr["name"] + " " + lr.get("location", ""))
+                        lr_norm = normalize_term(
+                            lr["name"] + " " + lr.get("location", "")
+                        )
                         # If query is short, we need to be stricter with word match
                         if any(w in lr_norm for w in q_words):
                             lr["source"] = p_name.lower()
                             # Avoid duplicates with sophisticated name comparison
                             if not any(
-                                normalize_term(res.get("name", "")) in lr_norm or lr_norm in normalize_term(res.get("name", ""))
+                                normalize_term(res.get("name", "")) in lr_norm
+                                or lr_norm in normalize_term(res.get("name", ""))
                                 for res in local_results
                             ):
                                 merged_results.append(lr)
                                 found_new = True
-                    
+
                     if found_new:
                         print(f"[Directory Search] SUCCESS with {p_name}")
-                        break # Stop if we found good results
+                        break  # Stop if we found good results
                 else:
                     print(f"[Directory Search] {p_name} returned no results")
             except Exception as e:
@@ -173,13 +183,9 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
     existed becomes shared and searchable by others.
     """
     # Fetch hotels via user_hotels mapping for accurate multitenant directory enrichment
-    res = (
-        db.table("user_hotels")
-        .select("hotel_id, hotels(*)")
-        .execute()
-    )
+    res = db.table("user_hotels").select("hotel_id, hotels(*)").execute()
     data = res.data or []
-    
+
     unique_hotels = {}
     for assoc in data:
         h = assoc.get("hotels")
@@ -231,32 +237,61 @@ async def add_hotel_to_account_logic(
         # Priority: serp_api_id > property_token > (name + location)
         existing_hotel = None
         if serp_api_id:
-            h_res = db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
+            h_res = (
+                db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
+            )
             if h_res.data:
                 existing_hotel = h_res.data[0]
-        
+
         if not existing_hotel and property_token:
-            h_res = db.table("hotels").select("*").eq("property_token", property_token).execute()
+            h_res = (
+                db.table("hotels")
+                .select("*")
+                .eq("property_token", property_token)
+                .execute()
+            )
             if h_res.data:
                 existing_hotel = h_res.data[0]
-        
+
         if not existing_hotel:
-            h_res = db.table("hotels").select("*").eq("name", name).eq("location", location).execute()
+            h_res = (
+                db.table("hotels")
+                .select("*")
+                .eq("name", name)
+                .eq("location", location)
+                .execute()
+            )
             if h_res.data:
                 existing_hotel = h_res.data[0]
 
         hotel_id = None
-        
+
         if existing_hotel:
             hotel_id = existing_hotel["id"]
             # Update missing metadata if provided in this call
             update_fields = {}
-            for field in ["serp_api_id", "property_token", "latitude", "longitude", "address", "phone", "website", "cid", "place_id", "stars"]:
+            for field in [
+                "serp_api_id",
+                "property_token",
+                "latitude",
+                "longitude",
+                "address",
+                "phone",
+                "website",
+                "cid",
+                "place_id",
+                "stars",
+            ]:
                 if not existing_hotel.get(field) and hotel_data.get(field):
                     update_fields[field] = hotel_data[field]
-            
+
             if update_fields:
-                upd_res = db.table("hotels").update(update_fields).eq("id", hotel_id).execute()
+                upd_res = (
+                    db.table("hotels")
+                    .update(update_fields)
+                    .eq("id", hotel_id)
+                    .execute()
+                )
                 if upd_res.data:
                     existing_hotel = upd_res.data[0]
         else:
@@ -276,7 +311,13 @@ async def add_hotel_to_account_logic(
             serp_api_id = hotel_data.get("serp_api_id")
             property_token = hotel_data.get("property_token")
 
-            dir_res = db.table("hotel_directory").select("*").eq("name", name).eq("location", location).execute()
+            dir_res = (
+                db.table("hotel_directory")
+                .select("*")
+                .eq("name", name)
+                .eq("location", location)
+                .execute()
+            )
             if dir_res.data:
                 d = dir_res.data[0]
                 rating = rating or d.get("rating")
@@ -313,10 +354,12 @@ async def add_hotel_to_account_logic(
                 "longitude": hotel_data.get("longitude"),
                 "stars": hotel_data.get("stars"),
             }
-            
+
             insert_res = db.table("hotels").insert(new_hotel_data).execute()
             if not insert_res.data:
-                raise HTTPException(status_code=500, detail="Failed to create hotel record")
+                raise HTTPException(
+                    status_code=500, detail="Failed to create hotel record"
+                )
             existing_hotel = insert_res.data[0]
             hotel_id = existing_hotel["id"]
 
@@ -324,7 +367,9 @@ async def add_hotel_to_account_logic(
         # Handle Target Toggle (User Specific)
         is_target = hotel_data.get("is_target_hotel", False)
         if is_target:
-            db.table("user_hotels").update({"is_target": False}).eq("user_id", str(user_id)).execute()
+            db.table("user_hotels").update({"is_target": False}).eq(
+                "user_id", str(user_id)
+            ).execute()
 
         # We use upsert to ensure (user_id, hotel_id) uniqueness is respected
         assoc_data = {
@@ -336,24 +381,39 @@ async def add_hotel_to_account_logic(
             "preferred_currency": hotel_data.get("preferred_currency", "TRY"),
             "fixed_check_in": hotel_data.get("fixed_check_in"),
             "fixed_check_out": hotel_data.get("fixed_check_out"),
-            "default_adults": hotel_data.get("default_adults", 2)
+            "default_adults": hotel_data.get("default_adults", 2),
         }
-        
+
         # Check if relation already exists to avoid redundant upsert
-        rel_existing = db.table("user_hotels").select("*").eq("user_id", str(user_id)).eq("hotel_id", hotel_id).execute()
-        
+        rel_existing = (
+            db.table("user_hotels")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .eq("hotel_id", hotel_id)
+            .execute()
+        )
+
         if not rel_existing.data:
             db.table("user_hotels").insert(assoc_data).execute()
         else:
             # Update existing association with new settings if provided
             update_data = {}
-            for key in ["is_target", "pricing_dna", "preferred_currency", "fixed_check_in", "fixed_check_out", "default_adults"]:
+            for key in [
+                "is_target",
+                "pricing_dna",
+                "preferred_currency",
+                "fixed_check_in",
+                "fixed_check_out",
+                "default_adults",
+            ]:
                 val = hotel_data.get(key if key != "is_target" else "is_target_hotel")
                 if val is not None:
                     update_data[key] = val
-            
+
             if update_data:
-                db.table("user_hotels").update(update_data).eq("id", rel_existing.data[0]["id"]).execute()
+                db.table("user_hotels").update(update_data).eq(
+                    "id", rel_existing.data[0]["id"]
+                ).execute()
 
         # Update hotel_directory for collaborative growth
         try:
@@ -407,16 +467,25 @@ async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str
     Retrieves a hotel with user-specific overrides from user_hotels.
     """
     # Fetch merged data: Global hotel + User settings
-    res = db.table("user_hotels").select("*, hotels(*)").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).single().execute()
-    
+    res = (
+        db.table("user_hotels")
+        .select("*, hotels(*)")
+        .eq("user_id", str(user_id))
+        .eq("hotel_id", str(hotel_id))
+        .single()
+        .execute()
+    )
+
     if not res.data:
-        raise HTTPException(status_code=404, detail="Hotel mapping for this user not found")
-        
+        raise HTTPException(
+            status_code=404, detail="Hotel mapping for this user not found"
+        )
+
     mapping = res.data
     hotel = mapping.get("hotels")
     if not hotel:
         raise HTTPException(status_code=404, detail="Master hotel record not found")
-        
+
     # Inject user overrides
     hotel["is_target_hotel"] = mapping.get("is_target", False)
     hotel["pricing_dna"] = mapping.get("pricing_dna")
@@ -424,25 +493,36 @@ async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str
     hotel["fixed_check_in"] = mapping.get("fixed_check_in")
     hotel["fixed_check_out"] = mapping.get("fixed_check_out")
     hotel["default_adults"] = mapping.get("default_adults", 2)
-    
+
     return hotel
 
 
-async def update_hotel_logic(hotel_id: UUID, user_id: UUID, update_data: Dict[str, Any], db: Client) -> Dict[str, Any]:
+async def update_hotel_logic(
+    hotel_id: UUID, user_id: UUID, update_data: Dict[str, Any], db: Client
+) -> Dict[str, Any]:
     """
     Updates user-specific hotel settings in user_hotels mappings.
     If 'is_target_hotel' is set, it clears other targets for this user.
     """
     # 1. Verify mapping exists
-    mapping_res = db.table("user_hotels").select("id").eq("user_id", str(user_id)).eq("hotel_id", str(hotel_id)).single().execute()
+    mapping_res = (
+        db.table("user_hotels")
+        .select("id")
+        .eq("user_id", str(user_id))
+        .eq("hotel_id", str(hotel_id))
+        .single()
+        .execute()
+    )
     if not mapping_res.data:
         raise HTTPException(status_code=404, detail="Hotel association not found")
-    
+
     assoc_id = mapping_res.data["id"]
 
     # 2. Handle Target Toggle (User Specific)
     if update_data.get("is_target_hotel") is True:
-        db.table("user_hotels").update({"is_target": False}).eq("user_id", str(user_id)).execute()
+        db.table("user_hotels").update({"is_target": False}).eq(
+            "user_id", str(user_id)
+        ).execute()
         update_data["is_target"] = True
     elif "is_target_hotel" in update_data:
         update_data["is_target"] = update_data["is_target_hotel"]
@@ -450,12 +530,16 @@ async def update_hotel_logic(hotel_id: UUID, user_id: UUID, update_data: Dict[st
     # 3. Filter only supported override fields for user_hotels
     # These match the columns in the 'user_hotels' table
     supported_fields = [
-        "is_target", "pricing_dna", "preferred_currency", 
-        "fixed_check_in", "fixed_check_out", "default_adults",
-        "is_monitored"
+        "is_target",
+        "pricing_dna",
+        "preferred_currency",
+        "fixed_check_in",
+        "fixed_check_out",
+        "default_adults",
+        "is_monitored",
     ]
     db_update = {k: v for k, v in update_data.items() if k in supported_fields}
-    
+
     if db_update:
         db.table("user_hotels").update(db_update).eq("id", assoc_id).execute()
 

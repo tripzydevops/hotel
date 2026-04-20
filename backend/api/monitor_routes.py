@@ -1,24 +1,22 @@
-from fastapi import APIRouter, Depends, Query, BackgroundTasks, Request
-from typing import List, Optional
+from typing import List
 from uuid import UUID
-from supabase import Client
-from backend.utils.db import get_supabase, try_acquire_lock
+
+from fastapi import APIRouter, Depends, Request
+
+from backend.models.schemas import QueryLog, ScanSession
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
-from backend.models.schemas import MonitorResult, ScanOptions, QueryLog, ScanSession
-from backend.services import monitor_service
-from datetime import datetime, timezone
+from supabase import Client
 
 router = APIRouter(prefix="/monitor", tags=["monitor"])
 # Redundant router for Vercel prefix flexibility
 router_legacy = APIRouter(tags=["monitor"])
 
 
-
 @router.get("/sessions/{session_id}", response_model=ScanSession)
 async def get_session(
-    session_id: UUID, 
+    session_id: UUID,
     db: Client = Depends(get_supabase_rls),
-    current_user=Depends(get_current_active_user)
+    current_user=Depends(get_current_active_user),
 ):
     """Fetch a single scan session by ID for live status/reasoning updates."""
     try:
@@ -28,6 +26,7 @@ async def get_session(
         if result.data:
             return ScanSession.model_validate(result.data[0])
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:
         if not isinstance(e, HTTPException):
@@ -37,9 +36,9 @@ async def get_session(
 
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
 async def get_session_logs(
-    session_id: UUID, 
+    session_id: UUID,
     db: Client = Depends(get_supabase_rls),
-    current_user=Depends(get_current_active_user)
+    current_user=Depends(get_current_active_user),
 ):
     """Fetch all query logs linked to a specific scan session."""
     try:
@@ -80,6 +79,7 @@ async def honey_pot_tasks(request: Request):
     Honey Pot route to identify and log rogue services pinging the system.
     Returns empty list to stop 404 spam.
     """
-    print(f"\n[IDENTIFIED] Rogue pinger caught! IP: {request.client.host} | User-Agent: {request.headers.get('user-agent')}\n")
+    print(
+        f"\n[IDENTIFIED] Rogue pinger caught! IP: {request.client.host} | User-Agent: {request.headers.get('user-agent')}\n"
+    )
     return []
-

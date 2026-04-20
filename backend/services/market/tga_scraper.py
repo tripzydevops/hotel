@@ -1,11 +1,11 @@
-import os
-import asyncio
-from typing import List, Dict, Any
-from supabase import Client
-from backend.utils.logger import get_logger
+from typing import Any, Dict, List
+
 from backend.services.analysis_service import get_genai_client
+from backend.utils.logger import get_logger
+from supabase import Client
 
 logger = get_logger(__name__)
+
 
 class TGAScraper:
     """
@@ -27,49 +27,65 @@ class TGAScraper:
         try:
             # Use firecrawl CLI to scrape the page content as markdown
             import subprocess
-            
+
             # npx -y firecrawl-cli@1.8.0 scrape <url> --only-main-content -f markdown
             process = subprocess.run(
-                ["npx", "-y", "firecrawl-cli@1.8.0", "scrape", self.URL, "--only-main-content", "-f", "markdown"],
+                [
+                    "npx",
+                    "-y",
+                    "firecrawl-cli@1.8.0",
+                    "scrape",
+                    self.URL,
+                    "--only-main-content",
+                    "-f",
+                    "markdown",
+                ],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
-            
+
             if process.returncode != 0:
                 logger.error(f"[TGAScraper] Firecrawl CLI failed: {process.stderr}")
-                return {"status": "error", "message": f"Firecrawl failed: {process.stderr}"}
-                
+                return {
+                    "status": "error",
+                    "message": f"Firecrawl failed: {process.stderr}",
+                }
+
             content = process.stdout
-            
+
             if not content or len(content) < 100:
                 logger.warning(f"[TGAScraper] Content too short: {len(content)} chars.")
-                return {"status": "error", "message": "Failed to extract meaningful content from TGA."}
+                return {
+                    "status": "error",
+                    "message": "Failed to extract meaningful content from TGA.",
+                }
 
             logger.info(f"[TGAScraper] Extracted {len(content)} characters of content.")
 
             # 2. Extract structured JSON using Gemini 3
             events = await self._extract_events_with_ai(content)
-            
+
             # 3. Store in Supabase
             processed_count = 0
             for event in events:
                 try:
                     # Enrich with compression score (AI suggested or default)
                     if "compression_score" not in event:
-                        event["compression_score"] = 3 # Default for TGA announcements
-                    
+                        event["compression_score"] = 3  # Default for TGA announcements
+
                     event["type"] = "announcement"
                     event["metadata"] = event.get("metadata", {})
                     event["metadata"]["source"] = "TGA"
-                    
+
                     self.db.table("market_events").upsert(
-                        event,
-                        on_conflict="name, start_date"
+                        event, on_conflict="name, start_date"
                     ).execute()
                     processed_count += 1
                 except Exception as e:
-                    logger.warning(f"[TGAScraper] Upsert failed for {event.get('name')}: {e}")
+                    logger.warning(
+                        f"[TGAScraper] Upsert failed for {event.get('name')}: {e}"
+                    )
 
             return {"status": "success", "processed": processed_count}
 
@@ -81,9 +97,9 @@ class TGAScraper:
         """
         Uses Gemini 3 to parse raw TGA content into structured market events.
         """
-        clean_preview = content[:500].replace('\n', ' ')
+        clean_preview = content[:500].replace("\n", " ")
         logger.info(f"[TGAScraper] AI prompt content preview: {clean_preview}...")
-        
+
         client = get_genai_client()
         if not client:
             logger.error("[TGAScraper] GenAI client not available.")
@@ -108,24 +124,25 @@ class TGAScraper:
             "- compression_score: integer",
             "",
             "CONTENT:",
-            content[:15000].replace('"""', ' ') # Extra safety
+            content[:15000].replace('"""', " "),  # Extra safety
         ]
-        
+
         prompt = "\n".join(instructions)
 
         try:
             response = client.models.generate_content(
                 model="gemini-3-flash-preview", contents=prompt
             )
-            
+
             if response and response.text:
                 import json
+
                 raw_text = response.text
                 if "```json" in raw_text:
                     raw_text = raw_text.split("```json")[1].split("```")[0].strip()
                 elif "```" in raw_text:
-                     raw_text = raw_text.split("```")[1].split("```")[0].strip()
-                
+                    raw_text = raw_text.split("```")[1].split("```")[0].strip()
+
                 data = json.loads(raw_text)
                 return data if isinstance(data, list) else [data]
         except Exception as e:

@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-from typing import Dict, Any, Tuple
-
 import time
+from datetime import datetime, timezone
+from typing import Any, Dict, Tuple
 
 # Fallback Configuration (Used if DB table is missing or unreachable)
 DEFAULT_TIERS = {
@@ -117,10 +116,13 @@ class SubscriptionService:
             .execute()
         )
         # Filter out associations where the underlying global hotel record is soft-deleted
-        current_count = len([
-            a for a in (res.data or []) 
-            if a.get("hotel") and not a["hotel"].get("deleted_at")
-        ])
+        current_count = len(
+            [
+                a
+                for a in (res.data or [])
+                if a.get("hotel") and not a["hotel"].get("deleted_at")
+            ]
+        )
 
         if current_count >= limit:
             return (

@@ -1,24 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
-from typing import List, Dict, Any
-from supabase import Client
-from backend.utils.db import get_supabase
-from backend.services.auth_service import get_current_admin_user
-from backend.utils.logger import get_logger
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+
+from backend.services.auth_service import get_current_admin_user
+from backend.utils.db import get_supabase
+from backend.utils.logger import get_logger
+from supabase import Client
 
 logger = get_logger(__name__)
 
 # EXPLANATION: Routing & Query Normalization (Regression Fix)
-# 1. Removed "/api" prefix from APIRouter to avoid doubled paths 
+# 1. Removed "/api" prefix from APIRouter to avoid doubled paths
 #    (e.g., /api/api/landing/config) when registered in main.py.
-# 2. Fixed query in get_landing_config by removing invalid .eq("status", "active") 
+# 2. Fixed query in get_landing_config by removing invalid .eq("status", "active")
 #    filter as the landing_page_config table does not contain a status column.
 router = APIRouter(tags=["landing"])
+
 
 class ConfigUpdate(BaseModel):
     locale: str = "tr"
     configs: List[Dict[str, Any]]
+
 
 @router.get("/landing/config")
 async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
@@ -67,7 +70,11 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
         else:
             # Process DB rows into a dictionary
             # Row format: {"key": "hero", "content": {...}}
-            config_dict = {item.get("key"): item.get("content") for item in config_data if item.get("key")}
+            config_dict = {
+                item.get("key"): item.get("content")
+                for item in config_data
+                if item.get("key")
+            }
             config_dict["status"] = "online"
 
         return config_dict
@@ -83,6 +90,7 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
             "status": "error",
             "error_hint": str(e),
         }
+
 
 @router.get("/admin/landing/config")
 async def get_admin_landing_config(
@@ -101,6 +109,7 @@ async def get_admin_landing_config(
         return res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.put("/admin/landing/config")
 async def update_landing_config(

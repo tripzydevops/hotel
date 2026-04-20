@@ -71,6 +71,7 @@ app = FastAPI(
     # redirect_slashes=True is the default and preferred for link robustness
 )
 
+
 # Security Headers Middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -78,7 +79,9 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.app; "
@@ -101,7 +104,6 @@ async def log_requests(request: Request, call_next):
 
 
 # ROUTE NORMALIZATION: (Deprecated /p-api stripping removed in favor of unified /api pathing)
-
 
 
 # Root Health Check
@@ -130,24 +132,37 @@ async def manual_cors_middleware(request: Request, call_next):
         response = JSONResponse(content="OK")
     else:
         response = await call_next(request)
-    
+
     # Log token presence for auth debugging
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
-        token_hint = f"{auth_header[:15]}..." 
+        token_hint = f"{auth_header[:15]}..."
         logger.info(f"Auth header detected on {request.url.path}")
     elif request.url.path.startswith("/api/auth"):
         logger.info(f"No auth header on sensitive path: {request.url.path}")
 
     origin = request.headers.get("origin")
-    if origin and response and (".vercel.app" in origin or ".insforge.app" in origin or "localhost" in origin):
+    if (
+        origin
+        and response
+        and (
+            ".vercel.app" in origin
+            or ".insforge.app" in origin
+            or "localhost" in origin
+        )
+    ):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        response.headers["Access-Control-Allow-Methods"] = (
+            "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        )
+        response.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        )
         response.headers["Access-Control-Max-Age"] = "86400"
-    
+
     return response
+
 
 # Enable Gzip compression for all responses larger than 1000 bytes
 # This significantly improves performance for data-heavy API endpoints
@@ -166,15 +181,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     if hasattr(exc, "status_code"):
         status_code = getattr(exc, "status_code")
         detail = getattr(exc, "detail", str(exc))
-        
+
         if status_code >= 500:
             print(f"CRITICAL HTTP 500 on {request.url.path}: {str(detail)}")
             detail = "Internal Server Error"
-            
-        return JSONResponse(
-            status_code=status_code,
-            content={"detail": str(detail)}
-        )
+
+        return JSONResponse(status_code=status_code, content={"detail": str(detail)})
 
     print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
     traceback.print_exc()
@@ -198,9 +210,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.get("/api/health/db")
 async def db_health():
     import os
+
     return {
         "env_url": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
-        "key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+        "key_present": bool(
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        ),
     }
 
 
@@ -277,17 +293,21 @@ async def system_report(db: Client = Depends(get_supabase)):
 
 # 1. Core Services
 app.include_router(auth_routes.router, prefix="/api")
-app.include_router(auth_routes.v1_router, prefix="/api") # Required for InsForge SDK Login
+app.include_router(
+    auth_routes.v1_router, prefix="/api"
+)  # Required for InsForge SDK Login
 app.include_router(hotel_routes.router, prefix="/api")
 app.include_router(profile_routes.router, prefix="/api")
 
 # 2. Intelligence & Reports (Defensive Loading)
 try:
     from backend.api import analysis_routes
+
     app.include_router(analysis_routes.router, prefix="/api")
     ANALYSIS_ENABLED = True
 except Exception as e:
     import traceback
+
     print(f"CRITICAL: Analysis Routes failed to load: {e}")
     traceback.print_exc()
     ANALYSIS_ENABLED = False
@@ -309,19 +329,24 @@ app.include_router(recovery_routes.router, prefix="/api")
 app.include_router(webhook_routes.router, prefix="/api")
 app.include_router(hotel_webhook.router, prefix="/api")
 
+
 @app.on_event("startup")
 async def startup_event():
     """
     Startup health check.
     """
     from backend.services.ai_service import HAS_GENAI
+
     print("--- STARTUP DIAGNOSTICS ---")
-    print(f"AI Service: {'ENABLED' if HAS_GENAI else 'DISABLED (google-genai SDK missing)'}")
+    print(
+        f"AI Service: {'ENABLED' if HAS_GENAI else 'DISABLED (google-genai SDK missing)'}"
+    )
     print(f"Analysis Module: {'READY' if ANALYSIS_ENABLED else 'FAILED TO INITIALIZE'}")
-    
+
     # Check DB Connection (Proactive Error Handling)
     try:
         from backend.utils.db import get_supabase_client
+
         db = get_supabase_client(admin=True)
         if db:
             print("Database Connection: OK")
@@ -330,6 +355,8 @@ async def startup_event():
     except Exception as e:
         print(f"Database Connection: ERROR ({e})")
     print("---------------------------")
+
+
 # The /auth/v1/* paths must be proxied directly to InsForge by Vercel.
 # FastAPI was intercepting these and returning 401 HTML because it expects
 # a Bearer token, but the InsForge SDK sends credentials.
@@ -342,8 +369,10 @@ async def trigger_cron_job(key: str):
     cron_secret = os.getenv("CRON_SECRET")
     if not cron_secret:
         logger.critical("SECURITY CONFIG ERROR: CRON_SECRET not set in environment.")
-        return JSONResponse(status_code=500, content={"detail": "System configuration error"})
-        
+        return JSONResponse(
+            status_code=500, content={"detail": "System configuration error"}
+        )
+
     if key != cron_secret:
         return JSONResponse(status_code=403, content={"detail": "Invalid Cron Key"})
 
@@ -353,7 +382,7 @@ async def trigger_cron_job(key: str):
     import asyncio
 
     db = get_supabase()
-    
+
     try:
         # Standard maintenance batch processing.
         # Enforces a 55s timeout to stay within serverless limits.
@@ -361,17 +390,27 @@ async def trigger_cron_job(key: str):
             asyncio.gather(
                 run_scheduler_check_logic(),
                 run_market_sync_if_needed(db),
-                RetentionService.run_maintenance_cycle(db)
+                RetentionService.run_maintenance_cycle(db),
             ),
-            timeout=55.0
+            timeout=55.0,
         )
-        return {"status": "success", "message": "Batch processed and maintenance complete"}
+        return {
+            "status": "success",
+            "message": "Batch processed and maintenance complete",
+        }
     except asyncio.TimeoutError:
-        logger.warning("CRON: Batch processing timed out after 55s, but locks should prevent duplicate runs.")
-        return {"status": "timeout", "message": "Processing partially completed (timeout)"}
+        logger.warning(
+            "CRON: Batch processing timed out after 55s, but locks should prevent duplicate runs."
+        )
+        return {
+            "status": "timeout",
+            "message": "Processing partially completed (timeout)",
+        }
     except Exception as e:
         logger.error(f"CRON ERROR: {str(e)}")
-        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
+        return JSONResponse(
+            status_code=500, content={"status": "error", "detail": str(e)}
+        )
 
 
 if __name__ == "__main__":

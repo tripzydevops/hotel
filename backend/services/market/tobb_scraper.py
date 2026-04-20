@@ -1,13 +1,10 @@
-import asyncio
-import io
-import os
-import pandas as pd
-from datetime import datetime
-from typing import List, Dict, Any
-from supabase import Client
+from typing import Any, Dict, List
+
 from backend.utils.logger import get_logger
+from supabase import Client
 
 logger = get_logger(__name__)
+
 
 class TOBBScraper:
     """
@@ -28,60 +25,78 @@ class TOBBScraper:
         logger.info("[TOBBScraper] Starting scrape via Firecrawl CLI...")
         try:
             import subprocess
-            
+
             # Since the TOBB table is heavily JS-rendered, we use scrape with a wait-for
             # Alternatively, we could use 'agent' but 'scrape' is faster if it works.
             process = subprocess.run(
                 [
-                    "npx", "-y", "firecrawl-cli@1.8.0", "scrape", 
-                    self.URL, 
-                    "--wait-for", "5000", 
-                    "-f", "markdown"
+                    "npx",
+                    "-y",
+                    "firecrawl-cli@1.8.0",
+                    "scrape",
+                    self.URL,
+                    "--wait-for",
+                    "5000",
+                    "-f",
+                    "markdown",
                 ],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
-            
+
             if process.returncode != 0:
                 logger.error(f"[TOBBScraper] Firecrawl CLI failed: {process.stderr}")
-                return {"status": "error", "message": f"Firecrawl failed: {process.stderr}"}
-                
-            content = process.stdout
-            
-            if not content or len(content) < 500:
-                logger.warning(f"[TOBBScraper] Content too short: {len(content)} chars.")
-                return {"status": "error", "message": "Failed to extract meaningful content from TOBB."}
+                return {
+                    "status": "error",
+                    "message": f"Firecrawl failed: {process.stderr}",
+                }
 
-            logger.info(f"[TOBBScraper] Extracted {len(content)} characters. Using AI to parse markdown table...")
+            content = process.stdout
+
+            if not content or len(content) < 500:
+                logger.warning(
+                    f"[TOBBScraper] Content too short: {len(content)} chars."
+                )
+                return {
+                    "status": "error",
+                    "message": "Failed to extract meaningful content from TOBB.",
+                }
+
+            logger.info(
+                f"[TOBBScraper] Extracted {len(content)} characters. Using AI to parse markdown table..."
+            )
 
             # 2. Extract structured JSON using Gemini 3
             # We reuse the logic from TGA but with a TOBB-specific focus
             events = await self._extract_events_with_ai(content)
-            
+
             # 3. Store in Supabase
             processed_count = 0
             for event in events:
                 try:
                     # Enrich with compression score (AI suggested or default)
                     if "compression_score" not in event:
-                        event["compression_score"] = 5 # Default for Fairs
-                    
+                        event["compression_score"] = 5  # Default for Fairs
+
                     event["type"] = "fair"
                     event["metadata"] = event.get("metadata", {})
                     event["metadata"]["source"] = "TOBB"
-                    
+
                     # Ensure city normalization (Safety check)
                     raw_city = event.get("city", "Unknown")
-                    event["city"] = raw_city.replace('İ', 'I').replace('ı', 'i').capitalize()
+                    event["city"] = (
+                        raw_city.replace("İ", "I").replace("ı", "i").capitalize()
+                    )
 
                     self.db.table("market_events").upsert(
-                        event,
-                        on_conflict="name, start_date"
+                        event, on_conflict="name, start_date"
                     ).execute()
                     processed_count += 1
                 except Exception as e:
-                    logger.warning(f"[TOBBScraper] Upsert failed for {event.get('name')}: {e}")
+                    logger.warning(
+                        f"[TOBBScraper] Upsert failed for {event.get('name')}: {e}"
+                    )
 
             return {"status": "success", "processed": processed_count}
 
@@ -94,6 +109,7 @@ class TOBBScraper:
         Uses Gemini 3 to parse raw TOBB markdown/table content into structured market events.
         """
         from backend.services.analysis_service import get_genai_client
+
         client = get_genai_client()
         if not client:
             logger.error("[TOBBScraper] GenAI client not available.")
@@ -117,24 +133,25 @@ class TOBBScraper:
             "- compression_score: integer",
             "",
             "CONTENT:",
-            content[:15000] 
+            content[:15000],
         ]
-        
+
         prompt = "\n".join(instructions)
 
         try:
             response = client.models.generate_content(
                 model="gemini-3-flash-preview", contents=prompt
             )
-            
+
             if response and response.text:
                 import json
+
                 raw_text = response.text
                 if "```json" in raw_text:
                     raw_text = raw_text.split("```json")[1].split("```")[0].strip()
                 elif "```" in raw_text:
                     raw_text = raw_text.split("```")[1].split("```")[0].strip()
-                
+
                 data = json.loads(raw_text)
                 return data if isinstance(data, list) else [data]
         except Exception as e:

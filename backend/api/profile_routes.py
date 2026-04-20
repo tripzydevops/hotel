@@ -1,23 +1,25 @@
-from fastapi import APIRouter, HTTPException, Depends
-from uuid import UUID
+from datetime import datetime, timezone
 from typing import Optional
-from supabase import Client
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from backend.models.schemas import (
-    UserProfile,
-    UserProfileUpdate,
     Settings,
     SettingsUpdate,
+    UserProfile,
+    UserProfileUpdate,
 )
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.services.profile_service import (
-    update_profile_logic,
     get_enriched_profile_logic,
+    update_profile_logic,
 )
-from datetime import datetime, timezone, timedelta
 from backend.utils.security import verify_ownership
+from supabase import Client
 
 # EXPLANATION: Routing Normalization (Regression Fix)
-# Removed "/api" prefix from APIRouter to avoid doubled paths 
+# Removed "/api" prefix from APIRouter to avoid doubled paths
 # (e.g., /api/api/profile/...) when registered in main.py.
 router = APIRouter(tags=["profile"])
 
@@ -45,10 +47,8 @@ async def get_profile(
     try:
         # Cast to UUID
         user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
-        
-        return await get_enriched_profile_logic(
-            user_uuid, None, db
-        )
+
+        return await get_enriched_profile_logic(user_uuid, None, db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -70,7 +70,7 @@ async def update_profile(
     try:
         # Cast to UUID
         user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
-        
+
         return await update_profile_logic(user_uuid, profile, db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -124,14 +124,14 @@ async def get_settings(
             result = db.table("settings").insert(insert_data).execute()
             # Return fresh data
             return result.data[0]
-        
+
         # KAİZEN: Handle missing or None fields for Pydantic validation safety
         # Merge database results with safe defaults to ensure required fields aren't None
         settings_data = result.data[0]
         for key, val in safe_defaults.items():
             if settings_data.get(key) is None:
                 settings_data[key] = val
-        
+
         return settings_data
     except Exception as e:
         print(f"Error in get_settings: {e}")

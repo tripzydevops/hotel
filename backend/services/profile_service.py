@@ -3,13 +3,14 @@ Profile Service
 Handles business logic for user profiles, including plan enrichment and admin bypasses.
 """
 
-import os
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 from uuid import UUID
-from typing import Optional, Dict, Any
+
 from fastapi import HTTPException
-from supabase import Client, create_client
+
 from backend.models.schemas import UserProfileUpdate
+from supabase import Client
 
 
 async def get_enriched_profile_logic(
@@ -17,14 +18,15 @@ async def get_enriched_profile_logic(
 ) -> Dict[str, Any]:
     # EXPLANATION: Profile Enrichment & Data Governance
     # We separate 'user_profiles' (managed metadata) from 'profiles' (auth system truth)
-    # to handle complex enterprise/admin overrides without polluting the primary 
-    # authentication tables. This ensures admin bypasses and specific plan overrides 
+    # to handle complex enterprise/admin overrides without polluting the primary
+    # authentication tables. This ensures admin bypasses and specific plan overrides
     # work even if the central billing system is slow to update.
     user_id_str = str(user_id)
     is_dev_user = user_id_str == "123e4567-e89b-12d3-a456-426614174000"
 
     # 0. Prepare admin access for truth checking and self-healing
     from backend.utils.db import get_supabase_client
+
     admin_db = get_supabase_client(admin=True)
     if not admin_db:
         print("[Profile] Admin access unavailable, proceeding with basic DB connection")
@@ -54,7 +56,9 @@ async def get_enriched_profile_logic(
                             new_profile = {
                                 "user_id": user_id_str,
                                 "email": email,
-                                "display_name": email.split("@")[0] if email else "User",
+                                "display_name": email.split("@")[0]
+                                if email
+                                else "User",
                                 "role": "user",
                                 "plan_type": "trial",
                                 "subscription_status": "trial",
@@ -62,19 +66,29 @@ async def get_enriched_profile_logic(
                                 "created_at": datetime.now(timezone.utc).isoformat(),
                                 "updated_at": datetime.now(timezone.utc).isoformat(),
                             }
-                            admin_db.table("user_profiles").insert(new_profile).execute()
+                            admin_db.table("user_profiles").insert(
+                                new_profile
+                            ).execute()
                             base_data = new_profile
-                            print(f"[Profile] Self-healed missing profile for {user_id_str}")
-                            
+                            print(
+                                f"[Profile] Self-healed missing profile for {user_id_str}"
+                            )
+
                             # Initialize default settings
-                            admin_db.table("settings").upsert({
-                                "user_id": user_id_str,
-                                "threshold_percent": 1.0,
-                                "notifications_enabled": True,
-                                "currency": "TRY",
-                                "created_at": datetime.now(timezone.utc).isoformat(),
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }).execute()
+                            admin_db.table("settings").upsert(
+                                {
+                                    "user_id": user_id_str,
+                                    "threshold_percent": 1.0,
+                                    "notifications_enabled": True,
+                                    "currency": "TRY",
+                                    "created_at": datetime.now(
+                                        timezone.utc
+                                    ).isoformat(),
+                                    "updated_at": datetime.now(
+                                        timezone.utc
+                                    ).isoformat(),
+                                }
+                            ).execute()
                     except Exception as he:
                         print(f"[Profile] Self-healing attempt failed: {he}")
         except Exception as e:
@@ -108,7 +122,7 @@ async def get_enriched_profile_logic(
 
     # EXPLANATION: Administrative Bypass (Super-User Rules)
     # This logic forces "Enterprise" status for known admin IDs and internal
-    # emails. This ensures internal staff always have full platform access 
+    # emails. This ensures internal staff always have full platform access
     # regardless of their billing status. This is a critical debugging/testing bridge.
     try:
         specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
@@ -174,7 +188,7 @@ async def get_enriched_profile_logic(
         profile_result.update(base_data)
     else:
         profile_result["user_id"] = user_id_str
-    
+
     # ENSURE AT LEAST ONE NAME FIELD IS POPULATED
     if not profile_result.get("display_name"):
         email = profile_result.get("email")
@@ -185,20 +199,24 @@ async def get_enriched_profile_logic(
                     email = auth_user.user.email
             except Exception:
                 pass
-        
-        profile_result["display_name"] = email.split("@")[0].capitalize() if email else "User"
+
+        profile_result["display_name"] = (
+            email.split("@")[0].capitalize() if email else "User"
+        )
 
     profile_result["plan_type"] = plan
     profile_result["subscription_status"] = status
     profile_result["is_admin_bypass"] = bypass_active
-    
+
     profile_result["timezone"] = profile_result.get("timezone") or "UTC"
-    
+
     # Finalize is_verified if not already set by bypass
     if is_verified_by_bypass:
         profile_result["is_verified"] = True
     elif "is_verified" not in profile_result:
-        profile_result["is_verified"] = base_data.get("is_verified", False) if base_data else False
+        profile_result["is_verified"] = (
+            base_data.get("is_verified", False) if base_data else False
+        )
 
     # Ensure timestamps exist for model validation
     # BUGFIX: Check for None values too, not just missing keys.
@@ -210,7 +228,7 @@ async def get_enriched_profile_logic(
         profile_result["created_at"] = now_iso
     if not profile_result.get("updated_at"):
         profile_result["updated_at"] = now_iso
-    
+
     # KAIZEN: Convert datetime objects to ISO strings for Pydantic consistency
     for key in ["created_at", "updated_at"]:
         if isinstance(profile_result.get(key), datetime):

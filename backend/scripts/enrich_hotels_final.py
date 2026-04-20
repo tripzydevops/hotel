@@ -18,7 +18,7 @@ def load_locations(paths):
                     # Simple valid JSON extraction attempt
                     try:
                         data = json.loads(json_text)
-                    except:
+                    except Exception:
                         # Try to handle cases where there might be text after JSON
                         data = json.loads(json_text[:json_text.rfind('}')+1])
                     
