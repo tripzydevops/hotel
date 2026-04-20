@@ -58,29 +58,47 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
       </div>
 
       {/* Tooltip Content */}
-      <div className="absolute top-0 left-full ml-2 w-36 p-2 bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border-accent)] rounded-lg shadow-2xl opacity-0 translate-x-1 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all z-50">
-        <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-[var(--glass-border)]">
-          <History className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-          <span className="text-[8px] font-black uppercase text-[var(--text-primary)] tracking-widest">{t("intradayStory.modalTitle")}</span>
+      <div className="absolute top-0 left-full ml-2 w-48 p-3 bg-[var(--deep-ocean)]/95 backdrop-blur-xl border border-[var(--soft-gold)]/20 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] opacity-0 translate-x-2 group-hover/intraday:opacity-100 group-hover/intraday:translate-x-0 pointer-events-none transition-all duration-300 z-50 overflow-hidden">
+        {/* Subtle glow background */}
+        <div className="absolute -top-10 -right-10 w-24 h-24 bg-[var(--soft-gold)]/10 rounded-full blur-2xl" />
+
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--glass-border)] relative">
+          <History className="w-3 h-3 text-[var(--soft-gold)]" />
+          <span className="text-[9px] font-black uppercase text-white tracking-[0.2em]">{t("intradayStory.modalTitle")}</span>
         </div>
-        <div className="space-y-1.5">
-          {events.map((ev, idx) => (
-            <div key={idx} className="flex items-center justify-between gap-1">
-              <div className="flex flex-col items-start">
-                <span className="text-[7px] font-bold text-[var(--text-muted)] leading-none">
-                  {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                {ev.label && (
-                  <span className="text-[6px] font-black text-[var(--soft-gold)] uppercase tracking-tighter leading-none mt-0.5">
-                    {t(`intradayStory.labels.${ev.label}`, { defaultValue: ev.label })}
+
+        <div className="flex flex-col relative before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-[1px] before:bg-gradient-to-b before:from-[var(--soft-gold)]/40 before:to-transparent">
+          {events.map((ev, idx) => {
+            const rawLabel = ev.label || "";
+            const displayLabel = rawLabel.toLowerCase() === "force scan"
+              ? "Live Check"
+              : rawLabel.toLowerCase() === "price scan"
+                ? "Automated Check"
+                : t(`intradayStory.labels.${rawLabel}`, { defaultValue: rawLabel.replace(/_/g, " ") });
+
+            return (
+              <div key={idx} className="relative pl-4 pb-3 last:pb-0 group/step">
+                {/* Timeline Dot */}
+                <div className={`absolute left-0 top-1 w-1.5 h-1.5 rounded-full z-10 transition-transform duration-300 group-hover/step:scale-150 ${idx === 0 ? "bg-[var(--soft-gold)] shadow-[0_0_5px_var(--soft-gold)]" : "bg-white/30 border border-white/50"}`} />
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col items-start translate-y-[-2px]">
+                    <span className="text-[10px] font-black text-white/90 uppercase tracking-wider leading-none">
+                      {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {displayLabel && (
+                      <span className="text-[7px] font-black text-[var(--soft-gold)]/80 uppercase tracking-widest mt-1">
+                        {displayLabel}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-black text-white tracking-tight bg-white/5 px-1.5 py-0.5 rounded shadow-inner border border-white/5">
+                    {symbol}{ev.price.toLocaleString()}
                   </span>
-                )}
+                </div>
               </div>
-              <span className="text-[8px] font-black text-[var(--text-primary)]">
-                {symbol}{ev.price.toLocaleString()}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

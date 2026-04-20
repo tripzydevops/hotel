@@ -219,7 +219,7 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
 
 
 async def add_hotel_to_account_logic(
-    hotel_data: Dict[str, Any], user_id: UUID, db: Client
+    hotel_data: Dict[str, Any], user_id: UUID, db: Client, admin_db: Optional[Client] = None
 ) -> Dict[str, Any]:
     """
     Associates a hotel with a user account using a Many-to-Many pattern.
@@ -259,17 +259,19 @@ async def add_hotel_to_account_logic(
 
         # 1. Attempt to find existing master hotel record
         # Priority: serp_api_id > property_token > (name + location)
+        # NOTE: We use admin_db for master record lookup to bypass user-specific RLS visibility
+        target_db = admin_db or db
         existing_hotel = None
         if serp_api_id:
             h_res = (
-                db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
+                target_db.table("hotels").select("*").eq("serp_api_id", serp_api_id).execute()
             )
             if h_res.data:
                 existing_hotel = h_res.data[0]
 
         if not existing_hotel and property_token:
             h_res = (
-                db.table("hotels")
+                target_db.table("hotels")
                 .select("*")
                 .eq("property_token", property_token)
                 .execute()
@@ -279,7 +281,7 @@ async def add_hotel_to_account_logic(
 
         if not existing_hotel:
             h_res = (
-                db.table("hotels")
+                target_db.table("hotels")
                 .select("*")
                 .eq("name", name)
                 .eq("location", location)
@@ -311,7 +313,7 @@ async def add_hotel_to_account_logic(
 
             if update_fields:
                 upd_res = (
-                    db.table("hotels")
+                    target_db.table("hotels")
                     .update(update_fields)
                     .eq("id", hotel_id)
                     .execute()
@@ -340,7 +342,7 @@ async def add_hotel_to_account_logic(
             dir_res = None
             if serp_api_id:
                 dir_res = (
-                    db.table("hotel_directory")
+                    target_db.table("hotel_directory")
                     .select("*")
                     .eq("serp_api_id", serp_api_id)
                     .execute()
@@ -349,7 +351,7 @@ async def add_hotel_to_account_logic(
             # Fallback to name + location if no serp_api_id match
             if not dir_res or not dir_res.data:
                 dir_res = (
-                    db.table("hotel_directory")
+                    target_db.table("hotel_directory")
                     .select("*")
                     .eq("name", name)
                     .eq("location", location)
@@ -392,7 +394,7 @@ async def add_hotel_to_account_logic(
                 "stars": hotel_data.get("stars"),
             }
 
-            insert_res = db.table("hotels").insert(new_hotel_data).execute()
+            insert_res = target_db.table("hotels").insert(new_hotel_data).execute()
             if not insert_res.data:
                 raise HTTPException(
                     status_code=500, detail="Failed to create hotel record"
@@ -486,7 +488,7 @@ async def add_hotel_to_account_logic(
             # Choose conflict strategy: ID for official, Name+Location for community
             conflict_target = "serp_api_id" if existing_hotel.get("serp_api_id") else "name,location"
             
-            db.table("hotel_directory").upsert(
+            target_db.table("hotel_directory").upsert(
                 dir_data,
                 on_conflict=conflict_target,
             ).execute()

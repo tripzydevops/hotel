@@ -103,6 +103,7 @@ async def search_hotel_directory_v2(
 async def create_hotel(
     hotel: HotelCreate,
     db: Optional[Client] = Depends(get_supabase_rls),
+    admin_db: Client = Depends(lambda: get_supabase(admin=True)),
     current_user=Depends(get_current_active_user),
 ):
     """
@@ -139,7 +140,7 @@ async def create_hotel(
     if hotel_data.get("location"):
         hotel_data["location"] = hotel_data["location"].title().strip()
 
-    result = await add_hotel_to_account_logic(hotel_data, user_id, db)
+    result = await add_hotel_to_account_logic(hotel_data, user_id, db, admin_db=admin_db)
     return result
 
 

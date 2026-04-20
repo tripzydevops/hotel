@@ -136,7 +136,12 @@ export default function IntradayStoryModal({
                         )}
                         {event.label && (
                           <span className="px-2 py-0.5 rounded-md bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest">
-                            {event.label}
+                            {(() => {
+                              const rawLabel = event.label || "";
+                              if (rawLabel.toLowerCase() === "force scan") return "Live Check";
+                              if (rawLabel.toLowerCase() === "price scan") return "Automated Check";
+                              return t(`intradayStory.labels.${rawLabel}`, { defaultValue: rawLabel.replace(/_/g, " ") });
+                            })()}
                           </span>
                         )}
                       </div>
