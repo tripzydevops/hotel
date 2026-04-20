@@ -51,6 +51,7 @@ export const tr = {
     intelligencePending: "Derin Zeka Bekleniyor...",
     market: "Pzr",
     yourHotel: "Sizin Oteliniz",
+    setAsMine: "Benim Otelim Olarak Ayarla",
     xOfY: "{current} / {total}",
     found: "Bulundu",
     matching: "eşleşen",
@@ -119,6 +120,8 @@ export const tr = {
     activeScans: "{count} Aktif Tarama",
     priceDiscoveryActive: "Fiyat Keşfi Aktif",
     dataUpdated: "Veriler Güncellendi",
+    noHotelsFound: "İzlenen Otel Bulunmuyor",
+    addFirstHotel: "Rekabet setinizi izlemeye başlamak için ilk otelinizi ekleyin.",
   },
   hotelDetails: {
     overview: "Genel Bakış",

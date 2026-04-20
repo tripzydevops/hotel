@@ -42,6 +42,7 @@ interface CompetitorTileProps {
   onEdit?: (id: string, hotel: any) => void;
 
   onViewDetails?: (hotel: any) => void;
+  onSetTarget?: (id: string) => void;
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];
@@ -63,6 +64,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
     <HotelTile
       {...props}
       variant="competitor"
+      onSetTarget={props.onSetTarget}
       headerBadges={
         props.rank ? (
           <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-black text-[var(--text-secondary)] uppercase">

@@ -138,6 +138,63 @@ export function useDashboard(
     },
   });
 
+  const updateHotelMutation = useMutation({
+    mutationFn: (variables: { hotelId: string; updates: any }) =>
+      api.updateHotel(variables.hotelId, variables.updates),
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard", userId] });
+      const previousDashboard = queryClient.getQueryData(["dashboard", userId]);
+
+      if (previousDashboard) {
+        queryClient.setQueryData(["dashboard", userId], (old: any) => {
+          if (!old) return old;
+          
+          const isSettingTarget = variables.updates.is_target_hotel === true;
+          
+          if (isSettingTarget) {
+            // Find the new target from either competitors or current target (unlikely to be target already but safe)
+            const allHotels = [...(old.competitors || []), old.target_hotel].filter(Boolean);
+            const newTarget = allHotels.find(h => h.id === variables.hotelId);
+            
+            if (!newTarget) return old;
+
+            // New competitors = all hotels except the new target, marked as NOT target
+            const newCompetitors = allHotels
+              .filter(h => h.id !== variables.hotelId)
+              .map(h => ({ ...h, is_target_hotel: false }));
+
+            return {
+              ...old,
+              target_hotel: { ...newTarget, is_target_hotel: true },
+              competitors: newCompetitors,
+            };
+          }
+
+          // Normal update for a single hotel (name, location, etc.)
+          const updateHotelInList = (list: any[]) => 
+            (list || []).map(h => h.id === variables.hotelId ? { ...h, ...variables.updates } : h);
+
+          return {
+            ...old,
+            target_hotel: old.target_hotel?.id === variables.hotelId 
+              ? { ...old.target_hotel, ...variables.updates } 
+              : old.target_hotel,
+            competitors: updateHotelInList(old.competitors),
+          };
+        });
+      }
+
+      return { previousDashboard };
+    },
+    onError: (err, variables, context: any) => {
+      queryClient.setQueryData(["dashboard", userId], context.previousDashboard);
+      toast.error(t("common.errorTitle") || "Update failed");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
+    },
+  });
+
   // --- Legacy Interface Shim ---
 
   // Combine loading states
@@ -174,6 +231,24 @@ export function useDashboard(
     deleteHotelMutation.mutate(hotelId);
   };
 
+  const handleUpdateHotel = async (hotelId: string, updates: any) => {
+    return updateHotelMutation.mutateAsync({ hotelId, updates });
+  };
+
+  const handleSetTargetHotel = async (hotelId: string) => {
+    try {
+      const currentData = dashboardQuery.data;
+      // If there is an existing target, unset it in the database first
+      if (currentData?.target_hotel) {
+        await api.updateHotel(currentData.target_hotel.id, { is_target_hotel: false });
+      }
+      return handleUpdateHotel(hotelId, { is_target_hotel: true });
+    } catch (error) {
+      console.error("Failed to set target hotel:", error);
+      throw error;
+    }
+  };
+
   const fetchData = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] }),
@@ -192,6 +267,8 @@ export function useDashboard(
     fetchData,
     handleAddHotel,
     handleDeleteHotel,
+    handleUpdateHotel,
+    handleSetTargetHotel,
     updateSettings,
     setProfile,
   };

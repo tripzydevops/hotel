@@ -87,6 +87,7 @@ export default function Dashboard() {
     fetchData,
     handleAddHotel,
     handleDeleteHotel,
+    handleSetTargetHotel,
     updateSettings,
     setProfile,
   } = useDashboard(userId, t);
@@ -459,6 +460,7 @@ export default function Dashboard() {
                             onViewDetails={(hotel) =>
                               handleOpenDetails(hotel, data)
                             }
+                            onSetTarget={handleSetTargetHotel}
                             isEnterprise={isEnterprise}
                             amenities={competitor.amenities}
                             images={competitor.images}

@@ -40,6 +40,7 @@ export interface HotelTileProps {
   priceHistory?: PricePoint[];
   onEdit?: (id: string, hotel: HotelWithPrice) => void;
   onViewDetails?: (hotel: HotelWithPrice) => void;
+  onSetTarget?: (id: string) => void;
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];
@@ -62,6 +63,7 @@ export default function HotelTile(props: HotelTileProps) {
     imageUrl,
     onEdit,
     onViewDetails,
+    onSetTarget,
     onDelete,
     variant = "competitor",
     isScanning = false,
@@ -181,6 +183,19 @@ export default function HotelTile(props: HotelTileProps) {
             <ExternalLink className="w-3 h-3" />
           </button>
           
+          {variant === "competitor" && onSetTarget && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetTarget(id);
+              }}
+              className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--soft-gold)] hover:border-[var(--soft-gold)] transition-all"
+              title="Set as My Hotel"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();

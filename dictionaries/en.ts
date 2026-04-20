@@ -51,6 +51,7 @@ export const en = {
     intelligencePending: "Deep Intelligence Pending...",
     market: "Mkt",
     yourHotel: "Your Hotel",
+    setAsMine: "Set as Mine",
     xOfY: "{current} of {total}",
     found: "Found",
     matching: "matching",
@@ -119,6 +120,8 @@ export const en = {
     activeScans: "{count} Active Scans",
     priceDiscoveryActive: "Price Discovery Active",
     dataUpdated: "Data Updated",
+    noHotelsFound: "No Hotels Tracked",
+    addFirstHotel: "Add your first hotel to start monitoring your competitive set.",
   },
   hotelDetails: {
     overview: "Overview",
