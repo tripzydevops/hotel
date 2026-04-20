@@ -9,11 +9,6 @@ DEFAULT_TIERS = {
         "ui_comparison_limit": 15,
         "history_days": 9999,
     },
-    "starter": {
-        "hotel_limit": 20,
-        "ui_comparison_limit": 5,
-        "history_days": 30,
-    },
     "pro": {
         "hotel_limit": 100,
         "ui_comparison_limit": 10,

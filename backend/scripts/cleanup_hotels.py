@@ -16,7 +16,8 @@ import sys
 load_env_standard()
 
 # Initialize via the global factory to handle InsForge pathing
-db = get_supabase_client()
+# IMPORTANT: We use admin=True to bypass RLS and see ALL hotels for cleanup.
+db = get_supabase_client(admin=True)
 
 # EXPLANATION: Safety Mode Toggle
 # Why: To prevent accidental data loss, we require an explicit --force flag.
@@ -41,8 +42,12 @@ assoc_res = db.table("user_hotels").select("hotel_id, user_id, is_target").execu
 associations = assoc_res.data or []
 
 # Fetch all valid user profiles (Active/Registered users)
-profiles_res = db.table("user_profiles").select("user_id").execute()
-active_user_ids = {str(p["user_id"]) for p in (profiles_res.data or [])}
+# We check BOTH tables because some users (Enterprise manually added) might only be in one
+profiles_res = db.table("profiles").select("id").execute()
+user_profiles_res = db.table("user_profiles").select("user_id").execute()
+
+active_user_ids = {str(p["id"]) for p in (profiles_res.data or [])}
+active_user_ids.update({str(p["user_id"]) for p in (user_profiles_res.data or [])})
 
 # Build protection maps
 # hotel_id -> set of active users owning it

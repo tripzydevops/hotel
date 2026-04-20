@@ -153,31 +153,33 @@ async def get_enriched_profile_logic(
                     "askinsezen@gmail.com",
                     "yusuf@tripzy.travel",
                     "elif@tripzy.travel",
-                    "tripzydevops@gmail.com", # Added for explicit verification
+                    "tripzydevops@gmail.com", # Fix for the specific user reporting issues
                 ] or email_lower.endswith("@hotel.plus")
         except Exception:
             pass
 
     # GLOBAL ACCESS RESOLUTION
-    # Rule 1: Admins are always Enterprise
+    # Rule 1: Admins and Known DevOps/Support accounts are always Enterprise
     if is_admin_role or is_admin_email or is_specific_admin or is_dev_user:
+        print(f"[Profile] Admin/Bypass detected for {user_id_str}. Granting Enterprise.")
         final_plan = "enterprise"
         final_status = "active"
         bypass_active = True
         is_verified_by_bypass = True
     
-    # Rule 2: If either table says Enterprise, honor it (Most Permissive wins)
+    # Rule 2: If either table explicitly says Enterprise, honor it (Most Permissive wins)
+    # This prevents users from being stuck in "Trial" (limit 1) if they were manually upgraded
     elif is_enterprise_val(auth_plan) or is_enterprise_val(meta_plan):
+        print(f"[Profile] Enterprise override detected (Auth: {auth_plan}, Meta: {meta_plan}) for {user_id_str}")
         final_plan = "enterprise"
-        final_status = "active" # Enterprise overrides are assumed active
+        final_status = "active"
         bypass_active = True if is_enterprise_val(meta_plan) else False
 
-    # Rule 3: General Fallback for trial/starter discrepancies
-    elif auth_plan in ["trial", "starter"] and meta_plan not in ["trial", "starter", None]:
-        # If metadata has a specific plan (e.g. 'professional') but auth says 'trial'
+    # Rule 3: General Fallback for trial discrepancies
+    elif auth_plan == "trial" and meta_plan not in ["trial", None]:
+        print(f"[Profile] Plan discrepancy: {auth_plan} vs {meta_plan}. Honoring metadata.")
         final_plan = meta_plan
-        # We don't automatically set 'active' here to honor billing status from profiles
-        # unless it's an explicit metadata override.
+        # Maintain status from billing truth unless it's a specific bypass branch above
 
     # Final Merge: Take base profile metadata and inject calculated plan status
     profile_result: Dict[str, Any] = {}
