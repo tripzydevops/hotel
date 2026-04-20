@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -66,6 +66,12 @@ export default function AnalysisPage() {
   } = useModalContext();
 
   const [data, setData] = useState<any>(null);
+  const dataRef = useRef<any>(null);
+
+  // Sync ref with state
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ title: string; message: string; action?: any } | null>(null);
   const [currency, setCurrency] = useState<string>("TRY");
@@ -137,7 +143,9 @@ export default function AnalysisPage() {
         try {
           const result = JSON.parse(e.data);
           setData(result);
-          if (result.display_currency) setCurrency(result.display_currency);
+          if (result.display_currency) {
+            setCurrency(prev => prev !== result.display_currency ? result.display_currency : prev);
+          }
           
           if (result.target_hotel && result.competitors) {
             setAllHotels([result.target_hotel, ...result.competitors]);
@@ -169,7 +177,7 @@ export default function AnalysisPage() {
         eventSource.close();
         
         // If we still didn't get data, show a friendly error
-        if (!data) {
+        if (!dataRef.current) {
           setLoading(false);
           setError({
             title: t("analysis.errors.analysisError.title"),
@@ -205,7 +213,7 @@ export default function AnalysisPage() {
     excludedHotelIds,
     roomType,
     router,
-    data, // Added to check for fallback
+    // data removed to avoid infinite loop
   ]);
 
   useEffect(() => {

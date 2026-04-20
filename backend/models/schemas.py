@@ -86,6 +86,15 @@ class HotelUpdate(BaseModel):
     cid: Optional[str] = None
     place_id: Optional[str] = None
 
+    # User-specific association fields
+    is_target_hotel: Optional[bool] = None
+    is_monitored: Optional[bool] = None
+    pricing_dna: Optional[Dict[str, Any]] = None
+    preferred_currency: Optional[str] = None
+    fixed_check_in: Optional[date] = None
+    fixed_check_out: Optional[date] = None
+    default_adults: Optional[int] = None
+
 
 class Hotel(HotelBase):
     id: UUID

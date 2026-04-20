@@ -236,17 +236,7 @@ export function useDashboard(
   };
 
   const handleSetTargetHotel = async (hotelId: string) => {
-    try {
-      const currentData = dashboardQuery.data;
-      // If there is an existing target, unset it in the database first
-      if (currentData?.target_hotel) {
-        await api.updateHotel(currentData.target_hotel.id, { is_target_hotel: false });
-      }
-      return handleUpdateHotel(hotelId, { is_target_hotel: true });
-    } catch (error) {
-      console.error("Failed to set target hotel:", error);
-      throw error;
-    }
+    return handleUpdateHotel(hotelId, { is_target_hotel: true });
   };
 
   const fetchData = async () => {
