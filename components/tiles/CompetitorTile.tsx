@@ -14,7 +14,7 @@ import {
   Edit2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { PricePoint } from "@/types";
+import { PricePoint, HotelImage } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import HotelTile from "./HotelTile";
 
@@ -44,7 +44,7 @@ interface CompetitorTileProps {
   onViewDetails?: (hotel: any) => void;
   isEnterprise?: boolean;
   amenities?: string[];
-  images?: { thumbnail?: string; original?: string }[];
+  images?: HotelImage[];
   offers?: { vendor?: string; price?: number }[];
   isEstimated?: boolean;
   phone?: string;

@@ -17,7 +17,7 @@ import {
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
-import { HotelWithPrice, PricePoint } from "@/types";
+import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
 import { ReactNode } from "react";
 
 export type TrendDirection = "up" | "down" | "stable";
@@ -42,11 +42,13 @@ export interface HotelTileProps {
   onViewDetails?: (hotel: HotelWithPrice) => void;
   isEnterprise?: boolean;
   amenities?: string[];
-  images?: { thumbnail?: string; original?: string }[];
+  images?: HotelImage[];
   variant?: "target" | "competitor";
   isUndercut?: boolean;
   headerBadges?: ReactNode;
   isScanning?: boolean;
+  footerStats?: boolean;
+  priority?: boolean;
 }
 
 export default function HotelTile(props: HotelTileProps) {
@@ -78,6 +80,7 @@ export default function HotelTile(props: HotelTileProps) {
             src={imageUrl}
             alt={name}
             fill
+            priority={props.priority}
             className="object-cover transition-transform duration-700 group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, 33vw"
           />

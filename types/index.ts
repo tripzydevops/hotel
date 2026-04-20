@@ -16,6 +16,8 @@ export interface GuestMention {
   text?: string;
 }
 
+export type HotelImage = { thumbnail?: string; original?: string } | string;
+
 export interface Hotel {
   id: string;
   name: string;
@@ -40,7 +42,7 @@ export interface Hotel {
   default_adults?: number;
   created_at: string;
   amenities?: string[];
-  images?: Array<{ thumbnail?: string; original?: string } | string>;
+  images?: HotelImage[];
   sentiment_breakdown?: Array<{
     name: string;
     rating: number;
