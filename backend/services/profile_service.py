@@ -95,51 +95,57 @@ async def get_enriched_profile_logic(
             print(f"Base Profile Fetch Error: {e}")
 
     # 2. Fetch subscription info (truth source) from the auth profiles table
-
-    plan = "trial"
-    status = "trial"
-    bypass_active = False
-    is_verified_by_bypass = False
+    auth_plan = "trial"
+    auth_status = "trial"
     sub_data = []
+    current_period_end = None
 
     try:
-        viewer_db = db
+        # We check the auth 'profiles' table for billing truth
         viewer_db = admin_db or db
-
         result = (
             viewer_db.table("profiles")
-            .select("plan_type, subscription_status")
+            .select("plan_type, subscription_status, current_period_end")
             .eq("id", user_id_str)
             .execute()
         )
-        sub_data = result.data
+        if result.data:
+            sub_data = result.data
+            auth_plan = sub_data[0].get("plan_type") or "trial"
+            auth_status = sub_data[0].get("subscription_status") or "trial"
+            current_period_end = sub_data[0].get("current_period_end")
     except Exception as e:
         print(f"Profile Sync Error: {e}")
 
-    if sub_data:
-        plan = sub_data[0].get("plan_type") or "trial"
-        status = sub_data[0].get("subscription_status") or "trial"
+    # 3. Administrative & Role-Based Access Logic (Bypasses)
+    # We consolidate access rules here to ensure admins and enterprise users
+    # are never locked out by stale auth table data.
+    final_plan = auth_plan
+    final_status = auth_status
+    bypass_active = False
+    is_verified_by_bypass = False
 
-    # EXPLANATION: Administrative Bypass (Super-User Rules)
-    # This logic forces "Enterprise" status for known admin IDs and internal
-    # emails. This ensures internal staff always have full platform access
-    # regardless of their billing status. This is a critical debugging/testing bridge.
-    try:
-        specific_admin_id = "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
-        is_specific_admin = user_id_str == specific_admin_id
+    # Extract metadata context for role checking
+    meta_role = (base_data.get("role") or "user") if base_data else "user"
+    meta_plan = (base_data.get("plan_type") or "trial") if base_data else "trial"
 
-        if admin_db:
-            admin_email_found = None
-            try:
-                user_auth = admin_db.auth.admin.get_user_by_id(user_id_str)
-                if user_auth and user_auth.user:
-                    admin_email_found = user_auth.user.email
-            except Exception:
-                pass
+    def is_enterprise_val(p: Any) -> bool:
+        return str(p).lower() == "enterprise"
 
-            is_admin_email = False
-            if admin_email_found:
-                email_lower = admin_email_found.lower()
+    def is_admin_val(r: Any) -> bool:
+        return str(r).lower() in ["admin", "market_admin", "market admin", "superadmin"]
+
+    # ABILITY: Detect admin status via various channels
+    is_admin_role = is_admin_val(meta_role)
+    is_specific_admin = user_id_str == "eb284dd9-7198-47be-acd0-fdb0403bcd0a"
+
+    # EMAIL CHECK (Requires Admin access)
+    is_admin_email = False
+    if admin_db:
+        try:
+            user_auth = admin_db.auth.admin.get_user_by_id(user_id_str)
+            if user_auth and user_auth.user and user_auth.user.email:
+                email_lower = user_auth.user.email.lower()
                 is_admin_email = email_lower in [
                     "admin@hotel.plus",
                     "selcuk@rate-sentinel.com",
@@ -147,40 +153,31 @@ async def get_enriched_profile_logic(
                     "askinsezen@gmail.com",
                     "yusuf@tripzy.travel",
                     "elif@tripzy.travel",
+                    "tripzydevops@gmail.com", # Added for explicit verification
                 ] or email_lower.endswith("@hotel.plus")
+        except Exception:
+            pass
 
-            is_admin_role = (
-                base_data
-                and base_data.get("role")
-                and str(base_data.get("role")).lower()
-                in ["admin", "market_admin", "market admin"]
-            )
-
-            if is_admin_email or is_admin_role or is_specific_admin:
-                plan = "enterprise"
-                status = "active"
-                bypass_active = True
-                is_verified_by_bypass = True
-
-        elif is_specific_admin:
-            plan = "enterprise"
-            status = "active"
-            bypass_active = True
-    except Exception as e:
-        print(f"[Profile] Bypass Logic Error: {e}")
-
-    # 3. Fallback to base_data if subscription lookup failed or returned trial
-    if (not sub_data or plan == "trial") and base_data:
-        if not bypass_active:
-            plan = base_data.get("plan_type") or plan
-            status = base_data.get("subscription_status") or status
-
-    # 4. Force Enterprise for Development/Testing User
-    if is_dev_user:
-        plan = "enterprise"
-        status = "active"
+    # GLOBAL ACCESS RESOLUTION
+    # Rule 1: Admins are always Enterprise
+    if is_admin_role or is_admin_email or is_specific_admin or is_dev_user:
+        final_plan = "enterprise"
+        final_status = "active"
         bypass_active = True
         is_verified_by_bypass = True
+    
+    # Rule 2: If either table says Enterprise, honor it (Most Permissive wins)
+    elif is_enterprise_val(auth_plan) or is_enterprise_val(meta_plan):
+        final_plan = "enterprise"
+        final_status = "active" # Enterprise overrides are assumed active
+        bypass_active = True if is_enterprise_val(meta_plan) else False
+
+    # Rule 3: General Fallback for trial/starter discrepancies
+    elif auth_plan in ["trial", "starter"] and meta_plan not in ["trial", "starter", None]:
+        # If metadata has a specific plan (e.g. 'professional') but auth says 'trial'
+        final_plan = meta_plan
+        # We don't automatically set 'active' here to honor billing status from profiles
+        # unless it's an explicit metadata override.
 
     # Final Merge: Take base profile metadata and inject calculated plan status
     profile_result: Dict[str, Any] = {}
@@ -204,9 +201,14 @@ async def get_enriched_profile_logic(
             email.split("@")[0].capitalize() if email else "User"
         )
 
-    profile_result["plan_type"] = plan
-    profile_result["subscription_status"] = status
+    profile_result["plan_type"] = final_plan
+    profile_result["subscription_status"] = final_status
     profile_result["is_admin_bypass"] = bypass_active
+
+    # Map the current_period_end from the profiles table to the UserProfile fields
+    # NOTE: current_period_end is extracted in section 2 of this function
+    profile_result["trial_ends_at"] = current_period_end if final_status == "trial" else None
+    profile_result["subscription_end_date"] = current_period_end if final_status != "trial" else None
 
     profile_result["timezone"] = profile_result.get("timezone") or "UTC"
 

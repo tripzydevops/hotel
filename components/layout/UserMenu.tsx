@@ -51,8 +51,25 @@ export default function UserMenu({
             {profile?.display_name?.split(' ')[0] || "User"}
           </span>
           <div className="flex items-center gap-1">
-            <Sparkles className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-            <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest leading-none opacity-80">Pro Plan</span>
+            {profile?.role === 'admin' ? (
+              <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest leading-none opacity-80">Admin</span>
+            ) : profile?.subscription_status === 'trial' ? (
+              <>
+                <Sparkles className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
+                <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest leading-none opacity-80">
+                  Trial: {(() => {
+                    const end = new Date(profile.trial_ends_at || Date.now());
+                    const diff = end.getTime() - Date.now();
+                    const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+                    return `${days}d left`;
+                  })()}
+                </span>
+              </>
+            ) : (
+              <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest leading-none opacity-80">
+                {profile?.plan_type || "Pro"} Plan
+              </span>
+            )}
           </div>
         </div>
         <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-all ${isOpen ? 'rotate-180' : ''}`} />

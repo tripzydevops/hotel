@@ -17,6 +17,7 @@ import {
   Heart,
   Share2,
   Shield,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HotelPlusLogo from "@/components/ui/HotelPlusLogo";
@@ -60,7 +61,13 @@ const analysisSubItems = [
 export default function Sidebar({
   profile,
 }: {
-  profile: { role?: string; display_name?: string } | null;
+  profile: { 
+    role?: string; 
+    display_name?: string;
+    subscription_status?: string;
+    trial_ends_at?: string;
+    plan_type?: string;
+  } | null;
 }) {
   const pathname = usePathname();
   const { setIsSettingsOpen } = useModalContext();
@@ -242,6 +249,39 @@ export default function Sidebar({
         <div className="pt-10 pb-6">
            <div className="h-[1px] bg-gradient-to-r from-transparent via-[var(--glass-border)] to-transparent w-full" />
         </div>
+
+        {/* Trial Status Widget */}
+        {profile?.role !== 'admin' && profile?.subscription_status === 'trial' && (
+          <div className="px-5 mb-6">
+            <div className="glass-card p-4 rounded-3xl border border-[var(--soft-gold)]/20 bg-[var(--soft-gold)]/5 relative overflow-hidden group/trial">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-[var(--soft-gold)]/10 blur-2xl -z-10 group-hover/trial:scale-150 transition-transform duration-700" />
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-1">Trial Status</p>
+                  <p className="text-sm font-black text-[var(--text-primary)] uppercase tracking-tight">
+                    {(() => {
+                      const end = new Date(profile.trial_ends_at || Date.now());
+                      const diff = end.getTime() - Date.now();
+                      const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+                      return `${days} Days Remaining`;
+                    })()}
+                  </p>
+                </div>
+                <Sparkles className="w-4 h-4 text-[var(--soft-gold)] animate-pulse" />
+              </div>
+              <div className="w-full bg-[var(--glass-bg-accent)] h-1 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: "65%" }} // Hardcoded for aesthetics or could be calculated if we had total trial duration
+                  className="h-full bg-gradient-to-r from-[var(--soft-gold-dim)] to-[var(--soft-gold)]"
+                />
+              </div>
+              <p className="text-[9px] text-[var(--text-muted)] font-medium mt-2 leading-tight uppercase tracking-wider">
+                Upgrade to preserve access to premium market insights
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Settings & Help */}
         <button

@@ -40,7 +40,7 @@ export interface Hotel {
   default_adults?: number;
   created_at: string;
   amenities?: string[];
-  images?: Array<{ thumbnail?: string; original?: string }>;
+  images?: Array<{ thumbnail?: string; original?: string } | string>;
   sentiment_breakdown?: Array<{
     name: string;
     rating: number;
@@ -119,6 +119,8 @@ export interface UserProfile {
   subscription_status?: string;
   role?: string;
   is_verified?: boolean;
+  trial_ends_at?: string;
+  subscription_end_date?: string;
 }
 
 export interface Alert {

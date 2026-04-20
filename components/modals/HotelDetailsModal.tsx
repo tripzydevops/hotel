@@ -53,6 +53,23 @@ export default function HotelDetailsModal({
     { id: "rooms", label: t("hotelDetails.rooms"), icon: Building2 },
   ];
 
+  // Normalize images to always be an array of objects
+  const rawImages = hotel.images || [];
+  const normalizedImages = rawImages.map(img => {
+    if (typeof img === 'string') {
+      return { original: img, thumbnail: img };
+    }
+    return {
+      original: img.original || img.thumbnail || "",
+      thumbnail: img.thumbnail || img.original || ""
+    };
+  }).filter(img => img.original || img.thumbnail);
+
+  // If we have a main image_url and it's not in the gallery, add it at the beginning
+  if (hotel.image_url && !normalizedImages.some(img => img.original === hotel.image_url || img.thumbnail === hotel.image_url)) {
+    normalizedImages.unshift({ original: hotel.image_url, thumbnail: hotel.image_url });
+  }
+
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500 ${isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
@@ -268,198 +285,158 @@ export default function HotelDetailsModal({
 
           {/* GALLERIES TAB (Locked) */}
           {activeTab === "gallery" && (
-            <LockedFeature
-              isEnterprise={isEnterprise}
-              onUpgrade={onUpgrade}
-              title={t("hotelDetails.lockedTitle").replace(
-                "{0}",
-                t("hotelDetails.visualIntel"),
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {normalizedImages.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="aspect-video rounded-lg overflow-hidden bg-[var(--deep-ocean-accent)] relative group cursor-pointer border border-[var(--glass-border)]"
+                >
+                  <FallbackImage
+                    src={img.original || img.thumbnail || ""}
+                    alt={`Gallery ${idx}`}
+                    fill
+                    className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+                    sizes="(max-width: 768px) 50vw, 33vw"
+                    // @ts-ignore
+                    iconClassName="w-6 h-6 text-[var(--soft-gold)]/20"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-ocean)]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 z-10">
+                    <span className="text-[9px] font-black text-white uppercase tracking-widest px-2 py-1 bg-[var(--soft-gold)]/20 backdrop-blur-md rounded border border-white/10">
+                      {t("common.view")} Full Res
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {normalizedImages.length === 0 && (
+                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
+                   <ImageIcon className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noImages")}</p>
+                </div>
               )}
-              description={t("hotelDetails.lockedDesc")}
-            >
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {(hotel.images || []).map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-video rounded-lg overflow-hidden bg-[var(--deep-ocean-accent)] relative group cursor-pointer border border-[var(--glass-border)]"
-                  >
-                    <FallbackImage
-                      src={img.original || img.thumbnail || ""}
-                      alt={`Gallery ${idx}`}
-                      fill
-                      className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      // @ts-ignore
-                      iconClassName="w-6 h-6 text-[var(--soft-gold)]/20"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-ocean)]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 z-10">
-                      <span className="text-[9px] font-black text-white uppercase tracking-widest px-2 py-1 bg-[var(--soft-gold)]/20 backdrop-blur-md rounded border border-white/10">
-                        {t("common.view")} Full Res
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {(!hotel.images || hotel.images.length === 0) && (
-                  <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                     <ImageIcon className="w-12 h-12 opacity-10" />
-                    <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noImages")}</p>
-                  </div>
-                )}
-              </div>
-            </LockedFeature>
+            </div>
           )}
 
           {/* AMENITIES TAB (Locked) */}
           {activeTab === "amenities" && (
-            <LockedFeature
-              isEnterprise={isEnterprise}
-              onUpgrade={onUpgrade}
-              title={t("hotelDetails.lockedTitle").replace(
-                "{0}",
-                t("hotelDetails.featureAnalysis"),
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {(hotel.amenities || []).map((amenity, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 p-4 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] group hover:border-[var(--soft-gold)]/30 transition-colors"
+                >
+                  <div className="w-6 h-6 rounded bg-[var(--soft-gold)]/10 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[var(--soft-gold)]" />
+                  </div>
+                  <span className="text-xs font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                    {amenity}
+                  </span>
+                </div>
+              ))}
+              {(!hotel.amenities || hotel.amenities.length === 0) && (
+                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
+                   <List className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noAmenities")}</p>
+                </div>
               )}
-              description={t("hotelDetails.lockedDesc")}
-            >
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {(hotel.amenities || []).map((amenity, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 p-4 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] group hover:border-[var(--soft-gold)]/30 transition-colors"
-                  >
-                    <div className="w-6 h-6 rounded bg-[var(--soft-gold)]/10 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-[var(--soft-gold)]" />
-                    </div>
-                    <span className="text-xs font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
-                      {amenity}
-                    </span>
-                  </div>
-                ))}
-                {(!hotel.amenities || hotel.amenities.length === 0) && (
-                  <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                     <List className="w-12 h-12 opacity-10" />
-                    <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noAmenities")}</p>
-                  </div>
-                )}
-              </div>
-            </LockedFeature>
+            </div>
           )}
 
           {/* OFFERS TAB (Locked) */}
           {activeTab === "offers" && (
-            <LockedFeature
-              isEnterprise={isEnterprise}
-              onUpgrade={onUpgrade}
-              title={t("hotelDetails.lockedTitle").replace(
-                "{0}",
-                t("hotelDetails.marketDepth"),
-              )}
-              description={t("hotelDetails.lockedDesc")}
-            >
-              <div className="overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)]">
-                <table className="w-full text-left text-xs uppercase font-black tracking-widest">
-                  <thead className="bg-[var(--deep-ocean-accent)] text-[var(--text-muted)] border-b border-[var(--glass-border)]">
-                    <tr>
-                      <th className="p-4">{t("hotelDetails.vendor")}</th>
-                      <th className="p-4 text-right">
-                        {t("hotelDetails.price")}
-                      </th>
-                      <th className="p-4 text-right">
-                        {t("hotelDetails.diff")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--glass-border)]">
-                    {(hotel.price_info?.offers || []).map((offer, idx) => {
-                      const diff =
-                        (offer.price || 0) -
-                        (hotel.price_info?.current_price || 0);
-                      return (
-                        <tr
-                          key={idx}
-                          className="group hover:bg-[var(--glass-bg-accent)] transition-all cursor-default"
+            <div className="overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)]">
+              <table className="w-full text-left text-xs uppercase font-black tracking-widest">
+                <thead className="bg-[var(--deep-ocean-accent)] text-[var(--text-muted)] border-b border-[var(--glass-border)]">
+                  <tr>
+                    <th className="p-4">{t("hotelDetails.vendor")}</th>
+                    <th className="p-4 text-right">
+                      {t("hotelDetails.price")}
+                    </th>
+                    <th className="p-4 text-right">
+                      {t("hotelDetails.diff")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--glass-border)]">
+                  {(hotel.price_info?.offers || []).map((offer, idx) => {
+                    const diff =
+                      (offer.price || 0) -
+                      (hotel.price_info?.current_price || 0);
+                    return (
+                      <tr
+                        key={idx}
+                        className="group hover:bg-[var(--glass-bg-accent)] transition-all cursor-default"
+                      >
+                        <td className="p-4 font-black text-[var(--text-primary)]">
+                          {offer.vendor || offer.source || "Unknown Source"}
+                        </td>
+                        <td className="p-4 text-right text-[var(--soft-gold)] font-black text-sm italic">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: hotel.price_info?.currency || "USD",
+                          }).format(offer.price || 0)}
+                        </td>
+                        <td
+                          className={`p-4 text-right font-black ${diff > 0 ? "text-alert-red" : diff < 0 ? "text-optimal-green" : "text-[var(--text-muted)]"}`}
                         >
-                          <td className="p-4 font-black text-[var(--text-primary)]">
-                            {offer.vendor || offer.source || "Unknown Source"}
-                          </td>
-                          <td className="p-4 text-right text-[var(--soft-gold)] font-black text-sm italic">
-                            {new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: hotel.price_info?.currency || "USD",
-                            }).format(offer.price || 0)}
-                          </td>
-                          <td
-                            className={`p-4 text-right font-black ${diff > 0 ? "text-alert-red" : diff < 0 ? "text-optimal-green" : "text-[var(--text-muted)]"}`}
-                          >
-                            <span className={`px-2 py-1 rounded ${diff > 0 ? "bg-rose-500/10" : diff < 0 ? "bg-emerald-500/10" : "bg-white/5"}`}>
-                                {diff > 0 ? "+" : ""}{diff.toFixed(0)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {(!hotel.price_info?.offers ||
-                  hotel.price_info.offers.length === 0) && (
-                  <div className="p-12 text-center text-[var(--text-muted)]">
-                     <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noOffers")}</p>
-                  </div>
-                )}
-              </div>
-            </LockedFeature>
+                          <span className={`px-2 py-1 rounded ${diff > 0 ? "bg-rose-500/10" : diff < 0 ? "bg-emerald-500/10" : "bg-white/5"}`}>
+                              {diff > 0 ? "+" : ""}{diff.toFixed(0)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {(!hotel.price_info?.offers ||
+                hotel.price_info.offers.length === 0) && (
+                <div className="p-12 text-center text-[var(--text-muted)]">
+                   <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noOffers")}</p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* ROOM TYPES TAB */}
           {activeTab === "rooms" && (
             <div className="space-y-4">
-              <LockedFeature
-                isEnterprise={isEnterprise}
-                onUpgrade={onUpgrade}
-                title={t("hotelDetails.lockedTitle").replace(
-                  "{0}",
-                  t("hotelDetails.rooms"),
+              <div className="grid grid-cols-1 gap-4">
+                {(hotel.price_info?.room_types || []).map((room, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
+                  >
+                    <div>
+                      <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                        {room.name || "Target Chamber"}
+                      </h4>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                        {t("hotelDetails.foundVia")} reconnaissance
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency:
+                            room.currency ||
+                            hotel.price_info?.currency ||
+                            "USD",
+                        }).format(room.price || 0)}
+                      </div>
+                      <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                        {t("common.availableNow")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!hotel.price_info?.room_types ||
+                  hotel.price_info.room_types.length === 0) && (
+                  <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
+                    <Building2 className="w-12 h-12 opacity-10" />
+                    <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noRooms")}</p>
+                  </div>
                 )}
-                description={t("hotelDetails.lockedDesc")}
-              >
-                <div className="grid grid-cols-1 gap-4">
-                  {(hotel.price_info?.room_types || []).map((room, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
-                    >
-                      <div>
-                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                          {room.name || "Target Chamber"}
-                        </h4>
-                        <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                          {t("hotelDetails.foundVia")} reconnaissance
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency:
-                              room.currency ||
-                              hotel.price_info?.currency ||
-                              "USD",
-                          }).format(room.price || 0)}
-                        </div>
-                        <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                          {t("common.availableNow")}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  {(!hotel.price_info?.room_types ||
-                    hotel.price_info.room_types.length === 0) && (
-                    <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                      <Building2 className="w-12 h-12 opacity-10" />
-                      <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noRooms")}</p>
-                    </div>
-                  )}
-                </div>
-              </LockedFeature>
+              </div>
             </div>
           )}
         </div>
