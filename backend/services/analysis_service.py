@@ -561,17 +561,18 @@ async def stream_narrative_gen(
             )
             return
 
-        # AGENT_FEATURE: Using modern GenerateContent API with streaming and Gemini 3.1
-        for chunk in client.models.generate_content_stream(
-            model="models/gemini-3-flash-preview",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-            ),
-        ):
-            if chunk.text:
-                yield chunk.text
-                await asyncio.sleep(0.01)  # Throttling for smoother UI flow
+        # AGENT_FEATURE: Using modern Interactions API with streaming and Gemini 3.1
+        stream = client.interactions.create(
+            model="gemini-3-flash-preview",
+            input=prompt,
+            generation_config={"temperature": 0.7},
+            stream=True
+        )
+        for chunk in stream:
+            if chunk.event_type == "content.delta":
+                if chunk.delta.type == "text":
+                    yield chunk.delta.text
+                    await asyncio.sleep(0.01)  # Throttling for smoother UI flow
 
     except Exception as e:
         logger.error(f"[SSE] AI Narrative failed: {e}")

@@ -66,10 +66,15 @@ class PriceExplanatoryAgent:
         """
 
         try:
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview", contents=prompt
+            interaction = client.interactions.create(
+                model="gemini-3-flash-preview",
+                input=prompt,
+                system_instruction="You are a Senior Revenue Strategist specializing in hotel market intelligence and compression analysis.",
             )
-            return response.text.strip() if response and response.text else fallback_msg
+            
+            if interaction and interaction.outputs:
+                return interaction.outputs[-1].text.strip()
+            return fallback_msg
         except Exception as e:
             logger.error(f"[PriceExplanatoryAgent] AI generation failed: {e}")
             return fallback_msg

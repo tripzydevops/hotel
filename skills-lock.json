@@ -35,6 +35,11 @@
       "source": "insforge/agent-skills",
       "sourceType": "github",
       "computedHash": "421b6eb1091930a437c223aae1d6547f3ee4d2e5cfef45e41a3e2b32a2c27f7e"
+    },
+    "seo-dataforseo": {
+      "source": "dataforseo/dataforseo-toolkit-skill",
+      "sourceType": "github",
+      "computedHash": "local-sync"
     }
   }
 }

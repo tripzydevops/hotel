@@ -38,7 +38,7 @@ class MarketIntelligenceService:
 
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY")
-        self.model_name = "models/gemini-2.0-flash-exp"  # Using stable 2.0 flash
+        self.model_name = "gemini-3-flash-preview"  # Upgraded to Gemini 3
         self.client = None
         self.sdk_available = False
 
@@ -110,15 +110,12 @@ class MarketIntelligenceService:
         """
 
         try:
-            response = self.client.models.generate_content(
+            interaction = self.client.interactions.create(
                 model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                ),
+                input=prompt,
             )
-
-            response_text = response.text
+            
+            response_text = interaction.outputs[-1].text
             # Clean up potential markdown formatting if Gemini includes it (fallback)
             if "```json" in response_text:
                 response_text = (
@@ -168,10 +165,12 @@ class MarketIntelligenceService:
         """
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model_name, contents=prompt
+            interaction = self.client.interactions.create(
+                model=self.model_name,
+                input=prompt,
+                system_instruction="You are a senior revenue management consultant focusing on actionable, concise market intelligence.",
             )
-            return response.text
+            return interaction.outputs[-1].text
         except Exception as e:
             logger.error(f"[AI] City briefing failed: {e}")
             return f"# {city_data.get('city', 'Market')} Briefing\n\nError synthesizing briefing text."
