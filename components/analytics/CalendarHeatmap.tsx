@@ -184,7 +184,7 @@ export default function CalendarHeatmap({
                       }`}
                     >
                       {data.vs_comp > 0 ? "+" : ""}
-                      {data.vs_comp.toFixed(0)}% vs Comp
+                      {Number(data.vs_comp).toFixed(0)}% vs Comp
                     </div>
                   </>
                 )}
@@ -220,7 +220,7 @@ export default function CalendarHeatmap({
               <div className="text-center">
                 <div className="text-xl font-bold text-[var(--text-muted)]">
                   {symbol}
-                  {hoveredData.comp_avg.toFixed(0)}
+                  {Number(hoveredData.comp_avg).toFixed(0)}
                 </div>
                 <div className="text-[9px] text-[var(--text-muted)] uppercase">
                   Comp Avg
@@ -235,7 +235,7 @@ export default function CalendarHeatmap({
               >
                 <div className="text-sm font-black">
                   {hoveredData.vs_comp > 0 ? "+" : ""}
-                  {hoveredData.vs_comp.toFixed(1)}%
+                  {Number(hoveredData.vs_comp).toFixed(1)}%
                 </div>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function CalendarHeatmap({
                   </span>
                   <span className="text-xs font-bold text-white/70">
                     {symbol}
-                    {comp.price.toFixed(0)}
+                    {Number(comp.price).toFixed(0)}
                   </span>
                 </div>
               ))}

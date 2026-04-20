@@ -277,23 +277,23 @@ export default function AdvisorQuadrant({
                   {t("strategicMap.sentimentIndex")}
                 </span>
                 <span
-                  className={`text-xs font-black ${(sentiment || 100) >= 100 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
+                  className={`text-xs font-black ${(Number(sentiment) || 100) >= 100 ? "text-[var(--optimal-green)]" : "text-[var(--alert-red)]"}`}
                 >
-                  {sentiment?.toFixed(1) || "100.0"}
+                  {Number(sentiment)?.toFixed(1) || "100.0"}
                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-1">
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ${(sentiment || 100) >= 100 ? "bg-[var(--optimal-green)]" : "bg-[var(--alert-red)]"}`}
+                  className={`h-full rounded-full transition-all duration-1000 ${(Number(sentiment) || 100) >= 100 ? "bg-[var(--optimal-green)]" : "bg-[var(--alert-red)]"}`}
                   style={{
-                    width: `${Math.min(Math.max((sentiment || 100) / 2, 0), 100)}%`,
+                    width: `${Math.min(Math.max((Number(sentiment) || 100) / 2, 0), 100)}%`,
                   }} // Normalized loosely
                 />
               </div>
               {/* Actual Ratings Display */}
               <div className="flex justify-between text-[8px] font-bold text-white/40 uppercase tracking-widest ">
-                <span>You: {targetRating?.toFixed(1) || "N/A"}</span>
-                <span>Mkt: {marketRating?.toFixed(1) || "N/A"}</span>
+                <span>You: {Number(targetRating)?.toFixed(1) || "N/A"}</span>
+                <span>Mkt: {Number(marketRating)?.toFixed(1) || "N/A"}</span>
               </div>
             </div>
 
@@ -304,14 +304,14 @@ export default function AdvisorQuadrant({
                   ARI
                 </span>
                 <span className="text-xs font-black text-white">
-                  {ari?.toFixed(1) || "100.0"}
+                  {Number(ari)?.toFixed(1) || "100.0"}
                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[var(--soft-gold)] rounded-full transition-all duration-1000"
                   style={{
-                    width: `${Math.min(Math.max((ari || 100) / 2, 0), 100)}%`,
+                    width: `${Math.min(Math.max((Number(ari) || 100) / 2, 0), 100)}%`,
                   }}
                 />
               </div>

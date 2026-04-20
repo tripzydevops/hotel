@@ -142,7 +142,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
           ) : (
             <TrendingUp className="w-3 h-3" />
           )}
-          {Math.abs(data.vsComp).toFixed(1)}% vs Mkt
+          {Number(Math.abs(data.vsComp)).toFixed(1)}% vs Mkt
         </div>
       </div>
 
@@ -155,7 +155,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
           </div>
           <span className="text-lg font-black text-[var(--soft-gold)]">
             {symbol}
-            {data.yourPrice?.toFixed(0)}
+            {Number(data.yourPrice)?.toFixed(0)}
           </span>
         </div>
 
@@ -171,7 +171,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
               </span>
               <span className="font-medium text-[var(--text-secondary)]">
                 {symbol}
-                {comp.price?.toFixed(0)}
+                {Number(comp.price)?.toFixed(0)}
               </span>
             </div>
           ))}

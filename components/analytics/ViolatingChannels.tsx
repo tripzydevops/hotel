@@ -38,7 +38,7 @@ export default function ViolatingChannels({
         current_price: price,
         target_price: targetPrice,
         currency: c.price_info?.currency || "TRY",
-        diff: `-${diffPercent.toFixed(1)}%`,
+        diff: `-${Number(diffPercent).toFixed(1)}%`,
         severity: diffPercent > 5 ? "high" : "low",
         desc: `Undercut detected at ${new Intl.NumberFormat("tr-TR", { style: "currency", currency: c.price_info?.currency || "TRY" }).format(price)}.`,
         last: "Just Now",

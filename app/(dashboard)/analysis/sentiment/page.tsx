@@ -146,7 +146,7 @@ const ScoreCard = ({
             <div className="flex items-center gap-2.5">
               <div className={`w-11 h-11 rounded-xl ${ratingStyle.bg} ring-2 ${ratingStyle.ring} flex items-center justify-center`}>
                 <span className={`text-lg font-black ${ratingStyle.text}`}>
-                  {(hotel.rating || 0).toFixed(1)}
+                  {(Number(hotel.rating) || 0).toFixed(1)}
                 </span>
               </div>
               <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
@@ -1008,13 +1008,13 @@ export default function SentimentPage() {
                             {hotel.name}
                           </span>
                           <span className="text-xs font-black text-[var(--text-secondary)]">
-                            {(hotel.rating || 0).toFixed(1)} ★
+                            {(Number(hotel.rating) || 0).toFixed(1)} ★
                           </span>
                         </div>
                         <div className="w-full h-1.5 bg-[var(--bg-accent)] rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${((hotel.rating || 0) / 5) * 100}%` }}
+                            animate={{ width: `${((Number(hotel.rating) || 0) / 5) * 100}%` }}
                             transition={{ duration: 0.8, ease: "easeOut", delay: idx * 0.08 }}
                             className={`h-full rounded-full ${hotel.isTarget ? "bg-gradient-to-r from-blue-500 to-blue-400" :
                               idx === 0 ? "bg-gradient-to-r from-amber-500 to-amber-400" :
