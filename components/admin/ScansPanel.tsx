@@ -27,6 +27,8 @@ import { useToast } from "@/components/ui/ToastContext";
 
 const ScansPanel = () => {
   const { toast } = useToast();
+  // router is used to force a server-side refresh of the page data, 
+  // bypassing any client-side cache and ensuring UI consistency after mutations.
   const router = useRouter();
   /* New Queue State */
   const [queue, setQueue] = useState<any[]>([]);
@@ -46,6 +48,7 @@ const ScansPanel = () => {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [batchDetails, setBatchDetails] = useState<any>(null);
   const [batchDetailsLoading, setBatchDetailsLoading] = useState(false);
+  // isCleaning tracks the progress of the automated scan history cleanup operation.
   const [isCleaning, setIsCleaning] = useState(false);
 
   const loadScans = useCallback(async () => {
@@ -84,19 +87,25 @@ const ScansPanel = () => {
     }
   }, []);
 
+  /**
+   * handleCleanup manages the removal of empty or failed scan sessions from the database.
+   * It includes a confirmation check, visual loading states, and explicit data re-fetching
+   * to ensure the UI reflects the changes immediately, even if the WebSocket is flaky.
+   */
   const handleCleanup = async () => {
     if (!confirm("Are you sure you want to remove all failed and empty scan sessions from the last 7 days?")) return;
     
+    // Set loading state to provide visual feedback and prevent redundant clicks.
     setIsCleaning(true);
     toast.success("Cleaning up empty scans...");
     try {
       const res = await api.cleanupEmptyScans();
       toast.success(res.message || "Cleanup complete!");
       
-      // EXPLANATION: Explicit Re-fetch
-      // Forces the UI to refresh by manually triggering the fetch
-      // and signaling Next.js to invalidate cache, bypassing 
-      // flaky WebSocket drops.
+      // EXPLANATION: Explicit Re-fetch & Refresh
+      // 1. loadScans() manually triggers a fresh API call for the local 'scans' state.
+      // 2. router.refresh() signals Next.js to invalidate its route cache and fetch fresh data.
+      // This combination guarantees that the dashboard stays synchronized with the server state.
       await loadScans();
       router.refresh();
     } catch (err: any) {
@@ -238,6 +247,7 @@ const ScansPanel = () => {
         )}
 
         {activeTab === "history" && (
+          /* Cleanup Action: Integrated with isCleaning state for robust visual feedback and debouncing */
           <button
             onClick={handleCleanup}
             disabled={isCleaning}
