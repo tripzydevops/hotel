@@ -53,7 +53,7 @@ const analysisSubItems = [
   },
   {
     label: "Market Intelligence",
-    href: "/dashboard/market-intelligence",
+    href: "/intelligence",
     icon: BarChart3,
   },
 ];
