@@ -17,6 +17,7 @@ import os
 import traceback
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+import uuid
 from uuid import UUID
 
 from backend.models.schemas import SCAN_PULSE_INTERVAL_HOURS
@@ -314,20 +315,11 @@ async def run_system_heartbeat(db: Client):
             return
 
         settings = settings_res.data[0]
-        # Transitioning to new 4 hour system-wide standard
         interval = SCAN_PULSE_INTERVAL_HOURS
         last_scan = settings.get("last_global_scan_at")
-
         now = datetime.now(timezone.utc)
 
         # 2. Check overlap
-        # EXPLANATION OF FIX:
-        # Previously, there was a timezone mismatch because InsForge returns timestamps
-        # ending with "Z" (e.g. 2026-04-19T13:42:51Z), and Python's datetime.fromisoformat()
-        # in standard libraries prior to 3.11 doesn't parse 'Z' natively.
-        # We explicitly replace 'Z' with '+00:00' to ensure it converts properly into a
-        # timezone-aware UTC datetime. This prevents false positive overlap checks which
-        # previously caused the system to skip scheduled background scans.
         is_due = True
         if last_scan:
             try:
@@ -340,111 +332,77 @@ async def run_system_heartbeat(db: Client):
         if not is_due and not getattr(db, "_force_heartbeat", False):
             return
 
-        s_logger.info(
-            f"Heartbeat: Global system scan starting (Interval: {interval}h)..."
-        )
+        s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
 
-        # 3. Fetch all unique monitored hotels
-        # 1. Update Admin Settings immediately (Optimistic Locking)
-        # This prevents the 5-minute scheduler loop from retrying if this execution is slow.
+        # 3. Create Monitoring Session
+        session_id = str(uuid.uuid4())
+        try:
+            db.table("market_heartbeat_logs").insert({
+                "id": session_id,
+                "status": "started",
+                "triggered_by": "scheduler",
+                "hotel_count": 0
+            }).execute()
+        except Exception as sle:
+            s_logger.error(f"Heartbeat: Failed to record session start: {sle}")
+
+        # 4. Update Admin Settings immediately
         next_scan = now + timedelta(hours=interval)
         try:
-            db.table("admin_settings").update(
-                {
-                    "last_global_scan_at": now.isoformat(),
-                    "next_global_scan_at": next_scan.isoformat(),
-                }
-            ).eq("id", settings["id"]).execute()
+            db.table("admin_settings").update({
+                "last_global_scan_at": now.isoformat(),
+                "next_global_scan_at": next_scan.isoformat(),
+            }).eq("id", settings["id"]).execute()
         except Exception as e:
-            s_logger.warning(
-                f"Heartbeat: Failed to update admin settings timestamp (pre-submission): {e}"
-            )
+            s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
 
-        # 2. Get monitored hotels
+        # 5. Get monitored hotels
         monitored_res = (
             db.table("user_hotels")
-            .select("hotel_id, hotels(name, location, property_token, serp_api_id)")
+            .select("hotel_id, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude)")
             .eq("is_monitored", True)
             .execute()
         )
         if not monitored_res.data:
             s_logger.info("Scheduler: No monitored hotels found.")
+            db.table("market_heartbeat_logs").update({
+                "status": "completed", 
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", session_id).execute()
             return
 
-        # Deduplicate by Unique Token (property_token) to save credits
-        criteria_groups = {}  # token -> [list_of_ids]
-        criteria_data = {}  # token -> hotel_metadata
-
+        # Deduplicate
+        hotels_to_scan = []
+        seen_hotels = set()
         for item in monitored_res.data:
             h = item.get("hotels")
-            if not h:
-                continue
+            if h and h.get("id") not in seen_hotels:
+                hotels_to_scan.append(h)
+                seen_hotels.add(h.get("id"))
+        
+        db.table("market_heartbeat_logs").update({"hotel_count": len(hotels_to_scan)}).eq("id", session_id).execute()
 
-            # Use serp_api_id as the primary unique key, then property_token
-            token = h.get("serp_api_id")
-            if not token:
-                token = h.get("property_token")
-
-            if not token:
-                # Fallback to name/location only if both identifiers are missing
-                token = f"{h['name'].lower().strip()}|{h['location'].lower().strip()}"
-
-            if token not in criteria_groups:
-                criteria_groups[token] = []
-                criteria_data[token] = h
-            criteria_groups[token].append(item["hotel_id"])
-
-        if not criteria_groups:
-            s_logger.info(
-                "Heartbeat: No valid monitored hotels found after deduplication."
-            )
-            return
-
-        s_logger.info(
-            f"Heartbeat: Submitting {len(criteria_groups)} unique search tasks (from {len(monitored_res.data)} monitored records)..."
+        # 6. Submit to DataForSEO
+        total = await dataforseo_provider.submit_hotel_scan_batch(
+            db,
+            hotels=hotels_to_scan,
+            check_in=(now + timedelta(days=1)).strftime("%Y-%m-%d"),
+            check_out=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
+            deep_scan=False,
+            session_id=session_id
         )
 
-        # 4. Use the optimized batch submission logic
-        target_hotel_ids = [h_ids[0] for h_ids in criteria_groups.values()]
+        db.table("market_heartbeat_logs").update({
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", session_id).execute()
 
-        check_in = date.today().strftime("%Y-%m-%d")
-        check_out = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
-
-        # Construct Pingback URL
-        api_domain = os.environ.get("API_BACKEND_DOMAIN") or os.environ.get(
-            "VERCEL_DOMAIN"
-        )
-        pingback_url = None
-        if api_domain:
-            pingback_url = f"https://{api_domain}/api/hotel-webhook"
-            source = (
-                "API_BACKEND_DOMAIN"
-                if os.environ.get("API_BACKEND_DOMAIN")
-                else "VERCEL_DOMAIN"
-            )
-            s_logger.info(
-                f"Heartbeat: Using explicit pingback_url ({source}): {pingback_url}"
-            )
-
-        success_count = await dataforseo_provider.submit_hotel_scan_batch(
-            db=db,
-            hotel_ids=target_hotel_ids,
-            check_in=check_in,
-            check_out=check_out,
-            batch_type="scheduled_pulse",
-            deep_scan=True,
-            pingback_url=pingback_url,
-        )
-
-        s_logger.info(
-            f"Heartbeat: Successfully posted {success_count}/{len(target_hotel_ids)} tracking units."
-        )
-
-        # 5. [VECTORIZED] Trigger high-speed processing of any ready tasks
-        await process_system_scans(db)
+        s_logger.info(f"Heartbeat: Successfully submitted {total} tasks for session {session_id}")
+        return total
 
     except Exception as e:
         s_logger.error(f"Heartbeat Failure: {e}")
+        s_logger.error(traceback.format_exc())
 
 
 async def process_system_scans(db: Client):

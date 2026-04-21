@@ -771,36 +771,18 @@ class DataForSEOProvider(HotelDataProvider):
     async def submit_hotel_scan_batch(
         self,
         db: Client,
-        hotel_ids: List[str],
+        hotels: List[Dict[str, Any]],
         check_in: str,
         check_out: str,
-        batch_type: str = "scheduled_pulse",
         deep_scan: bool = False,
         pingback_url: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> int:
         """
-        High-level batch submission for the system heartbeat.
+        Submits a batch of hotels for discovery.
+        Returns the number of tasks successfully registered.
         If deep_scan=True, it submits both Pricing AND Metadata/Sentiment tasks.
         """
-        if not hotel_ids:
-            return 0
-
-        # 1. Fetch hotel metadata for keywords
-        try:
-            hotels_res = (
-                db.table("hotels")
-                .select(
-                    "id, name, location, property_token, serp_api_id, location_code, latitude, longitude"
-                )
-                .in_("id", hotel_ids)
-                .execute()
-            )
-
-            hotels = hotels_res.data or []
-        except Exception as e:
-            logger.error(f"BatchSubmit: Failed to fetch metadata: {e}")
-            return 0
-
         hotel_task_map = {}
         price_task_params = []
         info_task_params = []
@@ -886,7 +868,7 @@ class DataForSEOProvider(HotelDataProvider):
             res = await self.post_price_tasks(chunk, pingback_url=pingback_url)
             if res:
                 total_submitted += await self._register_scan_tasks(
-                    db, res, hotel_task_map, "price_search"
+                    db, res, hotel_task_map, "price_search", session_id=session_id
                 )
 
         # Info
@@ -896,7 +878,7 @@ class DataForSEOProvider(HotelDataProvider):
                 res = await self.post_info_tasks(chunk, pingback_url=pingback_url)
                 if res:
                     total_submitted += await self._register_scan_tasks(
-                        db, res, hotel_task_map, "hotel_info"
+                        db, res, hotel_task_map, "hotel_info", session_id=session_id
                     )
 
         return total_submitted
@@ -907,18 +889,21 @@ class DataForSEOProvider(HotelDataProvider):
         tasks: List[Dict[str, Any]],
         mapping: Dict[str, str],
         task_type: str,
+        session_id: Optional[str] = None,
     ) -> int:
         """Helper to register external tasks into internal scan_tasks table."""
         try:
+            batch_data = {
+                "total_count": len(tasks),
+                "status": "processing",
+                "batch_type": task_type,
+            }
+            if session_id:
+                batch_data["session_id"] = session_id
+
             batch_res = (
                 db.table("scan_batches")
-                .insert(
-                    {
-                        "total_count": len(tasks),
-                        "status": "processing",
-                        "batch_type": task_type,
-                    }
-                )
+                .insert(batch_data)
                 .execute()
             )
             batch_id = batch_res.data[0]["id"] if batch_res.data else None

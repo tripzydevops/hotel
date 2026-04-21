@@ -428,3 +428,24 @@ export interface MarketIntelligence {
     comp_avg: number;
   }>;
 }
+
+export interface ProviderHealth {
+  name: string;
+  status: "operational" | "degraded" | "down";
+  success_rate: number;
+  latency_avg: number;
+}
+
+export interface ScanVolume {
+  timestamp: string;
+  count: number;
+}
+
+export interface HealthMetrics {
+  overall_status: "operational" | "degraded" | "down" | "maintenance";
+  uptime_24h: number;
+  avg_latency: number;
+  active_nodes: number;
+  provider_health: ProviderHealth[];
+  scan_volume: ScanVolume[];
+}

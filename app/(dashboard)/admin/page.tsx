@@ -33,6 +33,7 @@ import LogsPanel from "@/components/admin/LogsPanel";
 import ScansPanel from "@/components/admin/ScansPanel";
 import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
 import LandingPageEditor from "@/components/admin/LandingPageEditor";
+import HeartbeatMonitor from "@/components/admin/HeartbeatMonitor";
 
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
@@ -137,6 +138,15 @@ export default function AdminPage() {
               <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">System Health Metrics</h2>
             </div>
             <SystemHealthPanel stats={stats} />
+          </section>
+
+          {/* Service Pulse & Provider Matrix */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
+              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Service Pulse & Provider Matrix</h2>
+            </div>
+            <HeartbeatMonitor />
           </section>
 
           {/* EXPLANATION: Grid Layout Fix for Terminal/Stat card overlap.

@@ -14,6 +14,7 @@ from backend.models.schemas import (
     MembershipPlan,
     PlanCreate,
     PlanUpdate,
+    HealthMetrics,
 )
 from backend.services.admin_service import (
     add_admin_directory_entry_logic,
@@ -48,6 +49,7 @@ from backend.services.admin_service import (
     update_admin_hotel_logic,
     update_admin_plan_logic,
     update_admin_settings_logic,
+    get_admin_market_heartbeats_logic,
 )
 from backend.services.auth_service import get_current_admin_user
 from backend.services.provider_factory import ProviderFactory
@@ -358,6 +360,17 @@ async def get_admin_settings(
     Fetches global application parameters (maintenance mode, signup flags).
     """
     return await get_admin_settings_logic(db)
+
+
+@router.get("/heartbeats", response_model=HealthMetrics)
+async def get_admin_heartbeats(
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+):
+    """
+    Retrieves system operational heartbeats for diagnostics.
+    Specifically monitors the Market Pulse scheduler performance.
+    """
+    return await get_admin_market_heartbeats_logic(db)
 
 
 @router.post("/global-settings")

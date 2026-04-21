@@ -629,6 +629,28 @@ class MembershipPlan(PlanBase):
         from_attributes = True
 
 
+class ProviderHealth(BaseModel):
+    name: str
+    status: str  # online, offline
+    last_call: Optional[datetime] = None
+    success_rate: float = 0.0
+
+
+class ScanVolume(BaseModel):
+    timestamp: datetime
+    count: int
+
+
+class HealthMetrics(BaseModel):
+    overall_status: str  # operational, degraded, maintenance
+    uptime_24h: float
+    avg_latency: float
+    active_nodes: int
+    last_heartbeat: Optional[datetime] = None
+    provider_health: List[ProviderHealth] = []
+    scan_volume: List[ScanVolume] = []
+
+
 class MarketBriefingRequest(BaseModel):
     city: str
     user_id: Optional[str] = None

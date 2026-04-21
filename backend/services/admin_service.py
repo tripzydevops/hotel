@@ -27,6 +27,9 @@ from backend.models.schemas import (
     AdminUserUpdate,
     PlanCreate,
     PlanUpdate,
+    HealthMetrics,
+    ProviderHealth,
+    ScanVolume,
 )
 from supabase import Client
 
@@ -847,6 +850,184 @@ async def delete_admin_plan_logic(id: UUID, db: Client) -> Dict[str, Any]:
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+async def delete_plan_logic(db: Client, plan_id: UUID) -> bool:
+    """Delete a plan."""
+    try:
+        db.table("membership_plans").delete().eq("id", str(plan_id)).execute()
+        return True
+    except Exception as e:
+        print(f"Admin: Delete plan failure: {e}")
+        return False
+
+
+async def get_admin_market_heartbeats_logic(db: Client) -> HealthMetrics:
+    """
+    Retrieves real-time system health metrics using market_heartbeat_logs
+    and scan_batches.
+    """
+    try:
+        # 1. Get Maintenance Mode
+        settings_res = (
+            db.table("admin_settings").select("maintenance_mode").limit(1).execute()
+        )
+        is_maintenance = (
+            settings_res.data[0].get("maintenance_mode", False)
+            if settings_res.data
+            else False
+        )
+
+        # 2. Get 24h Heartbeat Logs
+        last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        heartbeat_logs = (
+            db.table("market_heartbeat_logs")
+            .select("*")
+            .gte("start_time", last_24h)
+            .order("start_time", desc=True)
+            .execute()
+        )
+
+        if not heartbeat_logs.data:
+            return HealthMetrics(
+                overall_status="maintenance" if is_maintenance else "operational",
+                uptime_24h=100.0,
+                avg_latency=0.0,
+                active_nodes=0,
+                last_heartbeat=None,
+                provider_health=[],
+                scan_volume=[],
+            )
+
+        # 3. Aggregations
+        total_logs = len(heartbeat_logs.data)
+        completed_logs = sum(
+            1 for log in heartbeat_logs.data if log.get("status") == "completed"
+        )
+        uptime_24h = (completed_logs / total_logs * 100) if total_logs > 0 else 100.0
+
+        # 4. Latency Calculation (Last 10 completed)
+        completed_heartbeats = [
+            log
+            for log in heartbeat_logs.data
+            if log.get("status") == "completed" and log.get("end_time")
+        ]
+        latencies = []
+        for log in completed_heartbeats[:10]:
+            try:
+                start = datetime.fromisoformat(log["start_time"].replace("Z", "+00:00"))
+                end = datetime.fromisoformat(log["end_time"].replace("Z", "+00:00"))
+                latencies.append((end - start).total_seconds())
+            except Exception:
+                continue
+        avg_latency = (sum(latencies) / len(latencies)) if latencies else 0.0
+
+        # 5. Provider Health (from scan_batches)
+        session_ids = [
+            log["session_id"] for log in heartbeat_logs.data if log.get("session_id")
+        ]
+        provider_health = []
+        serpapi_success_rate = 100.0
+
+        if session_ids:
+            batches_res = (
+                db.table("scan_batches")
+                .select("success_count, fail_count, session_id, updated_at")
+                .in_("session_id", session_ids)
+                .execute()
+            )
+
+            if batches_res.data:
+                tot_success = sum(b.get("success_count", 0) for b in batches_res.data)
+                tot_fail = sum(b.get("fail_count", 0) for b in batches_res.data)
+                tot_calls = tot_success + tot_fail
+                serpapi_success_rate = (
+                    (tot_success / tot_calls * 100) if tot_calls > 0 else 100.0
+                )
+
+                last_batch_time = None
+                try:
+                    last_batch_time = datetime.fromisoformat(
+                        batches_res.data[0]["updated_at"].replace("Z", "+00:00")
+                    )
+                except Exception:
+                    pass
+
+                provider_health = [
+                    ProviderHealth(
+                        name="SerpApi",
+                        status="online" if serpapi_success_rate > 80 else "degraded",
+                        last_call=last_batch_time,
+                        success_rate=round(serpapi_success_rate, 2),
+                    )
+                ]
+
+        # 6. Scan Volume (Hourly bins)
+        scan_volume_map = {}
+        for log in heartbeat_logs.data:
+            try:
+                dt = datetime.fromisoformat(log["start_time"].replace("Z", "+00:00"))
+                hour_key = dt.replace(minute=0, second=0, microsecond=0)
+                scan_volume_map[hour_key] = scan_volume_map.get(hour_key, 0) + (
+                    log.get("hotels_count") or 0
+                )
+            except Exception:
+                continue
+
+        scan_volume = [
+            ScanVolume(timestamp=k, count=v)
+            for k, v in sorted(scan_volume_map.items())
+        ]
+
+        # 7. Status Determination
+        overall_status = "operational"
+        if is_maintenance:
+            overall_status = "maintenance"
+        elif uptime_24h < 90 or serpapi_success_rate < 80:
+            overall_status = "degraded"
+
+        last_heartbeat_time = None
+        try:
+            last_heartbeat_time = datetime.fromisoformat(
+                heartbeat_logs.data[0]["start_time"].replace("Z", "+00:00")
+            )
+        except Exception:
+            pass
+
+        # Active nodes: unique trigger sources in the last 4 hours
+        four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=4)
+        active_nodes_count = len(
+            set(
+                log.get("trigger_source")
+                for log in heartbeat_logs.data
+                if log.get("trigger_source")
+                and datetime.fromisoformat(log["start_time"].replace("Z", "+00:00"))
+                > four_hours_ago
+            )
+        )
+
+        return HealthMetrics(
+            overall_status=overall_status,
+            uptime_24h=round(uptime_24h, 2),
+            avg_latency=round(avg_latency, 2),
+            active_nodes=max(1, active_nodes_count),
+            last_heartbeat=last_heartbeat_time,
+            provider_health=provider_health,
+            scan_volume=scan_volume,
+        )
+
+    except Exception as e:
+        print(f"Admin: Heartbeat logic failure: {e}")
+        # Return a safe fallback instead of crashing
+        return HealthMetrics(
+            overall_status="degraded",
+            uptime_24h=0.0,
+            avg_latency=0.0,
+            active_nodes=0,
+            last_heartbeat=None,
+            provider_health=[],
+            scan_volume=[],
+        )
 
 
 async def get_admin_settings_logic(db: Client) -> AdminSettings:

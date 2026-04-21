@@ -696,6 +696,10 @@ class ApiClient {
       method: "POST",
     });
   }
+
+  async getAdminHeartbeats(): Promise<HealthMetrics> {
+    return this.fetch<HealthMetrics>("/api/admin/heartbeats");
+  }
 }
 
 export const api = new ApiClient();
