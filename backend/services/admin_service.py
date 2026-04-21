@@ -1722,61 +1722,25 @@ async def cleanup_empty_scans_logic(db: Client) -> Dict[str, Any]:
     """
     Identifies and removes scan sessions that have no results.
     Criteria:
-    - Status is 'failed'
-    - Status is 'completed' or 'partial' but resulted in 0 successful price logs.
+    - raw_payload is NULL
     """
     try:
-        # 1. Get all failed sessions
-        failed_res = (
-            db.table("scan_sessions").select("id").eq("status", "failed").execute()
-        )
-        failed_ids = [s["id"] for s in (failed_res.data or [])]
-
-        # 2. Get all completed/partial sessions and check their result count
-        # This is more intensive, so we limit to last 7 days for safety
-        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
-        sessions_res = (
-            db.table("scan_sessions")
-            .select("id")
-            .in_("status", ["completed", "partial"])
-            .gte("created_at", cutoff)
-            .execute()
-        )
-
-        potential_empty_ids = [s["id"] for s in (sessions_res.data or [])]
-        empty_ids = []
-
-        for sid in potential_empty_ids:
-            # Check if there are any successful logs for this session
-            logs_res = (
-                db.table("price_logs")
-                .select("id", count="exact")
-                .eq("session_id", sid)
-                .execute()
-            )
-            if logs_res.count == 0:
-                empty_ids.append(sid)
-
-        all_to_delete = list(set(failed_ids + empty_ids))
-
-        if not all_to_delete:
-            return {
-                "status": "success",
-                "count": 0,
-                "message": "No empty scans found to clean up.",
-            }
-
-        # 3. Delete sessions
-        db.table("scan_sessions").delete().in_("id", all_to_delete).execute()
-
+        # KAIZEN: Simplified to a single-line batch deletion per exact requirement.
+        # This removes all sessions where no DataForSEO payload was ever saved.
+        response = db.table("scan_sessions").delete().is_("raw_payload", "null").execute()
+        
+        # In PostgREST, delete returns the deleted rows if 'return=representation' is handled by the client.
+        # If not, data might be empty. We check if response.data is available.
+        deleted_count = len(response.data) if hasattr(response, 'data') and response.data else 0
+        
         return {
             "status": "success",
-            "count": len(all_to_delete),
-            "message": f"Successfully removed {len(all_to_delete)} empty or failed scan sessions.",
+            "count": deleted_count,
+            "message": f"Successfully removed {deleted_count} empty scan sessions."
         }
     except Exception as e:
-        print(f"Cleanup Empty Scans Error: {e}")
-        return {"error": str(e)}
+        print(f"Admin: Cleanup failed: {e}")
+        return {"status": "error", "error": str(e)}
 
 
 async def get_admin_batches_logic(db: Client, limit: int = 50) -> List[Dict[str, Any]]:
