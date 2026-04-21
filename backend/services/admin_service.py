@@ -11,6 +11,7 @@ import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
+import pandas as pd
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -769,6 +770,7 @@ async def get_admin_scans_logic(db: Client, limit: int = 50) -> List[Dict[str, A
                 "hotels_count": s["hotels_count"],
                 "created_at": s["created_at"],
                 "completed_at": s["completed_at"],
+                "has_payload": s.get("raw_payload") is not None,
             }
         )
     return results
@@ -798,6 +800,67 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
         )
 
         return {"session": session, "logs": logs}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+async def get_admin_scan_export_logic(scan_id: UUID, db: Client) -> StreamingResponse:
+    """
+    KAIZEN: The Extraction Vault Export (Phase 1.2)
+    Targets the 'raw_payload' column in scan_sessions, flattens it using pandas,
+    and returns a downloadable CSV.
+    """
+    try:
+        res = (
+            db.table("scan_sessions")
+            .select("raw_payload")
+            .eq("id", str(scan_id))
+            .single()
+            .execute()
+        )
+
+        if not res.data or not res.data.get("raw_payload"):
+            raise HTTPException(404, "No raw payload found in the extraction vault.")
+
+        payload = res.data["raw_payload"]
+
+        # Normalize the JSON payload into a flat table
+        if isinstance(payload, list):
+            df = pd.json_normalize(payload)
+        elif isinstance(payload, dict):
+            # If it's a dict, handle cases where results are nested
+            # Usually SerpApi results have 'organic_results' or similar
+            # We try to find the largest list in the dict or just normalize the dict
+            results_key = None
+            for key, value in payload.items():
+                if isinstance(value, list) and (
+                    not results_key or len(value) > len(payload[results_key])
+                ):
+                    results_key = key
+
+            if results_key:
+                df = pd.json_normalize(payload[results_key])
+            else:
+                df = pd.json_normalize(payload)
+        else:
+            raise HTTPException(400, "Extraction payload format is invalid.")
+
+        # Convert to CSV
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        csv_content = output.getvalue()
+
+        return StreamingResponse(
+            io.BytesIO(csv_content.encode("utf-8")),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=scan_{scan_id}.csv"},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Extraction Export Error: {e}")
+        traceback.print_exc()
+        raise HTTPException(500, f"Export failed: {str(e)}")
     except Exception as e:
         raise HTTPException(500, str(e))
 

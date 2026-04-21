@@ -38,6 +38,7 @@ from backend.services.admin_service import (
     get_admin_providers_logic,
     get_admin_scan_details_logic,
     get_admin_scans_logic,
+    get_admin_scan_export_logic,
     get_admin_settings_logic,
     get_admin_stats_logic,
     get_admin_users_logic,
@@ -265,6 +266,19 @@ async def get_admin_scans(
     Lists global scan history. Essential for monitoring scraper health.
     """
     return await get_admin_scans_logic(db, limit)
+
+
+@router.get("/scans/{scan_id}/export")
+async def export_admin_scan(
+    scan_id: UUID,
+    db: Client = Depends(get_supabase),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    KAIZEN: Raw Payload Extraction Vault Export
+    Targets the raw_payload column, flattens it with pandas, and delivers a CSV.
+    """
+    return await get_admin_scan_export_logic(scan_id, db)
 
 
 @router.get("/scans/{scan_id}")

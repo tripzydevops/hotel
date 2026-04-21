@@ -286,6 +286,8 @@ class ScraperAgent:
                                         if options
                                         else "TRY",
                                         serp_api_id=serp_api_id,
+                                        db=self.db,
+                                        session_id=session_id,
                                     ),
                                     timeout=120.0,
                                 )

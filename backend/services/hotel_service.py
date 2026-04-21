@@ -133,7 +133,7 @@ async def search_hotel_directory_logic(
             p_name = provider.get_provider_name()
             try:
                 print(f"[Directory Search] Trying {p_name} for '{live_query}'")
-                live_results = await provider.search_hotels(live_query, limit=10)
+                live_results = await provider.search_hotels(live_query, limit=10, db=db)
 
                 if live_results:
                     # Filter and merge live results

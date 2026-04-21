@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { AdminScan } from "@/types";
 import {
   Clock,
   Loader2,
@@ -30,7 +31,7 @@ const ScansPanel = () => {
   const [activeTab, setActiveTab] = useState<"history" | "queue" | "batches">("history");
 
   /* History State */
-  const [scans, setScans] = useState<any[]>([]);
+  const [scans, setScans] = useState<AdminScan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
   const [scanDetails, setScanDetails] = useState<any>(null);
@@ -390,12 +391,30 @@ const ScansPanel = () => {
                 <h3 className="text-lg font-bold text-white">
                   Scan Detail: {selectedScanId.slice(0, 8)}...
                 </h3>
-                <button
-                  onClick={() => setSelectedScanId(null)}
-                  className="text-[var(--text-muted)] hover:text-white font-bold"
-                >
-                  ✕ Close
-                </button>
+                <div className="flex items-center gap-3">
+                  {scans.find((s) => s.id === selectedScanId)?.has_payload && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          toast.success("Preparing CSV export...");
+                          await api.exportAdminScanCsv(selectedScanId);
+                        } catch (err: any) {
+                          toast.error("Export failed: " + err.message);
+                        }
+                      }}
+                      className="flex items-center gap-2 bg-[var(--deep-ocean)] hover:bg-[var(--deep-ocean)]/80 text-[var(--soft-gold)] text-[10px] font-black px-4 py-2 rounded-lg transition-all border border-[var(--soft-gold)]/30 hover:scale-105 active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--soft-gold)]/5"
+                    >
+                      <Database className="w-3.5 h-3.5" />
+                      Export Data Vault
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedScanId(null)}
+                    className="text-[var(--text-muted)] hover:text-white font-bold transition-colors"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
               </div>
 
               {scanDetailsLoading ? (

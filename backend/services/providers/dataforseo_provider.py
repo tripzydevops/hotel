@@ -3,8 +3,8 @@ import os
 import re
 import unicodedata
 import uuid
-from datetime import date
-from typing import Any, Dict, List, Optional
+from datetime import date, datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
@@ -99,6 +99,31 @@ class DataForSEOProvider(HotelDataProvider):
         loc = ",".join([s.strip() for s in loc.split(",")])
 
         return loc
+
+    async def _vault_log(
+        self, db: Any, session_id: str, endpoint: str, data: Any
+    ) -> None:
+        """Internal helper to log raw payload to the Everything Vault."""
+        if not db or not session_id:
+            return
+
+        try:
+            # We use the RPC call to the atomic append function
+            # Capture metadata alongside raw data
+            vault_item = {
+                "endpoint": endpoint,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "payload": data,
+            }
+
+            db.rpc(
+                "append_scan_raw_payload",
+                {"session_id": str(session_id), "payload_item": vault_item},
+            ).execute()
+        except Exception as vault_err:
+            logger.error(
+                f"Everything Vault Failure for session {session_id}: {vault_err}"
+            )
 
     def _normalize_room_name(self, name: str) -> Dict[str, Any]:
         """
@@ -504,6 +529,8 @@ class DataForSEOProvider(HotelDataProvider):
         check_out: str = None,
         adults: int = 2,
         currency: str = "TRY",
+        session_id: Optional[str] = None,
+        db: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Deep scan using hotel_info/advanced.
@@ -537,6 +564,11 @@ class DataForSEOProvider(HotelDataProvider):
             # Use task-based async fetch if available, else standard requests
             response = await self._post_v3_request(endpoint, payload)
 
+            if db and session_id and response:
+                await self._vault_log(
+                    db, session_id, "business_data/google/hotel_info/advanced/live", response
+                )
+
             if response and response.get("tasks"):
                 task = response["tasks"][0]
                 if task.get("result"):
@@ -547,7 +579,54 @@ class DataForSEOProvider(HotelDataProvider):
 
         except Exception as e:
             logger.error(f"Advanced scan failed: {e}")
-            return {"status": "error", "message": str(e)}
+    async def search_hotels(
+        self,
+        query: str,
+        limit: int = 10,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Implementation of HotelDataProvider.search_hotels using DataForSEO.
+        Uses the 'hotel_searches' endpoint to find hotels in a location.
+        """
+        if not self.login or not self.password:
+            return []
+
+        auth = (self.login, self.password)
+        post_data = [
+            {
+                "location_name": self._normalize_location(query),
+                "language_code": "en",
+                "limit": limit,
+            }
+        ]
+
+        try:
+            async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.api_url}/business_data/google/hotel_searches/task_post",
+                    json=post_data,
+                )
+                res_json = response.json()
+
+                if db and session_id:
+                    await self._vault_log(
+                        db, session_id, "google/hotel_searches/task_post", res_json
+                    )
+
+                if res_json.get("status_code") not in [20000, 20100]:
+                    logger.error(f"Search Hotels Post Failed: {res_json.get('status_message')}")
+                    return []
+
+                tasks = res_json.get("tasks", [])
+                # Usually we'd return a list of simplified hotel objects if sync,
+                # but since it's async task_post, we return the task metadata wrapped as 'results'
+                # or just the task list. The interface expects List[Dict].
+                return tasks
+        except Exception as e:
+            logger.error(f"search_hotels failed: {e}")
+            return []
 
     async def fetch_price(
         self,
@@ -556,8 +635,10 @@ class DataForSEOProvider(HotelDataProvider):
         check_in: date,
         check_out: date,
         adults: int = 2,
-        currency: str = "TRY",  # Default to TRY as requested
+        currency: str = "USD",
         serp_api_id: Optional[str] = None,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Implementation of HotelDataProvider.fetch_price using DataForSEO Live Search.
@@ -576,8 +657,8 @@ class DataForSEOProvider(HotelDataProvider):
                     "location_name": self._normalize_location(location),
                     "language_code": "en",
                     "keyword": hotel_name,
-                    "check_in": check_in.strftime("%Y-%m-%d"),
-                    "check_out": check_out.strftime("%Y-%m-%d"),
+                    "check_in": check_in.strftime("%Y-%m-%d") if hasattr(check_in, "strftime") else check_in,
+                    "check_out": check_out.strftime("%Y-%m-%d") if hasattr(check_out, "strftime") else check_out,
                     "currency": currency,
                     "adults": adults,
                     "limit": 1,
@@ -591,7 +672,12 @@ class DataForSEOProvider(HotelDataProvider):
                 )
                 res_json = response.json()
 
-                if res_json.get("status_code") != 20000:
+                if db and session_id:
+                    await self._vault_log(
+                        db, session_id, "google/hotel_searches/task_post", res_json
+                    )
+
+                if res_json.get("status_code") != 20100 and res_json.get("status_code") != 20000:
                     logger.error(
                         f"DataForSEO Task POST Failed: {res_json.get('status_message')}"
                     )
@@ -611,20 +697,25 @@ class DataForSEOProvider(HotelDataProvider):
             return {"status": "error", "error": str(e)}
 
     async def fetch_hotel_info(
-        self, hotel_identifier: str, currency: str = "USD", adults: int = 1
+        self,
+        hotel_id: str,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+        currency: str = "USD",
+        adults: int = 1,
     ) -> Optional[Dict[str, Any]]:
         """
         Submits a task to the DataForSEO Google Hotels Info endpoint.
         Standard method: POST task, then GET results later.
         """
-        if not self.login or not self.password or not hotel_identifier:
+        if not self.login or not self.password or not hotel_id:
             return None
 
         auth = (self.login, self.password)
 
         post_data = [
             {
-                "hotel_identifier": hotel_identifier,
+                "hotel_identifier": hotel_id,
                 "language_name": "English",
                 "currency": currency,
                 "adults": adults,
@@ -638,6 +729,11 @@ class DataForSEOProvider(HotelDataProvider):
                     json=post_data,
                 )
                 res_json = response.json()
+
+                if db and session_id:
+                    await self._vault_log(
+                        db, session_id, "business_data/google/hotel_info/advanced/task_post", res_json
+                    )
 
                 if res_json.get("status_code") == 20100 or (
                     res_json.get("status_code") == 20000 and res_json.get("tasks")
@@ -938,24 +1034,45 @@ class DataForSEOProvider(HotelDataProvider):
         task_id: str,
         target_token: Optional[str] = None,
         target_name: Optional[str] = None,
+        session_id: Optional[str] = None,
+        db: Optional[Any] = None,
     ) -> Optional[Dict[str, Any]]:
         """Retrieves results for price search tasks with identity matching."""
-        return await self._fetch_results_generic(
+        processed, raw = await self._fetch_results_generic(
             task_id,
             "hotel_searches",
             target_token=target_token,
             target_name=target_name,
         )
 
-    async def fetch_hotel_info_results(self, task_id: str) -> Optional[Dict[str, Any]]:
+        if db and session_id and raw:
+            await self._vault_log(db, session_id, "hotel_searches/task_get", raw)
+
+        return processed
+
+    async def fetch_hotel_info_results(
+        self,
+        task_id: str,
+        session_id: Optional[str] = None,
+        db: Optional[Any] = None,
+    ) -> Optional[Dict[str, Any]]:
         """Retrieves results for rich metadata (hotel_info) tasks from either advanced or standard endpoint."""
         # Try advanced first
-        raw = await self._fetch_results_generic(task_id, "hotel_info/advanced")
-        if raw and raw.get("status") == "success" and raw.get("items"):
-            return raw
+        processed, raw = await self._fetch_results_generic(task_id, "hotel_info/advanced")
+
+        if db and session_id and raw:
+            await self._vault_log(db, session_id, "hotel_info/task_get/advanced", raw)
+
+        if processed and processed.get("status") == "success" and processed.get("items"):
+            return processed
 
         # Fallback to standard
-        return await self._fetch_results_generic(task_id, "hotel_info")
+        processed_std, raw_std = await self._fetch_results_generic(task_id, "hotel_info")
+
+        if db and session_id and raw_std:
+            await self._vault_log(db, session_id, "hotel_info/task_get", raw_std)
+
+        return processed_std
 
     async def _fetch_results_generic(
         self,
@@ -963,7 +1080,7 @@ class DataForSEOProvider(HotelDataProvider):
         endpoint: str,
         target_token: Optional[str] = None,
         target_name: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """Internal helper for GET results with Identity Verification logic."""
         if not self.login or not self.password or not task_id:
             return None
@@ -987,11 +1104,11 @@ class DataForSEOProvider(HotelDataProvider):
                 res_json = response.json()
 
                 if res_json.get("status_code") != 20000:
-                    return None
+                    return None, res_json
 
                 tasks = res_json.get("tasks", [])
                 if not tasks:
-                    return None
+                    return None, res_json
 
                 task = tasks[0]
                 if not task.get("result"):
@@ -1002,7 +1119,7 @@ class DataForSEOProvider(HotelDataProvider):
                         "task_type": "price_search"
                         if "hotel_searches" in endpoint
                         else "hotel_info",
-                    }
+                    }, res_json
 
                 result = task["result"][0]
                 items = result.get("items", [])
@@ -1057,7 +1174,7 @@ class DataForSEOProvider(HotelDataProvider):
                         logger.warning(
                             f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} results. Skipping to prevent leakage."
                         )
-                        return None
+                        return None, res_json
 
                     prices_data = target.get("prices", {})
                     reviews_data = target.get("reviews", {})
@@ -1181,7 +1298,7 @@ class DataForSEOProvider(HotelDataProvider):
                             logger.warning(
                                 f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} info results. Blocking metadata update."
                             )
-                            return None
+                            return None, res_json
 
                         # Try the item first; if it doesn't have hotel_info, use the result object.
                         if (
@@ -1202,7 +1319,7 @@ class DataForSEOProvider(HotelDataProvider):
                             "items": [],
                             "task_type": "hotel_info",
                             "tag": (task.get("data") or {}).get("tag"),
-                        }
+                        }, res_json
 
                     # [FIX 3] hotel_info results must NOT include price field
                     # This prevents the merge logic from overwriting valid prices with 0
@@ -1216,20 +1333,18 @@ class DataForSEOProvider(HotelDataProvider):
                     # hotel_info should NEVER set pricing — that's price_search's job
                     info_result.pop("price", None)
                     info_result.pop("best_price", None)
-                    return info_result
+                    return info_result, res_json
 
-                return {
-                    "status": "success",
-                    "items": items,
-                    "tag": (task.get("data") or {}).get("tag"),
-                }
+
         except Exception as e:
             logger.error(f"DataForSEO GET error ({endpoint}): {e}")
-            return None
+            return None, None
 
     async def get_task_result(
         self,
         task_id: str,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
         target_token: Optional[str] = None,
         target_name: Optional[str] = None,
         task_type: Optional[str] = None,
@@ -1245,19 +1360,33 @@ class DataForSEOProvider(HotelDataProvider):
             # [FIX 2026-04-19] Tasks are posted to hotel_info/task_post.
             # Results are fetched from hotel_info/task_get/advanced/{id}.
             # The "advanced" method gets structured data; no separate "advanced" post endpoint.
-            res = await self._fetch_results_generic(
+            processed, res_json = await self._fetch_results_generic(
                 task_id,
                 "hotel_info/advanced",
                 target_token=target_token,
                 target_name=target_name,
             )
-            return res if res and res.get("status") == "success" else None
+
+            # [EVERYTHING VAULT] Capture the raw GET response
+            if db and session_id and res_json:
+                await self._vault_log(
+                    db, session_id, "business_data/google/hotel_info/advanced/task_get", res_json
+                )
+
+            return processed if processed and processed.get("status") == "success" else None
         else:
             # Default: price_search via hotel_searches
-            res = await self.fetch_task_results(
+            processed, res_json = await self.fetch_task_results(
                 task_id, target_token=target_token, target_name=target_name
             )
-            return res if res and res.get("status") == "success" else None
+
+            # [EVERYTHING VAULT] Capture the raw GET response
+            if db and session_id and res_json:
+                await self._vault_log(
+                    db, session_id, "business_data/google/hotel_searches/task_get", res_json
+                )
+
+            return processed if processed and processed.get("status") == "success" else None
 
     async def get_completed_tasks(self) -> List[str]:
         """Returns a list of Task IDs that are ready for retrieval across all endpoints."""

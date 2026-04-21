@@ -416,6 +416,18 @@ export interface AdminSettings {
   next_global_scan_at?: string;
 }
 
+export interface AdminScan {
+  id: string;
+  user_id: string;
+  user_name: string;
+  session_type: string;
+  status: string;
+  hotels_count: number;
+  created_at: string;
+  completed_at: string | null;
+  has_payload: boolean;
+}
+
 export interface MarketIntelligence {
   voice_share: Array<{
     name: string;

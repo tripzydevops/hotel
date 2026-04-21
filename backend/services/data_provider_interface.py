@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class HotelDataProvider(ABC):
@@ -19,20 +19,36 @@ class HotelDataProvider(ABC):
         adults: int = 2,
         currency: str = "USD",
         serp_api_id: Optional[str] = None,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch price and metadata for a specific hotel.
+        """
+        pass
 
-        Returns:
-            Dict containing:
-            - price (float)
-            - currency (str)
-            - source (str) - e.g. "Decodo", "SerpApi"
-            - url (str)
-            - rating (float, optional)
-            - reviews (int, optional)
-            - amenities (list, optional)
-            - sentiment_breakdown (list, optional)
+    @abstractmethod
+    async def search_hotels(
+        self,
+        query: str,
+        limit: int = 10,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search for hotels based on a query string.
+        """
+        pass
+
+    @abstractmethod
+    async def fetch_hotel_info(
+        self,
+        hotel_id: str,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Fetch detailed information for a specific hotel.
         """
         pass
 
@@ -42,9 +58,13 @@ class HotelDataProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_task_result(self, task_id: str) -> Optional[Dict[str, Any]]:
+    async def get_task_result(
+        self,
+        task_id: str,
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
         """
         Retrieve results for a previously submitted task.
-        Used for async workflows to polling or handling postbacks.
         """
         pass
