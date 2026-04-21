@@ -20,6 +20,7 @@ import {
   Plus,
   Zap,
   Cpu,
+  Database,
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastContext";
 

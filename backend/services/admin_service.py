@@ -807,8 +807,9 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
 async def get_admin_scan_export_logic(scan_id: UUID, db: Client) -> StreamingResponse:
     """
     KAIZEN: The Extraction Vault Export (Phase 1.2)
-    Targets the 'raw_payload' column in scan_sessions, flattens it using pandas,
-    and returns a downloadable CSV.
+    Optimized for high-performance streaming and deep payload traversal.
+    Specifically targets DataForSEO nested arrays and handles large datasets
+    without causing OOM by yielding CSV chunks.
     """
     try:
         res = (
@@ -824,45 +825,87 @@ async def get_admin_scan_export_logic(scan_id: UUID, db: Client) -> StreamingRes
 
         payload = res.data["raw_payload"]
 
+        # EXPLANATION: Deep Payload Navigation
+        # DataForSEO results are often nested in tasks[0].result[0].items.
+        # We attempt to find this specific path first.
+        target_items = None
+        if isinstance(payload, dict):
+            # Check for DataForSEO structure
+            try:
+                tasks = payload.get("tasks", [])
+                if tasks and isinstance(tasks, list):
+                    results = tasks[0].get("result", [])
+                    if results and isinstance(results, list):
+                        items = results[0].get("items", [])
+                        if isinstance(items, list) and items:
+                            target_items = items
+            except (IndexError, KeyError, TypeError):
+                pass
+            
+            # Fallback to search for any large list if DataForSEO path failed
+            if not target_items:
+                results_key = None
+                for key, value in payload.items():
+                    if isinstance(value, list) and (
+                        not results_key or len(value) > len(payload[results_key])
+                    ):
+                        results_key = key
+                if results_key:
+                    target_items = payload[results_key]
+
+        elif isinstance(payload, list):
+            target_items = payload
+
+        if not target_items:
+            # If still nothing, just normalize the whole payload if it exists
+            target_items = payload if payload else []
+
         # Normalize the JSON payload into a flat table
-        if isinstance(payload, list):
-            df = pd.json_normalize(payload)
-        elif isinstance(payload, dict):
-            # If it's a dict, handle cases where results are nested
-            # Usually SerpApi results have 'organic_results' or similar
-            # We try to find the largest list in the dict or just normalize the dict
-            results_key = None
-            for key, value in payload.items():
-                if isinstance(value, list) and (
-                    not results_key or len(value) > len(payload[results_key])
-                ):
-                    results_key = key
+        # NOTE: We keep the dataframe in memory, but stream the serialization phase.
+        try:
+            df = pd.json_normalize(target_items)
+        except Exception as e:
+            print(f"Normalization failed: {e}")
+            # Minimal fallback if normalization fails
+            df = pd.DataFrame(target_items)
 
-            if results_key:
-                df = pd.json_normalize(payload[results_key])
-            else:
-                df = pd.json_normalize(payload)
-        else:
-            raise HTTPException(400, "Extraction payload format is invalid.")
+        if df.empty:
+            raise HTTPException(400, "Extraction payload resulted in an empty dataset.")
 
-        # Convert to CSV
-        output = io.StringIO()
-        df.to_csv(output, index=False)
-        csv_content = output.getvalue()
+        # EXPLANATION: True Chunked Streaming
+        # We use a generator to yield CSV chunks. This prevents the server from
+        # building a massive string/BytesIO object in memory for large exports.
+        async def csv_generator():
+            output = io.StringIO()
+            # Write headers first
+            df.head(0).to_csv(output, index=False)
+            yield output.getvalue().encode("utf-8")
+            output.truncate(0)
+            output.seek(0)
+
+            chunk_size = 500  # Process 500 rows at a time
+            for i in range(0, len(df), chunk_size):
+                chunk = df.iloc[i : i + chunk_size]
+                chunk.to_csv(output, index=False, header=False)
+                yield output.getvalue().encode("utf-8")
+                output.truncate(0)
+                output.seek(0)
 
         return StreamingResponse(
-            io.BytesIO(csv_content.encode("utf-8")),
+            csv_generator(),
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename=scan_{scan_id}.csv"},
+            headers={
+                "Content-Disposition": f"attachment; filename=scan_{scan_id}.csv",
+                "X-Export-Rows": str(len(df)),
+            },
         )
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"Extraction Export Error: {e}")
         traceback.print_exc()
         raise HTTPException(500, f"Export failed: {str(e)}")
-    except Exception as e:
-        raise HTTPException(500, str(e))
 
 
 async def get_admin_plans_logic(db: Client) -> List[Dict[str, Any]]:
