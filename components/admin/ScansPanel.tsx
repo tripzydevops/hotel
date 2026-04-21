@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { AdminScan } from "@/types";
@@ -26,6 +27,7 @@ import { useToast } from "@/components/ui/ToastContext";
 
 const ScansPanel = () => {
   const { toast } = useToast();
+  const router = useRouter();
   /* New Queue State */
   const [queue, setQueue] = useState<any[]>([]);
   const [queueLoading, setQueueLoading] = useState(false);
@@ -44,6 +46,7 @@ const ScansPanel = () => {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [batchDetails, setBatchDetails] = useState<any>(null);
   const [batchDetailsLoading, setBatchDetailsLoading] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
 
   const loadScans = useCallback(async () => {
     setLoading(true);
@@ -80,6 +83,28 @@ const ScansPanel = () => {
       setBatchLoading(false);
     }
   }, []);
+
+  const handleCleanup = async () => {
+    if (!confirm("Are you sure you want to remove all failed and empty scan sessions from the last 7 days?")) return;
+    
+    setIsCleaning(true);
+    toast.success("Cleaning up empty scans...");
+    try {
+      const res = await api.cleanupEmptyScans();
+      toast.success(res.message || "Cleanup complete!");
+      
+      // EXPLANATION: Explicit Re-fetch
+      // Forces the UI to refresh by manually triggering the fetch
+      // and signaling Next.js to invalidate cache, bypassing 
+      // flaky WebSocket drops.
+      await loadScans();
+      router.refresh();
+    } catch (err: any) {
+      toast.error("Cleanup failed: " + err.message);
+    } finally {
+      setIsCleaning(false);
+    }
+  };
 
   const handleTriggerNow = async (userId: string) => {
     toast.success("Triggering scan...");
@@ -214,21 +239,16 @@ const ScansPanel = () => {
 
         {activeTab === "history" && (
           <button
-            onClick={async () => {
-              if (!confirm("Are you sure you want to remove all failed and empty scan sessions from the last 7 days?")) return;
-              toast.success("Cleaning up empty scans...");
-              try {
-                const res = await api.cleanupEmptyScans();
-                toast.success(res.message || "Cleanup complete!");
-                loadScans();
-              } catch (err: any) {
-                toast.error("Cleanup failed: " + err.message);
-              }
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all"
+            onClick={handleCleanup}
+            disabled={isCleaning}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            Cleanup Empty Scans
+            {isCleaning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="w-3.5 h-3.5" />
+            )}
+            {isCleaning ? "Cleaning..." : "Cleanup Empty Scans"}
           </button>
         )}
 
