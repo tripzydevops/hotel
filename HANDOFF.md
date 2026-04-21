@@ -1,31 +1,29 @@
-# Handoff - Property Token Sync & Scan Stability
+# Handoff - Admin UI Stability & Cleanup Feedback
 
 ## Context
-This session focused on resolving scan discrepancies caused by mismatched or missing `serp_api_id` (property tokens) for tracked hotels. The primary target was **Ramada Kazdaglari**, but the fix was applied system-wide.
+This session addressed flaky UI synchronization in the Admin Dashboard, specifically within the Scans Panel. Mutations (like cleaning up scans) weren't always reflecting in the UI due to client-side caching or delayed WebSocket updates.
 
 ## Accomplishments
-- **Data Alignment**: Identified and fixed 4 critical token mismatches using `backend/scripts/realign_hotel_tokens.py`.
-- **Sync Logic Enhanced**:
-    - `backend/services/admin_service.py`: Added bi-directional sync. The global directory sync now repairs tokens in the user-tracked `hotels` table.
-    - `backend/services/hotel_service.py`: Implemented auto-discovery. New hotels added to an account will now automatically pull their token from the global directory if missing.
-- **Verification**: 
-    - Verified all mismatches are resolved using a diagnostic suite.
-    - Confirmed system health via Schema and Sentiment audits.
-- **Git**: All changes pushed to the `reporting-change` branch.
+- **UI Consistency Fix**:
+    - `components/admin/ScansPanel.tsx`: Integrated `useRouter` to implement an explicit `router.refresh()`.
+    - Combined manual state re-fetching (`loadScans()`) with the router refresh to guarantee that the dashboard reflects the current server state immediately after mutations.
+- **Enhanced UX**:
+    - **Loading States**: Added an `isCleaning` state to the "Cleanup Empty Scans" action.
+    - **Visual Feedback**: The button now displays a spinner icon and changes text to "Cleaning..." during execution.
+    - **Debouncing**: The button is automatically disabled while the operation is in flight to prevent redundant clicks.
+- **Documentation**:
+    - Added detailed inline explanations to `ScansPanel.tsx` explaining the rationale behind the refresh logic and state management.
+- **Git**: All changes pushed to the `main` branch.
 
 ## Current State
-- All tracked hotels (including the 14 active properties) are now aligned with the global directory.
-- "Ramada Kazdaglari" is correctly tokenized and ready for accurate scanning.
-- The system is protected against future token mismatches during onboarding or sync.
+- The cleanup feature in the Admin Scans panel is now production-hardened with clear user feedback.
+- Dashboard data consistency is guaranteed via explicit re-fetch and route invalidation.
 
 ## Next Steps
-- **Monitor Scans**: Observe the next round of scheduled scans to ensure price capture is consistent with the corrected tokens.
-- **UI Verification**: If the user reports UI issues, check if the "Willmont Hotel" (which previously "stole" the Ramada token) is displaying correctly with its new token.
+- **Dashboard Audit**: Identify other high-traffic admin panels (like User Management or Batches) that might benefit from the same "manual re-fetch + router refresh" pattern for critical actions.
 
 ## Files Modified
-- `backend/services/admin_service.py`
-- `backend/services/hotel_service.py`
-- `backend/scripts/realign_hotel_tokens.py` (New)
+- `components/admin/ScansPanel.tsx`
 
 ---
-*Session completed on 2026-02-26 by Antigravity.*
+*Session completed on 2026-04-21 by Antigravity.*
