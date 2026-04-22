@@ -3,6 +3,7 @@
 import React from "react";
 import { Gauge, AlertTriangle, CircleDollarSign } from "lucide-react";
 import { HotelWithPrice } from "@/types";
+import { parsePrice } from "@/lib/utils";
 
 interface ParityStatsProps {
   targetHotel?: HotelWithPrice | null;
@@ -13,13 +14,13 @@ export default function ParityStats({
   targetHotel,
   competitors = [],
 }: ParityStatsProps) {
-  const targetPrice = targetHotel?.price_info?.current_price || 0;
+  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
 
   // Calculate real metrics
   // Filter for competitors where our price is higher (we are being undercut)
   const undercuts = competitors.filter(
     (c) =>
-      c.price_info?.current_price && c.price_info.current_price < targetPrice,
+      c.price_info?.current_price && parsePrice(c.price_info.current_price) < targetPrice,
   );
 
   const activeDiscrepancies = undercuts.length;
@@ -34,7 +35,7 @@ export default function ParityStats({
 
   // Monthly Revenue Leakage: (Target Price - OTA Price) * 25 nights
   const monthlyLeakage = undercuts.reduce((acc, c) => {
-    const diff = targetPrice - (c.price_info?.current_price || 0);
+    const diff = targetPrice - parsePrice(c.price_info?.current_price || 0);
     return acc + (diff * 25);
   }, 0);
 

@@ -65,7 +65,7 @@ import { insforge } from "@/lib/insforge";
 import dynamic from "next/dynamic";
 import { PaywallOverlay } from "@/components/ui/PaywallOverlay";
 import { motion } from "framer-motion";
-import { getCurrencySymbol } from "@/lib/utils";
+import { getCurrencySymbol, parsePrice } from "@/lib/utils";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { useToast } from "@/components/ui/ToastContext";
 
@@ -125,9 +125,9 @@ function ParityHealthSection({
   competitors?: any[];
   currency?: string;
 }) {
-  const targetPrice = targetHotel?.price_info?.current_price || 0;
+  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
   const undercuts = competitors.filter(
-    (c) => c.price_info?.current_price && c.price_info.current_price < targetPrice
+    (c) => c.price_info?.current_price && parsePrice(c.price_info.current_price) < targetPrice
   );
 
   const parityScore = competitors.length > 0
@@ -135,7 +135,7 @@ function ParityHealthSection({
     : 100;
 
   const revenueRisk = undercuts.reduce((acc, c) => {
-    const diff = targetPrice - (c.price_info?.current_price || 0);
+    const diff = targetPrice - parsePrice(c.price_info?.current_price || 0);
     return acc + diff;
   }, 0);
 
@@ -876,7 +876,7 @@ export default function ReportsPage() {
   // Strategic Map computation
   const strategicMap = useMemo(() => {
     if (!targetHotel || !analysis) return null;
-    const myPrice = Number(targetHotel.price_info?.current_price) || 0;
+    const myPrice = parsePrice(targetHotel.price_info?.current_price || 0);
     const myRating = Number(targetHotel.rating) || 0;
     const validCompetitors = competitors.filter(
       (c: any) => c.price_info?.current_price
@@ -886,7 +886,7 @@ export default function ReportsPage() {
       validCompetitors.length > 0
         ? validCompetitors.reduce(
           (sum: number, c: any) =>
-            sum + (Number(c.price_info?.current_price) || 0),
+            sum + parsePrice(c.price_info?.current_price || 0),
           0
         ) / validCompetitors.length
         : myPrice;
@@ -945,7 +945,7 @@ export default function ReportsPage() {
           ["Market Average", analysis?.market_average ? `${getCurrencySymbol(currency)}${analysis.market_average.toLocaleString()}` : "N/A"],
           ["ARI (Avg Rate Index)", analysis?.ari?.toFixed(1) || "N/A"],
           ["GRI (Guest Rating Index)", analysis?.sentiment_index?.toFixed(1) || "N/A"],
-          ["Parity Score", targetHotel ? `${Math.round(((competitors.length - competitors.filter(c => c.price_info?.current_price && c.price_info.current_price < (targetHotel.price_info?.current_price || 0)).length) / (competitors.length || 1)) * 100)}%` : "N/A"],
+          ["Parity Score", targetHotel ? `${Math.round(((competitors.length - competitors.filter(c => c.price_info?.current_price && parsePrice(c.price_info.current_price) < parsePrice(targetHotel.price_info?.current_price || 0)).length) / (competitors.length || 1)) * 100)}%` : "N/A"],
           ["Competitive Rank", analysis?.competitive_rank ? `#${analysis.competitive_rank} of ${(analysis.competitors?.length || 0) + 1}` : "N/A"],
           ["Strategic Personality", analysis?.pricing_dna_text || "Standard Positioning"],
         ];

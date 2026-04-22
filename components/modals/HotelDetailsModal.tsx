@@ -1,6 +1,7 @@
 "use client";
 
 import { HotelWithPrice } from "@/types";
+import { parsePrice } from "@/lib/utils";
 import { useState } from "react";
 import {
   Building2,
@@ -165,7 +166,7 @@ export default function HotelDetailsModal({
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: hotel.price_info?.currency || "USD",
-                      }).format(hotel.price_info?.current_price || 0)}
+                      }).format(parsePrice(hotel.price_info?.current_price || 0))}
                     </span>
                     <span className="text-[var(--text-muted)] mb-2 uppercase font-bold text-[10px] tracking-widest">
                       / {t("common.perNight")}
@@ -360,7 +361,7 @@ export default function HotelDetailsModal({
                   {(hotel.price_info?.offers || []).map((offer, idx) => {
                     const diff =
                       (offer.price || 0) -
-                      (hotel.price_info?.current_price || 0);
+                      parsePrice(hotel.price_info?.current_price || 0);
                     return (
                       <tr
                         key={idx}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
+import { parsePrice } from "@/lib/utils";
 
 interface RateMatrixProps {
   targetHotel?: HotelWithPrice | null;
@@ -32,7 +33,7 @@ export default function RateMatrix({
 }: RateMatrixProps) {
   const { userId } = useAuth();
 
-  const targetPrice = targetHotel?.price_info?.current_price || 0;
+  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
   const currency = targetHotel?.price_info?.currency || "TRY";
 
   // State for selected hotels

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ArrowRight, X, AlertTriangle, Wand2, Copy, Check, Loader2 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 import { api } from "@/lib/api";
+import { parsePrice } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ViolatingChannelsProps {
@@ -20,17 +21,17 @@ export default function ViolatingChannels({
   const [disputeLetter, setDisputeLetter] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const targetPrice = targetHotel?.price_info?.current_price || 0;
+  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
   const hotelId = targetHotel?.id || "";
 
   // Filter real violations
   const violations = competitors
     .filter(
       (c) =>
-        c.price_info?.current_price && c.price_info.current_price < targetPrice,
+        c.price_info?.current_price && parsePrice(c.price_info.current_price) < targetPrice,
     )
     .map((c) => {
-      const price = c.price_info!.current_price;
+      const price = parsePrice(c.price_info!.current_price);
       const diffPercent = ((targetPrice - price) / targetPrice) * 100;
       return {
         id: c.id,

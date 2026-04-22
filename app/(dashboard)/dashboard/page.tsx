@@ -178,7 +178,7 @@ export default function Dashboard() {
     () =>
       (data?.competitors || []).filter(
         (c) =>
-          c.price_info && c.price_info.current_price < effectiveTargetPrice,
+          c.price_info && parsePrice(c.price_info.current_price) < effectiveTargetPrice,
       ).length,
     [data?.competitors, effectiveTargetPrice],
   );
@@ -405,13 +405,13 @@ export default function Dashboard() {
                   [...data.competitors]
                     .sort(
                       (a, b) =>
-                        (a.price_info?.current_price || 0) -
-                        (b.price_info?.current_price || 0),
+                        parsePrice(a.price_info?.current_price || 0) -
+                        parsePrice(b.price_info?.current_price || 0),
                     )
                     .map((competitor, index) => {
                       const isUndercut =
                         competitor.price_info &&
-                        competitor.price_info.current_price <
+                        parsePrice(competitor.price_info.current_price) <
                         effectiveTargetPrice;
 
                       return (
@@ -506,7 +506,7 @@ export default function Dashboard() {
                 (data?.competitors || []).filter(
                   (c: HotelWithPrice) =>
                     c.price_info &&
-                    c.price_info.current_price < effectiveTargetPrice,
+                    parsePrice(c.price_info.current_price) < effectiveTargetPrice,
                 ).length
               }
             </p>
@@ -550,7 +550,7 @@ export default function Dashboard() {
                     const avgPrice = Math.round(
                       (data?.competitors || []).reduce(
                         (sum: number, c: HotelWithPrice) =>
-                          sum + (c.price_info?.current_price || 0),
+                          sum + parsePrice(c.price_info?.current_price || 0),
                         0,
                       ) / (data?.competitors?.length || 1),
                     );

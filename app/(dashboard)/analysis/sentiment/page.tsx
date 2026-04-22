@@ -20,7 +20,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
-import { getCurrencySymbol } from "@/lib/utils";
+import { getCurrencySymbol, parsePrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
@@ -179,8 +179,8 @@ const ScoreCard = ({
           </div>
           {hotel.price_info?.price_change_percent !== undefined && (
             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hotel.price_info.price_change_percent > 0
-              ? "bg-red-500/10 text-red-400"
-              : "bg-emerald-500/10 text-emerald-400"
+              ? "bg-emerald-500/10 text-emerald-400"
+              : "bg-red-500/10 text-red-400"
               }`}>
               {hotel.price_info.price_change_percent > 0 ? (
                 <TrendingUp className="w-3 h-3" />
@@ -505,12 +505,12 @@ export default function SentimentPage() {
    */
   const strategicMap = useMemo(() => {
     if (!targetHotel) return null;
-    const myPrice = Number(targetHotel.price_info?.current_price) || 0;
+    const myPrice = parsePrice(targetHotel.price_info?.current_price || 0);
     const myRating = Number(targetHotel.rating) || 0;
     const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
 
     const avgMarketPrice = validCompetitors.length > 0
-      ? validCompetitors.reduce((sum: number, c: any) => sum + (Number(c.price_info?.current_price) || 0), 0) / validCompetitors.length
+      ? validCompetitors.reduce((sum: number, c: any) => sum + parsePrice(c.price_info?.current_price || 0), 0) / validCompetitors.length
       : myPrice;
 
     const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
