@@ -21,6 +21,13 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
+  --text-muted-foreground: rgba(255, 255, 255, 0.6);
+
+  /* ===== OVERLAYS & BADGES (DARK) ===== */
+  --overlay-bg: rgba(0, 0, 0, 0.4);
+  --overlay-border: rgba(255, 255, 255, 0.1);
+  --overlay-text: #FFFFFF;
+  --bg-subtle: rgba(255, 255, 255, 0.05);
 
   /* ===== GLASSMOPHISM & DEPTH (DARK) ===== */
   --glass-bg: rgba(21, 41, 74, 0.95);
@@ -42,10 +49,10 @@
   --deep-ocean-lighter: #FBFCFE;
   --deep-ocean-accent: rgba(15, 23, 42, 0.05);
   
-  --soft-gold: #9A7B4F; /* Antique Gold for high contrast */
-  --soft-gold-dim: #7C6036;
-  --soft-gold-bright: #B68D5D;
-  --soft-gold-glow: rgba(154, 123, 79, 0.15);
+  --soft-gold: #B48A3A; /* Refined Antique Gold for pop against light backgrounds */
+  --soft-gold-dim: #926C2A;
+  --soft-gold-bright: #D4A350;
+  --soft-gold-glow: rgba(180, 138, 58, 0.15);
 
   --optimal-green: #065F46;
   --optimal-green-soft: rgba(6, 95, 70, 0.08);
@@ -55,13 +62,20 @@
   --text-primary: #0F172A; /* Slate Navy-Inked */
   --text-secondary: #475569;
   --text-muted: #64748B;
+  --text-muted-foreground: rgba(15, 23, 42, 0.6);
+
+  /* ===== OVERLAYS & BADGES (LIGHT) ===== */
+  --overlay-bg: rgba(255, 255, 255, 0.6);
+  --overlay-border: rgba(15, 23, 42, 0.1);
+  --overlay-text: #0F172A;
+  --bg-subtle: rgba(15, 23, 42, 0.05);
 
   /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
   --glass-bg: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(15, 23, 42, 0.08);
   --glass-bg-accent: rgba(15, 23, 42, 0.03);
   --glass-blur: 24px;
-  --glass-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1);
+  --glass-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.04), 0 0 15px rgba(255, 255, 255, 0.6);
   --bg-accent: #E2E8F0;
   
   --card-tint: rgba(154, 123, 79, 0.03);
