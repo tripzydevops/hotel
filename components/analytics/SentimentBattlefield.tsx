@@ -185,7 +185,7 @@ export default function SentimentBattlefield({
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full h-[400px] bg-white/[0.02] rounded-xl border border-[var(--overlay-border)] p-4"
+      className="w-full h-[400px] bg-[var(--deep-ocean-card)] rounded-xl border border-[var(--glass-border)] p-4 shadow-sm"
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
@@ -195,39 +195,40 @@ export default function SentimentBattlefield({
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
-            stroke="rgba(255,255,255,0.05)" 
+            stroke="var(--glass-border)" 
+            opacity={0.3}
             vertical={false} 
           />
           <XAxis 
             dataKey="category" 
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#94a3b8", fontSize: 13, fontWeight: 500 }}
+            tick={{ fill: "var(--text-muted-foreground)", fontSize: 13, fontWeight: 600 }}
             dy={10}
           />
           <YAxis 
             domain={[0, 5]} 
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#64748b", fontSize: 12 }}
+            tick={{ fill: "var(--text-muted-foreground)", fontSize: 12 }}
             ticks={[0, 1, 2, 3, 4, 5]}
           />
           <Tooltip
-            cursor={{ fill: "rgba(255,255,255,0.03)" }}
+            cursor={{ fill: "var(--text-muted-foreground)", opacity: 0.05 }}
             contentStyle={{
-              backgroundColor: "#0F172A",
-              border: "1px solid rgba(255,255,255,0.1)",
+              backgroundColor: "var(--deep-ocean-card)",
+              border: "1px solid var(--glass-border)",
               borderRadius: "12px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-              color: "#fff",
+              boxShadow: "var(--glass-shadow)",
+              color: "var(--text-primary)",
             }}
-            itemStyle={{ fontSize: "12px", padding: "2px 0" }}
+            itemStyle={{ fontSize: "12px", padding: "2px 0", color: "inherit" }}
           />
           <Legend 
             verticalAlign="top" 
             align="right" 
             iconType="circle"
-            wrapperStyle={{ paddingBottom: "20px", fontSize: "12px", color: "#94a3b8" }}
+            wrapperStyle={{ paddingBottom: "20px", fontSize: "12px", color: "var(--text-muted-foreground)" }}
           />
           
           {allHotels.map((hotel, index) => (

@@ -66,14 +66,14 @@ export default function MarketPositionChart({
           <XAxis
             dataKey="name"
             stroke="currentColor"
-            className="text-[var(--text-secondary)]"
+            tick={{ fill: "var(--text-muted-foreground)" }}
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             stroke="currentColor"
-            className="text-[var(--text-secondary)]"
+            tick={{ fill: "var(--text-muted-foreground)" }}
             fontSize={12}
             tickLine={false}
             axisLine={false}

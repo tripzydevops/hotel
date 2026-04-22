@@ -21,13 +21,14 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
-  --text-muted-foreground: rgba(255, 255, 255, 0.6);
+  --text-muted-foreground: rgba(255, 255, 255, 0.7);
 
   /* ===== OVERLAYS & BADGES (DARK) ===== */
   --overlay-bg: rgba(0, 0, 0, 0.4);
   --overlay-border: rgba(255, 255, 255, 0.1);
   --overlay-text: #FFFFFF;
   --bg-subtle: rgba(255, 255, 255, 0.05);
+  --deep-ocean-card: #0F1F39;
 
   /* ===== GLASSMOPHISM & DEPTH (DARK) ===== */
   --glass-bg: rgba(21, 41, 74, 0.95);
@@ -62,23 +63,14 @@
   --text-primary: #0F172A; /* Slate Navy-Inked */
   --text-secondary: #475569;
   --text-muted: #64748B;
-  --text-muted-foreground: rgba(15, 23, 42, 0.6);
+  --text-muted-foreground: rgba(15, 23, 42, 0.8);
 
   /* ===== OVERLAYS & BADGES (LIGHT) ===== */
   --overlay-bg: rgba(255, 255, 255, 0.6);
   --overlay-border: rgba(15, 23, 42, 0.1);
   --overlay-text: #0F172A;
-  --bg-subtle: rgba(15, 23, 42, 0.05);
-
-  /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
-  --glass-bg: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-bg-accent: rgba(15, 23, 42, 0.03);
-  --glass-blur: 24px;
-  --glass-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.04), 0 0 15px rgba(255, 255, 255, 0.6);
-  --bg-accent: #E2E8F0;
-  
-  --card-tint: rgba(154, 123, 79, 0.03);
+  --bg-subtle: rgba(255, 255, 255, 0.8);
+  --deep-ocean-card: #FFFFFF;
 }
 
 /* ===== BASE STYLES ===== */

@@ -131,7 +131,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
   );
 
   return (
-    <div className="backdrop-blur-md bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
+    <div className="backdrop-blur-md bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-xl shadow-2xl p-4 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--glass-border)]">
         <span className="text-sm font-medium text-[var(--text-primary)]/90">{dateStr}</span>
         <div
@@ -281,7 +281,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: "var(--text-muted)",
+                  fill: "var(--text-muted-foreground)",
                   fontSize: 11,
                   fontWeight: 500,
                 }}
@@ -293,7 +293,7 @@ const CustomTooltip = ({ active, payload, symbol }: any) => {
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fill: "var(--text-muted)",
+                  fill: "var(--text-muted-foreground)",
                   fontSize: 11,
                   fontWeight: 500,
                 }}

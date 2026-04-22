@@ -157,7 +157,7 @@ export default function PriceTrendChart({
           <XAxis
             dataKey="date"
             stroke="currentColor"
-            className="text-[var(--text-muted)]"
+            tick={{ fill: "var(--text-muted-foreground)" }}
             fontSize={11}
             tickLine={false}
             axisLine={false}
@@ -165,7 +165,7 @@ export default function PriceTrendChart({
           />
           <YAxis
             stroke="currentColor"
-            className="text-[var(--text-muted)]"
+            tick={{ fill: "var(--text-muted-foreground)" }}
             fontSize={11}
             tickLine={false}
             axisLine={false}

@@ -77,7 +77,7 @@ export default function ViolatingChannels({
   };
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-gradient-to-b from-[#0A1629]/80 to-[#050B18] border border-[var(--overlay-border)] shadow-2xl relative">
+    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-white dark:bg-gradient-to-b dark:from-[#0A1629]/80 dark:to-[#050B18] border border-slate-200 dark:border-[var(--overlay-border)] shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-black text-[var(--overlay-text)] uppercase tracking-widest">Revenue Recovery</h2>
         {violations.length > 0 && (
@@ -92,7 +92,7 @@ export default function ViolatingChannels({
           violations.map((v, idx) => (
             <div
               key={idx}
-              className={`p-6 rounded-[1.5rem] bg-[#050B18]/50 border-2 relative overflow-hidden group transition-all ${
+              className={`p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-[#050B18]/50 border-2 relative overflow-hidden group transition-all ${
                 v.severity === "high"
                   ? "border-rose-500/20 hover:border-rose-500/50"
                   : "border-yellow-500/20 hover:border-yellow-500/50"
@@ -106,16 +106,16 @@ export default function ViolatingChannels({
                   {v.name}
                 </h4>
                 <div className="flex flex-col items-end">
-                  <span className={`font-black text-lg ${v.severity === "high" ? "text-rose-400" : "text-yellow-500"}`}>
+                  <span className={`font-black text-lg ${v.severity === "high" ? "text-rose-500" : "text-yellow-600 dark:text-yellow-500"}`}>
                     {v.diff}
                   </span>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Market Gap</span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-tighter">Market Gap</span>
                 </div>
               </div>
               <p className="text-xs font-medium text-[var(--text-muted)] mb-4">{v.desc}</p>
               
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--overlay-border)]">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   Live Sync
                 </span>
@@ -155,7 +155,7 @@ export default function ViolatingChannels({
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#0A1629] border border-[var(--overlay-border)] rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
+              className="bg-white dark:bg-[#0A1629] border border-slate-200 dark:border-[var(--overlay-border)] rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
             >
               <div className="p-8 border-b border-[var(--overlay-border)] flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-transparent">
                 <div className="flex items-center gap-4">
@@ -187,8 +187,8 @@ export default function ViolatingChannels({
                   </div>
                 ) : (
                   <>
-                    <div className="bg-[#050B18] border border-[var(--overlay-border)] rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
-                      <pre className="text-sm text-slate-300 font-medium whitespace-pre-wrap font-sans">
+                    <div className="bg-slate-50 dark:bg-[#050B18] border border-slate-200 dark:border-[var(--overlay-border)] rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
+                      <pre className="text-sm text-slate-700 dark:text-slate-300 font-medium whitespace-pre-wrap font-sans">
                         {disputeLetter}
                       </pre>
                     </div>
@@ -221,15 +221,15 @@ export default function ViolatingChannels({
           </h5>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-500 font-bold uppercase tracking-tighter">Shield Policy</span>
-              <span className="font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-slate-600 dark:text-slate-500 font-bold uppercase tracking-tighter">Shield Policy</span>
+              <span className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                 Active protection
               </span>
             </div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-500 font-bold uppercase tracking-tighter">Auto-Dispute</span>
-              <span className="font-black text-[var(--overlay-text)] uppercase tracking-widest">Enabled</span>
+              <span className="text-slate-600 dark:text-slate-500 font-bold uppercase tracking-tighter">Auto-Dispute</span>
+              <span className="font-black text-slate-900 dark:text-[var(--overlay-text)] uppercase tracking-widest">Enabled</span>
             </div>
           </div>
         </div>

@@ -121,17 +121,17 @@ const ScoreCard = ({
         {/* Header: Label + Rank Badge */}
         <div className="flex justify-between items-start mb-5">
           <div className="flex flex-col gap-1">
-            <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${isTarget ? "text-blue-400/80" : "text-gray-500"
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${isTarget ? "text-blue-600 dark:text-blue-400/80" : "text-slate-700 dark:text-gray-500"
               }`}>
               {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
             </span>
-            <h3 className="text-sm font-bold text-[var(--overlay-text)]/90 truncate max-w-[140px]">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[140px]">
               {hotel.name}
             </h3>
           </div>
           <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${isTarget
-            ? "bg-blue-500/10 border-blue-500/20 text-blue-300"
-            : "bg-white/5 border-[var(--glass-border)] text-gray-400"
+            ? "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300"
+            : "bg-[var(--bg-subtle)] border-[var(--glass-border)] text-slate-800 dark:text-gray-400"
             }`}>
             {rank}
           </div>
@@ -140,7 +140,7 @@ const ScoreCard = ({
         {/* Metrics: Rating (with color ring) + Price */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col">
-            <span className="text-[11px] text-gray-500 mb-2 font-medium">
+            <span className="text-[11px] text-slate-800 dark:text-gray-500 mb-2 font-medium">
               {t("sentiment.overallRating")}
             </span>
             <div className="flex items-center gap-2.5">
@@ -149,15 +149,15 @@ const ScoreCard = ({
                   {(Number(hotel.rating) || 0).toFixed(1)}
                 </span>
               </div>
-              <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
+              <span className="text-[10px] text-slate-700 dark:text-gray-500 font-semibold">/ 5.0</span>
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[11px] text-gray-500 mb-2 font-medium">
+            <span className="text-[11px] text-slate-800 dark:text-gray-500 mb-2 font-medium">
               {t("sentiment.currentPrice")}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-[var(--overlay-text)]/90">
+              <span className="text-xl font-bold text-slate-900 dark:text-white">
                 {hotel.price_info?.current_price
                   ? hotel.price_info.current_price.toLocaleString()
                   : "N/A"}
@@ -173,7 +173,7 @@ const ScoreCard = ({
 
         {/* Footer: Review count + Price change */}
         <div className="mt-4 pt-3.5 border-t border-[var(--glass-border)] flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-700 dark:text-gray-500">
             <Star className="w-3 h-3 text-amber-500/70" />
             <span className="font-medium">{(hotel.review_count || 0).toLocaleString()} reviews</span>
           </div>
@@ -224,9 +224,9 @@ const CategoryBar = ({
     <div className="flex flex-col">
       {/* Header: Category name + Score */}
       <div className="flex justify-between items-end mb-3">
-        <span className="text-sm font-bold text-[var(--text-secondary)]">{localizedCategory}</span>
+        <span className="text-sm font-bold text-slate-800 dark:text-gray-400">{localizedCategory}</span>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-xl font-black text-[var(--overlay-text)]/90">
+          <span className="text-xl font-black text-slate-900 dark:text-white">
             {myScore > 0 ? myScore.toFixed(2) : "N/A"}
           </span>
           <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
@@ -243,7 +243,7 @@ const CategoryBar = ({
         >
           {/* Tooltip on hover */}
           {myScore > 0 && (
-            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-[var(--overlay-text)] text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-[var(--overlay-border)]">
+            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900/95 backdrop-blur-sm text-slate-900 dark:text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-slate-200 dark:border-[var(--overlay-border)] shadow-md">
               {t("sentiment.myHotel")}: {myScore.toFixed(2)}
             </div>
           )}
@@ -253,7 +253,7 @@ const CategoryBar = ({
       {/* Comparison rows: Leader + Market Average */}
       <div className="mt-2.5 space-y-1.5">
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-gray-500 w-24 truncate font-medium">
+          <span className="text-[11px] text-slate-800 dark:text-gray-500 w-24 truncate font-medium">
             {leaderName || t("sentiment.leader")}
           </span>
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
@@ -269,7 +269,7 @@ const CategoryBar = ({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-gray-500 w-24 font-medium">
+          <span className="text-[11px] text-slate-800 dark:text-gray-500 w-24 font-medium">
             {t("sentiment.avgComp")}
           </span>
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
@@ -575,15 +575,15 @@ export default function SentimentPage() {
         {/* ── Page Header with Gradient Title ── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
           <div>
-            <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300 mb-2 tracking-tight">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
               {t("sentiment.title")}
             </h2>
-            <p className="text-[var(--text-secondary)] text-sm md:text-base">{t("sentiment.subtitle")}</p>
+            <p className="text-slate-600 dark:text-[var(--text-secondary)] text-sm md:text-base">{t("sentiment.subtitle")}</p>
           </div>
 
           {/* Hotel Selector Pills with checkmarks */}
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+            <span className="text-xs text-slate-500 dark:text-gray-500 uppercase tracking-wider font-semibold">
               {t("sentiment.comparingWith")}
             </span>
             <div className="flex flex-wrap gap-2">
@@ -599,14 +599,14 @@ export default function SentimentPage() {
                     });
                   }}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(targetHotel.id)
-                    ? "bg-blue-500/15 border-blue-500/30 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    ? "bg-blue-500/15 border-blue-500/30 text-blue-700 dark:text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-slate-700 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:border-[var(--overlay-border)]"
                     }`}
                 >
                   {selectedHotelIds.includes(targetHotel.id) ? (
-                    <Check className="w-3 h-3 text-blue-400" />
+                    <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                   ) : (
-                    <div className="w-3 h-3 rounded-full border border-gray-600" />
+                    <div className="w-3 h-3 rounded-full border border-slate-400 dark:border-gray-600" />
                   )}
                   <span className="text-xs font-medium">{t("sentiment.myHotel")}</span>
                 </button>
@@ -624,14 +624,14 @@ export default function SentimentPage() {
                     });
                   }}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHotelIds.includes(comp.id)
-                    ? "bg-amber-500/10 border-amber-500/25 text-amber-300"
-                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-gray-500 hover:text-gray-300 hover:border-white/15"
+                    ? "bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300"
+                    : "bg-[var(--bg-accent)] border-[var(--glass-border)] text-slate-700 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200 hover:border-[var(--overlay-border)]"
                     }`}
                 >
                   {selectedHotelIds.includes(comp.id) ? (
-                    <Check className="w-3 h-3 text-amber-400" />
+                    <Check className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   ) : (
-                    <div className="w-3 h-3 rounded-full border border-gray-600" />
+                    <div className="w-3 h-3 rounded-full border border-slate-400 dark:border-gray-600" />
                   )}
                   <span className="text-xs truncate max-w-[90px] font-medium">{comp.name}</span>
                 </button>
@@ -652,7 +652,7 @@ export default function SentimentPage() {
         ) : !targetHotel ? (
           <div className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-12 text-center border border-[var(--glass-border)]">
             <Hotel className="w-10 h-10 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">{t("sentiment.noDataAvailable")}</p>
+            <p className="text-slate-600 dark:text-gray-400">{t("sentiment.noDataAvailable")}</p>
           </div>
         ) : (
           <>
@@ -698,7 +698,7 @@ export default function SentimentPage() {
                 <Brain className="w-16 h-16 text-blue-300" />
               </div>
               <div className="p-6 pb-0">
-                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-indigo-400" />
                   </div>
@@ -731,14 +731,14 @@ export default function SentimentPage() {
               >
                 {/* Section header with icon badge */}
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <Radar className="w-4 h-4 text-blue-400" />
                     </div>
                     Experience Core
                   </h3>
                   {isTargetLeader && (
-                    <div className="flex items-center gap-2 bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/15">
+                    <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-500/15">
                       <Trophy className="w-3 h-3" />
                       Market Leader
                     </div>
@@ -805,7 +805,7 @@ export default function SentimentPage() {
               className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)] mb-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
                     <Zap className="w-4 h-4 text-purple-400" />
                   </div>
@@ -827,7 +827,7 @@ export default function SentimentPage() {
             </motion.div>
 
             {/* ── Gradient Section Divider ── */}
-            <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent mb-8" />
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/[0.08] to-transparent mb-8" />
 
             {/* ── Competitive Position ── */}
             <motion.div
@@ -837,7 +837,7 @@ export default function SentimentPage() {
               className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)]"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
                     <LineChart className="w-4 h-4 text-sky-400" />
                   </div>
@@ -849,10 +849,11 @@ export default function SentimentPage() {
                     <button
                       key={v}
                       onClick={() => setView(v)}
-                      className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${view === v
-                        ? "bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.1)] border border-blue-500/20"
-                        : "text-gray-400 hover:text-[var(--overlay-text)] border border-transparent"
-                        }`}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        view === v
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                          : "text-slate-700 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
                     >
                       {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
                     </button>
@@ -864,12 +865,11 @@ export default function SentimentPage() {
                       key={tf}
                       disabled={view === "battlefield"}
                       onClick={() => setTimeframe(tf)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs border transition-all duration-200 cursor-pointer ${view === "battlefield"
-                        ? "opacity-20 cursor-not-allowed"
-                        : timeframe === tf
-                          ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
-                          : "bg-[var(--bg-accent)] text-gray-400 border-[var(--glass-border)] hover:text-[var(--overlay-text)] hover:border-white/15"
-                        }`}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${
+                        timeframe === tf
+                          ? "bg-sky-500 text-white border-sky-500 shadow-md shadow-sky-500/10"
+                          : "bg-[var(--bg-accent)] text-slate-700 dark:text-gray-400 border-[var(--glass-border)] hover:text-slate-900 dark:hover:text-white"
+                      }`}
                     >
                       {tf.charAt(0).toUpperCase() + tf.slice(1)}
                     </button>
@@ -888,13 +888,13 @@ export default function SentimentPage() {
               ) : (
                 <>
                   {/* History chart with gradient strokes and grid */}
-                  <div className="h-[400px] w-full relative mb-10 bg-[var(--bg-accent)] rounded-2xl border border-white/[0.04] p-4">
+                  <div className="h-[400px] w-full relative mb-10 bg-[var(--bg-accent)] rounded-2xl border border-slate-200 dark:border-white/[0.04] p-4">
                     {/* Horizontal grid lines for visual reference */}
                     <div className="absolute inset-4 flex flex-col justify-between pointer-events-none">
                       {[5.0, 4.5, 4.0, 3.5, 3.0].map((v) => (
                         <div key={v} className="flex items-center gap-2 w-full">
-                          <span className="text-[9px] text-gray-600 w-6 text-right font-mono">{v.toFixed(1)}</span>
-                          <div className="flex-1 h-px bg-[var(--bg-accent)]" />
+                          <span className="text-[10px] text-slate-700 dark:text-gray-400 w-6 text-right font-mono font-bold">{v.toFixed(1)}</span>
+                          <div className="flex-1 h-px bg-slate-200 dark:bg-white/[0.08]" />
                         </div>
                       ))}
                     </div>
@@ -956,7 +956,7 @@ export default function SentimentPage() {
                       })()}
                     </div>
                     {/* Date axis labels */}
-                    <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[10px] text-gray-600 font-medium tracking-wide">
+                    <div className="absolute bottom-2 left-10 right-4 flex justify-between text-[11px] text-slate-800 dark:text-gray-400 font-bold tracking-wide">
                       {(function () {
                         const firstHist = Object.values(sentimentHistory)[0] || [];
                         if (firstHist.length < 2) return null;
@@ -993,21 +993,21 @@ export default function SentimentPage() {
                         }`}
                     >
                       {/* Position badge with medal colors for top 3 */}
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? "bg-amber-500/15 text-amber-400" :
-                        idx === 1 ? "bg-gray-400/10 text-gray-400" :
-                          idx === 2 ? "bg-amber-700/10 text-amber-600" :
-                            "bg-white/5 text-gray-500"
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" :
+                        idx === 1 ? "bg-slate-400/10 text-slate-500 dark:text-gray-400" :
+                          idx === 2 ? "bg-amber-700/10 text-amber-700 dark:text-amber-600" :
+                            "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-500"
                         }`}>
                         #{idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1.5">
                           <span
-                            className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-300" : "text-[var(--text-secondary)]"}`}
+                            className={`text-xs font-semibold truncate ${hotel.isTarget || (targetHotel?.id === hotel.id) ? "text-blue-700 dark:text-blue-300" : "text-slate-800 dark:text-gray-400"}`}
                           >
                             {hotel.name}
                           </span>
-                          <span className="text-xs font-black text-[var(--text-secondary)]">
+                          <span className="text-xs font-black text-slate-700 dark:text-gray-500">
                             {(Number(hotel.rating) || 0).toFixed(1)} ★
                           </span>
                         </div>
@@ -1034,9 +1034,9 @@ export default function SentimentPage() {
                   { color: "bg-amber-500", label: "Market Leader" },
                   { color: "bg-gray-500", label: "Competitors" },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--bg-accent)] border border-[var(--glass-border)]">
+                  <div key={item.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--bg-accent)] border border-[var(--glass-border)] shadow-sm">
                     <span className={`w-3 h-1 ${item.color} rounded-full`} />
-                    <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
+                    <span className="text-[11px] text-slate-600 dark:text-gray-400 font-medium">{item.label}</span>
                   </div>
                 ))}
               </div>

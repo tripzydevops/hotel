@@ -31,55 +31,58 @@ export const SentimentRadar: React.FC<SentimentRadarProps> = ({ data }) => {
     <div className="w-full h-full relative min-h-[200px]">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#374151" />
+          <PolarGrid stroke="var(--glass-border)" opacity={0.6} />
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: "#9CA3AF", fontSize: 12, fontWeight: "bold" }}
+            tick={{ fill: "var(--text-muted-foreground)", fontSize: 12, fontWeight: "bold" }}
           />
           <PolarRadiusAxis
             angle={30}
             domain={[0, 5]}
-            tick={{ fill: "#6B7280", fontSize: 10 }}
+            tick={{ fill: "var(--text-muted-foreground)", fontSize: 10 }}
             tickCount={6}
+            axisLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1F2937",
-              borderColor: "#374151",
-              color: "#F3F4F6",
+              backgroundColor: "var(--deep-ocean-card)",
+              borderColor: "var(--glass-border)",
+              borderRadius: "12px",
+              boxShadow: "var(--glass-shadow)",
+              color: "var(--text-primary)",
             }}
-            itemStyle={{ color: "#E5E7EB" }}
+            itemStyle={{ color: "inherit" }}
             formatter={(value) =>
               typeof value === "number" ? value.toFixed(2) : value
             }
           />
           <Legend
-            wrapperStyle={{ paddingTop: "20px" }}
+            wrapperStyle={{ paddingTop: "20px", color: "var(--text-muted-foreground)" }}
             verticalAlign="bottom"
             height={36}
           />
           <Radar
             name="My Hotel"
             dataKey="A"
-            stroke="#3B82F6"
+            stroke="var(--soft-gold)"
             strokeWidth={3}
-            fill="#3B82F6"
+            fill="var(--soft-gold)"
             fillOpacity={0.3}
           />
           <Radar
             name="Market Leader"
             dataKey="B"
-            stroke="#D4AF37"
+            stroke="var(--optimal-green)"
             strokeWidth={2}
-            fill="#D4AF37"
+            fill="var(--optimal-green)"
             fillOpacity={0.1}
           />
           <Radar
             name="Market Avg"
             dataKey="C"
-            stroke="#9CA3AF"
+            stroke="var(--text-muted)"
             strokeWidth={2}
-            fill="#9CA3AF"
+            fill="var(--text-muted)"
             fillOpacity={0.1}
             strokeDasharray="4 4"
           />
