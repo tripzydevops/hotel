@@ -885,13 +885,16 @@ async def sync_extraction_result(
                 source=source,
             )
 
-            # 5. Trigger Notifications (Heartbeat)
+            # 5. Trigger Notifications (Heartbeat) - Identity-Aware
+            # We call it once per unique extraction result, passing the property_token
+            # to handle variations.
             await _trigger_heartbeat_notifications(
                 db,
-                target_id,
+                hotel_id,
                 float(price),
                 currency,
                 parity_offers=result.get("parity_offers") or result.get("offers"),
+                property_token=prop_token,
             )
 
         # 7. Update Task/Batch status
@@ -1247,24 +1250,35 @@ async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, 
                 )
             )
 
-        # Individual Notification Checks
+        # Individual Notification Checks - Identity-Aware Deduplication
+        processed_tokens = set()
         for hid, h_data in hotel_data_map.items():
             h_ref = hotel_lookup.get(hid)
+            if not h_ref:
+                continue
+            
+            token = h_ref.get("property_token")
+            # If we've already notified for this identity in this batch, skip
+            if token and token in processed_tokens:
+                continue
+            if token:
+                processed_tokens.add(token)
+
             res_data = h_data["res"]
-            if h_ref:
-                price = float(res_data.get("price", 0))
-                currency = res_data.get("currency", "TRY")
-                if price > 0:
-                    post_sync_tasks.append(
-                        _trigger_heartbeat_notifications(
-                            db,
-                            hid,
-                            price,
-                            currency,
-                            parity_offers=res_data.get("parity_offers")
-                            or res_data.get("offers"),
-                        )
+            price = float(res_data.get("price", 0))
+            currency = res_data.get("currency", "TRY")
+            if price > 0:
+                post_sync_tasks.append(
+                    _trigger_heartbeat_notifications(
+                        db,
+                        hid,
+                        price,
+                        currency,
+                        parity_offers=res_data.get("parity_offers")
+                        or res_data.get("offers"),
+                        property_token=token,
                     )
+                )
 
         if post_sync_tasks:
             # We use return_exceptions=True to ensure one failure doesn't stop others

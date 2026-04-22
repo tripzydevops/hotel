@@ -5,6 +5,7 @@ Handles sending email notifications for alerts.
 
 import os
 import smtplib
+import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -23,6 +24,21 @@ class NotificationService:
         self.smtp_password = os.getenv("SMTP_PASSWORD")
         self.sender_email = os.getenv("SENDER_EMAIL", self.smtp_user)
         self.enabled = bool(self.smtp_user and self.smtp_password)
+
+    def _send_smtp_email(self, msg: MIMEMultipart) -> bool:
+        """
+        Synchronous helper to send email via SMTP.
+        Should be called via asyncio.to_thread to avoid blocking.
+        """
+        try:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(msg)
+            return True
+        except Exception as e:
+            print(f"[Notification] SMTP Error: {e}")
+            return False
 
     async def send_notifications(
         self,
@@ -149,13 +165,10 @@ class NotificationService:
             """
             msg.attach(MIMEText(body, "html"))
 
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
-            return True
+            # Offload to thread to prevent blocking the event loop
+            return await asyncio.to_thread(self._send_smtp_email, msg)
         except Exception as e:
-            print(f"[Notification] Summary Email failed: {e}")
+            print(f"[Notification] Summary Email preparation failed: {e}")
             return False
 
     async def send_whatsapp(self, number: str, message: str) -> bool:
@@ -173,12 +186,6 @@ class NotificationService:
     ) -> bool:
         """
         Send Web Push notification.
-
-        EXPLANATION: Data Format Fix (Feb 2026)
-        The service worker (sw.js) expects a JSON payload with {title, body} fields.
-        Previously this method sent a plain text string, which caused
-        event.data.json() to throw a silent parse error in the browser,
-        killing the notification before it could display.
         """
         if not subscription:
             print(f"[Notification] No subscription found for user {user_id}")
@@ -200,8 +207,6 @@ class NotificationService:
             }
 
             # JSON Payload for sw.js Compatibility
-            # sw.js calls event.data.json() and reads .title and .body
-            # We must send a JSON string, not plain text.
             payload = json.dumps(
                 {
                     "title": f"Price Alert: {hotel_name}"
@@ -211,6 +216,8 @@ class NotificationService:
                 }
             )
 
+            # Webpush is also IO-bound, but usually fast. 
+            # Could also use to_thread if it blocks significantly.
             webpush(
                 subscription_info=subscription,
                 data=payload,
@@ -266,18 +273,11 @@ class NotificationService:
             """
             msg.attach(MIMEText(body, "html"))
 
-            # Synchronous SMTP call (could be made async with aiosmtplib if needed,
-            # but for low volume this is acceptable)
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
-
-            print(f"[Notification] Sent email to {to_email}")
-            return True
+            # Offload to thread to prevent blocking the event loop
+            return await asyncio.to_thread(self._send_smtp_email, msg)
 
         except Exception as e:
-            print(f"[Notification] Failed to send email: {e}")
+            print(f"[Notification] Email preparation failed: {e}")
             return False
 
 
