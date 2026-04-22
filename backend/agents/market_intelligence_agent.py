@@ -1,4 +1,6 @@
 from typing import Any, Dict, List, Optional
+import uuid
+from datetime import datetime, timezone
 
 from backend.services.analysis_service import (
     generate_strategy_embedding,
@@ -35,6 +37,42 @@ class MarketIntelligenceAgent:
             volatility=volatility,
             model=self.model,
         )
+
+    async def analyze_market_batch(
+        self, db: Any, analysis_payload: List[Dict[str, Any]]
+    ) -> bool:
+        """
+        High-level orchestration for batch market analysis.
+        Generates analysis and persists a report.
+        """
+        if not analysis_payload:
+            return False
+
+        try:
+            logger.info(
+                f"MarketIntelligenceAgent: Triggering analysis for {len(analysis_payload)} results..."
+            )
+            intelligence = await self.run_analysis(analysis_payload)
+
+            report_title = f"System Market Briefing - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            hotel_ids = [str(r.get("hotel_id")) for r in analysis_payload if r.get("hotel_id")]
+
+            db.table("reports").insert(
+                {
+                    "id": str(uuid.uuid4()),
+                    "title": report_title,
+                    "report_type": "briefing",
+                    "hotel_ids": hotel_ids,
+                    "report_data": intelligence,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ).execute()
+
+            logger.info(f"MarketIntelligenceAgent: Successfully saved Briefing: {report_title}")
+            return True
+        except Exception as e:
+            logger.error(f"MarketIntelligenceAgent: Batch analysis failed: {e}")
+            return False
 
     async def synthesize_pricing_dna(
         self, history: List[Dict[str, Any]]

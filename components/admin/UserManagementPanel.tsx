@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Plus,
@@ -24,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const UserManagementPanel = () => {
   const { toast } = useToast();
+  const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [userSuccess, setUserSuccess] = useState(false);
@@ -115,7 +117,8 @@ const UserManagementPanel = () => {
       setNewUserName("");
       setNewUserPlan("trial");
       setNewUserStatus("trial");
-      loadUsers();
+      await loadUsers();
+      router.refresh();
       setTimeout(() => setUserSuccess(false), 3000);
       toast.success("User created successfully");
     } catch (err: unknown) {
@@ -141,7 +144,8 @@ const UserManagementPanel = () => {
         is_verified: editUserForm.is_verified,
       });
       setUserToEdit(null);
-      loadUsers();
+      await loadUsers();
+      router.refresh();
       toast.success("User updated");
     } catch (err: unknown) {
       toast.error(
@@ -158,7 +162,8 @@ const UserManagementPanel = () => {
       await api.updateAdminUser(user.id, {
         is_verified: !user.is_verified,
       });
-      loadUsers();
+      await loadUsers();
+      router.refresh();
       toast.success(user.is_verified ? "User de-verified" : "User verified");
     } catch (err: unknown) {
       toast.error(
@@ -177,7 +182,8 @@ const UserManagementPanel = () => {
       return;
     try {
       await api.deleteAdminUser(userId);
-      loadUsers();
+      await loadUsers();
+      router.refresh();
       toast.success("User deleted");
     } catch (err: unknown) {
       toast.error(
