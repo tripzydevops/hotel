@@ -39,7 +39,7 @@ class MarketIntelligenceAgent:
         )
 
     async def analyze_market_batch(
-        self, db: Any, analysis_payload: List[Dict[str, Any]]
+        self, insforge: Any, analysis_payload: List[Dict[str, Any]]
     ) -> bool:
         """
         High-level orchestration for batch market analysis.
@@ -57,7 +57,7 @@ class MarketIntelligenceAgent:
             report_title = f"System Market Briefing - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
             hotel_ids = [str(r.get("hotel_id")) for r in analysis_payload if r.get("hotel_id")]
 
-            db.table("reports").insert(
+            insforge.table("reports").insert(
                 {
                     "id": str(uuid.uuid4()),
                     "title": report_title,

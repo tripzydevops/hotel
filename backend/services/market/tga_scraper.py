@@ -19,7 +19,7 @@ class TGAScraper:
     def __init__(self, db: Client):
         self.db = db
 
-    async def scrape_to_supabase(self):
+    async def scrape_to_insforge(self):
         """
         [Stealth Mode] Main orchestration for TGA scraping.
         """

@@ -9,26 +9,26 @@ from types import SimpleNamespace
 import httpx
 from fastapi import Depends, HTTPException, Request
 
-from backend.utils.db import get_supabase, get_supabase_client
+from backend.utils.db import get_insforge_db, InsForgeClient as Client
 from backend.utils.logger import get_logger
-from supabase import Client
+
 
 # Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
 # InsForge backend URL for direct REST API calls
-INSFORGE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+INSFORGE_URL = os.getenv("NEXT_PUBLIC_INSFORGE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 
 
 async def _verify_token_via_insforge(token: str) -> dict:
     """
     Verify a JWT token by calling InsForge's REST API directly.
 
-    Uses GET /api/auth/sessions/current instead of supabase-py's
-    db.auth.get_user() which calls the incompatible /auth/v1/user path.
+    Uses GET /api/auth/sessions/current instead of InsForge's
+    insforge.auth.get_user() which calls the incompatible /auth/v1/user path.
 
     Returns a SimpleNamespace with .id, .email, .role attributes (duck-typed
-    to match what supabase-py's UserResponse.user would have provided).
+    to match what the legacy client's UserResponse.user would have provided).
     """
     url = f"{INSFORGE_URL}/api/auth/sessions/current"
     headers = {
@@ -95,13 +95,13 @@ def get_token(request: Request) -> str:
 async def get_current_admin_user(
     request: Request,
     token: str = Depends(get_token),
-    db: Client = Depends(get_supabase),
+    insforge: Client = Depends(get_insforge_db),
 ):
     """
     Verify that the request is made by an Admin.
     """
     try:
-        # Verify token via InsForge REST API (not supabase-py)
+        # Verify token via InsForge REST API (direct)
         user_obj = await _verify_token_via_insforge(token)
 
         user_id = getattr(user_obj, "id", None)
@@ -110,7 +110,7 @@ async def get_current_admin_user(
         # Verify admin role in database
         try:
             profile_res = (
-                db.table("user_profiles")
+                insforge.table("user_profiles")
                 .select("role")
                 .eq("user_id", user_id)
                 .limit(1)
@@ -122,8 +122,8 @@ async def get_current_admin_user(
                 "market admin",
             ]:
                 return user_obj
-        except Exception as db_e:
-            logger.error(f"Admin RBAC Error for {email}: {db_e}")
+        except Exception as insforge_e:
+            logger.error(f"Admin RBAC Error for {email}: {insforge_e}")
 
         raise HTTPException(status_code=403, detail="Admin Access Required")
     except Exception as e:
@@ -135,16 +135,16 @@ async def get_current_admin_user(
 async def get_current_active_user(
     request: Request,
     token: str = Depends(get_token),
-    db: Client = Depends(get_supabase),
+    insforge: Client = Depends(get_insforge_db),
 ):
     """
     Verify that the user is logged in AND has an active approval status.
     """
     try:
-        if not db:
-            raise HTTPException(status_code=503, detail="Database Unavailable")
+        if not insforge:
+            raise HTTPException(status_code=503, detail="InsForge Database Unavailable")
 
-        # Verify token via InsForge REST API (not supabase-py)
+        # Verify token via InsForge REST API (direct)
         user = await _verify_token_via_insforge(token)
 
         user_id = getattr(user, "id", None)
@@ -160,7 +160,7 @@ async def get_current_active_user(
             # 1. Verify that the REAL user (from JWT) is an admin
             # We check the 'user_profiles' table for role parity.
             admin_check = (
-                db.table("user_profiles")
+                insforge.table("user_profiles")
                 .select("role")
                 .eq("user_id", str(user_id))
                 .maybe_single()
@@ -177,7 +177,7 @@ async def get_current_active_user(
 
                 # Fetch target user profile to "become" them
                 target_res = (
-                    db.table("user_profiles")
+                    insforge.table("user_profiles")
                     .select("user_id, email, display_name")
                     .eq("user_id", str(impersonate_id))
                     .maybe_single()
@@ -224,19 +224,19 @@ async def get_current_active_user(
         email = getattr(user, "email", "No Email")
         logger.info(f"Checking verification for {user_id} ({email})")
 
-        # Diagnostic: Log SUPABASE connection details
+        # Diagnostic: Log InsForge connection details
         try:
             active_url = (
-                str(db.supabase_url) if hasattr(db, "supabase_url") else "Unknown"
+                str(insforge.supabase_url) if hasattr(insforge, "supabase_url") else "Unknown"
             )
-            logger.info(f"Supabase Client Target URL: {active_url}")
+            logger.info(f"InsForge Client Target URL: {active_url}")
         except Exception:
             pass
 
         try:
             # Check 'profiles' table first (legacy consistency)
             res = (
-                db.table("profiles")
+                insforge.table("profiles")
                 .select("role")
                 .eq("id", str(user_id))
                 .maybe_single()
@@ -249,7 +249,7 @@ async def get_current_active_user(
 
             # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
             res2 = (
-                db.table("user_profiles")
+                insforge.table("user_profiles")
                 .select("subscription_status, is_verified, role")
                 .eq("user_id", str(user_id))
                 .maybe_single()
@@ -283,7 +283,7 @@ async def get_current_active_user(
                         get_enriched_profile_logic,
                     )
 
-                    healed_profile = await get_enriched_profile_logic(user_id, None, db)
+                    healed_profile = await get_enriched_profile_logic(user_id, None, insforge)
                     if healed_profile:
                         status = healed_profile.get("subscription_status") or status
                         is_verified_val = healed_profile.get("is_verified")
@@ -297,8 +297,8 @@ async def get_current_active_user(
                     logger.error(f"Self-healing failed for {user_id}: {heal_e}")
                     # Non-fatal: user can still proceed with session defaults
 
-        except Exception as status_e:
-            logger.error(f"Verification check error for {user_id}: {status_e}")
+        except Exception as insforge_status_e:
+            logger.error(f"Verification check error for {user_id}: {insforge_status_e}")
             logger.error(traceback.format_exc())
 
         # Enforce Admin Verification
@@ -328,19 +328,19 @@ async def get_current_active_user(
         raise HTTPException(status_code=401, detail=f"Authentication Failed: {str(e)}")
 
 
-def get_supabase_rls(
+def get_insforge_rls(
     token: str = Depends(get_token),
 ) -> Client:
     """
-    Dependency that returns a Supabase client with RLS enabled.
+    Dependency that returns an InsForge client with RLS enabled.
     Uses the JWT from the Authorization header.
     """
-    return get_supabase_client(jwt=token)
+    return get_insforge_db(jwt=token)
 
 
-def get_supabase_admin() -> Client:
+def get_insforge_admin() -> Client:
     """
-    Dependency that returns a Supabase client with Admin privileges (Service Role).
+    Dependency that returns an InsForge client with Admin privileges (Service Role).
     Used for performance-sensitive background operations that bypass RLS.
     """
-    return get_supabase_client(admin=True)
+    return get_insforge_db(admin=True)

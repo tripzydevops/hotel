@@ -24,9 +24,9 @@ from backend.models.schemas import SCAN_PULSE_INTERVAL_HOURS
 from backend.services.location_service import LocationService
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.services.scan_persistence import ScanPersistenceService
-from backend.utils.db import get_supabase
+from backend.utils.db import get_insforge_db, InsForgeClient
 from backend.utils.logger import get_logger
-from supabase import Client
+
 
 logger = get_logger(__name__)
 
@@ -63,7 +63,7 @@ def get_scheduler_logger():
 
 
 async def record_system_pulse(
-    db: Client,
+    insforge: InsForgeClient,
     action_type: str,
     status: str = "success",
     status_detail: Optional[str] = None,
@@ -73,7 +73,7 @@ async def record_system_pulse(
     """
     try:
         res = (
-            db.table("query_logs")
+            insforge.table("query_logs")
             .insert(
                 {
                     "user_id": None,  # System records have no owner
@@ -101,7 +101,7 @@ async def record_system_pulse(
         logger.error(f"Pulse recording exception: {e}", exc_info=True)
 
 
-async def run_scheduler_check_logic(db: Optional[Client] = None):
+async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
     """
     Main entry point for the autonomous scheduler.
     Performs heartbeat checks, data processing, and cleanup.
@@ -109,15 +109,16 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
     s_logger = get_scheduler_logger()
     s_logger.info("CRON: Starting scheduler check...")
 
-    supabase = db or get_supabase(admin=True)
-    if not supabase:
-        s_logger.error("CRON: Could not initialize Supabase.")
+    # Use admin client for system-wide processing
+    insforge = insforge or get_insforge_db(admin=True)
+    if not insforge:
+        s_logger.error("CRON: Could not initialize InsForge.")
         return
 
     # 0. RESOLVE UNRECOGNIZED LOCATIONS
     # This pre-scan phase maps human-readable hotel locations to DataForSEO location_codes.
     try:
-        loc_service = LocationService(supabase)
+        loc_service = LocationService(insforge)
         await loc_service.resolve_hotel_locations()
     except Exception as rl_e:
         s_logger.warning(f"CRON: Location resolution phase had issues: {rl_e}")
@@ -129,7 +130,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 datetime.now(timezone.utc) - timedelta(minutes=5)
             ).isoformat()
             recent_pulse = (
-                supabase.table("query_logs")
+                insforge.table("query_logs")
                 .select("id")
                 .eq("action_type", "system_pulse")
                 .gt("created_at", five_mins_ago)
@@ -137,7 +138,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 .execute()
             )
             if not recent_pulse.data:
-                await record_system_pulse(supabase, "system_pulse")
+                await record_system_pulse(insforge, "system_pulse")
                 s_logger.info("CRON: Emitted system heartbeat pulse.")
         except Exception as p_e:
             s_logger.debug(f"Pulse emission skipped: {p_e}")
@@ -148,14 +149,14 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
         # 1.5 RUN SYSTEM HEARTBEAT (New Global 4h Standard)
         # This function handles its own timing checks via admin_settings table.
         try:
-            await run_system_heartbeat(supabase)
+            await run_system_heartbeat(insforge)
         except Exception as h_e:
             s_logger.error(f"CRON: Heartbeat submission error: {h_e}")
 
         # 2. PROCESS COMPLETED TASKS (DataForSEO result collector)
         # Always run this as a safety net for webhooks.
         try:
-            await process_system_scans(supabase)
+            await process_system_scans(insforge)
         except Exception as s_e:
             s_logger.error(f"CRON: Result collection error: {s_e}")
 
@@ -166,7 +167,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 datetime.now(timezone.utc) - timedelta(hours=2)
             ).isoformat()
             zombies = (
-                supabase.table("scan_sessions")
+                insforge.table("scan_sessions")
                 .select("id")
                 .in_("status", ["pending", "running", "processing"])
                 .lt("created_at", zombie_cutoff)
@@ -178,7 +179,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 s_logger.warning(
                     f"CRON: Cleaning up {len(z_ids)} zombie sessions: {z_ids}"
                 )
-                supabase.table("scan_sessions").update(
+                insforge.table("scan_sessions").update(
                     {
                         "status": "failed",
                         "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -190,7 +191,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 datetime.now(timezone.utc) - timedelta(hours=6)
             ).isoformat()
             stale_tasks = (
-                supabase.table("scan_tasks")
+                insforge.table("scan_tasks")
                 .select("id, batch_id")
                 .eq("status", "pending")
                 .lt("created_at", task_stale_cutoff)
@@ -202,7 +203,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 s_logger.warning(
                     f"CRON: Cleaning up {len(st_ids)} stale scan_tasks (abandoned): {st_ids}"
                 )
-                supabase.table("scan_tasks").update(
+                insforge.table("scan_tasks").update(
                     {
                         "status": "failed",
                         "error_message": "Abandoned: No response from provider after 6h",
@@ -220,7 +221,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                     )
                 )
                 for b_id in batch_ids:
-                    supabase.rpc("increment_batch_failures", {"b_id": b_id}).execute()
+                    insforge.rpc("increment_batch_failures", {"b_id": b_id}).execute()
         except Exception as z_e:
             s_logger.error(f"CRON: Stale cleanup failed: {str(z_e)}")
 
@@ -229,7 +230,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
         try:
             today_date = date.today().isoformat()
             last_sync = (
-                supabase.table("scan_sessions")
+                insforge.table("scan_sessions")
                 .select("id")
                 .eq("session_type", "market_sync")
                 .gte("created_at", f"{today_date}T00:00:00Z")
@@ -243,7 +244,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 )
 
                 sync_session = (
-                    supabase.table("scan_sessions")
+                    insforge.table("scan_sessions")
                     .insert(
                         {
                             "user_id": None,
@@ -260,11 +261,11 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 from backend.services.market.tga_scraper import TGAScraper
                 from backend.services.market.tobb_scraper import TOBBScraper
 
-                tobb = TOBBScraper(supabase)
-                tga = TGAScraper(supabase)
+                tobb = TOBBScraper(insforge)
+                tga = TGAScraper(insforge)
 
-                tobb_res = await tobb.scrape_to_supabase()
-                tga_res = await tga.scrape_to_supabase()
+                tobb_res = await tobb.scrape_to_insforge()
+                tga_res = await tga.scrape_to_insforge()
 
                 status = (
                     "completed"
@@ -276,7 +277,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
                 )
 
                 if sync_id:
-                    supabase.table("scan_sessions").update(
+                    insforge.table("scan_sessions").update(
                         {
                             "status": status,
                             "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -297,7 +298,7 @@ async def run_scheduler_check_logic(db: Optional[Client] = None):
         s_logger.error(traceback.format_exc())
 
 
-async def run_system_heartbeat(db: Client):
+async def run_system_heartbeat(insforge: InsForgeClient):
     """
     Checks if a global system-wide hotel scan is due.
     If due, submits all unique monitored hotels to the DataForSEO Task API.
@@ -305,7 +306,7 @@ async def run_system_heartbeat(db: Client):
     s_logger = get_scheduler_logger()
     try:
         # 1. Fetch Admin Settings
-        settings_res = db.table("admin_settings").select("*").limit(1).execute()
+        settings_res = insforge.table("admin_settings").select("*").limit(1).execute()
         if not settings_res.data:
             s_logger.warning("Heartbeat: No admin settings found. Skipping.")
             return
@@ -325,7 +326,7 @@ async def run_system_heartbeat(db: Client):
             except Exception:
                 is_due = True
 
-        if not is_due and not getattr(db, "_force_heartbeat", False):
+        if not is_due and not getattr(insforge, "_force_heartbeat", False):
             return
 
         s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
@@ -333,7 +334,7 @@ async def run_system_heartbeat(db: Client):
         # 3. Create Monitoring Session
         session_id = str(uuid.uuid4())
         try:
-            db.table("market_heartbeat_logs").insert({
+            insforge.table("market_heartbeat_logs").insert({
                 "id": session_id,
                 "status": "started",
                 "triggered_by": "scheduler",
@@ -345,7 +346,7 @@ async def run_system_heartbeat(db: Client):
         # 4. Update Admin Settings immediately
         next_scan = now + timedelta(hours=interval)
         try:
-            db.table("admin_settings").update({
+            insforge.table("admin_settings").update({
                 "last_global_scan_at": now.isoformat(),
                 "next_global_scan_at": next_scan.isoformat(),
             }).eq("id", settings["id"]).execute()
@@ -354,14 +355,14 @@ async def run_system_heartbeat(db: Client):
 
         # 5. Get monitored hotels
         monitored_res = (
-            db.table("user_hotels")
+            insforge.table("user_hotels")
             .select("hotel_id, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude)")
             .eq("is_monitored", True)
             .execute()
         )
         if not monitored_res.data:
             s_logger.info("Scheduler: No monitored hotels found.")
-            db.table("market_heartbeat_logs").update({
+            insforge.table("market_heartbeat_logs").update({
                 "status": "completed", 
                 "completed_at": datetime.now(timezone.utc).isoformat()
             }).eq("id", session_id).execute()
@@ -376,11 +377,11 @@ async def run_system_heartbeat(db: Client):
                 hotels_to_scan.append(h)
                 seen_hotels.add(h.get("id"))
         
-        db.table("market_heartbeat_logs").update({"hotel_count": len(hotels_to_scan)}).eq("id", session_id).execute()
+        insforge.table("market_heartbeat_logs").update({"hotel_count": len(hotels_to_scan)}).eq("id", session_id).execute()
 
         # 6. Submit to DataForSEO
         total = await dataforseo_provider.submit_hotel_scan_batch(
-            db,
+            insforge,
             hotels=hotels_to_scan,
             check_in=(now + timedelta(days=1)).strftime("%Y-%m-%d"),
             check_out=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
@@ -388,7 +389,7 @@ async def run_system_heartbeat(db: Client):
             session_id=session_id
         )
 
-        db.table("market_heartbeat_logs").update({
+        insforge.table("market_heartbeat_logs").update({
             "status": "completed",
             "completed_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", session_id).execute()
@@ -401,7 +402,7 @@ async def run_system_heartbeat(db: Client):
         s_logger.error(traceback.format_exc())
 
 
-async def process_system_scans(db: Client):
+async def process_system_scans(insforge: InsForgeClient):
     """
     The System Heartbeat Processor. Optimized for Batch Syncing.
     """
@@ -417,7 +418,7 @@ async def process_system_scans(db: Client):
             datetime.now(timezone.utc) - timedelta(minutes=3)
         ).isoformat()
         pending_res = (
-            db.table("scan_tasks")
+            insforge.table("scan_tasks")
             .select("external_task_id, created_at")
             .eq("status", "pending")
             .not_.is_("external_task_id", "null")
@@ -454,7 +455,7 @@ async def process_system_scans(db: Client):
             # [KAIZEN 2026] Included hotel:hotels(name, property_token) for identity verification
             # [FIX 5] Also select task_type for type-aware endpoint routing
             tasks_res = (
-                db.table("scan_tasks")
+                insforge.table("scan_tasks")
                 .select(
                     "id, external_task_id, hotel_id, batch_id, task_type, created_at, hotel:hotels(name, property_token)"
                 )
@@ -560,7 +561,7 @@ async def process_system_scans(db: Client):
             from collections import Counter
 
             fail_task_ids = [t["id"] for t in tasks_to_fail]
-            db.table("scan_tasks").update({"status": "failed"}).in_(
+            insforge.table("scan_tasks").update({"status": "failed"}).in_(
                 "id", fail_task_ids
             ).execute()
 
@@ -568,7 +569,7 @@ async def process_system_scans(db: Client):
                 [t["batch_id"] for t in tasks_to_fail if t.get("batch_id")]
             )
             for bid, count in batch_fail_counts.items():
-                db.rpc(
+                insforge.rpc(
                     "increment_batch_failures", {"b_id": str(bid), "p_count": count}
                 ).execute()
             s_logger.info(
@@ -579,7 +580,7 @@ async def process_system_scans(db: Client):
             s_logger.info(
                 f"Task Processor: Syncing {len(batch_results)} results in vectorized batch..."
             )
-            success = await sync_extraction_results_batch(db, batch_results)
+            success = await sync_extraction_results_batch(insforge, batch_results)
             if success:
                 s_logger.info(
                     f"Task Processor: Successfully synced {len(batch_results)} results."
@@ -592,416 +593,231 @@ async def process_system_scans(db: Client):
 
 
 async def _trigger_heartbeat_notifications(
-    db: Client,
-    hotel_id: str,
-    current_price: float,
-    currency: str,
-    parity_offers: Optional[List[Dict]] = None,
+    insforge: InsForgeClient,
+    events: List[Dict[str, Any]],
     initiator_id: Optional[UUID] = None,
-    property_token: Optional[str] = None,
 ):
     """
-    Finds all users monitoring this hotel and triggers alerts if price drops/changes.
-    If initiator_id is provided, those alerts are marked as 'market_pulse' for others.
+    Optimized Batch Heartbeat Notifications (Fixes N+1 Bug).
+    Uses vectorized queries to resolve users, settings, and history in bulk.
     """
+    if not events:
+        return
+
     try:
         from backend.agents.notifier_agent import NotifierAgent
+        notifier = NotifierAgent(insforge)
 
-        notifier = NotifierAgent()
+        # 1. Identity Resolution & Fetching Involved Users
+        property_tokens = list(set(e["property_token"] for e in events if e.get("property_token")))
+        hotel_ids = list(set(str(e["hotel_id"]) for e in events))
+        
+        query = insforge.table("user_hotels").select("user_id, hotel_id, hotels!inner(name, property_token)").eq("is_monitored", True)
+        
+        filter_parts = []
+        if property_tokens:
+            tokens_str = ",".join(f'"{t}"' for t in property_tokens)
+            filter_parts.append(f"hotels.property_token.in.({tokens_str})")
+        if hotel_ids:
+            ids_str = ",".join(f'"{h}"' for h in hotel_ids)
+            filter_parts.append(f"hotel_id.in.({ids_str})")
+            
+        if not filter_parts:
+            return
 
-        # 1. Find all users who monitor this hotel identity
-        # We query by property_token if available to ensure all linked hotels trigger alerts
-        if property_token:
-            query = (
-                db.table("user_hotels")
-                .select("user_id, hotel_id, hotels!inner(name, property_token)")
-                .eq("hotels.property_token", property_token)
-                .eq("is_monitored", True)
-            )
-        else:
-            query = (
-                db.table("user_hotels")
-                .select("user_id, hotel_id, hotels(name, property_token)")
-                .eq("hotel_id", hotel_id)
-                .eq("is_monitored", True)
-            )
-
-        users_res = query.execute()
+        users_res = query.or_(",".join(filter_parts)).execute()
         if not users_res.data:
             return
 
-        hotel_data = users_res.data[0].get("hotels", {})
-        hotel_name = hotel_data.get("name", "Unknown Hotel")
-
-        # 2. For each user, check their individual threshold
-        user_ids = [u["user_id"] for u in users_res.data]
-        settings_res = (
-            db.table("settings").select("*").in_("user_id", user_ids).execute()
-        )
+        # 2. Bulk Fetch Settings & Price History
+        user_ids = list(set(u["user_id"] for u in users_res.data))
+        settings_res = insforge.table("settings").select("*").in_("user_id", user_ids).execute()
         settings_map = {str(s["user_id"]): s for s in settings_res.data}
 
-        # 3. Detect Parity Breach / OTA Overcut
-        parity_alert = None
-        if parity_offers:
-            # Find direct price and lowest OTA
+        # Baseline Fetch: Top 10 recent per batch to ensure we have a comparison point
+        history_res = (
+            insforge.table("price_logs")
+            .select("hotel_id, price, recorded_at")
+            .in_("hotel_id", hotel_ids)
+            .order("recorded_at", desc=True)
+            .limit(len(hotel_ids) * 10)
+            .execute()
+        )
+        
+        history_map = {}
+        for h in (history_res.data or []):
+            hid = str(h["hotel_id"])
+            if hid not in history_map: history_map[hid] = []
+            history_map[hid].append(h)
+
+        # 3. Process Events & Generate Alerts
+        all_alerts = []
+        user_to_alerts = {} # user_id -> {alerts: [], names: {}}
+
+        for event in events:
+            hid = str(event["hotel_id"])
+            curr_p = float(event.get("price") or 0)
+            currency = event.get("currency", "TRY")
+            parity_offers = event.get("parity_offers") or []
+            token = event.get("property_token")
+            
+            # Find relevant users for this event
+            relevant_users = [
+                u for u in users_res.data 
+                if str(u["hotel_id"]) == hid or (token and u["hotels"].get("property_token") == token)
+            ]
+            if not relevant_users: continue
+            
+            h_name = relevant_users[0]["hotels"]["name"]
+            
+            # Parity Analysis
+            parity_alert_meta = None
             direct_price = None
-            lowest_ota = None
             min_ota_price = float("inf")
-
+            lowest_ota = None
             for offer in parity_offers:
-                is_direct = offer.get("is_direct", False)
-                price_val = float(offer.get("price", 0))
-                if price_val <= 0:
-                    continue
+                p_val = float(offer.get("price", 0))
+                if p_val <= 0: continue
+                if offer.get("is_direct"): direct_price = p_val
+                elif p_val < min_ota_price:
+                    min_ota_price = p_val
+                    lowest_ota = offer.get("source", "OTA")
 
-                if is_direct:
-                    direct_price = price_val
-                else:
-                    if price_val < min_ota_price:
-                        min_ota_price = price_val
-                        lowest_ota = offer.get("source", "OTA")
-
-            # If OTA is undercutting direct rate (by > 1% to avoid noise)
             if direct_price and min_ota_price < (direct_price * 0.99):
                 displacement = ((direct_price - min_ota_price) / direct_price) * 100
-                parity_alert = {
-                    "alert_type": "parity_breach",
-                    "displacement": displacement,
-                    "culprit": lowest_ota,
-                    "ota_price": min_ota_price,
-                    "direct_price": direct_price,
-                }
-            elif not direct_price and min_ota_price < (current_price * 0.95):
-                # If we don't have a direct flag but OTA is 5% lower than 'primary' detected price
-                displacement = ((current_price - min_ota_price) / current_price) * 100
-                parity_alert = {
-                    "alert_type": "ota_overcut",
-                    "displacement": displacement,
-                    "culprit": lowest_ota,
-                    "ota_price": min_ota_price,
-                    "direct_price": current_price,
-                }
+                parity_alert_meta = {"type": "parity_breach", "displacement": displacement, "culprit": lowest_ota, "ota_p": min_ota_price, "direct_p": direct_price}
 
-        # 4. Get price history for baseline comparison
-        history_res = (
-            db.table("price_logs")
-            .select("price")
-            .eq("hotel_id", hotel_id)
-            .order("recorded_at", desc=True)
-            .limit(2)
-            .execute()
-        )
+            # Price Shift Baseline
+            hist = history_map.get(hid, [])
+            prev_p = None
+            # Find first different price as baseline
+            for h_entry in hist:
+                p_val = float(h_entry["price"])
+                if p_val != curr_p:
+                    prev_p = p_val
+                    break
+            
+            change_pct = ((curr_p - prev_p) / max(prev_p, 1)) * 100 if prev_p else 0
 
-        if len(history_res.data) < 2:
-            return
+            # Distribute to Users
+            for u in relevant_users:
+                uid = str(u["user_id"])
+                s = settings_map.get(uid)
+                if not s or not s.get("notifications_enabled"): continue
+                
+                is_global = (initiator_id is None) or (str(initiator_id) != uid)
+                prefix = "[Pulse] " if is_global else ""
+                
+                # Threshold Check
+                if abs(change_pct) >= s.get("threshold_percent", 2.0):
+                    a_type = "market_pulse" if is_global else ("price_drop" if change_pct < 0 else "price_spike")
+                    alert = {
+                        "user_id": uid, 
+                        "hotel_id": hid, 
+                        "alert_type": a_type, 
+                        "message": f"{prefix}{h_name} rate shifted {abs(change_pct):.1f}% to {curr_p} {currency}", 
+                        "old_price": prev_p, 
+                        "new_price": curr_p, 
+                        "currency": currency,
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    all_alerts.append(alert)
+                    if uid not in user_to_alerts: user_to_alerts[uid] = {"alerts": [], "names": {}}
+                    user_to_alerts[uid]["alerts"].append(alert)
+                    user_to_alerts[uid]["names"][hid] = h_name
 
-        prev_price = float(history_res.data[1]["price"])
-        change_pct = ((current_price - prev_price) / max(prev_price, 1)) * 100
+                # Parity Breach Notification
+                if parity_alert_meta:
+                    p_alert = {
+                        "user_id": uid, 
+                        "hotel_id": hid, 
+                        "alert_type": "parity_breach", 
+                        "message": f"{prefix}Parity Breach: {parity_alert_meta['culprit']} is undercutting {h_name} by {parity_alert_meta['displacement']:.1f}%", 
+                        "old_price": parity_alert_meta["direct_p"], 
+                        "new_price": parity_alert_meta["ota_p"], 
+                        "currency": currency,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "metadata": parity_alert_meta
+                    }
+                    all_alerts.append(p_alert)
+                    if uid not in user_to_alerts: user_to_alerts[uid] = {"alerts": [], "names": {}}
+                    user_to_alerts[uid]["alerts"].append(p_alert)
+                    user_to_alerts[uid]["names"][hid] = h_name
 
-        # 5. Create ONE master Global Pulse record (user_id = None)
-        # This ensures the public 100-hotel feed is populated even if no user monitors it.
-        if abs(change_pct) > 0.1 or parity_alert:
-            pulse_type = "market_pulse"
-            if parity_alert:
-                pulse_msg = f"Global Pulse: Parity Breach detected for {hotel_name} at ${parity_alert['ota_price']} (Direct: ${parity_alert['direct_price']})"
-            else:
-                pulse_msg = f"Global Pulse: {hotel_name} price shifted {abs(change_pct):.1f}% to {current_price} {currency}"
-
-            db.table("alerts").insert(
-                {
-                    "user_id": None,
-                    "hotel_id": hotel_id,
-                    "alert_type": pulse_type,
-                    "message": pulse_msg,
-                    "old_price": prev_price,
-                    "new_price": current_price,
-                    "currency": currency,
-                    "is_global_pulse": True,
-                }
-            ).execute()
-
-        # 6. For each user, check their individual threshold
-        for user_id_str in user_ids:
-            user_id = UUID(user_id_str)
-            settings = settings_map.get(user_id_str)
-            if not settings or not settings.get("notifications_enabled"):
-                continue
-
-            threshold = settings.get("threshold_percent", 2.0)
-
-            # Determine Global Pulse Status (applicable to all alert types)
-            # System Heartbeat (initiator_id is None) OR cross-user notification
-            is_global = (initiator_id is None) or (str(initiator_id) != user_id_str)
-            prefix = "Global Pulse: " if is_global else ""
-
-            # A. Handle Price Shift Alert
-            if abs(change_pct) >= threshold:
-                # If triggered by someone else OR system, it's a pulse
-                if is_global and (initiator_id is not None):
-                    alert_type = "market_pulse"
-                else:
-                    alert_type = "price_drop" if change_pct < 0 else "price_spike"
-
-                alert_msg = f"{prefix}{hotel_name} rate shifted {abs(change_pct):.1f}% to {current_price} {currency}"
-
-                alert_res = (
-                    db.table("alerts")
-                    .insert(
-                        {
-                            "user_id": str(user_id),
-                            "hotel_id": hotel_id,
-                            "alert_type": alert_type,
-                            "message": alert_msg,
-                            "old_price": prev_price,
-                            "new_price": current_price,
-                            "currency": currency,
-                            "is_global_pulse": is_global,
-                        }
-                    )
-                    .execute()
-                )
-
-                # Dispatch notification
-                if alert_res.data:
-                    await notifier.dispatch_alerts(
-                        [alert_res.data[0]], settings, {hotel_id: hotel_name}
-                    )
-
-            # B. Handle Parity Breach Alert (Independent of threshold_percent)
-            if parity_alert:
-                parity_msg = f"{prefix}Parity Breach: {parity_alert['culprit']} is undercutting {hotel_name} by {parity_alert['displacement']:.1f}% (${parity_alert['ota_price']} vs ${parity_alert['direct_price']})"
-
-                p_alert_res = (
-                    db.table("alerts")
-                    .insert(
-                        {
-                            "user_id": str(user_id),
-                            "hotel_id": hotel_id,
-                            "alert_type": parity_alert["alert_type"],
-                            "message": parity_msg,
-                            "old_price": parity_alert["direct_price"],
-                            "new_price": parity_alert["ota_price"],
-                            "currency": currency,
-                            "is_global_pulse": is_global,
-                            "metadata": {
-                                "culprit": parity_alert["culprit"],
-                                "displacement": parity_alert["displacement"],
-                            },
-                        }
-                    )
-                    .execute()
-                )
-
-                if p_alert_res.data:
-                    await notifier.dispatch_alerts(
-                        [p_alert_res.data[0]], settings, {hotel_id: hotel_name}
-                    )
+        # 4. Vectorized Persistence & Dispatch
+        if all_alerts:
+            insforge.table("alerts").insert(all_alerts).execute()
+        
+        for uid, data in user_to_alerts.items():
+            await notifier.dispatch_alerts(data["alerts"], settings_map[uid], data["names"])
 
     except Exception as e:
-        logger.error(f"Heartbeat Notifier Error for hotel {hotel_id}: {e}")
-
+        logger.error(f"Batch Notifier Failure: {e}")
+        logger.error(traceback.format_exc())
 
 async def sync_extraction_result(
-    db: Client,
+    insforge: InsForgeClient,
     hotel_id: str,
     result: Dict[str, Any],
-    scan_task_id: Optional[str] = None,
-    batch_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
     source: str = "System",
-):
+) -> bool:
     """
-    Unified logic to update a hotel and its variations with a new extraction result.
-    Updates prices, logs history, triggers notifications, and increments batch status.
+    DRY Wrapper for Batch Sync.
     """
-    from backend.utils.logger import get_logger
+    batch_item = {
+        "hotel_id": hotel_id,
+        "result": result,
+        "initiator_id": user_id,
+        "scan_task_id": session_id
+    }
+    return await sync_extraction_results_batch(insforge, [batch_item], source=source)
 
-    logger = get_logger(__name__)
-
-    try:
-        # 1. Validation
-        try:
-            from uuid import UUID
-
-            UUID(hotel_id)
-        except ValueError:
-            logger.warning(f"Sync: Invalid hotel UUID: {hotel_id}")
-            return False
-
-        price = result.get("price")
-        currency = result.get("currency", "TRY")
-
-        if not price or float(price) <= 0:
-            if scan_task_id:
-                db.table("scan_tasks").update(
-                    {"status": "failed", "error_message": "Invalid price"}
-                ).eq("id", scan_task_id).execute()
-                if batch_id:
-                    db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
-            return False
-
-        # 2. Get hotel variation context
-        primary_res = (
-            db.table("hotels")
-            .select("id, name, location, property_token")
-            .eq("id", hotel_id)
-            .single()
-            .execute()
-        )
-        if not primary_res.data:
-            logger.warning(f"Sync: Hotel {hotel_id} not found.")
-            return False
-
-        hotel_ref = primary_res.data
-        prop_token = hotel_ref.get("property_token")
-        h_name = hotel_ref["name"]
-        h_location = hotel_ref["location"]
-
-        # 3. Find variations sharing the same identity
-        if prop_token:
-            matching_hotels = (
-                db.table("hotels")
-                .select("id")
-                .eq("property_token", prop_token)
-                .execute()
-            )
-        else:
-            matching_hotels = (
-                db.table("hotels")
-                .select("id")
-                .eq("name", h_name)
-                .eq("location", h_location)
-                .execute()
-            )
-
-        target_ids = (
-            [h["id"] for h in matching_hotels.data]
-            if matching_hotels.data
-            else [hotel_id]
-        )
-
-        # 4. Use ScanPersistenceService for "Whole Package" persistence
-        from backend.services.scan_persistence import ScanPersistenceService
-        from backend.utils.db import get_supabase
-
-        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
-
-        for target_id in target_ids:
-            # This call now handles: Price Logs (Parity/Market), Hotel Metadata, Sentiment History, and Room Catalog
-            await persistence.sync_from_external_provider(
-                db=db,
-                hotel_id=target_id,
-                result=result,
-                scan_task_id=scan_task_id,
-                batch_id=batch_id,
-                source=source,
-            )
-
-            # 5. Trigger Notifications (Heartbeat) - Identity-Aware
-            # We call it once per unique extraction result, passing the property_token
-            # to handle variations.
-            await _trigger_heartbeat_notifications(
-                db,
-                hotel_id,
-                float(price),
-                currency,
-                parity_offers=result.get("parity_offers") or result.get("offers"),
-                property_token=prop_token,
-            )
-
-        # 7. Update Task/Batch status
-        if scan_task_id:
-            db.table("scan_tasks").update({"status": "completed"}).eq(
-                "id", scan_task_id
-            ).execute()
-            if batch_id:
-                db.rpc("increment_batch_success", {"b_id": batch_id}).execute()
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Sync Failure: {e}")
-        if scan_task_id:
-            try:
-                db.table("scan_tasks").update(
-                    {"status": "failed", "error_message": str(e)}
-                ).eq("id", scan_task_id).execute()
-                if batch_id:
-                    db.rpc("increment_batch_failures", {"b_id": batch_id}).execute()
-            except Exception:
-                pass
-        return False
-
-
-async def sync_extraction_results_batch(db: Client, batch_items: List[Dict[str, Any]]):
+async def sync_extraction_results_batch(
+    insforge: InsForgeClient, 
+    batch_items: List[Dict[str, Any]], 
+    source: str = "System_Monitor_Batch"
+) -> bool:
     """
-    High-Performance Batch Sync.
-    Processes multiple extraction results in minimal database roundtrips.
-    Delegates core persistence to ScanPersistenceService for identity-aware updates.
+    Orchestrates batch persistence and side effects.
+    Delegates all DB operations to ScanPersistenceService.
     """
-    from backend.utils.logger import get_logger
     from backend.services.scan_persistence import ScanPersistenceService
     from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 
-    logger = get_logger(__name__)
-
-    if not batch_items:
-        return True
+    if not batch_items: return True
 
     try:
-        # 1. Initialize Persistence Service
-        persistence = ScanPersistenceService(db, admin_db=get_supabase(admin=True))
+        # 1. Delegate Persistence
+        persistence = ScanPersistenceService(insforge, admin_insforge=get_insforge_db(admin=True))
+        sync_result = await persistence.batch_sync_extraction_results(batch_items, source=source)
 
-        # 2. Execute Batch Persistence
-        # This handles: Merging results, variations lookup, price logs, sentiment, and room catalog
-        sync_result = await persistence.batch_sync_extraction_results(
-            batch_items, source="System_Monitor_Batch"
-        )
-
-        synced_ids = sync_result.get("synced_hotel_ids", [])
         notification_events = sync_result.get("notification_events", [])
         analysis_payload = sync_result.get("analysis_payload", [])
 
-        if not synced_ids:
-            return True
+        # 2. Batch Notification Trigger
+        if notification_events:
+            # Check initiator for first item as a proxy for the batch type (system/manual)
+            initiator_id = batch_items[0].get("initiator_id")
+            await _trigger_heartbeat_notifications(insforge, notification_events, initiator_id=initiator_id)
 
-        # 3. Trigger Notifications (Identity-Aware)
-        # We group by property_token to avoid sending duplicate alerts for the same identity group
-        processed_tokens = set()
-        for event in notification_events:
-            token = event.get("property_token")
-            if token and token in processed_tokens:
-                continue
-            if token:
-                processed_tokens.add(token)
-
-            await _trigger_heartbeat_notifications(
-                db=db,
-                hotel_id=event["hotel_id"],
-                current_price=event["price"],
-                currency=event["currency"],
-                parity_offers=event.get("parity_offers"),
-                property_token=token,
-            )
-
-        # 4. Trigger Market Intelligence Agent
+        # 3. Market Intelligence Briefing
         if analysis_payload:
             try:
                 agent = MarketIntelligenceAgent()
-                # Run market analysis on the batch of changes
-                await agent.analyze_market_batch(db, analysis_payload)
+                await agent.analyze_market_batch(insforge, analysis_payload)
             except Exception as e:
-                logger.error(f"Batch Sync: Intelligence Agent failed: {e}")
+                logger.error(f"Batch Sync: Market Analysis failed: {e}")
 
-        logger.info(
-            f"Batch Sync Success: {len(synced_ids)} hotel results processed across variations."
-        )
         return True
 
     except Exception as e:
         logger.error(f"CRITICAL: Batch Sync Failure: {e}")
-        import traceback
         logger.error(traceback.format_exc())
         return False
+
+
 
 
 

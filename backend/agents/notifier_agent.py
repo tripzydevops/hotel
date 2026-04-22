@@ -10,9 +10,9 @@ class NotifierAgent:
     """
 
     def __init__(self, db=None):
-        from backend.utils.db import get_supabase
+        from backend.utils.db import get_insforge_db
 
-        self.db = db or get_supabase()
+        self.db = db or get_insforge_db()
         self._log_buffer = []
 
     async def log_reasoning(self, session_id, message: str, level: str = "info"):

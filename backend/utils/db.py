@@ -1,4 +1,4 @@
-# Supabase/PostgREST Database Utility
+# InsForge/PostgREST Database Utility
 import os
 from typing import Any, Optional
 
@@ -7,6 +7,10 @@ from fastapi import Depends
 from yarl import URL  # Required for PostgREST base_url joinpath compatibility
 
 from supabase import Client, ClientOptions, create_client
+
+# Re-export for type hinting across the app
+InsForgeClient = Client
+
 
 
 def load_env_standard():
@@ -22,20 +26,21 @@ def load_env_standard():
 load_env_standard()
 
 
-def get_supabase_client(
+def get_insforge_db(
     jwt: Optional[str] = None, admin: bool = False
 ) -> Optional[Client]:
     """
-    Returns a configured Supabase client.
+    Returns a configured InsForge client.
 
-    If admin=True, it uses the SUPABASE_SERVICE_ROLE_KEY (bypasses RLS).
+    If admin=True, it uses the INSFORGE_SERVICE_ROLE_KEY (bypasses RLS).
     If jwt is provided, it returns a client scoped to that user (honors RLS).
     """
-    url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    url = os.getenv("NEXT_PUBLIC_INSFORGE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     key = (
-        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        os.getenv("INSFORGE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         if admin
-        else os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        else (os.getenv("NEXT_PUBLIC_INSFORGE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
     )
 
     if not url or not key:
@@ -51,19 +56,19 @@ def get_supabase_client(
 
     for attempt in range(max_retries):
         try:
-            supabase = create_client(url, key, options=options)
+            insforge = create_client(url, key, options=options)
 
             if jwt:
-                supabase.postgrest.auth(jwt)
+                insforge.postgrest.auth(jwt)
 
             # Configure base URL for database operations (InsForge compatibility override)
             # PostgREST client requires a yarl.URL object for joinpath support.
             clean_base = url.rstrip("/")
-            supabase.postgrest.base_url = URL(f"{clean_base}/api/database/records")
+            insforge.postgrest.base_url = URL(f"{clean_base}/api/database/records")
 
             # AGENT_FIX: Basic connectivity check (sanity)
             # We don't want to return a broken client that will fail on the first query.
-            return supabase
+            return insforge
         except Exception as e:
             if attempt == max_retries - 1:
                 print(f"CRITICAL_DB_INIT_FAILED after {max_retries} attempts: {str(e)}")
@@ -74,8 +79,8 @@ def get_supabase_client(
     return None
 
 
-def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_client)):
-    """FastAPI dependency for Supabase with automatic 500 on failure."""
+def get_insforge_dependency(client: Optional[Client] = Depends(get_insforge_db)):
+    """FastAPI dependency for InsForge with automatic 500 on failure."""
     if not client:
         from fastapi import HTTPException
 
@@ -86,8 +91,10 @@ def get_supabase_dependency(client: Optional[Client] = Depends(get_supabase_clie
     return client
 
 
-# Alias for backward compatibility with existing code (Functions and Dependencies)
-get_supabase = get_supabase_client
+# Alias for backward compatibility (Legacy support)
+get_supabase = get_insforge_db
+get_supabase_client = get_insforge_db
+get_supabase_dependency = get_insforge_dependency
 
 
 def try_acquire_lock(db: Any, lock_key: str, expire_seconds: int = 60) -> bool:

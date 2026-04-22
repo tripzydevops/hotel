@@ -12,7 +12,7 @@ from backend.utils.embeddings import format_room_type_for_embedding, get_embeddi
 from backend.utils.helpers import convert_currency, normalize_room_name
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import generate_mentions, merge_sentiment_breakdowns
-from supabase import Client
+from backend.utils.db import InsForgeClient
 
 logger = get_logger(__name__)
 
@@ -29,9 +29,9 @@ class ScanPersistenceService:
     4. CATALOGING: Normalizes and snapshots room types and rich reviews (Sentiment/NLP ready).
     """
 
-    def __init__(self, db: Client, admin_db: Optional[Client] = None):
-        self.db = db
-        self.admin_db = admin_db or db  # Fallback to shared if admin not provided
+    def __init__(self, insforge: InsForgeClient, admin_insforge: Optional[InsForgeClient] = None):
+        self.insforge = insforge
+        self.admin_insforge = admin_insforge or insforge  # Fallback to shared if admin not provided
 
     async def persist_scan_results(
         self,
@@ -145,7 +145,7 @@ class ScanPersistenceService:
                 # Note: price_logs has a unique index (hotel_id, check_in_date, recorded_at_minute)
                 # but standard .upsert() column matching is tricky with date_trunc in index.
                 # We fallback to per-item insertion if batch fails.
-                self.admin_db.table(table_name).insert(items).execute()
+                self.admin_insforge.table(table_name).insert(items).execute()
             except Exception as e:
                 logger.warning(
                     f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts."
@@ -153,7 +153,7 @@ class ScanPersistenceService:
                 # Per-item fallback
                 for item in items:
                     try:
-                        self.admin_db.table(table_name).insert(item).execute()
+                        self.admin_insforge.table(table_name).insert(item).execute()
                     except Exception as item_err:
                         # Log and ignore individual failures to keep the pipeline moving
                         logger.error(
@@ -211,7 +211,7 @@ class ScanPersistenceService:
         if not hotel_context:
             try:
                 res = (
-                    self.admin_db.table("hotels")
+                    self.admin_insforge.table("hotels")
                     .select("id, name, stars, location")
                     .eq("id", hotel_id)
                     .maybe_single()
@@ -266,7 +266,7 @@ class ScanPersistenceService:
                 valid_upserts = [
                     {k: v for k, v in r.items() if v is not None} for r in valid_upserts
                 ]
-                self.admin_db.table("room_type_catalog").upsert(
+                self.admin_insforge.table("room_type_catalog").upsert(
                     valid_upserts, on_conflict="id"
                 ).execute()
             except Exception as e:
@@ -344,7 +344,7 @@ class ScanPersistenceService:
             try:
                 # Use standard pagination if batch is huge?
                 # For now .upsert() handles large lists well.
-                self.admin_db.table("room_type_catalog").upsert(
+                self.admin_insforge.table("room_type_catalog").upsert(
                     valid_upserts, on_conflict="id"
                 ).execute()
                 logger.info(
@@ -355,7 +355,7 @@ class ScanPersistenceService:
 
     async def sync_from_external_provider(
         self,
-        db: Client,
+        db: InsForgeClient,
         hotel_id: str,
         result: Dict[str, Any],
         scan_task_id: Optional[str] = None,
@@ -392,13 +392,13 @@ class ScanPersistenceService:
 
         try:
             # 1. Log Price Entry
-            self.admin_db.table("price_logs").insert(log_entry).execute()
+            self.admin_insforge.table("price_logs").insert(log_entry).execute()
 
             # 2. Update Hotel Metadata (Whole Package)
             # Fetch existing sentiment for Smart Memory merge
             try:
                 existing_res = (
-                    self.admin_db.table("hotels")
+                    self.admin_insforge.table("hotels")
                     .select("sentiment_breakdown")
                     .eq("id", hotel_id)
                     .maybe_single()
@@ -439,7 +439,7 @@ class ScanPersistenceService:
             # Filter out None values to avoid overwriting existing data with null
             hotel_update = {k: v for k, v in hotel_update.items() if v is not None}
             if hotel_update:
-                self.admin_db.table("hotels").update(hotel_update).eq(
+                self.admin_insforge.table("hotels").update(hotel_update).eq(
                     "id", hotel_id
                 ).execute()
 
@@ -453,7 +453,7 @@ class ScanPersistenceService:
                     "sentiment_breakdown": result.get("sentiment_breakdown"),
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                 }
-                self.admin_db.table("sentiment_history").insert(
+                self.admin_insforge.table("sentiment_history").insert(
                     sentiment_entry
                 ).execute()
 
@@ -480,7 +480,7 @@ class ScanPersistenceService:
         history_map = {}
         try:
             res = (
-                self.admin_db.table("price_logs")
+                self.admin_insforge.table("price_logs")
                 .select(
                     "hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata"
                 )
@@ -505,7 +505,7 @@ class ScanPersistenceService:
         metadata_map = {}
         try:
             res = (
-                self.admin_db.table("hotels")
+                self.admin_insforge.table("hotels")
                 .select("id, name, min_price_floor")
                 .in_("id", hotel_ids)
                 .execute()
@@ -663,7 +663,7 @@ class ScanPersistenceService:
         # KAİZEN: Smart Update Logic for Static Fields
         # We fetch existing state to avoid redundant writes for stable data (descriptions, amenities, etc.)
         hotel_data_res = (
-            self.db.table("hotels")
+            self.insforge.table("hotels")
             .select(
                 "sentiment_breakdown, reviews, description, amenities, images, phone, website, address, stars, latitude, longitude, room_types, updated_at"
             )
@@ -762,7 +762,7 @@ class ScanPersistenceService:
         # Update DB using admin_db for background reliability
         if meta_update:
             try:
-                self.admin_db.table("hotels").update(meta_update).eq(
+                self.admin_insforge.table("hotels").update(meta_update).eq(
                     "id", hotel_id
                 ).execute()
             except Exception as e:
@@ -774,7 +774,7 @@ class ScanPersistenceService:
         volatility = 0.0
         if current_price > 0:
             volatility = await predictive_service.calculate_market_volatility(
-                self.db, hotel_id
+                self.insforge, hotel_id
             )
             active_threshold = predictive_service.get_smart_threshold(
                 threshold, volatility
@@ -852,7 +852,7 @@ class ScanPersistenceService:
         # [ROBUST] Update property-level metadata (Shared across users)
         # We use admin_db to ensure these updates persist even if RLS would block this user
         # from updating a shared record (which depends on specific RLS policies).
-        self.admin_db.table("hotels").update(
+        self.admin_insforge.table("hotels").update(
             {"last_scanned_at": datetime.now().isoformat()}
         ).eq("id", hotel_id).execute()
 
@@ -894,7 +894,7 @@ class ScanPersistenceService:
         for i, res in enumerate(results):
             hid, _ = queue[i]
             status = "current" if res is True else "failed"
-            self.admin_db.table("hotels").update({"embedding_status": status}).eq(
+            self.admin_insforge.table("hotels").update({"embedding_status": status}).eq(
                 "id", hid
             ).execute()
 
@@ -919,7 +919,7 @@ class ScanPersistenceService:
             profile = "\n".join(parts)
             embedding = await get_embedding(profile)
             if embedding:
-                self.admin_db.table("hotels").update(
+                self.admin_insforge.table("hotels").update(
                     {"sentiment_embedding": embedding}
                 ).eq("id", hotel_id).execute()
                 return True
@@ -977,286 +977,224 @@ class ScanPersistenceService:
     ) -> Dict[str, Any]:
         """
         High-Performance Batch Sync.
-        Processes multiple extraction results in minimal database roundtrips.
-        Returns payload for notifications and AI analysis.
+        Groups results by property_token (identity) to perform bulk updates across variations.
         """
         if not batch_items:
-            return {
-                "synced_hotel_ids": [],
-                "notification_events": [],
-                "analysis_payload": [],
-            }
+            return {"synced_hotel_ids": [], "notification_events": [], "analysis_payload": []}
 
-        # 1. Aggregate and Merge Results
-        hotel_data_map = {}
-        h_ids = []
-        completed_task_ids = []
-        raw_archives = []
-
-        for item in batch_items:
-            hid = str(item["hotel_id"])
-            h_ids.append(hid)
-            task_id = item.get("scan_task_id")
-            if task_id:
-                completed_task_ids.append(task_id)
-
-            res = item.get("result", {})
-            if not res or res.get("status") != "success":
-                continue
-
-            # Store Raw JSON for archival
-            if task_id and res.get("raw_data"):
-                raw_archives.append({"id": task_id, "raw_results": res["raw_data"]})
-
-            if hid not in hotel_data_map:
-                hotel_data_map[hid] = {"res": res, "task_ids": [task_id]}
-            else:
-                # Smart merge logic: Highest price wins, combine metadata
-                existing = hotel_data_map[hid]["res"]
-                merged = existing.copy()
-                for key, val in res.items():
-                    if key == "price":
-                        new_price = float(val) if val else 0
-                        old_price = float(merged.get("price", 0) or 0)
-                        if new_price > 0 and new_price > old_price:
-                            merged[key] = new_price
-                    elif val and (
-                        not merged.get(key)
-                        or (
-                            isinstance(val, list)
-                            and len(val) > len(merged.get(key, []))
-                        )
-                    ):
-                        merged[key] = val
-                hotel_data_map[hid]["res"] = merged
-                hotel_data_map[hid]["task_ids"].append(task_id)
-
-        # 2. Bulk Fetch Context
-        h_ids = list(set(h_ids))
-        hotels_res = (
-            self.admin_db.table("hotels")
-            .select("id, name, location, property_token")
-            .in_("id", h_ids)
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        # 1. Map Hotel IDs to Identity (property_token or id)
+        input_h_ids = list(set(str(item["hotel_id"]) for item in batch_items))
+        hotels_lookup_res = (
+            self.admin_insforge.table("hotels")
+            .select("id, property_token, name, location")
+            .in_("id", input_h_ids)
             .execute()
         )
-        hotel_lookup = {str(h["id"]): h for h in (hotels_res.data or [])}
+        hotel_ref_map = {str(h["id"]): h for h in (hotels_lookup_res.data or [])}
+        
+        # 2. Group and Merge Results by Identity
+        # Identity is property_token if exists, otherwise hotel_id
+        identity_groups = {} # identity -> { merged_res, task_ids, hotel_ids }
+        
+        for item in batch_items:
+            hid = str(item["hotel_id"])
+            h_ref = hotel_ref_map.get(hid)
+            if not h_ref: continue # Hotel not found in DB
+            
+            identity = h_ref.get("property_token") or hid
+            task_id = item.get("scan_task_id")
+            res = item.get("result", {})
+            if not res or res.get("status") != "success": continue
+            
+            if identity not in identity_groups:
+                identity_groups[identity] = {
+                    "res": res, 
+                    "task_ids": [task_id] if task_id else [],
+                    "hotel_ids": {hid}
+                }
+            else:
+                group = identity_groups[identity]
+                group["hotel_ids"].add(hid)
+                if task_id: group["task_ids"].append(task_id)
+                
+                # Smart merge: Priority on highest price and deeper metadata
+                existing = group["res"]
+                for key, val in res.items():
+                    if key == "price":
+                        new_p = float(val) if val else 0
+                        old_p = float(existing.get("price") or 0)
+                        if new_p > old_p: existing["price"] = new_p
+                    elif val and (not existing.get(key) or (isinstance(val, (list, dict)) and len(str(val)) > len(str(existing.get(key))))):
+                        existing[key] = val
 
-        tokens = list(
-            set(
-                [
-                    h["property_token"]
-                    for h in hotel_lookup.values()
-                    if h.get("property_token")
-                ]
-            )
-        )
-
-        variations_res = []
-        if tokens:
+        # 3. Discover All Variations for Identities
+        tokens = [k for k in identity_groups.keys() if not k.isdigit()] # Heuristic: tokens are UUIDs/strings, IDs are numeric strings
+        # Actually, tokens and IDs can both be strings. Let's just use tokens we found.
+        found_tokens = list(set(h["property_token"] for h in hotel_ref_map.values() if h.get("property_token")))
+        
+        variations_map = {} # identity -> [hotel_records]
+        if found_tokens:
             v_res = (
-                self.admin_db.table("hotels")
+                self.admin_insforge.table("hotels")
                 .select("id, property_token, name, location")
-                .in_("property_token", tokens)
+                .in_("property_token", found_tokens)
                 .execute()
             )
-            variations_res = v_res.data or []
-
-        # 3. Prepare Batch Updates
+            for v in (v_res.data or []):
+                tok = v["property_token"]
+                if tok not in variations_map: variations_map[tok] = []
+                variations_map[tok].append(v)
+        
+        # 4. Prepare Vectorized Payloads
         hotel_updates = []
         price_logs = []
         sentiment_history = []
-        now_ts = datetime.now(timezone.utc).isoformat()
-        processed_variations = set()
-        notification_events = []
+        raw_archives = []
         analysis_payload = []
-
-        for hid, h_data in hotel_data_map.items():
-            h_ref = hotel_lookup.get(hid)
-            if not h_ref:
-                continue
-
-            res_data = h_data["res"]
+        notification_events = []
+        completed_task_ids = []
+        
+        for identity, group in identity_groups.items():
+            res_data = group["res"]
             price = float(res_data.get("price") or 0)
             currency = res_data.get("currency", "TRY")
-            token = h_ref.get("property_token")
-
-            # Prep analysis payload (one per result group)
-            res_copy = res_data.copy()
-            res_copy.update(
-                {
-                    "hotel_id": hid,
-                    "hotel_name": h_ref.get("name"),
-                    "hotel_location": h_ref.get("location"),
-                }
-            )
-            analysis_payload.append(res_copy)
-
-            # Identify all targets for this specific result (primary + variations)
-            targets = (
-                [v for v in variations_res if v.get("property_token") == token]
-                if token
-                else [h_ref]
-            )
-
+            
+            # Determine targets: All variations if identity is a token, else just the single hotel
+            targets = variations_map.get(identity)
+            if not targets:
+                # Fallback: if identity is an ID, find it in hotel_ref_map
+                targets = [hotel_ref_map.get(identity)] if hotel_ref_map.get(identity) else []
+            
+            if not targets: continue
+            
+            # Prepare Analysis Payload (once per identity)
+            analysis_item = res_data.copy()
+            analysis_item.update({"identity": identity, "targets_count": len(targets)})
+            analysis_payload.append(analysis_item)
+            
             for target in targets:
                 tid = str(target["id"])
-                if tid in processed_variations:
-                    continue
-                processed_variations.add(tid)
-
+                
+                # Hotel Update Payload
                 upd = {
                     "id": tid,
-                    "name": target.get("name"),
-                    "location": target.get("location"),
                     "last_scanned_at": now_ts,
+                    "current_price": price if price > 0 else None
                 }
-                if price > 0:
-                    upd["current_price"] = price
-
-                # Metadata mapping
-                fields = {
-                    "rating": "rating",
-                    "stars": "stars",
-                    "description": "description",
-                    "amenities": "amenities",
-                    "check_in_time": "check_in_time",
-                    "check_out_time": "check_out_time",
-                    "sentiment_breakdown": "sentiment_breakdown",
-                    "latitude": "latitude",
-                    "longitude": "longitude",
-                    "phone": "phone",
-                    "website": "website",
-                    "address": "address",
-                    "image_url": "image_url",
-                    "rating_distribution": "rating_distribution",
-                    "guest_mentions": "guest_mentions",
-                    "images": "images",
-                }
-                for src, dst in fields.items():
-                    if res_data.get(src):
-                        upd[dst] = res_data[src]
-
+                
+                # Map rich metadata
+                metadata_fields = [
+                    "rating", "stars", "description", "amenities", "check_in_time", 
+                    "check_out_time", "sentiment_breakdown", "latitude", "longitude",
+                    "phone", "website", "address", "image_url", "rating_distribution",
+                    "guest_mentions", "images"
+                ]
+                for field in metadata_fields:
+                    if res_data.get(field): upd[field] = res_data[field]
+                
+                # Reviews & OTA Summary
                 if res_data.get("reviews") or res_data.get("reviews_count"):
-                    upd["review_count"] = res_data.get("reviews") or res_data.get(
-                        "reviews_count"
-                    )
-
-                # Room Catalog
-                room_types = res_data.get("room_types") or []
-                room_catalog = res_data.get("room_catalog") or []
-                if room_catalog:
-                    upd["room_types"] = room_catalog
-                elif room_types:
-                    upd["room_types"] = room_types
-
-                # Reviews Summary JSON
-                reviews_data = {}
-                if res_data.get("other_sites_reviews"):
-                    reviews_data["other_sites_reviews"] = res_data[
-                        "other_sites_reviews"
-                    ]
-                if res_data.get("ota_prices"):
-                    op = res_data["ota_prices"]
-                    reviews_data.update(
-                        {
-                            "ota_count": len(op),
-                            "ota_min_price": min(
-                                (p.get("price") or 9999999) for p in op
-                            ),
-                            "ota_sources": [
-                                p.get("source") for p in op if p.get("source")
-                            ],
-                        }
-                    )
-                if reviews_data:
-                    upd["reviews"] = reviews_data
-
+                    upd["review_count"] = res_data.get("reviews") or res_data.get("reviews_count")
+                
+                ota_prices = res_data.get("ota_prices") or []
+                if ota_prices:
+                    upd["reviews"] = {
+                        "ota_count": len(ota_prices),
+                        "ota_min_price": min((p.get("price") or 999999) for p in ota_prices),
+                        "ota_sources": list(set(p.get("source") for p in ota_prices if p.get("source")))
+                    }
+                
+                # Room Types
+                room_types = res_data.get("room_catalog") or res_data.get("room_types")
+                if room_types: upd["room_types"] = room_types
+                
                 hotel_updates.append(upd)
-
-                # Price Log Entry
+                
+                # Price Log (Insert)
                 if price > 0:
-                    ota_offers = res_data.get("ota_prices") or []
-                    price_logs.append(
-                        {
-                            "hotel_id": tid,
-                            "price": price,
-                            "currency": currency,
-                            "parity_offers": ota_offers
-                            or res_data.get("parity_offers")
-                            or res_data.get("offers", []),
-                            "market_offers": res_data.get("all_prices")
-                            or res_data.get("market_offers", []),
-                            "room_types": room_catalog if room_catalog else room_types,
-                            "recorded_at": now_ts,
-                            "source": source,
-                        }
-                    )
-
-                # Sentiment History
-                if res_data.get("sentiment_breakdown"):
-                    sentiment_history.append(
-                        {
-                            "hotel_id": tid,
-                            "rating": res_data.get("rating"),
-                            "review_count": res_data.get("reviews")
-                            or res_data.get("reviews_count"),
-                            "sentiment_breakdown": res_data.get("sentiment_breakdown"),
-                            "recorded_at": now_ts,
-                        }
-                    )
-
-            # Prepare notification event (one per unique identity in batch)
-            if price > 0:
-                notification_events.append(
-                    {
-                        "hotel_id": hid,
+                    price_logs.append({
+                        "hotel_id": tid,
                         "price": price,
                         "currency": currency,
-                        "parity_offers": res_data.get("parity_offers")
-                        or res_data.get("offers"),
-                        "property_token": token,
-                    }
-                )
+                        "parity_offers": ota_prices or res_data.get("parity_offers", []),
+                        "market_offers": res_data.get("all_prices") or res_data.get("market_offers", []),
+                        "room_types": room_types,
+                        "recorded_at": now_ts,
+                        "source": source
+                    })
+                
+                # Sentiment History
+                if res_data.get("sentiment_breakdown"):
+                    sentiment_history.append({
+                        "hotel_id": tid,
+                        "rating": res_data.get("rating"),
+                        "review_count": res_data.get("reviews") or res_data.get("reviews_count"),
+                        "sentiment_breakdown": res_data.get("sentiment_breakdown"),
+                        "recorded_at": now_ts
+                    })
 
-        # 4. Execute Bulk DB Operations
+            # Notification Event (per identity)
+            if price > 0:
+                notification_events.append({
+                    "hotel_id": list(group["hotel_ids"])[0],
+                    "price": price,
+                    "currency": currency,
+                    "property_token": identity if not identity.isdigit() else None,
+                    "parity_offers": ota_prices or res_data.get("parity_offers", [])
+                })
+            
+            # Archive raw results
+            for tid in group["task_ids"]:
+                completed_task_ids.append(tid)
+                if res_data.get("raw_data"):
+                    raw_archives.append({"id": tid, "raw_results": res_data["raw_data"]})
+
+        # 5. Execute Batch Operations
         if hotel_updates:
-            self.admin_db.table("hotels").upsert(hotel_updates).execute()
+            self.admin_insforge.table("hotels").upsert(hotel_updates).execute()
+        
         if price_logs:
-            self.admin_db.table("price_logs").upsert(price_logs).execute()
+            # Explicitly requested INSERT for price_logs
+            self.admin_insforge.table("price_logs").insert(price_logs).execute()
+            
         if sentiment_history:
-            self.admin_db.table("sentiment_history").insert(sentiment_history).execute()
+            self.admin_insforge.table("sentiment_history").insert(sentiment_history).execute()
+            
         if completed_task_ids:
-            self.admin_db.table("scan_tasks").update({"status": "completed"}).in_(
-                "id", completed_task_ids
-            ).execute()
+            self.admin_insforge.table("scan_tasks").update({"status": "completed"}).in_("id", completed_task_ids).execute()
+            
         if raw_archives:
-            self.admin_db.table("scan_tasks").upsert(raw_archives).execute()
+            self.admin_insforge.table("scan_tasks").upsert(raw_archives).execute()
 
-        # Batch increment successes via RPC
-        batch_ids = [item["batch_id"] for item in batch_items if item.get("batch_id")]
+        # 6. Room Type Catalog Update
+        catalog_items = []
+        for identity, group in identity_groups.items():
+            rt = group["res"].get("room_types") or group["res"].get("room_catalog")
+            if rt:
+                # We need a representative hotel_id from the group
+                catalog_items.append({"hotel_id": list(group["hotel_ids"])[0], "room_types": rt})
+        
+        if catalog_items:
+            await self.batch_update_room_type_catalog(catalog_items, list(hotel_ref_map.values()))
+
+        # 7. Batch increment successes via RPC
+        batch_ids = [item.get("batch_id") for item in batch_items if item.get("batch_id")]
         if batch_ids:
+            from collections import Counter
             counts = Counter(batch_ids)
             for bid, count in counts.items():
                 try:
-                    self.admin_db.rpc(
+                    self.admin_insforge.rpc(
                         "increment_batch_success", {"b_id": str(bid), "p_count": count}
                     ).execute()
-                except Exception:
-                    pass
-
-        # Room Catalog Update (Vectorized)
-        scraper_results_for_catalog = [
-            {"hotel_id": hid, "room_types": h_data["res"].get("room_types", [])}
-            for hid, h_data in hotel_data_map.items()
-            if h_data["res"].get("room_types")
-        ]
-        if scraper_results_for_catalog:
-            await self.batch_update_room_type_catalog(
-                scraper_results_for_catalog, list(hotel_lookup.values())
-            )
+                except Exception as e:
+                    logger.warning(f"Failed to increment batch success for {bid}: {e}")
 
         return {
-            "synced_hotel_ids": list(hotel_data_map.keys()),
+            "synced_hotel_ids": list(hotel_ref_map.keys()),
             "notification_events": notification_events,
-            "analysis_payload": analysis_payload,
+            "analysis_payload": analysis_payload
         }
+
