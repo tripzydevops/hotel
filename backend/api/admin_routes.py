@@ -15,6 +15,8 @@ from backend.models.schemas import (
     PlanCreate,
     PlanUpdate,
     HealthMetrics,
+    SystemLogEntry,
+    SystemLogsResponse,
 )
 from backend.services.admin_service import (
     add_admin_directory_entry_logic,
@@ -33,6 +35,7 @@ from backend.services.admin_service import (
     get_admin_feed_logic,
     get_admin_hotels_logic,
     get_admin_logs_logic,
+    get_system_logs_logic,
     get_admin_market_intelligence_logic,
     get_admin_plans_logic,
     get_admin_providers_logic,
@@ -230,6 +233,17 @@ async def get_admin_logs(
     System activity logs. Audit trail for administrative actions.
     """
     return await get_admin_logs_logic(limit, db)
+
+
+@router.get("/system-logs", response_model=SystemLogsResponse)
+async def get_system_logs(
+    limit: int = 100,
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Background worker logs (scheduler.log).
+    """
+    return await get_system_logs_logic(limit)
 
 
 @router.get("/feed")

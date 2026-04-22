@@ -461,3 +461,17 @@ export interface HealthMetrics {
   provider_health: ProviderHealth[];
   scan_volume: ScanVolume[];
 }
+
+export interface SystemLogEntry {
+  line: string;
+  level: string;
+  line_num?: number;
+  timestamp: string | null;
+  message: string;
+}
+
+export interface SystemLogsResponse {
+  logs: SystemLogEntry[];
+  total_lines: number;
+  file_path: string;
+}

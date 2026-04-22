@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 import pandas as pd
+from collections import deque
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -31,6 +32,8 @@ from backend.models.schemas import (
     HealthMetrics,
     ProviderHealth,
     ScanVolume,
+    SystemLogEntry,
+    SystemLogsResponse,
 )
 from supabase import Client
 
@@ -464,6 +467,54 @@ async def get_admin_logs_logic(db: Client, limit: int = 50) -> List[AdminLog]:
         return logs
     except Exception:
         return []
+
+
+async def get_system_logs_logic(limit: int = 100) -> SystemLogsResponse:
+    """
+    Efficiently tail the scheduler.log file to get the last N lines.
+    Uses collections.deque to avoid reading the entire file into memory.
+    """
+    log_path = os.path.join(os.getcwd(), "scheduler.log")
+    if not os.path.exists(log_path):
+        return SystemLogsResponse(
+            logs=[SystemLogEntry(line="[System] No log file found.", level="WARN", line_num=0)],
+            total_lines=0,
+            file_path=log_path
+        )
+
+    try:
+        # Memory-efficient: deque(f, maxlen=limit) iterates over the file handle
+        # and only keeps the last N lines in memory.
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            last_lines = deque(f, maxlen=limit)
+
+        logs = []
+        for i, line in enumerate(last_lines):
+            clean_line = line.strip()
+            if not clean_line:
+                continue
+
+            level = "INFO"
+            if "ERROR" in clean_line:
+                level = "ERROR"
+            elif "WARN" in clean_line:
+                level = "WARN"
+            elif "SUCCESS" in clean_line:
+                level = "SUCCESS"
+
+            logs.append(SystemLogEntry(line=clean_line, level=level, line_num=i))
+
+        return SystemLogsResponse(
+            logs=logs,
+            total_lines=len(logs),
+            file_path=log_path
+        )
+    except Exception as e:
+        return SystemLogsResponse(
+            logs=[SystemLogEntry(line=f"[System Error] Failed to read logs: {str(e)}", level="ERROR", line_num=0)],
+            total_lines=0,
+            file_path=log_path
+        )
 
 
 async def get_admin_directory_logic(

@@ -512,6 +512,20 @@ class AdminLog(BaseModel):
     user_name: Optional[str] = None
 
 
+class SystemLogEntry(BaseModel):
+    line: str
+    timestamp: Optional[datetime] = None
+    level: str = "INFO"
+    line_num: Optional[int] = None
+    message: Optional[str] = None
+
+
+class SystemLogsResponse(BaseModel):
+    logs: List[SystemLogEntry]
+    total_lines: int
+    file_path: str
+
+
 class AdminDataResponse(BaseModel):
     stats: AdminStats
     users: List[AdminUser] = []

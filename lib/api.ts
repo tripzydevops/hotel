@@ -15,6 +15,8 @@ import {
   AdminSettings,
   AdminScan,
   HealthMetrics,
+  SystemLogEntry,
+  SystemLogsResponse,
 } from "@/types";
 
 // EXPLANATION: Environment-aware API Configuration
@@ -376,6 +378,10 @@ class ApiClient {
 
   async getAdminLogs(limit = 50): Promise<any[]> {
     return this.fetch<any[]>(`/api/admin/logs?limit=${limit}`);
+  }
+
+  async getSystemLogs(limit = 100): Promise<SystemLogsResponse> {
+    return this.fetch<SystemLogsResponse>(`/api/admin/system-logs?limit=${limit}`);
   }
 
   async getAdminScans(limit = 50): Promise<any[]> {
