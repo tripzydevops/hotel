@@ -121,7 +121,8 @@ const ScansPanel = () => {
       await api.checkScheduledScan(true);
       toast.success("Scan triggered! Check history.");
       // Refresh queue
-      loadQueue();
+      await loadQueue();
+      router.refresh();
     } catch (err: any) {
       toast.error("Failed to trigger: " + err.message);
     }
@@ -177,7 +178,8 @@ const ScansPanel = () => {
     try {
       await api.rescanBatchTask(taskId);
       toast.success("Rescan triggered for task!");
-      if (selectedBatchId) fetchBatchDetails(selectedBatchId);
+      if (selectedBatchId) await fetchBatchDetails(selectedBatchId);
+      router.refresh();
     } catch (err: any) {
       toast.error("Rescan failed: " + err.message);
     }
@@ -234,7 +236,8 @@ const ScansPanel = () => {
               try {
                 await api.triggerAllOverdue();
                 toast.success("All overdue scans triggered!");
-                loadQueue();
+                await loadQueue();
+                router.refresh();
               } catch (err: any) {
                 toast.error("Failed: " + err.message);
               }
