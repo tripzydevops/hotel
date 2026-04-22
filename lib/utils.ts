@@ -12,16 +12,30 @@ export function cn(...inputs: ClassValue[]) {
  * Format currency with proper locale
  */
 export function formatCurrency(
-  amount: number,
+  amount: number | string,
   currency: string = "USD",
   locale: string = "en-US",
 ): string {
+  const numericAmount = typeof amount === "string" ? parsePrice(amount) : amount;
+  
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(numericAmount);
+}
+
+/**
+ * Sanitize and parse price strings with commas
+ */
+export function parsePrice(price: string | number): number {
+  if (typeof price === "number") return price;
+  if (!price) return 0;
+  // Strip commas and parse
+  const sanitized = price.toString().replace(/,/g, "");
+  const parsed = parseFloat(sanitized);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 /**

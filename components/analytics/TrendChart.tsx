@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { PricePoint } from "@/types";
+import { parsePrice } from "@/lib/utils";
 
 interface TrendChartProps {
   data: PricePoint[];
@@ -25,7 +26,7 @@ export default function TrendChart({
     // Sort by date (oldest to newest)
     const sorted = [...data].sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
     
-    const prices = sorted.map(p => p.price);
+    const prices = sorted.map(p => parsePrice(p.price));
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const range = maxPrice - minPrice;
@@ -37,7 +38,7 @@ export default function TrendChart({
     const points = sorted.map((p, i) => {
       const x = (i / (sorted.length - 1)) * width;
       // If range is 0 (flat line), center it
-      const normalizedPrice = range === 0 ? 0.5 : (p.price - minPrice) / range;
+      const normalizedPrice = range === 0 ? 0.5 : (parsePrice(p.price) - minPrice) / range;
       const y = paddingY + ((1 - normalizedPrice) * availableHeight);
       return [x, y];
     });

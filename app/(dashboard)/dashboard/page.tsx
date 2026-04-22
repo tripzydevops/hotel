@@ -28,11 +28,11 @@ import ZeroState from "@/components/ui/ZeroState";
 import { useI18n } from "@/lib/i18n";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import ModalLoading from "@/components/ui/ModalLoading";
+import { parsePrice, formatCurrency, formatDateTime } from "@/lib/utils";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { GlobalPulseFeed } from "@/components/tiles/GlobalPulseFeed";
-import { formatDateTime } from "@/lib/utils";
 
 // --- Components ---
 
@@ -127,7 +127,7 @@ export default function Dashboard() {
 
   // Memoized derived values to prevent recalculation on every render
   const effectiveTargetPrice = useMemo(
-    () => data?.target_hotel?.price_info?.current_price || 0,
+    () => parsePrice(data?.target_hotel?.price_info?.current_price || 0),
     [data?.target_hotel?.price_info?.current_price],
   );
 
@@ -168,7 +168,7 @@ export default function Dashboard() {
     if (!data?.competitors?.length) return 0;
     return Math.round(
       data.competitors.reduce(
-        (sum, c) => sum + (c.price_info?.current_price || 0),
+        (sum, c) => sum + parsePrice(c.price_info?.current_price || 0),
         0,
       ) / data.competitors.length,
     );
@@ -555,14 +555,7 @@ export default function Dashboard() {
                       ) / (data?.competitors?.length || 1),
                     );
 
-                    return new Intl.NumberFormat(
-                      activeCurrency === "TRY" ? "tr-TR" : "en-US",
-                      {
-                        style: "currency",
-                        currency: activeCurrency,
-                        minimumFractionDigits: 0,
-                      },
-                    ).format(avgPrice);
+                    return formatCurrency(avgPrice, activeCurrency);
                   })()}
                 </>
               ) : (

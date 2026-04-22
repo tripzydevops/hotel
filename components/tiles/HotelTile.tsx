@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion } from "framer-motion";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parsePrice } from "@/lib/utils";
 import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
 import { ReactNode } from "react";
 
@@ -56,10 +56,12 @@ export interface HotelTileProps {
 }
 
 export default function HotelTile(props: HotelTileProps) {
+  const currentPrice = parsePrice(props.currentPrice || 0);
+  const previousPrice = parsePrice(props.previousPrice || currentPrice);
+  
   const {
     id,
     name,
-    currentPrice,
     currency = "TRY",
     trend,
     changePercent,
@@ -176,10 +178,10 @@ export default function HotelTile(props: HotelTileProps) {
               Shift
             </div>
             <div className={`text-[10px] font-bold flex items-center gap-1 ${
-              changePercent > 0 ? "text-alert-red" : changePercent < 0 ? "text-optimal-green" : "text-[var(--text-muted)]"
+              changePercent > 0 ? "text-emerald-500" : changePercent < 0 ? "text-rose-500" : "text-[var(--text-muted)]"
             }`}>
               {changePercent > 0 ? "+" : ""}{changePercent}%
-              {trend === "up" ? <ArrowUpRight className="w-3 h-3 text-alert-red" /> : trend === "down" ? <ArrowDownRight className="w-3 h-3 text-optimal-green" /> : <Minus className="w-3 h-3" />}
+              {trend === "up" ? <ArrowUpRight className="w-3 h-3 text-emerald-500" /> : trend === "down" ? <ArrowDownRight className="w-3 h-3 text-rose-500" /> : <Minus className="w-3 h-3" />}
             </div>
           </div>
         </div>
