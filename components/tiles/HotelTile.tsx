@@ -44,6 +44,9 @@ export interface HotelTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];
+  offers?: { vendor?: string; source?: string; price?: number }[];
+  isEstimated?: boolean;
+  phone?: string;
   variant?: "target" | "competitor";
   isUndercut?: boolean;
   headerBadges?: ReactNode;
@@ -141,6 +144,14 @@ export default function HotelTile(props: HotelTileProps) {
             <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic">
               {formatCurrency(currentPrice, currency)}
             </div>
+            {(() => {
+              const vendorName = props.vendor || props.offers?.[0]?.vendor || props.offers?.[0]?.source || "DIRECT";
+              return (
+                <div className="text-[10px] uppercase text-white/60 bg-white/5 px-2 py-0.5 rounded-full mt-1 inline-block border border-white/5 backdrop-blur-sm font-bold tracking-wider">
+                  VIA {vendorName}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

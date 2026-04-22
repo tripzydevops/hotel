@@ -46,7 +46,7 @@ interface CompetitorTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];
-  offers?: { vendor?: string; price?: number }[];
+  offers?: { vendor?: string; source?: string; price?: number }[];
   isEstimated?: boolean;
   phone?: string;
   email?: string;
