@@ -1179,12 +1179,6 @@ class DataForSEOProvider(HotelDataProvider):
                     prices_data = target.get("prices", {})
                     reviews_data = target.get("reviews", {})
 
-                    # Room Types Extraction
-                    room_types_raw = target.get("room_types", [])
-                    normalized_rooms = [
-                        self._normalize_room_name(rt) for rt in room_types_raw
-                    ]
-
                     # OTA Parity / All Prices
                     raw_prices = prices_data.get("items", []) or []
                     PRIORITY_OTAS = [
@@ -1209,6 +1203,68 @@ class DataForSEOProvider(HotelDataProvider):
 
                     sorted_prices = sorted(raw_prices, key=ota_priority)
 
+                    # === Room Types Extraction ===
+                    # [FIX 2026-04-22] The hotel_searches batch endpoint does NOT
+                    # populate a top-level "room_types" key on the item. Room/offer
+                    # metadata lives inside prices.items[] — each price item has a
+                    # "title" field containing the room name/offer description.
+                    # We build a room_catalog matching the same schema as
+                    # _parse_advanced_hotel_info() so the downstream pipeline
+                    # (scan_persistence.py) and frontend receive identical structures.
+                    room_catalog = []
+                    seen_room_names = set()
+                    for price_item in raw_prices:
+                        if not isinstance(price_item, dict):
+                            continue
+                        room_title = price_item.get("title") or price_item.get("type")
+                        if not room_title:
+                            continue
+                        # Deduplicate by normalized name
+                        normalized = self._normalize_room_name(room_title)
+                        norm_key = normalized.get("name", "").lower()
+                        if norm_key and norm_key not in seen_room_names:
+                            seen_room_names.add(norm_key)
+                            room_catalog.append({
+                                "name": normalized.get("name", room_title),
+                                "original_name": normalized.get("original_name", room_title),
+                                "price": price_item.get("price_raw") or price_item.get("price"),
+                                "currency": price_item.get("currency"),
+                                "source": price_item.get("source") or price_item.get("vendor"),
+                                "url": price_item.get("source_url") or price_item.get("url"),
+                                "capacity": price_item.get("capacity"),
+                                "features": price_item.get("features"),
+                                "image_url": (price_item.get("images") or [None])[0],
+                                "attributes": normalized.get("attributes", {}),
+                            })
+
+                    # Fallback: check if the item itself has a top-level room_types list
+                    # (some response variants may include it as string names)
+                    if not room_catalog:
+                        room_types_raw = target.get("room_types") or []
+                        if isinstance(room_types_raw, list) and room_types_raw:
+                            for rt in room_types_raw:
+                                if isinstance(rt, str):
+                                    normalized = self._normalize_room_name(rt)
+                                    room_catalog.append({
+                                        "name": normalized.get("name", rt),
+                                        "original_name": normalized.get("original_name", rt),
+                                        "price": None,
+                                        "currency": None,
+                                        "source": None,
+                                        "url": None,
+                                        "capacity": None,
+                                        "features": None,
+                                        "image_url": None,
+                                        "attributes": normalized.get("attributes", {}),
+                                    })
+                                elif isinstance(rt, dict):
+                                    room_catalog.append(rt)
+
+                    # Build the same dual-key output as _parse_advanced_hotel_info:
+                    # "room_catalog" = full objects, "room_types" = name strings
+                    normalized_rooms = room_catalog
+                    room_type_names = [r["name"] for r in room_catalog if r.get("name")]
+
                     # Sentiment Fallback
                     search_sentiment = target.get("reviews_breakdown", {}).get(
                         "sentiment", []
@@ -1225,7 +1281,8 @@ class DataForSEOProvider(HotelDataProvider):
                         "stars": target.get("stars"),
                         "rating": reviews_data.get("value", 0.0),
                         "reviews": reviews_data.get("votes_count", 0),
-                        "room_types": normalized_rooms,
+                        "room_catalog": room_catalog,
+                        "room_types": room_type_names,
                         "tag": (task.get("data") or {}).get("tag"),
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,
