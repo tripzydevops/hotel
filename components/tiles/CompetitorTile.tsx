@@ -13,7 +13,7 @@ import {
   Trash2,
   Edit2,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+
 import { PricePoint, HotelImage } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import HotelTile from "./HotelTile";
@@ -67,7 +67,7 @@ export default function CompetitorTile(props: CompetitorTileProps) {
       onSetTarget={props.onSetTarget}
       headerBadges={
         props.rank ? (
-          <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-black text-[var(--text-secondary)] uppercase">
+          <span className="px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--overlay-border)] text-[9px] font-black text-[var(--text-secondary)] uppercase">
             #{props.rank}
           </span>
         ) : null

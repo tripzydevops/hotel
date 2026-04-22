@@ -112,15 +112,15 @@ export default function HotelTile(props: HotelTileProps) {
         </div>
 
         {props.isUndercut && (
-          <div className="absolute top-3 right-3 px-2 py-1 bg-optimal-green text-white text-[9px] font-black rounded-sm uppercase tracking-tighter shadow-lg flex items-center gap-1">
+          <div className="absolute top-3 right-3 px-2 py-1 bg-optimal-green text-[var(--overlay-text)] text-[9px] font-black rounded-sm uppercase tracking-tighter shadow-lg flex items-center gap-1">
             <TrendingDown className="w-3 h-3" />
             Optimal Price
           </div>
         )}
 
         {props.rating && (
-          <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded border border-white/10 flex items-center gap-1 text-[10px] font-bold text-[var(--soft-gold)]">
-            <span className="text-[11px]">★</span>
+          <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-[var(--overlay-bg)] backdrop-blur-md rounded border border-[var(--overlay-border)] flex items-center gap-1 text-[10px] font-bold text-[var(--overlay-text)]">
+            <span className="text-[11px] text-[var(--soft-gold)]">★</span>
             {props.rating.toFixed(1)}
           </div>
         )}
@@ -144,7 +144,7 @@ export default function HotelTile(props: HotelTileProps) {
               Live Rate
             </div>
             <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic">
-              {formatCurrency(currentPrice, currency)}
+              {currency} {currentPrice.toLocaleString('en-US')}
             </div>
             {(() => {
               const lowestOffer = props.offers && props.offers.length > 0
@@ -152,7 +152,7 @@ export default function HotelTile(props: HotelTileProps) {
                 : null;
               const vendorName = lowestOffer?.vendor || lowestOffer?.source || props.vendor || "DIRECT";
               return (
-                <div className="text-[10px] uppercase text-white/60 bg-white/5 px-2 py-0.5 rounded-full mt-1 inline-block border border-white/5 backdrop-blur-sm font-bold tracking-wider">
+                <div className="text-[10px] uppercase text-[var(--text-muted-foreground)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded-full mt-1 inline-block border border-[var(--overlay-border)] backdrop-blur-sm font-bold tracking-wider">
                   VIA {vendorName}
                 </div>
               );
