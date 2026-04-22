@@ -344,3 +344,9 @@ def get_insforge_admin() -> Client:
     Used for performance-sensitive background operations that bypass RLS.
     """
     return get_insforge_db(admin=True)
+
+
+# Backward-compatibility aliases (Legacy support)
+# All route files import these names from the pre-refactor era.
+get_supabase_rls = get_insforge_rls
+get_supabase_admin = get_insforge_admin
