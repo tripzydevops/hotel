@@ -83,7 +83,7 @@ const HeartbeatMonitor = () => {
 
   if (isLoading && !metrics) {
     return (
-      <div className="glass-card p-12 flex flex-col items-center justify-center border border-white/5">
+      <div className="glass-card p-12 flex flex-col items-center justify-center border border-[var(--overlay-border)]">
         <RefreshCw className="w-8 h-8 animate-spin text-[var(--soft-gold)] mb-4" />
         <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em]">Synchronizing Neural Heartbeat...</p>
       </div>
@@ -94,7 +94,7 @@ const HeartbeatMonitor = () => {
     <div className="space-y-6">
       {/* Top Header/Status Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="glass-card border border-white/5 p-6 relative overflow-hidden group">
+        <div className="glass-card border border-[var(--overlay-border)] p-6 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[40px] opacity-20 -z-10 group-hover:opacity-40 transition-opacity" />
           <div className="flex justify-between items-start mb-4">
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -118,7 +118,7 @@ const HeartbeatMonitor = () => {
           </div>
         </div>
 
-        <div className="glass-card border border-white/5 p-6 relative overflow-hidden group">
+        <div className="glass-card border border-[var(--overlay-border)] p-6 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-[40px] opacity-20 -z-10 group-hover:opacity-40 transition-opacity" />
           <div className="flex justify-between items-start mb-4">
             <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
@@ -126,7 +126,7 @@ const HeartbeatMonitor = () => {
             </div>
             <div className="text-right">
               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">Uptime (24h)</span>
-              <h4 className="text-xl font-black text-white tabular-nums mt-1">
+              <h4 className="text-xl font-black text-[var(--overlay-text)] tabular-nums mt-1">
                 {metrics?.uptime_24h || 99.9}%
               </h4>
             </div>
@@ -134,7 +134,7 @@ const HeartbeatMonitor = () => {
           <p className="text-[9px] font-black text-blue-400/60 uppercase tracking-widest mt-4">Target: 99.9%</p>
         </div>
 
-        <div className="glass-card border border-white/5 p-6 relative overflow-hidden group">
+        <div className="glass-card border border-[var(--overlay-border)] p-6 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 blur-[40px] opacity-20 -z-10 group-hover:opacity-40 transition-opacity" />
           <div className="flex justify-between items-start mb-4">
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
@@ -142,7 +142,7 @@ const HeartbeatMonitor = () => {
             </div>
             <div className="text-right">
               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">Avg Latency</span>
-              <h4 className="text-xl font-black text-white tabular-nums mt-1">
+              <h4 className="text-xl font-black text-[var(--overlay-text)] tabular-nums mt-1">
                 {metrics?.avg_latency || 0}ms
               </h4>
             </div>
@@ -150,7 +150,7 @@ const HeartbeatMonitor = () => {
           <p className="text-[9px] font-black text-purple-400/60 uppercase tracking-widest mt-4">P95 Response Time</p>
         </div>
 
-        <div className="glass-card border border-white/5 p-6 relative overflow-hidden group">
+        <div className="glass-card border border-[var(--overlay-border)] p-6 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--soft-gold)]/10 blur-[40px] opacity-20 -z-10 group-hover:opacity-40 transition-opacity" />
           <div className="flex justify-between items-start mb-4">
             <div className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-[var(--soft-gold)]">
@@ -158,7 +158,7 @@ const HeartbeatMonitor = () => {
             </div>
             <div className="text-right">
               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">Active Nodes</span>
-              <h4 className="text-xl font-black text-white tabular-nums mt-1">
+              <h4 className="text-xl font-black text-[var(--overlay-text)] tabular-nums mt-1">
                 {metrics?.active_nodes || 0}
               </h4>
             </div>
@@ -170,10 +170,10 @@ const HeartbeatMonitor = () => {
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Provider Health List */}
-        <div className="glass-card border border-white/5 p-8 overflow-hidden">
+        <div className="glass-card border border-[var(--overlay-border)] p-8 overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Provider Health</h3>
+              <h3 className="text-xs font-black text-[var(--overlay-text)] uppercase tracking-[0.2em]">Provider Health</h3>
               <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">External API Dependencies</p>
             </div>
             <BarChart3 className="w-4 h-4 text-[var(--soft-gold)] opacity-50" />
@@ -181,11 +181,11 @@ const HeartbeatMonitor = () => {
 
           <div className="space-y-4">
             {metrics?.provider_health.map((p: ProviderHealth, idx: number) => (
-              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 group hover:border-white/20 transition-all">
+              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-[var(--overlay-border)] group hover:border-white/20 transition-all">
                 <div className="flex items-center gap-3">
                   <StatusIcon status={p.status} />
                   <div>
-                    <p className="text-xs font-bold text-white tracking-tight">{p.name}</p>
+                    <p className="text-xs font-bold text-[var(--overlay-text)] tracking-tight">{p.name}</p>
                     <p className="text-[9px] text-[var(--text-muted)] uppercase font-medium">{p.latency_avg}ms Latency</p>
                   </div>
                 </div>
@@ -205,10 +205,10 @@ const HeartbeatMonitor = () => {
         </div>
 
         {/* Scan Volume Timeline */}
-        <div className="lg:col-span-2 glass-card border border-white/5 p-8 relative">
+        <div className="lg:col-span-2 glass-card border border-[var(--overlay-border)] p-8 relative">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Scan Intent Density</h3>
+              <h3 className="text-xs font-black text-[var(--overlay-text)] uppercase tracking-[0.2em]">Scan Intent Density</h3>
               <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Real-time Batch Frequency (Last 24h)</p>
             </div>
             <div className="flex items-center gap-2">

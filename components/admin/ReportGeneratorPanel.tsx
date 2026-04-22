@@ -116,7 +116,7 @@ export default function ReportGeneratorPanel() {
       {/* Report Type Toggle */}
       <div className="glass-card p-4">
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-400 font-medium">
+          <span className="text-sm text-[var(--text-muted)] font-medium">
             Report Type:
           </span>
           <div className="flex gap-2">
@@ -128,7 +128,7 @@ export default function ReportGeneratorPanel() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 reportType === "in-depth"
                   ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300"
-                  : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-white"
+                  : "bg-slate-800 border border-slate-700 text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               }`}
             >
               🔍 In-depth Analysis
@@ -141,7 +141,7 @@ export default function ReportGeneratorPanel() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 reportType === "comparison"
                   ? "bg-blue-500/20 border border-blue-500/50 text-blue-300"
-                  : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-white"
+                  : "bg-slate-800 border border-slate-700 text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               }`}
             >
               📊 Comparison Report
@@ -160,7 +160,7 @@ export default function ReportGeneratorPanel() {
         <div className="flex-1 space-y-6">
           {/* City Filter */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-bold text-white mb-4">
+            <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-4">
               1. Select City
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -171,7 +171,7 @@ export default function ReportGeneratorPanel() {
                   className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                     selectedCity === city
                       ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300"
-                      : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-white"
+                      : "bg-slate-800 border border-slate-700 text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
                   }`}
                 >
                   {city}
@@ -182,13 +182,13 @@ export default function ReportGeneratorPanel() {
 
           {/* Hotel Selection */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-bold text-white mb-4">
+            <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-4">
               2. Select Hotel{reportType === "comparison" ? "s (Max 3)" : ""}
             </h3>
             <input
               type="text"
               placeholder="Search hotels..."
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white mb-4 focus:ring-2 focus:ring-emerald-500/50 outline-none"
+              className="w-full bg-[var(--bg-subtle)] border border-slate-700 rounded-lg px-4 py-2 text-sm text-[var(--overlay-text)] mb-4 focus:ring-2 focus:ring-emerald-500/50 outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -208,8 +208,8 @@ export default function ReportGeneratorPanel() {
                     onClick={() => toggleHotel(String(h.id))}
                     className={`p-3 rounded-lg cursor-pointer border transition-all ${
                       selectedHotels.includes(String(h.id))
-                        ? "bg-emerald-500/20 border-emerald-500/50 text-white"
-                        : "bg-slate-800/50 border-transparent hover:bg-slate-800 text-slate-400"
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-[var(--overlay-text)]"
+                        : "bg-slate-800/50 border-transparent hover:bg-slate-800 text-[var(--text-muted)]"
                     }`}
                   >
                     <div className="flex justify-between items-center">
@@ -228,7 +228,7 @@ export default function ReportGeneratorPanel() {
               )}
             </div>
             {selectedHotels.length > 0 && (
-              <div className="mt-3 text-xs text-slate-400">
+              <div className="mt-3 text-xs text-[var(--text-muted)]">
                 Selected: {selectedHotels.length} / {maxHotels}
               </div>
             )}
@@ -236,7 +236,7 @@ export default function ReportGeneratorPanel() {
 
           {/* Analysis Period */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-bold text-white mb-4">
+            <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-4">
               3. Analysis Period
             </h3>
             <div className="flex gap-3">
@@ -247,7 +247,7 @@ export default function ReportGeneratorPanel() {
                   className={`flex-1 py-3 rounded-lg border font-medium transition-all ${
                     periodMonths === m
                       ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
-                      : "bg-slate-800 border-slate-700 text-slate-400 hover:text-white"
+                      : "bg-slate-800 border-slate-700 text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
                   }`}
                 >
                   {m} Months
@@ -262,7 +262,7 @@ export default function ReportGeneratorPanel() {
             className={`w-full py-4 rounded-lg font-bold text-lg transition-all ${
               loading || selectedHotels.length === 0
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20"
+                : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-[var(--overlay-text)] shadow-lg shadow-emerald-900/20"
             }`}
           >
             {loading
@@ -280,11 +280,11 @@ export default function ReportGeneratorPanel() {
                   <div className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">
                     Analysis Complete
                   </div>
-                  <h2 className="text-2xl font-bold text-white">
+                  <h2 className="text-2xl font-bold text-[var(--overlay-text)]">
                     {generatedReport.title}
                   </h2>
                 </div>
-                <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm flex items-center gap-2 transition-colors">
+                <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[var(--overlay-text)] rounded-lg text-sm flex items-center gap-2 transition-colors">
                   <span>📄</span> Download PDF
                 </button>
               </div>
@@ -294,7 +294,7 @@ export default function ReportGeneratorPanel() {
                   (insight: string, i: number) => (
                     <div
                       key={i}
-                      className="p-4 bg-slate-900/50 rounded-lg border border-slate-800"
+                      className="p-4 bg-[var(--bg-subtle)]/50 rounded-lg border border-slate-800"
                     >
                       <div className="flex gap-3">
                         <div className="mt-1 text-emerald-400">⚡</div>
@@ -316,7 +316,7 @@ export default function ReportGeneratorPanel() {
                           <div className="text-xs text-slate-500 mb-1">
                             {h.hotel?.name || "Hotel"}
                           </div>
-                          <div className="text-xl font-bold text-white">
+                          <div className="text-xl font-bold text-[var(--overlay-text)]">
                             ${h.metrics?.avg_price || "N/A"}
                           </div>
                           <div className="text-xs text-emerald-400">
@@ -330,11 +330,11 @@ export default function ReportGeneratorPanel() {
               )}
             </div>
           ) : (
-            <div className="h-full glass-card bg-slate-900/20 border-dashed border-slate-800 flex flex-col items-center justify-center p-8 text-center">
+            <div className="h-full glass-card bg-[var(--bg-subtle)]/20 border-dashed border-slate-800 flex flex-col items-center justify-center p-8 text-center">
               <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-3xl mb-4 grayscale opacity-50">
                 {reportType === "in-depth" ? "🔍" : "📊"}
               </div>
-              <h3 className="text-lg font-medium text-slate-400 mb-2">
+              <h3 className="text-lg font-medium text-[var(--text-muted)] mb-2">
                 Ready to Analyze
               </h3>
               <p className="text-sm text-slate-500 max-w-xs">

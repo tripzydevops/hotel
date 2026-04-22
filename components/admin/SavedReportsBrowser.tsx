@@ -47,7 +47,7 @@ export default function SavedReportsBrowser() {
 
   if (loading)
     return (
-      <div className="p-8 text-white/50 text-center">Loading Archives...</div>
+      <div className="p-8 text-[var(--text-muted)] text-center">Loading Archives...</div>
     );
 
   if (reports.length === 0) {
@@ -63,7 +63,7 @@ export default function SavedReportsBrowser() {
 
   return (
     <div className="space-y-4 mt-8">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-4 flex items-center gap-2">
         <span className="text-blue-400">📂</span> Deployment Archives
       </h3>
 
@@ -82,7 +82,7 @@ export default function SavedReportsBrowser() {
                 )}
               </div>
               <div>
-                <div className="font-bold text-white group-hover:text-blue-300 transition-colors">
+                <div className="font-bold text-[var(--overlay-text)] group-hover:text-blue-300 transition-colors">
                   {report.title}
                 </div>
                 <div className="text-xs text-slate-500 flex gap-2">
@@ -98,7 +98,7 @@ export default function SavedReportsBrowser() {
             <div className="flex gap-2">
               <button
                 onClick={() => downloadPdf(report.id, report.title)}
-                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-slate-700 rounded-lg text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
                 title="Download PDF"
               >
                 <Download className="w-5 h-5" />

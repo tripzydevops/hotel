@@ -151,7 +151,7 @@ export default function AdminMasterListPage() {
             <List className="w-6 h-6 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--overlay-text)]">
               Master Hotel List
             </h1>
             <p className="text-[var(--text-muted)] mt-1">
@@ -163,7 +163,7 @@ export default function AdminMasterListPage() {
         <button
           onClick={loadHotels}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-lg transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -182,7 +182,7 @@ export default function AdminMasterListPage() {
       )}
 
       {/* Filters */}
-      <div className="glass-card p-4 border border-white/10 mb-6">
+      <div className="glass-card p-4 border border-[var(--overlay-border)] mb-6">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-64 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -191,7 +191,7 @@ export default function AdminMasterListPage() {
               placeholder="Search hotels, locations, or users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-[var(--text-muted)]"
+              className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg pl-10 pr-4 py-2 text-[var(--overlay-text)] placeholder:text-[var(--text-muted)]"
             />
           </div>
 
@@ -199,7 +199,7 @@ export default function AdminMasterListPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+              className="bg-white/5 border border-[var(--overlay-border)] rounded-lg px-4 py-2 text-[var(--overlay-text)]"
             >
               <option value="created">Sort by Date</option>
               <option value="name">Sort by Name</option>
@@ -211,7 +211,7 @@ export default function AdminMasterListPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 showTargetOnly
                   ? "bg-[var(--soft-gold)] text-black font-medium"
-                  : "bg-white/5 text-[var(--text-muted)] hover:text-white"
+                  : "bg-white/5 text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               }`}
             >
               <Building2 className="w-4 h-4" />
@@ -223,13 +223,13 @@ export default function AdminMasterListPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="glass-card p-4 border border-white/10">
+        <div className="glass-card p-4 border border-[var(--overlay-border)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
             Total Hotels
           </div>
-          <div className="text-2xl font-bold text-white">{hotels.length}</div>
+          <div className="text-2xl font-bold text-[var(--overlay-text)]">{hotels.length}</div>
         </div>
-        <div className="glass-card p-4 border border-white/10">
+        <div className="glass-card p-4 border border-[var(--overlay-border)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
             Target Hotels
           </div>
@@ -237,26 +237,26 @@ export default function AdminMasterListPage() {
             {hotels.filter((h) => h.is_target_hotel).length}
           </div>
         </div>
-        <div className="glass-card p-4 border border-white/10">
+        <div className="glass-card p-4 border border-[var(--overlay-border)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
             Unique Users
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-[var(--overlay-text)]">
             {new Set(hotels.map((h) => h.user_id)).size}
           </div>
         </div>
-        <div className="glass-card p-4 border border-white/10">
+        <div className="glass-card p-4 border border-[var(--overlay-border)]">
           <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">
             With Prices
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-[var(--overlay-text)]">
             {hotels.filter((h) => h.last_price).length}
           </div>
         </div>
       </div>
 
       {/* Hotels Table */}
-      <div className="glass-card border border-white/10 overflow-hidden">
+      <div className="glass-card border border-[var(--overlay-border)] overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)] mx-auto mb-4" />
@@ -283,7 +283,7 @@ export default function AdminMasterListPage() {
                         <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
                       </div>
                       <div>
-                        <div className="font-medium text-white flex items-center gap-2">
+                        <div className="font-medium text-[var(--overlay-text)] flex items-center gap-2">
                           {hotel.name}
                           {hotel.serp_api_id && (
                             <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
@@ -299,13 +299,13 @@ export default function AdminMasterListPage() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="text-white text-xs">
+                    <div className="text-[var(--overlay-text)] text-xs">
                       {hotel.user_display || hotel.user_id.slice(0, 8) + "..."}
                     </div>
                   </td>
                   <td className="p-4">
                     {hotel.last_price ? (
-                      <span className="text-white font-medium">
+                      <span className="text-[var(--overlay-text)] font-medium">
                         {getCurrencySymbol(hotel.last_currency)}
                         {hotel.last_price.toLocaleString()}
                       </span>
@@ -335,7 +335,7 @@ export default function AdminMasterListPage() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEdit(hotel)}
-                        className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] hover:text-white transition-colors"
+                        className="p-2 hover:bg-white/10 rounded text-[var(--soft-gold)] hover:text-[var(--overlay-text)] transition-colors"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -371,12 +371,12 @@ export default function AdminMasterListPage() {
       {/* Edit Modal */}
       {editingHotel && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-card p-6 border border-white/10 w-full max-w-md mx-4">
+          <div className="glass-card p-6 border border-[var(--overlay-border)] w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Edit Hotel</h3>
+              <h3 className="text-xl font-bold text-[var(--overlay-text)]">Edit Hotel</h3>
               <button
                 onClick={() => setEditingHotel(null)}
-                className="text-[var(--text-muted)] hover:text-white"
+                className="text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -393,7 +393,7 @@ export default function AdminMasterListPage() {
                   onChange={(e) =>
                     setEditForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg px-4 py-2 text-[var(--overlay-text)]"
                 />
               </div>
               <div>
@@ -406,7 +406,7 @@ export default function AdminMasterListPage() {
                   onChange={(e) =>
                     setEditForm((f) => ({ ...f, location: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg px-4 py-2 text-[var(--overlay-text)]"
                 />
               </div>
               <div>
@@ -419,7 +419,7 @@ export default function AdminMasterListPage() {
                   onChange={(e) =>
                     setEditForm((f) => ({ ...f, serp_api_id: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white font-mono text-xs"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg px-4 py-2 text-[var(--overlay-text)] font-mono text-xs"
                   placeholder="Optional"
                 />
               </div>
@@ -436,7 +436,7 @@ export default function AdminMasterListPage() {
                   }
                   className="w-4 h-4"
                 />
-                <label htmlFor="is_target" className="text-white">
+                <label htmlFor="is_target" className="text-[var(--overlay-text)]">
                   This is a target hotel (not competitor)
                 </label>
               </div>
@@ -445,7 +445,7 @@ export default function AdminMasterListPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setEditingHotel(null)}
-                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-lg transition-colors"
               >
                 Cancel
               </button>

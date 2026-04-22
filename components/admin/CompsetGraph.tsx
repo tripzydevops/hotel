@@ -73,13 +73,13 @@ export default function CompsetGraph({
   return (
     <div
       ref={containerRef}
-      className="h-[400px] w-full bg-[#0f172a] rounded-xl border border-white/10 relative overflow-hidden"
+      className="h-[400px] w-full bg-[#0f172a] rounded-xl border border-[var(--overlay-border)] relative overflow-hidden"
     >
       <div className="absolute top-4 left-4 z-10">
-        <h3 className="text-sm font-medium text-white/90">
+        <h3 className="text-sm font-medium text-[var(--overlay-text)]/90">
           Competitive Network
         </h3>
-        <p className="text-xs text-white/50">
+        <p className="text-xs text-[var(--text-muted)]">
           {links.length} relationships active
         </p>
       </div>
@@ -131,7 +131,7 @@ export default function CompsetGraph({
                 }
               `}
             >
-              <div className="text-[10px] font-bold text-white">
+              <div className="text-[10px] font-bold text-[var(--overlay-text)]">
                 {isTarget ? "YOU" : "COMP"}
               </div>
               {/* Pulse Effect for Target */}
@@ -141,7 +141,7 @@ export default function CompsetGraph({
             </div>
 
             <div
-              className={`mt-2 px-2 py-1 rounded bg-black/50 backdrop-blur text-xs text-white whitespace-nowrap border border-white/10 ${isTarget ? "font-bold text-blue-200" : "text-slate-300"}`}
+              className={`mt-2 px-2 py-1 rounded bg-black/50 backdrop-blur text-xs text-[var(--overlay-text)] whitespace-nowrap border border-[var(--overlay-border)] ${isTarget ? "font-bold text-blue-200" : "text-slate-300"}`}
             >
               {node.label}
             </div>

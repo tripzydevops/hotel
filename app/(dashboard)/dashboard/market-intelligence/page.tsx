@@ -51,11 +51,11 @@ export default function MarketIntelligencePage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617] p-6 text-center">
                 <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-2xl max-w-md">
-                    <h2 className="text-xl font-bold text-white mb-2">Market Data Unavailable</h2>
-                    <p className="text-slate-400 mb-6">{error}</p>
+                    <h2 className="text-xl font-bold text-[var(--overlay-text)] mb-2">Market Data Unavailable</h2>
+                    <p className="text-[var(--text-muted)] mb-6">{error}</p>
                     <button 
                         onClick={() => window.location.reload()}
-                        className="flex items-center gap-2 mx-auto px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg border border-white/10 transition-colors"
+                        className="flex items-center gap-2 mx-auto px-6 py-2 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-lg border border-[var(--overlay-border)] transition-colors"
                     >
                         <RefreshCw className="w-4 h-4" />
                         Retry Connection
@@ -95,8 +95,8 @@ export default function MarketIntelligencePage() {
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Market Intelligence</h1>
-                    <p className="text-slate-400">Localized demand signals & predictive compression.</p>
+                    <h1 className="text-3xl font-bold text-[var(--overlay-text)] tracking-tight">Market Intelligence</h1>
+                    <p className="text-[var(--text-muted)]">Localized demand signals & predictive compression.</p>
                     {!loading && metadata?.last_synced && (
                         <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
                             <RefreshCw className="w-2.5 h-2.5" />
@@ -114,20 +114,20 @@ export default function MarketIntelligencePage() {
                     <button
                         onClick={handleExportCSV}
                         disabled={loading || data.length === 0}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg border border-white/10 transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] text-xs font-bold rounded-lg border border-[var(--overlay-border)] transition-all disabled:opacity-50"
                     >
                         <Search className="w-3.5 h-3.5" />
                         Download CSV
                     </button>
 
                     {/* Date Selector */}
-                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
+                    <div className="flex bg-white/5 p-1 rounded-lg border border-[var(--overlay-border)]">
                         {[30, 60, 90].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setDays(d)}
                                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                                    days === d ? "bg-[var(--soft-gold)] text-black" : "text-slate-400 hover:text-white"
+                                    days === d ? "bg-[var(--soft-gold)] text-black" : "text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
                                 }`}
                             >
                                 {d}D
@@ -140,10 +140,10 @@ export default function MarketIntelligencePage() {
                             value={city}
                             onChange={handleCityChange}
                             disabled={loadingCities}
-                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-60 cursor-pointer disabled:opacity-50"
+                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-60 cursor-pointer disabled:opacity-50"
                         >
                             {cities.map(c => (
-                                <option key={c} value={c} className="bg-slate-900 text-white">
+                                <option key={c} value={c} className="bg-[var(--bg-subtle)] text-[var(--overlay-text)]">
                                     {c}
                                 </option>
                             ))}
@@ -164,7 +164,7 @@ export default function MarketIntelligencePage() {
                         { label: "Critical Days", value: metadata.critical_days_count, sub: "High Risk", color: "text-orange-400" },
                         { label: "Total Signals", value: metadata.total_signals, sub: "Market Events", color: "text-[#A855F7]" },
                     ].map((kpi, i) => (
-                        <BentoTile key={i} className="bg-white/5 border-white/10 p-4">
+                        <BentoTile key={i} className="bg-white/5 border-[var(--overlay-border)] p-4">
                             <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider ">{kpi.label}</span>
                             <div className="flex items-baseline gap-2 mt-1">
                                 <span className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</span>
@@ -192,7 +192,7 @@ export default function MarketIntelligencePage() {
                                         <div className="p-1.5 rounded-lg bg-blue-500/20">
                                             <Info className="w-4 h-4 text-blue-400" />
                                         </div>
-                                        <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+                                        <h3 className="text-xs font-black text-[var(--overlay-text)] uppercase tracking-[0.2em]">
                                             Strategic Market Rationale
                                         </h3>
                                         <span className="text-[10px] text-slate-500 font-mono ml-auto">
@@ -229,7 +229,7 @@ export default function MarketIntelligencePage() {
             {loading && data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[50vh]">
                     <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-                    <p className="text-slate-400 italic">Ingesting Turkish demand signals...</p>
+                    <p className="text-[var(--text-muted)] italic">Ingesting Turkish demand signals...</p>
                 </div>
             ) : (
                 <motion.div
@@ -253,7 +253,7 @@ export default function MarketIntelligencePage() {
                                 <Tooltip 
                                     content={
                                         <div className="max-w-xs space-y-1">
-                                            <p className="font-bold border-b border-white/10 pb-1 mb-1">Market Intensity Signals</p>
+                                            <p className="font-bold border-b border-[var(--overlay-border)] pb-1 mb-1">Market Intensity Signals</p>
                                             <p>Clusters of dots indicate high-density market events.</p>
                                             <p className="text-[#A855F7] font-medium">Purple: Trade Fairs (TOBB)</p>
                                             <p className="text-[#F97316] font-medium">Orange: Tourism Announcements (TGA)</p>
@@ -263,7 +263,7 @@ export default function MarketIntelligencePage() {
                                     side="left"
                                 >
                                     <div className="p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-help">
-                                        <Info className="w-4 h-4 text-slate-400" />
+                                        <Info className="w-4 h-4 text-[var(--text-muted)]" />
                                     </div>
                                 </Tooltip>
                             </div>
@@ -304,10 +304,10 @@ export default function MarketIntelligencePage() {
                         <div className="flex items-center justify-between mb-8 relative z-10">
                             <h4 className="text-[10px] font-black text-[#F6C344] uppercase tracking-[0.3em]">Market Risk Analysis</h4>
                             <div className="flex items-center gap-2">
-                                <button className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                                <button className="p-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 transition-colors">
                                     <ChevronLeft className="w-3.5 h-3.5 text-[#F6C344]" />
                                 </button>
-                                <button className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                                <button className="p-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 transition-colors">
                                     <ChevronRight className="w-3.5 h-3.5 text-[#F6C344]" />
                                 </button>
                             </div>
@@ -316,24 +316,24 @@ export default function MarketIntelligencePage() {
                         <div className="flex-1 space-y-8 relative z-10">
                             <div className="space-y-1">
                                 <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
-                                <div className="text-3xl font-black text-white tracking-tight">
+                                <div className="text-3xl font-black text-[var(--overlay-text)] tracking-tight">
                                     {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)]">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
                                     <span className="text-sm font-black text-emerald-400">92%</span>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)]">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
                                     <span className="text-sm font-black text-blue-400">High</span>
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-white/10">
-                                <p className="text-xs text-slate-400 leading-relaxed italic">
+                            <div className="pt-6 border-t border-[var(--overlay-border)]">
+                                <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
                                     "Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression."
                                 </p>
                             </div>

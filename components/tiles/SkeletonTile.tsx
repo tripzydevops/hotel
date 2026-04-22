@@ -24,7 +24,7 @@ export default function SkeletonTile({ large = false }: { large?: boolean }) {
         <div className="h-3 w-20 skeleton rounded" />
       </div>
 
-      <div className="pt-4 border-t border-white/5 flex justify-between">
+      <div className="pt-4 border-t border-[var(--overlay-border)] flex justify-between">
         <div className="h-4 w-12 skeleton rounded" />
         <div className="h-4 w-12 skeleton rounded" />
         <div className="h-4 w-12 skeleton rounded" />

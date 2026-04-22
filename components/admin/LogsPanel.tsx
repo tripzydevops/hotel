@@ -33,11 +33,11 @@ const LogsPanel = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-4 px-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-center">
               <FileText className="w-5 h-5 text-[var(--soft-gold)]" />
             </div>
             <div>
-              <h3 className="text-xs font-black text-white uppercase tracking-widest">
+              <h3 className="text-xs font-black text-[var(--overlay-text)] uppercase tracking-widest">
                 System Audit Logs
               </h3>
               <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-tighter opacity-50">
@@ -47,13 +47,13 @@ const LogsPanel = () => {
           </div>
           <button
             onClick={loadLogs}
-            className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-white/5 transition-all active:scale-95"
+            className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-[var(--overlay-border)] transition-all active:scale-95"
           >
             Refresh Logs
           </button>
         </div>
 
-        <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+        <div className="glass-card border border-[var(--overlay-border)] overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
           {loading && logs.length === 0 ? (
             <div className="p-24 text-center">
               <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mx-auto opacity-50" />
@@ -61,7 +61,7 @@ const LogsPanel = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+                <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-[var(--overlay-border)]">
                   <tr>
                     <th className="p-5">Timestamp</th>
                     <th className="p-5">Log Level</th>
@@ -75,7 +75,7 @@ const LogsPanel = () => {
                       key={log.id}
                       className="hover:bg-white/[0.02] transition-colors group"
                     >
-                      <td className="p-5 text-[var(--text-muted)] whitespace-nowrap font-mono text-[11px] opacity-70 group-hover:opacity-100 group-hover:text-white transition-all">
+                      <td className="p-5 text-[var(--text-muted)] whitespace-nowrap font-mono text-[11px] opacity-70 group-hover:opacity-100 group-hover:text-[var(--overlay-text)] transition-all">
                         {formatDistanceToNow(new Date(log.timestamp), {
                           addSuffix: true,
                         })}
@@ -94,13 +94,13 @@ const LogsPanel = () => {
                         </span>
                       </td>
                       <td className="p-5">
-                        <span className="text-white font-bold tracking-tight text-sm flex items-center gap-2">
+                        <span className="text-[var(--overlay-text)] font-bold tracking-tight text-sm flex items-center gap-2">
                           <Shield className="w-3.5 h-3.5 text-[var(--soft-gold)] opacity-40 group-hover:opacity-100 transition-opacity" />
                           {log.action}
                         </span>
                       </td>
                       <td className="p-5">
-                        <div className="text-[var(--text-muted)] text-[11px] font-mono bg-black/20 p-2.5 rounded-lg border border-white/5 opacity-60 group-hover:opacity-100 group-hover:border-[var(--soft-gold)]/20 transition-all max-w-md truncate">
+                        <div className="text-[var(--text-muted)] text-[11px] font-mono bg-black/20 p-2.5 rounded-lg border border-[var(--overlay-border)] opacity-60 group-hover:opacity-100 group-hover:border-[var(--soft-gold)]/20 transition-all max-w-md truncate">
                           {log.details}
                         </div>
                       </td>

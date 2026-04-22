@@ -97,7 +97,7 @@ export default function CalendarControls({
 
       {/* LEFT: Room Type Selector */}
       <div className="flex items-center gap-3 w-full md:w-auto">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[var(--soft-gold)]">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--soft-gold)]">
           <BedDouble className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Room Type</span>
         </div>
@@ -110,16 +110,16 @@ export default function CalendarControls({
               const actualRoom = getFirstRoomForCategory(category);
               if (actualRoom) onRoomTypeChange(actualRoom);
             }}
-            className="w-full appearance-none bg-[var(--deep-ocean-lighter)] border border-[var(--soft-gold)]/20 text-white text-xs font-bold rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer hover:bg-[var(--deep-ocean-lighter)]/80 transition-colors"
+            className="w-full appearance-none bg-[var(--deep-ocean-lighter)] border border-[var(--soft-gold)]/20 text-[var(--overlay-text)] text-xs font-bold rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)] cursor-pointer hover:bg-[var(--deep-ocean-lighter)]/80 transition-colors"
 
           >
             {!roomType && (
-              <option value="" disabled className="bg-[var(--deep-ocean)] text-white/40">
+              <option value="" disabled className="bg-[var(--deep-ocean)] text-[var(--text-muted)]">
                 Select Room Type
               </option>
             )}
             {uniqueRoomCategories.map((category) => (
-              <option key={category} value={category} className="bg-[var(--deep-ocean)] text-white">
+              <option key={category} value={category} className="bg-[var(--deep-ocean)] text-[var(--overlay-text)]">
                 {category}
               </option>
             ))}
@@ -132,24 +132,24 @@ export default function CalendarControls({
       <div className="flex items-center p-1 rounded-xl bg-black/20 border border-[var(--soft-gold)]/20 shadow-inner">
         <button
           onClick={() => onNavigate(-7)}
-          className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
+          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
           title="Previous 7 days"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div className="px-6 py-1.5 flex flex-col items-center min-w-[180px] border-x border-white/5 mx-1">
+        <div className="px-6 py-1.5 flex flex-col items-center min-w-[180px] border-x border-[var(--overlay-border)] mx-1">
           <span className="text-[9px] font-black uppercase text-[var(--soft-gold)] tracking-widest mb-0.5">
             Viewing Range
           </span>
-          <span className="text-sm font-bold text-white whitespace-nowrap">
+          <span className="text-sm font-bold text-[var(--overlay-text)] whitespace-nowrap">
             {visibleRangeLabel}
           </span>
         </div>
 
         <button
           onClick={() => onNavigate(7)}
-          className="p-2 hover:bg-[var(--soft-gold)]/10 text-white/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
+          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
           title="Next 7 days"
         >
           <ChevronRight className="w-5 h-5" />
@@ -161,8 +161,8 @@ export default function CalendarControls({
         <button
           onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
           className={`flex items-center justify-between gap-3 w-full md:w-auto min-w-[200px] px-3 py-2.5 rounded-lg border text-xs font-bold transition-all ${isCompDropdownOpen
-              ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)] text-white"
-              : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+              ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)] text-[var(--overlay-text)]"
+              : "bg-white/5 border-[var(--overlay-border)] text-[var(--overlay-text)]/80 hover:bg-white/10"
             }`}
         >
           <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function CalendarControls({
           <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
             <div className="max-h-[300px] overflow-y-auto space-y-1 custom-scrollbar">
               {competitors.length === 0 ? (
-                <div className="p-4 text-center text-xs text-white/40 italic">
+                <div className="p-4 text-center text-xs text-[var(--text-muted)] italic">
                   No competitors found for this period.
                 </div>
               ) : (
@@ -205,7 +205,7 @@ export default function CalendarControls({
                         checked={isSelected}
                         onChange={() => toggleHotel(comp.id)}
                       />
-                      <span className={`text-xs truncate transition-colors ${isSelected ? "text-white font-medium" : "text-white/40 group-hover:text-white/80"}`}>
+                      <span className={`text-xs truncate transition-colors ${isSelected ? "text-[var(--overlay-text)] font-medium" : "text-[var(--text-muted)] group-hover:text-[var(--overlay-text)]/80"}`}>
                         {comp.name}
                       </span>
                     </label>
@@ -216,7 +216,7 @@ export default function CalendarControls({
 
             {/* Actions */}
             {competitors.length > 0 && (
-              <div className="pt-2 mt-2 border-t border-white/10 flex gap-2">
+              <div className="pt-2 mt-2 border-t border-[var(--overlay-border)] flex gap-2">
                 <button
                   onClick={() => onExcludedChange([])} // Select All = Clear Excluded
                   className="flex-1 py-1.5 text-[10px] font-bold text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/10 rounded"
@@ -225,7 +225,7 @@ export default function CalendarControls({
                 </button>
                 <button
                   onClick={() => onExcludedChange(competitors.map(c => c.id))} // Deselect All = Exclude All
-                  className="flex-1 py-1.5 text-[10px] font-bold text-white/40 hover:text-white hover:bg-white/5 rounded"
+                  className="flex-1 py-1.5 text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/5 rounded"
                 >
                   Clear
                 </button>

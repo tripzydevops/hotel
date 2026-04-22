@@ -72,13 +72,13 @@ const ActivityFeed = () => {
       <div className="absolute inset-x-0 h-[2px] bg-[var(--soft-gold)]/10 animate-[scan_4s_linear_infinite] pointer-events-none z-20" />
 
       {/* Header Overlay */}
-      <div className="p-6 bg-black/40 border-b border-white/5 flex justify-between items-center relative z-10 backdrop-blur-md">
+      <div className="p-6 bg-black/40 border-b border-[var(--overlay-border)] flex justify-between items-center relative z-10 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.05)]">
             <Terminal className="w-6 h-6 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <h3 className="text-[10px] font-black text-white flex items-center gap-3 uppercase tracking-[0.3em]">
+            <h3 className="text-[10px] font-black text-[var(--overlay-text)] flex items-center gap-3 uppercase tracking-[0.3em]">
               Live Activity Stream
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--optimal-green)] opacity-75"></span>
@@ -112,7 +112,7 @@ const ActivityFeed = () => {
               ))}
             </div>
           </div>
-          <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[var(--soft-gold)] font-mono text-[10px] flex items-center gap-2">
+          <div className="bg-white/5 border border-[var(--overlay-border)] px-4 py-2 rounded-xl text-[var(--soft-gold)] font-mono text-[10px] flex items-center gap-2">
             <Lock className="w-3.5 h-3.5" /> Secure Channel
           </div>
         </div>
@@ -135,7 +135,7 @@ const ActivityFeed = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group flex gap-6 hover:bg-white/[0.03] px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5"
+                className="group flex gap-6 hover:bg-white/[0.03] px-4 py-2 rounded-xl transition-all border border-transparent hover:border-[var(--overlay-border)]"
               >
                 <div className="text-[var(--text-muted)] w-24 shrink-0 flex flex-col pt-1">
                   <span className="font-black text-[9px] opacity-40 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -170,11 +170,11 @@ const ActivityFeed = () => {
                 names do not push the timestamp out of view or cause horizontal overflow
                 in the narrow feed sidebar.
               */}
-              <h4 className="font-bold text-white text-sm truncate max-w-[150px]">
+              <h4 className="font-bold text-[var(--overlay-text)] text-sm truncate max-w-[150px]">
                 {log.hotel_name || "Unknown"}
               </h4>
                     {log.price && (
-                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5 ml-auto shrink-0">
+                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-[var(--overlay-border)] ml-auto shrink-0">
                         <Zap className="w-3 h-3 text-[var(--soft-gold)]" />
                         <span className="text-[var(--soft-gold)] font-black tabular-nums whitespace-nowrap">
                           {log.price?.toLocaleString()} {log.currency}
@@ -199,7 +199,7 @@ const ActivityFeed = () => {
       </div>
 
       {/* Footer System Status */}
-      <div className="px-8 py-4 bg-black/40 border-t border-white/5 flex justify-between items-center text-[9px] font-mono text-[var(--text-muted)]">
+      <div className="px-8 py-4 bg-black/40 border-t border-[var(--overlay-border)] flex justify-between items-center text-[9px] font-mono text-[var(--text-muted)]">
         <div className="flex gap-10">
           <div className="flex items-center gap-2.5">
             <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_currentColor] ${
@@ -216,7 +216,7 @@ const ActivityFeed = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="opacity-40 uppercase">Last Sync:</span>
-          <span className="text-white font-black">
+          <span className="text-[var(--overlay-text)] font-black">
             {lastUpdate.toLocaleTimeString()}
           </span>
         </div>

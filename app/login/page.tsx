@@ -127,7 +127,7 @@ export default function LoginPage() {
       <div className="radial-glow" />
       <div className="bg-grain" />
 
-      <div className="w-full max-w-lg card-blur p-12 shadow-2xl relative z-10 group rounded-[3rem] border border-white/5">
+      <div className="w-full max-w-lg card-blur p-12 shadow-2xl relative z-10 group rounded-[3rem] border border-[var(--overlay-border)]">
         {/* Decorative Background Elements */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-[var(--soft-gold)]/10 rounded-full blur-3xl group-hover:bg-[var(--soft-gold)]/20 transition-all duration-1000" />
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-1000" />
@@ -166,7 +166,7 @@ export default function LoginPage() {
             <div className="w-20 h-20 bg-[var(--soft-gold)]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[var(--soft-gold)]/20">
                <span className="text-4xl">⏳</span>
             </div>
-            <h2 className="text-2xl font-black text-white italic">
+            <h2 className="text-2xl font-black text-[var(--overlay-text)] italic">
                {t("auth.pendingTitle") || "Approval Pending"}
             </h2>
             <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
@@ -178,7 +178,7 @@ export default function LoginPage() {
                  setIsLogin(true);
                  setError(null);
                }}
-               className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-[var(--soft-gold)] font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs"
+               className="w-full py-4 bg-white/5 border border-[var(--overlay-border)] rounded-xl text-[var(--soft-gold)] font-bold hover:bg-white/10 transition-all uppercase tracking-widest text-xs"
             >
                {t("auth.backToLogin") || "Back to Login"}
             </button>
@@ -198,7 +198,7 @@ export default function LoginPage() {
                 type="text"
                 required
                 maxLength={6}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white text-4xl text-center font-black tracking-[0.5em] placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-4 px-4 text-[var(--overlay-text)] text-4xl text-center font-black tracking-[0.5em] placeholder:text-[var(--overlay-text)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
                 placeholder="000000"
                 autoFocus
               />
@@ -208,7 +208,7 @@ export default function LoginPage() {
                 <button
                 disabled={isLoading}
                 className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-black text-lg transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${isLoading
-                    ? "bg-white/10 text-white/40 cursor-not-allowed"
+                    ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed"
                     : "bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] hover:shadow-[var(--soft-gold)]/20"
                     }`}
                 >
@@ -223,7 +223,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleResend}
                     disabled={isLoading}
-                    className="text-white/40 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors"
+                    className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest hover:text-[var(--overlay-text)] transition-colors"
                 >
                     {t("auth.resendButton")}
                 </button>
@@ -261,7 +261,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 defaultValue={emailForVerification}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-3 px-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
                 placeholder={t("auth.emailPlaceholder")}
               />
             </div>
@@ -278,7 +278,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-3 px-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/10"
                 placeholder="••••••••"
               />
             </div>
@@ -286,7 +286,7 @@ export default function LoginPage() {
             <button
               disabled={isLoading}
               className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-black text-lg transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${isLoading
-                ? "bg-white/10 text-white/40 cursor-not-allowed"
+                ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed"
                 : "bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] hover:shadow-[var(--soft-gold)]/20"
                 }`}
             >
@@ -303,7 +303,7 @@ export default function LoginPage() {
 
         {/* Toggle Section */}
         {!isVerifying && !isPendingApproval && (
-          <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
+          <div className="mt-8 pt-6 border-t border-[var(--overlay-border)] text-center relative z-10">
             <p className="text-[var(--text-muted)] text-sm mb-4">
               {isLogin ? t("auth.newToPlatform") : t("auth.alreadyHaveAccount")}
             </p>
@@ -312,7 +312,7 @@ export default function LoginPage() {
                 setIsLogin(!isLogin);
                 setError(null);
               }}
-              className="text-[var(--soft-gold)] font-bold hover:text-white transition-colors flex items-center gap-2 mx-auto decoration-2 underline-offset-4 hover:underline"
+              className="text-[var(--soft-gold)] font-bold hover:text-[var(--overlay-text)] transition-colors flex items-center gap-2 mx-auto decoration-2 underline-offset-4 hover:underline"
             >
               {isLogin ? t("auth.requestAccess") : t("auth.backToLogin")}
             </button>
@@ -325,13 +325,13 @@ export default function LoginPage() {
 
         <button 
           onClick={() => setShowDebug(!showDebug)}
-          className="mt-6 block mx-auto text-[11px] px-4 py-1.5 rounded-full border border-white/10 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all"
+          className="mt-6 block mx-auto text-[11px] px-4 py-1.5 rounded-full border border-[var(--overlay-border)] text-[var(--text-muted)] hover:text-[var(--overlay-text)]/80 hover:bg-white/5 transition-all"
         >
           {showDebug ? "Hide Debug System" : "Show Debug System"}
         </button>
 
         {showDebug && (
-          <div className="mt-4 p-4 bg-black/80 rounded-xl border border-white/10 text-[10px] font-mono text-green-400 overflow-auto max-h-48">
+          <div className="mt-4 p-4 bg-black/80 rounded-xl border border-[var(--overlay-border)] text-[10px] font-mono text-green-400 overflow-auto max-h-48">
             <pre>{JSON.stringify({
               config: {
                 // KAİZEN: Show actual client baseUrl instead of potentially stale env var

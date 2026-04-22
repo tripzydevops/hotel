@@ -49,8 +49,8 @@ const QUADRANT_STYLE: Record<string, { color: string; icon: React.ReactNode }> =
   "Premium King": { color: "text-[var(--soft-gold)]", icon: <Zap className="w-4 h-4" /> },
   "Budget / Economy": { color: "text-[var(--optimal-green)]", icon: <TrendingDown className="w-4 h-4" /> },
   "Danger Zone": { color: "text-red-400", icon: <AlertTriangle className="w-4 h-4" /> },
-  Standard: { color: "text-white/60", icon: <Target className="w-4 h-4" /> },
-  "Insufficient Data": { color: "text-white/40", icon: <AlertTriangle className="w-4 h-4" /> },
+  Standard: { color: "text-[var(--overlay-text)]/60", icon: <Target className="w-4 h-4" /> },
+  "Insufficient Data": { color: "text-[var(--text-muted)]", icon: <AlertTriangle className="w-4 h-4" /> },
 };
 
 export default function AdvisorQuadrant({
@@ -93,20 +93,20 @@ export default function AdvisorQuadrant({
           {/* Header */}
           {!compact && (
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 group/help">
-              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em]">
+              <h3 className="text-[10px] font-black text-[var(--overlay-text)] uppercase tracking-[0.15em]">
                 Advisor Quadrant
               </h3>
               <div className="relative">
                 <Zap className="w-3 h-3 text-[var(--soft-gold)] animate-pulse cursor-help" />
                 {/* Hover Explanation (Kaizen) */}
-                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-black/95 border border-white/10 rounded-xl shadow-2xl opacity-0 group-hover/help:opacity-100 transition-opacity pointer-events-none z-[100] backdrop-blur-xl">
+                <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-black/95 border border-[var(--overlay-border)] rounded-xl shadow-2xl opacity-0 group-hover/help:opacity-100 transition-opacity pointer-events-none z-[100] backdrop-blur-xl">
                   <div className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-1">Strategic Logic</div>
-                  <p className="text-[10px] leading-relaxed text-white/70">
+                  <p className="text-[10px] leading-relaxed text-[var(--overlay-text)]/70">
                     This matrix cross-references your <strong>Price Index (ARI)</strong> against your <strong>Value Index (Guest Satisfaction)</strong> to determine your current market territory.
                   </p>
                 </div>
               </div>
-              <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-white/10 uppercase">
+              <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-[var(--overlay-border)] uppercase">
                 Strategic Map
               </span>
             </div>
@@ -115,19 +115,19 @@ export default function AdvisorQuadrant({
           {/* Background Grid & Labels */}
           <div className="absolute inset-4 top-10 grid grid-cols-2 grid-rows-2 pointer-events-none opacity-20">
             {/* Top-Left: Danger Zone (High Price, Low Sentiment) */}
-            <div className="border-r border-b border-white/5 bg-red-500/10 flex items-center justify-center">
+            <div className="border-r border-b border-[var(--overlay-border)] bg-red-500/10 flex items-center justify-center">
               <div className="text-[8px] font-black uppercase tracking-widest text-red-400/80 -rotate-45">
                 Danger
               </div>
             </div>
             {/* Top-Right: Premium King (High Price, High Sentiment) */}
-            <div className="border-b border-white/5 bg-blue-500/10 flex items-center justify-center">
+            <div className="border-b border-[var(--overlay-border)] bg-blue-500/10 flex items-center justify-center">
               <div className="text-[8px] font-black uppercase tracking-widest text-blue-400 -rotate-45">
                 Premium
               </div>
             </div>
             {/* Bottom-Left: Economy (Low Price, Low Sentiment) */}
-            <div className="border-r border-white/5 bg-gray-500/10 flex items-center justify-center">
+            <div className="border-r border-[var(--overlay-border)] bg-gray-500/10 flex items-center justify-center">
               <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 -rotate-45">
                 Economy
               </div>
@@ -195,19 +195,19 @@ export default function AdvisorQuadrant({
               >
                 {/* Arrow */}
                 <div
-                  className={`absolute w-2.5 h-2.5 rotate-45 bg-black/90 border border-white/10
+                  className={`absolute w-2.5 h-2.5 rotate-45 bg-black/90 border border-[var(--overlay-border)]
                     ${leftPercent < 30 ? "left-4" : leftPercent > 70 ? "right-4" : "left-1/2 -translate-x-1/2"}
                     ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
                 />
-                <div className="relative bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl shadow-black/60">
+                <div className="relative bg-black/90 backdrop-blur-xl border border-[var(--overlay-border)] rounded-xl p-4 shadow-2xl shadow-black/60">
                   <div className={`flex items-center gap-2 mb-2 ${quadrantStyle.color}`}>
                     {quadrantStyle.icon}
                     <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-white/70 mb-3 whitespace-pre-line">
+                  <p className="text-[11px] leading-relaxed text-[var(--overlay-text)]/70 mb-3 whitespace-pre-line">
                     {customInsight || posDescription}
                   </p>
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--overlay-border)]">
                     <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
                     <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
                       {posAction}
@@ -234,7 +234,7 @@ export default function AdvisorQuadrant({
         </div>
 
         {/* Insights Panel - Right Side */}
-        <div className={`${compact ? "lg:w-[380px]" : "lg:w-[320px]"} p-6 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col justify-between`}>
+        <div className={`${compact ? "lg:w-[380px]" : "lg:w-[320px]"} p-6 bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-[var(--overlay-border)] flex flex-col justify-between`}>
           <div>
             {/* Current Position */}
             <div className="mb-6">
@@ -242,7 +242,7 @@ export default function AdvisorQuadrant({
                 {t("strategicMap.currentPosition")}
               </div>
               <div
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 ${quadrantStyle.color}`}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-[var(--overlay-border)] ${quadrantStyle.color}`}
               >
                 {quadrantStyle.icon}
                 <span className="text-sm font-black uppercase tracking-wide">
@@ -256,7 +256,7 @@ export default function AdvisorQuadrant({
               <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">
                 {t("strategicMap.marketInsight")}
               </div>
-              <p className="text-xs font-medium text-white/80 leading-relaxed whitespace-pre-line">
+              <p className="text-xs font-medium text-[var(--overlay-text)]/80 leading-relaxed whitespace-pre-line">
                 {customInsight || posInsight}
               </p>
             </div>
@@ -269,7 +269,7 @@ export default function AdvisorQuadrant({
               ARI (Average Rate Index): Your price divided by market average (×100).
               Together these two indices determine the quadrant position above. */}
           {/* Key Indices */}
-          <div className="space-y-4 pt-4 border-t border-white/5">
+          <div className="space-y-4 pt-4 border-t border-[var(--overlay-border)]">
             {/* Sentiment Index */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -291,7 +291,7 @@ export default function AdvisorQuadrant({
                 />
               </div>
               {/* Actual Ratings Display */}
-              <div className="flex justify-between text-[8px] font-bold text-white/40 uppercase tracking-widest ">
+              <div className="flex justify-between text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest ">
                 <span>You: {Number(targetRating)?.toFixed(1) || "N/A"}</span>
                 <span>Mkt: {Number(marketRating)?.toFixed(1) || "N/A"}</span>
               </div>
@@ -303,7 +303,7 @@ export default function AdvisorQuadrant({
                 <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                   ARI
                 </span>
-                <span className="text-xs font-black text-white">
+                <span className="text-xs font-black text-[var(--overlay-text)]">
                   {Number(ari)?.toFixed(1) || "100.0"}
                 </span>
               </div>

@@ -57,7 +57,7 @@ export default function ScanHistory({
           <button
             key={session.id}
             onClick={() => onOpenSession(session)}
-            className="group glass-card rounded-[2rem] px-6 py-5 flex items-center justify-between hover:bg-white/[0.04] transition-all border-white/5 hover:border-white/10 text-left"
+            className="group glass-card rounded-[2rem] px-6 py-5 flex items-center justify-between hover:bg-white/[0.04] transition-all border-[var(--overlay-border)] hover:border-[var(--overlay-border)] text-left"
           >
             <div className="flex items-center gap-6">
               <div

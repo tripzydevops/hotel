@@ -63,7 +63,7 @@ export default function AboutPage() {
             </p>
           </RevealSection>
           <RevealSection delay={100}>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
               Otelcilikte{" "}
               <span className="text-[var(--soft-gold)] gold-glow-text">Veri Devrimi</span>
             </h1>
@@ -83,7 +83,7 @@ export default function AboutPage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <RevealSection>
             <div>
-              <h2 className="text-3xl font-black text-white mb-6">
+              <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
                 Neden <span className="text-[var(--soft-gold)]">Hotel Plus</span>?
               </h2>
               <div className="space-y-4 text-[var(--text-secondary)] leading-relaxed">
@@ -109,11 +109,11 @@ export default function AboutPage() {
               <div className="mt-6 h-px bg-white/5" />
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-2xl font-bold text-white">3dk</p>
+                  <p className="text-2xl font-bold text-[var(--overlay-text)]">3dk</p>
                   <p className="text-xs text-[var(--text-muted)]">Kurulum süresi</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">7/24</p>
+                  <p className="text-2xl font-bold text-[var(--overlay-text)]">7/24</p>
                   <p className="text-xs text-[var(--text-muted)]">Otomatik tarama</p>
                 </div>
               </div>
@@ -130,7 +130,7 @@ export default function AboutPage() {
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
                 Nasıl Çalışır
               </p>
-              <h2 className="text-3xl md:text-4xl font-black text-white">
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--overlay-text)]">
                 3 Adımda <span className="text-[var(--soft-gold)]">Başlayın</span>
               </h2>
             </div>
@@ -159,7 +159,7 @@ export default function AboutPage() {
                   <div className="text-5xl font-black text-[var(--soft-gold)]/20 mb-4">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                  <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-3">{item.title}</h3>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                     {item.description}
                   </p>
@@ -174,7 +174,7 @@ export default function AboutPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
-            <h2 className="text-3xl font-black text-white mb-6">
+            <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
               Hemen <span className="text-[var(--soft-gold)]">Deneyimleyin</span>
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-8">

@@ -8,7 +8,7 @@ interface PaywallOverlayProps {
 export function PaywallOverlay({ reason = "Your trial has ended." }: PaywallOverlayProps) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-500">
-      <div className="glass-card max-w-md w-full p-8 text-center border border-white/10 shadow-2xl relative overflow-hidden">
+      <div className="glass-card max-w-md w-full p-8 text-center border border-[var(--overlay-border)] shadow-2xl relative overflow-hidden">
         {/* Decorative background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-[var(--soft-gold)]/20 blur-[50px] rounded-full -z-10" />
         
@@ -16,7 +16,7 @@ export function PaywallOverlay({ reason = "Your trial has ended." }: PaywallOver
           <Lock className="w-8 h-8 text-[var(--soft-gold)]" />
         </div>
         
-        <h2 className="text-2xl font-bold text-white mb-2">Access Locked</h2>
+        <h2 className="text-2xl font-bold text-[var(--overlay-text)] mb-2">Access Locked</h2>
         <p className="text-[var(--text-muted)] mb-8">
           {reason} <br/>
           To continue monitoring rates, please upgrade your plan.

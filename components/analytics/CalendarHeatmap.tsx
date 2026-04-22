@@ -110,7 +110,7 @@ export default function CalendarHeatmap({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-[var(--soft-gold)]" />
-          <h3 className="text-sm font-black text-white uppercase tracking-widest">
+          <h3 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest">
             Rate Calendar
           </h3>
         </div>
@@ -119,16 +119,16 @@ export default function CalendarHeatmap({
             onClick={goToPrevMonth}
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-white/70" />
+            <ChevronLeft className="w-4 h-4 text-[var(--overlay-text)]/70" />
           </button>
-          <span className="text-sm font-bold text-white min-w-[140px] text-center">
+          <span className="text-sm font-bold text-[var(--overlay-text)] min-w-[140px] text-center">
             {monthName}
           </span>
           <button
             onClick={goToNextMonth}
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <ChevronRight className="w-4 h-4 text-white/70" />
+            <ChevronRight className="w-4 h-4 text-[var(--overlay-text)]/70" />
           </button>
         </div>
       </div>
@@ -169,18 +169,18 @@ export default function CalendarHeatmap({
                 onMouseEnter={() => hasData && setHoveredDate(cell.date)}
                 onMouseLeave={() => setHoveredDate(null)}
               >
-                <div className="text-[10px] font-bold text-white/50">
+                <div className="text-[10px] font-bold text-[var(--text-muted)]">
                   {cell.day}
                 </div>
                 {hasData && (
                   <>
-                    <div className="text-sm font-black text-white">
+                    <div className="text-sm font-black text-[var(--overlay-text)]">
                       {symbol}
                       {data.price}
                     </div>
                     <div
                       className={`text-[9px] font-bold ${
-                        data.vs_comp > 0 ? "text-white/90" : "text-white/90"
+                        data.vs_comp > 0 ? "text-[var(--overlay-text)]/90" : "text-[var(--overlay-text)]/90"
                       }`}
                     >
                       {data.vs_comp > 0 ? "+" : ""}
@@ -195,7 +195,7 @@ export default function CalendarHeatmap({
 
         {/* Hover Popup - positioned left for better visibility */}
         {hoveredData && (
-          <div className="absolute top-0 left-0 z-[100] w-72 bg-[#0a0a14]/98 border border-white/10 rounded-xl shadow-2xl p-4 backdrop-blur-xl pointer-events-none">
+          <div className="absolute top-0 left-0 z-[100] w-72 bg-[#0a0a14]/98 border border-[var(--overlay-border)] rounded-xl shadow-2xl p-4 backdrop-blur-xl pointer-events-none">
             <div className="text-xs font-bold text-[var(--text-muted)] mb-2">
               {new Date(hoveredData.date + "T12:00:00").toLocaleDateString(
                 "en-US",
@@ -207,9 +207,9 @@ export default function CalendarHeatmap({
                 },
               )}
             </div>
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-[var(--overlay-border)]">
               <div className="text-center">
-                <div className="text-2xl font-black text-white">
+                <div className="text-2xl font-black text-[var(--overlay-text)]">
                   {symbol}
                   {hoveredData.price}
                 </div>
@@ -260,10 +260,10 @@ export default function CalendarHeatmap({
                   key={i}
                   className="flex items-center justify-between py-1.5 px-2 rounded bg-white/[0.02]"
                 >
-                  <span className="text-xs text-white/70 truncate max-w-[180px]">
+                  <span className="text-xs text-[var(--overlay-text)]/70 truncate max-w-[180px]">
                     {comp.name}
                   </span>
-                  <span className="text-xs font-bold text-white/70">
+                  <span className="text-xs font-bold text-[var(--overlay-text)]/70">
                     {symbol}
                     {Number(comp.price).toFixed(0)}
                   </span>
@@ -275,7 +275,7 @@ export default function CalendarHeatmap({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-white/5">
+      <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[var(--overlay-border)]">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-green-500/80" />
           <span className="text-[9px] text-[var(--text-muted)]">

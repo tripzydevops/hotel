@@ -63,10 +63,10 @@ export default function Toast({
       role="alert"
     >
       <div className="flex-shrink-0">{icons[type]}</div>
-      <p className="text-sm font-medium text-white">{message}</p>
+      <p className="text-sm font-medium text-[var(--overlay-text)]">{message}</p>
       <button
         onClick={handleClose}
-        className="ml-auto flex-shrink-0 p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+        className="ml-auto flex-shrink-0 p-1 rounded-full hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

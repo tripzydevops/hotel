@@ -36,7 +36,7 @@ export default function ParityPage() {
       <div className="flex items-center justify-between mb-8">
         <Link
           href="/analysis"
-          className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-white transition-colors"
+          className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Overview
@@ -46,7 +46,7 @@ export default function ParityPage() {
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isExporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export
@@ -60,7 +60,7 @@ export default function ParityPage() {
           <Share2 className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-white">Parity Monitor</h1>
+          <h1 className="text-2xl font-black text-[var(--overlay-text)]">Parity Monitor</h1>
           <p className="text-sm text-[var(--text-muted)]">
             OTA rate parity comparison and violation alerts
           </p>
@@ -77,7 +77,7 @@ export default function ParityPage() {
         <div className="glass-card p-8 flex items-center justify-center min-h-[400px]">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full" />
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[var(--text-muted)]">
               {!userId ? "Authenticating..." : "Loading parity data..."}
             </p>
           </div>

@@ -172,21 +172,21 @@ export default function RateMatrix({
   };
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 flex-grow border border-white/5 shadow-2xl">
+    <div className="card-blur rounded-[2.5rem] p-8 flex-grow border border-[var(--overlay-border)] shadow-2xl">
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-[var(--overlay-text)]">
               Rate Comparison Matrix
             </h2>
           </div>
           {/* Legend */}
           <div className="flex gap-2">
-            <span className="text-[10px] flex items-center gap-1 text-slate-400">
+            <span className="text-[10px] flex items-center gap-1 text-[var(--text-muted)]">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span> In
               Parity
             </span>
-            <span className="text-[10px] flex items-center gap-1 text-slate-400 ml-3">
+            <span className="text-[10px] flex items-center gap-1 text-[var(--text-muted)] ml-3">
               <span className="w-2 h-2 rounded-full bg-rose-500"></span>{" "}
               Undercut
             </span>
@@ -215,7 +215,7 @@ export default function RateMatrix({
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
                 selectedHotels.length > 0
                   ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                  : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"
+                  : "bg-white/5 text-[var(--text-muted)] border border-[var(--overlay-border)] hover:bg-white/10"
               }`}
             >
               <Building2 className="w-3 h-3" />
@@ -227,9 +227,9 @@ export default function RateMatrix({
 
             {/* Hotel Filter Dropdown */}
             {showHotelFilter && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl z-50 p-4">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-[#0a0a14] border border-[var(--overlay-border)] rounded-xl shadow-2xl z-50 p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                     Select Hotels to Display
                   </span>
                   {selectedHotels.length > 0 && (
@@ -268,7 +268,7 @@ export default function RateMatrix({
                         }}
                         className="w-3 h-3 rounded accent-blue-500"
                       />
-                      <span className="text-xs text-white truncate">
+                      <span className="text-xs text-[var(--overlay-text)] truncate">
                         {hotel.name}
                       </span>
                     </label>
@@ -293,7 +293,7 @@ export default function RateMatrix({
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
                 selectedOTAs.length > 0
                   ? "bg-[#F6C344]/20 text-[#F6C344] border border-[#F6C344]/30"
-                  : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"
+                  : "bg-white/5 text-[var(--text-muted)] border border-[var(--overlay-border)] hover:bg-white/10"
               }`}
             >
               <Filter className="w-3 h-3" />
@@ -305,9 +305,9 @@ export default function RateMatrix({
 
             {/* OTA Filter Dropdown */}
             {showOTAFilter && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-[#0a0a14] border border-white/10 rounded-xl shadow-2xl z-50 p-4">
+              <div className="absolute right-0 top-full mt-2 w-64 bg-[#0a0a14] border border-[var(--overlay-border)] rounded-xl shadow-2xl z-50 p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                     Select OTAs to Display
                   </span>
                   {selectedOTAs.length > 0 && (
@@ -344,7 +344,7 @@ export default function RateMatrix({
                         }}
                         className="w-3 h-3 rounded accent-[#F6C344]"
                       />
-                      <span className="text-xs text-white truncate">{ota}</span>
+                      <span className="text-xs text-[var(--overlay-text)] truncate">{ota}</span>
                     </label>
                   ))}
                 </div>
@@ -363,7 +363,7 @@ export default function RateMatrix({
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
               showAllOTAs
                 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                : "bg-white/5 text-[var(--text-muted)] border-[var(--overlay-border)] hover:bg-white/10"
             }`}
           >
             <Globe className="w-3 h-3" />
@@ -375,7 +375,7 @@ export default function RateMatrix({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/5 text-left text-slate-500">
+            <tr className="border-b border-[var(--overlay-border)] text-left text-slate-500">
               <th className="py-4 pl-4 text-[10px] uppercase tracking-widest font-bold w-48 sticky left-0 bg-[#0A1629]/80 backdrop-blur-sm z-10">
                 Hotel/Source
               </th>
@@ -409,7 +409,7 @@ export default function RateMatrix({
                 >
                   <td className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[#050B18]/90 backdrop-blur-sm z-10">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isTarget ? "bg-blue-500/20 border-blue-500/30" : "bg-white/5 border-white/5"}`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isTarget ? "bg-blue-500/20 border-blue-500/30" : "bg-white/5 border-[var(--overlay-border)]"}`}
                     >
                       <span
                         className={`text-[10px] font-bold ${isTarget ? "text-blue-400" : "text-slate-500"}`}
@@ -419,7 +419,7 @@ export default function RateMatrix({
                     </div>
                     <div>
                       <p
-                        className={`font-bold text-xs ${isTarget ? "text-blue-400" : "text-white"}`}
+                        className={`font-bold text-xs ${isTarget ? "text-blue-400" : "text-[var(--overlay-text)]"}`}
                       >
                         {comp.name}
                       </p>
@@ -428,7 +428,7 @@ export default function RateMatrix({
                       </p>
                     </div>
                   </td>
-                  <td className="py-5 text-center font-bold text-white bg-[#0A1629]/30 border-l border-r border-white/5">
+                  <td className="py-5 text-center font-bold text-[var(--overlay-text)] bg-[#0A1629]/30 border-l border-r border-[var(--overlay-border)]">
                     {formatPrice(targetPrice)}
                   </td>
                   {/* Dynamic OTA Cells */}
@@ -536,7 +536,7 @@ function ParityStatus({
 
       {/* Hover Detail */}
       {marketAvg && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-black/90 text-[8px] text-slate-300 opacity-0 group-hover/cell:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-black/90 text-[8px] text-slate-300 opacity-0 group-hover/cell:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-[var(--overlay-border)]">
           Market Avg: {formatPrice(marketAvg)}
         </div>
       )}

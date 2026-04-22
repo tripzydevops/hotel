@@ -47,7 +47,7 @@ export default function SearchHistory({
           <button
             key={search.id}
             onClick={() => onReSearch(search.hotel_name, search.location)}
-            className="group glass-card rounded-[2rem] p-5 hover:bg-white/[0.04] transition-all border-white/5 hover:border-white/10 text-left flex flex-col justify-between h-full"
+            className="group glass-card rounded-[2rem] p-5 hover:bg-white/[0.04] transition-all border-[var(--overlay-border)] hover:border-[var(--overlay-border)] text-left flex flex-col justify-between h-full"
           >
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -71,7 +71,7 @@ export default function SearchHistory({
               )}
             </div>
 
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5 group-hover:border-[var(--soft-gold)]/20 transition-colors">
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--overlay-border)] group-hover:border-[var(--soft-gold)]/20 transition-colors">
               <div className="flex-1">
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--soft-gold)] transition-colors">
                   {t("history.reSearch")}

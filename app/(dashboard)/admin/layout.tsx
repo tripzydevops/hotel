@@ -40,13 +40,13 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] text-white selection:bg-[var(--soft-gold)]/30">
+    <div className="min-h-screen bg-[var(--deep-ocean)] text-[var(--overlay-text)] selection:bg-[var(--soft-gold)]/30">
       {/* Immersive Background Layers */}
       <div className="radial-glow" />
       <div className="bg-grain" />
 
       {/* Iconic Floating Dock (Sidebar) */}
-      <aside className="w-[88px] hover:w-64 bg-black/40 backdrop-blur-3xl border-r border-white/5 flex flex-col fixed inset-y-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)] group shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
+      <aside className="w-[88px] hover:w-64 bg-black/40 backdrop-blur-3xl border-r border-[var(--overlay-border)] flex flex-col fixed inset-y-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.16, 1, 0.3, 1)] group shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
         <div className="p-6 flex justify-center group-hover:justify-start items-center transition-all">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#b49020] flex items-center justify-center shadow-[0_0_25px_rgba(212,175,55,0.3)] shrink-0">
@@ -85,7 +85,7 @@ export default function AdminLayout({
                   <Icon className="w-5 h-5" />
                 </div>
                 <span
-                  className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? "text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] group-hover/item:text-white"} opacity-0 group-hover:opacity-100 whitespace-nowrap`}
+                  className={`text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? "text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] group-hover/item:text-[var(--overlay-text)]"} opacity-0 group-hover:opacity-100 whitespace-nowrap`}
                 >
                   {item.name}
                 </span>
@@ -102,10 +102,10 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5 space-y-4">
+        <div className="p-4 border-t border-[var(--overlay-border)] space-y-4">
           <Link
             href="/"
-            className="flex items-center gap-4 p-3 rounded-2xl text-[var(--text-muted)] hover:text-white hover:bg-white/5 transition-all group/exit"
+            className="flex items-center gap-4 p-3 rounded-2xl text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/5 transition-all group/exit"
           >
             <div className="w-10 h-10 flex items-center justify-center shrink-0">
               <LayoutDashboard className="w-5 h-5 text-[var(--soft-gold)] group-hover/exit:rotate-12 transition-transform" />

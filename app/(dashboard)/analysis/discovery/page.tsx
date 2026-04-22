@@ -34,7 +34,7 @@ export default function DiscoveryPage() {
       <div className="flex items-center gap-3 mb-8">
         <Link
           href="/analysis"
-          className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-white transition-colors"
+          className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Overview
@@ -47,7 +47,7 @@ export default function DiscoveryPage() {
           <Radar className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-white">Discovery Engine</h1>
+          <h1 className="text-2xl font-black text-[var(--overlay-text)]">Discovery Engine</h1>
           <p className="text-sm text-[var(--text-muted)]">
             AI-powered competitor discovery using vector similarity
           </p>

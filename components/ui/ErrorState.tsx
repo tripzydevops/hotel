@@ -22,7 +22,7 @@ export default function ErrorState({
       <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 animate-in zoom-in duration-300">
         <AlertCircle className="w-6 h-6 text-red-400" />
       </div>
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
+      <h3 className="text-lg font-medium text-[var(--overlay-text)] mb-2">{title}</h3>
       <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-6">
         {message}
       </p>

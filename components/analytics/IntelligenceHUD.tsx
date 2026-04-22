@@ -41,22 +41,22 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     Optimal: 'border-emerald-500 text-emerald-400 bg-emerald-500/10',
     Moderate: 'border-amber-500 text-amber-400 bg-amber-500/10',
     Volatile: 'border-rose-500 text-rose-400 bg-rose-500/10',
-    Unknown: 'border-slate-500 text-slate-400 bg-slate-500/10'
+    Unknown: 'border-slate-500 text-[var(--text-muted)] bg-slate-500/10'
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl transition-all hover:shadow-cyan-500/10">
+    <div className="relative overflow-hidden rounded-2xl border border-[var(--overlay-border)] bg-slate-950 p-6 shadow-2xl transition-all hover:shadow-cyan-500/10">
       {/* Background HUD Decor */}
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent)]" />
       
       {/* HUD Header */}
-      <div className="relative mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+      <div className="relative mb-6 flex items-center justify-between border-b border-[var(--overlay-border)] pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/30">
             <Command className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="font-bold tracking-widest text-white uppercase text-sm">{t('analysis.title')}</h3>
+            <h3 className="font-bold tracking-widest text-[var(--overlay-text)] uppercase text-sm">{t('analysis.title')}</h3>
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${loading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
               <span className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">{t('analysis.system')} {loading ? t('analysis.processing') : t('analysis.active')}</span>
@@ -108,13 +108,13 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
                   transition={{ delay: i * 0.1 }}
                   className="flex items-start gap-3 group"
                 >
-                  <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-white/10 text-cyan-500 group-hover:border-cyan-500/50 transition-colors">
+                  <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-[var(--overlay-border)] text-cyan-500 group-hover:border-cyan-500/50 transition-colors">
                     <Target className="h-3 w-3" />
                   </div>
                   {loading ? (
                     <div className="h-4 w-full bg-slate-800 rounded animate-pulse" />
                   ) : (
-                    <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-tight">{action}</span>
+                    <span className="text-xs text-[var(--text-muted)] group-hover:text-slate-200 transition-colors uppercase tracking-tight">{action}</span>
                   )}
                 </motion.div>
               ))}
@@ -123,10 +123,10 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
         </div>
 
         {/* Intelligence Intel */}
-        <div className="rounded-xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm space-y-4">
+        <div className="rounded-xl border border-[var(--overlay-border)] bg-white/5 p-4 backdrop-blur-sm space-y-4">
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-cyan-400" />
-            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{t('analysis.fieldIntel')}</span>
+            <span className="text-[10px] font-bold text-[var(--overlay-text)] uppercase tracking-wider">{t('analysis.fieldIntel')}</span>
           </div>
           
           <div className="space-y-4">
@@ -138,13 +138,13 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
               {loading ? (
                 <div className="h-10 w-full bg-slate-800 rounded animate-pulse" />
               ) : (
-                <p className="text-[11px] text-slate-400 font-mono leading-tight">
+                <p className="text-[11px] text-[var(--text-muted)] font-mono leading-tight">
                   {brief?.market_sentiment}
                 </p>
               )}
             </div>
 
-            <div className="pt-4 border-t border-white/5">
+            <div className="pt-4 border-t border-[var(--overlay-border)]">
               <div className="flex items-center gap-2 mb-2 text-rose-400">
                 <AlertTriangle className="h-3 w-3" />
                 <span className="text-[9px] font-bold uppercase tracking-tighter">{t('analysis.dataAlert')}</span>

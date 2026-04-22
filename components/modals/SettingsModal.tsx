@@ -149,15 +149,15 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-2xl p-0 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-2xl p-0 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-white/5">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--overlay-border)] bg-white/5">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shadow-inner">
               <SettingsIcon className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white leading-none mb-1">
+              <h2 className="text-xl font-bold text-[var(--overlay-text)] leading-none mb-1">
                 {t("settings.title")}
               </h2>
               <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
@@ -167,7 +167,7 @@ export default function SettingsModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all ring-1 ring-white/10 hover:ring-white/20"
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--overlay-text)] transition-all ring-1 ring-white/10 hover:ring-white/20"
           >
             <X className="w-5 h-5" />
           </button>
@@ -186,9 +186,9 @@ export default function SettingsModal({
                   
                   <div className="space-y-6">
                     {/* Threshold */}
-                    <div className="space-y-4 p-5 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
+                    <div className="space-y-4 p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] shadow-inner">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-white/90 flex items-center gap-2">
+                        <label className="text-sm font-semibold text-[var(--overlay-text)]/90 flex items-center gap-2">
                           {t("settings.triggerThreshold")}
                         </label>
                         <span className="text-lg font-black text-[var(--soft-gold)] tabular-nums">
@@ -215,7 +215,7 @@ export default function SettingsModal({
                 <div className="space-y-4 p-5 rounded-2xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 animate-in fade-in duration-500">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-[var(--overlay-text)] flex items-center gap-2">
                          AI Smart Thresholds
                       </h4>
                       <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold mt-1">
@@ -236,7 +236,7 @@ export default function SettingsModal({
                   {dynamicEnabled && (
                     <div className="space-y-4 pt-2 animate-in slide-in-from-top-2">
                       <div className="h-px bg-white/10" />
-                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--overlay-text)]/60">
                         <span>Analysis Sensitivity</span>
                         <span className="text-[var(--soft-gold)]">{sensitivity}x</span>
                       </div>
@@ -267,9 +267,9 @@ export default function SettingsModal({
 
                   <div className="space-y-4">
                     {/* Email Alerts */}
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 hover:border-white/10 transition-colors">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] space-y-4 hover:border-[var(--overlay-border)] transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-white/90">
+                        <span className="text-sm font-semibold text-[var(--overlay-text)]/90">
                           {t("settings.emailAlerts")}
                         </span>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -288,7 +288,7 @@ export default function SettingsModal({
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
+                            className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl py-3 px-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm"
                             placeholder="alerts@yourhotel.com"
                           />
                         </div>
@@ -296,9 +296,9 @@ export default function SettingsModal({
                     </div>
 
                     {/* Push Alerts */}
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between hover:border-white/10 transition-colors">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-between hover:border-[var(--overlay-border)] transition-colors">
                       <div>
-                        <span className="text-sm font-semibold text-white/90">
+                        <span className="text-sm font-semibold text-[var(--overlay-text)]/90">
                           {t("settings.pushAlerts")}
                         </span>
                         <p className="text-[10px] text-[var(--text-muted)] mt-1">Direct OS notifications</p>
@@ -315,14 +315,14 @@ export default function SettingsModal({
                     </div>
 
                     {/* WhatsApp Alerts (Coming Soon) */}
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between opacity-50 grayscale select-none">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-between opacity-50 grayscale select-none">
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-white/90">{t("settings.whatsappAlerts")}</span>
+                        <span className="text-sm font-semibold text-[var(--overlay-text)]/90">{t("settings.whatsappAlerts")}</span>
                         <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-tighter mt-1">
                            Enterprise Only
                         </span>
                       </div>
-                      <div className="w-11 h-6 bg-white/5 rounded-full border border-white/5"></div>
+                      <div className="w-11 h-6 bg-white/5 rounded-full border border-[var(--overlay-border)]"></div>
                     </div>
                   </div>
                 </div>
@@ -331,11 +331,11 @@ export default function SettingsModal({
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-white/10 bg-black/20 flex gap-4 mt-auto">
+          <div className="p-6 border-t border-[var(--overlay-border)] bg-black/20 flex gap-4 mt-auto">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3.5 rounded-xl border border-white/10 text-white text-sm font-bold hover:bg-white/5 transition-all"
+              className="flex-1 px-6 py-3.5 rounded-xl border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm font-bold hover:bg-white/5 transition-all"
             >
               Discard Changes
             </button>

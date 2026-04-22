@@ -28,7 +28,7 @@ export default function LandingFooter() {
   ];
 
   return (
-    <footer className="relative z-10 border-t border-white/5 bg-[var(--deep-ocean)] transition-all duration-500">
+    <footer className="relative z-10 border-t border-[var(--overlay-border)] bg-[var(--deep-ocean)] transition-all duration-500">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand Column */}
@@ -92,7 +92,7 @@ export default function LandingFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mt-12 pt-8 border-t border-[var(--overlay-border)] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--text-muted)]">
             {t("landing.footer.rights")}
           </p>

@@ -302,7 +302,7 @@ export default function HotelDetailsModal({
                     iconClassName="w-6 h-6 text-[var(--soft-gold)]/20"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-ocean)]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 z-10">
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest px-2 py-1 bg-[var(--soft-gold)]/20 backdrop-blur-md rounded border border-white/10">
+                    <span className="text-[9px] font-black text-[var(--overlay-text)] uppercase tracking-widest px-2 py-1 bg-[var(--soft-gold)]/20 backdrop-blur-md rounded border border-[var(--overlay-border)]">
                       {t("common.view")} Full Res
                     </span>
                   </div>

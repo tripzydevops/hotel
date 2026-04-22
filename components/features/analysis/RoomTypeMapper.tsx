@@ -31,13 +31,13 @@ export default function RoomTypeMapper({
   const validMatches = matches.filter((m) => m.matchedRoomName);
 
   return (
-    <div className="mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+    <div className="mb-6 p-4 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)]">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 rounded-lg bg-[var(--deep-ocean-light)] text-[var(--soft-gold)]">
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white">
+          <h3 className="text-sm font-bold text-[var(--overlay-text)]">
             Semantic Room Matching
           </h3>
           <p className="text-[10px] text-[var(--text-muted)]">
@@ -57,7 +57,7 @@ export default function RoomTypeMapper({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[var(--soft-gold)]/30 transition-colors group"
+              className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-[var(--overlay-border)] hover:border-[var(--soft-gold)]/30 transition-colors group"
             >
               <div className="min-w-0 flex-1">
                 <div className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1 truncate">
@@ -65,7 +65,7 @@ export default function RoomTypeMapper({
                 </div>
                 <div className="flex items-center gap-2">
                   <BedDouble className="w-4 h-4 text-[var(--soft-gold)]" />
-                  <span className="text-xs font-medium text-white truncate">
+                  <span className="text-xs font-medium text-[var(--overlay-text)] truncate">
                     {match.matchedRoomName}
                   </span>
                 </div>
@@ -81,7 +81,7 @@ export default function RoomTypeMapper({
             </motion.div>
           ))
         ) : (
-          <div className="col-span-full flex items-center justify-center p-8 text-[var(--text-muted)] text-xs border border-dashed border-white/10 rounded-xl">
+          <div className="col-span-full flex items-center justify-center p-8 text-[var(--text-muted)] text-xs border border-dashed border-[var(--overlay-border)] rounded-xl">
             <AlertCircle className="w-4 h-4 mr-2" />
             No direct semantic matches found for this room type. showing lead
             prices.

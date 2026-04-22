@@ -92,10 +92,10 @@ export default function AnalyticsPanel() {
   if (!selectedCity) {
     return (
       <div className="h-96 flex flex-col items-center justify-center p-8 glass-card border-dashed border-slate-700">
-        <h2 className="text-2xl font-bold text-white mb-4">
+        <h2 className="text-2xl font-bold text-[var(--overlay-text)] mb-4">
           Market Intelligence Hub
         </h2>
-        <p className="text-slate-400 mb-8 max-w-md text-center">
+        <p className="text-[var(--text-muted)] mb-8 max-w-md text-center">
           Select a city to analyze regional pricing trends, visibility
           aggregated metrics, and competitive clusters.
         </p>
@@ -119,24 +119,24 @@ export default function AnalyticsPanel() {
       {/* Header & Filter */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-[var(--overlay-text)] flex items-center gap-2">
             <span className="text-emerald-400">●</span> {selectedCity} Market
             Analysis
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[var(--text-muted)]">
             Realtime aggregated intelligence.
           </p>
         </div>
         <button
           onClick={() => setSelectedCity("")}
-          className="text-sm text-slate-500 hover:text-white transition-colors"
+          className="text-sm text-slate-500 hover:text-[var(--overlay-text)] transition-colors"
         >
           Change City
         </button>
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-white/50 animate-pulse">
+        <div className="p-12 text-center text-[var(--text-muted)] animate-pulse">
           Running Market Analysis...
         </div>
       ) : error ? (
@@ -153,34 +153,34 @@ export default function AnalyticsPanel() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 glass-card bg-slate-900/50">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+            <div className="p-4 glass-card bg-[var(--bg-subtle)]/50">
+              <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">
                 Total Hotels
               </div>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-[var(--overlay-text)]">
                 {data.summary.hotel_count}
               </div>
             </div>
             {/* EXPLANATION: Bind dynamic currency from summary. 
                 Replaces hardcoded '$' with 'currency_symbol' (e.g. '₺'). */}
-            <div className="p-4 glass-card bg-slate-900/50">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+            <div className="p-4 glass-card bg-[var(--bg-subtle)]/50">
+              <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">
                 Avg Price
               </div>
               <div className="text-2xl font-bold text-emerald-400">
                 {data.summary.currency_symbol}{data.summary.avg_price}
               </div>
             </div>
-            <div className="p-4 glass-card bg-slate-900/50">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+            <div className="p-4 glass-card bg-[var(--bg-subtle)]/50">
+              <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">
                 Price Range
               </div>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-[var(--overlay-text)]">
                 {data.summary.currency_symbol}{data.summary.price_range[0]} - {data.summary.currency_symbol}{data.summary.price_range[1]}
               </div>
             </div>
-            <div className="p-4 glass-card bg-slate-900/50">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+            <div className="p-4 glass-card bg-[var(--bg-subtle)]/50">
+              <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">
                 Scan Coverage
               </div>
               <div className="text-2xl font-bold text-blue-400">
@@ -194,10 +194,10 @@ export default function AnalyticsPanel() {
             {/* Visibility Module (Aggregated) */}
             <section>
               <div className="mb-4">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-[var(--overlay-text)]">
                   Regional Visibility
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[var(--text-muted)]">
                   Avg search rank for {selectedCity} hotels.
                 </p>
               </div>
@@ -209,10 +209,10 @@ export default function AnalyticsPanel() {
             {/* Network Module */}
             <section>
               <div className="mb-4">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-[var(--overlay-text)]">
                   Competitive Clusters
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[var(--text-muted)]">
                   Top priced hotels network.
                 </p>
               </div>
@@ -227,10 +227,10 @@ export default function AnalyticsPanel() {
           {/* Geospatial Module */}
           <section>
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-[var(--overlay-text)]">
                 Geospatial Distribution
               </h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[var(--text-muted)]">
                 {data.summary.hotel_count} hotels analyzed in {selectedCity}.
               </p>
             </div>
@@ -240,14 +240,14 @@ export default function AnalyticsPanel() {
           {/* AI Market Sentiment Section */}
           <section className="glass-card p-6 mt-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-[var(--overlay-text)] text-lg">
                 🧠
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-[var(--overlay-text)]">
                   AI Market Sentiment
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[var(--text-muted)]">
                   Gemini-powered analysis for {selectedCity}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export default function AnalyticsPanel() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* Sentiment Score */}
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">
                   Market Sentiment
                 </div>
                 <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function AnalyticsPanel() {
 
               {/* Price Trend */}
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">
                   Price Pressure
                 </div>
                 <div className="text-3xl font-bold text-blue-400">
@@ -296,7 +296,7 @@ export default function AnalyticsPanel() {
 
               {/* Competition Level */}
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">
                   Competition
                 </div>
                 <div className="text-3xl font-bold text-amber-400">
@@ -314,10 +314,10 @@ export default function AnalyticsPanel() {
 
             {/* AI Insights */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-[var(--overlay-text)] uppercase tracking-wider">
                 AI Insights
               </h3>
-              <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+              <div className="p-4 bg-[var(--bg-subtle)]/50 rounded-lg border border-slate-800">
                 <div className="flex gap-3">
                   <span className="text-purple-400 mt-0.5">💡</span>
                   <p className="text-slate-300 text-sm">
@@ -332,7 +332,7 @@ export default function AnalyticsPanel() {
                   </p>
                 </div>
               </div>
-              <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+              <div className="p-4 bg-[var(--bg-subtle)]/50 rounded-lg border border-slate-800">
                 <div className="flex gap-3">
                   <span className="text-emerald-400 mt-0.5">📊</span>
                   <p className="text-slate-300 text-sm">

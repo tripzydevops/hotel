@@ -642,7 +642,7 @@ export default function AnalysisPage() {
                               {comp.name}
                             </div>
                             <div
-                              className={`text-sm font-black ${compSpread < 33 ? "text-[var(--optimal-green)]" : compSpread > 66 ? "text-[var(--alert-red)]" : "text-white"}`}
+                              className={`text-sm font-black ${compSpread < 33 ? "text-[var(--optimal-green)]" : compSpread > 66 ? "text-[var(--alert-red)]" : "text-[var(--overlay-text)]"}`}
                             >
                               {CURRENCY_SYMBOLS[currency]}
                               {comp.price?.toFixed(0)}
@@ -886,7 +886,7 @@ function KPICard({
                       key={item.id}
                       className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-all ${item.is_target
                         ? "bg-[var(--soft-gold)]/15 border border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20"
-                        : "bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10"
+                        : "bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 hover:border-[var(--overlay-border)]"
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -896,13 +896,13 @@ function KPICard({
                           #{item.rank}
                         </span>
                         <span
-                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold px-0.5" : "text-white/80 font-medium"} truncate max-w-[140px]`}
+                          className={`text-xs ${item.is_target ? "text-[var(--soft-gold)] font-bold px-0.5" : "text-[var(--overlay-text)]/80 font-medium"} truncate max-w-[140px]`}
                         >
                           {item.name}
                         </span>
                       </div>
                       <span
-                        className={`text-xs font-black tabular-nums ${item.is_target ? "text-[var(--soft-gold)]" : "text-white"}`}
+                        className={`text-xs font-black tabular-nums ${item.is_target ? "text-[var(--soft-gold)]" : "text-[var(--overlay-text)]"}`}
                       >
                         {symbol}
                         {item.price != null ? Math.round(item.price).toLocaleString() : "N/A"}
@@ -918,27 +918,27 @@ function KPICard({
                   {t("analysis.marketComparison")}
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                    <span className="text-xs text-white/60 font-medium italic">{t("analysis.baseMetric")}</span>
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--overlay-border)]">
+                    <span className="text-xs text-[var(--overlay-text)]/60 font-medium italic">{t("analysis.baseMetric")}</span>
                     <span className="text-[10px] font-black text-[var(--text-muted)] tracking-wider">ARI INDEX</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70 font-medium">{t("analysis.targetPrice")}</span>
+                    <span className="text-xs text-[var(--overlay-text)]/70 font-medium">{t("analysis.targetPrice")}</span>
                     <span className="text-base font-black text-[var(--soft-gold)] tabular-nums">
                       {symbol}
                       {Math.round(hoverData.targetPrice || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/70 font-medium">{t("common.average")}</span>
-                    <span className="text-base font-black text-white tabular-nums">
+                    <span className="text-xs text-[var(--overlay-text)]/70 font-medium">{t("common.average")}</span>
+                    <span className="text-base font-black text-[var(--overlay-text)] tabular-nums">
                       {symbol}
                       {Math.round(hoverData.marketAvg || 0).toLocaleString()}
                     </span>
                   </div>
                   {hoverData.targetPrice && hoverData.marketAvg && (
-                    <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-2">
-                      <span className="text-xs text-white/90 font-bold uppercase tracking-tighter">{t("common.performance")}</span>
+                    <div className="flex items-center justify-between pt-4 border-t border-[var(--overlay-border)] mt-2">
+                      <span className="text-xs text-[var(--overlay-text)]/90 font-bold uppercase tracking-tighter">{t("common.performance")}</span>
                       <span
                         className={`text-sm font-black px-2.5 py-1 rounded-lg ${hoverData.targetPrice > hoverData.marketAvg ? "bg-[var(--alert-red)]/10 text-[var(--alert-red)] border border-[var(--alert-red)]/20" : "bg-[var(--optimal-green)]/10 text-[var(--optimal-green)] border border-[var(--optimal-green)]/20"}`}
                       >
@@ -968,7 +968,7 @@ function KPICard({
                         <span className="text-[9px] text-[var(--optimal-green)] uppercase font-black tracking-widest mb-1">
                           {t("analysis.marketMinimum")}
                         </span>
-                        <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
+                        <span className="text-xs text-[var(--overlay-text)]/90 truncate max-w-[160px] font-bold">
                           {hoverData.minHotel.name}
                         </span>
                       </div>
@@ -984,7 +984,7 @@ function KPICard({
                         <span className="text-[9px] text-[var(--alert-red)] uppercase font-black tracking-widest mb-1">
                           {t("analysis.marketMaximum")}
                         </span>
-                        <span className="text-xs text-white/90 truncate max-w-[160px] font-bold">
+                        <span className="text-xs text-[var(--overlay-text)]/90 truncate max-w-[160px] font-bold">
                           {hoverData.maxHotel.name}
                         </span>
                       </div>
@@ -1003,7 +1003,7 @@ function KPICard({
                   <div className="w-1 h-1 rounded-full bg-[var(--soft-gold)]" />
                   {t("analysis.metricPerspective")}
                 </div>
-                <div className="text-sm text-white/80 leading-relaxed font-medium p-4 bg-white/5 rounded-2xl border border-white/10 italic">
+                <div className="text-sm text-[var(--overlay-text)]/80 leading-relaxed font-medium p-4 bg-white/5 rounded-2xl border border-[var(--overlay-border)] italic">
                   "{hoverData.description}"
                 </div>
               </div>

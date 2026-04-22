@@ -29,14 +29,14 @@ export default function ThemeToggle() {
         <div className="flex items-center justify-center w-8 h-8">
           <Moon
             className={`w-3.5 h-3.5 transition-colors duration-300 ${
-              theme === "dark" ? "text-white" : "text-[var(--text-muted)]"
+              theme === "dark" ? "text-[var(--overlay-text)]" : "text-[var(--text-muted)]"
             }`}
           />
         </div>
         <div className="flex items-center justify-center w-8 h-8">
           <Sun
             className={`w-4 h-4 transition-colors duration-300 ${
-              theme === "light" ? "text-white" : "text-[var(--text-muted)]"
+              theme === "light" ? "text-[var(--overlay-text)]" : "text-[var(--text-muted)]"
             }`}
           />
         </div>

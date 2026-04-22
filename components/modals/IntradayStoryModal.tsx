@@ -52,7 +52,7 @@ export default function IntradayStoryModal({
             onClick={onClose}
             className="absolute top-6 right-6 p-2 rounded-xl border border-[var(--glass-border)] hover:bg-white/5 transition-colors group"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] group-hover:text-white" />
+            <X className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--overlay-text)]" />
           </button>
 
           <div className="flex items-center gap-4 mb-6">
@@ -60,7 +60,7 @@ export default function IntradayStoryModal({
               <Clock className="w-7 h-7 text-[var(--soft-gold)]" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none italic">
+              <h2 className="text-2xl font-black text-[var(--overlay-text)] tracking-tight uppercase leading-none italic">
                 {t("intradayStory.modalTitle")}
               </h2>
               <div className="flex items-center gap-2 mt-2">
@@ -78,7 +78,7 @@ export default function IntradayStoryModal({
                 <Building2 className="w-3 h-3" />
                 Target Entity
               </span>
-              <span className="text-lg font-black text-white tracking-tight italic truncate max-w-[250px]">{hotelName}</span>
+              <span className="text-lg font-black text-[var(--overlay-text)] tracking-tight italic truncate max-w-[250px]">{hotelName}</span>
             </div>
             
             <div className="flex items-center gap-6">
@@ -87,7 +87,7 @@ export default function IntradayStoryModal({
                 <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${
                   isUp ? "bg-red-500/10 border-red-500/20 text-red-400" : 
                   isDown ? "bg-green-500/10 border-green-500/20 text-green-400" :
-                  "bg-white/5 border-white/10 text-white/40"
+                  "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)]"
                 }`}>
                   {isUp ? <TrendingUp className="w-3 h-3" /> : isDown ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
                   <span className="text-xs font-black uppercase tracking-wider">
@@ -100,7 +100,7 @@ export default function IntradayStoryModal({
 
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5 text-right w-full">Net Change</span>
-                <span className={`text-xl font-black tracking-tight ${isUp ? "text-red-400" : isDown ? "text-green-400" : "text-white"}`}>
+                <span className={`text-xl font-black tracking-tight ${isUp ? "text-red-400" : isDown ? "text-green-400" : "text-[var(--overlay-text)]"}`}>
                   {isUp ? "+" : ""}{priceDiff.toLocaleString()}
                 </span>
               </div>
@@ -130,7 +130,7 @@ export default function IntradayStoryModal({
                           {new Date(event.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </span>
                         {event.vendor && (
-                          <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
+                          <span className="px-2 py-0.5 rounded-md bg-white/5 border border-[var(--overlay-border)] text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
                             {event.vendor}
                           </span>
                         )}
@@ -147,7 +147,7 @@ export default function IntradayStoryModal({
                       </div>
                       
                       <div className="flex items-center gap-4">
-                        <span className="text-3xl font-black text-white tracking-tighter">
+                        <span className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter">
                           {event.price ? event.price.toLocaleString() : "—"}
                         </span>
                         

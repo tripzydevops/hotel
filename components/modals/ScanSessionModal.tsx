@@ -48,9 +48,9 @@ function ReasoningItem({ trace, isNew }: { trace: any; isNew: boolean }) {
   // Handle Legacy String Traces
   if (typeof trace === "string") {
     return (
-      <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
+      <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-[var(--overlay-border)] animate-in fade-in slide-in-from-left-2 duration-300">
         <span className="text-xs">📝</span>
-        <span className="text-[10px] text-white/80 font-mono leading-relaxed">
+        <span className="text-[10px] text-[var(--overlay-text)]/80 font-mono leading-relaxed">
           {displayedMessage}
         </span>
       </div>
@@ -59,10 +59,10 @@ function ReasoningItem({ trace, isNew }: { trace: any; isNew: boolean }) {
 
   // Handle New Structured ReasoningLog
   const { step, level, timestamp } = trace;
-  let colorClass = "text-white/80";
+  let colorClass = "text-[var(--overlay-text)]/80";
   let iconEmoji = "📝";
   let bgClass = "bg-white/5";
-  let borderClass = "border-white/10";
+  let borderClass = "border-[var(--overlay-border)]";
 
   switch (level) {
     case "info":
@@ -78,10 +78,10 @@ function ReasoningItem({ trace, isNew }: { trace: any; isNew: boolean }) {
   return (
     <div className={`flex flex-col gap-1 p-3 rounded-xl border ${bgClass} ${borderClass} animate-in fade-in slide-in-from-left-2 duration-300`}>
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[8px] font-black uppercase tracking-wider text-white/40">
+        <span className="flex items-center gap-2 text-[8px] font-black uppercase tracking-wider text-[var(--text-muted)]">
           {iconEmoji} {step}
         </span>
-        <span className="text-[8px] font-mono text-white/20">
+        <span className="text-[8px] font-mono text-[var(--overlay-text)]/20">
           {timestamp ? new Date(timestamp * 1000).toLocaleTimeString() : ""}
         </span>
       </div>
@@ -216,16 +216,16 @@ export default function ScanSessionModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="p-4 sm:p-8 border-b border-white/5 bg-white/[0.02]">
+        <div className="p-4 sm:p-8 border-b border-[var(--overlay-border)] bg-white/[0.02]">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="p-3 sm:p-4 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 shadow-inner">
                 <Database className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <h2 className="text-lg sm:text-2xl font-black text-[var(--overlay-text)] tracking-tight flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                   {t("scanSession.title")}
                   <span
                     className={`text-[9px] sm:text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 sm:py-1 rounded-full font-bold self-start ${
@@ -269,7 +269,7 @@ export default function ScanSessionModal({
                   // EXPLANATION: Prevent "possibly undefined" TypeScript error when reasoning_trace is optional
                   // Using null-coalescing (?? 0) ensures we compare a number to a number.
                   disabled={logs.length === 0 && !((activeSession.reasoning_trace?.length ?? 0) > 0)}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-[10px] sm:text-xs font-bold hover:bg-white/10 transition-all flex items-center gap-1.5 group disabled:opacity-50"
                 >
                   <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:-translate-y-0.5 transition-transform" />
                   {t("scanSession.csvExport")}
@@ -277,7 +277,7 @@ export default function ScanSessionModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-[var(--text-muted)] hover:text-white"
+                className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-[var(--overlay-border)] text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               >
                 <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
@@ -286,12 +286,12 @@ export default function ScanSessionModal({
 
           {/* Summary Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+            <div className="bg-white/[0.02] border border-[var(--overlay-border)] rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 {t("scanSession.averageRate")}
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-xl sm:text-2xl font-black text-white">
+                <span className="text-xl sm:text-2xl font-black text-[var(--overlay-text)]">
                   {logs.length > 0
                     ? (
                         logs.reduce((acc, l) => acc + (l.price || 0), 0) /
@@ -304,7 +304,7 @@ export default function ScanSessionModal({
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+            <div className="bg-white/[0.02] border border-[var(--overlay-border)] rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 {t("scanSession.successRate")}
               </p>
@@ -321,17 +321,17 @@ export default function ScanSessionModal({
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+            <div className="bg-white/[0.02] border border-[var(--overlay-border)] rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 {t("scanSession.vendors")}
               </p>
               <div className="flex items-end gap-1">
-                <span className="text-xl sm:text-2xl font-black text-white">
+                <span className="text-xl sm:text-2xl font-black text-[var(--overlay-text)]">
                   {new Set(logs.map((l) => l.vendor).filter(Boolean)).size}
                 </span>
               </div>
             </div>
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4">
+            <div className="bg-white/[0.02] border border-[var(--overlay-border)] rounded-2xl p-3 sm:p-4">
               <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">
                 {t("scanSession.sessionId")}
               </p>
@@ -349,10 +349,10 @@ export default function ScanSessionModal({
           <div className="space-y-8">
             {/* Live Progress Bar */}
             {(activeSession.status === "running" || activeSession.status === "pending" || activeSession.status === "intelligence_pending") && (
-              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+              <div className="p-6 bg-white/[0.02] border border-[var(--overlay-border)] rounded-3xl">
                 <div className="flex justify-between items-end mb-3">
                   <div>
-                    <h4 className="text-xs font-black text-white uppercase tracking-wider mb-1">
+                    <h4 className="text-xs font-black text-[var(--overlay-text)] uppercase tracking-wider mb-1">
                       {activeSession.status === "intelligence_pending" ? "Deep Intelligence Analysis" : "Scan in Progress..."}
                     </h4>
                     <p className="text-[10px] text-[var(--text-muted)] font-medium">
@@ -370,7 +370,7 @@ export default function ScanSessionModal({
                     %
                   </span>
                 </div>
-                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
+                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-[var(--overlay-border)] p-0.5">
                   <div
                     className="h-full bg-gradient-to-r from-[var(--soft-gold)] to-amber-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_var(--soft-gold)]/30"
                     style={{
@@ -382,7 +382,7 @@ export default function ScanSessionModal({
             )}
 
             {/* Agent Mesh Processing Map */}
-            <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl relative overflow-hidden">
+            <div className="p-6 bg-white/[0.02] border border-[var(--overlay-border)] rounded-3xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-5">
                 <Zap className="w-24 h-24 text-[var(--soft-gold)]" />
               </div>
@@ -403,13 +403,13 @@ export default function ScanSessionModal({
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
                       activeSession.status !== "pending" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Scraper")))
                         ? "bg-optimal-green/20 border-optimal-green/50 text-optimal-green shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                        : "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)]"
                     }`}
                   >
                     <Database className="w-5 h-5" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                    <p className="text-[9px] font-black uppercase text-[var(--overlay-text)] tracking-widest">
                       Scraper Agent
                     </p>
                     <p className="text-[8px] font-bold text-[var(--text-muted)]">
@@ -424,13 +424,13 @@ export default function ScanSessionModal({
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
                       ["completed", "partial", "failed"].includes(activeSession.status) || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Analyst")))
                         ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)]/50 text-[var(--soft-gold)] shadow-[0_0_15px_rgba(255,215,0,0.2)]"
-                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                        : "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)]"
                     }`}
                   >
                     <Zap className="w-5 h-5" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                    <p className="text-[9px] font-black uppercase text-[var(--overlay-text)] tracking-widest">
                       Analyst Agent
                     </p>
                     <p className="text-[8px] font-bold text-[var(--text-muted)]">
@@ -445,13 +445,13 @@ export default function ScanSessionModal({
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
                       ["completed", "intelligence_pending"].includes(activeSession.status) || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Notifier")))
                         ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                        : "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)]"
                     }`}
                   >
                     <Users className="w-5 h-5" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                    <p className="text-[9px] font-black uppercase text-[var(--overlay-text)] tracking-widest">
                       Notifier Agent
                     </p>
                     <p className="text-[8px] font-bold text-[var(--text-muted)]">
@@ -466,13 +466,13 @@ export default function ScanSessionModal({
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
                       activeSession.status === "completed" || (Array.isArray(activeSession.reasoning_trace) && activeSession.reasoning_trace.some(t => JSON.stringify(t).includes("Intelligence")))
                         ? "bg-purple-500/20 border-purple-500/50 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                        : "bg-white/5 border-white/10 text-[var(--text-muted)]"
+                        : "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)]"
                     }`}
                   >
                     <Zap className="w-5 h-5" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[9px] font-black uppercase text-white tracking-widest">
+                    <p className="text-[9px] font-black uppercase text-[var(--overlay-text)] tracking-widest">
                       Intelligence Agent
                     </p>
                     <p className="text-[8px] font-bold text-[var(--text-muted)]">
@@ -484,7 +484,7 @@ export default function ScanSessionModal({
             </div>
             {/* Agent Reasoning Timeline */}
             {activeSession.reasoning_trace && activeSession.reasoning_trace.length > 0 && (
-              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+              <div className="p-6 bg-white/[0.02] border border-[var(--overlay-border)] rounded-3xl">
                 <h4 className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
                   Agent Reasoning Timeline
@@ -506,14 +506,14 @@ export default function ScanSessionModal({
               <EmptyState
                 title={t("scanSession.noRecords") || "No records found"}
                 icon={AlertCircle}
-                className="bg-white/[0.01] border-dashed border-white/10"
+                className="bg-white/[0.01] border-dashed border-[var(--overlay-border)]"
               />
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl transition-all duration-200"
+                    className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-[var(--overlay-border)] rounded-2xl transition-all duration-200"
                   >
                     <div className="flex items-center gap-5">
                       <div
@@ -557,13 +557,13 @@ export default function ScanSessionModal({
                               {log.room_types.slice(0, 3).map((rt: any, idx: number) => (
                                 <span 
                                   key={idx}
-                                  className="text-[8px] px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/40 font-medium"
+                                  className="text-[8px] px-1.5 py-0.5 rounded-md bg-white/5 border border-[var(--overlay-border)] text-[var(--text-muted)] font-medium"
                                 >
                                   {typeof rt === 'string' ? rt : rt.name}
                                 </span>
                               ))}
                               {log.room_types.length > 3 && (
-                                <span className="text-[8px] text-white/20">+{log.room_types.length - 3}</span>
+                                <span className="text-[8px] text-[var(--overlay-text)]/20">+{log.room_types.length - 3}</span>
                               )}
                             </div>
                           )}
@@ -573,7 +573,7 @@ export default function ScanSessionModal({
                     <div className="flex items-center gap-8">
                       {log.price && (
                         <div className="text-right">
-                          <p className="text-xl font-black text-white tracking-tight">
+                          <p className="text-xl font-black text-[var(--overlay-text)] tracking-tight">
                             {new Intl.NumberFormat("en-US", {
                               style: "currency",
                               currency: log.currency || "USD",
@@ -605,14 +605,14 @@ export default function ScanSessionModal({
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
+        <div className="p-6 bg-white/[0.02] border-t border-[var(--overlay-border)] flex items-center justify-between">
           <p className="text-[10px] text-[var(--text-muted)] font-medium">
             {t("scanSession.verifiedSerp")} • {t("hotelDetails.foundVia")}{" "}
             SerpApi
           </p>
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-            <span className="text-[10px] text-white font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-[var(--overlay-text)] font-bold uppercase tracking-wider">
               {t("scanSession.generatedAt").replace(
                 "{0}",
                 new Date().toLocaleTimeString(),

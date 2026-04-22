@@ -104,7 +104,7 @@ const ApiKeysPanel = () => {
 
   if (loading) {
     return (
-      <div className="glass-card p-8 border border-white/10 text-center">
+      <div className="glass-card p-8 border border-[var(--overlay-border)] text-center">
         <Loader2 className="w-8 h-8 animate-spin text-[var(--soft-gold)] mx-auto" />
         <p className="text-[var(--text-muted)] mt-4">Loading key status...</p>
       </div>
@@ -123,7 +123,7 @@ const ApiKeysPanel = () => {
             <ShieldCheck className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <span className="text-white text-base font-bold tracking-tight">
+            <span className="text-[var(--overlay-text)] text-base font-bold tracking-tight">
               API Management
             </span>
             <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-widest mt-0.5">
@@ -135,7 +135,7 @@ const ApiKeysPanel = () => {
           <button
             onClick={handleReload}
             disabled={actionLoading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/5"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-[var(--overlay-border)]"
           >
             {actionLoading ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -149,14 +149,14 @@ const ApiKeysPanel = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+        <div className="glass-card p-6 border border-[var(--overlay-border)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Activity className="w-12 h-12 text-[var(--soft-gold)]" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">
             Total Usage
           </p>
-          <p className="text-3xl font-black text-white tabular-nums">
+          <p className="text-3xl font-black text-[var(--overlay-text)] tabular-nums">
             {keyStatus?.monthly_usage || 0}
           </p>
           <div className="mt-4 flex items-center gap-2">
@@ -171,7 +171,7 @@ const ApiKeysPanel = () => {
           </div>
         </div>
 
-        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+        <div className="glass-card p-6 border border-[var(--overlay-border)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <CheckCircle2 className="w-12 h-12 text-[var(--optimal-green)]" />
           </div>
@@ -186,7 +186,7 @@ const ApiKeysPanel = () => {
           </p>
         </div>
 
-        <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+        <div className="glass-card p-6 border border-[var(--overlay-border)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <AlertCircle className="w-12 h-12 text-red-400" />
           </div>
@@ -204,17 +204,17 @@ const ApiKeysPanel = () => {
 
       {/* Network Providers */}
       <div className="space-y-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-white px-1">
+        <h3 className="text-xs font-black uppercase tracking-widest text-[var(--overlay-text)] px-1">
           Data Providers
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
           {providers?.map((p) => (
             <div
               key={p.name}
-              className="glass-card p-4 border border-white/5 hover:border-white/10 transition-all group"
+              className="glass-card p-4 border border-[var(--overlay-border)] hover:border-[var(--overlay-border)] transition-all group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-black text-white uppercase tracking-tighter">
+                <span className="text-[10px] font-black text-[var(--overlay-text)] uppercase tracking-tighter">
                   {p.name}
                 </span>
                 <div
@@ -222,7 +222,7 @@ const ApiKeysPanel = () => {
                 />
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-lg font-black text-white tracking-tighter tabular-nums">
+                <span className="text-lg font-black text-[var(--overlay-text)] tracking-tighter tabular-nums">
                   {p.priority}
                 </span>
                 <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
@@ -237,14 +237,14 @@ const ApiKeysPanel = () => {
       {/* Keys Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-black uppercase tracking-widest text-white">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[var(--overlay-text)]">
             Managed API Keys
           </h3>
           <div className="flex gap-3">
             <button
               onClick={handleReset}
               disabled={actionLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[var(--overlay-border)]"
             >
               Reset Quotas
             </button>
@@ -263,9 +263,9 @@ const ApiKeysPanel = () => {
           </div>
         </div>
 
-        <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-blue-500/10">
+        <div className="glass-card border border-[var(--overlay-border)] overflow-hidden shadow-2xl transition-all duration-500 hover:border-blue-500/10">
           <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+            <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-[var(--overlay-border)]">
               <tr>
                 <th className="p-5">Key ID</th>
                 <th className="p-5">Key Suffix</th>
@@ -282,7 +282,7 @@ const ApiKeysPanel = () => {
                     key={key.index}
                     className={`hover:bg-white/[0.02] transition-colors group ${key.is_current ? "bg-[var(--soft-gold)]/5" : ""}`}
                   >
-                    <td className="p-5 text-white font-black tabular-nums">
+                    <td className="p-5 text-[var(--overlay-text)] font-black tabular-nums">
                       KEY_{String(key.index).padStart(2, "0")}
                       {key.is_current && (
                         <span className="ml-2 text-[8px] bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-1 rounded">
@@ -291,7 +291,7 @@ const ApiKeysPanel = () => {
                       )}
                     </td>
                     <td className="p-5">
-                      <code className="text-[10px] font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-[var(--soft-gold)] transition-colors">
+                      <code className="text-[10px] font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-[var(--overlay-border)] group-hover:text-[var(--soft-gold)] transition-colors">
                         {key.key_suffix}
                       </code>
                     </td>
@@ -317,12 +317,12 @@ const ApiKeysPanel = () => {
                       <div className="flex flex-col items-start gap-1.5">
                         {/* Live Data Block */}
                         {key.searches_left !== undefined && (
-                          <div className="flex flex-col items-start px-3 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                          <div className="flex flex-col items-start px-3 py-2 bg-white/5 rounded-xl border border-[var(--overlay-border)] shadow-inner">
                             <div className="flex items-center gap-2">
                               <span className={`text-xl font-black tabular-nums tracking-tighter ${key.searches_left > 10 ? 'text-blue-400' : 'text-orange-500'}`}>
                                 {key.searches_left}
                               </span>
-                              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Scans Left</span>
+                              <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Scans Left</span>
                             </div>
                             <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-60 mt-0.5">
                               of {key.limit || `${keyStatus?.quota_per_key || 250}`} limit
@@ -355,15 +355,15 @@ const ApiKeysPanel = () => {
 
       {/* Diagnostics (Debug Info) */}
       {keyStatus?.env_debug && (
-        <div className="glass-card p-6 border border-white/5">
-          <h3 className="text-xs font-black uppercase tracking-widest text-white mb-4">
+        <div className="glass-card p-6 border border-[var(--overlay-border)]">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[var(--overlay-text)] mb-4">
             Environment Diagnostics
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(keyStatus.env_debug).map(([key, status]) => (
               <div
                 key={key}
-                className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between"
+                className="bg-black/20 p-3 rounded-lg border border-[var(--overlay-border)] flex items-center justify-between"
               >
                 <div className="flex flex-col">
                   <span className="text-[10px] font-mono text-[var(--text-muted)]">

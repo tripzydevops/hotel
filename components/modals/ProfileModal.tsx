@@ -165,7 +165,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, display_name: e.target.value })
                   }
                   placeholder={t("profile.namePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, company_name: e.target.value })
                   }
                   placeholder={t("profile.companyPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, job_title: e.target.value })
                   }
                   placeholder={t("profile.jobPlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function ProfileModal({
                     setProfile({ ...profile, phone: e.target.value })
                   }
                   placeholder={t("profile.phonePlaceholder")}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/30 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50"
                 />
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function ProfileModal({
                   onChange={(e) =>
                     setProfile({ ...profile, timezone: e.target.value })
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 [&>option]:bg-[var(--deep-ocean-card)]"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2.5 pl-10 pr-4 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 [&>option]:bg-[var(--deep-ocean-card)]"
                 >
                   {TIMEZONES.map((tz) => (
                     <option key={tz} value={tz}>

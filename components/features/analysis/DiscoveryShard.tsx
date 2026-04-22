@@ -99,7 +99,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
             )}
           </div>
           <div>
-            <h2 className="text-xl font-black text-white tracking-tight">
+            <h2 className="text-xl font-black text-[var(--overlay-text)] tracking-tight">
               Discovery Engine
             </h2>
             <p className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-[0.2em]">
@@ -113,7 +113,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
         <button
           onClick={discover}
           disabled={loading}
-          className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:text-white hover:bg-white/10 transition-all group/refresh"
+          className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/10 transition-all group/refresh"
         >
           <RefreshCw
             className={`w-4 h-4 ${loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`}
@@ -138,7 +138,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-sm font-black text-white uppercase tracking-widest mb-1">
+                <p className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest mb-1">
                   Analyzing Market Vibes
                 </p>
                 <p className="text-[10px] text-[var(--text-muted)] font-medium">
@@ -155,7 +155,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
               <div className="text-[var(--alert-red)] mb-4 bg-[var(--alert-red)]/10 p-4 rounded-full">
                 <Radar className="w-8 h-8" />
               </div>
-              <p className="text-white font-bold mb-1">{error}</p>
+              <p className="text-[var(--overlay-text)] font-bold mb-1">{error}</p>
               <button
                 onClick={discover}
                 className="text-[var(--soft-gold)] text-[10px] font-black uppercase tracking-widest hover:underline"
@@ -175,10 +175,10 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all group/item"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)] hover:bg-white/[0.04] hover:border-[var(--overlay-border)] transition-all group/item"
                 >
                   {/* Hotel Thumbnail */}
-                  <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 overflow-hidden border border-white/5 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/10 overflow-hidden border border-[var(--overlay-border)] flex-shrink-0">
                     {rival.image_url ? (
                       <img
                         src={rival.image_url}
@@ -195,14 +195,14 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-bold text-white truncate">
+                      <h3 className="text-sm font-bold text-[var(--overlay-text)] truncate">
                         {rival.name}
                       </h3>
                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20">
                         <span className="text-[8px] font-black text-[var(--soft-gold)]">
                           MATCH
                         </span>
-                        <span className="text-[10px] font-black text-white">
+                        <span className="text-[10px] font-black text-[var(--overlay-text)]">
                           {rival.similarity && !isNaN(rival.similarity)
                             ? Math.round(rival.similarity * 100)
                             : "0"}
@@ -267,7 +267,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
       </div>
 
       {/* Footer Meta */}
-      <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest relative z-10">
+      <div className="mt-6 pt-6 border-t border-[var(--overlay-border)] flex items-center justify-between text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--optimal-green)] animate-pulse" />
           Engine Online

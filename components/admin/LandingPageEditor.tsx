@@ -77,15 +77,15 @@ export default function LandingPageEditor() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Landing Page CMS</h2>
+          <h2 className="text-2xl font-black text-[var(--overlay-text)] tracking-tight">Landing Page CMS</h2>
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Kaizen Content Management</p>
         </div>
         <div className="flex gap-3 items-center">
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 mr-2">
+          <div className="flex bg-white/5 p-1 rounded-xl border border-[var(--overlay-border)] mr-2">
             <button
               onClick={() => setActiveLocale("tr")}
               className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
-                activeLocale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-slate-400 hover:text-white"
+                activeLocale === "tr" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               }`}
             >
               TR
@@ -93,7 +93,7 @@ export default function LandingPageEditor() {
             <button
               onClick={() => setActiveLocale("en")}
               className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
-                activeLocale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-slate-400 hover:text-white"
+                activeLocale === "en" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               }`}
             >
               EN
@@ -101,7 +101,7 @@ export default function LandingPageEditor() {
           </div>
           <button 
             onClick={loadConfig}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white transition-all font-bold text-xs border border-white/5"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-[var(--overlay-text)] transition-all font-bold text-xs border border-[var(--overlay-border)]"
           >
             <RotateCcw className="w-4 h-4" />
             Reload
@@ -127,7 +127,7 @@ export default function LandingPageEditor() {
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 border ${
                 activeSection === config.key 
                   ? "bg-[var(--soft-gold)]/10 border-[var(--soft-gold)]/30 text-[var(--soft-gold)]" 
-                  : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                  : "bg-white/5 border-[var(--overlay-border)] text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--overlay-text)]"
               }`}
             >
               <Layout className="w-4 h-4" />
@@ -202,7 +202,7 @@ function StatsEditor({ content, onChange }: any) {
   return (
     <div className="space-y-6">
       {content.map((item: any, i: number) => (
-        <div key={i} className="flex gap-4 items-end bg-white/5 p-4 rounded-xl border border-white/5">
+        <div key={i} className="flex gap-4 items-end bg-white/5 p-4 rounded-xl border border-[var(--overlay-border)]">
           <Input className="flex-1" label="Value" value={item.value} onChange={(v: string) => {
             const next = [...content];
             next[i].value = Number(v);
@@ -227,13 +227,13 @@ function StatsEditor({ content, onChange }: any) {
 function FeaturesEditor({ content, onChange }: any) {
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-6 border-b border-white/5 pb-8 mb-8">
+      <div className="grid grid-cols-2 gap-6 border-b border-[var(--overlay-border)] pb-8 mb-8">
         <Input label="Section Subtitle" value={content.subtitle} onChange={(v: string) => onChange({...content, subtitle: v})} />
         <Input label="Section Title" value={content.title} onChange={(v: string) => onChange({...content, title: v})} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {content.items.map((item: any, i: number) => (
-          <div key={i} className="bg-white/5 p-6 rounded-xl border border-white/5 space-y-4">
+          <div key={i} className="bg-white/5 p-6 rounded-xl border border-[var(--overlay-border)] space-y-4">
             <Input label="Title" value={item.title} onChange={(v: string) => {
               const next = {...content};
               next.items[i].title = v;
@@ -254,13 +254,13 @@ function FeaturesEditor({ content, onChange }: any) {
 function PricingEditor({ content, onChange }: any) {
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-6 border-b border-white/5 pb-8 mb-8">
+      <div className="grid grid-cols-2 gap-6 border-b border-[var(--overlay-border)] pb-8 mb-8">
         <Input label="Section Subtitle" value={content.subtitle} onChange={(v: string) => onChange({...content, subtitle: v})} />
         <Input label="Section Title" value={content.title} onChange={(v: string) => onChange({...content, title: v})} />
       </div>
       <div className="space-y-6">
         {content.plans.map((plan: any, i: number) => (
-          <div key={i} className="bg-white/5 p-6 rounded-xl border border-white/5 space-y-4 relative">
+          <div key={i} className="bg-white/5 p-6 rounded-xl border border-[var(--overlay-border)] space-y-4 relative">
             <div className="flex gap-4">
               <Input className="flex-1" label="Plan Name" value={plan.name} onChange={(v: string) => {
                 const next = {...content};
@@ -286,7 +286,7 @@ function PricingEditor({ content, onChange }: any) {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Features (Comma separated)</label>
               <textarea 
-                className="w-full bg-[var(--deep-ocean)] border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all min-h-[80px]"
+                className="w-full bg-[var(--deep-ocean)] border border-[var(--overlay-border)] rounded-xl px-4 py-3 text-xs font-bold text-[var(--overlay-text)] focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all min-h-[80px]"
                 value={plan.features.join(", ")}
                 onChange={e => {
                   const next = {...content};
@@ -305,13 +305,13 @@ function PricingEditor({ content, onChange }: any) {
 function FAQEditor({ content, onChange }: any) {
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-6 border-b border-white/5 pb-8 mb-8">
+      <div className="grid grid-cols-2 gap-6 border-b border-[var(--overlay-border)] pb-8 mb-8">
         <Input label="Section Title" value={content.title} onChange={(v: string) => onChange({...content, title: v})} />
         <Input label="Section Subtitle" value={content.subtitle} onChange={(v: string) => onChange({...content, subtitle: v})} />
       </div>
       <div className="space-y-4">
         {content.items.map((item: any, i: number) => (
-          <div key={i} className="bg-white/5 p-6 rounded-xl border border-white/5 space-y-4">
+          <div key={i} className="bg-white/5 p-6 rounded-xl border border-[var(--overlay-border)] space-y-4">
             <Input label="Question" value={item.q} onChange={(v: string) => {
               const next = {...content};
               next.items[i].q = v;
@@ -332,13 +332,13 @@ function FAQEditor({ content, onChange }: any) {
 function TestimonialsEditor({ content, onChange }: any) {
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-6 border-b border-white/5 pb-8 mb-8">
+      <div className="grid grid-cols-2 gap-6 border-b border-[var(--overlay-border)] pb-8 mb-8">
         <Input label="Section Title" value={content.title} onChange={(v: string) => onChange({...content, title: v})} />
         <Input label="Section Subtitle" value={content.subtitle} onChange={(v: string) => onChange({...content, subtitle: v})} />
       </div>
       <div className="space-y-4">
         {content.items.map((item: any, i: number) => (
-          <div key={i} className="bg-white/5 p-6 rounded-xl border border-white/5 space-y-4">
+          <div key={i} className="bg-white/5 p-6 rounded-xl border border-[var(--overlay-border)] space-y-4">
             <TextArea label="Quote" value={item.quote} onChange={(v: string) => {
               const next = {...content};
               next.items[i].quote = v;
@@ -391,7 +391,7 @@ function Input({ label, value, onChange, className = "" }: any) {
       <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{label}</label>
       <input 
         type="text" 
-        className="w-full bg-[var(--deep-ocean)] border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all"
+        className="w-full bg-[var(--deep-ocean)] border border-[var(--overlay-border)] rounded-xl px-4 py-3 text-xs font-bold text-[var(--overlay-text)] focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all"
         value={value}
         onChange={e => onChange(e.target.value)}
       />
@@ -404,7 +404,7 @@ function TextArea({ label, value, onChange, className = "" }: any) {
     <div className={`space-y-2 ${className}`}>
       <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{label}</label>
       <textarea 
-        className="w-full bg-[var(--deep-ocean)] border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all min-h-[100px]"
+        className="w-full bg-[var(--deep-ocean)] border border-[var(--overlay-border)] rounded-xl px-4 py-3 text-xs font-bold text-[var(--overlay-text)] focus:outline-none focus:border-[var(--soft-gold)]/50 transition-all min-h-[100px]"
         value={value}
         onChange={e => onChange(e.target.value)}
       />

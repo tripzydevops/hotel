@@ -145,7 +145,7 @@ export default function PricingPage() {
             </p>
           </RevealSection>
           <RevealSection delay={100}>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
               Şeffaf ve{" "}
               <span className="text-[var(--soft-gold)] gold-glow-text">Adil Fiyatlandırma</span>
             </h1>
@@ -173,10 +173,10 @@ export default function PricingPage() {
                     En Popüler
                   </div>
                 )}
-                <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
+                <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-1">{plan.name}</h3>
                 <p className="text-sm text-[var(--text-muted)] mb-6">{plan.description}</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-black text-white">{plan.price}</span>
+                  <span className="text-4xl font-black text-[var(--overlay-text)]">{plan.price}</span>
                   <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
                 </div>
                 <Link
@@ -196,7 +196,7 @@ export default function PricingPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <RevealSection>
-            <h2 className="text-2xl font-bold text-white text-center mb-10">
+            <h2 className="text-2xl font-bold text-[var(--overlay-text)] text-center mb-10">
               Özellik Karşılaştırması
             </h2>
           </RevealSection>
@@ -205,7 +205,7 @@ export default function PricingPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/5">
+                    <tr className="border-b border-[var(--overlay-border)]">
                       <th className="text-left p-4 text-[var(--text-muted)] font-bold uppercase tracking-wider text-xs">
                         Özellik
                       </th>
@@ -219,14 +219,14 @@ export default function PricingPage() {
                   </thead>
                   <tbody>
                     {features.map((feature, i) => (
-                      <tr key={i} className="border-b border-white/5 last:border-0">
+                      <tr key={i} className="border-b border-[var(--overlay-border)] last:border-0">
                         <td className="p-4 text-[var(--text-secondary)]">{feature.name}</td>
                         {feature.values.map((val, j) => (
                           <td key={j} className="text-center p-4">
                             {typeof val === "boolean" ? (
                               val ? <span className="inline-flex justify-center"><CheckIcon /></span> : <span className="inline-flex justify-center"><XIcon /></span>
                             ) : (
-                              <span className="text-white font-medium">{val}</span>
+                              <span className="text-[var(--overlay-text)] font-medium">{val}</span>
                             )}
                           </td>
                         ))}
@@ -250,7 +250,7 @@ export default function PricingPage() {
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
                 SSS
               </p>
-              <h2 className="text-3xl font-black text-white">
+              <h2 className="text-3xl font-black text-[var(--overlay-text)]">
                 Sık Sorulan Sorular
               </h2>
             </div>
@@ -264,7 +264,7 @@ export default function PricingPage() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left cursor-pointer"
                   >
-                    <span className="text-sm font-bold text-white pr-4">{faq.question}</span>
+                    <span className="text-sm font-bold text-[var(--overlay-text)] pr-4">{faq.question}</span>
                     <svg
                       width="20"
                       height="20"
@@ -297,7 +297,7 @@ export default function PricingPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
-            <h2 className="text-3xl font-black text-white mb-6">
+            <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
               Hala Kararsız mısınız?
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-8">

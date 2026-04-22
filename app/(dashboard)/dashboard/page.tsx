@@ -351,16 +351,16 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.2em] mb-1">{t("dashboard.sentimentScore")}</p>
-                            <p className="text-3xl font-black text-white tracking-tighter">
+                            <p className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter">
                               {data?.agg_metrics?.avg_rating?.toFixed(1) || "0.0"}
                             </p>
                           </div>
                         </div>
-                        <div className="relative mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                          <span className="text-[10px] text-white/40 uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
+                        <div className="relative mt-4 pt-4 border-t border-[var(--overlay-border)] flex items-center justify-between">
+                          <span className="text-[10px] text-[var(--text-muted-foreground)] uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((s) => (
-                              <div key={s} className={`w-1 h-3 rounded-full ${s <= Math.round(data?.agg_metrics?.avg_rating || 0) ? 'bg-[var(--soft-gold)]' : 'bg-white/10'}`} />
+                              <div key={s} className={`w-1 h-3 rounded-full ${s <= Math.round(data?.agg_metrics?.avg_rating || 0) ? 'bg-[var(--soft-gold)]' : 'bg-[var(--bg-subtle)]'}`} />
                             ))}
                           </div>
                         </div>
@@ -381,14 +381,14 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">{t("dashboard.rateParity")}</p>
-                            <p className="text-3xl font-black text-white tracking-tighter">
+                            <p className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter">
                               {data?.agg_metrics?.rate_parity_score || "0"}%
                             </p>
                           </div>
                         </div>
-                        <div className="relative mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                          <span className="text-[10px] text-white/40 uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
-                          <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="relative mt-4 pt-4 border-t border-[var(--overlay-border)] flex items-center justify-between">
+                          <span className="text-[10px] text-[var(--text-muted-foreground)] uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
+                          <div className="w-16 h-1.5 bg-[var(--bg-subtle)] rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${data?.agg_metrics?.rate_parity_score || 0}%` }}

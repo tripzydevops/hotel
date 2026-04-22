@@ -77,9 +77,9 @@ export default function ViolatingChannels({
   };
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-gradient-to-b from-[#0A1629]/80 to-[#050B18] border border-white/5 shadow-2xl relative">
+    <div className="card-blur rounded-[2.5rem] p-8 h-full bg-gradient-to-b from-[#0A1629]/80 to-[#050B18] border border-[var(--overlay-border)] shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-lg font-black text-white uppercase tracking-widest">Revenue Recovery</h2>
+        <h2 className="text-lg font-black text-[var(--overlay-text)] uppercase tracking-widest">Revenue Recovery</h2>
         {violations.length > 0 && (
           <span className="text-[10px] bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full border border-rose-500/20 font-black uppercase tracking-widest animate-pulse">
             {violations.length} Leakage Alerts
@@ -102,7 +102,7 @@ export default function ViolatingChannels({
                 className={`absolute left-0 top-0 bottom-0 w-1 ${v.severity === "high" ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]" : "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"}`}
               ></div>
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-black text-white text-md tracking-tight truncate pr-2">
+                <h4 className="font-black text-[var(--overlay-text)] text-md tracking-tight truncate pr-2">
                   {v.name}
                 </h4>
                 <div className="flex flex-col items-end">
@@ -112,16 +112,16 @@ export default function ViolatingChannels({
                   <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Market Gap</span>
                 </div>
               </div>
-              <p className="text-xs font-medium text-slate-400 mb-4">{v.desc}</p>
+              <p className="text-xs font-medium text-[var(--text-muted)] mb-4">{v.desc}</p>
               
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--overlay-border)]">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   Live Sync
                 </span>
                 <button 
                   onClick={() => handleGenerateDispute(v)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95 group/btn"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-[var(--overlay-text)] text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95 group/btn"
                 >
                   <Wand2 className="w-3.5 h-3.5 group-hover/btn:rotate-12 transition-transform" />
                   Generate Dispute
@@ -134,7 +134,7 @@ export default function ViolatingChannels({
             <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6 border border-emerald-500/20">
               <AlertTriangle className="w-10 h-10 text-emerald-500" />
             </div>
-            <p className="text-lg font-black text-white uppercase tracking-widest">Shield Secure</p>
+            <p className="text-lg font-black text-[var(--overlay-text)] uppercase tracking-widest">Shield Secure</p>
             <p className="text-sm text-slate-500 mt-2 max-w-[200px] leading-relaxed">
               No pricing leakage detected across tracked channels.
             </p>
@@ -155,15 +155,15 @@ export default function ViolatingChannels({
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#0A1629] border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
+              className="bg-[#0A1629] border border-[var(--overlay-border)] rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
             >
-              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-transparent">
+              <div className="p-8 border-b border-[var(--overlay-border)] flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-transparent">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-blue-600 rounded-2xl">
-                    <Wand2 className="w-6 h-6 text-white" />
+                    <Wand2 className="w-6 h-6 text-[var(--overlay-text)]" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white tracking-tight">AI Dispute Generator</h3>
+                    <h3 className="text-xl font-black text-[var(--overlay-text)] tracking-tight">AI Dispute Generator</h3>
                     <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mt-1">
                       Resolving: {selectedViolation.name}
                     </p>
@@ -173,7 +173,7 @@ export default function ViolatingChannels({
                   onClick={() => setSelectedViolation(null)}
                   className="p-2 hover:bg-white/5 rounded-full transition-colors"
                 >
-                  <X className="w-6 h-6 text-slate-400" />
+                  <X className="w-6 h-6 text-[var(--text-muted)]" />
                 </button>
               </div>
 
@@ -181,13 +181,13 @@ export default function ViolatingChannels({
                 {isGenerating ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                    <p className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] animate-pulse">
                       Synthesizing Dispute Logic...
                     </p>
                   </div>
                 ) : (
                   <>
-                    <div className="bg-[#050B18] border border-white/5 rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
+                    <div className="bg-[#050B18] border border-[var(--overlay-border)] rounded-2xl p-6 mb-8 max-h-[400px] overflow-y-auto scrollbar-hide">
                       <pre className="text-sm text-slate-300 font-medium whitespace-pre-wrap font-sans">
                         {disputeLetter}
                       </pre>
@@ -199,7 +199,7 @@ export default function ViolatingChannels({
                       <div className="flex gap-3">
                         <button 
                           onClick={handleCopy}
-                          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest transition-all"
+                          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] text-xs font-black uppercase tracking-widest transition-all"
                         >
                           {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                           {copied ? "Copied" : "Copy to Clipboard"}
@@ -229,7 +229,7 @@ export default function ViolatingChannels({
             </div>
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-500 font-bold uppercase tracking-tighter">Auto-Dispute</span>
-              <span className="font-black text-white uppercase tracking-widest">Enabled</span>
+              <span className="font-black text-[var(--overlay-text)] uppercase tracking-widest">Enabled</span>
             </div>
           </div>
         </div>

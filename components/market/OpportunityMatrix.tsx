@@ -70,7 +70,7 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
                         <span className="text-[11px] font-bold text-[var(--text-primary)] mb-1 leading-tight group-hover:scale-105 transition-transform">
                             {q.name}
                         </span>
-                        <p className="text-[9px] text-slate-400 leading-tight px-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <p className="text-[9px] text-[var(--text-muted)] leading-tight px-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             {q.desc}
                         </p>
                     </motion.div>

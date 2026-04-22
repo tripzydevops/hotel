@@ -147,14 +147,14 @@ export default function DashboardLayout({
             <div className="bg-red-500/90 backdrop-blur-md border-x border-b border-red-400/30 px-6 py-2 rounded-b-2xl shadow-[0_10px_40px_rgba(239,68,68,0.4)] flex items-center gap-6 pointer-events-auto group">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <EyeOff className="w-4 h-4 text-white animate-pulse" />
+                  <EyeOff className="w-4 h-4 text-[var(--overlay-text)] animate-pulse" />
                   <div className="absolute inset-0 bg-white blur-lg opacity-50 animate-pulse" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-tight">
+                  <span className="text-[10px] font-black text-[var(--overlay-text)] uppercase tracking-[0.2em] leading-tight">
                     Ghost Mode Active
                   </span>
-                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-widest">
+                  <span className="text-[9px] font-bold text-[var(--overlay-text)]/70 uppercase tracking-widest">
                     Impersonating: {profile?.display_name || profile?.email}
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export default function DashboardLayout({
 
               <button
                 onClick={handleTerminateImpersonation}
-                className="flex items-center gap-2 bg-white text-red-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-xl"
+                className="flex items-center gap-2 bg-white text-red-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-[var(--overlay-text)] transition-all transform hover:scale-105 active:scale-95 shadow-xl"
               >
                 <LogOut className="w-3 h-3" />
                 Stop Session
@@ -214,7 +214,7 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("en")}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-[var(--soft-gold)] text-white shadow-lg shadow-[var(--soft-gold-glow)]"
+                    ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
@@ -223,7 +223,7 @@ export default function DashboardLayout({
                 <button
                   onClick={() => setLocale("tr")}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-[var(--soft-gold)] text-white shadow-lg shadow-[var(--soft-gold-glow)]"
+                    ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >

@@ -90,7 +90,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
       <div className="flex items-center gap-3 mb-6">
         <ShieldAlert className="w-6 h-6 text-red-400" />
         <div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-[var(--overlay-text)]">
             {t("sentiment.competitiveVulnerabilities")}
           </h3>
           <p className="text-xs text-gray-400">
@@ -142,7 +142,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                   {isSecure ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-xs font-bold text-white leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <h4 className="text-xs font-bold text-[var(--overlay-text)] leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {comp.name}
                   </h4>
                   <div className="flex items-center gap-1 mt-0.5">
@@ -169,7 +169,7 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
                   weaknesses.map((w, wIdx) => (
                     <div
                       key={wIdx}
-                      className="p-2 rounded-lg bg-black/20 border border-white/5 group-hover:border-red-500/10 transition-colors"
+                      className="p-2 rounded-lg bg-black/20 border border-[var(--overlay-border)] group-hover:border-red-500/10 transition-colors"
                     >
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-[10px] font-bold text-gray-300">

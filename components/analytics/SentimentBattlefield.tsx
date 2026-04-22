@@ -185,7 +185,7 @@ export default function SentimentBattlefield({
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full h-[400px] bg-white/[0.02] rounded-xl border border-white/5 p-4"
+      className="w-full h-[400px] bg-white/[0.02] rounded-xl border border-[var(--overlay-border)] p-4"
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart

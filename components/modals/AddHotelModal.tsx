@@ -201,7 +201,7 @@ export default function AddHotelModal({
 
         <div className="flex items-center justify-between mb-8">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-black text-white italic tracking-tighter">
+            <h2 className="text-2xl font-black text-[var(--overlay-text)] italic tracking-tighter">
               NEW <span className="text-[var(--soft-gold)]">SIGNAL</span>
             </h2>
             <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)] font-bold">
@@ -212,7 +212,7 @@ export default function AddHotelModal({
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-full transition-all hover:rotate-90"
           >
-            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
+            <X className="w-5 h-5 text-[var(--text-muted)] hover:text-[var(--overlay-text)]" />
           </button>
         </div>
 
@@ -233,7 +233,7 @@ export default function AddHotelModal({
                   setSuggestions([]);
                   setShowSuggestions(true);
                 }}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 pl-12 pr-12 text-white placeholder:text-white/10 focus:outline-none focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all font-medium"
+                className="w-full bg-white/[0.03] border border-[var(--overlay-border)] rounded-xl py-4 pl-12 pr-12 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/10 focus:outline-none focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all font-medium"
                 placeholder={t("addHotel.namePlaceholder")}
               />
               {name.length > 0 && !isSearching && (
@@ -264,10 +264,10 @@ export default function AddHotelModal({
                           key={idx}
                           type="button"
                           onClick={() => handleSelectSuggestion(item)}
-                          className="w-full px-4 py-3 text-left hover:bg-[var(--soft-gold)]/10 flex flex-col transition-all border-b border-white/5 last:border-none group/item"
+                          className="w-full px-4 py-3 text-left hover:bg-[var(--soft-gold)]/10 flex flex-col transition-all border-b border-[var(--overlay-border)] last:border-none group/item"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-white font-bold text-sm group-hover/item:text-[var(--soft-gold)] transition-colors">
+                            <span className="text-[var(--overlay-text)] font-bold text-sm group-hover/item:text-[var(--soft-gold)] transition-colors">
                               {item.name}
                             </span>
                             {item.source === "serpapi" && (
@@ -309,7 +309,7 @@ export default function AddHotelModal({
                 value={country}
                 disabled={isManualEntry}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] disabled:opacity-30 transition-all font-bold"
+                className="w-full bg-white/[0.03] border border-[var(--overlay-border)] rounded-xl py-3 px-4 text-[var(--overlay-text)] focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] disabled:opacity-30 transition-all font-bold"
               >
                 {countries.map((c) => (
                   <option key={c} value={c}>
@@ -330,7 +330,7 @@ export default function AddHotelModal({
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="ENTER CITY"
-                  className="w-full bg-white/[0.03] border border-[var(--soft-gold)]/30 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)]/30 text-sm font-bold"
+                  className="w-full bg-white/[0.03] border border-[var(--soft-gold)]/30 rounded-xl py-3 px-4 text-[var(--overlay-text)] focus:outline-none focus:ring-1 focus:ring-[var(--soft-gold)]/30 text-sm font-bold"
                 />
               ) : (
                 <select
@@ -344,7 +344,7 @@ export default function AddHotelModal({
                       setCity(e.target.value);
                     }
                   }}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] transition-all font-bold"
+                  className="w-full bg-white/[0.03] border border-[var(--overlay-border)] rounded-xl py-3 px-4 text-[var(--overlay-text)] focus:outline-none focus:border-[var(--soft-gold)]/50 text-sm [&>option]:bg-[#0a1225] transition-all font-bold"
                 >
                   <option value="">{t("addHotel.selectCity")}</option>
                   {filteredCities.map((c) => (
@@ -363,7 +363,7 @@ export default function AddHotelModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-2 border-y border-white/5">
+          <div className="flex items-center justify-between py-2 border-y border-[var(--overlay-border)]">
             <div className="flex items-center gap-3">
               <div className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -376,7 +376,7 @@ export default function AddHotelModal({
                 <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--soft-gold)]"></div>
                 <label
                   htmlFor="isTarget"
-                  className="ml-3 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] peer-checked:text-white transition-colors"
+                  className="ml-3 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] peer-checked:text-[var(--overlay-text)] transition-colors"
                 >
                   {t("addHotel.targetLabel")}
                 </label>

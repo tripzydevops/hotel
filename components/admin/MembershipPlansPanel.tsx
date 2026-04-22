@@ -116,7 +116,7 @@ const MembershipPlansPanel = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Crown className="w-6 h-6 text-[var(--soft-gold)]" />
-          <h3 className="text-xl font-bold text-white">Membership Plans</h3>
+          <h3 className="text-xl font-bold text-[var(--overlay-text)]">Membership Plans</h3>
         </div>
         <button
           onClick={() => {
@@ -141,12 +141,12 @@ const MembershipPlansPanel = () => {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className="glass-card p-6 border border-white/10 relative group"
+            className="glass-card p-6 border border-[var(--overlay-border)] relative group"
           >
             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => openEdit(plan)}
-                className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white"
+                className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-[var(--overlay-text)]"
               >
                 <Edit2 className="w-3 h-3" />
               </button>
@@ -158,7 +158,7 @@ const MembershipPlansPanel = () => {
               </button>
             </div>
 
-            <h4 className="text-lg font-bold text-white mb-1">{plan.name}</h4>
+            <h4 className="text-lg font-bold text-[var(--overlay-text)] mb-1">{plan.name}</h4>
             <div className="text-2xl font-bold text-[var(--soft-gold)] mb-4">
               ${plan.price_monthly}
               <span className="text-xs text-[var(--text-muted)] font-normal">
@@ -167,19 +167,19 @@ const MembershipPlansPanel = () => {
             </div>
 
             <div className="space-y-2 text-sm text-[var(--text-muted)]">
-              <div className="flex justify-between border-b border-white/5 pb-1">
+              <div className="flex justify-between border-b border-[var(--overlay-border)] pb-1">
                 <span>Monitors</span>
-                <span className="text-white">{plan.hotel_limit} Hotels</span>
+                <span className="text-[var(--overlay-text)]">{plan.hotel_limit} Hotels</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-1">
+              <div className="flex justify-between border-b border-[var(--overlay-border)] pb-1">
                 <span>Frequency</span>
-                <span className="text-white capitalize">
+                <span className="text-[var(--overlay-text)] capitalize">
                   {plan.scan_frequency_limit}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-1">
+              <div className="flex justify-between border-b border-[var(--overlay-border)] pb-1">
                 <span>Monthly Limit</span>
-                <span className="text-white">
+                <span className="text-[var(--overlay-text)]">
                   {plan.monthly_scan_limit || 100} Scans
                 </span>
               </div>
@@ -203,8 +203,8 @@ const MembershipPlansPanel = () => {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 border border-white/10 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">
+          <div className="glass-card p-6 border border-[var(--overlay-border)] w-full max-w-md">
+            <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-4">
               {editingPlan ? "Edit Plan" : "Create Plan"}
             </h3>
             <form onSubmit={handleSave} className="space-y-4">
@@ -218,7 +218,7 @@ const MembershipPlansPanel = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
                   placeholder="e.g. Gold"
                 />
               </div>
@@ -238,7 +238,7 @@ const MembershipPlansPanel = () => {
                         price_monthly: parseFloat(e.target.value),
                       })
                     }
-                    className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                    className="w-full bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
                   />
                 </div>
                 <div>
@@ -255,7 +255,7 @@ const MembershipPlansPanel = () => {
                         hotel_limit: parseInt(e.target.value),
                       })
                     }
-                    className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                    className="w-full bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
                   />
                 </div>
               </div>
@@ -274,7 +274,7 @@ const MembershipPlansPanel = () => {
                         monthly_scan_limit: parseInt(e.target.value),
                       })
                     }
-                    className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white"
+                    className="w-full bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
                   />
                 </div>
                 <div>
@@ -289,7 +289,7 @@ const MembershipPlansPanel = () => {
                         scan_frequency_limit: e.target.value,
                       })
                     }
-                    className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white [&>option]:bg-black"
+                    className="w-full bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)] [&>option]:bg-black"
                   >
                     <option value="daily">Daily</option>
                     <option value="hourly">Hourly</option>
@@ -301,7 +301,7 @@ const MembershipPlansPanel = () => {
                 <label className="block text-xs uppercase text-[var(--text-muted)] mb-1">
                   Features (Press Enter to add)
                 </label>
-                <div className="bg-black/30 border border-white/10 rounded px-3 py-2 min-h-[50px] flex flex-wrap gap-2">
+                <div className="bg-black/30 border border-[var(--overlay-border)] rounded px-3 py-2 min-h-[50px] flex flex-wrap gap-2">
                   {formData.features.map((feat: string, i: number) => (
                     <span
                       key={i}
@@ -318,14 +318,14 @@ const MembershipPlansPanel = () => {
                             features: newFeats,
                           });
                         }}
-                        className="hover:text-white"
+                        className="hover:text-[var(--overlay-text)]"
                       >
                         ×
                       </button>
                     </span>
                   ))}
                   <input
-                    className="flex-1 bg-transparent border-none outline-none text-white text-xs"
+                    className="flex-1 bg-transparent border-none outline-none text-[var(--overlay-text)] text-xs"
                     placeholder="Type and enter..."
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -348,7 +348,7 @@ const MembershipPlansPanel = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg"
+                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] rounded-lg"
                 >
                   Cancel
                 </button>

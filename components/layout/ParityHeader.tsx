@@ -42,7 +42,7 @@ export default function ParityHeader() {
           </div>
           <nav className="hidden lg:flex items-center gap-8 h-full">
             <Link
-              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors h-full flex items-center"
+              className="text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors h-full flex items-center"
               href="/"
             >
               Dashboard

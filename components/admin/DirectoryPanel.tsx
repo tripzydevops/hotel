@@ -113,7 +113,7 @@ const DirectoryPanel = () => {
             <List className="w-6 h-6 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <span className="text-white text-base font-bold tracking-tight">
+            <span className="text-[var(--overlay-text)] text-base font-bold tracking-tight">
               Master Asset Inventory
             </span>
             <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-widest mt-0.5">
@@ -130,15 +130,15 @@ const DirectoryPanel = () => {
       </div>
 
       {/* Add New Form */}
-      <div className="glass-card p-8 border border-white/5 relative overflow-hidden group">
+      <div className="glass-card p-8 border border-[var(--overlay-border)] relative overflow-hidden group">
         <div className="absolute top-0 left-0 w-1 h-full bg-[var(--soft-gold)]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-black text-white tracking-widest uppercase text-sm">
+          <h3 className="text-xl font-black text-[var(--overlay-text)] tracking-widest uppercase text-sm">
             Create New Entry
           </h3>
           <button
             onClick={handleSyncDirectory}
-            className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-white/5 transition-all"
+            className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-[var(--overlay-border)] transition-all"
           >
             <RefreshCw className="w-3 h-3" /> Sync Database
           </button>
@@ -156,7 +156,7 @@ const DirectoryPanel = () => {
               placeholder="e.g. Grand Plaza Hotel"
               value={dirName}
               onChange={(e) => setDirName(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
               required
             />
           </div>
@@ -168,7 +168,7 @@ const DirectoryPanel = () => {
               placeholder="e.g. London, UK"
               value={dirLocation}
               onChange={(e) => setDirLocation(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
               required
             />
           </div>
@@ -180,7 +180,7 @@ const DirectoryPanel = () => {
               placeholder="Optional ID"
               value={dirSerpId}
               onChange={(e) => setDirSerpId(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none font-mono"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none font-mono"
             />
           </div>
           <div className="flex items-end">
@@ -204,7 +204,7 @@ const DirectoryPanel = () => {
       </div>
 
       {/* List */}
-      <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+      <div className="glass-card border border-[var(--overlay-border)] overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
         {loading && directory.length === 0 ? (
           <div className="p-24 text-center">
             <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mx-auto opacity-50" />
@@ -212,7 +212,7 @@ const DirectoryPanel = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+              <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-[var(--overlay-border)]">
                 <tr>
                   <th className="p-5">Asset Descriptor</th>
                   <th className="p-5">Market Context</th>
@@ -228,10 +228,10 @@ const DirectoryPanel = () => {
                   >
                     <td className="p-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:border-[var(--soft-gold)]/30 group-hover:bg-[var(--soft-gold)]/5 transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-center text-[var(--overlay-text)] group-hover:border-[var(--soft-gold)]/30 group-hover:bg-[var(--soft-gold)]/5 transition-all">
                           <Building2 className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:text-[var(--soft-gold)] transition-all" />
                         </div>
-                        <span className="text-white font-bold tracking-tight text-base group-hover:text-[var(--soft-gold)] transition-colors">
+                        <span className="text-[var(--overlay-text)] font-bold tracking-tight text-base group-hover:text-[var(--soft-gold)] transition-colors">
                           {d.name}
                         </span>
                       </div>
@@ -240,7 +240,7 @@ const DirectoryPanel = () => {
                       {d.location}
                     </td>
                     <td className="p-5">
-                      <span className="font-mono text-[11px] bg-black/30 text-[var(--text-muted)] px-3 py-1.5 rounded-lg border border-white/5 group-hover:text-white transition-colors">
+                      <span className="font-mono text-[11px] bg-black/30 text-[var(--text-muted)] px-3 py-1.5 rounded-lg border border-[var(--overlay-border)] group-hover:text-[var(--overlay-text)] transition-colors">
                         {d.serp_api_id || "NOT_CLUSTERED"}
                       </span>
                     </td>
@@ -248,14 +248,14 @@ const DirectoryPanel = () => {
                       <div className="flex justify-end gap-3">
                         <button
                           onClick={() => setEntryToEdit(d)}
-                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-[var(--overlay-border)] hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
                           title="Refresh / Sync"
                         >
                           <RefreshCw className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteDirectory(d.id)}
-                          className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-95"
+                          className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-[var(--overlay-border)] hover:border-red-500/30 transition-all active:scale-95"
                           title="Purge"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -273,12 +273,12 @@ const DirectoryPanel = () => {
       {/* Edit Modal */}
       {entryToEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-6 border border-white/10 w-full max-w-md">
+          <div className="glass-card p-6 border border-[var(--overlay-border)] w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Edit Entry</h3>
+              <h3 className="text-xl font-bold text-[var(--overlay-text)]">Edit Entry</h3>
               <button
                 onClick={() => setEntryToEdit(null)}
-                className="text-[var(--text-muted)] hover:text-white"
+                className="text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
               >
                 ✕
               </button>
@@ -290,7 +290,7 @@ const DirectoryPanel = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, name: e.target.value })
                 }
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
               />
               <input
                 placeholder="Location"
@@ -298,7 +298,7 @@ const DirectoryPanel = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, location: e.target.value })
                 }
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
               />
               <input
                 placeholder="SerpApi ID"
@@ -306,12 +306,12 @@ const DirectoryPanel = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, serp_api_id: e.target.value })
                 }
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white"
+                className="w-full bg-white/5 border border-[var(--overlay-border)] rounded px-3 py-2 text-[var(--overlay-text)]"
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setEntryToEdit(null)}
-                  className="flex-1 py-2 bg-white/5 rounded text-white"
+                  className="flex-1 py-2 bg-white/5 rounded text-[var(--overlay-text)]"
                 >
                   Cancel
                 </button>

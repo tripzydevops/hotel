@@ -233,7 +233,7 @@ export default function EditHotelModal({
                   type="date"
                   value={fixedCheckIn}
                   onChange={(e) => setFixedCheckIn(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2 px-3 text-[var(--overlay-text)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
                 />
               </div>
               <div>
@@ -244,7 +244,7 @@ export default function EditHotelModal({
                   type="date"
                   value={fixedCheckOut}
                   onChange={(e) => setFixedCheckOut(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
+                  className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-lg py-2 px-3 text-[var(--overlay-text)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 text-sm [color-scheme:dark]"
                 />
               </div>
             </div>

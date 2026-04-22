@@ -27,7 +27,7 @@ export default function SemanticSearchBar({
         />
 
         <div
-          className={`relative flex items-center bg-[#0a0a14]/90 border transition-all duration-300 rounded-2xl overflow-hidden ${isFocused ? "border-[var(--soft-gold)] shadow-[0_0_30px_rgba(255,215,0,0.1)]" : "border-white/10"}`}
+          className={`relative flex items-center bg-[#0a0a14]/90 border transition-all duration-300 rounded-2xl overflow-hidden ${isFocused ? "border-[var(--soft-gold)] shadow-[0_0_30px_rgba(255,215,0,0.1)]" : "border-[var(--overlay-border)]"}`}
         >
           <div className="pl-4 text-[var(--text-muted)] group-focus-within:text-[var(--soft-gold)] transition-colors">
             <Sparkles className="w-5 h-5" />
@@ -40,7 +40,7 @@ export default function SemanticSearchBar({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder="Ask the engine (e.g., 'Find luxury spa hotels with ocean view under $200')..."
-            className="w-full bg-transparent px-4 py-4 text-white placeholder:text-white/20 focus:outline-none font-medium"
+            className="w-full bg-transparent px-4 py-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none font-medium"
           />
 
           <div className="pr-4 flex items-center gap-2">
@@ -53,7 +53,7 @@ export default function SemanticSearchBar({
               </button>
             )}
             {!query && (
-              <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded bg-white/5 border border-white/5 text-[10px] text-[var(--text-muted)] font-black uppercase tracking-wider">
+              <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded bg-white/5 border border-[var(--overlay-border)] text-[10px] text-[var(--text-muted)] font-black uppercase tracking-wider">
                 <Command className="w-3 h-3" />
                 <span>K</span>
               </div>

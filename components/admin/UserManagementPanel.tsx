@@ -196,14 +196,14 @@ const UserManagementPanel = () => {
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       {/* Add User Form */}
-      <div className="glass-card p-8 border border-white/5 relative overflow-hidden group">
+      <div className="glass-card p-8 border border-[var(--overlay-border)] relative overflow-hidden group">
         <div className="absolute top-0 left-0 w-1 h-full bg-[var(--soft-gold)]/50 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center">
               <UserPlus className="w-5 h-5 text-[var(--soft-gold)]" />
             </div>
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">
+            <h3 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.2em]">
               Create New User
             </h3>
           </div>
@@ -235,7 +235,7 @@ const UserManagementPanel = () => {
               required
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             />
           </div>
           <div className="space-y-1.5">
@@ -247,7 +247,7 @@ const UserManagementPanel = () => {
               placeholder="e.g. John Doe"
               value={newUserName}
               onChange={(e) => setNewUserName(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             />
           </div>
           <div className="space-y-1.5">
@@ -261,7 +261,7 @@ const UserManagementPanel = () => {
               minLength={6}
               value={newUserPass}
               onChange={(e) => setNewUserPass(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             />
           </div>
 
@@ -272,7 +272,7 @@ const UserManagementPanel = () => {
             <select
               value={newUserPlan}
               onChange={(e) => setNewUserPlan(e.target.value as AdminUser["plan_type"])}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             >
               <option value="trial">TRIAL (5 Hotels)</option>
               <option value="starter">STARTER (20 Hotels)</option>
@@ -288,7 +288,7 @@ const UserManagementPanel = () => {
             <select
               value={newUserStatus}
               onChange={(e) => setNewUserStatus(e.target.value as AdminUser["subscription_status"])}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-3 text-white focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
+              className="w-full bg-black/20 border border-[var(--overlay-border)] rounded-xl px-5 py-3 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-0 transition-all outline-none"
             >
               <option value="active">ACTIVE</option>
               <option value="trial">TRIAL</option>
@@ -309,7 +309,7 @@ const UserManagementPanel = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="glass-card p-4 border border-white/5 flex items-center gap-4 bg-white/[0.02]">
+      <div className="glass-card p-4 border border-[var(--overlay-border)] flex items-center gap-4 bg-white/[0.02]">
         <div className="flex-1 relative group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
             <Eye className="w-4 h-4 text-[var(--text-muted)] group-focus-within:text-[var(--soft-gold)] transition-colors" />
@@ -319,12 +319,12 @@ const UserManagementPanel = () => {
             placeholder="Search by name, email, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-5 py-3.5 text-sm text-white focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all outline-none"
+            className="w-full bg-black/40 border border-[var(--overlay-border)] rounded-xl pl-12 pr-5 py-3.5 text-sm text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 focus:ring-1 focus:ring-[var(--soft-gold)]/20 transition-all outline-none"
           />
           {searchTerm && (
             <button 
               onClick={() => setSearchTerm("")}
-              className="absolute inset-y-0 right-4 flex items-center text-[var(--text-muted)] hover:text-white transition-colors"
+              className="absolute inset-y-0 right-4 flex items-center text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
             >
               ✕
             </button>
@@ -332,7 +332,7 @@ const UserManagementPanel = () => {
         </div>
         <button 
           onClick={() => loadUsers(searchTerm)}
-          className="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white rounded-xl transition-all border border-white/5 flex items-center gap-2"
+          className="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-[var(--overlay-text)] rounded-xl transition-all border border-[var(--overlay-border)] flex items-center gap-2"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Force Refresh
@@ -340,7 +340,7 @@ const UserManagementPanel = () => {
       </div>
 
       {/* Users Table */}
-      <div className="glass-card border border-white/5 overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+      <div className="glass-card border border-[var(--overlay-border)] overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
         {loading && users.length === 0 ? (
           <div className="p-24 text-center">
             <Loader2 className="w-10 h-10 animate-spin text-[var(--soft-gold)] mx-auto opacity-50" />
@@ -348,7 +348,7 @@ const UserManagementPanel = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5">
+              <thead className="bg-white/[0.02] text-[var(--text-muted)] font-black text-[10px] uppercase tracking-[0.2em] border-b border-[var(--overlay-border)]">
                 <tr>
                   <th className="p-5">User Profile</th>
                   <th className="p-5">Tier / Status</th>
@@ -367,12 +367,12 @@ const UserManagementPanel = () => {
                   >
                     <td className="p-5">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[var(--soft-gold)]/10 group-hover:border-[var(--soft-gold)]/30 transition-all overflow-hidden relative">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-center group-hover:bg-[var(--soft-gold)]/10 group-hover:border-[var(--soft-gold)]/30 transition-all overflow-hidden relative">
                           {u.display_name?.[0] || u.email?.[0] || "U"}
                           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-white font-bold tracking-tight text-base group-hover:text-[var(--soft-gold)] transition-colors">
+                          <span className="text-[var(--overlay-text)] font-bold tracking-tight text-base group-hover:text-[var(--soft-gold)] transition-colors">
                             {u.display_name ||
                               u.email?.split("@")[0] ||
                               "Unknown"}
@@ -389,7 +389,7 @@ const UserManagementPanel = () => {
                           className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${u.plan_type === "pro" ||
                             u.plan_type === "enterprise"
                             ? "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border-[var(--soft-gold)]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
-                            : "bg-white/5 text-white/50 border-white/10"
+                            : "bg-white/5 text-[var(--text-muted)] border-[var(--overlay-border)]"
                             }`}
                         >
                           {u.plan_type || "TRIAL"}
@@ -430,14 +430,14 @@ const UserManagementPanel = () => {
                     <td className="p-5">
                       <div className="flex flex-col gap-2 min-w-[150px]">
                         <div className="flex justify-between items-baseline mb-1">
-                          <span className="text-[11px] font-black text-white tabular-nums">
+                          <span className="text-[11px] font-black text-[var(--overlay-text)] tabular-nums">
                             {u.hotel_count} <span className="opacity-40 font-bold ml-0.5">/ {u.max_hotels || 5}</span>
                           </span>
                           <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter opacity-50">
                             {Math.round((u.hotel_count / (u.max_hotels || 5)) * 100)}% Load
                           </span>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-[var(--overlay-border)] p-[1px]">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(100, (u.hotel_count / (u.max_hotels || 5)) * 100)}%` }}
@@ -464,7 +464,7 @@ const UserManagementPanel = () => {
                     </td>
                     <td className="p-5">
                       <div className="flex flex-col text-[var(--text-muted)]">
-                        <span className="text-xs font-bold tabular-nums group-hover:text-white transition-colors">
+                        <span className="text-xs font-bold tabular-nums group-hover:text-[var(--overlay-text)] transition-colors">
                           {u.created_at
                             ? new Date(u.created_at).toLocaleDateString()
                             : "-"}
@@ -480,21 +480,21 @@ const UserManagementPanel = () => {
                           onClick={() =>
                             window.open(`/?impersonate=${u.id}`, "_blank")
                           }
-                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95 group/ghost"
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-[var(--overlay-border)] hover:border-[var(--soft-gold)]/30 transition-all active:scale-95 group/ghost"
                           title="Enter Ghost Mode (Impersonate)"
                         >
                           <EyeOff className="w-4 h-4 group-hover/ghost:scale-110 transition-transform" />
                         </button>
                         <button
                           onClick={() => setUserToEdit(u)}
-                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-white/5 hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
+                          className="p-2.5 bg-white/5 hover:bg-[var(--soft-gold)]/10 rounded-xl text-[var(--soft-gold)] border border-[var(--overlay-border)] hover:border-[var(--soft-gold)]/30 transition-all active:scale-95"
                           title="Edit Profile"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(u.id)}
-                          className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-95"
+                          className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-red-400 border border-[var(--overlay-border)] hover:border-red-500/30 transition-all active:scale-95"
                           title="Delete User"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -512,7 +512,7 @@ const UserManagementPanel = () => {
       {/* Edit User Modal */}
       {userToEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="glass-card p-8 border border-white/10 w-full max-w-lg shadow-2xl relative overflow-hidden">
+          <div className="glass-card p-8 border border-[var(--overlay-border)] w-full max-w-lg shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--soft-gold)]/5 blur-3xl pointer-events-none" />
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
@@ -520,7 +520,7 @@ const UserManagementPanel = () => {
                   <Edit2 className="w-5 h-5 text-[var(--soft-gold)]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white uppercase tracking-widest">
+                  <h3 className="text-lg font-black text-[var(--overlay-text)] uppercase tracking-widest">
                     Edit User Account
                   </h3>
                   <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 opacity-50 lowercase">
@@ -530,7 +530,7 @@ const UserManagementPanel = () => {
               </div>
               <button
                 onClick={() => setUserToEdit(null)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-[var(--text-muted)] hover:text-white transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-all"
               >
                 ✕
               </button>
@@ -546,7 +546,7 @@ const UserManagementPanel = () => {
                   onChange={(e) =>
                     setEditUserForm({ ...editUserForm, email: e.target.value })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
               <div className="space-y-1.5">
@@ -561,7 +561,7 @@ const UserManagementPanel = () => {
                       display_name: e.target.value,
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
 
@@ -578,7 +578,7 @@ const UserManagementPanel = () => {
                       plan_type: e.target.value as AdminUser["plan_type"],
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 transition-all outline-none"
                 >
                   <option value="trial">TRIAL (5 Hotels)</option>
                   <option value="starter">STARTER (20 Hotels)</option>
@@ -598,7 +598,7 @@ const UserManagementPanel = () => {
                       subscription_status: e.target.value as AdminUser["subscription_status"],
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all outline-none"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 transition-all outline-none"
                 >
                   <option value="active">ACTIVE</option>
                   <option value="trial">TRIALING</option>
@@ -611,7 +611,7 @@ const UserManagementPanel = () => {
                 <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
                   Monitoring Cadence
                 </label>
-                <div className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 text-white/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
+                <div className="w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
                   <RefreshCw className="w-3 h-3" />
                   System Pulse: 4 Hours (Autonomous)
                 </div>
@@ -630,12 +630,12 @@ const UserManagementPanel = () => {
                       password: e.target.value,
                     })
                   }
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-[var(--soft-gold)]/50 transition-all"
+                  className="w-full bg-black/30 border border-[var(--overlay-border)] rounded-xl px-4 py-2.5 text-[var(--overlay-text)] focus:border-[var(--soft-gold)]/50 transition-all"
                 />
               </div>
-              <div className="col-span-1 md:col-span-2 p-4 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between">
+              <div className="col-span-1 md:col-span-2 p-4 bg-white/5 border border-[var(--overlay-border)] rounded-xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Access Verification</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--overlay-text)]">Access Verification</h4>
                   <p className="text-[9px] text-[var(--text-muted)] mt-1">When disabled, the user is blocked from logging in.</p>
                 </div>
                 <button
@@ -650,7 +650,7 @@ const UserManagementPanel = () => {
             <div className="flex gap-4">
               <button
                 onClick={() => setUserToEdit(null)}
-                className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white rounded-xl transition-all border border-white/5"
+                className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-[var(--overlay-text)] rounded-xl transition-all border border-[var(--overlay-border)]"
               >
                 Abort
               </button>

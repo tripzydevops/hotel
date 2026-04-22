@@ -90,7 +90,7 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
     <div className="glass-card mb-10 overflow-hidden border border-white/[0.08] relative">
       <div className="p-6 border-b border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white flex items-center gap-3">
+          <h3 className="text-lg font-bold text-[var(--overlay-text)] flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
               <Activity className="w-4 h-4 text-indigo-400" />
             </div>
@@ -101,7 +101,7 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
           </p>
         </div>
 
-        <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+        <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--overlay-border)]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -109,7 +109,7 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                 activeTab === tab.id
                   ? 'bg-white/10 text-[var(--soft-gold)] shadow-lg'
-                  : 'text-[var(--text-muted)] hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--overlay-text)]'
               }`}
             >
               <tab.icon className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
                 </div>
                 <div className="space-y-6">
                   <div className="mb-4">
-                    <h4 className="text-xl font-black text-white mb-2">Voice Share Index</h4>
+                    <h4 className="text-xl font-black text-[var(--overlay-text)] mb-2">Voice Share Index</h4>
                     <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                       Market dominance based on total review volume and digital presence. 
                       You currently hold <span className="text-[var(--soft-gold)] font-bold">{(voiceShareData[0]?.percentage || 0).toFixed(1)}%</span> of the market&apos;s digital voice.
@@ -170,14 +170,14 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
                   </div>
                   <div className="grid grid-cols-1 gap-3">
                     {voiceShareData.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div key={entry.name} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-[var(--overlay-border)]">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                          <span className="text-xs font-bold text-white/80">{entry.name}</span>
+                          <span className="text-xs font-bold text-[var(--overlay-text)]/80">{entry.name}</span>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-[10px] font-black text-[var(--text-muted)]">{entry.value} Reviews</span>
-                          <span className="text-xs font-black text-white">{entry.percentage.toFixed(1)}%</span>
+                          <span className="text-xs font-black text-[var(--overlay-text)]">{entry.percentage.toFixed(1)}%</span>
                         </div>
                       </div>
                     ))}
@@ -266,7 +266,7 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
                 </div>
                 <div className="space-y-6">
                   <div className="mb-4">
-                    <h4 className="text-xl font-black text-white mb-2">Competitive Sentiment Radar</h4>
+                    <h4 className="text-xl font-black text-[var(--overlay-text)] mb-2">Competitive Sentiment Radar</h4>
                     <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                       Benchmarking your guest experience against the market average. 
                       Focus on pillars where the gold radar (You) underperforms the blue background (Market).
@@ -276,9 +276,9 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
                     {sentimentData.map((item) => {
                       const diff = item.hotel_score - item.comp_avg;
                       return (
-                        <div key={item.pillar} className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <div key={item.pillar} className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)]">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs font-black uppercase tracking-widest text-white">{item.pillar}</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-[var(--overlay-text)]">{item.pillar}</span>
                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
                               diff > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
                             }`}>

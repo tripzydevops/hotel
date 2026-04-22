@@ -21,7 +21,7 @@ export default function BottomNav({
   const { t } = useI18n();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--deep-ocean)]/80 backdrop-blur-xl border-t border-white/5 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--deep-ocean)]/80 backdrop-blur-xl border-t border-[var(--overlay-border)] pb-safe">
       <div className="flex items-center justify-around h-16 px-2">
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

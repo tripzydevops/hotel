@@ -7,7 +7,7 @@ import { useMemo } from "react";
 const HeatmapMap = dynamic(() => import("./HeatmapMap"), {
   ssr: false,
   loading: () => (
-    <div className="h-[500px] w-full bg-slate-100 animate-pulse rounded-xl flex items-center justify-center text-slate-400">
+    <div className="h-[500px] w-full bg-slate-100 animate-pulse rounded-xl flex items-center justify-center text-[var(--text-muted)]">
       Loading Map...
     </div>
   ),
@@ -47,7 +47,7 @@ export default function HeatmapPanel({ hotels }: HeatmapPanelProps) {
       {validHotels.length > 0 ? (
         <HeatmapMap hotels={validHotels} />
       ) : (
-        <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+        <div className="h-64 flex flex-col items-center justify-center text-[var(--text-muted)] bg-slate-50 rounded-lg border border-dashed border-slate-200">
           <p>No geospatial data available.</p>
           <p className="text-xs mt-2">Run a scan to populate coordinates.</p>
         </div>

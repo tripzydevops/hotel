@@ -63,7 +63,7 @@ export default function AnalysisTabs() {
                 ${
                   isActive
                     ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] shadow-[0_0_15px_rgba(246,195,68,0.3)]"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-[var(--overlay-text)]/60 hover:bg-white/10 hover:text-[var(--overlay-text)]"
                 }
               `}
             >

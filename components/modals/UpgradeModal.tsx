@@ -54,7 +54,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
         <div className="bg-[var(--deep-ocean-accent)]/10 rounded-xl p-4 mb-6 border border-[var(--glass-border)]">
              <div className="flex justify-between items-center mb-1">
-                 <span className="text-white font-medium">Pro Plan</span>
+                 <span className="text-[var(--overlay-text)] font-medium">Pro Plan</span>
                  <span className="text-2xl font-bold text-[var(--soft-gold)]">$99<span className="text-xs text-[var(--text-muted)] font-normal">/mo</span></span>
              </div>
              <p className="text-xs text-[var(--text-muted)]">Billed monthly. Cancel anytime.</p>

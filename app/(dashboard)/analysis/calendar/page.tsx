@@ -173,12 +173,12 @@ export default function CalendarPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/analysis"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[var(--overlay-text)]/60 hover:text-[var(--overlay-text)] transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-white">Rate Calendar</h1>
+            <h1 className="text-2xl font-black text-[var(--overlay-text)]">Rate Calendar</h1>
             <p className="text-sm text-[var(--text-muted)]">
               Market Intelligence & Rate Strategy
             </p>

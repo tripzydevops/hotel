@@ -81,7 +81,7 @@ export default function AdminPage() {
       className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden group ${
         activeTab === id
           ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold shadow-lg shadow-[var(--soft-gold)]/20 scale-[1.02]"
-          : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5"
+          : "text-[var(--text-secondary)] hover:text-[var(--overlay-text)] hover:bg-white/5"
       }`}
     >
       <Icon
@@ -113,7 +113,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
       {/* Navigation Tabs - Dock Style */}
-      <div className="flex items-center p-1.5 bg-[var(--deep-ocean-card)]/40 backdrop-blur-md rounded-2xl border border-white/5 w-fit shadow-2xl">
+      <div className="flex items-center p-1.5 bg-[var(--deep-ocean-card)]/40 backdrop-blur-md rounded-2xl border border-[var(--overlay-border)] w-fit shadow-2xl">
         <TabButton id="overview" label="Overview" icon={LayoutDashboard} />
         <div className="w-px h-6 bg-white/5 mx-1" />
         <TabButton id="users" label="Users" icon={Users} />
@@ -135,7 +135,7 @@ export default function AdminPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <Shield className="w-5 h-5 text-[var(--soft-gold)]" />
-              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">System Health Metrics</h2>
+              <h2 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.3em]">System Health Metrics</h2>
             </div>
             <SystemHealthPanel stats={stats} />
           </section>
@@ -144,7 +144,7 @@ export default function AdminPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
-              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Service Pulse & Provider Matrix</h2>
+              <h2 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.3em]">Service Pulse & Provider Matrix</h2>
             </div>
             <HeartbeatMonitor />
           </section>
@@ -157,7 +157,7 @@ export default function AdminPage() {
             <div className="lg:col-span-9 min-w-0 space-y-6">
               <div className="flex items-center gap-3">
                 <Activity className="w-5 h-5 text-[var(--soft-gold)]" />
-                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Live Activity Stream</h2>
+                <h2 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.3em]">Live Activity Stream</h2>
               </div>
               <ActivityFeed />
             </div>
@@ -166,7 +166,7 @@ export default function AdminPage() {
             <div className="lg:col-span-3 flex flex-col gap-8 h-full min-w-0">
               <div className="flex items-center gap-3">
                 <TrendingUp className="w-5 h-5 text-[var(--soft-gold)]" />
-                <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Core Metrics</h2>
+                <h2 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.3em]">Core Metrics</h2>
               </div>
               <StatCard
                 label="Total Users"
@@ -200,7 +200,7 @@ export default function AdminPage() {
                 <UserPlus className="w-7 h-7" />
               </div>
               <div className="text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--overlay-text)]">
                   User Management
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">
@@ -219,7 +219,7 @@ export default function AdminPage() {
                 <Activity className="w-7 h-7" />
               </div>
               <div className="text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--overlay-text)]">
                   System Diagnostics
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">
@@ -238,7 +238,7 @@ export default function AdminPage() {
                 <Key className="w-7 h-7" />
               </div>
               <div className="text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--overlay-text)]">
                   API Management
                 </h3>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1">

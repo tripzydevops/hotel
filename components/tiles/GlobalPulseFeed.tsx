@@ -84,7 +84,7 @@ export const GlobalPulseFeed: React.FC = () => {
   }
 
   return (
-    <div className="glass-card rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group border-white/5 bg-[var(--deep-ocean)]/30">
+    <div className="glass-card rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group border-[var(--overlay-border)] bg-[var(--deep-ocean)]/30">
       {/* Decorative Gradient Pulse */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 blur-[100px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-700" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-700" />
@@ -112,7 +112,7 @@ export const GlobalPulseFeed: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.05 }}
-                className="group/item flex items-start gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-default"
+                className="group/item flex items-start gap-4 p-4 rounded-2xl bg-white/[0.03] border border-[var(--overlay-border)] hover:bg-white/[0.06] hover:border-[var(--overlay-border)] transition-all cursor-default"
               >
                 <div className="mt-1 p-2 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover/item:scale-110 transition-transform">
                   <TrendingDown className="w-4 h-4" />
@@ -142,24 +142,24 @@ export const GlobalPulseFeed: React.FC = () => {
       </div>
       
       {/* EXPLANATION: [Global Pulse Phase 2] — Live Network Stats Footer */}
-      <div className="mt-6 pt-6 border-t border-white/5 mb-2">
+      <div className="mt-6 pt-6 border-t border-[var(--overlay-border)] mb-2">
         {stats ? (
           <div className="grid grid-cols-3 gap-4">
-            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)] hover:bg-white/[0.04] transition-colors">
               <div className="flex items-center gap-1.5 text-indigo-400">
                 <Users className="w-3.5 h-3.5" />
                 <span className="text-base font-black tracking-tighter">{stats.active_users_count}</span>
               </div>
               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Users</span>
             </div>
-            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)] hover:bg-white/[0.04] transition-colors">
               <div className="flex items-center gap-1.5 text-cyan-400">
                 <Building2 className="w-3.5 h-3.5" />
                 <span className="text-base font-black tracking-tighter">{stats.hotels_monitored}</span>
               </div>
               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Hotels</span>
             </div>
-            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)] hover:bg-white/[0.04] transition-colors">
               <div className="flex items-center gap-1.5 text-emerald-400">
                 <Shield className="w-3.5 h-3.5" />
                 <span className="text-base font-black tracking-tighter">{stats.cache_hit_rate_24h}%</span>

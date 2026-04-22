@@ -64,7 +64,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
 
         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--glass-border)] relative">
           <History className="w-3 h-3 text-[var(--soft-gold)]" />
-          <span className="text-[9px] font-black uppercase text-white tracking-[0.2em]">{t("intradayStory.modalTitle")}</span>
+          <span className="text-[9px] font-black uppercase text-[var(--overlay-text)] tracking-[0.2em]">{t("intradayStory.modalTitle")}</span>
         </div>
 
         <div className="flex flex-col relative before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-[1px] before:bg-gradient-to-b before:from-[var(--soft-gold)]/40 before:to-transparent">
@@ -83,7 +83,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex flex-col items-start translate-y-[-2px]">
-                    <span className="text-[10px] font-black text-white/90 uppercase tracking-wider leading-none">
+                    <span className="text-[10px] font-black text-[var(--overlay-text)]/90 uppercase tracking-wider leading-none">
                       {new Date(ev.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     {displayLabel && (
@@ -92,7 +92,7 @@ const IntradayIndicator = ({ events, symbol }: { events: IntradayEvent[], symbol
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] font-black text-white tracking-tight bg-white/5 px-1.5 py-0.5 rounded shadow-inner border border-white/5">
+                  <span className="text-[11px] font-black text-[var(--overlay-text)] tracking-tight bg-white/5 px-1.5 py-0.5 rounded shadow-inner border border-[var(--overlay-border)]">
                     {symbol}{ev.price.toLocaleString()}
                   </span>
                 </div>

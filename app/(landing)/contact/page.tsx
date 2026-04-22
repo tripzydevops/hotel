@@ -64,7 +64,7 @@ export default function ContactPage() {
   };
 
   const inputClasses =
-    "w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/8 text-sm";
+    "w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-3.5 px-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/8 text-sm";
 
   return (
     <div className="relative overflow-hidden">
@@ -87,7 +87,7 @@ export default function ContactPage() {
                 <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-4">
                   İletişim
                 </p>
-                <h1 className="text-4xl md:text-5xl font-black text-white leading-[1.1] tracking-tight mb-6">
+                <h1 className="text-4xl md:text-5xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
                   Demo{" "}
                   <span className="text-[var(--soft-gold)] gold-glow-text">Talep Edin</span>
                 </h1>
@@ -147,7 +147,7 @@ export default function ContactPage() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">
+                    <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-2">
                       Talebiniz Alındı!
                     </h3>
                     <p className="text-sm text-[var(--text-secondary)]">
@@ -216,7 +216,7 @@ export default function ContactPage() {
                       disabled={formState === "sending"}
                       className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all cursor-pointer ${
                         formState === "sending"
-                          ? "bg-white/10 text-white/40 cursor-not-allowed"
+                          ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed"
                           : "btn-gold"
                       }`}
                     >

@@ -23,9 +23,9 @@ export function GlobalEventCalendar() {
 
   if (loading) {
     return (
-      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
+      <div className="card-blur rounded-[2rem] p-8 border border-[var(--overlay-border)] flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
         <Loader2 className="w-8 h-8 text-[#F6C344] animate-spin mb-4" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+        <p className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest animate-pulse">
           Loading Global Market Calendar...
         </p>
       </div>
@@ -46,9 +46,9 @@ export function GlobalEventCalendar() {
 
   if (!events || events.length === 0) {
     return (
-      <div className="card-blur rounded-[2rem] p-8 border border-white/5 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
+      <div className="card-blur rounded-[2rem] p-8 border border-[var(--overlay-border)] flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-r from-[#0A1629]/50 to-[#050B18]/50">
         <CalendarDays className="w-8 h-8 text-slate-600 mb-4" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+        <p className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest">
           No Upcoming Events Detected
         </p>
       </div>
@@ -66,13 +66,13 @@ export function GlobalEventCalendar() {
   });
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 bg-gradient-to-br from-[#0A1629]/80 to-[#050B18] border border-white/5 shadow-2xl relative overflow-hidden group">
+    <div className="card-blur rounded-[2.5rem] p-8 bg-gradient-to-br from-[#0A1629]/80 to-[#050B18] border border-[var(--overlay-border)] shadow-2xl relative overflow-hidden group">
       {/* Background Accent */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#F6C344]/5 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div>
-          <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+          <h2 className="text-xl font-black text-[var(--overlay-text)] uppercase tracking-widest flex items-center gap-3">
             <div className="p-2 rounded-xl bg-[#F6C344]/10 border border-[#F6C344]/20 shadow-[0_0_15px_rgba(246,195,68,0.1)]">
                 <CalendarDays className="w-5 h-5 text-[#F6C344]" />
             </div>
@@ -88,14 +88,14 @@ export function GlobalEventCalendar() {
         <div className="flex items-center gap-2">
           <button 
             onClick={scrollLeft}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/5 hover:border-white/20 active:scale-95"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] transition-all border border-[var(--overlay-border)] hover:border-white/20 active:scale-95"
             aria-label="Scroll Left"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button 
             onClick={scrollRight}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/5 hover:border-white/20 active:scale-95"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--overlay-text)] transition-all border border-[var(--overlay-border)] hover:border-white/20 active:scale-95"
             aria-label="Scroll Right"
           >
             <ChevronRight className="w-5 h-5" />
@@ -106,7 +106,7 @@ export function GlobalEventCalendar() {
       {/* Compact Monthly Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 relative z-10 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
         {Object.entries(groupedEvents).map(([month, monthEvents]) => (
-          <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-white/5">
+          <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-[var(--overlay-border)]">
             <h3 className="text-[11px] font-black text-[#F6C344] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
               <span>{month}</span>
               <span className="text-[9px] text-slate-500 font-bold">{monthEvents.length} Events</span>
@@ -126,12 +126,12 @@ export function GlobalEventCalendar() {
                 return (
                   <div 
                     key={event.id || idx} 
-                    className="group/item p-2.5 rounded-xl bg-[#050B18]/40 hover:bg-[#050B18]/60 border border-white/5 hover:border-white/10 transition-all duration-200"
+                    className="group/item p-2.5 rounded-xl bg-[#050B18]/40 hover:bg-[#050B18]/60 border border-[var(--overlay-border)] hover:border-[var(--overlay-border)] transition-all duration-200"
                   >
                     <div className="flex items-start gap-3">
                       {/* Date Indicator Block */}
-                      <div className="flex flex-col items-center justify-center min-w-[40px] py-1 rounded-lg bg-white/5 border border-white/5">
-                        <span className="text-[10px] font-black text-white leading-none">
+                      <div className="flex flex-col items-center justify-center min-w-[40px] py-1 rounded-lg bg-white/5 border border-[var(--overlay-border)]">
+                        <span className="text-[10px] font-black text-[var(--overlay-text)] leading-none">
                             {format(parseISO(event.start_date), "dd")}
                         </span>
                         <span className="text-[7px] font-bold text-slate-500 uppercase">
@@ -145,7 +145,7 @@ export function GlobalEventCalendar() {
                                 className="w-1.5 h-1.5 rounded-full" 
                                 style={{ backgroundColor: accentColor }}
                             />
-                            <h4 className="font-bold text-white text-[11px] leading-tight truncate group-hover/item:text-[#F6C344] transition-colors">
+                            <h4 className="font-bold text-[var(--overlay-text)] text-[11px] leading-tight truncate group-hover/item:text-[#F6C344] transition-colors">
                                 {event.name}
                             </h4>
                         </div>

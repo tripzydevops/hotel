@@ -31,7 +31,7 @@ export default function ErrorModal({
         {/* Outer Glow Effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-red-500/20 via-[var(--soft-gold)]/20 to-orange-500/20 blur-2xl opacity-50" />
         
-        <div className="premium-card relative bg-[#0a1224] border border-white/10 p-8 shadow-2xl overflow-hidden">
+        <div className="premium-card relative bg-[#0a1224] border border-[var(--overlay-border)] p-8 shadow-2xl overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--soft-gold)]/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
           
@@ -42,7 +42,7 @@ export default function ErrorModal({
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white italic tracking-tight uppercase leading-none mb-1">
+                <h2 className="text-xl font-black text-[var(--overlay-text)] italic tracking-tight uppercase leading-none mb-1">
                   {title}
                 </h2>
                 <div className="h-[2px] w-12 bg-red-500/50 rounded-full" />
@@ -53,7 +53,7 @@ export default function ErrorModal({
                   onClick={onClose}
                   className="ml-auto p-2 hover:bg-white/5 rounded-full transition-colors group"
                 >
-                  <X className="w-5 h-5 text-white/30 group-hover:text-white transition-colors" />
+                  <X className="w-5 h-5 text-[var(--overlay-text)]/30 group-hover:text-[var(--overlay-text)] transition-colors" />
                 </button>
               )}
             </div>
@@ -80,7 +80,7 @@ export default function ErrorModal({
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.25em] text-white/30 hover:text-white transition-colors"
+                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--overlay-text)]/30 hover:text-[var(--overlay-text)] transition-colors"
                 >
                   Dismiss
                 </button>

@@ -93,7 +93,7 @@ export default function SubscriptionModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[var(--overlay-text)] flex items-center gap-2">
               <Shield className="w-6 h-6 text-[var(--soft-gold)]" />
               {t("subscription.title")}
             </h2>
@@ -106,7 +106,7 @@ export default function SubscriptionModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white transition-all"
+            className="p-2 rounded-xl bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--overlay-text)] transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -124,7 +124,7 @@ export default function SubscriptionModal({
                 key={plan.id}
                 className={`relative rounded-2xl p-6 border transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl md:hover:shadow-[var(--soft-gold)]/10 flex flex-col ${isPopular
                     ? "bg-gradient-to-b from-white/10 to-transparent border-[var(--soft-gold)]"
-                    : "bg-white/5 border-white/10"
+                    : "bg-white/5 border-[var(--overlay-border)]"
                   }`}
               >
                 {isPopular && (
@@ -135,15 +135,15 @@ export default function SubscriptionModal({
 
                 <div className="p-3 bg-white/5 rounded-xl w-fit mb-4">
                   <Icon
-                    className={`w-6 h-6 ${isPopular ? "text-[var(--soft-gold)]" : "text-white"}`}
+                    className={`w-6 h-6 ${isPopular ? "text-[var(--soft-gold)]" : "text-[var(--overlay-text)]"}`}
                   />
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-2">
                   {plan.name}
                 </h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-black text-white">
+                  <span className="text-3xl font-black text-[var(--overlay-text)]">
                     {plan.price}
                   </span>
                   <span className="text-sm text-[var(--text-muted)]">
@@ -161,7 +161,7 @@ export default function SubscriptionModal({
                       className="flex items-start gap-3 text-sm text-[var(--text-secondary)]"
                     >
                       <Check
-                        className={`w-4 h-4 shrink-0 mt-0.5 ${isPopular ? "text-[var(--soft-gold)]" : "text-white/50"}`}
+                        className={`w-4 h-4 shrink-0 mt-0.5 ${isPopular ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"}`}
                       />
                       <span>{feature}</span>
                     </div>
@@ -172,7 +172,7 @@ export default function SubscriptionModal({
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={isCurrent || loading !== null}
                   className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isCurrent
-                      ? "bg-white/10 text-white cursor-default"
+                      ? "bg-white/10 text-[var(--overlay-text)] cursor-default"
                       : isPopular
                         ? "btn-gold shadow-lg shadow-[var(--soft-gold)]/20 hover:scale-[1.02]"
                         : "bg-white text-black hover:bg-gray-100"

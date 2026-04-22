@@ -153,11 +153,11 @@ function ParityHealthSection({
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <Shield className="w-16 h-16 text-[#F6C344]" />
         </div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+        <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">
           Parity Health
         </h3>
         <div className="flex flex-col">
-          <span className="text-4xl font-black text-white">{parityScore}%</span>
+          <span className="text-4xl font-black text-[var(--overlay-text)]">{parityScore}%</span>
           <span className="text-[10px] text-emerald-400 font-bold mt-1">Live Market Integrity</span>
         </div>
       </div>
@@ -166,11 +166,11 @@ function ParityHealthSection({
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <AlertCircle className="w-16 h-16 text-rose-500" />
         </div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+        <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">
           Discrepancies
         </h3>
         <div className="flex flex-col">
-          <span className="text-4xl font-black text-white">{undercuts.length}</span>
+          <span className="text-4xl font-black text-[var(--overlay-text)]">{undercuts.length}</span>
           <span className="text-[10px] text-rose-400 font-bold mt-1">Active Undercuts Detected</span>
         </div>
       </div>
@@ -179,12 +179,12 @@ function ParityHealthSection({
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <Activity className="w-16 h-16 text-blue-400" />
         </div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+        <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">
           Revenue Leakage
         </h3>
         <div className="flex flex-col">
-          <span className="text-4xl font-black text-white">{formatCurrency(revenueRisk)}</span>
-          <span className="text-[10px] text-slate-400 font-bold mt-1">Est. Daily Parity Risk</span>
+          <span className="text-4xl font-black text-[var(--overlay-text)]">{formatCurrency(revenueRisk)}</span>
+          <span className="text-[10px] text-[var(--text-muted)] font-bold mt-1">Est. Daily Parity Risk</span>
         </div>
       </div>
     </div>
@@ -227,7 +227,7 @@ function PricingDNAProfileCard({
             <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white">Strategic Personality</h3>
+            <h3 className="text-sm font-black text-[var(--overlay-text)]">Strategic Personality</h3>
             <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
               Pricing DNA Profile
             </p>
@@ -240,7 +240,7 @@ function PricingDNAProfileCard({
           </div>
         )}
       </div>
-      <p className="text-sm text-white/80 leading-relaxed italic font-medium whitespace-pre-line">
+      <p className="text-sm text-[var(--overlay-text)]/80 leading-relaxed italic font-medium whitespace-pre-line">
         &quot;{streamingNarrative || dnaText || `Analyzing ${hotelName}'s market footprint to determine strategic intent...`}&quot;
       </p>
     </motion.div>
@@ -287,7 +287,7 @@ function RecommendationCard({
             {isPositive ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
           </div>
           <div>
-            <h3 className="text-sm font-black text-white">Strategic Recommendation</h3>
+            <h3 className="text-sm font-black text-[var(--overlay-text)]">Strategic Recommendation</h3>
             <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
               Actionable AI Layer
             </p>
@@ -301,8 +301,8 @@ function RecommendationCard({
       </div>
 
       <div className="space-y-4">
-        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-          <p className="text-lg font-black text-white mb-1">
+        <div className="p-4 rounded-xl bg-white/5 border border-[var(--overlay-border)]">
+          <p className="text-lg font-black text-[var(--overlay-text)] mb-1">
             {recommendation.action === "increase" ? "Increase Rates" : recommendation.action === "decrease" ? "Decrease Rates" : "Maintain Rates"}
           </p>
           <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed">
@@ -311,9 +311,9 @@ function RecommendationCard({
         </div>
 
         {recommendation.new_price && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-[var(--overlay-border)]">
             <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Target ADR</span>
-            <span className="text-base font-black text-white">
+            <span className="text-base font-black text-[var(--overlay-text)]">
               {getCurrencySymbol(currency)}{recommendation.new_price.toLocaleString()}
             </span>
           </div>
@@ -331,7 +331,7 @@ function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; 
   return (
     <motion.div
       variants={fadeInUp}
-      className={`glass-card p-6 border border-white/10 relative overflow-hidden ${isLocked ? 'grayscale opacity-50' : ''}`}
+      className={`glass-card p-6 border border-[var(--overlay-border)] relative overflow-hidden ${isLocked ? 'grayscale opacity-50' : ''}`}
     >
       {isLocked && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--deep-ocean)]/60 backdrop-blur-[4px]">
@@ -346,7 +346,7 @@ function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; 
           <CheckCircle2 className="w-5 h-5 text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-sm font-black text-white">Operational Audit</h3>
+          <h3 className="text-sm font-black text-[var(--overlay-text)]">Operational Audit</h3>
           <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
             Kaizen Priority Tasks
           </p>
@@ -360,7 +360,7 @@ function OperationalAuditChecklist({ checklist, isLocked }: { checklist: any[]; 
               <span className="text-[10px] font-black text-indigo-400">{idx + 1}</span>
             </div>
             <div>
-              <p className="text-xs font-black text-white/90 mb-1">{item.pillar}</p>
+              <p className="text-xs font-black text-[var(--overlay-text)]/90 mb-1">{item.pillar}</p>
               <p className="text-[11px] text-[var(--text-muted)] font-medium leading-relaxed mb-2">
                 {item.issue}
               </p>
@@ -453,7 +453,7 @@ function KpiCard({
           {label}
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-black text-white">{value}</span>
+          <span className="text-2xl font-black text-[var(--overlay-text)]">{value}</span>
           {suffix && (
             <span className="text-xs font-bold text-[var(--text-muted)]">
               {suffix}
@@ -497,7 +497,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             <Brain className="w-6 h-6 text-[var(--soft-gold)]" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-xl font-black text-[var(--overlay-text)] flex items-center gap-2">
               {briefing.context?.report_type || 'Agentic Executive Briefing'}
               <span className="text-[10px] font-black uppercase tracking-widest bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] px-2 py-0.5 rounded border border-[var(--soft-gold)]/20">
                 Live AI Insight
@@ -528,14 +528,14 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">GRI Index</span>
-                <span className="text-lg font-black text-white">{target.rating || '—'}/5.0</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">GRI Index</span>
+                <span className="text-lg font-black text-[var(--overlay-text)]">{target.rating || '—'}/5.0</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Market Parity</span>
-                <span className="text-lg font-black text-white">{(metrics.gri || 0) > 4 ? 'Above Par' : 'Standard'}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Market Parity</span>
+                <span className="text-lg font-black text-[var(--overlay-text)]">{(metrics.gri || 0) > 4 ? 'Above Par' : 'Standard'}</span>
               </div>
-              <p className="text-xs text-white/70 italic leading-relaxed">
+              <p className="text-xs text-[var(--overlay-text)]/70 italic leading-relaxed">
                 {metrics.battlefield_text}
               </p>
             </div>
@@ -550,14 +550,14 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Search Visibility</span>
-                <span className="text-lg font-black text-white">#{metrics.avg_rank || '—'}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Search Visibility</span>
+                <span className="text-lg font-black text-[var(--overlay-text)]">#{metrics.avg_rank || '—'}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Market Benchmark</span>
-                <span className="text-lg font-black text-white">{fmt(metrics.market_avg_price || 0)}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Market Benchmark</span>
+                <span className="text-lg font-black text-[var(--overlay-text)]">{fmt(metrics.market_avg_price || 0)}</span>
               </div>
-              <p className="text-xs text-white/70 italic leading-relaxed">
+              <p className="text-xs text-[var(--overlay-text)]/70 italic leading-relaxed">
                 {metrics.battlefield_text}
               </p>
             </div>
@@ -573,15 +573,15 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                  <span className="text-xs font-bold text-slate-400">Sentiment Rank</span>
-                  <span className="text-lg font-black text-white">Top 15%</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)]">Sentiment Rank</span>
+                  <span className="text-lg font-black text-[var(--overlay-text)]">Top 15%</span>
                 </div>
                 {/* Dynamically fallback to some rating info since we don't have deep sentiment breakdown here yet */}
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                  <span className="text-xs font-bold text-slate-400">Value Rating</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)]">Value Rating</span>
                   <span className="text-lg font-black text-emerald-400">{target.rating >= 4 ? 'Elite' : 'Stable'}</span>
                 </div>
-                <p className="text-xs text-white/70 leading-relaxed">
+                <p className="text-xs text-[var(--overlay-text)]/70 leading-relaxed">
                   {metrics.yield_text}
                 </p>
               </div>
@@ -596,18 +596,18 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                <span className="text-xs font-bold text-slate-400">Parity Leaks</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Parity Leaks</span>
                 <span className={`text-lg font-black ${(metrics.parity_leaks_count || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{metrics.parity_leaks_count || 0}</span>
               </div>
               {metrics.revenue_projection && (
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                  <span className="text-xs font-bold text-slate-400">Monthly Risk</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)]">Monthly Risk</span>
                   <span className={`text-lg font-black ${(metrics.revenue_projection.monthly_risk || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                     {fmt(metrics.revenue_projection.monthly_risk || 0)}
                   </span>
                 </div>
               )}
-              <p className="text-xs text-white/70 leading-relaxed">
+              <p className="text-xs text-[var(--overlay-text)]/70 leading-relaxed">
                 {metrics.yield_text}
               </p>
             </div>
@@ -626,11 +626,11 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
         </div>
         <div className="min-h-[120px] max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
           {narrative ? (
-            <div className="text-sm text-white/90 font-medium leading-relaxed whitespace-pre-line">
+            <div className="text-sm text-[var(--overlay-text)]/90 font-medium leading-relaxed whitespace-pre-line">
               {narrative}
             </div>
           ) : (
-            <p className="text-sm text-white/50 italic">AI narrative is being generated... Click &quot;Run Intelligence Agent&quot; to analyze.</p>
+            <p className="text-sm text-[var(--text-muted)] italic">AI narrative is being generated... Click &quot;Run Intelligence Agent&quot; to analyze.</p>
           )}
         </div>
       </div>
@@ -650,7 +650,7 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
               <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
                 metrics.price_trend.direction === "up" ? "bg-emerald-500/10 text-emerald-400" :
                 metrics.price_trend.direction === "down" ? "bg-rose-500/10 text-rose-400" :
-                "bg-white/5 text-slate-400"
+                "bg-white/5 text-[var(--text-muted)]"
               }`}>
                 {metrics.price_trend.direction === "up" ? "▲" : metrics.price_trend.direction === "down" ? "▼" : "—"}{" "}
                 {Math.abs(metrics.price_trend.change_pct || 0)}%
@@ -708,15 +708,15 @@ function BriefingIntelligence({ briefing, onExportPdf }: { briefing: any; onExpo
                   {/* Your hotel row */}
                   <tr className="bg-[var(--soft-gold)]/5">
                     <td className="py-2 text-xs font-black text-[var(--soft-gold)] truncate max-w-[180px]">{target.name} (You)</td>
-                    <td className="py-2 text-xs font-black text-white text-right">{fmt(metrics.target_avg_price || 0)}</td>
-                    <td className="py-2 text-xs font-bold text-white text-right">{(metrics.gri || 0).toFixed(1)}</td>
+                    <td className="py-2 text-xs font-black text-[var(--overlay-text)] text-right">{fmt(metrics.target_avg_price || 0)}</td>
+                    <td className="py-2 text-xs font-bold text-[var(--overlay-text)] text-right">{(metrics.gri || 0).toFixed(1)}</td>
                     <td className="py-2 text-xs font-bold text-slate-500 text-right">—</td>
                   </tr>
                   {metrics.competitor_table.map((comp: any, i: number) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-2 text-xs font-bold text-white/80 truncate max-w-[180px]">{comp.name}</td>
-                      <td className="py-2 text-xs font-bold text-white/80 text-right">{comp.price > 0 ? fmt(comp.price) : "N/A"}</td>
-                      <td className="py-2 text-xs font-bold text-white/80 text-right">{(comp.rating || 0).toFixed(1)}</td>
+                      <td className="py-2 text-xs font-bold text-[var(--overlay-text)]/80 truncate max-w-[180px]">{comp.name}</td>
+                      <td className="py-2 text-xs font-bold text-[var(--overlay-text)]/80 text-right">{comp.price > 0 ? fmt(comp.price) : "N/A"}</td>
+                      <td className="py-2 text-xs font-bold text-[var(--overlay-text)]/80 text-right">{(comp.rating || 0).toFixed(1)}</td>
                       <td className="py-2 text-right">
                         {comp.gap_pct !== 0 ? (
                           <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
@@ -1084,14 +1084,14 @@ export default function ReportsPage() {
 
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Currency Selector */}
-            <div className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+            <div className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 border border-[var(--overlay-border)]">
               <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">
                 {t("reports.currencyLabel")}
               </span>
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="bg-transparent text-xs font-bold text-white border-none focus:ring-0 cursor-pointer"
+                className="bg-transparent text-xs font-bold text-[var(--overlay-text)] border-none focus:ring-0 cursor-pointer"
               >
                 <option value="USD" className="bg-[var(--deep-ocean)]">USD ($)</option>
                 <option value="EUR" className="bg-[var(--deep-ocean)]">EUR (€)</option>
@@ -1130,7 +1130,7 @@ export default function ReportsPage() {
         {/* ═══════════════════════════════════════════════ */}
         {/* ── PHASE 8: REPORT CONTROL PANEL ──            */}
         {/* ═══════════════════════════════════════════════ */}
-        <div className="glass p-6 rounded-2xl border border-white/10 mb-8 relative overflow-hidden group">
+        <div className="glass p-6 rounded-2xl border border-[var(--overlay-border)] mb-8 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-32 -mt-32" />
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
@@ -1138,12 +1138,12 @@ export default function ReportsPage() {
               {/* Timeframe Dropdown */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Period</label>
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 bg-white/5 border border-[var(--overlay-border)] rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
                   <History className="w-4 h-4 text-[var(--soft-gold)]" />
                   <select
                     value={timeframe}
                     onChange={(e) => setTimeframe(Number(e.target.value))}
-                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[100px]"
+                    className="bg-transparent text-sm font-bold text-[var(--overlay-text)] border-none focus:ring-0 cursor-pointer min-w-[100px]"
                   >
                     <option value={7} className="bg-[var(--deep-ocean)]">Last 7 Days</option>
                     <option value={30} className="bg-[var(--deep-ocean)]">Last 30 Days</option>
@@ -1155,12 +1155,12 @@ export default function ReportsPage() {
               {/* Report Type Dropdown */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Analytical Lens</label>
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 bg-white/5 border border-[var(--overlay-border)] rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
                   <Activity className="w-4 h-4 text-emerald-400" />
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value)}
-                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[180px]"
+                    className="bg-transparent text-sm font-bold text-[var(--overlay-text)] border-none focus:ring-0 cursor-pointer min-w-[180px]"
                   >
                     <option value="Strategic Market Pulse" className="bg-[var(--deep-ocean)]">Strategic Market Pulse</option>
                     <option value="Yield Audit" className="bg-[var(--deep-ocean)]">Yield Audit</option>
@@ -1173,12 +1173,12 @@ export default function ReportsPage() {
               {/* Rival Selection */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#8892b0] ml-1">Rival Benchmarking</label>
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 bg-white/5 border border-[var(--overlay-border)] rounded-xl px-4 py-2 hover:bg-white/10 transition-colors">
                   <Swords className="w-4 h-4 text-red-400" />
                   <select
                     value={selectedRivalId || ""}
                     onChange={(e) => setSelectedRivalId(e.target.value || null)}
-                    className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[200px]"
+                    className="bg-transparent text-sm font-bold text-[var(--overlay-text)] border-none focus:ring-0 cursor-pointer min-w-[200px]"
                   >
                     <option value="" className="bg-[var(--deep-ocean)]">All Market (Avg)</option>
                     {competitors.map((c: any) => (
@@ -1215,13 +1215,13 @@ export default function ReportsPage() {
               onExportPdf={handleExportBriefingPdf}
             />
           ) : loadingBriefing ? (
-            <div className="glass p-12 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-4 mb-8">
+            <div className="glass p-12 rounded-2xl border border-[var(--overlay-border)] flex flex-col items-center justify-center gap-4 mb-8">
               <div className="w-12 h-12 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
               <p className="text-sm font-bold text-indigo-400 animate-pulse uppercase tracking-widest">Generating {reportType}...</p>
             </div>
           ) : null
         ) : (
-          <div className="glass p-12 rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 mb-10 opacity-60">
+          <div className="glass p-12 rounded-3xl border border-dashed border-[var(--overlay-border)] flex flex-col items-center justify-center gap-4 mb-10 opacity-60">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-2">
               <Brain className="w-8 h-8 text-[#8892b0]" />
             </div>
@@ -1376,7 +1376,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">Market Sentiment Match</h4>
-                <p className="text-sm text-white/80 font-medium">
+                <p className="text-sm text-[var(--overlay-text)]/80 font-medium">
                   {analysis?.sentiment_index && analysis.sentiment_index > 100
                     ? "Your brand reputation is outperforming market baseline. You have pricing power."
                     : "Sentiment is currently below market par. Focus on Cleanliness and Service pillars to regain leverage."}
@@ -1424,17 +1424,17 @@ export default function ReportsPage() {
                   Synthetic AI Narrative
                 </h5>
                 <p
-                  className="text-base text-white/95 font-semibold leading-relaxed tracking-tight whitespace-pre-line"
+                  className="text-base text-[var(--overlay-text)]/95 font-semibold leading-relaxed tracking-tight whitespace-pre-line"
                   aria-live="polite"
                 >
                   {streamingNarrative || analysis.synthetic_narrative || analysis.advisory_msg || "Synthesizing market intelligence..."}
                 </p>
                 <div className="mt-4 flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                     <Activity className="w-3 h-3" />
                     ARI: {analysis.ari?.toFixed(1)}
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                     <Shield className="w-3 h-3" />
                     Market Pulse: {analysis.quadrant_label}
                   </div>
@@ -1472,7 +1472,7 @@ export default function ReportsPage() {
               <Brain className="w-16 h-16 text-blue-300" />
             </div>
             <div className="p-6 pb-0">
-              <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+              <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-indigo-400" />
                 </div>
@@ -1507,7 +1507,7 @@ export default function ReportsPage() {
             <div className="p-5 border-b border-white/[0.06] bg-[var(--soft-gold)]/5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Brain className="w-5 h-5 text-[var(--soft-gold)]" />
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-[var(--overlay-text)]">
                   Saved Agentic Briefings
                 </h2>
               </div>
@@ -1531,7 +1531,7 @@ export default function ReportsPage() {
                         <td className="px-6 py-4 text-sm text-[var(--text-muted)] font-medium">
                           {new Date(b.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-white/90">
+                        <td className="px-6 py-4 text-sm font-bold text-[var(--overlay-text)]/90">
                           {b.title || "Executive Briefing"}
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -1545,7 +1545,7 @@ export default function ReportsPage() {
                             </button>
                             <button
                               onClick={() => handleViewSavedBriefing(b.id)}
-                              className="p-2 rounded-lg bg-white/5 hover:bg-[var(--soft-gold)] text-white hover:text-[var(--deep-ocean)] transition-all"
+                              className="p-2 rounded-lg bg-white/5 hover:bg-[var(--soft-gold)] text-[var(--overlay-text)] hover:text-[var(--deep-ocean)] transition-all"
                             >
                               <ArrowRight className="w-4 h-4" />
                             </button>
@@ -1570,7 +1570,7 @@ export default function ReportsPage() {
           >
             <div className="flex items-center gap-3">
               <History className="w-5 h-5 text-[var(--soft-gold)]" />
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-[var(--overlay-text)]">
                 {t("reports.fullHistoryLog")}
               </h2>
               <span className="text-[10px] font-bold text-[var(--text-muted)] bg-white/5 px-2 py-0.5 rounded-full">
@@ -1598,7 +1598,7 @@ export default function ReportsPage() {
               <div className="overflow-x-auto border-t border-white/[0.06]">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-white/[0.02] border-b border-white/5">
+                    <tr className="bg-white/[0.02] border-b border-[var(--overlay-border)]">
                       <th className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                         {t("reports.timestamp")}
                       </th>
@@ -1623,7 +1623,7 @@ export default function ReportsPage() {
                         className="hover:bg-white/[0.02] transition-colors group"
                       >
                         <td className="px-6 py-4">
-                          <div className="text-sm font-bold text-white">
+                          <div className="text-sm font-bold text-[var(--overlay-text)]">
                             {new Date(session.created_at).toLocaleDateString(
                               locale === "en" ? "en-US" : "tr-TR"
                             )}
@@ -1635,7 +1635,7 @@ export default function ReportsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 text-white">
+                          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 text-[var(--overlay-text)]">
                             {session.session_type}
                           </span>
                         </td>
@@ -1646,13 +1646,13 @@ export default function ReportsPage() {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-amber-500" />
                             )}
-                            <span className="text-xs font-bold text-white capitalize">
+                            <span className="text-xs font-bold text-[var(--overlay-text)] capitalize">
                               {session.status}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm font-black text-white">
+                          <span className="text-sm font-black text-[var(--overlay-text)]">
                             {session.hotels_count}
                           </span>
                           <span className="text-[10px] text-[var(--text-muted)] ml-1 font-bold uppercase">

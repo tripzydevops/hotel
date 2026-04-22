@@ -39,12 +39,12 @@ export default function VisibilityChart({
   }, [data]);
 
   return (
-    <div className="relative h-[300px] min-h-[300px] w-full bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm overflow-hidden">
+    <div className="relative h-[300px] min-h-[300px] w-full bg-white/5 p-4 rounded-xl border border-[var(--overlay-border)] backdrop-blur-sm overflow-hidden">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-white/80">
+        <h3 className="text-sm font-medium text-[var(--overlay-text)]/80">
           Search Visibility (Rank)
         </h3>
-        <div className="text-xs text-white/50">Lower # is better</div>
+        <div className="text-xs text-[var(--text-muted)]">Lower # is better</div>
       </div>
 
       <div className="h-[220px] w-full">

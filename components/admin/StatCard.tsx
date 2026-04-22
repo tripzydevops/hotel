@@ -43,7 +43,7 @@ const StatCard = ({
         {label}
       </p>
       <div className="flex items-baseline gap-2 mt-1">
-        <p className="text-3xl font-black text-white tracking-tighter tabular-nums">
+        <p className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter tabular-nums">
           {value?.toLocaleString() || 0}
         </p>
         <span

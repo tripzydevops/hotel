@@ -82,14 +82,14 @@ export default function AlertsModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-      <div className="bg-[var(--deep-ocean-card)] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white leading-tight">
+              <h2 className="text-xl font-black text-[var(--overlay-text)] leading-tight">
                 {t("alerts.title")}
               </h2>
               <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
@@ -110,7 +110,7 @@ export default function AlertsModal({
               onClick={onClose}
               className="p-2 hover:bg-white/10 rounded-xl transition-colors"
             >
-              <X className="w-5 h-5 text-[var(--text-muted)] hover:text-white" />
+              <X className="w-5 h-5 text-[var(--text-muted)] hover:text-[var(--overlay-text)]" />
             </button>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function AlertsModal({
               <div
                 key={alert.id}
                 className={`p-4 rounded-xl border transition-all duration-300 ${alert.is_read
-                    ? "bg-white/[0.02] border-white/5 opacity-60"
+                    ? "bg-white/[0.02] border-[var(--overlay-border)] opacity-60"
                     : "bg-white/[0.05] border-[var(--soft-gold)]/20 shadow-lg shadow-[var(--soft-gold)]/5"
                   }`}
               >
@@ -159,7 +159,7 @@ export default function AlertsModal({
                         {new Date(alert.created_at).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-white mb-3">
+                    <p className="text-xs font-bold text-[var(--overlay-text)] mb-3">
                       {alert.message}
                     </p>
                     {alert.old_price && alert.new_price && (
@@ -168,7 +168,7 @@ export default function AlertsModal({
                           <span className="text-[8px] uppercase font-black text-[var(--text-muted)]">
                             {t("alerts.previous")}
                           </span>
-                          <span className="text-xs font-bold text-white/40 line-through">
+                          <span className="text-xs font-bold text-[var(--text-muted)] line-through">
                             {alert.currency === "TRY"
                               ? "₺"
                               : alert.currency === "EUR"
@@ -201,7 +201,7 @@ export default function AlertsModal({
                   {!alert.is_read && (
                     <button
                       onClick={() => handleMarkAsRead(alert.id)}
-                      className="h-fit p-2 hover:bg-white/10 rounded-lg text-[var(--text-muted)] hover:text-white transition-colors"
+                      className="h-fit p-2 hover:bg-white/10 rounded-lg text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
                       title={t("alerts.markAsRead")}
                     >
                       <CheckCircle className="w-5 h-5" />
@@ -213,7 +213,7 @@ export default function AlertsModal({
           )}
         </div>
 
-        <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
+        <div className="mt-8 pt-6 border-t border-[var(--overlay-border)] flex justify-end">
           <button
             onClick={onClose}
             className="btn-gold px-8 py-3 text-xs font-black uppercase tracking-widest"

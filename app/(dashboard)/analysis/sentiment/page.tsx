@@ -125,7 +125,7 @@ const ScoreCard = ({
               }`}>
               {isTarget ? t("sentiment.myHotel") : t("sentiment.competitor")}
             </span>
-            <h3 className="text-sm font-bold text-white/90 truncate max-w-[140px]">
+            <h3 className="text-sm font-bold text-[var(--overlay-text)]/90 truncate max-w-[140px]">
               {hotel.name}
             </h3>
           </div>
@@ -157,7 +157,7 @@ const ScoreCard = ({
               {t("sentiment.currentPrice")}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-white/90">
+              <span className="text-xl font-bold text-[var(--overlay-text)]/90">
                 {hotel.price_info?.current_price
                   ? hotel.price_info.current_price.toLocaleString()
                   : "N/A"}
@@ -226,7 +226,7 @@ const CategoryBar = ({
       <div className="flex justify-between items-end mb-3">
         <span className="text-sm font-bold text-[var(--text-secondary)]">{localizedCategory}</span>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-xl font-black text-white/90">
+          <span className="text-xl font-black text-[var(--overlay-text)]/90">
             {myScore > 0 ? myScore.toFixed(2) : "N/A"}
           </span>
           <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
@@ -243,7 +243,7 @@ const CategoryBar = ({
         >
           {/* Tooltip on hover */}
           {myScore > 0 && (
-            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-white/10">
+            <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-[var(--overlay-text)] text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-[var(--overlay-border)]">
               {t("sentiment.myHotel")}: {myScore.toFixed(2)}
             </div>
           )}
@@ -326,7 +326,7 @@ const KeywordTag = ({
       </span>
       {/* Glass-panel tooltip with review snippet */}
       {description && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl text-[10px] text-[var(--text-secondary)] font-medium italic leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2.5 bg-gray-900/95 backdrop-blur-xl border border-[var(--overlay-border)] rounded-xl text-[10px] text-[var(--text-secondary)] font-medium italic leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
           "{description}"
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95" />
         </div>
@@ -565,7 +565,7 @@ export default function SentimentPage() {
         <div className="flex items-center gap-3 mb-8">
           <Link
             href="/analysis"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-accent)] backdrop-blur-sm border border-[var(--glass-border)] text-sm text-gray-400 hover:text-white hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-accent)] backdrop-blur-sm border border-[var(--glass-border)] text-sm text-gray-400 hover:text-[var(--overlay-text)] hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             {t("sentiment.backToOverview")}
@@ -698,7 +698,7 @@ export default function SentimentPage() {
                 <Brain className="w-16 h-16 text-blue-300" />
               </div>
               <div className="p-6 pb-0">
-                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-indigo-400" />
                   </div>
@@ -731,7 +731,7 @@ export default function SentimentPage() {
               >
                 {/* Section header with icon badge */}
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                  <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <Radar className="w-4 h-4 text-blue-400" />
                     </div>
@@ -805,7 +805,7 @@ export default function SentimentPage() {
               className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)] mb-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
                     <Zap className="w-4 h-4 text-purple-400" />
                   </div>
@@ -837,7 +837,7 @@ export default function SentimentPage() {
               className="bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)]"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <h3 className="text-lg font-bold text-white/90 flex items-center gap-3">
+                <h3 className="text-lg font-bold text-[var(--overlay-text)]/90 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
                     <LineChart className="w-4 h-4 text-sky-400" />
                   </div>
@@ -851,7 +851,7 @@ export default function SentimentPage() {
                       onClick={() => setView(v)}
                       className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${view === v
                         ? "bg-blue-500/20 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.1)] border border-blue-500/20"
-                        : "text-gray-400 hover:text-white border border-transparent"
+                        : "text-gray-400 hover:text-[var(--overlay-text)] border border-transparent"
                         }`}
                     >
                       {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
@@ -868,7 +868,7 @@ export default function SentimentPage() {
                         ? "opacity-20 cursor-not-allowed"
                         : timeframe === tf
                           ? "bg-blue-500/15 text-blue-300 border-blue-500/25 font-bold"
-                          : "bg-[var(--bg-accent)] text-gray-400 border-[var(--glass-border)] hover:text-white hover:border-white/15"
+                          : "bg-[var(--bg-accent)] text-gray-400 border-[var(--glass-border)] hover:text-[var(--overlay-text)] hover:border-white/15"
                         }`}
                     >
                       {tf.charAt(0).toUpperCase() + tf.slice(1)}

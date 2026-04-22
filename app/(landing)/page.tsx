@@ -104,7 +104,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-white/5 last:border-0">
+    <div className="border-b border-[var(--overlay-border)] last:border-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full py-6 flex items-center justify-between text-left group cursor-pointer"
@@ -318,19 +318,19 @@ export default function LandingHome() {
                       { date: new Date(2026, 1, 20), you: 4350, a: 4900, b: 3980, c: 5400 },
                     ].map((row, i) => (
                       <div key={i} className="contents">
-                        <div className="text-[var(--text-secondary)] py-2 border-t border-white/5 uppercase">
+                        <div className="text-[var(--text-secondary)] py-2 border-t border-[var(--overlay-border)] uppercase">
                           {row.date.toLocaleDateString(locale === "tr" ? "tr-TR" : "en-US", { day: '2-digit', month: 'short' })}
                         </div>
-                        <div className="text-[var(--soft-gold)] font-bold py-2 text-center border-t border-white/5">
+                        <div className="text-[var(--soft-gold)] font-bold py-2 text-center border-t border-[var(--overlay-border)]">
                           {locale === "tr" ? `₺${row.you.toLocaleString()}` : `$${(row.you / 30).toFixed(0)}`}
                         </div>
-                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-[var(--overlay-border)]">
                           {locale === "tr" ? `₺${row.a.toLocaleString()}` : `$${(row.a / 30).toFixed(0)}`}
                         </div>
-                        <div className="text-green-400 py-2 text-center border-t border-white/5">
+                        <div className="text-green-400 py-2 text-center border-t border-[var(--overlay-border)]">
                           {locale === "tr" ? `₺${row.b.toLocaleString()}` : `$${(row.b / 30).toFixed(0)}`}
                         </div>
-                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-white/5">
+                        <div className="text-[var(--text-primary)] py-2 text-center border-t border-[var(--overlay-border)]">
                           {locale === "tr" ? `₺${row.c.toLocaleString()}` : `$${(row.c / 30).toFixed(0)}`}
                         </div>
                       </div>
@@ -344,7 +344,7 @@ export default function LandingHome() {
       </section>
 
       {/* ===== STATS BAR ===== */}
-      <section className="relative z-10 py-16 border-y border-white/5 bg-[#030a15]/50">
+      <section className="relative z-10 py-16 border-y border-[var(--overlay-border)] bg-[#030a15]/50">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.length > 0 ? stats.map((stat: any, i: number) => (
             <RevealSection key={i} delay={i * 100}>
@@ -429,7 +429,7 @@ export default function LandingHome() {
       </section>
 
       {/* ===== TESTIMONIALS SECTION ===== */}
-      <section className="relative z-10 py-24 px-6 border-y border-white/5 bg-[#030a15]/50">
+      <section className="relative z-10 py-24 px-6 border-y border-[var(--overlay-border)] bg-[#030a15]/50">
         <div className="max-w-6xl mx-auto">
           <RevealSection>
             <div className="text-center mb-16">
@@ -549,7 +549,7 @@ export default function LandingHome() {
               <p className="text-[var(--text-secondary)]">{faq.subtitle || t("landing.faq.subtitle")}</p>
             </div>
             
-            <div className="divide-y divide-white/5 border-y border-white/5">
+            <div className="divide-y divide-white/5 border-y border-[var(--overlay-border)]">
               {(faq.items?.length > 0 ? faq.items : [
                 { q: t("landing.faq.items.0.q"), a: t("landing.faq.items.0.a") },
                 { q: t("landing.faq.items.1.q"), a: t("landing.faq.items.1.a") },

@@ -31,19 +31,19 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
   const MetricCard = ({ label, value, subValue, icon: Icon, colorClass, shadowColor }: any) => (
     <motion.div 
       whileHover={{ y: -5, scale: 1.02 }}
-      className="glass-card p-6 border border-white/5 relative overflow-hidden group h-full"
+      className="glass-card p-6 border border-[var(--overlay-border)] relative overflow-hidden group h-full"
     >
       <div className={`absolute top-0 right-0 w-24 h-24 blur-[60px] opacity-20 -z-10 ${shadowColor}`} />
       
       <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-xl bg-white/5 border border-white/10 ${colorClass}`}>
+        <div className={`p-3 rounded-xl bg-white/5 border border-[var(--overlay-border)] ${colorClass}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="text-right">
           <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">
             {label}
           </span>
-          <h4 className="text-2xl font-black text-white tabular-nums drop-shadow-sm">
+          <h4 className="text-2xl font-black text-[var(--overlay-text)] tabular-nums drop-shadow-sm">
             {value}
           </h4>
         </div>
@@ -88,11 +88,11 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-black text-white uppercase tracking-widest">System Performance Alert</h4>
+              <h4 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest">System Performance Alert</h4>
               <p className="text-[10px] text-red-400/80 uppercase mt-1 tracking-tight">System-wide error rate exceeds 10% threshold. Verify API Keys and network connectivity.</p>
             </div>
           </div>
-          <button className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-8 py-3 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
+          <button className="bg-red-500 text-[var(--overlay-text)] text-[10px] font-black uppercase tracking-widest px-8 py-3 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
             Diagnostics
           </button>
         </motion.div>
@@ -100,14 +100,14 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Latency Board */}
-        <div className="lg:col-span-2 glass-card p-8 border border-white/5 relative overflow-hidden flex flex-col min-h-[400px]">
+        <div className="lg:col-span-2 glass-card p-8 border border-[var(--overlay-border)] relative overflow-hidden flex flex-col min-h-[400px]">
           <div className="absolute top-0 right-0 p-8 opacity-5">
             <Waves className="w-40 h-40 text-[var(--soft-gold)]" />
           </div>
 
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
+              <h3 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.3em] flex items-center gap-3">
                 System Response Latency
                 <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_10px_var(--soft-gold)]" />
               </h3>
@@ -161,14 +161,14 @@ const SystemHealthPanel = ({ stats }: SystemHealthPanelProps) => {
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/5 relative z-10">
+          <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-[var(--overlay-border)] relative z-10">
             <div className="space-y-1">
               <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">Throughput</span>
-              <p className="text-sm font-bold text-white uppercase">14.2 req/s</p>
+              <p className="text-sm font-bold text-[var(--overlay-text)] uppercase">14.2 req/s</p>
             </div>
             <div className="space-y-1">
               <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">Active Nodes</span>
-              <p className="text-sm font-bold text-white uppercase">{stats?.active_nodes || 1} Instances</p>
+              <p className="text-sm font-bold text-[var(--overlay-text)] uppercase">{stats?.active_nodes || 1} Instances</p>
             </div>
             <div className="space-y-1">
               <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40">Stability</span>
