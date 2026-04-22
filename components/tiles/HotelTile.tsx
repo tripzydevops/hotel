@@ -145,7 +145,10 @@ export default function HotelTile(props: HotelTileProps) {
               {formatCurrency(currentPrice, currency)}
             </div>
             {(() => {
-              const vendorName = props.vendor || props.offers?.[0]?.vendor || props.offers?.[0]?.source || "DIRECT";
+              const lowestOffer = props.offers && props.offers.length > 0
+                ? props.offers.reduce((prev, curr) => ((curr.price || Infinity) < (prev.price || Infinity) ? curr : prev), props.offers[0])
+                : null;
+              const vendorName = lowestOffer?.vendor || lowestOffer?.source || props.vendor || "DIRECT";
               return (
                 <div className="text-[10px] uppercase text-white/60 bg-white/5 px-2 py-0.5 rounded-full mt-1 inline-block border border-white/5 backdrop-blur-sm font-bold tracking-wider">
                   VIA {vendorName}
