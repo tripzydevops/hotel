@@ -128,3 +128,6 @@ scratch/
 
 # InsForge & AI agent skills
 .windsurf
+
+# Scheduler logs
+backend/logs/*.log

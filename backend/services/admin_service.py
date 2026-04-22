@@ -474,7 +474,10 @@ async def get_system_logs_logic(limit: int = 100) -> SystemLogsResponse:
     Efficiently tail the scheduler.log file to get the last N lines.
     Uses collections.deque to avoid reading the entire file into memory.
     """
-    log_path = os.path.join(os.getcwd(), "scheduler.log")
+    # Canonical path — must match the writer in monitor_service.py
+    log_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "logs", "scheduler.log")
+    )
     if not os.path.exists(log_path):
         return SystemLogsResponse(
             logs=[SystemLogEntry(line="[System] No log file found.", level="WARN", line_num=0)],

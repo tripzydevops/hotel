@@ -31,28 +31,24 @@ from supabase import Client
 logger = get_logger(__name__)
 
 
+# Canonical log path — single source of truth for both writer and reader.
+# Derived from __file__ so it resolves correctly regardless of CWD.
+SCHEDULER_LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+SCHEDULER_LOG_PATH = os.path.join(SCHEDULER_LOG_DIR, "scheduler.log")
+
+
 # Dedicated Scheduler Logging
 def get_scheduler_logger():
     s_logger = logging.getLogger("scheduler")
     if not s_logger.handlers:
         from logging.handlers import RotatingFileHandler
 
-        # Environment-Aware Log Path
-        # This prevents crashes when the scheduler runs outside the VM.
-        vm_path = "/home/tripzydevops/hotel/scheduler.log"
-        local_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "scheduler.log")
-        )
-
-        log_path = (
-            vm_path
-            if os.path.isfile(vm_path) or os.path.isdir(os.path.dirname(vm_path))
-            else local_path
-        )
+        # Ensure the logs directory exists
+        os.makedirs(SCHEDULER_LOG_DIR, exist_ok=True)
 
         try:
             handler = RotatingFileHandler(
-                log_path, maxBytes=5 * 1024 * 1024, backupCount=3
+                SCHEDULER_LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=3
             )
         except (OSError, PermissionError):
             # Final fallback: stream to stdout (visible in GitHub Actions logs)
