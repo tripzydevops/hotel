@@ -113,7 +113,7 @@ def _transform_serp_links(breakdown: Any) -> Any:
     return breakdown
 
 
-def _extract_price(raw: Any) -> Optional[float]:
+def _extract_price(raw: Any, currency: Optional[str] = None) -> Optional[float]:
     """Helper to cleanly extract a numeric price from various raw formats (str, int, float)."""
     if raw is None:
         return None
@@ -124,6 +124,11 @@ def _extract_price(raw: Any) -> Optional[float]:
         s = str(raw).strip()
         # Remove currency symbols and whitespace
         s_clean = re.sub(r"[^\d.,]", "", s)
+        if not s_clean:
+            return None
+
+        # Normalize currency for lookup
+        curr_upper = (currency or "").upper()
 
         # Case 1: Both . and , exist (e.g. "3.825,00" or "3,825.00")
         if "." in s_clean and "," in s_clean:
@@ -134,18 +139,33 @@ def _extract_price(raw: Any) -> Optional[float]:
                 # US/UK: Comma is thousand, Dot is decimal
                 s_clean = s_clean.replace(",", "")
 
-        # Case 2: Only Dot exists (e.g. "3.825" or "150.50")
-        elif "." in s_clean:
-            parts = s_clean.split(".")
-            if len(parts) == 2 and len(parts[1]) == 3:
-                val = float(s_clean)
-                if val < 500:  # Threshold
-                    s_clean = s_clean.replace(".", "")
-
-        # Case 3: Only Comma exists (e.g. "125,50")
-        elif "," in s_clean:
-            # Assume comma is decimal (common in TR)
-            s_clean = s_clean.replace(",", ".")
+        # Case 2: Only Dot or Comma exists (e.g. "3.825" or "150,50")
+        else:
+            # Find all separators
+            separators = [m.start() for m in re.finditer(r"[.,]", s_clean)]
+            if separators:
+                last_sep_idx = separators[-1]
+                last_sep_char = s_clean[last_sep_idx]
+                trailing_digits = len(s_clean) - last_sep_idx - 1
+                
+                # AMBIGUITY FIX: exactly 3 trailing digits (e.g. 1.234)
+                if trailing_digits == 3:
+                    # In USD/GBP/EUR, a dot followed by 3 digits is almost ALWAYS a decimal (e.g. 1.000)
+                    # or an accidental 3-digit decimal from a scraper.
+                    # Thousand separators in these currencies are usually commas.
+                    if last_sep_char == "." and curr_upper in ["USD", "GBP", "EUR", "CAD", "AUD"]:
+                        # Treat as decimal
+                        s_clean = s_clean.replace(",", ".")
+                    elif last_sep_char == "," and curr_upper == "TRY":
+                        # In TR, comma is decimal.
+                        s_clean = s_clean.replace(",", ".")
+                    else:
+                        # Default to thousand separator for 3-digits if it's the only separator
+                        # This handles "1.234" in TR or "1,234" in US correctly.
+                        s_clean = s_clean.replace(".", "").replace(",", "")
+                else:
+                    # Assume it's a decimal separator (e.g., "150.50" or "150,50")
+                    s_clean = s_clean.replace(",", ".")
 
         return float(s_clean)
     except Exception:
@@ -157,6 +177,7 @@ def get_price_for_room(
     price_log: Dict[str, Any],
     target_room_type: str,
     allowed_room_names_map: Dict[str, List[str]],
+    currency: Optional[str] = None,
 ) -> Tuple[Optional[float], Optional[str], float]:
     """
     Finds the best matching room price within a price log.
@@ -169,6 +190,9 @@ def get_price_for_room(
 
     t_lower = target_room_type.lower().strip()
     r_types = price_log.get("room_types") or []
+    
+    # Use currency from price_log if not explicitly provided
+    active_currency = currency or price_log.get("currency")
 
     # 1. OPTIMIZED MATCHING: EXACT NAME FIRST
     # If the user selected a specific room name from the dropdown, find it exactly.
@@ -178,7 +202,7 @@ def get_price_for_room(
                 continue
             r_name = (r.get("name") or "").strip().lower()
             if r_name == t_lower:
-                p = _extract_price(r.get("price"))
+                p = _extract_price(r.get("price"), currency=active_currency)
                 if p is not None and p > 0:
                     return p, r.get("name"), 1.0
 
@@ -206,7 +230,7 @@ def get_price_for_room(
     # 3. HANDLE STANDARD CATEGORY
     if is_standard and not is_suite and not is_deluxe:
         # Lead price is the most reliable "from" price for Standard in the market logs
-        lead_p = _extract_price(price_log.get("price"))
+        lead_p = _extract_price(price_log.get("price"), currency=active_currency)
         if lead_p is not None and lead_p > 0:
             return lead_p, "Standard (Main)", 1.0
 
@@ -222,7 +246,7 @@ def get_price_for_room(
                     k in r_name
                     for k in ["suite", "süit", "deluxe", "superior", "premium"]
                 ):
-                    p = _extract_price(r.get("price"))
+                    p = _extract_price(r.get("price"), currency=active_currency)
                     if p:
                         valid_prices.append((p, r.get("name") or "Standard"))
             if valid_prices:

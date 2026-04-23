@@ -23,7 +23,7 @@ class PriceComparator:
         Returns:
             Tuple of (TrendDirection, change_percent)
         """
-        if previous_price is None or previous_price == 0:
+        if current_price is None or previous_price is None or previous_price <= 0:
             return TrendDirection.STABLE, 0.0
 
         change_percent = ((current_price - previous_price) / previous_price) * 100

@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException
 
 from backend.services.analysis_service import (
+    _extract_price,
     generate_synthetic_narrative,
     get_price_for_room,
 )
@@ -81,6 +82,17 @@ async def get_dashboard_logic(
         # AGENT_FIX: Sequential Data Fetching for Stability
         # Previous asyncio.to_thread + lambda approach was causing thread-safety crashes
         # with the Supabase client, leading to intermittent 500 errors on Vercel.
+        fallback_data = {
+            "target_hotel": None,
+            "competitors": [],
+            "recent_searches": [],
+            "recent_sessions": [],
+            "scan_history": [],
+            "unread_alerts_count": 0,
+            "active_scans": 0,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "market_insight": "Market data is currently being synchronized...",
+        }
 
         # 1. User Profile
         profile_res = (
@@ -176,6 +188,7 @@ async def get_dashboard_logic(
         user_settings = (
             settings_res.data if settings_res and hasattr(settings_res, "data") else {}
         )
+        display_currency = user_settings.get("currency", "TRY")
         unread_count = (
             alerts_res.count if alerts_res and hasattr(alerts_res, "count") else 0
         )
@@ -266,29 +279,58 @@ async def get_dashboard_logic(
 
             # Price Processing
             current_log = prices[0] if prices else None
-            prev_log = prices[1] if len(prices) > 1 else None
+            prev_log = None
             price_info = None
-            if current_log:
-                try:
-                    # AGENT_FEATURE: Use Strict Source Routing for Dashboard Prices
-                    # This ensures the 'standard' price in dashboard matches the analysis selection.
-                    target_room = h.get("room_type_standard") or "Standard"
-                    curr_p, matched_name, confidence = get_price_for_room(
-                        current_log, target_room, {}
-                    )
 
-                    if curr_p is not None:
-                        curr_c = current_log.get("currency") or "TRY"
+            if current_log:
+                # AGENT_FIX: Find a comparable previous log (same stay duration and adults)
+                # Comparing a 1-night stay with a 7-night stay is a common cause of -99% errors.
+                curr_check_in = current_log.get("check_in_date")
+                curr_sessions = current_log.get("scan_sessions") or {}
+                curr_check_out = curr_sessions.get("check_out_date")
+                curr_adults = curr_sessions.get("adults")
+
+                for p in prices[1:]:
+                    p_sessions = p.get("scan_sessions") or {}
+                    if (p.get("check_in_date") == curr_check_in and 
+                        p_sessions.get("check_out_date") == curr_check_out and 
+                        p_sessions.get("adults") == curr_adults):
+                        prev_log = p
+                        break
+
+                try:
+                    # AGENT_FIX: Unified Source Routing
+                    # Ensure we compare the SAME room category between scans.
+                    target_room = h.get("room_type_standard") or "Standard"
+                    curr_c = current_log.get("currency") or "TRY"
+                    curr_p_raw, matched_name, confidence = get_price_for_room(
+                        current_log, target_room, {}, currency=curr_c
+                    )
+                    
+                    curr_p = None
+                    if curr_p_raw is not None and curr_p_raw > 0:
+                        curr_p = convert_currency(curr_p_raw, curr_c, display_currency)
                         active_prices.append(curr_p)
 
+                    # Get previous price for the same room category
                     prev_p = None
-                    if prev_log and prev_log.get("price") is not None:
-                        raw_prev = float(prev_log["price"])
+                    if prev_log:
                         prev_c = prev_log.get("currency") or "TRY"
-                        prev_p = convert_currency(raw_prev, prev_c, curr_c)
+                        p_val_prev, _, _ = get_price_for_room(
+                            prev_log, target_room, {}, currency=prev_c
+                        )
+                        if p_val_prev is not None and p_val_prev > 0:
+                            prev_p = convert_currency(p_val_prev, prev_c, display_currency)
 
-                    trend_obj, change = price_comparator.calculate_trend(curr_p, prev_p)
-                    trend_val = str(getattr(trend_obj, "value", trend_obj))
+                    # AGENT_FIX: Safety Guard
+                    # Only calculate trend if both prices are valid.
+                    # This prevents erratic -99.9% shifts when rooms go in/out of stock.
+                    if curr_p is not None and curr_p > 0 and prev_p is not None and prev_p > 0:
+                        trend_obj, change = price_comparator.calculate_trend(curr_p, prev_p)
+                        trend_val = str(getattr(trend_obj, "value", trend_obj))
+                    else:
+                        trend_val = "stable"
+                        change = 0.0
 
                     price_info = {
                         "current_price": curr_p,
@@ -312,7 +354,7 @@ async def get_dashboard_logic(
                         "room_types": current_log.get("room_types") or [],
                     }
                 except Exception as e:
-                    logger.warning(f"Price processing error: {e}")
+                    logger.warning(f"Price processing error for {hid}: {e}")
 
             # Sentiment Processing
             # AGENT_FIX: Sentiment Fallback (Global Pulse)
@@ -498,8 +540,17 @@ async def get_dashboard_logic(
 
             # AGENT_LOGIC: Calculate Rate Parity Score
             price_info = hotel_data.get("price_info")
+            target_room = h.get("room_type_standard") or "Standard"
+            
+            # AGENT_FIX: Consistency check
+            # Only calculate parity if we are tracking a "Standard" room category.
+            # Comparing a Suite price to OTA Lead prices leads to 0% parity scores (apples to oranges).
+            standard_keys = ["standard", "standart", "economy", "ekonomik", "base", "classic"]
+            is_standard_tracking = any(k in target_room.lower() for k in standard_keys) or target_room == "Standard"
+
             if (
-                price_info
+                is_standard_tracking
+                and price_info
                 and price_info.get("current_price")
                 and price_info.get("offers")
             ):
@@ -507,9 +558,14 @@ async def get_dashboard_logic(
                 offers = price_info["offers"]
 
                 # Find the lowest price among all offers (OTAs)
-                ota_prices = [
-                    of.get("price") for of in offers if of.get("price") is not None
-                ]
+                # AGENT_FIX: Ensure numerical extraction
+                ota_prices = []
+                for of in offers:
+                    p_raw = of.get("price")
+                    if p_raw is not None:
+                        p_val = _extract_price(p_raw)
+                        if p_val and p_val > 0:
+                            ota_prices.append(p_val)
 
                 if ota_prices:
                     cheapest_ota = min(ota_prices)
@@ -518,13 +574,14 @@ async def get_dashboard_logic(
                         hotel_data["parity_score"] = 100
                     else:
                         # Penalty for being more expensive
-                        # e.g. if we are 110 and ota is 100, score is 90%
-                        parity_ratio = (cheapest_ota / target_price) * 100
-                        hotel_data["parity_score"] = round(max(0, parity_ratio))
+                        # If we are 10% more expensive, score drops to 90, etc.
+                        diff_percent = ((target_price - cheapest_ota) / cheapest_ota) * 100
+                        hotel_data["parity_score"] = max(0, int(100 - diff_percent))
                 else:
-                    hotel_data["parity_score"] = 100  # No competition found
+                    hotel_data["parity_score"] = 100  # No competition found = in parity
             else:
-                hotel_data["parity_score"] = None  # Unknown
+                # Default for non-standard rooms where we lack comparable OTA data
+                hotel_data["parity_score"] = 100 if is_standard_tracking else None
 
         # 6. Final Aggregation
         target_hotel = next(

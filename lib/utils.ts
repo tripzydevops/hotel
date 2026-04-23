@@ -27,16 +27,52 @@ export function formatCurrency(
 }
 
 /**
- * Sanitize and parse price strings with commas
+ * Sanitize and parse price strings with commas and currency symbols
  */
-export function parsePrice(price: string | number): number {
+/**
+ * Sanitize and parse price strings with international format support (commas/dots)
+ */
+export function parsePrice(price: string | number | null | undefined): number {
   if (typeof price === "number") return price;
-  if (!price) return 0;
-  // Strip commas and parse
-  const sanitized = price.toString().replace(/,/g, "");
-  const parsed = parseFloat(sanitized);
-  return isNaN(parsed) ? 0 : parsed;
+  if (price === null || price === undefined || price === "") return 0;
+  
+  try {
+    let s = price.toString().trim();
+    // Remove everything except digits, dots, commas, and minus
+    let sClean = s.replace(/[^\d.,-]/g, "");
+
+    // Case 1: Both . and , exist (e.g. "3.825,00" or "3,825.00")
+    if (sClean.includes(".") && sClean.includes(",")) {
+      if (sClean.lastIndexOf(",") > sClean.lastIndexOf(".")) {
+        // Turkish/European: Dot is thousand, Comma is decimal
+        sClean = sClean.replace(/\./g, "").replace(/,/g, ".");
+      } else {
+        // US/UK: Comma is thousand, Dot is decimal
+        sClean = sClean.replace(/,/g, "");
+      }
+    }
+    // Case 2: Only Dot or Comma exists (e.g. "3.825" or "150,50")
+    else if (sClean.includes(".") || sClean.includes(",")) {
+      const lastSepIdx = Math.max(sClean.lastIndexOf("."), sClean.lastIndexOf(","));
+      const trailingDigits = sClean.length - lastSepIdx - 1;
+      
+      // If there are exactly 3 trailing digits after the last separator,
+      // it's very likely a thousand separator (e.g. "1.234" or "1,234")
+      if (trailingDigits === 3) {
+        sClean = sClean.replace(/\./g, "").replace(/,/g, "");
+      } else {
+        // Assume it's a decimal separator (e.g. "150.50" or "150,50")
+        sClean = sClean.replace(/,/g, ".");
+      }
+    }
+
+    const parsed = parseFloat(sClean);
+    return isNaN(parsed) ? 0 : parsed;
+  } catch (e) {
+    return 0;
+  }
 }
+
 
 /**
  * Format date for display
