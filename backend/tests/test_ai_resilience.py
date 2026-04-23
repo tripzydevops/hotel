@@ -30,7 +30,7 @@ class TestAIResilience(unittest.TestCase):
             
             self.assertIsNone(commander.client)
             
-            # Verify generate_command_brief returns a safe fallback instead of crashing
+            # Verify generate_market_brief returns a safe fallback instead of crashing
             import asyncio
             loop = asyncio.get_event_loop()
             result = loop.run_until_complete(commander.generate_market_brief({"test": "data"}))
