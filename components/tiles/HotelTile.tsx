@@ -56,8 +56,22 @@ export interface HotelTileProps {
 }
 
 export default function HotelTile(props: HotelTileProps) {
-  const currentPrice = parsePrice(props.currentPrice || 0);
-  const previousPrice = parsePrice(props.previousPrice || currentPrice);
+  // Atomic derivation of best price and vendor
+  const offers = props.offers || [];
+  const bestOffer = offers.length > 0 
+    ? offers.reduce((best, curr) => {
+        const currentP = parsePrice(curr.price || 0);
+        const bestP = parsePrice(best.price || 0);
+        return (currentP > 0 && currentP < bestP) || bestP === 0 ? curr : best;
+      }, offers[0])
+    : null;
+
+  const displayPrice = bestOffer && parsePrice(bestOffer.price || 0) > 0 
+    ? parsePrice(bestOffer.price || 0) 
+    : parsePrice(props.currentPrice || 0);
+    
+  const displayVendor = bestOffer?.vendor || bestOffer?.source || props.vendor || "DIRECT";
+  const previousPrice = parsePrice(props.previousPrice || displayPrice);
   
   const {
     id,
@@ -144,19 +158,11 @@ export default function HotelTile(props: HotelTileProps) {
               Live Rate
             </div>
             <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic">
-              {currency} {currentPrice.toLocaleString('en-US')}
+              {currency} {displayPrice.toLocaleString('en-US')}
             </div>
-            {(() => {
-              const lowestOffer = props.offers && props.offers.length > 0
-                ? props.offers.reduce((prev, curr) => ((curr.price || Infinity) < (prev.price || Infinity) ? curr : prev), props.offers[0])
-                : null;
-              const vendorName = lowestOffer?.vendor || lowestOffer?.source || props.vendor || "DIRECT";
-              return (
-                <div className="text-[10px] uppercase text-[var(--text-muted-foreground)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded-full mt-1 inline-block border border-[var(--overlay-border)] backdrop-blur-sm font-bold tracking-wider">
-                  VIA {vendorName}
-                </div>
-              );
-            })()}
+            <div className="text-[10px] uppercase text-[var(--text-muted-foreground)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded-full mt-1 inline-block border border-[var(--overlay-border)] backdrop-blur-sm font-bold tracking-wider">
+              VIA {displayVendor}
+            </div>
           </div>
         </div>
 

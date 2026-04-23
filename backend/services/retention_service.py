@@ -39,6 +39,8 @@ class RetentionService:
                 stats["rollups"] = response.data.get("rolled_up", 0)
                 stats["logs_pruned"] = response.data.get("pruned_logs", 0)
                 status = response.data.get("status", "SUCCESS")
+                if status == "FAILED":
+                    stats["errors"].append(response.data.get("error", "Unknown SQL Error"))
             else:
                 status = "SUCCESS"
 

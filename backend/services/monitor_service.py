@@ -32,8 +32,8 @@ logger = get_logger(__name__)
 
 
 # Canonical log path — single source of truth for both writer and reader.
-# Derived from __file__ so it resolves correctly regardless of CWD.
-SCHEDULER_LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+# Aligning to project root for visibility in admin dashboard
+SCHEDULER_LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SCHEDULER_LOG_PATH = os.path.join(SCHEDULER_LOG_DIR, "scheduler.log")
 
 
@@ -277,9 +277,11 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
                 )
 
                 if sync_id:
+                    total_events = tobb_res.get("processed", 0) + tga_res.get("processed", 0)
                     insforge.table("scan_sessions").update(
                         {
                             "status": status,
+                            "hotels_count": total_events,
                             "completed_at": datetime.now(timezone.utc).isoformat(),
                             "reasoning_trace": [f"TOBB: {tobb_res}", f"TGA: {tga_res}"],
                         }
@@ -352,11 +354,24 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         # 4. Create Monitoring Session
         session_id = str(uuid.uuid4())
         try:
-            insforge.table("market_heartbeat_logs").insert({
+            # 2. Record Heartbeat Start
+            # AGENT_FIX: Record in scan_sessions with NULL user_id for global dashboard visibility
+            insforge.table("scan_sessions").insert({
                 "id": session_id,
+                "user_id": None,  # NULL for all users
+                "session_type": "autonomous_heartbeat",
+                "status": "running",
+                "hotels_count": len(hotels_to_scan),
+                "currency": "TRY",
+                "check_in_date": datetime.now(timezone.utc).date().isoformat(),
+                "check_out_date": (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
+            }).execute()
+
+            insforge.table("market_heartbeat_logs").insert({
+                "session_id": session_id,
                 "status": "started",
-                "triggered_by": "CRON_WORKER",
-                "hotel_count": len(hotels_to_scan)
+                "trigger_source": None, # AGENT_FIX: Use None for system-triggered scans to avoid UUID conversion errors
+                "hotels_count": len(hotels_to_scan)
             }).execute()
         except Exception as sle:
             s_logger.error(f"Heartbeat: Failed to record session start: {sle}")
@@ -365,8 +380,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             s_logger.info("Scheduler: No monitored hotels found.")
             insforge.table("market_heartbeat_logs").update({
                 "status": "completed", 
-                "completed_at": datetime.now(timezone.utc).isoformat()
-            }).eq("id", session_id).execute()
+                "end_time": datetime.now(timezone.utc).isoformat()
+            }).eq("session_id", session_id).execute()
             return
 
         # 4. Update Admin Settings immediately
@@ -392,8 +407,9 @@ async def run_system_heartbeat(insforge: InsForgeClient):
 
         insforge.table("market_heartbeat_logs").update({
             "status": "completed",
-            "completed_at": datetime.now(timezone.utc).isoformat()
-        }).eq("id", session_id).execute()
+            "hotels_count": total,
+            "end_time": datetime.now(timezone.utc).isoformat()
+        }).eq("session_id", session_id).execute()
 
         s_logger.info(f"Heartbeat: Successfully submitted {total} tasks for session {session_id}")
         return total
