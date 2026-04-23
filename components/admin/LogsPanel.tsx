@@ -113,7 +113,7 @@ const LogsPanel = () => {
                         className="p-20 text-center text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest opacity-40"
                       >
                         <Terminal className="w-10 h-10 mx-auto mb-4 opacity-20" />
-                        No logs found
+                        No system logs found
                       </td>
                     </tr>
                   )}

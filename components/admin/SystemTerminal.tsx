@@ -120,6 +120,11 @@ const SystemTerminal = () => {
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 Initializing terminal session...
               </div>
+            ) : logs.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center opacity-50 italic text-[var(--text-muted)]">
+                <Terminal className="w-8 h-8 mb-2 opacity-30" />
+                No system logs found
+              </div>
             ) : (
               <div className="space-y-0.5">
                 {logs.map((log, i) => (

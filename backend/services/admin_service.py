@@ -1,3 +1,4 @@
+
 """
 Admin Service.
 Handles system-wide operations, manual directory syncs, user administration,
@@ -480,7 +481,7 @@ async def get_system_logs_logic(limit: int = 100) -> SystemLogsResponse:
     )
     if not os.path.exists(log_path):
         return SystemLogsResponse(
-            logs=[SystemLogEntry(line="[System] No log file found.", level="WARN", line_num=0)],
+            logs=[SystemLogEntry(line="[System Error] No log file found.", level="ERROR", line_num=0)],
             total_lines=0,
             file_path=log_path
         )

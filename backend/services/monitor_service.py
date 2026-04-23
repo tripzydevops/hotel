@@ -331,17 +331,43 @@ async def run_system_heartbeat(insforge: InsForgeClient):
 
         s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
 
-        # 3. Create Monitoring Session
+        # 3. Get monitored hotels first (to set explicit count in initial log)
+        monitored_res = (
+            insforge.table("user_hotels")
+            .select("hotel_id, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude)")
+            .eq("is_monitored", True)
+            .execute()
+        )
+        
+        # Deduplicate
+        hotels_to_scan = []
+        seen_hotels = set()
+        if monitored_res.data:
+            for item in monitored_res.data:
+                h = item.get("hotels")
+                if h and h.get("id") not in seen_hotels:
+                    hotels_to_scan.append(h)
+                    seen_hotels.add(h.get("id"))
+
+        # 4. Create Monitoring Session
         session_id = str(uuid.uuid4())
         try:
             insforge.table("market_heartbeat_logs").insert({
                 "id": session_id,
                 "status": "started",
-                "triggered_by": "scheduler",
-                "hotel_count": 0
+                "triggered_by": "CRON_WORKER",
+                "hotel_count": len(hotels_to_scan)
             }).execute()
         except Exception as sle:
             s_logger.error(f"Heartbeat: Failed to record session start: {sle}")
+
+        if not hotels_to_scan:
+            s_logger.info("Scheduler: No monitored hotels found.")
+            insforge.table("market_heartbeat_logs").update({
+                "status": "completed", 
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", session_id).execute()
+            return
 
         # 4. Update Admin Settings immediately
         next_scan = now + timedelta(hours=interval)
@@ -353,31 +379,6 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         except Exception as e:
             s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
 
-        # 5. Get monitored hotels
-        monitored_res = (
-            insforge.table("user_hotels")
-            .select("hotel_id, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude)")
-            .eq("is_monitored", True)
-            .execute()
-        )
-        if not monitored_res.data:
-            s_logger.info("Scheduler: No monitored hotels found.")
-            insforge.table("market_heartbeat_logs").update({
-                "status": "completed", 
-                "completed_at": datetime.now(timezone.utc).isoformat()
-            }).eq("id", session_id).execute()
-            return
-
-        # Deduplicate
-        hotels_to_scan = []
-        seen_hotels = set()
-        for item in monitored_res.data:
-            h = item.get("hotels")
-            if h and h.get("id") not in seen_hotels:
-                hotels_to_scan.append(h)
-                seen_hotels.add(h.get("id"))
-        
-        insforge.table("market_heartbeat_logs").update({"hotel_count": len(hotels_to_scan)}).eq("id", session_id).execute()
 
         # 6. Submit to DataForSEO
         total = await dataforseo_provider.submit_hotel_scan_batch(
