@@ -279,15 +279,19 @@ async def get_dashboard_logic(
 
                     if curr_p is not None:
                         curr_c = current_log.get("currency") or "TRY"
+                        curr_p = float(curr_p)
                         active_prices.append(curr_p)
 
                     prev_p = None
-                    if prev_log and prev_log.get("price") is not None:
-                        raw_prev = float(prev_log["price"])
-                        prev_c = prev_log.get("currency") or "TRY"
-                        prev_p = convert_currency(raw_prev, prev_c, curr_c)
+                    if prev_log:
+                        raw_prev_p, _, _ = get_price_for_room(prev_log, target_room, {})
+                        if raw_prev_p is not None:
+                            raw_prev_p = float(raw_prev_p)
+                            prev_c = prev_log.get("currency") or "TRY"
+                            prev_p = float(convert_currency(raw_prev_p, prev_c, curr_c))
 
                     trend_obj, change = price_comparator.calculate_trend(curr_p, prev_p)
+                    change = float(change)
                     trend_val = str(getattr(trend_obj, "value", trend_obj))
 
                     price_info = {

@@ -186,7 +186,7 @@ export default function HotelTile(props: HotelTileProps) {
             <div className={`text-[10px] font-bold flex items-center gap-1 ${
               changePercent > 0 ? "text-emerald-500" : changePercent < 0 ? "text-rose-500" : "text-[var(--text-muted)]"
             }`}>
-              {changePercent > 0 ? "+" : ""}{changePercent}%
+              {changePercent > 0 ? "+" : changePercent < 0 ? "-" : ""}{Math.abs(changePercent)}%
               {trend === "up" ? <ArrowUpRight className="w-3 h-3 text-emerald-500" /> : trend === "down" ? <ArrowDownRight className="w-3 h-3 text-rose-500" /> : <Minus className="w-3 h-3" />}
             </div>
           </div>

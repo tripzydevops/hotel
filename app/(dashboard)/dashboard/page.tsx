@@ -313,7 +313,7 @@ export default function Dashboard() {
                       stars={data.target_hotel.stars}
                       imageUrl={data.target_hotel.image_url}
                       vendor={data.target_hotel.price_info?.vendor}
-                      priceHistory={data.target_hotel.price_history}
+                      priceHistory={data.target_hotel.price_history?.map(p => ({ ...p, price: parsePrice(p.price) }))}
                       checkIn={data.target_hotel.price_info?.check_in}
                       checkOut={data.target_hotel.price_info?.check_out}
                       adults={data.target_hotel.price_info?.adults}
@@ -451,7 +451,7 @@ export default function Dashboard() {
                             stars={competitor.stars}
                             imageUrl={competitor.image_url}
                             vendor={competitor.price_info?.vendor}
-                            priceHistory={competitor.price_history}
+                            priceHistory={competitor.price_history?.map(p => ({ ...p, price: parsePrice(p.price) }))}
                             checkIn={competitor.price_info?.check_in}
                             checkOut={competitor.price_info?.check_out}
                             adults={competitor.price_info?.adults}
