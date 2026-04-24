@@ -662,7 +662,7 @@ class DataForSEOProvider(HotelDataProvider):
         check_in: date,
         check_out: date,
         adults: int = 2,
-        currency: str = "USD",
+        currency: str = "TRY",
         serp_api_id: Optional[str] = None,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
@@ -728,7 +728,7 @@ class DataForSEOProvider(HotelDataProvider):
         hotel_id: str,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-        currency: str = "USD",
+        currency: str = "TRY",
         adults: int = 1,
     ) -> Optional[Dict[str, Any]]:
         """
@@ -900,7 +900,7 @@ class DataForSEOProvider(HotelDataProvider):
         deep_scan: bool = False,
         pingback_url: Optional[str] = None,
         session_id: Optional[str] = None,
-        currency: str = "USD",
+        currency: str = "TRY",
     ) -> int:
         """
         Submits a batch of hotels for discovery.
@@ -1303,7 +1303,7 @@ class DataForSEOProvider(HotelDataProvider):
                     result_dict = {
                         "status": "success",
                         "task_type": "price_search",
-                        "currency": prices_data.get("currency", "USD"),
+                        "currency": prices_data.get("currency", "TRY"),
                         "property_token": target.get("hotel_identifier"),
                         "hotel_name": target.get("title"),
                         "stars": target.get("stars"),
