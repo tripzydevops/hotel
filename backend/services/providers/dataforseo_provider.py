@@ -471,9 +471,36 @@ class DataForSEOProvider(HotelDataProvider):
                     }
                 )
 
+        # Fallback to about.rooms if room_catalog is empty (Deep Scans)
+        if not room_catalog and about.get("rooms"):
+            for r in about["rooms"]:
+                if isinstance(r, dict):
+                    room_catalog.append({
+                        "name": r.get("title") or r.get("name"),
+                        "price": None,
+                        "currency": None,
+                        "source": "About",
+                        "url": None,
+                        "capacity": None,
+                        "features": None,
+                        "image_url": r.get("image_url") or r.get("image"),
+                    })
+
         # === 9. Best Price from prices object ===
         best_price = prices_obj.get("price")
         currency = prices_obj.get("currency")
+
+        # Currency Fallback: check room catalog or items
+        if not currency:
+            for r in room_catalog:
+                if r.get("currency"):
+                    currency = r["currency"]
+                    break
+        if not currency and items:
+            for item in items:
+                if isinstance(item, dict) and item.get("currency"):
+                    currency = item["currency"]
+                    break
 
         logger.info(
             f"DataForSEO AdvancedParser: title={title}, stars={stars}, rating={rating}, "

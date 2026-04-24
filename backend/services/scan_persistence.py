@@ -430,6 +430,7 @@ class ScanPersistenceService:
                 "check_out_time": result.get("check_out_time"),
                 "sentiment_breakdown": merged_sentiment,
                 "room_types": result.get("room_types"),
+                "currency": result.get("currency"),
             }
             # Add phone, website etc if present
             for field in ["phone", "website", "address", "latitude", "longitude"]:
@@ -730,6 +731,7 @@ class ScanPersistenceService:
             "room_types",
             "check_in_time",
             "check_out_time",
+            "currency",
         ]
         for field in static_fields:
             new_val = price_data.get(field)
@@ -758,6 +760,9 @@ class ScanPersistenceService:
                 field == "room_types" and isinstance(new_val, list) and len(new_val) > 0
             ):
                 # Always snapshot room types if found, to keep the UI fresh
+                should_update = True
+            elif field == "currency" and new_val != existing_val:
+                # Force update currency if it changed (e.g. was None or different)
                 should_update = True
 
             if should_update:
