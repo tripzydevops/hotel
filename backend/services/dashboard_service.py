@@ -350,8 +350,8 @@ async def get_dashboard_logic(
                         "adults": current_log.get("scan_sessions", {}).get("adults")
                         if current_log.get("scan_sessions")
                         else 2,
-                        "offers": current_log.get("parity_offers") or [],
-                        "room_types": current_log.get("room_types") or [],
+                        "offers": [{**o, "vendor": o.get("source") or o.get("vendor")} for o in (current_log.get("parity_offers") or [])],
+                        "room_types": current_log.get("room_types") or h.get("room_types") or dir_data.get("room_types") or [],
                     }
                 except Exception as e:
                     logger.warning(f"Price processing error for {hid}: {e}")
