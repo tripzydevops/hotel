@@ -900,6 +900,7 @@ class DataForSEOProvider(HotelDataProvider):
         deep_scan: bool = False,
         pingback_url: Optional[str] = None,
         session_id: Optional[str] = None,
+        currency: str = "USD",
     ) -> int:
         """
         Submits a batch of hotels for discovery.
@@ -940,7 +941,7 @@ class DataForSEOProvider(HotelDataProvider):
                 "language_name": "English",
                 "check_in": check_in,
                 "check_out": check_out,
-                "currency": "TRY",
+                "currency": currency,
                 "tag": price_uuid,
             }
             if location_code:
@@ -1110,7 +1111,7 @@ class DataForSEOProvider(HotelDataProvider):
     ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """Internal helper for GET results with Identity Verification logic."""
         if not self.login or not self.password or not task_id:
-            return None
+            return None, None
 
         auth = (self.login, self.password)
         try:
@@ -1460,8 +1461,14 @@ class DataForSEOProvider(HotelDataProvider):
             return processed if processed and processed.get("status") == "success" else None
         else:
             # Default: price_search via hotel_searches
-            processed, res_json = await self.fetch_task_results(
-                task_id, target_token=target_token, target_name=target_name
+            # [FIX 2026-04-24] Call _fetch_results_generic directly to get the
+            # (processed, raw) tuple. fetch_task_results returns a single value,
+            # which caused a silent unpacking crash in asyncio.gather.
+            processed, res_json = await self._fetch_results_generic(
+                task_id,
+                "hotel_searches",
+                target_token=target_token,
+                target_name=target_name,
             )
 
             # [EVERYTHING VAULT] Capture the raw GET response
