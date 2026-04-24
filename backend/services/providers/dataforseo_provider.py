@@ -1321,7 +1321,7 @@ class DataForSEOProvider(HotelDataProvider):
                     # Only include price if it's a real positive number
                     if raw_price and float(raw_price) > 0:
                         result_dict["price"] = float(raw_price)
-                    return result_dict
+                    return result_dict, res_json
 
                 if "hotel_info" in endpoint:
                     # [FIX 2026-04-19] hotel_info/advanced has TWO response shapes:

@@ -1162,7 +1162,9 @@ class ScanPersistenceService:
 
         # 5. Execute Batch Operations
         if hotel_updates:
-            self.admin_insforge.table("hotels").upsert(hotel_updates).execute()
+            for upd in hotel_updates:
+                hotel_id = upd.pop("id")
+                self.admin_insforge.table("hotels").update(upd).eq("id", hotel_id).execute()
         
         if price_logs:
             # Explicitly requested INSERT for price_logs
