@@ -401,35 +401,41 @@ export default function HotelDetailsModal({
           {activeTab === "rooms" && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                {(hotel.price_info?.room_types || []).map((room, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
-                  >
-                    <div>
-                      <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                        {room.name || "Target Chamber"}
-                      </h4>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                        {t("hotelDetails.foundVia")} reconnaissance
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency:
-                            room.currency ||
-                            hotel.price_info?.currency ||
-                            "USD",
-                        }).format(room.price || 0)}
+                {(hotel.price_info?.room_types || []).map((room, idx) => {
+                  const isString = typeof room === "string";
+                  const roomName = isString ? room : (room?.name || "Target Chamber");
+                  const roomPrice = isString ? null : room?.price;
+                  const roomCurrency = isString ? hotel.price_info?.currency || "USD" : (room?.currency || hotel.price_info?.currency || "USD");
+
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
+                    >
+                      <div>
+                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                          {roomName}
+                        </h4>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                          {t("hotelDetails.foundVia")} reconnaissance
+                        </p>
                       </div>
-                      <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                        {t("common.availableNow")}
-                      </span>
+                      {roomPrice != null && (
+                        <div className="text-right">
+                          <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: roomCurrency,
+                            }).format(roomPrice)}
+                          </div>
+                          <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                            {t("common.availableNow")}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {(!hotel.price_info?.room_types ||
                   hotel.price_info.room_types.length === 0) && (
                   <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
