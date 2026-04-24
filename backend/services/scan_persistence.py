@@ -479,14 +479,18 @@ class ScanPersistenceService:
     ) -> Dict[str, List[Dict[str, Any]]]:
         history_map = {}
         try:
+            # 5-Day Variance Window: We fetch all history for these hotels from exactly 5 days ago
+            # This ensures the 30% variance check is based on time, not a random row count.
+            five_days_ago = datetime.now(timezone.utc) - timedelta(days=5)
+            
             res = (
                 self.admin_insforge.table("price_logs")
                 .select(
                     "hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata"
                 )
                 .in_("hotel_id", hotel_ids)
+                .gte("recorded_at", five_days_ago.isoformat())
                 .order("recorded_at", desc=True)
-                .limit(len(hotel_ids) * 5)
                 .execute()
             )
 

@@ -10,10 +10,11 @@ The "Pulse" represents the heartbeat of the platform—a continuous stream of hi
 The system has evolved from a simple linear scraper into an **Asynchronous Agent Mesh** optimized for scale and data integrity.
 
 ### Stage A: The System Heartbeat (`monitor_service.py`)
-- **Trigger**: Every 4 hours (SCAN_PULSE_INTERVAL_HOURS) via GitHub Action Cron.
+- **Trigger**: GitHub Action Cron runs every **5 minutes** (`*/5 * * * *`) as a resilient heartbeat.
+- **Throttling**: The actual task generation logic is strictly throttled to every **4 hours** (`SCAN_PULSE_INTERVAL_HOURS`) by verifying the `last_global_scan_at` state in the database.
 - **Responsibility**:
-    1.  **Poll Existing Tasks**: Checks for completed external scans from the previous cycle.
-    2.  **Dispatch New Scans**: Identifies properties needing a "Pulse" check and dispatches them in **Batches of 100**.
+    1.  **Poll Existing Tasks**: Checks for completed external scans from the previous cycle every 5 minutes.
+    2.  **Dispatch New Scans**: If the 4-hour threshold is met, it identifies properties needing a "Pulse" check and dispatches them in **Batches of 100**.
     3.  **Persistence**: Offloads raw results to the `ScanPersistenceService`.
 
 ### Stage B: The Provider Interface (`DataForSEOProvider`)
