@@ -345,6 +345,24 @@ async def get_dashboard_logic(
                         current_log.get("parity_offers") or 
                         []
                     )
+
+                    # AGENT_FIX: OTA Fallback from Google Local reviews JSON (DataForSEO Resilience)
+                    if not raw_offers:
+                        reviews_data = h.get("reviews") or {}
+                        if isinstance(reviews_data, dict):
+                            ota_sources = reviews_data.get("ota_sources") or []
+                            ota_min_price = reviews_data.get("ota_min_price")
+                            if ota_sources and ota_min_price:
+                                raw_offers = [
+                                    {
+                                        "vendor": source, 
+                                        "price": ota_min_price, 
+                                        "currency": active_currency,
+                                        "is_fallback": True
+                                    }
+                                    for source in ota_sources[:3]
+                                ]
+
                     
                     processed_offers = []
                     for of in raw_offers:
