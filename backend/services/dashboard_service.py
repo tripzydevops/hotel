@@ -421,9 +421,13 @@ async def get_dashboard_logic(
                             continue
                         
                         # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
-                        v_name = of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown"
+                        v_name = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                         p_val = _extract_price(of.get("price"), currency=active_currency)
                         
+                        # AGENT_FIX: Filter out offers with no valid price (Fix for 0 price entries in UI)
+                        if p_val is None or p_val <= 0:
+                            continue
+
                         processed_offers.append({
                             "vendor": v_name,
                             "price": p_val,
@@ -440,7 +444,7 @@ async def get_dashboard_logic(
                         "trend": trend_val,
                         "change_percent": change,
                         "recorded_at": current_log.get("recorded_at"),
-                        "vendor": current_log.get("vendor") or "Unknown",
+                        "vendor": current_log.get("vendor") or current_log.get("source") or current_log.get("site") or "Unknown",
                         "check_in": current_log.get("check_in_date"),
                         "check_out": current_log.get("scan_sessions", {}).get("check_out_date") if current_log.get("scan_sessions") else None,
                         "adults": current_log.get("scan_sessions", {}).get("adults") if current_log.get("scan_sessions") else 2,

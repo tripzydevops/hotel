@@ -655,10 +655,18 @@ class ScanPersistenceService:
             result.get("parity_offers") or 
             result.get("all_prices") or 
             price_data.get("offers") or 
+            price_data.get("prices") or 
             []
         )
         is_shallow = len(offers) < 5 and not is_estimated
-        current_room_types = price_data.get("room_types", [])
+        current_room_types = price_data.get("room_types") or price_data.get("all_rooms") or []
+        
+        # If room_types is empty, try to derive from offers/prices
+        if not current_room_types and offers:
+            current_room_types = [
+                {"name": of.get("name") or of.get("room_type"), "price": of.get("price")} 
+                for of in offers if of.get("name") or of.get("room_type")
+            ]
         if not current_room_types and not is_estimated and status == "success":
             # Carry forward room types if missing but scan was successful
             for h in history:
@@ -669,7 +677,7 @@ class ScanPersistenceService:
         # 4. Metadata & Sentiment
         meta_update = {
             "last_scan": datetime.now(timezone.utc).isoformat(),
-            "vendor_source": price_data.get("vendor", "Provider"),
+            "vendor_source": price_data.get("vendor") or price_data.get("source") or price_data.get("site") or price_data.get("ota_name") or "Provider",
         }
 
         # Only update the 'live' price if we have a fresh, valid one
@@ -827,7 +835,7 @@ class ScanPersistenceService:
             "check_out_date": check_out_str,
             "is_estimated": is_estimated,
             "session_id": str(session_id) if session_id else None,
-            "vendor": price_data.get("vendor", "Provider"),
+            "vendor": price_data.get("vendor") or price_data.get("source") or price_data.get("site") or price_data.get("ota_name") or "Provider",
             "parity_offers": result.get("parity_offers") or offers,
             "offers": result.get("offers") or price_data.get("offers") or offers,
             "room_types": current_room_types,
@@ -1052,18 +1060,34 @@ class ScanPersistenceService:
                             # If we have no old price, or new price is better (lower)
                             if old_p == 0 or new_p < old_p:
                                 existing[key] = new_p
-                    elif key in ["offers", "ota_prices", "room_catalog", "room_types", "market_offers"]:
-                        # Merge lists and deduplicate by 'source' or 'title'
+                    elif key in ["offers", "ota_prices", "room_catalog", "room_types", "market_offers", "parity_offers", "all_prices"]:
+                        # Merge lists and deduplicate by 'source', 'title', or 'name'
                         existing_list = existing.get(key) or []
                         if not isinstance(existing_list, list): existing_list = []
                         if isinstance(val, list):
-                            # Heuristic for deduplication
                             seen = set()
                             combined = []
                             for item in (existing_list + val):
-                                if not isinstance(item, dict): continue
-                                # Use source+price+title as unique key
-                                ident = f"{item.get('source')}_{item.get('price')}_{item.get('title')}"
+                                # Support both dicts (offers/rooms) and primitives (strings)
+                                if not isinstance(item, dict):
+                                    if item not in seen:
+                                        combined.append(item)
+                                        seen.add(item)
+                                    continue
+                                    
+                                # Use source+price+identity as unique key
+                                # We check multiple common keys for the 'title' part
+                                it_title = (
+                                    item.get('title') or 
+                                    item.get('name') or 
+                                    item.get('room_name') or 
+                                    item.get('description') or 
+                                    ""
+                                )
+                                it_source = item.get('source') or item.get('vendor') or "unknown"
+                                it_price = item.get('price') or item.get('price_raw') or 0
+                                
+                                ident = f"{it_source}_{it_price}_{it_title}"
                                 if ident not in seen:
                                     combined.append(item)
                                     seen.add(ident)
@@ -1101,10 +1125,17 @@ class ScanPersistenceService:
         for identity, group in identity_groups.items():
             res_data = group["res"]
             
-            # [FIX 2026-04-25] Robust Price Extraction
-            # We look for 'price' or 'best_price'. If missing, try to derive from offers.
+            # [FIX 2026-04-25] Robust Price & Offer Extraction
+            # We look for various price/offer fields from both agent response and DataForSEO raw data.
             price = float(res_data.get("price") or res_data.get("best_price") or 0)
-            offers = res_data.get("offers") or res_data.get("ota_prices") or []
+            offers = (
+                res_data.get("offers") or 
+                res_data.get("ota_prices") or 
+                res_data.get("parity_offers") or 
+                res_data.get("all_prices") or 
+                res_data.get("prices") or 
+                []
+            )
             
             if price == 0 and offers:
                 # Derive price from cheapest OTA if top-level is missing
@@ -1155,18 +1186,42 @@ class ScanPersistenceService:
                 
                 # Reviews & OTA Summary
                 if res_data.get("reviews") or res_data.get("reviews_count"):
-                    upd["review_count"] = res_data.get("reviews") or res_data.get("reviews_count")
-                
-                offers = res_data.get("offers") or []
+                    upd["review_count"] = (
+                        res_data.get("reviews") or res_data.get("reviews_count")
+                    )
+
+                # [KAIZEN 2026] Extract full list of offers using all possible keys
+                offers = (
+                    res_data.get("offers")
+                    or res_data.get("ota_prices")
+                    or res_data.get("parity_offers")
+                    or res_data.get("all_prices")
+                    or res_data.get("prices")
+                    or []
+                )
+
                 if offers:
                     upd["reviews"] = {
                         "ota_count": len(offers),
-                        "ota_min_price": min((p.get("price") or 999999) for p in offers),
-                        "ota_sources": list(set(p.get("source") for p in offers if p.get("source")))
+                        "ota_min_price": min(
+                            (p.get("price") or 999999) for p in offers
+                        ),
+                        "ota_sources": list(
+                            set(p.get("source") for p in offers if p.get("source"))
+                        ),
                     }
+                    # [KAIZEN 2026] Persist full offer lists for frontend availability
+                    upd["offers"] = offers
+                    upd["parity_offers"] = res_data.get("parity_offers") or offers
+                    upd["market_offers"] = res_data.get("market_offers") or offers
                 
-                # Room Types
-                room_types = res_data.get("room_catalog") or res_data.get("room_types")
+                # Room Types Fallback
+                room_types = (
+                    res_data.get("room_catalog") or 
+                    res_data.get("room_types") or 
+                    res_data.get("all_rooms") or 
+                    []
+                )
                 if room_types: upd["room_types"] = room_types
                 
                 hotel_updates.append(upd)
@@ -1174,16 +1229,27 @@ class ScanPersistenceService:
                 # Price Log (Insert)
                 # [FIX] Log if we have a price OR if we have OTA offers (even if price is 0, though unlikely now)
                 if price > 0 or offers:
+                    # Determine vendor name for this log
+                    log_vendor = (
+                        res_data.get("vendor") or 
+                        res_data.get("source") or 
+                        res_data.get("site") or 
+                        res_data.get("ota_name") or 
+                        source or 
+                        "Provider"
+                    )
+
                     price_logs.append({
                         "hotel_id": tid,
                         "price": price,
                         "currency": currency,
+                        "vendor": log_vendor,
+                        "source": source,
                         "parity_offers": offers,
                         "market_offers": res_data.get("market_offers") or offers,
                         "offers": offers,
                         "room_types": room_types,
-                        "recorded_at": now_ts,
-                        "source": source
+                        "recorded_at": now_ts
                     })
                 
                 # Sentiment History
