@@ -263,7 +263,7 @@ def get_price_for_room(
         if not isinstance(r, dict):
             continue
         r_name = (r.get("name") or "").lower()
-        p = _extract_price(r.get("price"))
+        p = _extract_price(r.get("price"), currency=currency)
         if not p:
             continue
 

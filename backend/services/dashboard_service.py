@@ -332,6 +332,39 @@ async def get_dashboard_logic(
                         trend_val = "stable"
                         change = 0.0
 
+                    # KAİZEN 2026: Enhanced Price Info Extraction
+                    active_currency = current_log.get("currency") or display_currency or "TRY"
+                    
+                    # Room Types Extraction (Strict routing per USER request)
+                    raw_rooms = current_log.get("room_types") or []
+                    if not raw_rooms and "price_data" in current_log:
+                        raw_rooms = (current_log.get("price_data") or {}).get("room_types") or []
+                    
+                    # Offers Extraction with Vendor Logic
+                    raw_offers = (
+                        current_log.get("offers") or 
+                        current_log.get("ota_prices") or 
+                        current_log.get("parity_offers") or 
+                        []
+                    )
+                    
+                    processed_offers = []
+                    for of in raw_offers:
+                        if not isinstance(of, dict):
+                            continue
+                        
+                        # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
+                        v_name = of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown"
+                        p_val = _extract_price(of.get("price"), currency=active_currency)
+                        
+                        processed_offers.append({
+                            "vendor": v_name,
+                            "price": p_val,
+                            "currency": of.get("currency") or active_currency,
+                            "url": of.get("url") or of.get("link"),
+                            "is_direct": of.get("is_direct", False)
+                        })
+
                     price_info = {
                         "current_price": curr_p,
                         "previous_price": prev_p,
@@ -340,18 +373,12 @@ async def get_dashboard_logic(
                         "trend": trend_val,
                         "change_percent": change,
                         "recorded_at": current_log.get("recorded_at"),
-                        "vendor": current_log.get("vendor"),
+                        "vendor": current_log.get("vendor") or "Unknown",
                         "check_in": current_log.get("check_in_date"),
-                        "check_out": current_log.get("scan_sessions", {}).get(
-                            "check_out_date"
-                        )
-                        if current_log.get("scan_sessions")
-                        else None,
-                        "adults": current_log.get("scan_sessions", {}).get("adults")
-                        if current_log.get("scan_sessions")
-                        else 2,
-                        "offers": current_log.get("parity_offers") or [],
-                        "room_types": current_log.get("room_types") or [],
+                        "check_out": current_log.get("scan_sessions", {}).get("check_out_date") if current_log.get("scan_sessions") else None,
+                        "adults": current_log.get("scan_sessions", {}).get("adults") if current_log.get("scan_sessions") else 2,
+                        "offers": processed_offers,
+                        "room_types": raw_rooms,
                     }
                 except Exception as e:
                     logger.warning(f"Price processing error for {hid}: {e}")
@@ -558,12 +585,12 @@ async def get_dashboard_logic(
                 offers = price_info["offers"]
 
                 # Find the lowest price among all offers (OTAs)
-                # AGENT_FIX: Ensure numerical extraction
+                # AGENT_FIX: Ensure numerical extraction with currency context
                 ota_prices = []
                 for of in offers:
                     p_raw = of.get("price")
                     if p_raw is not None:
-                        p_val = _extract_price(p_raw)
+                        p_val = _extract_price(p_raw, currency=price_info.get("currency"))
                         if p_val and p_val > 0:
                             ota_prices.append(p_val)
 
