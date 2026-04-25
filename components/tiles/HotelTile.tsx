@@ -45,8 +45,15 @@ export interface HotelTileProps {
   amenities?: string[];
   images?: HotelImage[];
   offers?: { vendor?: string; source?: string; price?: number }[];
+  room_types?: { name?: string; price?: number; currency?: string }[];
   isEstimated?: boolean;
   phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  description?: string;
+  cid?: string;
+  placeId?: string;
   variant?: "target" | "competitor";
   isUndercut?: boolean;
   headerBadges?: ReactNode;

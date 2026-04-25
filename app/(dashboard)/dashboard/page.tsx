@@ -318,11 +318,12 @@ export default function Dashboard() {
                       checkOut={data.target_hotel.price_info?.check_out}
                       adults={data.target_hotel.price_info?.adults}
                       onEdit={(id) => handleEditHotel(id, data)}
+                      offers={data.target_hotel.price_info?.offers}
+                      room_types={data.target_hotel.price_info?.room_types}
                       onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
                       isEnterprise={isEnterprise}
                       amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
-                      offers={data.target_hotel.price_info?.offers}
                       isEstimated={data.target_hotel.price_info?.is_estimated}
                       phone={data.target_hotel.phone}
                       email={data.target_hotel.email}
@@ -465,6 +466,7 @@ export default function Dashboard() {
                             amenities={competitor.amenities}
                             images={competitor.images}
                             offers={competitor.price_info?.offers}
+                            room_types={competitor.price_info?.room_types}
                             phone={competitor.phone}
                             email={competitor.email}
                             website={competitor.website}

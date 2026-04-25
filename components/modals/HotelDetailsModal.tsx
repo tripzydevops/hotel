@@ -358,7 +358,7 @@ export default function HotelDetailsModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--glass-border)]">
-                  {(hotel.price_info?.offers || []).map((offer, idx) => {
+                  {((hotel as any).price_info?.offers || (hotel as any).offers || []).map((offer: any, idx: number) => {
                     const diff =
                       (offer.price || 0) -
                       parsePrice(hotel.price_info?.current_price || 0);
@@ -374,7 +374,7 @@ export default function HotelDetailsModal({
                           {new Intl.NumberFormat("en-US", {
                             style: "currency",
                             currency: hotel.price_info?.currency || "USD",
-                          }).format(offer.price || 0)}
+                          }).format(parsePrice(offer.price || 0))}
                         </td>
                         <td
                           className={`p-4 text-right font-black ${diff > 0 ? "text-alert-red" : diff < 0 ? "text-optimal-green" : "text-[var(--text-muted)]"}`}
@@ -401,7 +401,7 @@ export default function HotelDetailsModal({
           {activeTab === "rooms" && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                {(hotel.price_info?.room_types || []).map((room, idx) => (
+                {((hotel as any).price_info?.room_types || (hotel as any).room_types || []).map((room: any, idx: number) => (
                   <div
                     key={idx}
                     className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
@@ -422,7 +422,7 @@ export default function HotelDetailsModal({
                             room.currency ||
                             hotel.price_info?.currency ||
                             "USD",
-                        }).format(room.price || 0)}
+                        }).format(parsePrice(room.price || 0))}
                       </div>
                       <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
                         {t("common.availableNow")}
