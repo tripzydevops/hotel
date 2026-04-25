@@ -431,14 +431,29 @@ class DataForSEOProvider(HotelDataProvider):
             ]
 
         # === 6. OTA Price Items ===
+        # === 6. OTA Price Items ===
         ota_prices = []
-        price_items = prices_obj.get("items") or []
-        for pi in price_items:
-            if isinstance(pi, dict):
+        # Merge items from prices object and top-level items array
+        raw_price_items = (prices_obj.get("items") or []) + (data.get("items") or [])
+        
+        seen_sources = set()
+        for pi in raw_price_items:
+            if isinstance(pi, dict) and (pi.get("type") == "hotel_info_price" or pi.get("price")):
+                source = pi.get("title") or pi.get("source")
+                if not source:
+                    continue
+                
+                # Deduplicate by source and price to avoid noise
+                price_val = pi.get("price")
+                dedup_key = f"{source}_{price_val}"
+                if dedup_key in seen_sources:
+                    continue
+                seen_sources.add(dedup_key)
+                
                 ota_prices.append(
                     {
-                        "source": pi.get("title") or pi.get("source"),
-                        "price": pi.get("price"),
+                        "source": source,
+                        "price": price_val,
                         "currency": pi.get("currency"),
                         "url": pi.get("source_url") or pi.get("url"),
                         "type": pi.get("type", "hotel_info_price"),
@@ -530,8 +545,12 @@ class DataForSEOProvider(HotelDataProvider):
             "guest_mentions": guest_mentions,
             "other_sites_reviews": other_sites_reviews,
             "ota_prices": ota_prices,
+            "all_prices": ota_prices,      # [FIX] Return all_prices for consistency
+            "parity_offers": ota_prices,   # [FIX] Return parity_offers for consistency
+            "offers": ota_prices,          # [FIX] Return offers for consistency
             "room_catalog": room_catalog,
             "room_types": [r["name"] for r in room_catalog if r.get("name")],
+            "price": best_price,           # [FIX] Standardize price key
             "best_price": best_price,
             "currency": currency,
             "rating_distribution": rating_distribution,
@@ -555,7 +574,7 @@ class DataForSEOProvider(HotelDataProvider):
         check_in: str = None,
         check_out: str = None,
         adults: int = 2,
-        currency: str = "TRY",
+        currency: Optional[str] = None,
         session_id: Optional[str] = None,
         db: Optional[Any] = None,
     ) -> Dict[str, Any]:
@@ -662,7 +681,7 @@ class DataForSEOProvider(HotelDataProvider):
         check_in: date,
         check_out: date,
         adults: int = 2,
-        currency: str = "TRY",
+        currency: Optional[str] = None,
         serp_api_id: Optional[str] = None,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
@@ -728,7 +747,7 @@ class DataForSEOProvider(HotelDataProvider):
         hotel_id: str,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-        currency: str = "TRY",
+        currency: Optional[str] = None,
         adults: int = 1,
     ) -> Optional[Dict[str, Any]]:
         """
@@ -900,7 +919,7 @@ class DataForSEOProvider(HotelDataProvider):
         deep_scan: bool = False,
         pingback_url: Optional[str] = None,
         session_id: Optional[str] = None,
-        currency: str = "TRY",
+        currency: Optional[str] = None,
     ) -> int:
         """
         Submits a batch of hotels for discovery.
@@ -934,6 +953,9 @@ class DataForSEOProvider(HotelDataProvider):
             # This forces the API to return the specific hotel rather than searching for neighbors
             is_targeted = bool(hotel.get("serp_api_id") or hotel.get("property_token"))
 
+            # Respect hotel-specific currency if set, else use batch default
+            hotel_currency = hotel.get("currency") or currency
+
             price_task = {
                 "hotel_identifier": keyword if is_targeted else None,
                 "keyword": None if is_targeted else keyword,
@@ -941,7 +963,7 @@ class DataForSEOProvider(HotelDataProvider):
                 "language_name": "English",
                 "check_in": check_in,
                 "check_out": check_out,
-                "currency": currency,
+                "currency": hotel_currency,
                 "tag": price_uuid,
             }
             if location_code:
@@ -971,7 +993,7 @@ class DataForSEOProvider(HotelDataProvider):
                     "language_name": "English",
                     "check_in": check_in,
                     "check_out": check_out,
-                    "currency": "TRY",
+                    "currency": hotel_currency,
                     "tag": info_uuid,
                 }
                 if location_code:
@@ -1209,6 +1231,40 @@ class DataForSEOProvider(HotelDataProvider):
 
                     # OTA Parity / All Prices
                     raw_prices = prices_data.get("items", []) or []
+
+                    # [FIX 2026-04-25] Fallback: If no price items, check market_data or top-level fields
+                    if not raw_prices:
+                        market_data = target.get("market_data", {})
+                        if market_data:
+                            m_price = market_data.get("price")
+                            m_currency = market_data.get("currency")
+                            if m_price:
+                                raw_prices = [{
+                                    "source": "Market Data",
+                                    "price": m_price,
+                                    "currency": m_currency,
+                                    "is_best": True
+                                }]
+                                # Ensure prices_data reflects this for downstream keys
+                                if not prices_data.get("price"):
+                                    prices_data["price"] = m_price
+                                if not prices_data.get("currency"):
+                                    prices_data["currency"] = m_currency
+                        
+                        # Some shapes have top-level price/currency
+                        top_price = target.get("price")
+                        top_currency = target.get("currency")
+                        if not raw_prices and top_price:
+                            raw_prices = [{
+                                "source": "Search Result",
+                                "price": top_price,
+                                "currency": top_currency,
+                                "is_best": True
+                            }]
+                            if not prices_data.get("price"):
+                                prices_data["price"] = top_price
+                            if not prices_data.get("currency"):
+                                prices_data["currency"] = top_currency
                     PRIORITY_OTAS = [
                         "Booking.com",
                         "Expedia",
@@ -1303,7 +1359,7 @@ class DataForSEOProvider(HotelDataProvider):
                     result_dict = {
                         "status": "success",
                         "task_type": "price_search",
-                        "currency": prices_data.get("currency", "TRY"),
+                        "currency": prices_data.get("currency"), # [FIX] Remove hardcoded TRY default
                         "property_token": target.get("hotel_identifier"),
                         "hotel_name": target.get("title"),
                         "stars": target.get("stars"),
@@ -1312,6 +1368,7 @@ class DataForSEOProvider(HotelDataProvider):
                         "room_catalog": room_catalog,
                         "room_types": room_type_names,
                         "tag": (task.get("data") or {}).get("tag"),
+                        "ota_prices": sorted_prices,
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,
                         "offers": sorted_prices,

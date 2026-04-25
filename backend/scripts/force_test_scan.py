@@ -27,7 +27,7 @@ async def force_scan():
     # Call the autonomous logic directly
     print("📡 Pitching the task to DataForSEO...")
     # Force the scheduler logic using our pre-configured forced client
-    await run_scheduler_check_logic(db=db)
+    await run_scheduler_check_logic(insforge=db)
     
     print("-" * 30)
     print(f"✅ SUCCESS: System check cycle triggered.")

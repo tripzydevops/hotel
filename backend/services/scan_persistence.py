@@ -370,7 +370,7 @@ class ScanPersistenceService:
             return {"status": "skipped", "reason": "invalid_result"}
 
         price = result.get("price", 0.0)
-        currency = result.get("currency", "USD")
+        currency = result.get("currency")
 
         # 1. Persist to price_logs
         log_entry = {
@@ -378,11 +378,13 @@ class ScanPersistenceService:
             "price": price,
             "currency": currency,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
-            "check_in_date": str(date.today()),  # Default
+            "check_in_date": result.get("check_in") or str(date.today()),
+            "check_out_date": result.get("check_out"),
             "vendor": result.get("vendor", source),
             "room_types": result.get("room_types", []),
-            "parity_offers": result.get("parity_offers", []),
-            "market_offers": result.get("all_prices", []),
+            "parity_offers": result.get("parity_offers") or result.get("offers") or [],
+            "offers": result.get("offers") or [],
+            "market_offers": result.get("all_prices") or result.get("offers") or [],
             "metadata": {
                 "scan_task_id": scan_task_id,
                 "batch_id": batch_id,
@@ -511,7 +513,7 @@ class ScanPersistenceService:
         try:
             res = (
                 self.admin_insforge.table("hotels")
-                .select("id, name, min_price_floor")
+                .select("id, name, min_price_floor, currency")
                 .in_("id", hotel_ids)
                 .execute()
             )
@@ -538,16 +540,16 @@ class ScanPersistenceService:
         price_data = cast(Dict[str, Any], result.get("price_data") or {})
         status = result.get("status")
 
-        raw_price = price_data.get("price")
+        raw_price = price_data.get("price") or result.get("price")
         current_price = float(raw_price) if raw_price is not None else 0.0
-        currency = str(price_data.get("currency", "TRY"))
+        currency = str(price_data.get("currency") or result.get("currency") or metadata.get("currency") or "TRY")
         hotel_name = metadata.get("name", "")
 
         # 1. Price Validation (Kaizen 2026: Tiered Sanity Check)
         is_valid = True
 
         # A. Minimum Floor Safeguard (User Insight 2026)
-        if currency == "TRY" and current_price > 0:
+        if current_price > 0:
             # 1. Check manual floor from DB
             floor = float(metadata.get("min_price_floor") or 0)
 
@@ -608,7 +610,9 @@ class ScanPersistenceService:
                     is_valid = False
 
         # Normalization
-        target_currency = getattr(options, "currency", "TRY") if options else "TRY"
+        target_currency = getattr(options, "currency", None) if options else None
+        if not target_currency:
+            target_currency = metadata.get("currency") or "USD"
         if current_price > 0 and currency != target_currency:
             current_price = convert_currency(current_price, currency, target_currency)
             currency = target_currency
@@ -645,7 +649,14 @@ class ScanPersistenceService:
                     )
 
         # 3. Market Depth & Room Persistence
-        offers = price_data.get("offers", [])
+        offers = (
+            result.get("ota_prices") or 
+            result.get("offers") or 
+            result.get("parity_offers") or 
+            result.get("all_prices") or 
+            price_data.get("offers") or 
+            []
+        )
         is_shallow = len(offers) < 5 and not is_estimated
         current_room_types = price_data.get("room_types", [])
         if not current_room_types and not is_estimated and status == "success":
@@ -817,11 +828,12 @@ class ScanPersistenceService:
             "is_estimated": is_estimated,
             "session_id": str(session_id) if session_id else None,
             "vendor": price_data.get("vendor", "Provider"),
-            "parity_offers": offers,
+            "parity_offers": result.get("parity_offers") or offers,
+            "offers": result.get("offers") or price_data.get("offers") or offers,
             "room_types": current_room_types,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "is_deep_scan": result.get("is_deep_scan", False),
-            "market_offers": price_data.get("all_prices", []),
+            "market_offers": result.get("all_prices") or result.get("ota_prices") or price_data.get("all_prices") or price_data.get("offers") or offers or [],
             "metadata": {"is_shallow": is_shallow, "extraction_depth": len(offers)},
         }
 
@@ -1107,12 +1119,12 @@ class ScanPersistenceService:
                 if res_data.get("reviews") or res_data.get("reviews_count"):
                     upd["review_count"] = res_data.get("reviews") or res_data.get("reviews_count")
                 
-                ota_prices = res_data.get("ota_prices") or []
-                if ota_prices:
+                offers = res_data.get("offers") or []
+                if offers:
                     upd["reviews"] = {
-                        "ota_count": len(ota_prices),
-                        "ota_min_price": min((p.get("price") or 999999) for p in ota_prices),
-                        "ota_sources": list(set(p.get("source") for p in ota_prices if p.get("source")))
+                        "ota_count": len(offers),
+                        "ota_min_price": min((p.get("price") or 999999) for p in offers),
+                        "ota_sources": list(set(p.get("source") for p in offers if p.get("source")))
                     }
                 
                 # Room Types
@@ -1127,8 +1139,9 @@ class ScanPersistenceService:
                         "hotel_id": tid,
                         "price": price,
                         "currency": currency,
-                        "parity_offers": ota_prices or res_data.get("parity_offers", []),
-                        "market_offers": res_data.get("all_prices") or res_data.get("market_offers", []),
+                        "parity_offers": res_data.get("offers") or [],
+                        "market_offers": res_data.get("offers") or [],
+                        "offers": res_data.get("offers") or [],
                         "room_types": room_types,
                         "recorded_at": now_ts,
                         "source": source
@@ -1151,7 +1164,7 @@ class ScanPersistenceService:
                     "price": price,
                     "currency": currency,
                     "property_token": identity if not identity.isdigit() else None,
-                    "parity_offers": ota_prices or res_data.get("parity_offers", [])
+                    "parity_offers": res_data.get("offers") or []
                 })
             
             # Archive raw results

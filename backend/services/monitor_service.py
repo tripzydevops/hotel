@@ -337,7 +337,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         # 3. Get monitored hotels first (to set explicit count in initial log)
         monitored_res = (
             insforge.table("user_hotels")
-            .select("hotel_id, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude)")
+            .select("hotel_id, preferred_currency, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude, currency)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -348,9 +348,17 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         if monitored_res.data:
             for item in monitored_res.data:
                 h = item.get("hotels")
-                if h and h.get("id") not in seen_hotels:
-                    hotels_to_scan.append(h)
-                    seen_hotels.add(h.get("id"))
+                pref_currency = item.get("preferred_currency")
+                if h:
+                    # [AGENT_FIX] Prioritize preferred_currency from user_hotels, 
+                    # fallback to hotels.currency if not set. This ensures 
+                    # DataForSEO receives the requested currency.
+                    if pref_currency:
+                        h["currency"] = pref_currency
+                    
+                    if h.get("id") not in seen_hotels:
+                        hotels_to_scan.append(h)
+                        seen_hotels.add(h.get("id"))
 
         # 4. Create Monitoring Session
         session_id = str(uuid.uuid4())
@@ -476,7 +484,7 @@ async def process_system_scans(insforge: InsForgeClient):
             tasks_res = (
                 insforge.table("scan_tasks")
                 .select(
-                    "id, external_task_id, hotel_id, batch_id, task_type, created_at, hotel:hotels(name, property_token)"
+                    "id, external_task_id, hotel_id, batch_id, task_type, created_at, hotel:hotels(name, property_token, currency)"
                 )
                 .or_(
                     f"id.in.({','.join(tags_quoted)}),external_task_id.in.({','.join(tags_quoted)})"
@@ -633,18 +641,10 @@ async def _trigger_heartbeat_notifications(
         
         query = insforge.table("user_hotels").select("user_id, hotel_id, hotels!inner(name, property_token)").eq("is_monitored", True)
         
-        filter_parts = []
-        if property_tokens:
-            tokens_str = ",".join(f'"{t}"' for t in property_tokens)
-            filter_parts.append(f"hotels.property_token.in.({tokens_str})")
-        if hotel_ids:
-            ids_str = ",".join(f'"{h}"' for h in hotel_ids)
-            filter_parts.append(f"hotel_id.in.({ids_str})")
-            
-        if not filter_parts:
+        if not hotel_ids:
             return
 
-        users_res = query.or_(",".join(filter_parts)).execute()
+        users_res = query.in_("hotel_id", hotel_ids).execute()
         if not users_res.data:
             return
 
