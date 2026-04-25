@@ -317,6 +317,10 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         interval = settings.get("scan_interval_hours", SCAN_PULSE_INTERVAL_HOURS)
         currency = settings.get("default_currency", "TRY")
         last_scan = settings.get("last_global_scan_at")
+        
+        deep_scan_interval = settings.get("deep_scan_interval_hours", 168)  # Default 7 days
+        last_deep_scan = settings.get("last_deep_scan_at")
+        
         now = datetime.now(timezone.utc)
 
         # 2. Check overlap
@@ -324,6 +328,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         if last_scan:
             try:
                 last_dt = datetime.fromisoformat(last_scan.replace("Z", "+00:00"))
+                if last_dt.tzinfo is None:
+                    last_dt = last_dt.replace(tzinfo=timezone.utc)
                 if (now - last_dt).total_seconds() < (interval * 3600):
                     is_due = False
             except Exception:
@@ -332,7 +338,22 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         if not is_due and not getattr(insforge, "_force_heartbeat", False):
             return
 
-        s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h)...")
+        is_deep_scan_due = True
+        if last_deep_scan:
+            try:
+                last_deep_dt = datetime.fromisoformat(last_deep_scan.replace("Z", "+00:00"))
+                if last_deep_dt.tzinfo is None:
+                    last_deep_dt = last_deep_dt.replace(tzinfo=timezone.utc)
+                if (now - last_deep_dt).total_seconds() < (deep_scan_interval * 3600):
+                    is_deep_scan_due = False
+            except Exception:
+                is_deep_scan_due = True
+                
+        # If forced heartbeat has deep_scan set, override
+        if getattr(insforge, "_force_deep_scan", False):
+            is_deep_scan_due = True
+
+        s_logger.info(f"Heartbeat: Global system scan starting (Interval: {interval}h, Deep Scan: {is_deep_scan_due})...")
 
         # 3. Get monitored hotels first (to set explicit count in initial log)
         monitored_res = (
@@ -380,7 +401,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                 "session_id": session_id,
                 "status": "started",
                 "trigger_source": None, # AGENT_FIX: Use None for system-triggered scans to avoid UUID conversion errors
-                "hotels_count": len(hotels_to_scan)
+                "hotels_count": len(hotels_to_scan),
+                "is_deep_scan": is_deep_scan_due
             }).execute()
         except Exception as sle:
             s_logger.error(f"Heartbeat: Failed to record session start: {sle}")
@@ -395,11 +417,15 @@ async def run_system_heartbeat(insforge: InsForgeClient):
 
         # 4. Update Admin Settings immediately
         next_scan = now + timedelta(hours=interval)
+        update_data = {
+            "last_global_scan_at": now.isoformat(),
+            "next_global_scan_at": next_scan.isoformat(),
+        }
+        if is_deep_scan_due:
+            update_data["last_deep_scan_at"] = now.isoformat()
+            
         try:
-            insforge.table("admin_settings").update({
-                "last_global_scan_at": now.isoformat(),
-                "next_global_scan_at": next_scan.isoformat(),
-            }).eq("id", settings["id"]).execute()
+            insforge.table("admin_settings").update(update_data).eq("id", settings["id"]).execute()
         except Exception as e:
             s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
 
@@ -410,7 +436,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             hotels=hotels_to_scan,
             check_in=(now + timedelta(days=1)).strftime("%Y-%m-%d"),
             check_out=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
-            deep_scan=False,
+            deep_scan=is_deep_scan_due,
             session_id=session_id,
             currency=currency
         )

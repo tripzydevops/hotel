@@ -371,20 +371,47 @@ async def get_dashboard_logic(
                         )
 
                     # AGENT_FIX: OTA Fallback from Google Local reviews JSON (DataForSEO Resilience)
+                    # When price_logs.offers is empty (standard for hourly price_search tasks which
+                    # don't return per-OTA breakdown), we reconstruct the offer list from the
+                    # hotel_info data stored in hotels.reviews and hotels.room_types.
                     if not raw_offers:
                         reviews_data = h.get("reviews") or {}
                         if isinstance(reviews_data, dict):
                             ota_sources = reviews_data.get("ota_sources") or []
                             ota_min_price = reviews_data.get("ota_min_price")
                             if ota_sources and ota_min_price:
+                                # Deduplicate while preserving insertion order
+                                # (raw list from DataForSEO often contains repeated OTA names)
+                                seen_vendors: set = set()
+                                unique_sources = []
+                                for source in ota_sources:
+                                    if source and source not in seen_vendors:
+                                        seen_vendors.add(source)
+                                        unique_sources.append(source)
+
+                                # Try to find a per-source price from room_types STD entry
+                                # to use as a more representative OTA reference price
+                                hotel_room_types = h.get("room_types") or []
+                                std_room_price = None
+                                if isinstance(hotel_room_types, list):
+                                    for rt in hotel_room_types:
+                                        if isinstance(rt, dict) and rt.get("canonical_code") == "STD":
+                                            std_room_price = rt.get("price")
+                                            break
+
+                                # OTA representative price: individual STD room price if available,
+                                # otherwise the aggregate ota_min_price
+                                ota_ref_price = std_room_price or ota_min_price
+
                                 raw_offers = [
                                     {
-                                        "vendor": source, 
-                                        "price": ota_min_price, 
+                                        "vendor": source,
+                                        "price": ota_ref_price,
                                         "currency": active_currency,
-                                        "is_fallback": True
+                                        "is_fallback": True,
+                                        "ota_min_market": ota_min_price,
                                     }
-                                    for source in ota_sources[:3]
+                                    for source in unique_sources
                                 ]
 
                     
