@@ -290,9 +290,10 @@ class ScanPersistenceService:
             if not hotel_id:
                 continue
 
-            rooms = result.get("room_types") or []
+            rooms = result.get("room_catalog") or result.get("room_types") or []
             if not rooms and "price_data" in result:
-                rooms = result.get("price_data", {}).get("room_types") or []
+                p_data = result.get("price_data", {})
+                rooms = p_data.get("room_catalog") or p_data.get("room_types") or []
 
             if isinstance(rooms, list) and rooms:
                 hotel_ctx = hotel_map.get(str(hotel_id))
@@ -381,7 +382,7 @@ class ScanPersistenceService:
             "check_in_date": result.get("check_in") or str(date.today()),
             "check_out_date": result.get("check_out"),
             "vendor": result.get("vendor", source),
-            "room_types": result.get("room_types", []),
+            "room_types": result.get("room_catalog") or result.get("room_types") or [],
             "parity_offers": result.get("parity_offers") or result.get("offers") or [],
             "offers": result.get("offers") or [],
             "market_offers": result.get("all_prices") or result.get("offers") or [],
@@ -431,7 +432,7 @@ class ScanPersistenceService:
                 "check_in_time": result.get("check_in_time"),
                 "check_out_time": result.get("check_out_time"),
                 "sentiment_breakdown": merged_sentiment,
-                "room_types": result.get("room_types"),
+                "room_types": result.get("room_catalog") or result.get("room_types"),
                 "currency": result.get("currency"),
             }
             # Add phone, website etc if present
@@ -659,7 +660,13 @@ class ScanPersistenceService:
             []
         )
         is_shallow = len(offers) < 5 and not is_estimated
-        current_room_types = price_data.get("room_types") or price_data.get("all_rooms") or []
+        # Room Types Priority: Prefer rich catalog objects over simple string names
+        current_room_types = (
+            result.get("room_catalog") or 
+            price_data.get("room_types") or 
+            price_data.get("all_rooms") or 
+            []
+        )
         
         # If room_types is empty, try to derive from offers/prices
         if not current_room_types and offers:
@@ -754,6 +761,9 @@ class ScanPersistenceService:
         ]
         for field in static_fields:
             new_val = price_data.get(field)
+            if field == "room_types":
+                # Ensure we use rich catalog if available even if 'room_types' field exists (which is often just strings)
+                new_val = result.get("room_catalog") or price_data.get("room_types") or price_data.get("all_rooms")
             if not new_val:
                 continue
 
@@ -1276,7 +1286,11 @@ class ScanPersistenceService:
             for tid in group["task_ids"]:
                 completed_task_ids.append(tid)
                 if res_data.get("raw_data"):
-                    raw_archives.append({"id": tid, "raw_results": res_data["raw_data"]})
+                    raw_archives.append({
+                        "id": tid, 
+                        "raw_results": res_data["raw_data"],
+                        "status": "completed"
+                    })
 
         # 5. Execute Batch Operations
         if hotel_updates:
@@ -1291,16 +1305,15 @@ class ScanPersistenceService:
         if sentiment_history:
             self.admin_insforge.table("sentiment_history").insert(sentiment_history).execute()
             
-        if completed_task_ids:
-            self.admin_insforge.table("scan_tasks").update({"status": "completed"}).in_("id", completed_task_ids).execute()
-            
         if raw_archives:
+            # Note: raw_archives now includes status: completed for atomicity
             self.admin_insforge.table("scan_tasks").upsert(raw_archives).execute()
 
         # 6. Room Type Catalog Update
         catalog_items = []
         for identity, group in identity_groups.items():
-            rt = group["res"].get("room_types") or group["res"].get("room_catalog")
+            # Priority: catalog (rich objects) > types (strings)
+            rt = group["res"].get("room_catalog") or group["res"].get("room_types")
             if rt:
                 # We need a representative hotel_id from the group
                 catalog_items.append({"hotel_id": list(group["hotel_ids"])[0], "room_types": rt})
