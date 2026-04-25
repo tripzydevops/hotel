@@ -160,7 +160,7 @@ async def get_dashboard_logic(
         # AGENT_LOGIC: Join with user_hotels to support multi-user property tracking.
         res = (
             db.table("user_hotels")
-            .select("*, hotel:hotels(id, name, currency, room_types, stars, rating, review_count, image_url, latitude, longitude, amenities, images, reviews, sentiment_breakdown, serp_api_id, property_token, room_type_standard, pricing_dna_text)")
+            .select("*, hotel:hotels(id, name, currency, room_types, stars, rating, review_count, image_url, latitude, longitude, amenities, images, reviews, sentiment_breakdown, serp_api_id, property_token, deleted_at, address, location)")
             .eq("user_id", str(user_id))
             .execute()
         )
