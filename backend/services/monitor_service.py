@@ -653,13 +653,18 @@ async def _trigger_heartbeat_notifications(
         settings_res = insforge.table("settings").select("*").in_("user_id", user_ids).execute()
         settings_map = {str(s["user_id"]): s for s in settings_res.data}
 
-        # Baseline Fetch: Top 10 recent per batch to ensure we have a comparison point
+        # Baseline Fetch: 5-Day Rolling Window
+        # We fetch all history for these hotels from exactly 5 days ago
+        # This ensures the 30% variance check is based on time, not a random row count.
+        from datetime import datetime, timedelta, timezone
+        five_days_ago = datetime.now(timezone.utc) - timedelta(days=5)
+
         history_res = (
             insforge.table("price_logs")
             .select("hotel_id, price, recorded_at")
             .in_("hotel_id", hotel_ids)
+            .gte("recorded_at", five_days_ago.isoformat())
             .order("recorded_at", desc=True)
-            .limit(len(hotel_ids) * 10)
             .execute()
         )
         
