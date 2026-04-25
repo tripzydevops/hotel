@@ -1314,6 +1314,7 @@ class DataForSEOProvider(HotelDataProvider):
                         "tag": (task.get("data") or {}).get("tag"),
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,
+                        "offers": sorted_prices,
                         "sentiment_breakdown": search_sentiment,
                         "raw_data": target,
                         "items": items,

@@ -314,7 +314,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             return
 
         settings = settings_res.data[0]
-        interval = SCAN_PULSE_INTERVAL_HOURS
+        interval = settings.get("scan_interval_hours", SCAN_PULSE_INTERVAL_HOURS)
+        currency = settings.get("default_currency", "TRY")
         last_scan = settings.get("last_global_scan_at")
         now = datetime.now(timezone.utc)
 
@@ -362,7 +363,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                 "session_type": "autonomous_heartbeat",
                 "status": "running",
                 "hotels_count": len(hotels_to_scan),
-                "currency": "TRY",
+                "currency": currency,
                 "check_in_date": datetime.now(timezone.utc).date().isoformat(),
                 "check_out_date": (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
             }).execute()
@@ -402,7 +403,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             check_in=(now + timedelta(days=1)).strftime("%Y-%m-%d"),
             check_out=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
             deep_scan=False,
-            session_id=session_id
+            session_id=session_id,
+            currency=currency
         )
 
         insforge.table("market_heartbeat_logs").update({

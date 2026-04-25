@@ -641,22 +641,36 @@ def generate_audit_checklist(target_h: dict, market_avg_scores: dict) -> list:
     checklist = []
     if not target_h or not market_avg_scores:
         return checklist
-    for p in ["Cleanliness", "Service", "Value"]:
-        my_s = 0.0
-        bd = target_h.get("sentiment_breakdown") or []
-        for item in bd:
-            if item.get("name", "").lower() == p.lower():
-                my_s = float(item.get("rating") or 0.0)
-                break
+
+    # AGENT_FIX: Updated pillars to match actual DB sentiment categories
+    # The database uses positive/total counts instead of a direct rating.
+    pillars = ["Cleanliness", "Service", "Value", "Room", "Location"]
+    bd = target_h.get("sentiment_breakdown") or []
+
+    my_scores = {}
+    for item in bd:
+        name = item.get("name", "").lower()
+        total = item.get("total", 0)
+        if total > 0:
+            # Normalize to 5-point scale for comparison with market averages
+            rating = (item.get("positive", 0) / total) * 5.0
+            my_scores[name] = rating
+
+    for p in pillars:
+        p_lower = p.lower()
+        my_s = my_scores.get(p_lower, 0.0)
+        # Use 4.0 as a safe fallback if market average for a pillar is missing
         mkt_s = market_avg_scores.get(p, 4.0)
+
         if my_s > 0 and my_s < mkt_s * 0.95:
             checklist.append(
                 {
                     "pillar": p,
-                    "issue": f"{p} is below market.",
-                    "action": f"Task: {p} audit.",
+                    "issue": f"{p} is below market average ({my_s:.1f} vs {mkt_s:.1f}).",
+                    "action": f"Task: {p} quality audit.",
                 }
             )
+
     if not checklist:
         checklist.append(
             {"pillar": "Global", "issue": "Performing well.", "action": "Maintain."}
@@ -692,12 +706,13 @@ async def perform_market_analysis(
 
     # Find Target
     for h in hotels:
-        if h.get("rating"):
-            market_sentiments.append(float(h["rating"]))
+        r_val = h.get("rating")
+        if r_val is not None:
+            market_sentiments.append(float(r_val))
         if h.get("is_target_hotel") and not target_hotel_id:
             target_hotel_id = str(h["id"])
             target_hotel_name = h.get("name", "Target")
-            target_sentiment = float(h.get("rating") or 0.0)
+            target_sentiment = float(r_val or 0.0)
 
     if not target_hotel_id and hotels:
         target_hotel_id = str(hotels[0]["id"])
@@ -705,8 +720,29 @@ async def perform_market_analysis(
         target_sentiment = float(hotels[0].get("rating") or 0.0)
 
     # Market Stats
-    raw_ratings = [float(h.get("rating") or 0.0) for h in hotels if h.get("rating")]
+    raw_ratings = [float(h.get("rating")) for h in hotels if h.get("rating") is not None]
     avg_sent_val = sum(raw_ratings) / len(raw_ratings) if raw_ratings else 0.0
+
+    # AGENT_FIX: Calculate Market Sentiment Averages for Audit Checklist
+    market_avg_scores = {}
+    pillar_data: Dict[str, List[float]] = {}
+    for h in hotels:
+        h_bd = h.get("sentiment_breakdown") or []
+        for item in h_bd:
+            name = item.get("name")
+            if not name:
+                continue
+            # Normalize to capitalized for consistent lookup (e.g., "Service")
+            name_norm = name.capitalize()
+            total = item.get("total", 0)
+            if total > 0:
+                rating = (item.get("positive", 0) / total) * 5.0
+                if name_norm not in pillar_data:
+                    pillar_data[name_norm] = []
+                pillar_data[name_norm].append(rating)
+
+    for name, ratings in pillar_data.items():
+        market_avg_scores[name] = sum(ratings) / len(ratings)
 
     # Build Price Rank
     for h in hotels:
@@ -1045,6 +1081,9 @@ async def perform_market_analysis(
             target_h.get("pricing_dna") if target_h else None,
             target_hotel_name,
         ),
+        "audit_checklist": generate_audit_checklist(target_h, market_avg_scores)
+        if target_h
+        else [],
     }
 
 
