@@ -7,6 +7,7 @@ import {
   Bell,
   TrendingUp,
   Save,
+  Globe,
 } from "lucide-react";
 import { UserSettings } from "@/types";
 import { useI18n } from "@/lib/i18n";
@@ -29,6 +30,7 @@ export default function SettingsModal({
     settings?.threshold_percent || 2.0,
   );
 
+  const [currency, setCurrency] = useState(settings?.currency || "USD");
   const [email, setEmail] = useState(settings?.notification_email || "");
   const [enabled, setEnabled] = useState(
     settings?.notifications_enabled ?? true,
@@ -48,7 +50,7 @@ export default function SettingsModal({
   React.useEffect(() => {
     if (settings) {
       setThreshold(settings.threshold_percent || 2.0);
-
+      setCurrency(settings.currency || "USD");
       setEmail(settings.notification_email || "");
       setEnabled(settings.notifications_enabled ?? true);
       setPushEnabled(settings.push_enabled ?? false);
@@ -132,7 +134,7 @@ export default function SettingsModal({
       await onSave({
         ...settings,
         threshold_percent: threshold,
-
+        currency,
         notification_email: email,
         notifications_enabled: enabled,
         push_enabled: pushEnabled,
@@ -206,6 +208,39 @@ export default function SettingsModal({
                       />
                       <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
                         {t("settings.thresholdDesc").replace("{0}", threshold.toString())}
+                      </p>
+                    </div>
+
+                    {/* Currency Selection */}
+                    <div className="space-y-4 p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-[var(--overlay-text)]/90 flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-[var(--soft-gold)]" />
+                          Display Currency
+                        </label>
+                        <span className="text-xs font-black text-[var(--soft-gold)] uppercase">
+                          {currency}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 gap-2">
+                        {["USD", "EUR", "TRY", "GBP"].map((curr) => (
+                          <button
+                            key={curr}
+                            type="button"
+                            onClick={() => setCurrency(curr)}
+                            className={`py-2 px-1 rounded-xl text-[10px] font-black transition-all border ${
+                              currency === curr
+                                ? "bg-[var(--soft-gold)]/20 border-[var(--soft-gold)] text-[var(--soft-gold)] shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+                                : "bg-white/5 border-white/5 text-[var(--text-muted)] hover:bg-white/10"
+                            }`}
+                          >
+                            {curr}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] leading-relaxed italic">
+                        Real-time exchange rates are applied to all market intelligence and pricing analytics.
                       </p>
                     </div>
                   </div>
