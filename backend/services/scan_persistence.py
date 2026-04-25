@@ -196,6 +196,45 @@ class ScanPersistenceService:
 
         return analysis_summary
 
+    def _normalize_room_types(self, rooms: Any) -> List[Dict[str, Any]]:
+        """
+        KAİZEN 2026: Normalizes room type data into a consistent object structure.
+        Prevents frontend errors where strings are expected to be objects (e.g. room.name).
+        """
+        if not rooms or not isinstance(rooms, list):
+            return []
+            
+        normalized = []
+        for r in rooms:
+            if isinstance(r, str):
+                normalized.append({
+                    "name": r,
+                    "price": None,
+                    "currency": None
+                })
+            elif isinstance(r, dict):
+                # Ensure we have a 'name' field
+                name = r.get("name") or r.get("room_type") or r.get("type")
+                if not name:
+                    continue
+                    
+                entry = {
+                    "name": name,
+                    "price": r.get("price"),
+                    "currency": r.get("currency"),
+                    "amenities": r.get("amenities") or r.get("features") or [],
+                    "sqm": r.get("sqm"),
+                    "capacity": r.get("capacity"),
+                    "image_url": r.get("image_url")
+                }
+                # Preserve any other useful metadata
+                for k, v in r.items():
+                    if k not in entry:
+                        entry[k] = v
+                normalized.append(entry)
+                
+        return normalized
+
     async def update_room_type_catalog(
         self,
         hotel_id: str,
@@ -373,7 +412,20 @@ class ScanPersistenceService:
         price = result.get("price", 0.0)
         currency = result.get("currency")
 
-        # 1. Persist to price_logs
+        # Room Types Priority: Prefer rich catalog objects over simple string names
+        # KAİZEN 2026: Always normalize to objects to prevent frontend "Target Chamber" errors
+        current_room_types = self._normalize_room_types(
+            result.get("room_catalog") or result.get("room_types") or []
+        )
+
+        # If room_types is empty, try to derive from offers/prices (Market Depth)
+        if not current_room_types and (result.get("all_prices") or result.get("offers")):
+            source_offers = result.get("all_prices") or result.get("offers") or []
+            current_room_types = [
+                {"name": of.get("name") or of.get("room_type"), "price": of.get("price")} 
+                for of in source_offers if of.get("name") or of.get("room_type")
+            ]
+
         log_entry = {
             "hotel_id": hotel_id,
             "price": price,
@@ -382,7 +434,7 @@ class ScanPersistenceService:
             "check_in_date": result.get("check_in") or str(date.today()),
             "check_out_date": result.get("check_out"),
             "vendor": result.get("vendor", source),
-            "room_types": result.get("room_catalog") or result.get("room_types") or [],
+            "room_types": current_room_types,
             "parity_offers": result.get("parity_offers") or result.get("offers") or [],
             "offers": result.get("offers") or [],
             "market_offers": result.get("all_prices") or result.get("offers") or [],
@@ -432,7 +484,7 @@ class ScanPersistenceService:
                 "check_in_time": result.get("check_in_time"),
                 "check_out_time": result.get("check_out_time"),
                 "sentiment_breakdown": merged_sentiment,
-                "room_types": result.get("room_catalog") or result.get("room_types"),
+                "room_types": current_room_types,
                 "currency": result.get("currency"),
             }
             # Add phone, website etc if present
@@ -661,7 +713,8 @@ class ScanPersistenceService:
         )
         is_shallow = len(offers) < 5 and not is_estimated
         # Room Types Priority: Prefer rich catalog objects over simple string names
-        current_room_types = (
+        # KAİZEN 2026: Use unified normalization helper to prevent "Target Chamber" UI bug
+        current_room_types = self._normalize_room_types(
             result.get("room_catalog") or 
             price_data.get("room_types") or 
             price_data.get("all_rooms") or 
@@ -678,7 +731,8 @@ class ScanPersistenceService:
             # Carry forward room types if missing but scan was successful
             for h in history:
                 if h.get("room_types"):
-                    current_room_types = h["room_types"]
+                    # KAİZEN: Always normalize history fallbacks too
+                    current_room_types = self._normalize_room_types(h["room_types"])
                     break
 
         # 4. Metadata & Sentiment
@@ -1226,7 +1280,7 @@ class ScanPersistenceService:
                     upd["market_offers"] = res_data.get("market_offers") or offers
                 
                 # Room Types Fallback
-                room_types = (
+                room_types = self._normalize_room_types(
                     res_data.get("room_catalog") or 
                     res_data.get("room_types") or 
                     res_data.get("all_rooms") or 
