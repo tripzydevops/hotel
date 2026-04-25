@@ -279,6 +279,25 @@ async def get_dashboard_logic(
 
             # Price Processing
             current_log = prices[0] if prices else None
+            
+            # AGENT_FIX: Historical Data Harvesting (Resilience against empty recent scans)
+            # Find the most recent log that actually contains offers and room types
+            offers_log = current_log
+            rooms_log = current_log
+            
+            if prices:
+                # Find latest log with offers
+                for p in prices:
+                    if p.get("offers") or p.get("parity_offers") or p.get("market_offers"):
+                        offers_log = p
+                        break
+                
+                # Find latest log with rooms
+                for p in prices:
+                    if p.get("room_types") and len(p.get("room_types")) > 0:
+                        rooms_log = p
+                        break
+
             prev_log = None
             price_info = None
 
@@ -336,15 +355,20 @@ async def get_dashboard_logic(
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
                     # Room Types Extraction (Strict Fallback per USER request)
-                    raw_rooms = current_log.get("room_types") if (current_log.get("room_types") and len(current_log.get("room_types")) > 0) else (h.get("room_types") or [])
+                    # Use harvested rooms_log first, then master hotel record
+                    raw_rooms = rooms_log.get("room_types") if (rooms_log and rooms_log.get("room_types") and len(rooms_log.get("room_types")) > 0) else (h.get("room_types") or [])
                     
                     # Offers Extraction with Vendor Logic
-                    raw_offers = (
-                        current_log.get("offers") or 
-                        current_log.get("ota_prices") or 
-                        current_log.get("parity_offers") or 
-                        []
-                    )
+                    # Use harvested offers_log for maximum accuracy
+                    raw_offers = []
+                    if offers_log:
+                        raw_offers = (
+                            offers_log.get("offers") or 
+                            offers_log.get("ota_prices") or 
+                            offers_log.get("parity_offers") or 
+                            offers_log.get("market_offers") or
+                            []
+                        )
 
                     # AGENT_FIX: OTA Fallback from Google Local reviews JSON (DataForSEO Resilience)
                     if not raw_offers:

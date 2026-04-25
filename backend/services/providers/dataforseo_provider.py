@@ -1464,18 +1464,15 @@ class DataForSEOProvider(HotelDataProvider):
                             "tag": (task.get("data") or {}).get("tag"),
                         }, res_json
 
-                    # [FIX 3] hotel_info results must NOT include price field
-                    # This prevents the merge logic from overwriting valid prices with 0
+                    # [FIX 2026-04-25] hotel_info results should keep price data if found
+                    # We no longer pop price/best_price here because the persistence service
+                    # now handles merging and NULL-protection correctly.
                     info_result = {
                         "status": "success",
                         "task_type": "hotel_info",
                         "tag": (task.get("data") or {}).get("tag"),
                         **parsed,
                     }
-                    # Remove any price/best_price that defaulted to None/0
-                    # hotel_info should NEVER set pricing — that's price_search's job
-                    info_result.pop("price", None)
-                    info_result.pop("best_price", None)
                     return info_result, res_json
 
 

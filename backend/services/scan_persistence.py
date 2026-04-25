@@ -1040,14 +1040,35 @@ class ScanPersistenceService:
                 group["hotel_ids"].add(hid)
                 if task_id: group["task_ids"].append(task_id)
                 
-                # Smart merge: Priority on highest price and deeper metadata
+                # Smart merge: Priority on BEST (lowest) price and deeper metadata
                 existing = group["res"]
                 for key, val in res.items():
-                    if key == "price":
+                    if not val: continue
+                    
+                    if key in ["price", "best_price"]:
                         new_p = float(val) if val else 0
-                        old_p = float(existing.get("price") or 0)
-                        if new_p > old_p: existing["price"] = new_p
-                    elif val and (not existing.get(key) or (isinstance(val, (list, dict)) and len(str(val)) > len(str(existing.get(key))))):
+                        old_p = float(existing.get(key) or 0)
+                        if new_p > 0:
+                            # If we have no old price, or new price is better (lower)
+                            if old_p == 0 or new_p < old_p:
+                                existing[key] = new_p
+                    elif key in ["offers", "ota_prices", "room_catalog", "room_types", "market_offers"]:
+                        # Merge lists and deduplicate by 'source' or 'title'
+                        existing_list = existing.get(key) or []
+                        if not isinstance(existing_list, list): existing_list = []
+                        if isinstance(val, list):
+                            # Heuristic for deduplication
+                            seen = set()
+                            combined = []
+                            for item in (existing_list + val):
+                                if not isinstance(item, dict): continue
+                                # Use source+price+title as unique key
+                                ident = f"{item.get('source')}_{item.get('price')}_{item.get('title')}"
+                                if ident not in seen:
+                                    combined.append(item)
+                                    seen.add(ident)
+                            existing[key] = combined
+                    elif not existing.get(key) or (isinstance(val, (list, dict)) and len(str(val)) > len(str(existing.get(key)))):
                         existing[key] = val
 
         # 3. Discover All Variations for Identities
@@ -1079,8 +1100,21 @@ class ScanPersistenceService:
         
         for identity, group in identity_groups.items():
             res_data = group["res"]
-            price = float(res_data.get("price") or 0)
-            currency = res_data.get("currency", "TRY")
+            
+            # [FIX 2026-04-25] Robust Price Extraction
+            # We look for 'price' or 'best_price'. If missing, try to derive from offers.
+            price = float(res_data.get("price") or res_data.get("best_price") or 0)
+            offers = res_data.get("offers") or res_data.get("ota_prices") or []
+            
+            if price == 0 and offers:
+                # Derive price from cheapest OTA if top-level is missing
+                try:
+                    price = min(float(p.get("price") or 999999) for p in offers)
+                    if price == 999999: price = 0
+                except:
+                    price = 0
+            
+            currency = res_data.get("currency") or "TRY"
             
             # Determine targets: All variations if identity is a token, else just the single hotel
             targets = variations_map.get(identity)
@@ -1101,9 +1135,13 @@ class ScanPersistenceService:
                 # Hotel Update Payload
                 upd = {
                     "id": tid,
-                    "last_scanned_at": now_ts,
-                    "current_price": price if price > 0 else None
+                    "last_scanned_at": now_ts
                 }
+                
+                # [FIX] Only update current_price if we actually found a positive price.
+                # This prevents hotel_info (or failed scans) from overwriting valid prices with NULL.
+                if price > 0:
+                    upd["current_price"] = price
                 
                 # Map rich metadata
                 metadata_fields = [
@@ -1134,14 +1172,15 @@ class ScanPersistenceService:
                 hotel_updates.append(upd)
                 
                 # Price Log (Insert)
-                if price > 0:
+                # [FIX] Log if we have a price OR if we have OTA offers (even if price is 0, though unlikely now)
+                if price > 0 or offers:
                     price_logs.append({
                         "hotel_id": tid,
                         "price": price,
                         "currency": currency,
-                        "parity_offers": res_data.get("offers") or [],
-                        "market_offers": res_data.get("offers") or [],
-                        "offers": res_data.get("offers") or [],
+                        "parity_offers": offers,
+                        "market_offers": res_data.get("market_offers") or offers,
+                        "offers": offers,
                         "room_types": room_types,
                         "recorded_at": now_ts,
                         "source": source
