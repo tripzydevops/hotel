@@ -160,7 +160,7 @@ async def get_dashboard_logic(
         # AGENT_LOGIC: Join with user_hotels to support multi-user property tracking.
         res = (
             db.table("user_hotels")
-            .select("*, hotel:hotels(*)")
+            .select("*, hotel:hotels(id, name, currency, room_types, stars, rating, review_count, image_url, latitude, longitude, amenities, images, reviews, sentiment_breakdown, serp_api_id, property_token, room_type_standard, pricing_dna_text)")
             .eq("user_id", str(user_id))
             .execute()
         )
@@ -249,7 +249,7 @@ async def get_dashboard_logic(
         hotel_prices_map = {}
         all_prices_res = (
             db.table("price_logs")
-            .select("*, scan_sessions(adults, check_out_date)")
+            .select("id, hotel_id, price, currency, room_types, offers, parity_offers, recorded_at, check_in_date, scan_sessions(adults, check_out_date)")
             .in_("hotel_id", hotel_ids)
             .order("recorded_at", desc=True)
             .limit(1000)
@@ -335,10 +335,8 @@ async def get_dashboard_logic(
                     # KAİZEN 2026: Enhanced Price Info Extraction
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
-                    # Room Types Extraction (Strict routing per USER request)
-                    raw_rooms = current_log.get("room_types") or []
-                    if not raw_rooms and "price_data" in current_log:
-                        raw_rooms = (current_log.get("price_data") or {}).get("room_types") or []
+                    # Room Types Extraction (Strict Fallback per USER request)
+                    raw_rooms = current_log.get("room_types") if (current_log.get("room_types") and len(current_log.get("room_types")) > 0) else (h.get("room_types") or [])
                     
                     # Offers Extraction with Vendor Logic
                     raw_offers = (
