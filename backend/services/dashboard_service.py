@@ -335,7 +335,7 @@ async def get_dashboard_logic(
                     price_info = {
                         "current_price": curr_p,
                         "previous_price": prev_p,
-                        "currency": curr_c,
+                        "currency": display_currency,
                         "name": h.get("name"),
                         "trend": trend_val,
                         "change_percent": change,

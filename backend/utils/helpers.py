@@ -18,6 +18,8 @@ EXCHANGE_RATES_TO_USD = {
 
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
     """Convert amount from one currency to another via USD."""
+    from_currency = from_currency.upper()
+    to_currency = to_currency.upper()
     if from_currency == to_currency:
         return amount
     # Convert to USD first
