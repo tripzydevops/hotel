@@ -213,6 +213,9 @@ export const en = {
     verifiedSerp: "Intelligence data verified via DataForSEO",
     generatedAt: "Generated {0}",
     csvExport: "CSV",
+    hotelName: "Hotel Name",
+    vendor: "Vendor",
+    location: "Location",
   },
   history: {
     intelLogs: "Intelligence Logs",

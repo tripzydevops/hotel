@@ -215,6 +215,9 @@ export const tr = {
     verifiedSerp: "İstihbarat verileri DataForSEO ile doğrulandı",
     generatedAt: "Oluşturulma: {0}",
     csvExport: "CSV",
+    hotelName: "Otel Adı",
+    vendor: "Satıcı",
+    location: "Konum",
   },
   history: {
     intelLogs: "İstihbarat Kayıtları",

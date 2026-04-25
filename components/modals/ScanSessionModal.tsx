@@ -510,14 +510,28 @@ export default function ScanSessionModal({
               />
             ) : (
               <div className="grid grid-cols-1 gap-3">
+                {/* Table Header */}
+                <div className="hidden md:flex items-center justify-between px-5 py-2 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--overlay-border)] mb-1">
+                  <div className="flex items-center gap-5 flex-1">
+                    <div className="w-11"></div> {/* Icon space */}
+                    <div className="grid grid-cols-12 gap-4 flex-1">
+                      <div className="col-span-4">{t("scanSession.hotelName")}</div>
+                      <div className="col-span-3">{t("scanSession.vendor")}</div>
+                      <div className="col-span-5">{t("scanSession.location")}</div>
+                    </div>
+                  </div>
+                  <div className="w-[120px] text-right pr-4">{t("hotelDetails.price")}</div>
+                  <div className="w-[80px] text-right">{t("reports.status")}</div>
+                </div>
+
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="group flex items-center justify-between p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-[var(--overlay-border)] rounded-2xl transition-all duration-200"
+                    className="group flex flex-col md:flex-row md:items-center justify-between p-4 md:p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-[var(--overlay-border)] rounded-2xl transition-all duration-200 gap-4 md:gap-0"
                   >
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-5 flex-1">
                       <div
-                        className={`p-3 rounded-xl ${
+                        className={`p-3 rounded-xl shrink-0 ${
                           log.status === "success"
                             ? "bg-optimal-green/10 text-optimal-green border border-optimal-green/20"
                             : "bg-alert-red/10 text-alert-red border border-alert-red/20"
@@ -529,51 +543,69 @@ export default function ScanSessionModal({
                           <AlertCircle className="w-5 h-5" />
                         )}
                       </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          {log.status === "failed" && log.status_detail && (
-                            <span className="text-[9px] font-bold text-alert-red italic flex items-center gap-1">
-                              <AlertCircle className="w-2.5 h-2.5" />
-                              {log.status_detail}
-                            </span>
-                          )}
-                          
-                          {log.sentiment_summary && log.sentiment_summary.length > 0 && (
-                            <div className="flex items-center gap-1 pb-0.5">
-                              {log.sentiment_summary.slice(0, 2).map((s: any, idx: number) => (
-                                <span 
-                                  key={idx}
-                                  className={`text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
-                                    (s.sentiment || 0) > 0.5 ? "bg-optimal-green/10 text-optimal-green" : "bg-alert-red/10 text-alert-red"
-                                  }`}
-                                >
-                                  {s.category}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 flex-1 min-w-0">
+                        {/* Hotel Name */}
+                        <div className="md:col-span-4 flex flex-col min-w-0">
+                          <span className="text-sm font-bold text-[var(--overlay-text)] truncate">
+                            {log.hotel_name || "Unknown Hotel"}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            {log.status === "failed" && log.status_detail && (
+                              <span className="text-[8px] font-bold text-alert-red italic flex items-center gap-1">
+                                <AlertCircle className="w-2 h-2" />
+                                {log.status_detail}
+                              </span>
+                            )}
+                            {log.sentiment_summary && log.sentiment_summary.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                {log.sentiment_summary.slice(0, 1).map((s: any, idx: number) => (
+                                  <span 
+                                    key={idx}
+                                    className={`text-[7px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                                      (s.sentiment || 0) > 0.5 ? "bg-optimal-green/10 text-optimal-green" : "bg-alert-red/10 text-alert-red"
+                                    }`}
+                                  >
+                                    {s.category}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
+                        {/* Vendor */}
+                        <div className="md:col-span-3 flex items-center">
+                          <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                            {log.vendor || "Direct"}
+                          </span>
+                        </div>
+
+                        {/* Location */}
+                        <div className="md:col-span-5 flex flex-col justify-center min-w-0">
+                          <span className="text-[10px] font-medium text-[var(--text-muted)] truncate">
+                            {log.location || "Global Market"}
+                          </span>
                           {log.room_types && log.room_types.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {log.room_types.slice(0, 3).map((rt: any, idx: number) => (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {log.room_types.slice(0, 2).map((rt: any, idx: number) => (
                                 <span 
                                   key={idx}
-                                  className="text-[8px] px-1.5 py-0.5 rounded-md bg-white/5 border border-[var(--overlay-border)] text-[var(--text-muted)] font-medium"
+                                  className="text-[7px] px-1 py-0.5 rounded-md bg-white/5 border border-[var(--overlay-border)] text-[var(--text-muted)]/60 font-medium"
                                 >
                                   {typeof rt === 'string' ? rt : rt.name}
                                 </span>
                               ))}
-                              {log.room_types.length > 3 && (
-                                <span className="text-[8px] text-[var(--overlay-text)]/20">+{log.room_types.length - 3}</span>
-                              )}
                             </div>
                           )}
                         </div>
                       </div>
+                    </div>
 
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
                       {log.price && (
-                        <div className="text-right">
-                          <p className="text-xl font-black text-[var(--overlay-text)] tracking-tight">
+                        <div className="text-left md:text-right w-[120px]">
+                          <p className="text-lg md:text-xl font-black text-[var(--overlay-text)] tracking-tight">
                             {new Intl.NumberFormat("en-US", {
                               style: "currency",
                               currency: log.currency || "USD",
@@ -585,9 +617,9 @@ export default function ScanSessionModal({
                           </p>
                         </div>
                       )}
-                      <div className="hidden sm:block">
+                      <div className="w-[80px] text-right">
                         <span
-                          className={`text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-lg ${
+                          className={`text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-lg ${
                             log.status === "success"
                               ? "text-optimal-green bg-optimal-green/5 border border-optimal-green/10"
                               : "text-alert-red bg-alert-red/5 border border-alert-red/10"
