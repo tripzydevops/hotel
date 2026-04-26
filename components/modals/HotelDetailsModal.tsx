@@ -366,7 +366,7 @@ export default function HotelDetailsModal({
                           {new Intl.NumberFormat("en-US", {
                             style: "currency",
                             currency: hotel.price_info?.currency || "USD",
-                          }).format(typeof offer.price === 'string' ? parsePrice(offer.price) : offer.price)}
+                          }).format(parsePrice(offer.price))}
                         </div>
                       </div>
                     </div>
@@ -404,7 +404,7 @@ export default function HotelDetailsModal({
                           {new Intl.NumberFormat("en-US", {
                             style: "currency",
                             currency: hotel.price_info?.currency || "USD",
-                          }).format(typeof room.price === 'string' ? parsePrice(room.price) : room.price)}
+                          }).format(parsePrice(room.price))}
                         </div>
                         <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
                           {t("common.availableNow")}
