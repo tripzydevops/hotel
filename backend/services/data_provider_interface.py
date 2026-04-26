@@ -21,7 +21,7 @@ class HotelDataProvider(ABC):
         serp_api_id: Optional[str] = None,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Fetch price and metadata for a specific hotel.
         """
@@ -46,7 +46,7 @@ class HotelDataProvider(ABC):
         hotel_id: str,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Fetch detailed information for a specific hotel.
         """
@@ -63,7 +63,7 @@ class HotelDataProvider(ABC):
         task_id: str,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Retrieve results for a previously submitted task.
         """

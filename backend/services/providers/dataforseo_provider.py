@@ -685,13 +685,13 @@ class DataForSEOProvider(HotelDataProvider):
         serp_api_id: Optional[str] = None,
         db: Optional[Any] = None,
         session_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Implementation of HotelDataProvider.fetch_price using DataForSEO Live Search.
         Captures best price and all market offers (OTA prices).
         """
         if not self.login or not self.password:
-            return {"status": "error", "error": "missing_credentials"}
+            return {"status": "error", "error": "missing_credentials"}, None
 
         auth = (self.login, self.password)
 
@@ -730,17 +730,17 @@ class DataForSEOProvider(HotelDataProvider):
                     return {
                         "status": "error",
                         "error": f"{res_json.get('status_message')}",
-                    }
+                    }, res_json
 
                 task = res_json.get("tasks", [{}])[0]
                 return {
                     "status": "pending",
                     "task_id": task.get("id"),
                     "message": "Task submitted to standard queue. Poll fetch_task_results later.",
-                }
+                }, res_json
         except Exception as e:
             logger.error(f"DataForSEO Provider fetch_price Error: {e}")
-            return {"status": "error", "error": str(e)}
+            return {"status": "error", "error": str(e)}, None
 
     async def fetch_hotel_info(
         self,
@@ -749,13 +749,13 @@ class DataForSEOProvider(HotelDataProvider):
         session_id: Optional[str] = None,
         currency: Optional[str] = None,
         adults: int = 1,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Submits a task to the DataForSEO Google Hotels Info endpoint.
         Standard method: POST task, then GET results later.
         """
         if not self.login or not self.password or not hotel_id:
-            return None
+            return None, None
 
         auth = (self.login, self.password)
 
@@ -789,16 +789,16 @@ class DataForSEOProvider(HotelDataProvider):
                         "status": "pending",
                         "task_id": task.get("id"),
                         "message": "Hotel Information task submitted.",
-                    }
+                    }, res_json
 
                 logger.warning(
                     f"DataForSEO Hotel Info POST failed: {res_json.get('status_message')}"
                 )
-                return None
+                return None, res_json
 
         except Exception as e:
             logger.error(f"DataForSEO fetch_hotel_info error: {e}")
-            return None
+            return None, None
 
     # ===== Task API (Async) Implementation =====
 
@@ -1086,7 +1086,7 @@ class DataForSEOProvider(HotelDataProvider):
         target_name: Optional[str] = None,
         session_id: Optional[str] = None,
         db: Optional[Any] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """Retrieves results for price search tasks with identity matching."""
         processed, raw = await self._fetch_results_generic(
             task_id,
@@ -1098,14 +1098,14 @@ class DataForSEOProvider(HotelDataProvider):
         if db and session_id and raw:
             await self._vault_log(db, session_id, "hotel_searches/task_get", raw)
 
-        return processed
+        return processed, raw
 
     async def fetch_hotel_info_results(
         self,
         task_id: str,
         session_id: Optional[str] = None,
         db: Optional[Any] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """Retrieves results for rich metadata (hotel_info) tasks from either advanced or standard endpoint."""
         # Try advanced first
         processed, raw = await self._fetch_results_generic(task_id, "hotel_info/advanced")
@@ -1114,7 +1114,7 @@ class DataForSEOProvider(HotelDataProvider):
             await self._vault_log(db, session_id, "hotel_info/task_get/advanced", raw)
 
         if processed and processed.get("status") == "success" and processed.get("items"):
-            return processed
+            return processed, raw
 
         # Fallback to standard
         processed_std, raw_std = await self._fetch_results_generic(task_id, "hotel_info")
@@ -1122,7 +1122,7 @@ class DataForSEOProvider(HotelDataProvider):
         if db and session_id and raw_std:
             await self._vault_log(db, session_id, "hotel_info/task_get", raw_std)
 
-        return processed_std
+        return processed_std, raw_std
 
     async def _fetch_results_generic(
         self,
@@ -1488,7 +1488,7 @@ class DataForSEOProvider(HotelDataProvider):
         target_token: Optional[str] = None,
         target_name: Optional[str] = None,
         task_type: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Implementation of abstract method from HotelDataProvider.
 
@@ -1513,7 +1513,8 @@ class DataForSEOProvider(HotelDataProvider):
                     db, session_id, "business_data/google/hotel_info/advanced/task_get", res_json
                 )
 
-            return processed if processed and processed.get("status") == "success" else None
+            res = processed if processed and processed.get("status") == "success" else None
+            return res, res_json
         else:
             # Default: price_search via hotel_searches
             # [FIX 2026-04-24] Call _fetch_results_generic directly to get the
@@ -1532,7 +1533,8 @@ class DataForSEOProvider(HotelDataProvider):
                     db, session_id, "business_data/google/hotel_searches/task_get", res_json
                 )
 
-            return processed if processed and processed.get("status") == "success" else None
+            res = processed if processed and processed.get("status") == "success" else None
+            return res, res_json
 
     async def get_completed_tasks(self) -> List[str]:
         """Returns a list of Task IDs that are ready for retrieval across all endpoints."""

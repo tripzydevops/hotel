@@ -27,7 +27,7 @@ async def test_providers():
     for provider in providers:
         print(f"\nTesting {provider.get_provider_name()}...")
         try:
-            res = await provider.fetch_price(
+            res, _ = await provider.fetch_price(
                 hotel_name=hotel_name,
                 location=location,
                 check_in=check_in,

@@ -275,7 +275,7 @@ class ScraperAgent:
 
                             try:
                                 # Per-hotel logic with timeout
-                                current_data = await asyncio.wait_for(
+                                res_tuple = await asyncio.wait_for(
                                     provider.fetch_price(
                                         hotel_name=hotel_name,
                                         location=location,
@@ -291,6 +291,12 @@ class ScraperAgent:
                                     ),
                                     timeout=120.0,
                                 )
+
+                                # [FIX 2026-04-26] Handle 2-tuple return (processed_data, raw_json)
+                                if isinstance(res_tuple, tuple) and len(res_tuple) == 2:
+                                    current_data, raw_json = res_tuple
+                                else:
+                                    current_data, raw_json = res_tuple, None
 
                                 # Validate results: we want at least a base price or room types
                                 if (

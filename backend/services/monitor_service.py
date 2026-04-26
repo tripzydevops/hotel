@@ -556,14 +556,20 @@ async def process_system_scans(insforge: InsForgeClient):
         now_utc = datetime.now(timezone.utc)
         PERMANENT_FAIL_MINUTES = 30  # Only permanently fail after 30 minutes
 
-        for i, result in enumerate(all_results):
+        for i, res_tuple in enumerate(all_results):
             tid = completed_ids[i]
             meta = task_id_to_metadata.get(tid)
+
+            # [FIX 2026-04-26] Unpack 2-tuple (processed_data, raw_json) from provider
+            if isinstance(res_tuple, tuple) and len(res_tuple) == 2:
+                result, raw_json = res_tuple
+            else:
+                result, raw_json = res_tuple, None
 
             if (
                 isinstance(result, Exception)
                 or not result
-                or result.get("status") != "success"
+                or (isinstance(result, dict) and result.get("status") != "success")
             ):
                 if meta:
                     # Check task age before marking as permanent failure
@@ -592,7 +598,7 @@ async def process_system_scans(insforge: InsForgeClient):
                         tasks_not_ready.append(meta)
                 continue
 
-            tag_raw = result.get("tag", tid)  # Fallback to tid if tag missing
+            tag_raw = result.get("tag", tid) if isinstance(result, dict) else tid
             # If meta wasn't found by tid, try tag_raw
             if not meta:
                 meta = task_id_to_metadata.get(tag_raw)
