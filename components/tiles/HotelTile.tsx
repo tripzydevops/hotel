@@ -69,16 +69,18 @@ export default function HotelTile(props: HotelTileProps) {
     ? offers.reduce((best, curr) => {
         const currentP = parsePrice(curr.price || 0);
         const bestP = parsePrice(best.price || 0);
-        return (currentP > 0 && currentP < bestP) || bestP === 0 ? curr : best;
+        return (currentP > 0 && (currentP < bestP || bestP === 0)) ? curr : best;
       }, offers[0])
     : null;
 
-  const displayPrice = bestOffer && parsePrice(bestOffer.price || 0) > 0 
-    ? parsePrice(bestOffer.price || 0) 
+  const displayPriceValue = (bestOffer && parsePrice(bestOffer.price || 0) > 0)
+    ? parsePrice(bestOffer.price || 0)
     : parsePrice(props.currentPrice || 0);
     
-  const displayVendor = bestOffer?.vendor || bestOffer?.source || props.vendor || "DIRECT";
-  const previousPrice = parsePrice(props.previousPrice || displayPrice);
+  const displayVendor = bestOffer?.vendor || bestOffer?.source || props.vendor || "UNSPECIFIED";
+  const previousPrice = parsePrice(props.previousPrice || 0);
+
+
   
   const {
     id,
@@ -156,7 +158,7 @@ export default function HotelTile(props: HotelTileProps) {
             </h3>
             <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest flex items-center gap-1 truncate">
               <MapPin className="w-3 h-3 text-[var(--soft-gold)]/50 flex-shrink-0" />
-              {props.location || "Sector Alpha"}
+              {props.location || "Location Unknown"}
             </p>
           </div>
           
@@ -165,7 +167,7 @@ export default function HotelTile(props: HotelTileProps) {
               Live Rate
             </div>
             <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic">
-              {currency} {displayPrice.toLocaleString('en-US')}
+              {displayPriceValue > 0 ? `${currency} ${displayPriceValue.toLocaleString('en-US')}` : "---"}
             </div>
             <div className="text-[10px] uppercase text-[var(--text-muted-foreground)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded-full mt-1 inline-block border border-[var(--overlay-border)] backdrop-blur-sm font-bold tracking-wider">
               VIA {displayVendor}
@@ -181,7 +183,7 @@ export default function HotelTile(props: HotelTileProps) {
               Recency
             </div>
             <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
-              {props.lastUpdated || "2m ago"}
+              {props.lastUpdated || "Pending Sync"}
             </div>
           </div>
 

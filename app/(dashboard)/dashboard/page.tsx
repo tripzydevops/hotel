@@ -165,23 +165,29 @@ export default function Dashboard() {
   }, [data?.competitors]);
 
   const avgCompetitorPrice = useMemo(() => {
-    if (!data?.competitors?.length) return 0;
+    const validCompetitors = (data?.competitors || []).filter(c => parsePrice(c.price_info?.current_price || 0) > 0);
+    if (!validCompetitors.length) return 0;
+    
     return Math.round(
-      data.competitors.reduce(
+      validCompetitors.reduce(
         (sum, c) => sum + parsePrice(c.price_info?.current_price || 0),
         0,
-      ) / data.competitors.length,
+      ) / validCompetitors.length,
     );
   }, [data?.competitors]);
+
 
   const undercuttingCount = useMemo(
     () =>
       (data?.competitors || []).filter(
-        (c) =>
-          c.price_info && parsePrice(c.price_info.current_price) < effectiveTargetPrice,
+        (c) => {
+          const price = parsePrice(c.price_info?.current_price || 0);
+          return price > 0 && price < effectiveTargetPrice;
+        }
       ).length,
     [data?.competitors, effectiveTargetPrice],
   );
+
 
   const pricesDroppedCount = useMemo(
     () =>
@@ -506,10 +512,12 @@ export default function Dashboard() {
             <p className="text-3xl font-black text-[var(--alert-red)] tracking-tighter mb-1">
               {
                 (data?.competitors || []).filter(
-                  (c: HotelWithPrice) =>
-                    c.price_info &&
-                    parsePrice(c.price_info.current_price) < effectiveTargetPrice,
+                  (c: HotelWithPrice) => {
+                    const price = parsePrice(c.price_info?.current_price || 0);
+                    return price > 0 && price < effectiveTargetPrice;
+                  }
                 ).length
+
               }
             </p>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--alert-red)] transition-colors">
@@ -549,13 +557,20 @@ export default function Dashboard() {
                       userSettings?.currency ||
                       "TRY";
 
+                    const validCompetitors = (data?.competitors || []).filter(
+                      (c: HotelWithPrice) => parsePrice(c.price_info?.current_price || 0) > 0
+                    );
+                    
+                    if (validCompetitors.length === 0) return 0;
+
                     const avgPrice = Math.round(
-                      (data?.competitors || []).reduce(
+                      validCompetitors.reduce(
                         (sum: number, c: HotelWithPrice) =>
                           sum + parsePrice(c.price_info?.current_price || 0),
                         0,
-                      ) / (data?.competitors?.length || 1),
+                      ) / validCompetitors.length,
                     );
+
 
                     return formatCurrency(avgPrice, activeCurrency);
                   })()}

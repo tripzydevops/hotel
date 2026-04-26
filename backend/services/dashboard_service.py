@@ -14,7 +14,8 @@ from backend.services.analysis_service import (
     get_price_for_room,
 )
 from backend.services.price_comparator import price_comparator
-from backend.utils.helpers import convert_currency
+from backend.utils.helpers import convert_currency, log_query
+from backend.utils.vendor_normalizer import normalize_vendor_name
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import (
     generate_mentions,
@@ -383,7 +384,8 @@ async def get_dashboard_logic(
                             continue
                         
                         # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
-                        v_name = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
+                        v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
+                        v_name = normalize_vendor_name(v_raw)
                         p_val = _extract_price(of.get("price"), currency=active_currency)
                         
                         # AGENT_FIX: Filter out offers with no valid price (Fix for 0 price entries in UI)

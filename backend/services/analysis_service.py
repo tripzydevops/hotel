@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from backend.services.ai_service import intelligence_service
 from backend.utils.helpers import convert_currency
+from backend.utils.vendor_normalizer import normalize_vendor_name
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import (
     calculate_stability,
@@ -868,7 +869,7 @@ async def perform_market_analysis(
                 event = {
                     "price": float(conv_p),
                     "recorded_at": p_log.get("recorded_at"),
-                    "vendor": p_log.get("vendor") or "Direct",
+                    "vendor": normalize_vendor_name(p_log.get("vendor") or "Direct"),
                     "label": label,
                 }
 

@@ -342,102 +342,88 @@ export default function HotelDetailsModal({
             </div>
           )}
 
-          {/* OFFERS TAB (Locked) */}
           {activeTab === "offers" && (
-            <div className="overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)]">
-              <table className="w-full text-left text-xs uppercase font-black tracking-widest">
-                <thead className="bg-[var(--deep-ocean-accent)] text-[var(--text-muted)] border-b border-[var(--glass-border)]">
-                  <tr>
-                    <th className="p-4">{t("hotelDetails.vendor")}</th>
-                    <th className="p-4 text-right">
-                      {t("hotelDetails.price")}
-                    </th>
-                    <th className="p-4 text-right">
-                      {t("hotelDetails.diff")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--glass-border)]">
-                  {((hotel as any).price_info?.offers || (hotel as any).offers || []).map((offer: any, idx: number) => {
-                    const diff =
-                      (offer.price || 0) -
-                      parsePrice(hotel.price_info?.current_price || 0);
-                    return (
-                      <tr
-                        key={idx}
-                        className="group hover:bg-[var(--glass-bg-accent)] transition-all cursor-default"
-                      >
-                        <td className="p-4 font-black text-[var(--text-primary)]">
-                          {offer.vendor || offer.source || "Unknown Source"}
-                        </td>
-                        <td className="p-4 text-right text-[var(--soft-gold)] font-black text-sm italic">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: hotel.price_info?.currency || "USD",
-                          }).format(parsePrice(offer.price || 0))}
-                        </td>
-                        <td
-                          className={`p-4 text-right font-black ${diff > 0 ? "text-alert-red" : diff < 0 ? "text-optimal-green" : "text-[var(--text-muted)]"}`}
-                        >
-                          <span className={`px-2 py-1 rounded ${diff > 0 ? "bg-rose-500/10" : diff < 0 ? "bg-emerald-500/10" : "bg-white/5"}`}>
-                              {diff > 0 ? "+" : ""}{diff.toFixed(0)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {(!hotel.price_info?.offers ||
-                hotel.price_info.offers.length === 0) && (
-                <div className="p-12 text-center text-[var(--text-muted)]">
-                   <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noOffers")}</p>
+            <div className="space-y-4">
+              {hotel?.price_info?.offers && hotel.price_info.offers.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {hotel.price_info.offers.map((offer, index) => (
+                    <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
+                          <Tag className="w-5 h-5 text-[var(--soft-gold)]" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                            {offer.vendor || "Market Partner"}
+                          </h4>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                            External Source Data
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                          {offer.price ? (
+                            typeof offer.price === 'number' ? 
+                              new Intl.NumberFormat("en-US", { style: "currency", currency: hotel.price_info?.currency || "USD" }).format(offer.price) : 
+                              offer.price
+                          ) : "---"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
+                  <Tag className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] uppercase font-black tracking-widest">No additional offers found.</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* ROOM TYPES TAB */}
           {activeTab === "rooms" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                {((hotel as any).price_info?.room_types || (hotel as any).room_types || []).map((room: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl"
-                  >
-                    <div>
-                      <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                        {room.name || "Target Chamber"}
-                      </h4>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                        {t("hotelDetails.foundVia")} reconnaissance
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency:
-                            room.currency ||
-                            hotel.price_info?.currency ||
-                            "USD",
-                        }).format(parsePrice(room.price || 0))}
+              {hotel?.price_info?.room_types && hotel.price_info.room_types.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {hotel.price_info.room_types.map((room, index) => (
+                    <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
+                          <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                            {room.name || "Room Unit"}
+                          </h4>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                            Verified Specification
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                        {t("common.availableNow")}
-                      </span>
+                      <div className="text-right">
+                        <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                          {room.price ? (
+                            typeof room.price === 'number' ? 
+                              new Intl.NumberFormat("en-US", { style: "currency", currency: room.currency || hotel.price_info?.currency || "USD" }).format(room.price) : 
+                              room.price
+                          ) : "---"}
+                        </div>
+                        {room.price && (
+                          <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                            {t("common.availableNow")}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {(!hotel.price_info?.room_types ||
-                  hotel.price_info.room_types.length === 0) && (
-                  <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                    <Building2 className="w-12 h-12 opacity-10" />
-                    <p className="text-[10px] uppercase font-black tracking-widest">{t("hotelDetails.noRooms")}</p>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
+                  <Building2 className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] uppercase font-black tracking-widest">No room details found.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
