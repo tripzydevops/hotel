@@ -354,29 +354,27 @@ export default function HotelDetailsModal({
                         </div>
                         <div>
                           <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                            {offer.vendor || "Market Partner"}
+                            {offer.vendor}
                           </h4>
                           <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                            External Source Data
+                            Market Partner
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                          {offer.price ? (
-                            typeof offer.price === 'number' ? 
-                              new Intl.NumberFormat("en-US", { style: "currency", currency: hotel.price_info?.currency || "USD" }).format(offer.price) : 
-                              offer.price
-                          ) : "---"}
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: hotel.price_info?.currency || "USD",
+                          }).format(typeof offer.price === 'string' ? parsePrice(offer.price) : offer.price)}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                  <Tag className="w-12 h-12 opacity-10" />
-                  <p className="text-[10px] uppercase font-black tracking-widest">No additional offers found.</p>
+                <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
+                  No additional offers found.
                 </div>
               )}
             </div>
@@ -394,7 +392,7 @@ export default function HotelDetailsModal({
                         </div>
                         <div>
                           <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                            {room.name || "Room Unit"}
+                            {room.name}
                           </h4>
                           <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
                             Verified Specification
@@ -403,25 +401,21 @@ export default function HotelDetailsModal({
                       </div>
                       <div className="text-right">
                         <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                          {room.price ? (
-                            typeof room.price === 'number' ? 
-                              new Intl.NumberFormat("en-US", { style: "currency", currency: room.currency || hotel.price_info?.currency || "USD" }).format(room.price) : 
-                              room.price
-                          ) : "---"}
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: hotel.price_info?.currency || "USD",
+                          }).format(typeof room.price === 'string' ? parsePrice(room.price) : room.price)}
                         </div>
-                        {room.price && (
-                          <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                            {t("common.availableNow")}
-                          </span>
-                        )}
+                        <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                          {t("common.availableNow")}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="py-20 text-center flex flex-col items-center gap-4 text-[var(--text-muted)] bg-[var(--glass-bg)] rounded-xl border border-dashed border-[var(--glass-border)]">
-                  <Building2 className="w-12 h-12 opacity-10" />
-                  <p className="text-[10px] uppercase font-black tracking-widest">No room details found.</p>
+                <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
+                  No room data available.
                 </div>
               )}
             </div>
