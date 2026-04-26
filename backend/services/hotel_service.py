@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from backend.utils.helpers import log_query
 from backend.utils.url_extractors import extract_hotel_data_from_url
+from backend.utils.text_normalizer import normalize_search_string
 from supabase import Client
 
 
@@ -27,29 +28,7 @@ async def search_hotel_directory_logic(
     if len(q_trimmed) < 2:
         return []
 
-    def normalize_term(text: str) -> str:
-        if not text:
-            return ""
-        text = text.lower()
-        # Turkish normalization
-        rep = {
-            "ı": "i",
-            "i̇": "i",
-            "i": "i",
-            "ğ": "g",
-            "ü": "u",
-            "ş": "s",
-            "ö": "o",
-            "ç": "c",
-            "â": "a",
-            "î": "i",
-            "û": "u",
-        }
-        for char, target in rep.items():
-            text = text.replace(char, target)
-        return text.strip()
-
-    q_normalized = normalize_term(q_trimmed)
+    q_normalized = normalize_search_string(q_trimmed)
     q_words = q_normalized.split()
 
     # 1. Local Lookup (Primary)
@@ -80,8 +59,8 @@ async def search_hotel_directory_logic(
 
     local_results = []
     for h in result.data or []:
-        h_name_norm = normalize_term(h.get("name", ""))
-        h_loc_norm = normalize_term(h.get("location", ""))
+        h_name_norm = normalize_search_string(h.get("name", ""))
+        h_loc_norm = normalize_search_string(h.get("location", ""))
         h_combined = f"{h_name_norm} {h_loc_norm}"
         # Scoring logic using list summing to satisfy linter
         # Simplified scoring logic
@@ -139,7 +118,7 @@ async def search_hotel_directory_logic(
                     # Filter and merge live results
                     found_new = False
                     for lr in live_results:
-                        lr_norm = normalize_term(
+                        lr_norm = normalize_search_string(
                             lr["name"] + " " + lr.get("location", "")
                         )
                         # If query is short, we need to be stricter with word match
@@ -147,8 +126,8 @@ async def search_hotel_directory_logic(
                             lr["source"] = p_name.lower()
                             # Avoid duplicates with sophisticated name comparison
                             if not any(
-                                normalize_term(res.get("name", "")) in lr_norm
-                                or lr_norm in normalize_term(res.get("name", ""))
+                                normalize_search_string(res.get("name", "")) in lr_norm
+                                or lr_norm in normalize_search_string(res.get("name", ""))
                                 for res in local_results
                             ):
                                 merged_results.append(lr)
@@ -193,7 +172,10 @@ async def sync_directory_manual_logic(db: Client) -> Dict[str, Any]:
         h = assoc.get("hotels")
         if not h or h.get("deleted_at"):
             continue
-        key = f"{h['name'].lower()}|{h.get('location', '').lower()}"
+        # Use normalization for consistent key generation during sync
+        h_name_norm = normalize_search_string(h['name'])
+        h_loc_norm = normalize_search_string(h.get('location', ''))
+        key = f"{h_name_norm}|{h_loc_norm}"
         if key not in unique_hotels:
             unique_hotels[key] = {
                 "name": h["name"],
@@ -280,15 +262,27 @@ async def add_hotel_to_account_logic(
                 existing_hotel = h_res.data[0]
 
         if not existing_hotel:
+            # Shield the Database: Use normalized comparison
+            # We fetch potential candidates and normalize them in Python for strict verification
+            name_norm = normalize_search_string(name)
+            loc_norm = normalize_search_string(location)
+            
             h_res = (
                 target_db.table("hotels")
                 .select("*")
-                .eq("name", name)
-                .eq("location", location)
+                .ilike("name", f"%{name_norm}%")
                 .execute()
             )
+            
             if h_res.data:
-                existing_hotel = h_res.data[0]
+                for candidate in h_res.data:
+                    c_name_norm = normalize_search_string(candidate.get("name", ""))
+                    c_loc_norm = normalize_search_string(candidate.get("location", ""))
+                    
+                    if c_name_norm == name_norm and c_loc_norm == loc_norm:
+                        existing_hotel = candidate
+                        print(f"[Normalization Shield] Matched existing hotel via normalization: {existing_hotel['id']}")
+                        break
 
         hotel_id = None
 
@@ -350,14 +344,38 @@ async def add_hotel_to_account_logic(
 
             # Fallback to name + location if no serp_api_id match
             if not dir_res or not dir_res.data:
+                # Normalization Shield for Directory Lookup
                 dir_res = (
                     target_db.table("hotel_directory")
                     .select("*")
-                    .eq("name", name)
-                    .eq("location", location)
+                    .ilike("name", f"%{name_norm}%")
                     .execute()
                 )
-            if dir_res.data:
+                
+                matched_dir = None
+                if dir_res.data:
+                    for d in dir_res.data:
+                        d_name_norm = normalize_search_string(d.get("name", ""))
+                        d_loc_norm = normalize_search_string(d.get("location", ""))
+                        if d_name_norm == name_norm and d_loc_norm == loc_norm:
+                            matched_dir = d
+                            break
+                
+                if matched_dir:
+                    d = matched_dir
+                    rating = rating or d.get("rating")
+                    review_count = review_count or d.get("review_count")
+                    image_url = image_url or d.get("image_url")
+                    phone = phone or d.get("phone")
+                    email = email or d.get("email")
+                    website = website or d.get("website")
+                    address = address or d.get("address")
+                    description = description or d.get("description")
+                    cid = cid or d.get("cid")
+                    place_id = place_id or d.get("place_id")
+                    serp_api_id = serp_api_id or d.get("serp_api_id")
+                    property_token = property_token or d.get("property_token")
+            elif dir_res.data:
                 d = dir_res.data[0]
                 rating = rating or d.get("rating")
                 review_count = review_count or d.get("review_count")
