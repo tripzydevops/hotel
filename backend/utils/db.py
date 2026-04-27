@@ -57,6 +57,7 @@ def get_insforge_db(
     for attempt in range(max_retries):
         try:
             insforge = create_client(url, key, options=options)
+            insforge.is_admin = admin  # Tag for diagnostic tracking
 
             if jwt:
                 insforge.postgrest.auth(jwt)

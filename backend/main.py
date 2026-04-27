@@ -381,7 +381,7 @@ async def trigger_cron_job(key: str):
     from backend.utils.db import get_supabase
     import asyncio
 
-    db = get_supabase()
+    db = get_supabase(admin=True)
 
     try:
         # Standard maintenance batch processing.

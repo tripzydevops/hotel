@@ -36,10 +36,14 @@ async def handle_task_completed(
             return {"status": "ignored", "reason": "no_task_id"}
 
         # 2. Fetch full results from provider
-        result = await dataforseo_provider.fetch_task_results(task_id)
-        if not result or result.get("status") != "success":
-            logger.warning(f"Webhook: Result fetch failed for {task_id}")
-            return {"status": "error", "reason": "fetch_failed"}
+        # Pass DB for identity resolution
+        processed, raw = await dataforseo_provider.fetch_task_results(task_id, db=db)
+        
+        if not processed or processed.get("status") != "success":
+            logger.warning(f"Webhook: Result fetch failed or identity mismatch for {task_id}")
+            return {"status": "error", "reason": "fetch_failed_or_identity_mismatch"}
+
+        result = processed
 
         # 3. Process the results using the core sync utility
         # Tag identifies the hotel/task context
@@ -80,11 +84,10 @@ async def handle_task_completed(
 
         # 5. Execute unified sync
         success = await sync_extraction_result(
-            db=db,
+            insforge=db,
             hotel_id=h_id,
             result=result,
-            scan_task_id=scan_task_id,
-            batch_id=batch_id,
+            session_id=scan_task_id,
             source="Webhook",
         )
 

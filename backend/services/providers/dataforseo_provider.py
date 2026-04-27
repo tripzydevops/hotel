@@ -62,6 +62,18 @@ class DataForSEOProvider(HotelDataProvider):
     - Cost-Optimized: Uses task-based batching instead of expensive Live endpoints.
     """
 
+    # Common OTA/Vendor names to filter out of room type catalogs
+    VENDOR_NAMES = {
+        "booking.com", "expedia", "agoda", "hotels.com", "airbnb", "tripadvisor",
+        "google", "tatilbudur.com", "otelz.com", "jolly tur", "etstur", "tatil.com",
+        "trivago", "kayak", "priceline", "orbitz", "travelocity", "hotwire",
+        "trip.com", "ctrip", "rakuten", "amoma", "venere", "otel.com", "zenhotels",
+        "destinia", "findhotel", "snap travel", "super.com", "nuitee", "prestigia",
+        "hoteltonight", "lastminute.com", "ebookers", "opodo", "edreams", "gotogate",
+        "tatilbudur", "otelz", "etstur", "jollytur", "jolly", "setur", "neredekal", "odamax",
+        "gezinomi", "eccetur", "tatilsepeti"
+    }
+
     def _normalize_location(self, location: str) -> str:
         """
         Normalizes location for DataForSEO API.
@@ -132,6 +144,28 @@ class DataForSEOProvider(HotelDataProvider):
         """
         if not name:
             return {"name": "Standard Room", "attributes": {}}
+
+        # === OTA/Vendor Filtering ===
+        normalized_lower = name.lower().strip()
+        # Exact match or simple contains check for common vendors
+        is_vendor = any(
+            v in normalized_lower 
+            for v in self.VENDOR_NAMES
+        )
+        
+        # Additional check for Turkish-specific vendor patterns
+        if not is_vendor:
+            tr_vendors = ["tatilbudur", "otelz", "etstur", "jolly", "setur", "neredekal", "odamax"]
+            for v in tr_vendors:
+                if v in normalized_lower:
+                    is_vendor = True
+                    break
+                    # If it's a short string containing the vendor name, it's likely a title/source
+                    is_vendor = True
+                    break
+
+        if is_vendor:
+            return {"name": None, "original_name": name, "attributes": {}, "is_vendor": True}
 
         original = name.lower()
         attributes = {
@@ -470,12 +504,18 @@ class DataForSEOProvider(HotelDataProvider):
         items = data.get("items") or []
         for item in items:
             if isinstance(item, dict) and item.get("type") == "hotel_item":
+                room_title = item.get("title")
+                normalized = self._normalize_room_name(room_title)
+                
+                if normalized.get("is_vendor"):
+                    continue
+                    
                 img = None
                 if item.get("images"):
                     img = item["images"][0]
                 room_catalog.append(
                     {
-                        "name": item.get("title"),
+                        "name": normalized.get("name") or room_title,
                         "price": item.get("price_raw") or item.get("price"),
                         "currency": item.get("currency"),
                         "source": item.get("source"),
@@ -490,8 +530,14 @@ class DataForSEOProvider(HotelDataProvider):
         if not room_catalog and about.get("rooms"):
             for r in about["rooms"]:
                 if isinstance(r, dict):
+                    room_title = r.get("title") or r.get("name")
+                    normalized = self._normalize_room_name(room_title)
+                    
+                    if normalized.get("is_vendor"):
+                        continue
+                        
                     room_catalog.append({
-                        "name": r.get("title") or r.get("name"),
+                        "name": normalized.get("name") or room_title,
                         "price": None,
                         "currency": None,
                         "source": "About",
@@ -956,9 +1002,12 @@ class DataForSEOProvider(HotelDataProvider):
             # Respect hotel-specific currency if set, else use batch default
             hotel_currency = hotel.get("currency") or currency
 
+            # [KAIZEN 2026] FIX: DataForSEO hotel_searches requires 'keyword'. 
+            # Even if we have a token, we MUST send the keyword to narrow the search.
+            # Otherwise, it does a broad city search and might miss our hotel if it's not in top 10.
             price_task = {
-                "hotel_identifier": keyword if is_targeted else None,
-                "keyword": None if is_targeted else keyword,
+                "hotel_identifier": hotel.get("property_token") or hotel.get("serp_api_id"),
+                "keyword": f"{hotel['name']} {hotel['location']}",
                 "location_name": normalized_loc,
                 "language_name": "English",
                 "check_in": check_in,
@@ -1093,6 +1142,7 @@ class DataForSEOProvider(HotelDataProvider):
             "hotel_searches",
             target_token=target_token,
             target_name=target_name,
+            db=db
         )
 
         if db and session_id and raw:
@@ -1130,6 +1180,7 @@ class DataForSEOProvider(HotelDataProvider):
         endpoint: str,
         target_token: Optional[str] = None,
         target_name: Optional[str] = None,
+        db: Optional[Any] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """Internal helper for GET results with Identity Verification logic."""
         if not self.login or not self.password or not task_id:
@@ -1173,6 +1224,25 @@ class DataForSEOProvider(HotelDataProvider):
 
                 result = task["result"][0]
                 items = result.get("items", [])
+                tag = task.get("data", {}).get("tag")
+
+                # [KAIZEN 2026] AUTO-RESOLVE IDENTITY FROM DB
+                if not target_token and not target_name and db and tag:
+                    try:
+                        # Resolve scan_task_id from tag
+                        scan_task_id = tag.split("|")[-1] if "|" in str(tag) else tag
+                        
+                        # Fetch hotel metadata
+                        h_res = db.table("scan_tasks").select("hotel_id").eq("id", scan_task_id).execute()
+                        if h_res.data:
+                            h_id = h_res.data[0]["hotel_id"]
+                            hotel_res = db.table("hotels").select("name", "property_token").eq("id", h_id).execute()
+                            if hotel_res.data:
+                                target_name = hotel_res.data[0]["name"]
+                                target_token = hotel_res.data[0]["property_token"]
+                                logger.info(f"DataForSEO: Resolved identity from DB for tag {tag}: {target_name} ({target_token})")
+                    except Exception as e:
+                        logger.error(f"DataForSEO: Failed to resolve identity from DB for tag {tag}: {e}")
 
                 if (
                     endpoint == "hotel_searches" or endpoint == "hotel_search"
@@ -1182,9 +1252,11 @@ class DataForSEOProvider(HotelDataProvider):
                     target = None
 
                     if target_token:
-                        # Priority 1: Exact Token Match
+                        # Priority 1: Exact Token Match (Case-Insensitive)
+                        t_token = str(target_token).strip().lower()
                         for item in items:
-                            if item.get("hotel_identifier") == target_token:
+                            i_token = str(item.get("hotel_identifier") or "").strip().lower()
+                            if i_token == t_token:
                                 target = item
                                 break
 
@@ -1305,11 +1377,14 @@ class DataForSEOProvider(HotelDataProvider):
                             continue
                         # Deduplicate by normalized name
                         normalized = self._normalize_room_name(room_title)
+                        if normalized.get("is_vendor"):
+                            continue
+                            
                         norm_key = normalized.get("name", "").lower()
                         if norm_key and norm_key not in seen_room_names:
                             seen_room_names.add(norm_key)
                             room_catalog.append({
-                                "name": normalized.get("name", room_title),
+                                "name": normalized.get("name") or room_title,
                                 "original_name": normalized.get("original_name", room_title),
                                 "price": price_item.get("price_raw") or price_item.get("price"),
                                 "currency": price_item.get("currency"),

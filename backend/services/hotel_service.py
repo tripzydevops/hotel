@@ -262,27 +262,43 @@ async def add_hotel_to_account_logic(
                 existing_hotel = h_res.data[0]
 
         if not existing_hotel:
-            # Shield the Database: Use normalized comparison
-            # We fetch potential candidates and normalize them in Python for strict verification
+            # Shield the Database: Use normalized comparison via search_name
             name_norm = normalize_search_string(name)
-            loc_norm = normalize_search_string(location)
+            loc_norm = normalize_search_string(location or "")
+            search_name = normalize_search_string(f"{name} {location or ''}")
             
             h_res = (
                 target_db.table("hotels")
                 .select("*")
-                .ilike("name", f"%{name_norm}%")
+                .eq("search_name", search_name)
                 .execute()
             )
             
             if h_res.data:
-                for candidate in h_res.data:
-                    c_name_norm = normalize_search_string(candidate.get("name", ""))
-                    c_loc_norm = normalize_search_string(candidate.get("location", ""))
-                    
-                    if c_name_norm == name_norm and c_loc_norm == loc_norm:
-                        existing_hotel = candidate
-                        print(f"[Normalization Shield] Matched existing hotel via normalization: {existing_hotel['id']}")
-                        break
+                existing_hotel = h_res.data[0]
+                print(f"[Normalization Shield] Matched existing hotel via search_name: {existing_hotel['id']}")
+            else:
+                # Fallback: if search_name doesn't match, try partial match with ilike but verify
+                h_res = (
+                    target_db.table("hotels")
+                    .select("*")
+                    .ilike("name", f"%{name_norm}%")
+                    .execute()
+                )
+                
+                if h_res.data:
+                    for candidate in h_res.data:
+                        c_search_norm = candidate.get("search_name")
+                        if not c_search_norm:
+                             # Legacy records might not have search_name yet
+                             c_name_norm = normalize_search_string(candidate.get("name", ""))
+                             c_loc_norm = normalize_search_string(candidate.get("location", ""))
+                             if c_name_norm == name_norm and c_loc_norm == loc_norm:
+                                 existing_hotel = candidate
+                                 break
+                        elif c_search_norm == search_name:
+                            existing_hotel = candidate
+                            break
 
         hotel_id = None
 
@@ -393,6 +409,7 @@ async def add_hotel_to_account_logic(
             new_hotel_data = {
                 "name": name,
                 "location": location,
+                "search_name": normalize_search_string(f"{name} {location or ''}"),
                 "serp_api_id": serp_api_id,
                 "property_token": property_token,
                 "rating": rating,

@@ -306,6 +306,11 @@ async def run_system_heartbeat(insforge: InsForgeClient):
     If due, submits all unique monitored hotels to the DataForSEO Task API.
     """
     s_logger = get_scheduler_logger()
+    
+    # AGENT_FIX: Verify if the client has elevated privileges
+    is_admin = getattr(insforge, "is_admin", False)
+    s_logger.info(f"Heartbeat: Pulse check using client role: {'SERVICE_ROLE' if is_admin else 'ANON'}")
+    
     try:
         # 1. Fetch Admin Settings
         settings_res = insforge.table("admin_settings").select("*").limit(1).execute()
@@ -362,6 +367,14 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             .eq("is_monitored", True)
             .execute()
         )
+        
+        # AGENT_FIX: Detailed logging for query results
+        if not monitored_res.data:
+            s_logger.warning(f"Heartbeat: user_hotels query returned 0 rows. (Admin Client: {is_admin})")
+            if not is_admin:
+                s_logger.critical("Heartbeat SECURITY ALERT: Running system pulse with ANON client. RLS is likely blocking hotel discovery.")
+        else:
+            s_logger.info(f"Heartbeat: Found {len(monitored_res.data)} raw monitored hotel entries.")
         
         # Deduplicate
         hotels_to_scan = []
@@ -543,6 +556,7 @@ async def process_system_scans(insforge: InsForgeClient):
             fetch_tasks.append(
                 dataforseo_provider.get_task_result(
                     tid,
+                    db=insforge,
                     target_token=token,
                     target_name=name,
                     task_type=meta.get("task_type") if meta else None,
