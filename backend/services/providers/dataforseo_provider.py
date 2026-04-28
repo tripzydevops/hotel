@@ -321,6 +321,52 @@ class DataForSEOProvider(HotelDataProvider):
     def get_provider_name(self) -> str:
         return "DataForSEO"
 
+    async def check_health(self) -> Dict[str, Any]:
+        """
+        Check if the provider is healthy (credentials valid, API reachable).
+        Calls the DataForSEO user info endpoint.
+        """
+        if not self.login or not self.password:
+            return {
+                "status": "unhealthy",
+                "reason": "Credentials missing",
+                "details": {}
+            }
+
+        auth = (self.login, self.password)
+        try:
+            async with httpx.AsyncClient(auth=auth, timeout=10.0) as client:
+                response = await client.get(f"{self.api_url}/user")
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("status_code") == 20000:
+                        user_data = data.get("tasks", [{}])[0].get("result", [{}])[0]
+                        return {
+                            "status": "healthy",
+                            "details": {
+                                "login": user_data.get("login"),
+                                "balance": user_data.get("money_limit"),
+                                "spent": user_data.get("money_spent"),
+                            }
+                        }
+                    return {
+                        "status": "unhealthy",
+                        "reason": f"API Error: {data.get('status_message')}",
+                        "details": data
+                    }
+
+                return {
+                    "status": "unhealthy",
+                    "reason": f"HTTP Error {response.status_code}",
+                    "details": {"text": response.text}
+                }
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "reason": str(e),
+                "details": {}
+            }
+
     def _parse_advanced_hotel_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Extracts high-fidelity metadata and sentiment from hotel_info/advanced response.
@@ -1629,7 +1675,13 @@ class DataForSEOProvider(HotelDataProvider):
         return all_ids
 
     async def _get_ready_tasks_generic(self, endpoint: str) -> List[str]:
-        """Internal helper for pooling ready tasks."""
+        """Internal helper for pooling ready tasks.
+
+        [FIX 2026-04-28] The tasks_ready response has a nested structure:
+          response.tasks[0].result[].id  ← actual fetchable task IDs
+          response.tasks[0].id           ← wrapper envelope ID (NOT fetchable)
+        Previously we returned the wrapper ID, causing 40004 errors on every fetch.
+        """
         if not self.login or not self.password:
             return []
         auth = (self.login, self.password)
@@ -1640,9 +1692,14 @@ class DataForSEOProvider(HotelDataProvider):
                 )
                 res_json = response.json()
                 if res_json.get("status_code") == 20000:
-                    return [
-                        t.get("id") for t in res_json.get("tasks", []) if t.get("id")
-                    ]
+                    task_ids = []
+                    for wrapper_task in res_json.get("tasks", []):
+                        # The actual task IDs live in wrapper_task["result"][].id
+                        for item in wrapper_task.get("result") or []:
+                            tid = item.get("id")
+                            if tid:
+                                task_ids.append(tid)
+                    return task_ids
                 return []
         except Exception as e:
             logger.error(f"DataForSEO ready tasks error ({endpoint}): {e}")
