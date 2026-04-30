@@ -1,12 +1,12 @@
 # Graph Report - hotel  (2026-04-30)
 
 ## Corpus Check
-- 397 files · ~252,787 words
+- 400 files · ~253,435 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1826 nodes · 4652 edges · 66 communities detected
-- Extraction: 35% EXTRACTED · 65% INFERRED · 0% AMBIGUOUS · INFERRED: 3042 edges (avg confidence: 0.55)
+- 1855 nodes · 4696 edges · 67 communities detected
+- Extraction: 34% EXTRACTED · 66% INFERRED · 0% AMBIGUOUS · INFERRED: 3080 edges (avg confidence: 0.55)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -35,7 +35,7 @@
 - [[_COMMUNITY_Community 24|Community 24]]
 - [[_COMMUNITY_Community 28|Community 28]]
 - [[_COMMUNITY_Community 29|Community 29]]
-- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 30|Community 30]]
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 40|Community 40]]
 - [[_COMMUNITY_Community 41|Community 41]]
@@ -50,9 +50,6 @@
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
 - [[_COMMUNITY_Community 68|Community 68]]
-- [[_COMMUNITY_Community 203|Community 203]]
-- [[_COMMUNITY_Community 204|Community 204]]
-- [[_COMMUNITY_Community 205|Community 205]]
 - [[_COMMUNITY_Community 206|Community 206]]
 - [[_COMMUNITY_Community 207|Community 207]]
 - [[_COMMUNITY_Community 208|Community 208]]
@@ -62,10 +59,10 @@
 - [[_COMMUNITY_Community 212|Community 212]]
 - [[_COMMUNITY_Community 213|Community 213]]
 - [[_COMMUNITY_Community 214|Community 214]]
-- [[_COMMUNITY_Community 218|Community 218]]
-- [[_COMMUNITY_Community 231|Community 231]]
-- [[_COMMUNITY_Community 232|Community 232]]
-- [[_COMMUNITY_Community 233|Community 233]]
+- [[_COMMUNITY_Community 215|Community 215]]
+- [[_COMMUNITY_Community 216|Community 216]]
+- [[_COMMUNITY_Community 217|Community 217]]
+- [[_COMMUNITY_Community 221|Community 221]]
 - [[_COMMUNITY_Community 234|Community 234]]
 - [[_COMMUNITY_Community 235|Community 235]]
 - [[_COMMUNITY_Community 236|Community 236]]
@@ -76,6 +73,10 @@
 - [[_COMMUNITY_Community 241|Community 241]]
 - [[_COMMUNITY_Community 242|Community 242]]
 - [[_COMMUNITY_Community 243|Community 243]]
+- [[_COMMUNITY_Community 244|Community 244]]
+- [[_COMMUNITY_Community 245|Community 245]]
+- [[_COMMUNITY_Community 246|Community 246]]
+- [[_COMMUNITY_Community 247|Community 247]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `ProviderFactory` - 162 edges
@@ -104,20 +105,20 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.02
-Nodes (160): AnalystAgent, Phase 1: Persists raw scraper data and performs basic heuristic analysis (ARI, b, Phase 2: Deep AI Reasoning (Market Intelligence).         This is slower and use, Analyst Agent.     Specialized in price analytics, trend detection, and multi-ho, Background task to update a user's pricing DNA for a specific property., Legacy wrapper for backward compatibility., Helper to extract pulse data and dispatch background alerts., VECTOR SEARCH Logic for ghost competitor discovery with geographical filtering. (+152 more)
+Cohesion: 0.01
+Nodes (161): Phase 1: Persists raw scraper data and performs basic heuristic analysis (ARI, b, Phase 2: Deep AI Reasoning (Market Intelligence).         This is slower and use, Analyst Agent.     Specialized in price analytics, trend detection, and multi-ho, Background task to update a user's pricing DNA for a specific property., Legacy wrapper for backward compatibility., Helper to extract pulse data and dispatch background alerts., VECTOR SEARCH Logic for ghost competitor discovery with geographical filtering., Buffer a log entry in memory for batch processing later. (+153 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.16
-Nodes (166): Fetches high-level system statistics for the Admin Dashboard.     Includes total, Fetches high-level system statistics for the Admin Dashboard.     Includes total, Directly updates a user profile from the admin interface.     Used for managing, Directly updates a user profile from the admin interface.     Used for managing, Lists all users in the system with their roles and subscription status.     Prov, Lists all users in the system with their roles and subscription status.     Prov, Retrieves the global hotel directory.     This is the source of truth for "Disco, Retrieves the global hotel directory.     This is the source of truth for "Disco (+158 more)
+Cohesion: 0.02
+Nodes (141): AnalystAgent, Runs the Gemini 3 agentic reasoning flow over current scan results.         Dele, High-level orchestration for batch market analysis.         Generates analysis a, clear_all_alerts(), delete_alert(), list_alerts(), mark_alert_read(), Fetches the recent price alerts for the current user. (+133 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.02
-Nodes (91): ABC, Agent responsible for data acquisition from SerpApi., Performs the actual scraping for a list of hotels., Buffer a log entry in memory for batch processing later., Batch update the reasoning trace to the database in a single round-trip., Cross-User Shared Cache         Searches price_logs for ANY hotel that shares th, ScraperAgent, test_ids() (+83 more)
+Nodes (108): ABC, Agent responsible for data acquisition from SerpApi., Performs the actual scraping for a list of hotels., Buffer a log entry in memory for batch processing later., Batch update the reasoning trace to the database in a single round-trip., Cross-User Shared Cache         Searches price_logs for ANY hotel that shares th, ScraperAgent, test_ids() (+100 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.02
-Nodes (132): add_admin_directory_entry(), admin_update_user(), cleanup_empty_scans(), cleanup_test_data(), create_admin_plan(), create_admin_user(), debug_providers(), delete_admin_directory() (+124 more)
+Cohesion: 0.16
+Nodes (166): Fetches high-level system statistics for the Admin Dashboard.     Includes total, Fetches high-level system statistics for the Admin Dashboard.     Includes total, Directly updates a user profile from the admin interface.     Used for managing, Directly updates a user profile from the admin interface.     Used for managing, Lists all users in the system with their roles and subscription status.     Prov, Lists all users in the system with their roles and subscription status.     Prov, Retrieves the global hotel directory.     This is the source of truth for "Disco, Retrieves the global hotel directory.     This is the source of truth for "Disco (+158 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.03
@@ -125,27 +126,27 @@ Nodes (111): execute_strategy_bridge(), ExecutionRequest, [Future-Proofing] Webh
 
 ### Community 5 - "Community 5"
 Cohesion: 0.02
-Nodes (56): get_network_stats(), [Global Pulse Phase 2] — Pulse Routes API endpoints for the Global Pulse network, Returns live Global Pulse network metrics.     Used by GlobalPulseFeed.tsx to di, find(), audit(), check(), check(), check() (+48 more)
+Nodes (69): get_network_stats(), [Global Pulse Phase 2] — Pulse Routes API endpoints for the Global Pulse network, Returns live Global Pulse network metrics.     Used by GlobalPulseFeed.tsx to di, find(), audit(), check(), check(), check() (+61 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.04
 Nodes (5): fetchBrief(), handleSaveSettings(), ApiClient, fetchPulse(), fetchStats()
 
 ### Community 7 - "Community 7"
-Cohesion: 0.03
-Nodes (75): debug_analysis_data(), get_market_intelligence(), get_market_intelligence_brief(), get_sentiment_history(), Fetches historical sentiment breakdown for a hotel.     Used for the 6-month tre, Diagnostic endpoint for Reports page debugging., AGENT_FEATURE: AI Business Intelligence Stream (SSE)     Streams market data fol, AGENT_FEATURE: Market Intelligence AI Brief.     Synthesizes market data into ac (+67 more)
+Cohesion: 0.04
+Nodes (77): add_admin_directory_entry(), admin_update_user(), cleanup_empty_scans(), cleanup_test_data(), create_admin_plan(), create_admin_user(), debug_providers(), delete_admin_directory() (+69 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.03
-Nodes (40): main(), check_hotels(), main(), check_scans(), main(), debug_heartbeat(), check_monitored_hotels(), debug_ramada_verification() (+32 more)
-
-### Community 9 - "Community 9"
 Cohesion: 0.05
 Nodes (25): DataForSEOClient, DataForSEO Client for Hotel Metadata Enrichment Fetches detailed hotel informati, Map DataForSEO result fields to internal format., Client for interacting with DataForSEO API to get rich hotel metadata., Generate Basic Auth header., Fetch hotel details using Google Maps Business Data API., NotificationService, Notification Service Handles sending email notifications for alerts. (+17 more)
 
+### Community 9 - "Community 9"
+Cohesion: 0.1
+Nodes (28): auth_root_sync(), auth_token_bridge(), get_current_session(), get_current_session_v1(), get_user_info(), get_user_info_v1(), Returns current user info., Unified endpoint for base /api/auth calls (SDK compatibility). (+20 more)
+
 ### Community 10 - "Community 10"
-Cohesion: 0.09
-Nodes (22): handleDestroyKey(), handleReload(), handleReset(), handleRotate(), loadKeyStatus(), handleDelete(), handleSave(), loadPlans() (+14 more)
+Cohesion: 0.12
+Nodes (15): handleDestroyKey(), handleReload(), handleReset(), handleRotate(), loadKeyStatus(), handleDelete(), handleSave(), loadPlans() (+7 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.09
@@ -203,7 +204,7 @@ Nodes (4): main(), process_results(), Brand Scan Script Scans for specific major
 Cohesion: 0.8
 Nodes (4): clean_name(), load_hotels(), load_locations(), main()
 
-### Community 31 - "Community 31"
+### Community 30 - "Community 30"
 Cohesion: 0.4
 Nodes (2): LandingGroupLayout(), useTheme()
 
@@ -263,114 +264,118 @@ Nodes (2): RevealSection(), useScrollReveal()
 Cohesion: 1.0
 Nodes (2): RevealSection(), useScrollReveal()
 
-### Community 203 - "Community 203"
+### Community 206 - "Community 206"
 Cohesion: 1.0
 Nodes (1): Runs the maintenance cycle using a native database function for efficiency.
 
-### Community 204 - "Community 204"
+### Community 207 - "Community 207"
 Cohesion: 1.0
 Nodes (1): Fetch price and metadata for a specific hotel.
 
-### Community 205 - "Community 205"
+### Community 208 - "Community 208"
 Cohesion: 1.0
 Nodes (1): Search for hotels based on a query string.
 
-### Community 206 - "Community 206"
+### Community 209 - "Community 209"
 Cohesion: 1.0
 Nodes (1): Fetch detailed information for a specific hotel.
 
-### Community 207 - "Community 207"
+### Community 210 - "Community 210"
 Cohesion: 1.0
 Nodes (1): Return the unique name of this provider
 
-### Community 208 - "Community 208"
+### Community 211 - "Community 211"
 Cohesion: 1.0
 Nodes (1): Retrieve results for a previously submitted task.
 
-### Community 209 - "Community 209"
-Cohesion: 1.0
-Nodes (1): Check if the provider is healthy (credentials valid, API reachable).
-
-### Community 210 - "Community 210"
-Cohesion: 1.0
-Nodes (1): Returns the cached mappings, refreshing if expired.
-
-### Community 211 - "Community 211"
-Cohesion: 1.0
-Nodes (1): Fetches fresh config from Supabase.
-
 ### Community 212 - "Community 212"
 Cohesion: 1.0
-Nodes (1): Fetch all tiers from DB with local caching.
+Nodes (1): Check if the provider is healthy (credentials valid, API reachable).
 
 ### Community 213 - "Community 213"
 Cohesion: 1.0
-Nodes (1): Return the limits for a specific user profile.
+Nodes (1): Returns the cached mappings, refreshing if expired.
 
 ### Community 214 - "Community 214"
 Cohesion: 1.0
+Nodes (1): Fetches fresh config from Supabase.
+
+### Community 215 - "Community 215"
+Cohesion: 1.0
+Nodes (1): Fetch all tiers from DB with local caching.
+
+### Community 216 - "Community 216"
+Cohesion: 1.0
+Nodes (1): Return the limits for a specific user profile.
+
+### Community 217 - "Community 217"
+Cohesion: 1.0
 Nodes (1): Check if user can add more hotels based on dynamic plan limits.
 
-### Community 218 - "Community 218"
+### Community 221 - "Community 221"
 Cohesion: 1.0
 Nodes (1): Normalizes a vendor name by removing clutter and mapping to canonical forms.
 
-### Community 231 - "Community 231"
-Cohesion: 1.0
-Nodes (1): Generate Basic Auth header.
-
-### Community 232 - "Community 232"
-Cohesion: 1.0
-Nodes (1): Fetch hotel details using Google Maps Business Data API.
-
-### Community 233 - "Community 233"
-Cohesion: 1.0
-Nodes (1): Map DataForSEO result fields to internal format.
-
 ### Community 234 - "Community 234"
-Cohesion: 1.0
-Nodes (1): Check if the provider is healthy (credentials valid, API reachable).
-
-### Community 235 - "Community 235"
 Cohesion: 1.0
 Nodes (1): High-Performance Batch Sync.         Groups results by property_token (identity)
 
+### Community 235 - "Community 235"
+Cohesion: 1.0
+Nodes (1): Generate Basic Auth header.
+
 ### Community 236 - "Community 236"
 Cohesion: 1.0
-Nodes (1): Generates a high-level strategic verdict based on pricing (ARI) and sentiment.
+Nodes (1): Fetch hotel details using Google Maps Business Data API.
 
 ### Community 237 - "Community 237"
 Cohesion: 1.0
-Nodes (1): Cleans markdown JSON fencing from LLM output.
+Nodes (1): Map DataForSEO result fields to internal format.
 
 ### Community 238 - "Community 238"
 Cohesion: 1.0
-Nodes (1): Core AI logic for market anomaly detection and strategic reasoning.     Uses Gem
+Nodes (1): Check if the provider is healthy (credentials valid, API reachable).
 
 ### Community 239 - "Community 239"
 Cohesion: 1.0
-Nodes (1): Fallback logic for market intelligence.
+Nodes (1): High-Performance Batch Sync.         Groups results by property_token (identity)
 
 ### Community 240 - "Community 240"
 Cohesion: 1.0
-Nodes (1): Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
+Nodes (1): Generates a high-level strategic verdict based on pricing (ARI) and sentiment.
 
 ### Community 241 - "Community 241"
 Cohesion: 1.0
-Nodes (1): Converts the Pricing DNA narrative into a vector embedding for retrieval groundi
+Nodes (1): Cleans markdown JSON fencing from LLM output.
 
 ### Community 242 - "Community 242"
 Cohesion: 1.0
-Nodes (1): Step 2: Generate the Gemini 3 narrative using the interactions streaming API.
+Nodes (1): Core AI logic for market anomaly detection and strategic reasoning.     Uses Gem
 
 ### Community 243 - "Community 243"
+Cohesion: 1.0
+Nodes (1): Fallback logic for market intelligence.
+
+### Community 244 - "Community 244"
+Cohesion: 1.0
+Nodes (1): Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
+
+### Community 245 - "Community 245"
+Cohesion: 1.0
+Nodes (1): Converts the Pricing DNA narrative into a vector embedding for retrieval groundi
+
+### Community 246 - "Community 246"
+Cohesion: 1.0
+Nodes (1): Step 2: Generate the Gemini 3 narrative using the interactions streaming API.
+
+### Community 247 - "Community 247"
 Cohesion: 1.0
 Nodes (1): Checks if a user owns a specific hotel via the user_hotels mapping table.
 
 ## Knowledge Gaps
-- **200 isolated node(s):** `DataForSEO Pingback handler.     When a task is ready, DataForSEO sends a POST w`, `Returns current user info.`, `Unified endpoint for base /api/auth calls (SDK compatibility).`, `Internal SDK endpoint for session synchronization.`, `SDK Token Refresh bridge.` (+195 more)
+- **208 isolated node(s):** `DataForSEO Pingback handler.     When a task is ready, DataForSEO sends a POST w`, `Returns current user info.`, `Unified endpoint for base /api/auth calls (SDK compatibility).`, `Internal SDK endpoint for session synchronization.`, `SDK Token Refresh bridge.` (+203 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 31`** (5 nodes): `layout.tsx`, `LandingGroupLayout()`, `ThemeProvider()`, `theme.tsx`, `useTheme()`
+- **Thin community `Community 30`** (5 nodes): `layout.tsx`, `LandingGroupLayout()`, `ThemeProvider()`, `theme.tsx`, `useTheme()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 40`** (4 nodes): `page.tsx`, `useAuth.ts`, `useAuth()`, `DebugDataPage()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -394,68 +399,70 @@ Nodes (1): Checks if a user owns a specific hotel via the user_hotels mapping ta
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 68`** (3 nodes): `RevealSection()`, `useScrollReveal()`, `page.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 203`** (1 nodes): `Runs the maintenance cycle using a native database function for efficiency.`
+- **Thin community `Community 206`** (1 nodes): `Runs the maintenance cycle using a native database function for efficiency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 204`** (1 nodes): `Fetch price and metadata for a specific hotel.`
+- **Thin community `Community 207`** (1 nodes): `Fetch price and metadata for a specific hotel.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 205`** (1 nodes): `Search for hotels based on a query string.`
+- **Thin community `Community 208`** (1 nodes): `Search for hotels based on a query string.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 206`** (1 nodes): `Fetch detailed information for a specific hotel.`
+- **Thin community `Community 209`** (1 nodes): `Fetch detailed information for a specific hotel.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 207`** (1 nodes): `Return the unique name of this provider`
+- **Thin community `Community 210`** (1 nodes): `Return the unique name of this provider`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 208`** (1 nodes): `Retrieve results for a previously submitted task.`
+- **Thin community `Community 211`** (1 nodes): `Retrieve results for a previously submitted task.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 209`** (1 nodes): `Check if the provider is healthy (credentials valid, API reachable).`
+- **Thin community `Community 212`** (1 nodes): `Check if the provider is healthy (credentials valid, API reachable).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 210`** (1 nodes): `Returns the cached mappings, refreshing if expired.`
+- **Thin community `Community 213`** (1 nodes): `Returns the cached mappings, refreshing if expired.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 211`** (1 nodes): `Fetches fresh config from Supabase.`
+- **Thin community `Community 214`** (1 nodes): `Fetches fresh config from Supabase.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 212`** (1 nodes): `Fetch all tiers from DB with local caching.`
+- **Thin community `Community 215`** (1 nodes): `Fetch all tiers from DB with local caching.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 213`** (1 nodes): `Return the limits for a specific user profile.`
+- **Thin community `Community 216`** (1 nodes): `Return the limits for a specific user profile.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 214`** (1 nodes): `Check if user can add more hotels based on dynamic plan limits.`
+- **Thin community `Community 217`** (1 nodes): `Check if user can add more hotels based on dynamic plan limits.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 218`** (1 nodes): `Normalizes a vendor name by removing clutter and mapping to canonical forms.`
+- **Thin community `Community 221`** (1 nodes): `Normalizes a vendor name by removing clutter and mapping to canonical forms.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 231`** (1 nodes): `Generate Basic Auth header.`
+- **Thin community `Community 234`** (1 nodes): `High-Performance Batch Sync.         Groups results by property_token (identity)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 232`** (1 nodes): `Fetch hotel details using Google Maps Business Data API.`
+- **Thin community `Community 235`** (1 nodes): `Generate Basic Auth header.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 233`** (1 nodes): `Map DataForSEO result fields to internal format.`
+- **Thin community `Community 236`** (1 nodes): `Fetch hotel details using Google Maps Business Data API.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 234`** (1 nodes): `Check if the provider is healthy (credentials valid, API reachable).`
+- **Thin community `Community 237`** (1 nodes): `Map DataForSEO result fields to internal format.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 235`** (1 nodes): `High-Performance Batch Sync.         Groups results by property_token (identity)`
+- **Thin community `Community 238`** (1 nodes): `Check if the provider is healthy (credentials valid, API reachable).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 236`** (1 nodes): `Generates a high-level strategic verdict based on pricing (ARI) and sentiment.`
+- **Thin community `Community 239`** (1 nodes): `High-Performance Batch Sync.         Groups results by property_token (identity)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 237`** (1 nodes): `Cleans markdown JSON fencing from LLM output.`
+- **Thin community `Community 240`** (1 nodes): `Generates a high-level strategic verdict based on pricing (ARI) and sentiment.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 238`** (1 nodes): `Core AI logic for market anomaly detection and strategic reasoning.     Uses Gem`
+- **Thin community `Community 241`** (1 nodes): `Cleans markdown JSON fencing from LLM output.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 239`** (1 nodes): `Fallback logic for market intelligence.`
+- **Thin community `Community 242`** (1 nodes): `Core AI logic for market anomaly detection and strategic reasoning.     Uses Gem`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 240`** (1 nodes): `Synthesizes a hotel's 'Pricing DNA' from historical performance logs.`
+- **Thin community `Community 243`** (1 nodes): `Fallback logic for market intelligence.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 241`** (1 nodes): `Converts the Pricing DNA narrative into a vector embedding for retrieval groundi`
+- **Thin community `Community 244`** (1 nodes): `Synthesizes a hotel's 'Pricing DNA' from historical performance logs.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 242`** (1 nodes): `Step 2: Generate the Gemini 3 narrative using the interactions streaming API.`
+- **Thin community `Community 245`** (1 nodes): `Converts the Pricing DNA narrative into a vector embedding for retrieval groundi`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 243`** (1 nodes): `Checks if a user owns a specific hotel via the user_hotels mapping table.`
+- **Thin community `Community 246`** (1 nodes): `Step 2: Generate the Gemini 3 narrative using the interactions streaming API.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 247`** (1 nodes): `Checks if a user owns a specific hotel via the user_hotels mapping table.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Alert` connect `Community 10` to `Community 4`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Why does `get_insforge_db()` connect `Community 8` to `Community 0`, `Community 3`, `Community 7`?**
-  _High betweenness centrality (0.071) - this node is a cross-community bridge._
-- **Why does `get_supabase()` connect `Community 5` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 7`, `Community 8`?**
+- **Why does `Alert` connect `Community 10` to `Community 1`, `Community 4`?**
+  _High betweenness centrality (0.081) - this node is a cross-community bridge._
+- **Why does `get_insforge_db()` connect `Community 0` to `Community 1`, `Community 2`, `Community 5`, `Community 9`?**
   _High betweenness centrality (0.061) - this node is a cross-community bridge._
+- **Why does `downloadPdf()` connect `Community 10` to `Community 6`?**
+  _High betweenness centrality (0.060) - this node is a cross-community bridge._
 - **Are the 161 inferred relationships involving `ProviderFactory` (e.g. with `Diagnostic endpoint to verify data provider status.     Returns which providers` and `Returns the list of network providers and their status for the API Keys panel.`) actually correct?**
   _`ProviderFactory` has 161 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 147 inferred relationships involving `AdminStats` (e.g. with `Diagnostic endpoint to verify data provider status.     Returns which providers` and `Returns the list of network providers and their status for the API Keys panel.`) actually correct?**

@@ -610,6 +610,28 @@ class DataForSEOProvider(HotelDataProvider):
             f"other_site_reviews={len(other_sites_reviews)}"
         )
 
+        # === 10. Extract Individual Review Snippets ===
+        # [FIX 2026-04-30] DataForSEO hotel_info returns review text inside
+        # other_sites_reviews[].review_text. We extract these into a flat
+        # "reviews_list" array so scan_persistence can persist to hotel_reviews.
+        reviews_list = []
+        for osr in other_sites_reviews:
+            if isinstance(osr, dict) and osr.get("review_text"):
+                # Split multi-review blocks (pipe-delimited by DataForSEO)
+                texts = osr["review_text"].split("|")
+                for text in texts:
+                    text = text.strip()
+                    if not text:
+                        continue
+                    osr_rating = osr.get("rating", {})
+                    reviews_list.append({
+                        "author": osr.get("title", "Anonymous"),  # source name as author
+                        "rating": osr_rating.get("value") if isinstance(osr_rating, dict) else osr_rating,
+                        "text": text,
+                        "source": osr.get("title"),
+                        "url": osr.get("url"),
+                    })
+
         return {
             "name": title,
             "stars": stars,
@@ -629,6 +651,7 @@ class DataForSEOProvider(HotelDataProvider):
             "sentiment_breakdown": sentiment_breakdown,
             "guest_mentions": guest_mentions,
             "other_sites_reviews": other_sites_reviews,
+            "reviews_list": reviews_list,      # [FIX] Flat list of review text for hotel_reviews table
             "ota_prices": ota_prices,
             "all_prices": ota_prices,      # [FIX] Return all_prices for consistency
             "parity_offers": ota_prices,   # [FIX] Return parity_offers for consistency

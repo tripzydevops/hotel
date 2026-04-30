@@ -975,17 +975,24 @@ class ScanPersistenceService:
         # This includes generating synthetic but stable IDs if missing, and
         # flattening category ratings (e.g. 'Cleanliness') for analytics.
         rich_reviews = []
-        if "reviews" in price_data and isinstance(price_data["reviews"], list):
+        # [FIX 2026-04-30] Check reviews_list first (flat list from hotel_info parser),
+        # then fall back to reviews only if it's actually a list (not an integer vote count).
+        raw_reviews = price_data.get("reviews_list") or (
+            price_data.get("reviews") if isinstance(price_data.get("reviews"), list) else None
+        ) or []
+        if raw_reviews and isinstance(raw_reviews, list):
             import uuid
 
-            for r in price_data["reviews"]:
-                # Map SerpApi fields to our DB schema
+            for r in raw_reviews:
+                if not isinstance(r, dict):
+                    continue
+                # Map SerpApi/DataForSEO fields to our DB schema
                 review_obj = {
                     "hotel_id": hotel_id,
                     "external_id": r.get("id") or str(uuid.uuid4()),
                     "author": r.get("title") or r.get("author", "Anonymous"),
                     "rating": r.get("rating", 0),
-                    "text": r.get("snippet") or r.get("review_text") or "",
+                    "text": r.get("snippet") or r.get("review_text") or r.get("text") or "",
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                     "review_date": self._parse_relative_date(
                         r.get("date") or r.get("review_date")
