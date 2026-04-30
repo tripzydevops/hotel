@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-     "lint": "eslint",
+    "lint": "eslint",
     "test": "echo \"No tests yet\" && exit 0",
     "ai": "gemini",
     "gemini": "gemini"
@@ -20,6 +20,7 @@
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-query-devtools": "^5.91.3",
     "axios": "^1.15.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
