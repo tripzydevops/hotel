@@ -26,7 +26,7 @@ class AnalystAgent:
         # Background persistence requires admin bypass for RLS on query_logs/hotels
         self.admin_db = admin_db or get_supabase(admin=True)
         self.adk_agent = MarketIntelligenceAgent()
-        self.persistence = ScanPersistenceService(db, admin_db=self.admin_db)
+        self.persistence = ScanPersistenceService(db, admin_insforge=self.admin_db)
         self._log_buffer = {}
 
     async def log_reasoning(
