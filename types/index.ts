@@ -76,6 +76,13 @@ export interface Hotel {
   place_id?: string;
   overall_sentiment_score?: number;
   parity_score?: number;
+  other_sites_reviews?: Array<{
+    title: string;
+    url?: string;
+    review_count?: number;
+    rating?: number;
+    rating_max?: number;
+  }>;
 }
 
 export interface PriceInfo {

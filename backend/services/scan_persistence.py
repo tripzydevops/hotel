@@ -1,5 +1,7 @@
 import asyncio
+import math
 import re
+import statistics
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, cast
 from collections import Counter
@@ -32,6 +34,48 @@ class ScanPersistenceService:
     def __init__(self, insforge: InsForgeClient, admin_insforge: Optional[InsForgeClient] = None):
         self.insforge = insforge
         self.admin_insforge = admin_insforge or insforge  # Fallback to shared if admin not provided
+
+    async def _resilient_insert(self, table_name: str, items: List[Dict[str, Any]]):
+        """Helper for batch insertion with per-item fallback on failure."""
+        if not items:
+            return
+        try:
+            # Use admin_db for persistence in background to avoid RLS/Session issues
+            self.admin_insforge.table(table_name).insert(items).execute()
+        except Exception as e:
+            logger.warning(
+                f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts."
+            )
+            # Per-item fallback
+            for item in items:
+                try:
+                    self.admin_insforge.table(table_name).insert(item).execute()
+                except Exception as item_err:
+                    # Log and ignore individual failures to keep the pipeline moving
+                    logger.error(
+                        f"Failed to persist {table_name} item for {item.get('hotel_id')}: {item_err}"
+                    )
+
+    async def vault_log(
+        self, db: Any, session_id: str, endpoint: str, data: Any
+    ) -> None:
+        """Log raw payload to the Everything Vault (scan_sessions.raw_payload)."""
+        if not db or not session_id:
+            return
+
+        try:
+            vault_item = {
+                "endpoint": endpoint,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "payload": data,
+            }
+            # Use existing RPC for atomic appending
+            db.rpc("append_scan_raw_payload", {
+                "session_id": str(session_id),
+                "payload_item": vault_item
+            }).execute()
+        except Exception as e:
+            logger.error(f"Everything Vault Error: {e}")
 
     async def persist_scan_results(
         self,
@@ -136,41 +180,17 @@ class ScanPersistenceService:
         # We now attempt batch inserts but provide a per-hotel fallback if batch fails
         # (e.g. due to unique constraint violations on idx_price_logs_dedup)
 
-        # Helper for resilient insertion
-        async def _resilient_insert(table_name: str, items: List[Dict[str, Any]]):
-            if not items:
-                return
-            try:
-                # Use admin_db for persistence in background to avoid RLS/Session issues
-                # Note: price_logs has a unique index (hotel_id, check_in_date, recorded_at_minute)
-                # but standard .upsert() column matching is tricky with date_trunc in index.
-                # We fallback to per-item insertion if batch fails.
-                self.admin_insforge.table(table_name).insert(items).execute()
-            except Exception as e:
-                logger.warning(
-                    f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts."
-                )
-                # Per-item fallback
-                for item in items:
-                    try:
-                        self.admin_insforge.table(table_name).insert(item).execute()
-                    except Exception as item_err:
-                        # Log and ignore individual failures to keep the pipeline moving
-                        logger.error(
-                            f"Failed to persist {table_name} item for {item.get('hotel_id')}: {item_err}"
-                        )
-
         # Execute insertions
-        await _resilient_insert("price_logs", price_logs_to_insert)
-        await _resilient_insert("sentiment_history", sentiment_history_to_insert)
-        await _resilient_insert("alerts", alerts_to_insert)
-        await _resilient_insert("query_logs", query_logs_to_insert)
+        await self._resilient_insert("price_logs", price_logs_to_insert)
+        await self._resilient_insert("sentiment_history", sentiment_history_to_insert)
+        await self._resilient_insert("alerts", alerts_to_insert)
+        await self._resilient_insert("query_logs", query_logs_to_insert)
 
         # EXPLANATION: Granular Review Persistence (Kaizen 2026)
         # While the 'hotels' table stores a JSON snapshot of reviews for fast UI display,
         # we also persist individual review objects to the 'hotel_reviews' table.
         # This enables long-term historical sentiment analysis and NLP tasks.
-        await _resilient_insert("hotel_reviews", reviews_to_insert)
+        await self._resilient_insert("hotel_reviews", reviews_to_insert)
 
         # 3. Parallel Embedding Generation
         if embedding_queue:
@@ -379,19 +399,27 @@ class ScanPersistenceService:
             payload = {k: v for k, v in catalog_entry.items() if v is not None}
             valid_upserts.append(payload)
 
-        # 3. Resilient Bulk Persistence
+        # 3. Resilient Bulk Persistence with Pagination
         if valid_upserts:
-            try:
-                # Use standard pagination if batch is huge?
-                # For now .upsert() handles large lists well.
-                self.admin_insforge.table("room_type_catalog").upsert(
-                    valid_upserts, on_conflict="id"
-                ).execute()
-                logger.info(
-                    f"[Catalog] Vectorized sync complete for {len(valid_upserts)} rooms."
-                )
-            except Exception as e:
-                logger.error(f"Batch catalog upsert failed: {e}")
+            batch_size = 200 # Safe size for Postgres + Embedding payload
+            for i in range(0, len(valid_upserts), batch_size):
+                batch = valid_upserts[i : i + batch_size]
+                try:
+                    self.admin_insforge.table("room_type_catalog").upsert(
+                        batch, on_conflict="id"
+                    ).execute()
+                except Exception as e:
+                    logger.error(f"Batch catalog upsert failed for chunk {i//batch_size}: {e}")
+                    # Per-item fallback for the failed batch
+                    for item in batch:
+                        try:
+                            self.admin_insforge.table("room_type_catalog").upsert(
+                                item, on_conflict="id"
+                            ).execute()
+                        except Exception as item_err:
+                            logger.error(f"Individual catalog upsert failed for {item.get('id')}: {item_err}")
+            
+            logger.info(f"[Catalog] Vectorized sync complete for {len(valid_upserts)} rooms across {math.ceil(len(valid_upserts)/batch_size)} chunks.")
 
     async def sync_from_external_provider(
         self,
@@ -426,6 +454,28 @@ class ScanPersistenceService:
                 for of in source_offers if of.get("name") or of.get("room_type")
             ]
 
+        # [KAIZEN 2026] Anomaly Detection Safeguard (30% Variance)
+        # Fetch 5-day history for baseline calculation
+        is_anomaly = False
+        try:
+            history_map = await self._fetch_history_map([hotel_id])
+            hist = history_map.get(hotel_id, [])
+            recent_valid = [
+                float(h["price"])
+                for h in hist
+                if h.get("price") is not None and float(h["price"]) > 0 and not h.get("is_anomaly", False)
+            ]
+            
+            if recent_valid and price > 0:
+                avg_baseline = sum(recent_valid) / len(recent_valid)
+                # REJECT if price deviates by more than 30% from verified baseline
+                lower_bound = avg_baseline * 0.7
+                upper_bound = avg_baseline * 1.3
+                if price < lower_bound or price > upper_bound:
+                    is_anomaly = True
+        except Exception as e:
+            logger.error(f"Anomaly detection failed in individual sync for {hotel_id}: {e}")
+
         log_entry = {
             "hotel_id": hotel_id,
             "price": price,
@@ -438,6 +488,7 @@ class ScanPersistenceService:
             "parity_offers": result.get("parity_offers") or result.get("offers") or [],
             "offers": result.get("offers") or [],
             "market_offers": result.get("all_prices") or result.get("offers") or [],
+            "is_anomaly": is_anomaly,
             "metadata": {
                 "scan_task_id": scan_task_id,
                 "batch_id": batch_id,
@@ -525,7 +576,7 @@ class ScanPersistenceService:
                 simple_rooms = [{"name": r} for r in result["room_types"]]
                 await self.update_room_type_catalog(hotel_id, simple_rooms)
 
-            return {"status": "success", "price": price}
+            return {"status": "success", "price": price, "is_anomaly": is_anomaly}
         except Exception as e:
             logger.error(f"Sync persistence failed for {hotel_id}: {e}")
             return {"status": "error", "error": str(e)}
@@ -542,7 +593,7 @@ class ScanPersistenceService:
             res = (
                 self.admin_insforge.table("price_logs")
                 .select(
-                    "hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata"
+                    "hotel_id, price, currency, recorded_at, check_in_date, vendor, parity_offers, room_types, metadata, is_anomaly"
                 )
                 .in_("hotel_id", hotel_ids)
                 .gte("recorded_at", five_days_ago.isoformat())
@@ -631,7 +682,7 @@ class ScanPersistenceService:
                     await log_reasoning_fn(
                         session_id,
                         "Safeguard",
-                        f"Rejected unrealistic price {current_price} TRY for '{hotel_name}'. Floor is {floor} TRY.",
+                        f"REJECTED: Price {current_price} {currency} is below floor ({floor} {currency}) for '{hotel_name}'.",
                         "warning",
                     )
                 current_price = 0.0
@@ -656,7 +707,7 @@ class ScanPersistenceService:
                         await log_reasoning_fn(
                             session_id,
                             "Safeguard",
-                            f"Rejected suspicious price {current_price} (Avg: {avg_baseline:.2f}). Deviation > 30%.",
+                            f"REJECTED: Price {current_price} {currency} deviates {((current_price/avg_baseline)-1)*100:.1f}% from baseline ({avg_baseline:.2f} {currency}).",
                             "warning",
                         )
                     current_price = 0.0
@@ -1087,6 +1138,10 @@ class ScanPersistenceService:
         )
         hotel_ref_map = {str(h["id"]): h for h in (hotels_lookup_res.data or [])}
         
+        # 1b. Bulk Fetch Price History for 5-Day Variance Baseline
+        # Uses shared _fetch_history_map to ensure consistency across all sync paths
+        history_map = await self._fetch_history_map(input_h_ids)
+        
         # 2. Group and Merge Results by Identity
         # Identity is property_token if exists, otherwise hotel_id
         identity_groups = {} # identity -> { merged_res, task_ids, hotel_ids }
@@ -1181,6 +1236,7 @@ class ScanPersistenceService:
         hotel_updates = []
         price_logs = []
         sentiment_history = []
+        hotel_reviews = []
         raw_archives = []
         analysis_payload = []
         notification_events = []
@@ -1200,6 +1256,10 @@ class ScanPersistenceService:
                 res_data.get("prices") or 
                 []
             )
+
+            # [FIX 2026-04-30] Extract stay dates for accurate Rate Spread analysis
+            check_in = res_data.get("check_in_date") or res_data.get("check_in")
+            check_out = res_data.get("check_out_date") or res_data.get("check_out")
             
             if price == 0 and offers:
                 # Derive price from cheapest OTA if top-level is missing
@@ -1210,6 +1270,49 @@ class ScanPersistenceService:
                     price = 0
             
             currency = res_data.get("currency") or "TRY"
+
+            # [KAIZEN 2026] Dynamic Anomaly Detection (Standard Deviation + Variance)
+            # Calculate shift against 5-day rolling average with confidence intervals
+            is_anomaly = False
+            anomaly_details = {}
+            first_h_id = list(group["hotel_ids"])[0]
+            hist = history_map.get(first_h_id, [])
+            
+            # Filter out previous anomalies and zeros for a clean baseline
+            recent_valid = [
+                float(h["price"])
+                for h in hist
+                if h.get("price") is not None and float(h["price"]) > 0 and not h.get("is_anomaly", False)
+            ]
+            
+            if recent_valid and price > 0:
+                avg_baseline = sum(recent_valid) / len(recent_valid)
+                
+                # Dynamic Threshold: Use StdDev if we have enough samples (N>3)
+                if len(recent_valid) > 3:
+                    std_dev = statistics.stdev(recent_valid)
+                    # Z-Score check: Reject if price is > 3 sigma or > 50% shift
+                    z_score = abs(price - avg_baseline) / (std_dev or 1)
+                    if z_score > 3 or abs(price - avg_baseline) / avg_baseline > 0.5:
+                        is_anomaly = True
+                        anomaly_details = {"z_score": round(z_score, 2), "std_dev": round(std_dev, 2)}
+                else:
+                    # Fallback: REJECT if price deviates by more than 30% from verified baseline
+                    lower_bound = avg_baseline * 0.7
+                    upper_bound = avg_baseline * 1.3
+                    if price < lower_bound or price > upper_bound:
+                        is_anomaly = True
+                        anomaly_details = {"fixed_threshold": 0.3}
+
+                if is_anomaly:
+                    logger.warning(
+                        f"Anomaly Detected for {first_h_id}: Price {price} vs Baseline {avg_baseline}. "
+                        f"Details: {anomaly_details}"
+                    )
+                else:
+                    anomaly_details = None
+            else:
+                anomaly_details = None
             
             # Determine targets: All variations if identity is a token, else just the single hotel
             targets = variations_map.get(identity)
@@ -1217,7 +1320,8 @@ class ScanPersistenceService:
                 # Fallback: if identity is an ID, find it in hotel_ref_map
                 targets = [hotel_ref_map.get(identity)] if hotel_ref_map.get(identity) else []
             
-            if not targets: continue
+            if not targets:
+                continue
             
             # Prepare Analysis Payload (once per identity)
             analysis_item = res_data.copy()
@@ -1243,10 +1347,11 @@ class ScanPersistenceService:
                     "rating", "stars", "description", "amenities", "check_in_time", 
                     "check_out_time", "sentiment_breakdown", "latitude", "longitude",
                     "phone", "website", "address", "image_url", "rating_distribution",
-                    "guest_mentions", "images"
+                    "guest_mentions", "images", "other_sites_reviews"
                 ]
                 for field in metadata_fields:
-                    if res_data.get(field): upd[field] = res_data[field]
+                    if res_data.get(field):
+                        upd[field] = res_data[field]
                 
                 # Reviews & OTA Summary
                 if res_data.get("reviews") or res_data.get("reviews_count"):
@@ -1286,7 +1391,8 @@ class ScanPersistenceService:
                     res_data.get("all_rooms") or 
                     []
                 )
-                if room_types: upd["room_types"] = room_types
+                if room_types:
+                    upd["room_types"] = room_types
                 
                 hotel_updates.append(upd)
                 
@@ -1307,14 +1413,40 @@ class ScanPersistenceService:
                         "hotel_id": tid,
                         "price": price,
                         "currency": currency,
+                        "check_in_date": check_in,
+                        "check_out_date": check_out,
                         "vendor": log_vendor,
                         "source": source,
                         "parity_offers": offers,
                         "market_offers": res_data.get("market_offers") or offers,
                         "offers": offers,
                         "room_types": room_types,
-                        "recorded_at": now_ts
+                        "recorded_at": now_ts,
+                        "is_anomaly": is_anomaly,
+                        "metadata": {"anomaly_details": anomaly_details} if is_anomaly else None
                     })
+
+                    # [KAIZEN 2026] Individual Reviews (Insert)
+                    # We extract the full list of reviews (if present) for detailed feedback analysis
+                    scraped_reviews = res_data.get("reviews_list") or res_data.get("reviews")
+                    if isinstance(scraped_reviews, list) and scraped_reviews:
+                        import uuid
+                        for r in scraped_reviews:
+                            if not isinstance(r, dict): continue
+                            # We only care about reviews with content or a rating
+                            if not r.get("text") and not r.get("rating") and not r.get("review_text"):
+                                continue
+
+                            hotel_reviews.append({
+                                "hotel_id": tid,
+                                "external_id": str(r.get("id") or r.get("review_id") or uuid.uuid4()),
+                                "author": r.get("author") or r.get("title") or "Anonymous",
+                                "rating": r.get("rating"),
+                                "text": r.get("text") or r.get("snippet") or r.get("review_text") or "",
+                                "review_date": self._parse_relative_date(r.get("date") or r.get("review_date")),
+                                "recorded_at": now_ts,
+                                "metadata": {k: v for k, v in r.items() if k not in ["author", "rating", "text", "date", "id", "review_text", "review_id"]}
+                            })
                 
                 # Sentiment History
                 if res_data.get("sentiment_breakdown"):
@@ -1333,7 +1465,8 @@ class ScanPersistenceService:
                     "price": price,
                     "currency": currency,
                     "property_token": identity if not identity.isdigit() else None,
-                    "parity_offers": res_data.get("offers") or []
+                    "parity_offers": res_data.get("offers") or [],
+                    "is_anomaly": is_anomaly
                 })
             
             # Archive raw results
@@ -1352,15 +1485,21 @@ class ScanPersistenceService:
                 hotel_id = upd.pop("id")
                 self.admin_insforge.table("hotels").update(upd).eq("id", hotel_id).execute()
         
+        # 6. Finalize Transactional Insertions
+        if hotel_reviews:
+            logger.info(f"[Sync] Persisting {len(hotel_reviews)} individual reviews.")
+            await self._resilient_insert("hotel_reviews", hotel_reviews)
+
         if price_logs:
             # Explicitly requested INSERT for price_logs
-            self.admin_insforge.table("price_logs").insert(price_logs).execute()
+            await self._resilient_insert("price_logs", price_logs)
             
         if sentiment_history:
-            self.admin_insforge.table("sentiment_history").insert(sentiment_history).execute()
+            await self._resilient_insert("sentiment_history", sentiment_history)
             
         if raw_archives:
             # Note: raw_archives now includes status: completed for atomicity
+            # We use upsert here as we are updating existing task records
             self.admin_insforge.table("scan_tasks").upsert(raw_archives).execute()
 
         # 6. Room Type Catalog Update

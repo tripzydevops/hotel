@@ -33,38 +33,10 @@ import ErrorState from "@/components/ui/ErrorState";
 import LoadingState from "@/components/ui/LoadingState";
 import { useModalContext } from "@/components/ui/ModalContext";
 import { GlobalPulseFeed } from "@/components/tiles/GlobalPulseFeed";
+import { DashboardHeader, MarketInsight, PerformanceMetrics } from "@/components/dashboard";
 
 // --- Components ---
 
-const MarketDataStatus = ({ 
-  lastUpdate,
-  t 
-}: { 
-  lastUpdate?: string;
-  t: any;
-}) => {
-  return (
-    <div className="hidden md:flex items-center gap-3 bg-[var(--deep-ocean)]/40 px-4 py-2 rounded-2xl border border-[var(--glass-border)] backdrop-blur-md">
-      <div className="w-2.5 h-2.5 rounded-full bg-[var(--optimal-green)] shadow-[0_0_10px_var(--optimal-green)]" />
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-black text-[var(--optimal-green)] uppercase tracking-[0.1em] leading-tight">
-            {t("dashboard.marketSynchronized")}
-          </span>
-          <CheckCircle2 className="w-3 h-3 text-[var(--optimal-green)]" />
-        </div>
-        {lastUpdate && (
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <Clock className="w-3 h-3 text-[var(--text-muted)]" />
-            <span className="text-[9px] text-[var(--text-muted)] font-medium">
-              {t("dashboard.dataUpdated")}: {lastUpdate}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default function Dashboard() {
   const { t, locale } = useI18n();
@@ -241,29 +213,20 @@ export default function Dashboard() {
       )}
 
       <main className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <MarketDataStatus 
-              lastUpdate={data?.last_updated ? formatDateTime(data.last_updated) : undefined}
-              t={t}
+        <DashboardHeader 
+          lastUpdate={data?.last_updated ? formatDateTime(data.last_updated) : undefined}
+          onAddHotel={() => setIsAddHotelOpen(true)}
+          loading={loading || isRefreshing}
+        />
+
+        {data?.market_insight && (
+          <div className="mb-8">
+            <MarketInsight 
+              insight={data.market_insight} 
+              loading={loading || isRefreshing} 
             />
-
-
-            <button
-              onClick={() => setIsAddHotelOpen(true)}
-              className="
-                group relative overflow-hidden rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#D4AF37] p-[1px] shadow-xl transition-all active:scale-95 hover:scale-105 hover:shadow-[var(--soft-gold)]/40
-              "
-            >
-              <div className="relative flex items-center gap-2 bg-[var(--soft-gold)] px-5 py-2.5 rounded-[11px] transition-colors">
-                <Plus className="w-4 h-4 text-[var(--deep-ocean)] stroke-[3px]" />
-                <span className="font-bold text-[var(--deep-ocean)] text-sm uppercase tracking-widest">
-                  {t("common.addHotel")}
-                </span>
-              </div>
-            </button>
           </div>
-        </div>
+        )}
 
         <ErrorBoundary>
           <BentoGrid>
@@ -343,69 +306,13 @@ export default function Dashboard() {
                 )}
 
                 {data?.target_hotel && (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.1 }}
-                      className="col-span-1"
-                    >
-                      <div className="h-full rounded-2xl bg-[var(--deep-ocean)]/40 border border-[#D4AF37]/20 p-6 flex flex-col justify-between shadow-lg relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[var(--soft-gold)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative flex items-center gap-4">
-                          <div className="p-3 rounded-xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20">
-                            <Smile className="w-6 h-6 text-[var(--soft-gold)]" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.2em] mb-1">{t("dashboard.sentimentScore")}</p>
-                            <p className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter">
-                              {data?.agg_metrics?.avg_rating?.toFixed(1) || "0.0"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="relative mt-4 pt-4 border-t border-[var(--overlay-border)] flex items-center justify-between">
-                          <span className="text-[10px] text-[var(--text-muted-foreground)] uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <div key={s} className={`w-1 h-3 rounded-full ${s <= Math.round(data?.agg_metrics?.avg_rating || 0) ? 'bg-[var(--soft-gold)]' : 'bg-[var(--bg-subtle)]'}`} />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.15 }}
-                      className="col-span-1"
-                    >
-                      <div className="h-full rounded-2xl bg-[var(--deep-ocean)]/40 border border-[#D4AF37]/20 p-6 flex flex-col justify-between shadow-lg relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[var(--deep-ocean)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative flex items-center gap-4">
-                          <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                            <ArrowLeftRight className="w-6 h-6 text-blue-400" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">{t("dashboard.rateParity")}</p>
-                            <p className="text-3xl font-black text-[var(--overlay-text)] tracking-tighter">
-                              {data?.agg_metrics?.rate_parity_score || "0"}%
-                            </p>
-                          </div>
-                        </div>
-                        <div className="relative mt-4 pt-4 border-t border-[var(--overlay-border)] flex items-center justify-between">
-                          <span className="text-[10px] text-[var(--text-muted-foreground)] uppercase font-black tracking-widest">{t("dashboard.verified")}</span>
-                          <div className="w-16 h-1.5 bg-[var(--bg-subtle)] rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${data?.agg_metrics?.rate_parity_score || 0}%` }}
-                              className="h-full bg-blue-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
+                  <div className="col-span-1 md:col-span-2 lg:col-span-2 space-y-6">
+                    <PerformanceMetrics 
+                      avgRating={data.agg_metrics?.avg_rating}
+                      rateParityScore={data.agg_metrics?.rate_parity_score}
+                      loading={loading || isRefreshing}
+                    />
+                  </div>
                 )}
 
                 {data?.competitors &&

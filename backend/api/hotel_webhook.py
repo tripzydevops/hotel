@@ -22,9 +22,9 @@ async def hotel_webhook_handler(request: Request, background_tasks: BackgroundTa
         logger.info(f"Received DataForSEO pingback for task: {task_id}")
 
         # We trigger process_system_scans in the background to ensure fast response to DataForSEO
-        # If no task_id is present, it will still attempt to sync all pending tasks (safety net)
+        # We now pass the specific task_id to avoid full tasks_ready polling.
         db = get_supabase_client(admin=True)
-        background_tasks.add_task(process_system_scans, db)
+        background_tasks.add_task(process_system_scans, db, task_id)
 
         return {"status": "success", "message": "Ingestion triggered"}
 

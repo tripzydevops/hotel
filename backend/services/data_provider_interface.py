@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class HotelDataProvider(ABC):
@@ -66,5 +66,32 @@ class HotelDataProvider(ABC):
     ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         """
         Retrieve results for a previously submitted task.
+        """
+        pass
+
+    async def get_tasks_bulk(
+        self,
+        tasks_metadata: List[Dict[str, Any]],
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> List[Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]]:
+        """
+        Retrieve results for multiple tasks in a single bulk request.
+        Default implementation falls back to individual calls.
+        """
+        return [
+            await self.get_task_result(
+                task_id=meta["external_task_id"],
+                db=db,
+                session_id=session_id,
+                **{k: v for k, v in meta.items() if k not in ["external_task_id"]}
+            )
+            for meta in tasks_metadata
+        ]
+
+    @abstractmethod
+    async def check_health(self) -> Dict[str, Any]:
+        """
+        Check if the provider is healthy (credentials valid, API reachable).
         """
         pass

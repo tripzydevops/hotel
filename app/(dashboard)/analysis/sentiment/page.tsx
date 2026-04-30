@@ -536,9 +536,9 @@ export default function SentimentPage() {
       subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}`
         ? t(`sentiment.${cat.toLowerCase()}`)
         : cat,
-      A: getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id]),
-      B: leader ? getCategoryScore(leader, cat, sentimentHistory[leader.id]) : 0,
-      C: marketAvgRating || 3, // Fallback to neutral 3 if avg unavailable
+      myHotel: getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id]),
+      marketLeader: leader ? getCategoryScore(leader, cat, sentimentHistory[leader.id]) : 0,
+      marketAvg: marketAvgRating || 3, // Fallback to neutral 3 if avg unavailable
     }));
   }, [targetHotel, leader, sentimentHistory, marketAvgRating, t]);
 

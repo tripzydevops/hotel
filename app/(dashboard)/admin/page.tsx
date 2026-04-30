@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Crown,
   LineChart,
+  Wrench,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -34,6 +35,7 @@ import ScansPanel from "@/components/admin/ScansPanel";
 import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
 import LandingPageEditor from "@/components/admin/LandingPageEditor";
 import HeartbeatMonitor from "@/components/admin/HeartbeatMonitor";
+import MaintenancePanel from "@/components/admin/MaintenancePanel";
 
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
@@ -126,6 +128,7 @@ export default function AdminPage() {
         <TabButton id="keys" label="API Keys" icon={Key} />
         <TabButton id="landing" label="Landing Page" icon={LayoutDashboard} />
         <TabButton id="logs" label="System Logs" icon={Database} />
+        <TabButton id="maintenance" label="Maintenance" icon={Wrench} />
       </div>
 
       {/* Overview Tab Content - High-Fidelity Bento Orchestration */}
@@ -277,6 +280,7 @@ export default function AdminPage() {
               {activeTab === "keys" && <ApiKeysPanel />}
               {activeTab === "landing" && <LandingPageEditor />}
               {activeTab === "logs" && <LogsPanel />}
+              {activeTab === "maintenance" && <MaintenancePanel />}
             </motion.div>
           </AnimatePresence>
         </Suspense>

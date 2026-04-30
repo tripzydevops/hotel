@@ -58,6 +58,7 @@ export const en = {
     performance: "Performance",
     above: "Above",
     below: "Below",
+    crossPlatformIntelligence: "Cross-Platform Intelligence",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
@@ -153,9 +154,12 @@ export const en = {
     noAmenities: "No amenities captured for this hotel.",
     noOffers: "No additional offers found in this scan.",
     noRooms: "No specific room type data available for this date.",
-    stars: "{0} Stars",
-    current: "Current",
     checkIn: "Stay Date",
+    current: "Current",
+    marketPresence: "Market Presence",
+    trustSummary: "Trust Summary",
+    sentimentVoices: "Sentiment Voices",
+    stars: "{0} Stars",
   },
   addHotel: {
     title: "Add New Hotel",

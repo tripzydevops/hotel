@@ -52,6 +52,16 @@ class NotifierAgent:
         except Exception as e:
             print(f"[NotifierAgent] Failed to flush logs: {e}")
 
+    async def notify(
+        self,
+        alerts: list,
+        settings: Dict[str, Any],
+        hotel_name_map: Dict[str, str],
+        session_id=None,
+    ):
+        """Wrapper for dispatch_alerts to maintain compatibility with legacy naming."""
+        return await self.dispatch_alerts(alerts, settings, hotel_name_map, session_id)
+
     async def dispatch_alerts(
         self,
         alerts: list,

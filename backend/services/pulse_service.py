@@ -51,19 +51,20 @@ async def get_pulse_network_stats(db: Client) -> Dict[str, Any]:
                 "estimated_savings_credits": 0,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
-        # EXPLANATION: We run 4 lightweight count queries.
-        # These are fast index scans on Supabase/PostgreSQL.
+        # EXPLANATION: Live Network Stats for Dashboard Phase 2
+        # We query the actual production tables to get real-time metrics.
+        # Results are cached by the caller (API layer) to prevent DB thrashing.
 
-        # 1. Active users: users who have at least 1 hotel
+        # 1. Active Users (Count of unique user_id in user_hotels)
         active_users_count = 0
         try:
-            users_res = db.table("hotels").select("user_id").execute()
-            unique_users = set(h["user_id"] for h in (users_res.data or []))
-            active_users_count = len(unique_users)
+            users_res = db.table("user_hotels").select("user_id").execute()
+            active_users_count = len(set(u["user_id"] for u in users_res.data)) if users_res.data else 0
         except Exception as e:
             logger.warning(f"Pulse: Failed to count active users: {e}")
 
-        # 2. Monitored hotels: distinct serp_api_ids across all users
+        # 2. Hotels Monitored (Count of unique serp_api_id in hotels table)
+        # We use serp_api_id as the unique identifier for a physical hotel property.
         hotels_monitored = 0
         try:
             hotels_res = (

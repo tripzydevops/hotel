@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from backend.services.data_provider_interface import HotelDataProvider
-from backend.utils.helpers import normalize_room_name
+
 from backend.utils.logger import get_logger
 from supabase import Client
 
@@ -62,27 +62,16 @@ class DataForSEOProvider(HotelDataProvider):
     - Cost-Optimized: Uses task-based batching instead of expensive Live endpoints.
     """
 
-    # Common OTA/Vendor names to filter out of room type catalogs
-    VENDOR_NAMES = {
-        "booking.com", "expedia", "agoda", "hotels.com", "airbnb", "tripadvisor",
-        "google", "tatilbudur.com", "otelz.com", "jolly tur", "etstur", "tatil.com",
-        "trivago", "kayak", "priceline", "orbitz", "travelocity", "hotwire",
-        "trip.com", "ctrip", "rakuten", "amoma", "venere", "otel.com", "zenhotels",
-        "destinia", "findhotel", "snap travel", "super.com", "nuitee", "prestigia",
-        "hoteltonight", "lastminute.com", "ebookers", "opodo", "edreams", "gotogate",
-        "tatilbudur", "otelz", "etstur", "jollytur", "jolly", "setur", "neredekal", "odamax",
-        "gezinomi", "eccetur", "tatilsepeti"
-    }
-
     def _normalize_location(self, location: str) -> str:
         """
         Normalizes location for DataForSEO API.
 
         This method performs four critical transformations:
-        1. Transliterates Turkish-specific characters (ı, ğ, ü, ş, ö, ç) to ASCII.
-        2. Normalizes non-spacing marks (accents).
-        3. Maps common country variations (e.g., Turkey -> Turkiye) to API-supported names.
-        4. Removes trailing/leading spaces from comma-separated location parts.
+        1. Explicitly handles 'İ' (Turkish dotted I) before lowercasing.
+        2. Transliterates Turkish-specific characters (ı, ğ, ü, ş, ö, ç) to ASCII.
+        3. Normalizes non-spacing marks (accents).
+        4. Maps common country variations (e.g., Turkey -> Turkiye) to API-supported names.
+        5. Removes trailing/leading spaces from comma-separated location parts.
 
         Args:
             location: The raw location string (e.g., "İstanbul, Türkiye")
@@ -92,22 +81,27 @@ class DataForSEOProvider(HotelDataProvider):
         if not location:
             return ""
 
-        # 1. Transliterate Turkish characters
-        loc = location.translate(_TURKISH_CHAR_MAP)
+        # 1. Handle 'İ' specifically before any processing
+        # In Turkish, İ.lower() is 'i', but in some environments it might fail or behave unexpectedly.
+        # We ensure it becomes 'I' (ASCII 73) or 'i' (ASCII 105) consistently.
+        loc = location.replace("İ", "I").replace("ı", "i")
 
-        # 2. General ASCII normalization
+        # 2. Transliterate other Turkish characters
+        loc = loc.translate(_TURKISH_CHAR_MAP)
+
+        # 3. General ASCII normalization (remove accents)
         loc = "".join(
             c
             for c in unicodedata.normalize("NFD", loc)
             if unicodedata.category(c) != "Mn"
         )
 
-        # 3. Handle Country Aliases
+        # 4. Handle Country Aliases
         for variant, official in _COUNTRY_NAME_MAP.items():
             if variant in loc.lower():
                 loc = re.sub(re.escape(variant), official, loc, flags=re.IGNORECASE)
 
-        # 4. Remove spaces after commas
+        # 5. Remove spaces after commas
         loc = ",".join([s.strip() for s in loc.split(",")])
 
         return loc
@@ -139,35 +133,19 @@ class DataForSEOProvider(HotelDataProvider):
 
     def _normalize_room_name(self, name: str) -> Dict[str, Any]:
         """
-        Cleans room names and extracts metadata attributes.
-        Returns a dict: {'name': cleaned_name, 'attributes': {...}}
+        Cleans room names and extracts metadata attributes using RoomTypeNormalizer.
+        Returns a dict: {'name': cleaned_name, 'attributes': {...}, 'is_vendor': bool}
         """
+        from backend.utils.room_normalizer import RoomTypeNormalizer
+
         if not name:
-            return {"name": "Standard Room", "attributes": {}}
+            return {"name": "Standard Room", "attributes": {}, "is_vendor": False}
 
-        # === OTA/Vendor Filtering ===
-        normalized_lower = name.lower().strip()
-        # Exact match or simple contains check for common vendors
-        is_vendor = any(
-            v in normalized_lower 
-            for v in self.VENDOR_NAMES
-        )
+        original_input = name
+        normalized_data = RoomTypeNormalizer.normalize(name)
         
-        # Additional check for Turkish-specific vendor patterns
-        if not is_vendor:
-            tr_vendors = ["tatilbudur", "otelz", "etstur", "jolly", "setur", "neredekal", "odamax"]
-            for v in tr_vendors:
-                if v in normalized_lower:
-                    is_vendor = True
-                    break
-                    # If it's a short string containing the vendor name, it's likely a title/source
-                    is_vendor = True
-                    break
-
-        if is_vendor:
-            return {"name": None, "original_name": name, "attributes": {}, "is_vendor": True}
-
-        original = name.lower()
+        # === Attribute Extraction ===
+        original_lower = name.lower()
         attributes = {
             "is_refundable": True,
             "has_breakfast": False,
@@ -176,20 +154,22 @@ class DataForSEOProvider(HotelDataProvider):
         }
 
         # Check for non-refundable
-        if any(x in original for x in ["non-refundable", "non refundable", "n/r"]):
+        if any(x in original_lower for x in ["non-refundable", "non refundable", "n/r", "iptal edilemez"]):
             attributes["is_refundable"] = False
 
         # Check for breakfast
         if any(
-            x in original
-            for x in ["breakfast", "kahvalti", "bb", "half board", "full board"]
+            x in original_lower
+            for x in ["breakfast", "kahvalti", "bb", "half board", "full board", "yarim pansiyon", "tam pansiyon"]
         ):
             attributes["has_breakfast"] = True
 
-        # 2. Cleaning using global helper
-        cleaned = normalize_room_name(name)
-
-        return {"name": cleaned, "original_name": name, "attributes": attributes}
+        return {
+            "name": normalized_data["canonical_name"],
+            "original_name": original_input,
+            "attributes": attributes,
+            "is_vendor": normalized_data["is_vendor"]
+        }
 
     def _normalize_sentiment_breakdown(
         self, breakdown: Dict[str, Any]
@@ -246,10 +226,23 @@ class DataForSEOProvider(HotelDataProvider):
     def __init__(self):
         self.login = os.getenv("DATAFORSEO_LOGIN")
         self.password = os.getenv("DATAFORSEO_PASSWORD")
+        self.postback_url = os.getenv("DATAFORSEO_POSTBACK_URL")
+        
+        # Fallback to general APP_URL if set
+        if not self.postback_url:
+            app_url = os.getenv("APP_URL")
+            if app_url:
+                self.postback_url = f"{app_url}/api/v1/webhooks/dataforseo"
+        
         self.api_url = "https://api.dataforseo.com/v3"
 
         if not self.login or not self.password:
             logger.warning("DataForSEO credentials missing from environment.")
+
+        if self.postback_url:
+            logger.info(f"DataForSEO Webhooks ENABLED with postback: {self.postback_url}")
+        else:
+            logger.warning("DataForSEO Webhooks DISABLED (DATAFORSEO_POSTBACK_URL not set).")
 
     async def _post_v3_request(
         self, endpoint: str, payload: List[Dict[str, Any]]
@@ -739,6 +732,9 @@ class DataForSEOProvider(HotelDataProvider):
                 "limit": limit,
             }
         ]
+        
+        if self.postback_url:
+            post_data[0]["postback_url"] = self.postback_url
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
@@ -803,6 +799,9 @@ class DataForSEOProvider(HotelDataProvider):
                 }
             ]
 
+            if self.postback_url:
+                post_data[0]["postback_url"] = self.postback_url
+
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_searches/task_post",
@@ -860,6 +859,9 @@ class DataForSEOProvider(HotelDataProvider):
             }
         ]
 
+        if self.postback_url:
+            post_data[0]["postback_url"] = self.postback_url
+
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
@@ -913,6 +915,8 @@ class DataForSEOProvider(HotelDataProvider):
                 task["limit"] = 100
             if pingback_url:
                 task["pingback_url"] = pingback_url
+            if self.postback_url:
+                task["postback_url"] = self.postback_url
             modified_params.append(task)
 
         try:
@@ -941,13 +945,16 @@ class DataForSEOProvider(HotelDataProvider):
         if not self.login or not self.password:
             return []
         auth = (self.login, self.password)
-        if pingback_url:
+        if pingback_url or self.postback_url:
             for t in tasks:
-                t["pingback_url"] = pingback_url
+                if pingback_url:
+                    t["pingback_url"] = pingback_url
+                if self.postback_url:
+                    t["postback_url"] = self.postback_url
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/task_post",
+                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
                     json=tasks,
                 )
                 if response.status_code != 200 or response.json().get(
@@ -981,6 +988,10 @@ class DataForSEOProvider(HotelDataProvider):
             }
             for token in property_tokens
         ]
+
+        if self.postback_url:
+            for t in tasks:
+                t["postback_url"] = self.postback_url
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
@@ -1290,13 +1301,23 @@ class DataForSEOProvider(HotelDataProvider):
                     except Exception as e:
                         logger.error(f"DataForSEO: Failed to resolve identity from DB for tag {tag}: {e}")
 
-                if (
-                    endpoint == "hotel_searches" or endpoint == "hotel_search"
-                ) and items:
-                    # [KAIZEN 2026] IDENTITY ENFORCEMENT
-                    # We no longer take items[0]. We find the item that MATCHES our target.
-                    target = None
+                # [KAIZEN 2026] UNIFIED IDENTITY ENFORCEMENT
+                # We no longer take items[0] by default. We find the item that MATCHES our target.
+                target = None
 
+                # Step 1: Detect if we have a direct result (Shape B for hotel_info)
+                has_direct_data = bool(
+                    result.get("about")
+                    or result.get("reviews")
+                    or result.get("prices")
+                    or result.get("title")
+                )
+
+                if has_direct_data:
+                    # Shape B: The result itself is the target
+                    target = result
+                elif items:
+                    # Shape A: Search items array for the target
                     if target_token:
                         # Priority 1: Exact Token Match (Case-Insensitive)
                         t_token = str(target_token).strip().lower()
@@ -1309,40 +1330,47 @@ class DataForSEOProvider(HotelDataProvider):
                     if not target and target_name:
                         # Priority 2: Fuzzy Name Match
                         from difflib import SequenceMatcher
-
                         best_score = 0
-
-                        # Normalize target name for comparison
                         norm_target = self._normalize_location(target_name).lower()
 
                         for item in items:
                             raw_title = item.get("title", "")
-                            # Normalize title for robust comparison
                             norm_title = self._normalize_location(raw_title).lower()
+                            score = SequenceMatcher(None, norm_target, norm_title).ratio()
+                            is_substring = (norm_target in norm_title or norm_title in norm_target)
 
-                            score = SequenceMatcher(
-                                None, norm_target, norm_title
-                            ).ratio()
-
-                            # Promotion: If one is a substring of the other and they are reasonably similar
-                            is_substring = (
-                                norm_target in norm_title or norm_title in norm_target
-                            )
-
-                            if (is_substring and score > 0.60) or score > 0.75:
+                            if (is_substring and score > 0.60) or score > 0.65:
                                 if score > best_score:
                                     target = item
                                     best_score = score
 
-                    # Fallback: If no identity context provided, take items[0] (backward compatibility)
-                    if not target and not target_token and not target_name:
-                        target = items[0]
+                # Fallback: If no identity context provided, take items[0] (backward compatibility)
+                if not target and not target_token and not target_name and items:
+                    target = items[0]
 
-                    if not target:
-                        logger.warning(
-                            f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} results. Skipping to prevent leakage."
-                        )
-                        return None, res_json
+                if not target:
+                    failure_msg = f"Identity mismatch for {target_name or 'Unknown'} (Token: {target_token}). Checked {len(items)} items."
+                    if items:
+                        # Add diagnostic info about what we found
+                        found_names = [i.get("title") for i in items[:3]]
+                        failure_msg += f" Found titles: {found_names}..."
+                    
+                    logger.warning(f"DataForSEO: {failure_msg}")
+                    return {
+                        "status": "failed",
+                        "failure_reason": "identity_mismatch",
+                        "message": failure_msg,
+                        "tag": tag,
+                        "details": {
+                            "target_token": target_token,
+                            "target_name": target_name,
+                            "items_count": len(items)
+                        }
+                    }, res_json
+
+                if (
+                    endpoint == "hotel_searches" or endpoint == "hotel_search"
+                ):
 
                     prices_data = target.get("prices", {})
                     reviews_data = target.get("reviews", {})
@@ -1503,91 +1531,20 @@ class DataForSEOProvider(HotelDataProvider):
                     return result_dict, res_json
 
                 if "hotel_info" in endpoint:
-                    # [FIX 2026-04-19] hotel_info/advanced has TWO response shapes:
-                    # Shape A: result has 'items' array containing hotel objects (identity matching needed)
-                    # Shape B: result itself IS the hotel data (about, reviews, prices at top level)
-                    #          This happens when hotel_identifier is used. items may be empty or
-                    #          contain room type objects, NOT hotel identity objects.
-
-                    # Detect Shape B: result itself has rich data (about/reviews/prices)
-                    has_direct_data = bool(
-                        result.get("about")
-                        or result.get("reviews")
-                        or result.get("prices")
-                        or result.get("title")
-                    )
-
-                    if has_direct_data:
-                        # Shape B: Parse result directly — it IS the hotel data
-                        logger.info(
-                            f"DataForSEO hotel_info: Direct result shape detected (keys: {list(result.keys())[:8]})"
-                        )
-                        parsed = self._parse_advanced_hotel_info(result)
-                    elif items:
-                        # Shape A: items array contains hotel objects, need identity matching
-                        # [KAIZEN 2026] IDENTITY ENFORCEMENT for Hotel Info
-                        target = None
-                        if target_token:
-                            for item in items:
-                                if item.get("hotel_identifier") == target_token:
-                                    target = item
-                                    break
-
-                        if not target and target_name:
-                            from difflib import SequenceMatcher
-
-                            best_score = 0
-                            norm_target = self._normalize_location(target_name).lower()
-                            for item in items:
-                                norm_title = self._normalize_location(
-                                    item.get("title", "")
-                                ).lower()
-                                score = SequenceMatcher(
-                                    None, norm_target, norm_title
-                                ).ratio()
-
-                                is_substring = (
-                                    norm_target in norm_title
-                                    or norm_title in norm_target
-                                )
-                                if (is_substring and score > 0.60) or score > 0.75:
-                                    if score > best_score:
-                                        target = item
-                                        best_score = score
-
-                        if not target and not target_token and not target_name:
-                            target = items[0]
-
-                        if not target:
-                            logger.warning(
-                                f"DataForSEO: No match found for hotel (Token: {target_token}, Name: {target_name}) in {len(items)} info results. Blocking metadata update."
-                            )
-                            return None, res_json
-
-                        # Try the item first; if it doesn't have hotel_info, use the result object.
-                        if (
-                            target.get("hotel_info")
-                            or target.get("about")
-                            or target.get("reviews")
-                        ):
-                            parsed = self._parse_advanced_hotel_info(target)
-                        else:
-                            parsed = self._parse_advanced_hotel_info(result)
+                    # [FIX 2026-04-19] hotel_info/advanced has TWO response shapes.
+                    # Unified matching has already set 'target' to either the specific item
+                    # (Shape A) or the result object itself (Shape B).
+                    
+                    # Try the target first; if it doesn't have hotel_info, use the result object.
+                    if (
+                        target.get("hotel_info")
+                        or target.get("about")
+                        or target.get("reviews")
+                    ):
+                        parsed = self._parse_advanced_hotel_info(target)
                     else:
-                        # No items and no direct data — empty result
-                        logger.warning(
-                            "DataForSEO hotel_info: Empty result (no items, no direct data)"
-                        )
-                        return {
-                            "status": "success",
-                            "items": [],
-                            "task_type": "hotel_info",
-                            "tag": (task.get("data") or {}).get("tag"),
-                        }, res_json
+                        parsed = self._parse_advanced_hotel_info(result)
 
-                    # [FIX 2026-04-25] hotel_info results should keep price data if found
-                    # We no longer pop price/best_price here because the persistence service
-                    # now handles merging and NULL-protection correctly.
                     info_result = {
                         "status": "success",
                         "task_type": "hotel_info",
@@ -1626,6 +1583,7 @@ class DataForSEOProvider(HotelDataProvider):
                 "hotel_info/advanced",
                 target_token=target_token,
                 target_name=target_name,
+                db=db,
             )
 
             # [EVERYTHING VAULT] Capture the raw GET response
@@ -1634,8 +1592,7 @@ class DataForSEOProvider(HotelDataProvider):
                     db, session_id, "business_data/google/hotel_info/advanced/task_get", res_json
                 )
 
-            res = processed if processed and processed.get("status") == "success" else None
-            return res, res_json
+            return processed, res_json
         else:
             # Default: price_search via hotel_searches
             # [FIX 2026-04-24] Call _fetch_results_generic directly to get the
@@ -1646,6 +1603,7 @@ class DataForSEOProvider(HotelDataProvider):
                 "hotel_searches",
                 target_token=target_token,
                 target_name=target_name,
+                db=db,
             )
 
             # [EVERYTHING VAULT] Capture the raw GET response
@@ -1654,56 +1612,47 @@ class DataForSEOProvider(HotelDataProvider):
                     db, session_id, "business_data/google/hotel_searches/task_get", res_json
                 )
 
-            res = processed if processed and processed.get("status") == "success" else None
-            return res, res_json
+            return processed, res_json
 
-    async def get_completed_tasks(self) -> List[str]:
-        """Returns a list of Task IDs that are ready for retrieval across all endpoints."""
-        tasks = await asyncio.gather(
-            self._get_ready_tasks_generic("hotel_searches"),
-            self._get_ready_tasks_generic("hotel_info"),
-            # [FIX 2026-04-19] Removed "hotel_info/advanced" — it's NOT a separate
-            # tasks_ready endpoint. All hotel_info tasks appear in hotel_info/tasks_ready.
-            # The "advanced" part is only the GET method: hotel_info/task_get/advanced/{id}
-            return_exceptions=True,
-        )
-
-        all_ids = []
-        for res in tasks:
-            if isinstance(res, list):
-                all_ids.extend(res)
-        return all_ids
-
-    async def _get_ready_tasks_generic(self, endpoint: str) -> List[str]:
-        """Internal helper for pooling ready tasks.
-
-        [FIX 2026-04-28] The tasks_ready response has a nested structure:
-          response.tasks[0].result[].id  ← actual fetchable task IDs
-          response.tasks[0].id           ← wrapper envelope ID (NOT fetchable)
-        Previously we returned the wrapper ID, causing 40004 errors on every fetch.
+    async def get_tasks_bulk(
+        self,
+        tasks_metadata: List[Dict[str, Any]],
+        db: Optional[Any] = None,
+        session_id: Optional[str] = None,
+    ) -> List[Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]]:
         """
-        if not self.login or not self.password:
+        Implementation of bulk result retrieval using asyncio.gather for high concurrency.
+        Each task is fetched independently; exceptions are caught and returned as None.
+        """
+        if not tasks_metadata:
             return []
-        auth = (self.login, self.password)
-        try:
-            async with httpx.AsyncClient(auth=auth, timeout=30.0) as client:
-                response = await client.get(
-                    f"{self.api_url}/business_data/google/{endpoint}/tasks_ready"
+
+        async def _fetch_safe(meta):
+            try:
+                task_id = meta.get("external_task_id")
+                if not task_id:
+                    return None, None
+                
+                # Extract other metadata for context (e.g. tag, hotel_id)
+                context = {k: v for k, v in meta.items() if k != "external_task_id"}
+                
+                return await self.get_task_result(
+                    task_id=task_id,
+                    db=db,
+                    session_id=session_id,
+                    **context
                 )
-                res_json = response.json()
-                if res_json.get("status_code") == 20000:
-                    task_ids = []
-                    for wrapper_task in res_json.get("tasks", []):
-                        # The actual task IDs live in wrapper_task["result"][].id
-                        for item in wrapper_task.get("result") or []:
-                            tid = item.get("id")
-                            if tid:
-                                task_ids.append(tid)
-                    return task_ids
-                return []
-        except Exception as e:
-            logger.error(f"DataForSEO ready tasks error ({endpoint}): {e}")
-            return []
+            except Exception as e:
+                logger.error(f"DataForSEO: Bulk fetch error for task {meta.get('external_task_id')}: {e}")
+                return None, None
+
+        # Execute all fetches in parallel
+        results = await asyncio.gather(*[_fetch_safe(m) for m in tasks_metadata])
+        return list(results)
+
+    # [REMOVED 2026-05] get_completed_tasks and _get_ready_tasks_generic removed.
+    # We now use Webhooks (handle_dataforseo_webhook) + Recovery Loop in monitor_service.
+
 
 
 # Global instance for service usage

@@ -238,7 +238,15 @@ class ApiClient {
   }
 
   async syncDirectory(): Promise<{ synced_count: number }> {
-    return this.fetch<{ synced_count: number }>(`/api/admin/sync`);
+    return this.fetch<{ synced_count: number }>(`/api/admin/sync`, { method: "POST" });
+  }
+
+  async syncProfiles(): Promise<{ synced_count: number }> {
+    return this.fetch<{ synced_count: number }>(`/api/admin/sync/profiles`, { method: "POST" });
+  }
+
+  async syncAll(): Promise<{ directory: any; profiles: any }> {
+    return this.fetch<{ directory: any; profiles: any }>(`/api/admin/sync/all`, { method: "POST" });
   }
 
   async deleteLog(logId: string): Promise<void> {

@@ -37,6 +37,7 @@ from backend.models.schemas import (
     SystemLogsResponse,
 )
 from supabase import Client
+from backend.services.provider_factory import ProviderFactory
 
 
 async def search_admin_directory_logic(db: Client, q: str) -> List[Dict[str, Any]]:
@@ -91,7 +92,7 @@ async def get_admin_stats_logic(db: Client) -> AdminStats:
         # Scraper Health (Last 24h)
         # Calculate health as the percentage of successful or partially successful
         # scans over the last 24 hours. This allows administrators to quickly
-        # identify if an external provider (like SerpApi) is experiencing global issues.
+        # identify if an external provider (like DataForSEO) is experiencing global issues.
         last_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
         recent_sessions_health = (
             db.table("scan_sessions")
@@ -162,7 +163,7 @@ async def get_admin_providers_logic() -> List[Dict[str, Any]]:
     Fetch status of registered network providers.
 
     EXPLANATION: Admin Providers
-    Returns a list of configured providers (e.g. SerpApi, RapidAPI) with their
+    Returns a list of configured providers (e.g. DataForSEO) with their
     status and priority. Used by ApiKeysPanel to show 'Network Providers'.
     """
     try:
@@ -466,7 +467,8 @@ async def get_admin_logs_logic(db: Client, limit: int = 50) -> List[AdminLog]:
                 )
             )
         return logs
-    except Exception:
+    except Exception as e:
+        print(f"Admin Error: {e}")
         return []
 
 
@@ -1089,13 +1091,18 @@ async def get_admin_market_heartbeats_logic(db: Client) -> HealthMetrics:
                 continue
         avg_latency = (sum(latencies) / len(latencies)) if latencies else 0.0
 
-        # 5. Provider Health (from scan_batches)
+        # 5. Provider Health (Dynamic via check_health)
+        provider_health = []
+        active_providers = ProviderFactory.get_active_providers()
+
+        # Calculate success rate from recent batches for context
         session_ids = [
             log["session_id"] for log in heartbeat_logs.data if log.get("session_id")
         ]
-        provider_health = []
-        serpapi_success_rate = 100.0
+        batch_success_rates = {}
+        last_batch_times = {}
 
+        global_success_rate = 100.0
         if session_ids:
             batches_res = (
                 db.table("scan_batches")
@@ -1108,26 +1115,49 @@ async def get_admin_market_heartbeats_logic(db: Client) -> HealthMetrics:
                 tot_success = sum(b.get("success_count", 0) for b in batches_res.data)
                 tot_fail = sum(b.get("fail_count", 0) for b in batches_res.data)
                 tot_calls = tot_success + tot_fail
-                serpapi_success_rate = (
+                global_success_rate = (
                     (tot_success / tot_calls * 100) if tot_calls > 0 else 100.0
                 )
 
-                last_batch_time = None
+                last_time = None
                 try:
-                    last_batch_time = datetime.fromisoformat(
+                    last_time = datetime.fromisoformat(
                         batches_res.data[0]["updated_at"].replace("Z", "+00:00")
                     )
                 except Exception:
                     pass
 
-                provider_health = [
-                    ProviderHealth(
-                        name="SerpApi",
-                        status="online" if serpapi_success_rate > 80 else "degraded",
-                        last_call=last_batch_time,
-                        success_rate=round(serpapi_success_rate, 2),
-                    )
-                ]
+                # Assign metrics to providers
+                for p in active_providers:
+                    p_name = p.get_provider_name()
+                    batch_success_rates[p_name] = global_success_rate
+                    last_batch_times[p_name] = last_time
+
+        for provider in active_providers:
+            p_name = provider.get_provider_name()
+            try:
+                # Perform real-time health check (API call to provider)
+                health_res = await provider.check_health()
+                status = "online" if health_res["status"] == "healthy" else "offline"
+            except Exception as e:
+                print(f"Admin: Health check failed for {p_name}: {e}")
+                status = "offline"
+
+            s_rate = batch_success_rates.get(p_name, 100.0)
+            l_call = last_batch_times.get(p_name, datetime.now(timezone.utc))
+
+            # Degrade status if success rate is low
+            if status == "online" and s_rate < 80:
+                status = "degraded"
+
+            provider_health.append(
+                ProviderHealth(
+                    name=p_name,
+                    status=status,
+                    last_call=l_call,
+                    success_rate=round(s_rate, 2),
+                )
+            )
 
         # 6. Scan Volume (Hourly bins)
         scan_volume_map = {}
@@ -1150,16 +1180,17 @@ async def get_admin_market_heartbeats_logic(db: Client) -> HealthMetrics:
         overall_status = "operational"
         if is_maintenance:
             overall_status = "maintenance"
-        elif uptime_24h < 90 or serpapi_success_rate < 80:
+        elif uptime_24h < 90 or global_success_rate < 80:
             overall_status = "degraded"
 
-        last_heartbeat_time = None
-        try:
-            last_heartbeat_time = datetime.fromisoformat(
-                heartbeat_logs.data[0]["start_time"].replace("Z", "+00:00")
-            )
-        except Exception:
-            pass
+        last_heartbeat = None
+        if heartbeat_logs.data:
+            try:
+                last_heartbeat = datetime.fromisoformat(
+                    heartbeat_logs.data[0]["start_time"].replace("Z", "+00:00")
+                )
+            except Exception:
+                pass
 
         # Active nodes: unique trigger sources in the last 4 hours
         four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=4)
@@ -1178,7 +1209,7 @@ async def get_admin_market_heartbeats_logic(db: Client) -> HealthMetrics:
             uptime_24h=round(uptime_24h, 2),
             avg_latency=round(avg_latency, 2),
             active_nodes=max(1, active_nodes_count),
-            last_heartbeat=last_heartbeat_time,
+            last_heartbeat=last_heartbeat,
             provider_health=provider_health,
             scan_volume=scan_volume,
         )
@@ -1260,6 +1291,22 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
                 "image_url": hotel.get("image_url"),
                 "latitude": hotel.get("latitude"),
                 "longitude": hotel.get("longitude"),
+                "amenities": hotel.get("amenities", []),
+                "images": hotel.get("images", []),
+                "description": hotel.get("description"),
+                "address": hotel.get("address"),
+                "phone": hotel.get("phone"),
+                "email": hotel.get("email"),
+                "website": hotel.get("website"),
+                "cid": hotel.get("cid"),
+                "place_id": hotel.get("place_id"),
+                "property_token": hotel.get("property_token"),
+                "review_count": hotel.get("review_count", 0),
+                "reviews": hotel.get("reviews", []),
+                "sentiment_breakdown": hotel.get("sentiment_breakdown", {}),
+                "location_code": hotel.get("location_code"),
+                "resolved_location_name": hotel.get("resolved_location_name"),
+                "location_verified": hotel.get("location_verified", False),
             }
 
             if existing:
@@ -1290,6 +1337,76 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
     except Exception as e:
         print(f"Admin: Directory Sync Error: {e}")
         return {"status": "error", "message": str(e)}
+
+
+async def sync_user_profiles_logic(db: Client) -> Dict[str, Any]:
+    """
+    Ensures 'profiles' table (Modern) is in sync with 'user_profiles' (Legacy/Internal).
+    Migrates missing users and updates stale metadata.
+    """
+    try:
+        # 1. Fetch all user_profiles
+        user_profiles_res = db.table("user_profiles").select("*").execute()
+        user_profiles = user_profiles_res.data or []
+
+        # 2. Fetch all profiles
+        profiles_res = db.table("profiles").select("*").execute()
+        profiles = profiles_res.data or []
+        profile_ids = {str(p["id"]) for p in profiles}
+
+        synced_count = 0
+        updated_count = 0
+
+        for up in user_profiles:
+            uid = str(up["user_id"])
+
+            # Prepare profile data
+            p_data = {
+                "id": uid,
+                "email": up.get("email"),
+                "display_name": up.get("display_name"),
+                "company_name": up.get("company_name"),
+                "job_title": up.get("job_title"),
+                "phone": up.get("phone"),
+                "timezone": up.get("timezone", "UTC"),
+                "role": up.get("role", "user"),
+                "plan_type": up.get("plan_type", "trial"),
+                "subscription_status": up.get("subscription_status", "trial"),
+            }
+
+            if uid not in profile_ids:
+                # Insert missing profile
+                db.table("profiles").insert(p_data).execute()
+                synced_count += 1
+            else:
+                # Update existing profile (optional, but good for consistency)
+                db.table("profiles").update(p_data).eq("id", uid).execute()
+                updated_count += 1
+
+        return {
+            "status": "success",
+            "processed": len(user_profiles),
+            "created": synced_count,
+            "updated": updated_count,
+        }
+    except Exception as e:
+        print(f"Admin: Profile Sync Error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+async def sync_all_logic(db: Client) -> Dict[str, Any]:
+    """
+    KAIZEN: Unified Sync (Phase 1.2)
+    Triggers both directory and profile synchronization.
+    """
+    hotel_res = await sync_hotel_directory_logic(db)
+    profile_res = await sync_user_profiles_logic(db)
+
+    return {
+        "status": "success",
+        "directory": hotel_res,
+        "profiles": profile_res,
+    }
 
 
 async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:

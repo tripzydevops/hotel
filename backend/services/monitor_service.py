@@ -426,6 +426,15 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                 "status": "completed", 
                 "end_time": datetime.now(timezone.utc).isoformat()
             }).eq("session_id", session_id).execute()
+            
+            try:
+                insforge.table("scan_sessions").update({
+                    "status": "completed",
+                    "completed_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", session_id).execute()
+            except Exception as upd_e:
+                s_logger.warning(f"Heartbeat: Failed to complete scan_sessions (no hotels): {upd_e}")
+                
             return
 
         # 4. Update Admin Settings immediately
@@ -460,52 +469,75 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             "end_time": datetime.now(timezone.utc).isoformat()
         }).eq("session_id", session_id).execute()
 
+        try:
+            insforge.table("scan_sessions").update({
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", session_id).execute()
+        except Exception as upd_e:
+            s_logger.warning(f"Heartbeat: Failed to complete scan_sessions: {upd_e}")
+
         s_logger.info(f"Heartbeat: Successfully submitted {total} tasks for session {session_id}")
         return total
 
     except Exception as e:
         s_logger.error(f"Heartbeat Failure: {e}")
         s_logger.error(traceback.format_exc())
+        
+        # AGENT_FIX: Make sure the session doesn't linger as a zombie if the heartbeat crashes
+        try:
+            if 'session_id' in locals():
+                insforge.table("scan_sessions").update({
+                    "status": "failed",
+                    "error_message": str(e),
+                    "completed_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", session_id).execute()
+        except Exception as inner_e:
+            s_logger.warning(f"Heartbeat: Could not update scan_sessions failure status: {inner_e}")
 
 
-async def process_system_scans(insforge: InsForgeClient):
+async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optional[str] = None):
     """
-    The System Heartbeat Processor. Optimized for Batch Syncing.
+    The System Heartbeat Processor. Optimized for Webhook-driven processing.
+    Now replaces polling with targeted fetching or recovery logic.
     """
     s_logger = get_scheduler_logger()
     try:
-        # 1. Get completed task IDs
-        completed_ids = await dataforseo_provider.get_completed_tasks()
-
-        # [RECOVERY] If tasks_ready is skipping some, check old pending tasks directly
-        # [FIX 2026-04-19] Only attempt recovery on tasks older than 3 minutes
-        # to avoid race condition where freshly submitted tasks get permanently failed
-        recovery_cutoff = (
-            datetime.now(timezone.utc) - timedelta(minutes=3)
-        ).isoformat()
-        pending_res = (
-            insforge.table("scan_tasks")
-            .select("external_task_id, created_at")
-            .eq("status", "pending")
-            .not_.is_("external_task_id", "null")
-            .lt("created_at", recovery_cutoff)
-            .limit(100)
-            .execute()
-        )
-
-        if pending_res.data:
-            pending_external_ids = [t["external_task_id"] for t in pending_res.data]
-            # Merge with completed_ids (de-duplicate)
-            completed_ids = list(set(completed_ids + pending_external_ids))
-            s_logger.info(
-                f"Task Processor: Added {len(pending_external_ids)} recovery candidates (>{3}min old)."
+        completed_ids = []
+        if specific_task_id:
+            completed_ids = [specific_task_id]
+            s_logger.info(f"Task Processor: Processing targeted task {specific_task_id} (Webhook-driven)")
+        else:
+            # [REPLACEMENT] We no longer poll get_completed_tasks() (tasks_ready endpoint).
+            # Instead, we rely on webhooks, and use this as a recovery loop for missed tasks.
+            s_logger.info("Task Processor: Running recovery check for missed webhooks...")
+            
+            # [RECOVERY] check old pending tasks directly
+            # Only attempt recovery on tasks older than 10 minutes (safety buffer for webhook arrival)
+            recovery_cutoff = (
+                datetime.now(timezone.utc) - timedelta(minutes=10)
+            ).isoformat()
+            pending_res = (
+                insforge.table("scan_tasks")
+                .select("external_task_id, created_at")
+                .eq("status", "pending")
+                .not_.is_("external_task_id", "null")
+                .lt("created_at", recovery_cutoff)
+                .limit(100)
+                .execute()
             )
+
+            if pending_res.data:
+                completed_ids = [t["external_task_id"] for t in pending_res.data]
+                s_logger.info(
+                    f"Task Processor: Added {len(completed_ids)} recovery candidates (>{10}min old)."
+                )
 
         if not completed_ids:
             return
 
         s_logger.info(
-            f"Task Processor: Found {len(completed_ids)} items to check (including recovery candidates)."
+            f"Task Processor: Found {len(completed_ids)} items to process."
         )
 
         # 2. Extract Task IDs and resolve Metadata in BULK
@@ -523,7 +555,7 @@ async def process_system_scans(insforge: InsForgeClient):
             tasks_res = (
                 insforge.table("scan_tasks")
                 .select(
-                    "id, external_task_id, hotel_id, batch_id, task_type, created_at, hotel:hotels(name, property_token, currency)"
+                    "id, external_task_id, hotel_id, batch_id, task_type, created_at, batch:scan_batches(session_id), hotel:hotels(name, property_token, currency)"
                 )
                 .or_(
                     f"id.in.({','.join(tags_quoted)}),external_task_id.in.({','.join(tags_quoted)})"
@@ -546,20 +578,29 @@ async def process_system_scans(insforge: InsForgeClient):
         fetch_tasks = []
         for tid in completed_ids:
             meta = task_id_to_metadata.get(tid)
+
+            # [FIX 2026-04-28] Ensure we have metadata before fetching to prevent identity-less extraction
+            # that could lead to data leakage (picking items[0] blindly).
+            if not meta:
+                s_logger.warning(f"Task Processor: No metadata found for task {tid}. Skipping fetch.")
+                continue
+
             token = None
             name = None
-            if meta and meta.get("hotel"):
+            if meta.get("hotel"):
                 token = meta["hotel"].get("property_token")
                 name = meta["hotel"].get("name")
 
             # [FIX 5] Pass task_type for type-aware endpoint routing
+            # [KAIZEN 2026] Pass batch_id as session_id for Everything Vault logging
             fetch_tasks.append(
                 dataforseo_provider.get_task_result(
                     tid,
                     db=insforge,
+                    session_id=meta.get("batch", {}).get("session_id") if meta.get("batch") else None,
                     target_token=token,
                     target_name=name,
-                    task_type=meta.get("task_type") if meta else None,
+                    task_type=meta.get("task_type"),
                 )
             )
 
@@ -569,6 +610,8 @@ async def process_system_scans(insforge: InsForgeClient):
         tasks_not_ready = []
         now_utc = datetime.now(timezone.utc)
         PERMANENT_FAIL_MINUTES = 30  # Only permanently fail after 30 minutes
+
+        persistence = ScanPersistenceService(insforge, admin_insforge=get_insforge_db(admin=True))
 
         for i, res_tuple in enumerate(all_results):
             tid = completed_ids[i]
@@ -587,7 +630,6 @@ async def process_system_scans(insforge: InsForgeClient):
             ):
                 if meta:
                     # Check task age before marking as permanent failure
-                    meta.get("created_at") or meta.get("id")  # fallback
                     task_age_minutes = 0
                     try:
                         if isinstance(meta.get("created_at"), str):
@@ -600,12 +642,47 @@ async def process_system_scans(insforge: InsForgeClient):
                     except Exception:
                         task_age_minutes = 999  # If we can't parse, assume old
 
-                    if task_age_minutes >= PERMANENT_FAIL_MINUTES:
+                    # Determine if this is a definitive failure that shouldn't wait for timeout
+                    is_definitive_failure = False
+                    fail_reason = "unknown"
+                    if isinstance(result, dict):
+                        fail_reason = result.get("failure_reason", result.get("status", "failed"))
+                        if fail_reason in ["identity_mismatch", "invalid_response", "provider_error"]:
+                            is_definitive_failure = True
+                    elif isinstance(result, Exception):
+                        fail_reason = "exception"
+                        # Optional: Mark certain exceptions as definitive
+                    
+                    if task_age_minutes >= PERMANENT_FAIL_MINUTES or is_definitive_failure:
                         s_logger.error(
-                            f"Task Processor: Permanently failing stale task {tid} (age: {task_age_minutes:.0f}min): {result}"
+                            f"Task Processor: Failing task {tid} (Reason: {fail_reason}, Age: {task_age_minutes:.0f}min): {result}"
                         )
+                        # Attach the reason to meta so we can persist it to the DB
+                        meta["error_message"] = str(result.get("message")) if isinstance(result, dict) and result.get("message") else fail_reason
                         tasks_to_fail.append(meta)
+
+                        # [DIAGNOSTIC] Log to Everything Vault for unified error observability
+                        try:
+                            # Safely extract session_id from the nested meta structure
+                            session_id = None
+                            if meta.get("batch") and isinstance(meta["batch"], dict):
+                                session_id = meta["batch"].get("session_id")
+                            
+                            await persistence.vault_log(
+                                db=persistence.admin_insforge,
+                                session_id=session_id,
+                                endpoint=f"monitor/fail/{fail_reason}",
+                                data={
+                                    "task_id": tid,
+                                    "hotel_id": meta.get("hotel_id"),
+                                    "result": str(result) if not isinstance(result, dict) else result,
+                                    "raw_response": raw_json
+                                }
+                            )
+                        except Exception as v_err:
+                            s_logger.error(f"Task Processor: Vault logging failed: {v_err}")
                     else:
+
                         s_logger.info(
                             f"Task Processor: Task {tid} not ready yet (age: {task_age_minutes:.0f}min) — will retry later."
                         )
@@ -633,10 +710,14 @@ async def process_system_scans(insforge: InsForgeClient):
         if tasks_to_fail:
             from collections import Counter
 
-            fail_task_ids = [t["id"] for t in tasks_to_fail]
-            insforge.table("scan_tasks").update({"status": "failed"}).in_(
-                "id", fail_task_ids
-            ).execute()
+            # Bulk update status and individual error messages
+            # [FIX] We iterate to preserve individual error messages captured in the loop
+            for t in tasks_to_fail:
+                insforge.table("scan_tasks").update({
+                    "status": "failed",
+                    "error_message": t.get("error_message", "Unknown error")
+                }).eq("id", t["id"]).execute()
+
 
             batch_fail_counts = Counter(
                 [t["batch_id"] for t in tasks_to_fail if t.get("batch_id")]
@@ -682,7 +763,6 @@ async def _trigger_heartbeat_notifications(
         notifier = NotifierAgent(insforge)
 
         # 1. Identity Resolution & Fetching Involved Users
-        property_tokens = list(set(e["property_token"] for e in events if e.get("property_token")))
         hotel_ids = list(set(str(e["hotel_id"]) for e in events))
         
         query = insforge.table("user_hotels").select("user_id, hotel_id, hotels!inner(name, property_token)").eq("is_monitored", True)
@@ -717,7 +797,8 @@ async def _trigger_heartbeat_notifications(
         history_map = {}
         for h in (history_res.data or []):
             hid = str(h["hotel_id"])
-            if hid not in history_map: history_map[hid] = []
+            if hid not in history_map:
+                history_map[hid] = []
             history_map[hid].append(h)
 
         # 3. Process Events & Generate Alerts
@@ -736,7 +817,8 @@ async def _trigger_heartbeat_notifications(
                 u for u in users_res.data 
                 if str(u["hotel_id"]) == hid or (token and u["hotels"].get("property_token") == token)
             ]
-            if not relevant_users: continue
+            if not relevant_users:
+                continue
             
             h_name = relevant_users[0]["hotels"]["name"]
             
@@ -747,8 +829,10 @@ async def _trigger_heartbeat_notifications(
             lowest_ota = None
             for offer in parity_offers:
                 p_val = float(offer.get("price", 0))
-                if p_val <= 0: continue
-                if offer.get("is_direct"): direct_price = p_val
+                if p_val <= 0:
+                    continue
+                if offer.get("is_direct"):
+                    direct_price = p_val
                 elif p_val < min_ota_price:
                     min_ota_price = p_val
                     lowest_ota = offer.get("source", "OTA")
@@ -757,42 +841,61 @@ async def _trigger_heartbeat_notifications(
                 displacement = ((direct_price - min_ota_price) / direct_price) * 100
                 parity_alert_meta = {"type": "parity_breach", "displacement": displacement, "culprit": lowest_ota, "ota_p": min_ota_price, "direct_p": direct_price}
 
-            # Price Shift Baseline
-            hist = history_map.get(hid, [])
-            prev_p = None
-            # Find first different price as baseline
-            for h_entry in hist:
-                p_val = float(h_entry["price"])
-                if p_val != curr_p:
-                    prev_p = p_val
-                    break
+            # [KAIZEN 2026] Integrated Anomaly Detection
+            # Rely on the flag from persistence for centralized logic
+            is_anomaly = event.get("is_anomaly", False)
             
-            change_pct = ((curr_p - prev_p) / max(prev_p, 1)) * 100 if prev_p else 0
+            # Calculate change_pct for display relative to baseline
+            change_pct = 0.0
+            hist = history_map.get(hid, [])
+            recent_valid = [float(h["price"]) for h in hist if float(h.get("price") or 0) > 0 and not h.get("is_anomaly")]
+            if recent_valid:
+                avg_baseline = sum(recent_valid) / len(recent_valid)
+                if avg_baseline > 0:
+                    change_pct = ((curr_p - avg_baseline) / avg_baseline) * 100
+            else:
+                avg_baseline = 0.0
 
             # Distribute to Users
             for u in relevant_users:
                 uid = str(u["user_id"])
                 s = settings_map.get(uid)
-                if not s or not s.get("notifications_enabled"): continue
+                if not s or not s.get("notifications_enabled"):
+                    continue
                 
                 is_global = (initiator_id is None) or (str(initiator_id) != uid)
                 prefix = "[Pulse] " if is_global else ""
-                
-                # Threshold Check
-                if abs(change_pct) >= s.get("threshold_percent", 2.0):
+                if is_anomaly:
+                    prefix = f"[CRITICAL] {prefix}"
+
+                # Threshold Check (User Defined)
+                user_threshold = s.get("threshold_percent", 2.0)
+                if abs(change_pct) >= user_threshold:
                     a_type = "market_pulse" if is_global else ("price_drop" if change_pct < 0 else "price_spike")
+                    
+                    msg = f"{prefix}{h_name} rate shifted {abs(change_pct):.1f}% to {curr_p} {currency}"
+                    if is_anomaly:
+                        msg += f" (Baseline: {avg_baseline:.0f})"
+
                     alert = {
-                        "user_id": uid, 
-                        "hotel_id": hid, 
-                        "alert_type": a_type, 
-                        "message": f"{prefix}{h_name} rate shifted {abs(change_pct):.1f}% to {curr_p} {currency}", 
-                        "old_price": prev_p, 
-                        "new_price": curr_p, 
+                        "user_id": uid,
+                        "hotel_id": hid,
+                        "alert_type": a_type,
+                        "message": msg,
+                        "old_price": round(avg_baseline, 2),
+                        "new_price": curr_p,
                         "currency": currency,
-                        "created_at": datetime.now(timezone.utc).isoformat()
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "metadata": {
+                            "variance": round(change_pct, 2),
+                            "is_anomaly": is_anomaly,
+                            "baseline": round(avg_baseline, 2)
+                        }
                     }
                     all_alerts.append(alert)
-                    if uid not in user_to_alerts: user_to_alerts[uid] = {"alerts": [], "names": {}}
+                    
+                    if uid not in user_to_alerts:
+                        user_to_alerts[uid] = {"alerts": [], "names": {}}
                     user_to_alerts[uid]["alerts"].append(alert)
                     user_to_alerts[uid]["names"][hid] = h_name
 
@@ -810,7 +913,8 @@ async def _trigger_heartbeat_notifications(
                         "metadata": parity_alert_meta
                     }
                     all_alerts.append(p_alert)
-                    if uid not in user_to_alerts: user_to_alerts[uid] = {"alerts": [], "names": {}}
+                    if uid not in user_to_alerts:
+                        user_to_alerts[uid] = {"alerts": [], "names": {}}
                     user_to_alerts[uid]["alerts"].append(p_alert)
                     user_to_alerts[uid]["names"][hid] = h_name
 
@@ -819,7 +923,7 @@ async def _trigger_heartbeat_notifications(
             insforge.table("alerts").insert(all_alerts).execute()
         
         for uid, data in user_to_alerts.items():
-            await notifier.dispatch_alerts(data["alerts"], settings_map[uid], data["names"])
+            await notifier.notify(data["alerts"], settings_map[uid], data["names"])
 
     except Exception as e:
         logger.error(f"Batch Notifier Failure: {e}")
@@ -856,7 +960,8 @@ async def sync_extraction_results_batch(
     from backend.services.scan_persistence import ScanPersistenceService
     from backend.agents.market_intelligence_agent import MarketIntelligenceAgent
 
-    if not batch_items: return True
+    if not batch_items:
+        return True
 
     try:
         # 1. Delegate Persistence

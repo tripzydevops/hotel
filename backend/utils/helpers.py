@@ -72,13 +72,11 @@ async def log_query(
 
 
 def normalize_room_name(name: str) -> str:
-    """Standardize room names for cataloging and comparison."""
-    import re
+    """Standardize room names for cataloging and comparison using RoomTypeNormalizer."""
+    from backend.utils.room_normalizer import RoomTypeNormalizer
 
     if not name:
         return "Standard Room"
-    name = name.lower().strip()
-    name = re.sub(r"\s*-\s*", " ", name)
-    name = re.sub(r"\(.*?\)", "", name)
-    name = re.sub(r"\s+", " ", name).title()
-    return name
+
+    normalized = RoomTypeNormalizer.normalize(name)
+    return normalized["canonical_name"]

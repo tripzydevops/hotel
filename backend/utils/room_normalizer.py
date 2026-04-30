@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Set
+from typing import Dict, Set, Any
 
 from backend.services.config_service import ConfigService
 
@@ -138,7 +138,17 @@ class RoomTypeNormalizer:
         "NS": "Non-Smoking",
     }
 
-    # Dynamic Configuration via Database (Hybrid Fallback)
+    # 3. Common OTA/Vendor names to filter out of room type catalogs
+    VENDOR_NAMES = {
+        "booking.com", "expedia", "agoda", "hotels.com", "airbnb", "tripadvisor",
+        "google", "tatilbudur.com", "otelz.com", "jolly tur", "etstur", "tatil.com",
+        "trivago", "kayak", "priceline", "orbitz", "travelocity", "hotwire",
+        "trip.com", "ctrip", "rakuten", "amoma", "venere", "otel.com", "zenhotels",
+        "destinia", "findhotel", "snap travel", "super.com", "nuitee", "prestigia",
+        "hoteltonight", "lastminute.com", "ebookers", "opodo", "edreams", "gotogate",
+        "tatilbudur", "otelz", "etstur", "jollytur", "jolly", "setur", "neredekal", "odamax",
+        "gezinomi", "eccetur", "tatilsepeti", "neredekal.com", "odamax.com", "setur.com.tr"
+    }
 
     @classmethod
     def _get_config(cls):
@@ -171,9 +181,10 @@ class RoomTypeNormalizer:
         }
 
     @classmethod
-    def normalize(cls, raw_string: str) -> Dict[str, str]:
+    def normalize(cls, raw_string: str) -> Dict[str, Any]:
         """
         Parses a raw room string and returns a dictionary with canonical details.
+        Includes vendor detection and stripping.
         """
         if not raw_string:
             return {
@@ -181,6 +192,7 @@ class RoomTypeNormalizer:
                 "canonical_code": "UNK",
                 "canonical_name": "Unknown Room",
                 "tokens": [],
+                "is_vendor": False
             }
 
         # Load Configuration (Hybrid)
@@ -189,16 +201,29 @@ class RoomTypeNormalizer:
         canonical_names = config["canonical_names"]
         category_order = config["category_order"]
 
-        # 1. Clean and Tokenize
-        clean_text = raw_string.lower()
+        # 1. Vendor Detection & Stripping
+        clean_text = raw_string.lower().strip()
+        found_vendor = False
+        
+        # Sort vendors by length descending to match longer patterns first (e.g. 'booking.com' before 'booking')
+        sorted_vendors = sorted(list(cls.VENDOR_NAMES), key=len, reverse=True)
+        
+        for vendor in sorted_vendors:
+            if vendor in clean_text:
+                found_vendor = True
+                clean_text = clean_text.replace(vendor, "")
+
+        # 2. Clean and Tokenize
         # Remove punctuation, parentheses, brackets, etc.
         clean_text = re.sub(r"[^\w\s]", " ", clean_text)
-
         words = clean_text.split()
+
+        # If it's empty or too short after stripping, it was likely just a vendor name/title
+        is_vendor = found_vendor or not words or (found_vendor and len(" ".join(words)) < 4)
 
         found_tokens: Set[str] = set()
 
-        # 2. Map words to tokens
+        # 3. Map words to tokens
         for word in words:
             if word in token_map:
                 found_tokens.add(token_map[word])
@@ -213,6 +238,7 @@ class RoomTypeNormalizer:
                 "canonical_code": "ROH",
                 "canonical_name": raw_string.strip(),
                 "tokens": [],
+                "is_vendor": is_vendor
             }
 
         canonical_code = "-".join(sorted_tokens)
@@ -228,4 +254,5 @@ class RoomTypeNormalizer:
             "canonical_code": canonical_code,
             "canonical_name": canonical_name,
             "tokens": sorted_tokens,
+            "is_vendor": is_vendor
         }

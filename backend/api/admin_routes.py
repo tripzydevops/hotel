@@ -48,6 +48,8 @@ from backend.services.admin_service import (
     get_scheduler_queue_logic,
     rescan_batch_task_logic,
     sync_hotel_directory_logic,
+    sync_user_profiles_logic,
+    sync_all_logic,
     trigger_all_overdue_logic,
     update_admin_directory_logic,
     update_admin_hotel_logic,
@@ -427,6 +429,26 @@ async def sync_directory(
     # EXPLANATION: Manual Directory Sync
     # Merges unique user-added hotels into the global searchable directory.
     return await sync_hotel_directory_logic(db)
+
+
+@router.post("/sync/profiles")
+async def sync_profiles(
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+):
+    """
+    Triggers a manual sync for user profile metadata.
+    """
+    return await sync_user_profiles_logic(db)
+
+
+@router.post("/sync/all")
+async def sync_all_systems(
+    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+):
+    """
+    Triggers a full system sync (directory + profiles).
+    """
+    return await sync_all_logic(db)
 
 
 @router.post("/cleanup-test-data")

@@ -16,6 +16,8 @@ import {
   Globe,
   MapPin,
   Info,
+  Star,
+  ExternalLink,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
@@ -37,13 +39,13 @@ export default function HotelDetailsModal({
 }: HotelDetailsModalProps) {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "amenities" | "offers" | "gallery" | "rooms"
+    "overview" | "amenities" | "offers" | "gallery" | "rooms" | "reviews"
   >("overview");
 
   if (!hotel) return null;
 
   const tabs: {
-    id: "overview" | "amenities" | "offers" | "gallery" | "rooms";
+    id: "overview" | "amenities" | "offers" | "gallery" | "rooms" | "reviews";
     label: string;
     icon: any;
   }[] = [
@@ -52,6 +54,7 @@ export default function HotelDetailsModal({
     { id: "amenities", label: t("hotelDetails.amenities"), icon: List },
     { id: "offers", label: t("hotelDetails.offers"), icon: Tag },
     { id: "rooms", label: t("hotelDetails.rooms"), icon: Building2 },
+    { id: "reviews", label: "Reviews", icon: Star },
   ];
 
   // Normalize images to always be an array of objects
@@ -420,6 +423,164 @@ export default function HotelDetailsModal({
               )}
             </div>
           )}
+
+          {activeTab === "reviews" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tighter italic">
+                    {t("common.crossPlatformIntelligence")}
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest mt-1">
+                    Synchronized market reputation data
+                  </p>
+                </div>
+                {hotel.other_sites_reviews && hotel.other_sites_reviews.length > 0 && (
+                  <div className="px-3 py-1 bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 rounded-full">
+                    <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest">
+                      {hotel.other_sites_reviews.length} SOURCES DETECTED
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {hotel.other_sites_reviews && hotel.other_sites_reviews.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {hotel.other_sites_reviews.map((site, index) => {
+                    const normalized = site.title.toLowerCase();
+                    let brandColor = "var(--soft-gold)";
+                    let brandBg = "rgba(212, 175, 55, 0.1)";
+                    
+                    if (normalized.includes("google")) {
+                      brandColor = "#4285F4";
+                      brandBg = "rgba(66, 133, 244, 0.1)";
+                    } else if (normalized.includes("booking")) {
+                      brandColor = "#003580";
+                      brandBg = "rgba(0, 53, 128, 0.1)";
+                    } else if (normalized.includes("tripadvisor")) {
+                      brandColor = "#34E0A1";
+                      brandBg = "rgba(52, 224, 161, 0.1)";
+                    } else if (normalized.includes("hotels.com") || normalized.includes("expedia")) {
+                      brandColor = "#D32F2F";
+                      brandBg = "rgba(211, 47, 47, 0.1)";
+                    }
+
+                    const rating = site.rating || 0;
+                    const ratingMax = site.rating_max || 5;
+                    const ratingPercent = (rating / ratingMax) * 100;
+
+                    return (
+                      <div 
+                        key={index} 
+                        className="bg-[var(--glass-bg)] p-5 border border-[var(--glass-border)] rounded-2xl relative overflow-hidden group hover:border-[var(--soft-gold)]/40 transition-all duration-500 hover:shadow-2xl hover:shadow-[var(--soft-gold)]/5"
+                      >
+                        {/* Platform Header */}
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg transition-transform group-hover:scale-110"
+                              style={{ backgroundColor: brandColor }}
+                            >
+                              {site.title.charAt(0)}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-tight truncate max-w-[150px]">
+                                {site.title}
+                              </h4>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <div className="w-1 h-1 rounded-full animate-pulse" style={{ backgroundColor: brandColor }} />
+                                <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live Feed</span>
+                              </div>
+                            </div>
+                          </div>
+                          {site.url && (
+                            <a 
+                              href={site.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--glass-bg-accent)] text-[var(--text-muted)] hover:text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/10 transition-all"
+                              title="View Original Source"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                        
+                        {/* Rating Display */}
+                        <div className="flex items-end justify-between relative z-10">
+                          <div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-black text-[var(--text-primary)] tracking-tighter italic">
+                                {site.rating?.toFixed(1)}
+                              </span>
+                              {site.rating_max && (
+                                <span className="text-sm text-[var(--text-muted)] font-bold italic opacity-40">
+                                  /{site.rating_max}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-0.5 mt-2">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star 
+                                  key={s} 
+                                  className={`w-2.5 h-2.5 ${s <= Math.round(site.rating || 0) ? 'text-[var(--soft-gold)] fill-[var(--soft-gold)]' : 'text-[var(--text-muted)] opacity-20'}`} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-xl font-black text-[var(--text-primary)] italic tracking-tighter">
+                              {site.review_count?.toLocaleString()}
+                            </div>
+                            <p className="text-[8px] text-[var(--text-muted)] uppercase font-black tracking-[0.2em] mt-1 opacity-60">
+                              Total Verified Reviews
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-6 relative">
+                          <div className="h-1.5 w-full bg-[var(--glass-bg-accent)] rounded-full overflow-hidden border border-[var(--glass-border)]/20">
+                            <div 
+                              className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(212,175,55,0.3)]"
+                              style={{ 
+                                width: `${ratingPercent}%`,
+                                background: `linear-gradient(90deg, ${brandColor} 0%, var(--soft-gold) 100%)`
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Decorative Background Elements */}
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
+                          <Star className="w-32 h-32 rotate-12" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-16 text-center bg-[var(--glass-bg)] rounded-3xl border-2 border-dashed border-[var(--glass-border)] relative overflow-hidden">
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 bg-[var(--glass-bg-accent)] rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[var(--glass-border)]">
+                      <Star className="w-8 h-8 text-[var(--text-muted)] opacity-20" />
+                    </div>
+                    <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">
+                      No Data Synchronized
+                    </h4>
+                    <p className="text-[10px] text-[var(--text-muted)] max-w-[240px] mx-auto uppercase font-bold tracking-tight leading-relaxed opacity-60">
+                      Cross-platform review intelligence is currently being aggregated for this property.
+                    </p>
+                  </div>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.02] pointer-events-none">
+                    <Globe className="w-64 h-64 animate-spin-slow" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>

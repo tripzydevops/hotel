@@ -28,6 +28,13 @@ class DataForSEOClient:
         self.login = os.getenv("DATAFORSEO_LOGIN")
         self.password = os.getenv("DATAFORSEO_PASSWORD")
         self.base_url = "https://api.dataforseo.com/v3"
+        self.postback_url = os.getenv("DATAFORSEO_POSTBACK_URL")
+
+        # Fallback to general APP_URL if set
+        if not self.postback_url:
+            app_url = os.getenv("APP_URL")
+            if app_url:
+                self.postback_url = f"{app_url}/api/v1/webhooks/dataforseo"
 
         if not self.login or not self.password:
             logger.warning("DataForSEO credentials not found in environment.")
@@ -53,13 +60,16 @@ class DataForSEOClient:
         endpoint = f"{self.base_url}/business_data/google/hotel_info/task_post"
 
         # DataForSEO requires a specific payload format
-        payload = [
-            {
-                "keyword": f"{hotel_name} {location}",
-                "language_code": "en",
-                "location_name": location,
-            }
-        ]
+        task_data = {
+            "keyword": f"{hotel_name} {location}",
+            "language_code": "en",
+            "location_name": location,
+        }
+
+        if self.postback_url:
+            task_data["postback_url"] = self.postback_url
+
+        payload = [task_data]
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:

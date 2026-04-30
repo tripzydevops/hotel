@@ -257,6 +257,12 @@ def get_price_for_room(
 
     # 4. HANDLE PREMIUM CATEGORIES (Deluxe, Suite)
     if not isinstance(r_types, list) or not r_types:
+        # LEGACY FALLBACK: If no room_types array exists, use the top-level lead price
+        # as a baseline even for non-standard room requests. This ensures historical
+        # continuity for logs (e.g. Jan/Feb) that lacked granular room mapping.
+        lead_p = _extract_price(price_log.get("price"), currency=active_currency)
+        if lead_p is not None and lead_p > 0:
+            return lead_p, "Legacy Fallback", 0.5
         return None, None, 0.0
 
     matches = []
@@ -829,6 +835,7 @@ async def perform_market_analysis(
                             "target_intraday_events": [],
                             "comp_prices_map": {},  # Map hid -> comp price object for easy updates
                             "seen_ids": set(),
+                            "is_historical": False,
                         }
 
                 # AGENT_FEATURE: Intraday Event Collection & Detection
@@ -878,6 +885,9 @@ async def perform_market_analysis(
                     # Use the first one found (latest) as the primary price
                     if hid not in daily_snapshot_map[date_key]["seen_ids"]:
                         daily_snapshot_map[date_key]["target_price"] = float(conv_p)
+                        daily_snapshot_map[date_key]["is_historical"] = p_log.get(
+                            "is_historical", False
+                        )
                 else:
                     if hid not in daily_snapshot_map[date_key]["comp_prices_map"]:
                         daily_snapshot_map[date_key]["comp_prices_map"][hid] = {
@@ -938,6 +948,7 @@ async def perform_market_analysis(
                 else 0.0,
                 "competitors": c_details,
                 "intraday_events": snap.get("target_intraday_events", []),
+                "is_historical": snap.get("is_historical", False),
             }
         )
 
@@ -1181,26 +1192,83 @@ async def get_market_intelligence_data(
         }
 
     h_ids = [str(h["id"]) for h in hotels]
-    # AGENT_LOGIC: Fetch only essential price log fields, avoiding large JSON blobs like amenities unless needed
-    p_res = (
+    # AGENT_LOGIC: Fetch price logs with expanded window and date filtering
+    p_query = (
         query_db.table("price_logs")
         .select(
             "hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor"
         )
         .in_("hotel_id", h_ids)
-        .order("recorded_at", desc=True)
-        .limit(1000)
+    )
+
+    # 2026-04-30: Filter by check-in date range if provided to ensure historical January/February
+    # data is retrieved instead of just the latest 1000 snapshots.
+    if start_date:
+        p_query = p_query.gte("check_in_date", start_date)
+    if end_date:
+        p_query = p_query.lte("check_in_date", end_date)
+
+    p_res = (
+        p_query.order("recorded_at", desc=True)
+        .limit(5000)
         .execute()
     )
     logs = p_res.data or []
 
     p_map = {}
-    # LINTER FIX: Renamed ambiguous variable 'l' to 'log' to resolve E741
+
+    # Add live logs first - they are already sorted by recorded_at desc
+    # This ensures that when we process logs, the latest live data takes precedence
     for log in logs:
         hid = str(log["hotel_id"])
         if hid not in p_map:
             p_map[hid] = []
         p_map[hid].append(log)
+
+    # AGENT_FIX: Always fetch historical aggregates to fill gaps in the timeline
+    history_logs = []
+    if start_date and end_date:
+        logger.info(f"[Analysis] Fetching historical aggregates for range {start_date} to {end_date}")
+        h_query = (
+            query_db.table("price_history_daily")
+            .select("*")
+            .in_("hotel_id", h_ids)
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .order("date", desc=True)
+            .execute()
+        )
+        history_logs = h_query.data or []
+
+    # Map history to price_log format and append AFTER live logs
+    for h_log in history_logs:
+        hid = str(h_log["hotel_id"])
+        mapped_room_types = []
+        rt_summary = h_log.get("room_type_summary") or {}
+        for rt_name, stats in rt_summary.items():
+            if isinstance(stats, dict):
+                mapped_room_types.append({
+                    "name": rt_name,
+                    "price": stats.get("avg") or stats.get("min") or 0.0,
+                })
+
+        if not mapped_room_types and h_log.get("avg_price"):
+            mapped_room_types.append({"name": "Standard", "price": h_log["avg_price"]})
+
+        log_entry = {
+            "hotel_id": hid,
+            "check_in_date": h_log["date"],
+            "check_out_date": None,
+            "price": h_log.get("avg_price") or 0.0,
+            "recorded_at": h_log.get("observation_date") or h_log.get("date"),
+            "currency": "TRY",
+            "room_types": mapped_room_types,
+            "vendor": h_log.get("top_vendor") or h_log.get("source") or "Aggregate",
+            "is_historical": True
+        }
+        if hid not in p_map:
+            p_map[hid] = []
+        p_map[hid].append(log_entry)
 
     # Building a more robust allowed_map with synonyms
     allowed_map = {}
