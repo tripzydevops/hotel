@@ -82,6 +82,7 @@ export default function Dashboard() {
     handleOpenDetails,
     handleOpenSession,
     handleEditHotel,
+    handleOpenAddHotel,
     handleReSearch,
     reSearchName,
     reSearchLocation,
@@ -215,7 +216,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         <DashboardHeader 
           lastUpdate={data?.last_updated ? formatDateTime(data.last_updated) : undefined}
-          onAddHotel={() => setIsAddHotelOpen(true)}
+          onAddHotel={handleOpenAddHotel}
           loading={loading || isRefreshing}
         />
 
@@ -243,7 +244,7 @@ export default function Dashboard() {
             ) : !data?.target_hotel &&
               (!data?.competitors || data.competitors.length === 0) ? (
               <div className="col-span-full">
-                <ZeroState onAddHotel={() => setIsAddHotelOpen(true)} />
+                <ZeroState onAddHotel={handleOpenAddHotel} />
               </div>
             ) : (
               <>
@@ -286,10 +287,10 @@ export default function Dashboard() {
                       checkIn={data.target_hotel.price_info?.check_in}
                       checkOut={data.target_hotel.price_info?.check_out}
                       adults={data.target_hotel.price_info?.adults}
-                      onEdit={(id) => handleEditHotel(id, data)}
+                      onEdit={(id, hotel) => handleEditHotel(hotel)}
                       offers={data.target_hotel.price_info?.offers}
                       room_types={data.target_hotel.price_info?.room_types}
-                      onViewDetails={(hotel) => handleOpenDetails(hotel, data)}
+                      onViewDetails={(hotel) => handleOpenDetails(hotel)}
                       isEnterprise={isEnterprise}
                       amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
@@ -370,9 +371,9 @@ export default function Dashboard() {
                             checkOut={competitor.price_info?.check_out}
                             adults={competitor.price_info?.adults}
                             isEstimated={competitor.price_info?.is_estimated}
-                            onEdit={(id) => handleEditHotel(id, data)}
+                            onEdit={(id, hotel) => handleEditHotel(hotel)}
                             onViewDetails={(hotel) =>
-                              handleOpenDetails(hotel, data)
+                              handleOpenDetails(hotel)
                             }
                             onSetTarget={handleSetTargetHotel}
                             isEnterprise={isEnterprise}

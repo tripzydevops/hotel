@@ -831,6 +831,7 @@ function KPICard({
   hoverData?: HoverData;
 }) {
   const { t } = useI18n();
+  const router = useRouter();
   const symbol = hoverData?.currency
     ? CURRENCY_SYMBOLS[hoverData.currency] || "$"
     : "$";
@@ -882,9 +883,10 @@ function KPICard({
                 </div>
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 thin-scrollbar">
                   {hoverData.priceRankList.map((item) => (
-                    <div
+                    <button
                       key={item.id}
-                      className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-all ${item.is_target
+                      onClick={() => router.push('/analysis/hotel-intelligence')}
+                      className={`w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all hover:bg-white/10 ${item.is_target
                         ? "bg-[var(--soft-gold)]/15 border border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20"
                         : "bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 hover:border-[var(--overlay-border)]"
                         }`}
@@ -907,7 +909,7 @@ function KPICard({
                         {symbol}
                         {item.price != null ? Math.round(item.price).toLocaleString() : "N/A"}
                       </span>
-                    </div>
+                      </button>
                   ))}
                 </div>
               </>

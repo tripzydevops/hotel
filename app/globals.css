@@ -119,6 +119,12 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
 }
 
+.glass-modal {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
 .tinted-frame {
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-accent);

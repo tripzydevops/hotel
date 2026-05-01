@@ -334,6 +334,8 @@ export const en = {
     baseMetric: "Base Metric",
     marketMinimum: "Market Minimum",
     marketMaximum: "Market Maximum",
+    priceGapToMin: "Price Gap to Min",
+    inventorySpread: "Inventory Spread",
   },
   reports: {
     title: "Audit & Intelligence Reports",
@@ -768,7 +770,7 @@ export const en = {
   rateIntelligence: {
     title: "Rate Intelligence Grid",
     subtitle: "14-day price comparison vs compset",
-    daysCount: "{0} Days",
+    daysCount: "{count} Days",
     dateRange: "Date Range",
     lowestRate: "Lowest Rate",
     notAvailable: "Price not available for this room type",
@@ -777,4 +779,27 @@ export const en = {
     belowAvg: "Below Market Avg",
     viewDetail: "Rate intelligence detail",
   },
+  hotelIntelligence: {
+    marketLeader: "Market Leader",
+    exportIntelligence: "Export Intelligence",
+    bestMarketPrice: "Best Market Price",
+    globalSentiment: "Global Sentiment",
+    parityScore: "Parity Score",
+    activeOTAs: "Active OTAs",
+    monitoringGlobal: "Monitoring global channels",
+    otaComparison: "OTA Market Comparison",
+    otaComparisonDesc: "Real-time price distribution across major booking channels.",
+    intelligenceBreakdown: "Intelligence Breakdown",
+    intelligenceBreakdownDesc: "Deep dive into service quality and room types.",
+    sentimentByCategory: "Sentiment by Category",
+    roomTypeDiscovery: "Room Type Discovery",
+    verifiedSources: "Verified Sources",
+    newParityOpportunity: "New Parity Opportunity",
+    analyzeOpportunity: "Analyze Opportunity",
+    liveView: "LIVE VIEW",
+    scanComplete: "Intelligence Scan Complete",
+    opportunityDesc: "Hotels.com just increased prices. Consider a 5% promotional adjustment to capture search volume.",
+    interiorOverview: "{hotel} - Interior Overview",
+    discoveredVia: "Discovered via high-resolution scraping of global OTAs."
+  }
 };

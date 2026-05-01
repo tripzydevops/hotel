@@ -9,6 +9,7 @@ import {
   ExternalLink,
   RefreshCw,
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -245,9 +246,12 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                         </>
                       )}
                     </button>
-                    <button className="text-[var(--text-muted)] group-hover/item:text-[var(--soft-gold)] transition-colors">
+                    <Link 
+                      href="/analysis/hotel-intelligence"
+                      className="text-[var(--text-muted)] group-hover/item:text-[var(--soft-gold)] transition-colors"
+                    >
                       <ExternalLink className="w-4 h-4" />
-                    </button>
+                    </Link>
                   </div>
                 </motion.div>
               ))}

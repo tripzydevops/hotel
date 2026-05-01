@@ -327,6 +327,8 @@ export const tr = {
     baseMetric: "Temel Değer",
     marketMinimum: "Market Minimumu",
     marketMaximum: "Market Maksimumu",
+    priceGapToMin: "Min. Fiyat Farkı",
+    inventorySpread: "Envanter Dağılımı",
   },
   sentiment: {
     performancePulse: "Performans Nabzı",
@@ -757,7 +759,7 @@ export const tr = {
   rateIntelligence: {
     title: "Fiyat İstihbaratı Matrisi",
     subtitle: "Rekabet setiyle 14 günlük fiyat karşılaştırması",
-    daysCount: "{0} Gün",
+    daysCount: "{count} Gün",
     dateRange: "Tarih Aralığı",
     lowestRate: "En Düşük Fiyat",
     notAvailable: "Bu oda tipi için fiyat mevcut değil",
@@ -766,4 +768,27 @@ export const tr = {
     belowAvg: "Pazar Ortalaması Altı",
     viewDetail: "Fiyat istihbarat detayı",
   },
+  hotelIntelligence: {
+    marketLeader: "Pazar Lideri",
+    exportIntelligence: "İstihbaratı Dışa Aktar",
+    bestMarketPrice: "En İyi Pazar Fiyatı",
+    globalSentiment: "Küresel Memnuniyet",
+    parityScore: "Parite Puanı",
+    activeOTAs: "Aktif OTA'lar",
+    monitoringGlobal: "Küresel kanallar izleniyor",
+    otaComparison: "OTA Pazar Karşılaştırması",
+    otaComparisonDesc: "Büyük rezervasyon kanallarında gerçek zamanlı fiyat dağılımı.",
+    intelligenceBreakdown: "İstihbarat Detayları",
+    intelligenceBreakdownDesc: "Hizmet kalitesi ve oda tiplerine derinlemesine bakış.",
+    sentimentByCategory: "Kategoriye Göre Memnuniyet",
+    roomTypeDiscovery: "Oda Tipi Keşfi",
+    verifiedSources: "Doğrulanmış Kaynaklar",
+    newParityOpportunity: "Yeni Parite Fırsatı",
+    analyzeOpportunity: "Fırsatı Analiz Et",
+    liveView: "CANLI GÖRÜNÜM",
+    scanComplete: "İstihbarat Taraması Tamamlandı",
+    opportunityDesc: "Hotels.com fiyatları yeni artırdı. Arama hacmini yakalamak için %5'lik bir promosyon ayarlaması yapmayı düşünün.",
+    interiorOverview: "{hotel} - İç Mekan Özeti",
+    discoveredVia: "Küresel OTA'ların yüksek çözünürlüklü kazınmasıyla keşfedildi."
+  }
 };

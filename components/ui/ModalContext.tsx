@@ -37,11 +37,10 @@ interface ModalContextType {
   selectedIntradayHotelName: string;
   setSelectedIntradayHotelName: (name: string) => void;
   openIntradayModal: (events: any[], hotelName: string) => void;
-
-  // Handlers
-  handleOpenDetails: (hotel: Hotel, data: DashboardData | null) => void;
+  handleOpenAddHotel: () => void;
+  handleOpenDetails: (hotel: Hotel) => void;
   handleOpenSession: (session: ScanSession) => void;
-  handleEditHotel: (id: string, data: DashboardData | null) => void;
+  handleEditHotel: (hotel: Hotel) => void;
   handleReSearch: (name: string, location?: string) => void;
 }
 
@@ -74,48 +73,24 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const [selectedIntradayEvents, setSelectedIntradayEvents] = useState<any[] | null>(null);
   const [selectedIntradayHotelName, setSelectedIntradayHotelName] = useState("");
 
-  const handleOpenDetails = (hotel: Hotel, data: DashboardData | null) => {
-    const fullHotel =
-      data?.competitors.find((h) => h.id === hotel.id) ||
-      (data?.target_hotel?.id === hotel.id ? data?.target_hotel : null);
-
-    // [FIX] The tile passes amenities/images in the hotel arg, but the cache
-    // lookup (fullHotel) may not have those fields (or may have empty arrays).
-    // Use || to fall back to the tile's values when cache has empty/undefined.
-    const cacheAmenities = (fullHotel as any)?.amenities;
-    const cacheImages = (fullHotel as any)?.images;
-
-    console.log("[HotelDetails] tile hotel.amenities:", hotel.amenities?.length, "| cache amenities:", cacheAmenities?.length);
-    console.log("[HotelDetails] tile hotel.images:", hotel.images?.length, "| cache images:", cacheImages?.length);
-
-    const mergedHotel = fullHotel
-      ? {
-        ...fullHotel,
-        amenities: (cacheAmenities && cacheAmenities.length > 0) ? cacheAmenities : hotel.amenities,
-        images: (cacheImages && cacheImages.length > 0) ? cacheImages : hotel.images,
-      }
-      : hotel;
-
-    console.log("[HotelDetails] merged amenities:", (mergedHotel as any).amenities?.length, "images:", (mergedHotel as any).images?.length);
-
-    setSelectedHotelForDetails(mergedHotel);
-    setIsDetailsModalOpen(true);
+  // Handlers
+  const handleOpenAddHotel = () => {
+    setIsAddHotelOpen(true);
   };
 
+  const handleOpenDetails = (hotel: Hotel) => {
+    setSelectedHotelForDetails(hotel);
+    setIsDetailsModalOpen(true);
+  };
 
   const handleOpenSession = (session: ScanSession) => {
     setSelectedSession(session);
     setIsSessionModalOpen(true);
   };
 
-  const handleEditHotel = (id: string, data: DashboardData | null) => {
-    const fullHotel =
-      data?.competitors.find((h) => h.id === id) ||
-      (data?.target_hotel?.id === id ? data.target_hotel : null);
-    if (fullHotel) {
-      setHotelToEdit(fullHotel);
-      setIsEditHotelOpen(true);
-    }
+  const handleEditHotel = (hotel: Hotel) => {
+    setHotelToEdit(hotel);
+    setIsEditHotelOpen(true);
   };
 
   const handleReSearch = (name: string, location?: string) => {
@@ -165,6 +140,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       selectedIntradayHotelName,
       setSelectedIntradayHotelName,
       openIntradayModal,
+      handleOpenAddHotel,
       handleOpenDetails,
       handleOpenSession,
       handleEditHotel,

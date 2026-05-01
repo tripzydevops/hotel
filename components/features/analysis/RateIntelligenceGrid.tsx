@@ -11,6 +11,7 @@ import {
   History,
   Clock,
 } from "lucide-react";
+import Link from "next/link";
 
 interface Competitor {
   id: string;
@@ -159,7 +160,7 @@ export default function RateIntelligenceGrid({
         </div>
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 rounded-lg bg-[var(--glass-bg-accent)] border border-[var(--glass-border-accent)] text-[var(--soft-gold)] text-xs font-black uppercase tracking-wider">
-            {t("rateIntelligence.daysCount", { 0: sortedData.length })}
+            {t("rateIntelligence.daysCount", { count: sortedData.length })}
           </div>
         </div>
       </div>
@@ -191,11 +192,14 @@ export default function RateIntelligenceGrid({
                   key={comp.id}
                   className="p-4 min-w-[140px] border-b border-[var(--glass-border)] text-center"
                 >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider truncate max-w-[120px]">
+                  <Link 
+                    href="/analysis/hotel-intelligence"
+                    className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group/header"
+                  >
+                    <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider truncate max-w-[120px] group-hover/header:text-[var(--soft-gold)] transition-colors">
                       {comp.name}
                     </span>
-                  </div>
+                  </Link>
                 </th>
               ))}
             </tr>

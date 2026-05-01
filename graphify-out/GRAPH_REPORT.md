@@ -1,7 +1,7 @@
-# Graph Report - hotel  (2026-04-30)
+# Graph Report - hotel  (2026-05-01)
 
 ## Corpus Check
-- 400 files · ~253,435 words
+- 400 files · ~253,442 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary

@@ -9062,81 +9062,81 @@
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L62",
-      "id": "services_scan_persistence_rationale_62",
       "community": 0,
-      "norm_label": "log raw payload to the everything vault (scan_sessions.raw_payload)."
+      "norm_label": "log raw payload to the everything vault (scan_sessions.raw_payload).",
+      "id": "services_scan_persistence_rationale_62"
     },
     {
       "label": "Executes the persistence pipeline for a batch of scraper results.          This",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L91",
-      "id": "services_scan_persistence_rationale_91",
       "community": 0,
-      "norm_label": "executes the persistence pipeline for a batch of scraper results.          this"
+      "norm_label": "executes the persistence pipeline for a batch of scraper results.          this",
+      "id": "services_scan_persistence_rationale_91"
     },
     {
       "label": "KA\u0130ZEN 2026: Normalizes room type data into a consistent object structure.",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L220",
-      "id": "services_scan_persistence_rationale_220",
       "community": 0,
-      "norm_label": "kaizen 2026: normalizes room type data into a consistent object structure."
+      "norm_label": "kaizen 2026: normalizes room type data into a consistent object structure.",
+      "id": "services_scan_persistence_rationale_220"
     },
     {
       "label": "Normalizes and snapshots room types in a dedicated catalog.         Provides a s",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L264",
-      "id": "services_scan_persistence_rationale_264",
       "community": 0,
-      "norm_label": "normalizes and snapshots room types in a dedicated catalog.         provides a s"
+      "norm_label": "normalizes and snapshots room types in a dedicated catalog.         provides a s",
+      "id": "services_scan_persistence_rationale_264"
     },
     {
       "label": "Batch process room types from multiple hotels with vectorized embedding generati",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L337",
-      "id": "services_scan_persistence_rationale_337",
       "community": 0,
-      "norm_label": "batch process room types from multiple hotels with vectorized embedding generati"
+      "norm_label": "batch process room types from multiple hotels with vectorized embedding generati",
+      "id": "services_scan_persistence_rationale_337"
     },
     {
       "label": "Tier-2 Sync logic for external data providers (e.g. DataForSEO).         Mirrors",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L433",
-      "id": "services_scan_persistence_rationale_433",
       "community": 0,
-      "norm_label": "tier-2 sync logic for external data providers (e.g. dataforseo).         mirrors"
+      "norm_label": "tier-2 sync logic for external data providers (e.g. dataforseo).         mirrors",
+      "id": "services_scan_persistence_rationale_433"
     },
     {
       "label": "Processes queued embeddings in parallel.",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L1038",
-      "id": "services_scan_persistence_rationale_1038",
       "community": 0,
-      "norm_label": "processes queued embeddings in parallel."
+      "norm_label": "processes queued embeddings in parallel.",
+      "id": "services_scan_persistence_rationale_1038"
     },
     {
       "label": "Robust relative date parser for SerpApi strings (En/Tr).         Example inputs:",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L1082",
-      "id": "services_scan_persistence_rationale_1082",
       "community": 0,
-      "norm_label": "robust relative date parser for serpapi strings (en/tr).         example inputs:"
+      "norm_label": "robust relative date parser for serpapi strings (en/tr).         example inputs:",
+      "id": "services_scan_persistence_rationale_1082"
     },
     {
       "label": "High-Performance Batch Sync.         Groups results by property_token (identity)",
       "file_type": "rationale",
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L1129",
-      "id": "services_scan_persistence_rationale_1129",
       "community": 0,
-      "norm_label": "high-performance batch sync.         groups results by property_token (identity)"
+      "norm_label": "high-performance batch sync.         groups results by property_token (identity)",
+      "id": "services_scan_persistence_rationale_1129"
     },
     {
       "label": "recovery_service.py",
@@ -11591,135 +11591,135 @@
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L669",
-      "id": "providers_dataforseo_provider_rationale_669",
       "community": 2,
-      "norm_label": "normalizes localized category names (e.g. turkish) to english."
+      "norm_label": "normalizes localized category names (e.g. turkish) to english.",
+      "id": "providers_dataforseo_provider_rationale_669"
     },
     {
       "label": "Deep scan using hotel_info/advanced.         Provides detailed sentiment and enr",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L689",
-      "id": "providers_dataforseo_provider_rationale_689",
       "community": 2,
-      "norm_label": "deep scan using hotel_info/advanced.         provides detailed sentiment and enr"
+      "norm_label": "deep scan using hotel_info/advanced.         provides detailed sentiment and enr",
+      "id": "providers_dataforseo_provider_rationale_689"
     },
     {
       "label": "Implementation of HotelDataProvider.search_hotels using DataForSEO.         Uses",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L743",
-      "id": "providers_dataforseo_provider_rationale_743",
       "community": 2,
-      "norm_label": "implementation of hoteldataprovider.search_hotels using dataforseo.         uses"
+      "norm_label": "implementation of hoteldataprovider.search_hotels using dataforseo.         uses",
+      "id": "providers_dataforseo_provider_rationale_743"
     },
     {
       "label": "Implementation of HotelDataProvider.fetch_price using DataForSEO Live Search.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L800",
-      "id": "providers_dataforseo_provider_rationale_800",
       "community": 2,
-      "norm_label": "implementation of hoteldataprovider.fetch_price using dataforseo live search."
+      "norm_label": "implementation of hoteldataprovider.fetch_price using dataforseo live search.",
+      "id": "providers_dataforseo_provider_rationale_800"
     },
     {
       "label": "Submits a task to the DataForSEO Google Hotels Info endpoint.         Standard m",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L867",
-      "id": "providers_dataforseo_provider_rationale_867",
       "community": 2,
-      "norm_label": "submits a task to the dataforseo google hotels info endpoint.         standard m"
+      "norm_label": "submits a task to the dataforseo google hotels info endpoint.         standard m",
+      "id": "providers_dataforseo_provider_rationale_867"
     },
     {
       "label": "Submits multiple hotel search tasks to DataForSEO.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L925",
-      "id": "providers_dataforseo_provider_rationale_925",
       "community": 2,
-      "norm_label": "submits multiple hotel search tasks to dataforseo."
+      "norm_label": "submits multiple hotel search tasks to dataforseo.",
+      "id": "providers_dataforseo_provider_rationale_925"
     },
     {
       "label": "Batch posts hotel metadata tasks to DataForSEO.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L967",
-      "id": "providers_dataforseo_provider_rationale_967",
       "community": 2,
-      "norm_label": "batch posts hotel metadata tasks to dataforseo."
+      "norm_label": "batch posts hotel metadata tasks to dataforseo.",
+      "id": "providers_dataforseo_provider_rationale_967"
     },
     {
       "label": "POSTs property tokens to DataForSEO Google Hotels endpoint.         Returns ONLY",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L998",
-      "id": "providers_dataforseo_provider_rationale_998",
       "community": 2,
-      "norm_label": "posts property tokens to dataforseo google hotels endpoint.         returns only"
+      "norm_label": "posts property tokens to dataforseo google hotels endpoint.         returns only",
+      "id": "providers_dataforseo_provider_rationale_998"
     },
     {
       "label": "Submits a batch of hotels for discovery.         Returns the number of tasks suc",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1050",
-      "id": "providers_dataforseo_provider_rationale_1050",
       "community": 2,
-      "norm_label": "submits a batch of hotels for discovery.         returns the number of tasks suc"
+      "norm_label": "submits a batch of hotels for discovery.         returns the number of tasks suc",
+      "id": "providers_dataforseo_provider_rationale_1050"
     },
     {
       "label": "Helper to register external tasks into internal scan_tasks table.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1169",
-      "id": "providers_dataforseo_provider_rationale_1169",
       "community": 2,
-      "norm_label": "helper to register external tasks into internal scan_tasks table."
+      "norm_label": "helper to register external tasks into internal scan_tasks table.",
+      "id": "providers_dataforseo_provider_rationale_1169"
     },
     {
       "label": "Retrieves results for price search tasks with identity matching.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1219",
-      "id": "providers_dataforseo_provider_rationale_1219",
       "community": 2,
-      "norm_label": "retrieves results for price search tasks with identity matching."
+      "norm_label": "retrieves results for price search tasks with identity matching.",
+      "id": "providers_dataforseo_provider_rationale_1219"
     },
     {
       "label": "Retrieves results for rich metadata (hotel_info) tasks from either advanced or s",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1239",
-      "id": "providers_dataforseo_provider_rationale_1239",
       "community": 2,
-      "norm_label": "retrieves results for rich metadata (hotel_info) tasks from either advanced or s"
+      "norm_label": "retrieves results for rich metadata (hotel_info) tasks from either advanced or s",
+      "id": "providers_dataforseo_provider_rationale_1239"
     },
     {
       "label": "Internal helper for GET results with Identity Verification logic.",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1265",
-      "id": "providers_dataforseo_provider_rationale_1265",
       "community": 2,
-      "norm_label": "internal helper for get results with identity verification logic."
+      "norm_label": "internal helper for get results with identity verification logic.",
+      "id": "providers_dataforseo_provider_rationale_1265"
     },
     {
       "label": "Implementation of abstract method from HotelDataProvider.          [FIX 1] Task-",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1593",
-      "id": "providers_dataforseo_provider_rationale_1593",
       "community": 2,
-      "norm_label": "implementation of abstract method from hoteldataprovider.          [fix 1] task-"
+      "norm_label": "implementation of abstract method from hoteldataprovider.          [fix 1] task-",
+      "id": "providers_dataforseo_provider_rationale_1593"
     },
     {
       "label": "Implementation of bulk result retrieval using asyncio.gather for high concurrenc",
       "file_type": "rationale",
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L1646",
-      "id": "providers_dataforseo_provider_rationale_1646",
       "community": 2,
-      "norm_label": "implementation of bulk result retrieval using asyncio.gather for high concurrenc"
+      "norm_label": "implementation of bulk result retrieval using asyncio.gather for high concurrenc",
+      "id": "providers_dataforseo_provider_rationale_1646"
     },
     {
       "label": "run_migration.py",
@@ -38558,11 +38558,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_62",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_62",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_62",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_62"
     },
     {
       "relation": "uses",
@@ -38570,11 +38570,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_91",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_91",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_91",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_91"
     },
     {
       "relation": "uses",
@@ -38582,11 +38582,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_220",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_220",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_220",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_220"
     },
     {
       "relation": "uses",
@@ -38594,11 +38594,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_264",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_264",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_264",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_264"
     },
     {
       "relation": "uses",
@@ -38606,11 +38606,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_337",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_337",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_337",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_337"
     },
     {
       "relation": "uses",
@@ -38618,11 +38618,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_433",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_433",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_433",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_433"
     },
     {
       "relation": "uses",
@@ -38630,11 +38630,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_1038",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_1038",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_1038",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_1038"
     },
     {
       "relation": "uses",
@@ -38642,11 +38642,11 @@
       "source_file": "backend/services/scan_persistence.py",
       "source_location": "L10",
       "weight": 0.8,
-      "_src": "services_scan_persistence_rationale_1082",
-      "_tgt": "models_schemas_scanoptions",
+      "_src": "models_schemas_scanoptions",
+      "_tgt": "services_scan_persistence_rationale_1082",
+      "confidence_score": 0.5,
       "source": "models_schemas_scanoptions",
-      "target": "services_scan_persistence_rationale_1082",
-      "confidence_score": 0.5
+      "target": "services_scan_persistence_rationale_1082"
     },
     {
       "relation": "uses",
@@ -58862,11 +58862,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_669",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_669",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_669",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_669"
     },
     {
       "relation": "uses",
@@ -58874,11 +58874,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_689",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_689",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_689",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_689"
     },
     {
       "relation": "uses",
@@ -58886,11 +58886,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_743",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_743",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_743",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_743"
     },
     {
       "relation": "uses",
@@ -58898,11 +58898,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_800",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_800",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_800",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_800"
     },
     {
       "relation": "uses",
@@ -58910,11 +58910,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_867",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_867",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_867",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_867"
     },
     {
       "relation": "uses",
@@ -58922,11 +58922,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_925",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_925",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_925",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_925"
     },
     {
       "relation": "uses",
@@ -58934,11 +58934,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_967",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_967",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_967",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_967"
     },
     {
       "relation": "uses",
@@ -58946,11 +58946,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_998",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_998",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_998",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_998"
     },
     {
       "relation": "uses",
@@ -58958,11 +58958,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1050",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1050",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1050",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1050"
     },
     {
       "relation": "uses",
@@ -58970,11 +58970,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1169",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1169",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1169",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1169"
     },
     {
       "relation": "uses",
@@ -58982,11 +58982,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1219",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1219",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1219",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1219"
     },
     {
       "relation": "uses",
@@ -58994,11 +58994,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1239",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1239",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1239",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1239"
     },
     {
       "relation": "uses",
@@ -59006,11 +59006,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1265",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1265",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1265",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1265"
     },
     {
       "relation": "uses",
@@ -59018,11 +59018,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1593",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1593",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1593",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1593"
     },
     {
       "relation": "uses",
@@ -59030,11 +59030,11 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1646",
-      "_tgt": "services_data_provider_interface_hoteldataprovider",
+      "_src": "services_data_provider_interface_hoteldataprovider",
+      "_tgt": "providers_dataforseo_provider_rationale_1646",
+      "confidence_score": 0.5,
       "source": "services_data_provider_interface_hoteldataprovider",
-      "target": "providers_dataforseo_provider_rationale_1646",
-      "confidence_score": 0.5
+      "target": "providers_dataforseo_provider_rationale_1646"
     },
     {
       "relation": "uses",
@@ -67504,9 +67504,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_669",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_669",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67516,9 +67516,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_689",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_689",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67528,9 +67528,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_743",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_743",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67540,9 +67540,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_800",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_800",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67552,9 +67552,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_867",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_867",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67564,9 +67564,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_925",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_925",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67576,9 +67576,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_967",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_967",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67588,9 +67588,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_998",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_998",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67600,9 +67600,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1050",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1050",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67612,9 +67612,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1169",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1169",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67624,9 +67624,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1219",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1219",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67636,9 +67636,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1239",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1239",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67648,9 +67648,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1265",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1265",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67660,9 +67660,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1593",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1593",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "uses",
@@ -67672,9 +67672,9 @@
       "weight": 0.8,
       "_src": "providers_dataforseo_provider_rationale_1646",
       "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "confidence_score": 0.5,
       "source": "providers_dataforseo_provider_rationale_1646",
-      "target": "utils_room_normalizer_roomtypenormalizer",
-      "confidence_score": 0.5
+      "target": "utils_room_normalizer_roomtypenormalizer"
     },
     {
       "relation": "contains",
@@ -68366,8 +68366,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_646",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_646",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_646"
@@ -68378,8 +68378,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_666",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_666",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_666"
@@ -68390,8 +68390,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_720",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_720",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_720"
@@ -68402,8 +68402,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_777",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_777",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_777"
@@ -68414,8 +68414,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_844",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_844",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_844"
@@ -68426,8 +68426,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_902",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_902",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_902"
@@ -68438,8 +68438,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_944",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_944",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_944"
@@ -68450,8 +68450,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_975",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_975",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_975"
@@ -68462,8 +68462,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1027",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1027",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1027"
@@ -68474,8 +68474,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1146",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1146",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1146"
@@ -68486,8 +68486,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1196",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1196",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1196"
@@ -68498,8 +68498,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1216",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1216",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1216"
@@ -68510,8 +68510,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1242",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1242",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1242"
@@ -68522,8 +68522,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1570",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1570",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1570"
@@ -68534,8 +68534,8 @@
       "source_file": "backend/services/providers/dataforseo_provider.py",
       "source_location": "L139",
       "weight": 0.8,
-      "_src": "providers_dataforseo_provider_rationale_1623",
-      "_tgt": "utils_room_normalizer_roomtypenormalizer",
+      "_src": "utils_room_normalizer_roomtypenormalizer",
+      "_tgt": "providers_dataforseo_provider_rationale_1623",
       "confidence_score": 0.5,
       "source": "utils_room_normalizer_roomtypenormalizer",
       "target": "providers_dataforseo_provider_rationale_1623"

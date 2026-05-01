@@ -2,17 +2,14 @@
 
 import React from "react";
 import { 
-  Hotel, 
   Star, 
   MapPin, 
   BarChart3, 
-  TrendingUp, 
   AlertCircle, 
   Bed, 
   Users, 
   MessageSquare,
   ShieldCheck,
-  ExternalLink,
   ChevronRight,
   TrendingDown,
   Info
@@ -20,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { useDictionary } from "@/lib/dictionary-context";
 
 // Mock data extracted from output.txt
 const HOTEL_DATA = {
@@ -64,6 +62,9 @@ const HOTEL_DATA = {
 };
 
 export default function HotelIntelligencePage() {
+  const { dict } = useDictionary();
+  const d = dict.hotelIntelligence;
+
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
       {/* Header Section */}
@@ -85,9 +86,9 @@ export default function HotelIntelligencePage() {
         </div>
         <div className="flex items-center gap-3">
           <Badge className="bg-[var(--optimal-green-soft)] text-[var(--optimal-green)] border-[var(--optimal-green)] px-3 py-1">
-            <ShieldCheck size={14} className="mr-1" /> Market Leader
+            <ShieldCheck size={14} className="mr-1" /> {d.marketLeader}
           </Badge>
-          <button className="btn-premium">Export Intelligence</button>
+          <button className="btn-premium">{d.exportIntelligence}</button>
         </div>
       </div>
 
@@ -95,7 +96,7 @@ export default function HotelIntelligencePage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium tactical-label">Best Market Price</CardTitle>
+            <CardTitle className="text-sm font-medium tactical-label">{d.bestMarketPrice}</CardTitle>
             <TrendingDown className="h-4 w-4 text-[var(--optimal-green)]" />
           </CardHeader>
           <CardContent>
@@ -109,7 +110,7 @@ export default function HotelIntelligencePage() {
         </Card>
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium tactical-label">Global Sentiment</CardTitle>
+            <CardTitle className="text-sm font-medium tactical-label">{d.globalSentiment}</CardTitle>
             <MessageSquare className="h-4 w-4 text-[var(--soft-gold)]" />
           </CardHeader>
           <CardContent>
@@ -121,7 +122,7 @@ export default function HotelIntelligencePage() {
         </Card>
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium tactical-label">Parity Score</CardTitle>
+            <CardTitle className="text-sm font-medium tactical-label">{d.parityScore}</CardTitle>
             <BarChart3 className="h-4 w-4 text-[var(--optimal-green)]" />
           </CardHeader>
           <CardContent>
@@ -133,13 +134,13 @@ export default function HotelIntelligencePage() {
         </Card>
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium tactical-label">Active OTAs</CardTitle>
+            <CardTitle className="text-sm font-medium tactical-label">{d.activeOTAs}</CardTitle>
             <Users className="h-4 w-4 text-[var(--text-secondary)]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--text-primary)]">15+</div>
             <p className="text-xs text-[var(--text-secondary)] mt-1">
-              Monitoring global channels
+              {d.monitoringGlobal}
             </p>
           </CardContent>
         </Card>
@@ -149,9 +150,9 @@ export default function HotelIntelligencePage() {
         {/* OTA Comparison */}
         <Card className="col-span-4 glass-card">
           <CardHeader>
-            <CardTitle className="text-xl">OTA Market Comparison</CardTitle>
+            <CardTitle className="text-xl">{d.otaComparison}</CardTitle>
             <CardDescription className="text-[var(--text-secondary)]">
-              Real-time price distribution across major booking channels.
+              {d.otaComparisonDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -190,14 +191,14 @@ export default function HotelIntelligencePage() {
         {/* Sentiment & Categories */}
         <Card className="col-span-3 glass-card">
           <CardHeader>
-            <CardTitle className="text-xl">Intelligence Breakdown</CardTitle>
+            <CardTitle className="text-xl">{d.intelligenceBreakdown}</CardTitle>
             <CardDescription className="text-[var(--text-secondary)]">
-              Deep dive into service quality and room types.
+              {d.intelligenceBreakdownDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <h4 className="tactical-label">Sentiment by Category</h4>
+              <h4 className="tactical-label">{d.sentimentByCategory}</h4>
               {HOTEL_DATA.sentiment.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex justify-between text-xs">
@@ -210,7 +211,7 @@ export default function HotelIntelligencePage() {
             </div>
 
             <div className="pt-4 border-t border-[var(--glass-border)]">
-              <h4 className="tactical-label mb-3">Room Type Discovery</h4>
+              <h4 className="tactical-label mb-3">{d.roomTypeDiscovery}</h4>
               <div className="grid gap-2">
                 {HOTEL_DATA.roomTypes.map((room, index) => (
                   <div key={index} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-subtle)] rounded-lg">
@@ -227,7 +228,7 @@ export default function HotelIntelligencePage() {
             </div>
 
             <div className="pt-4 border-t border-[var(--glass-border)]">
-              <h4 className="tactical-label mb-3">Verified Sources</h4>
+              <h4 className="tactical-label mb-3">{d.verifiedSources}</h4>
               <div className="flex flex-wrap gap-2">
                 {HOTEL_DATA.reviewSources.map((source, index) => (
                   <div key={index} className="px-3 py-1 rounded-full bg-[var(--deep-ocean)] border border-[var(--glass-border)] text-xs flex items-center gap-2">
@@ -246,13 +247,12 @@ export default function HotelIntelligencePage() {
       <div className="grid gap-6 md:grid-cols-3">
          <Card className="glass-card flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[var(--deep-ocean-card)] to-[var(--bg-accent)] border-[var(--soft-gold-glow)]">
             <AlertCircle size={32} className="text-[var(--soft-gold)] mb-4 animate-pulse-subtle" />
-            <h3 className="text-lg font-bold">New Parity Opportunity</h3>
+            <h3 className="text-lg font-bold">{d.newParityOpportunity}</h3>
             <p className="text-sm text-[var(--text-secondary)] mt-2">
-              Hotels.com just increased prices. 
-              Consider a 5% promotional adjustment to capture search volume.
+              {d.opportunityDesc}
             </p>
             <button className="mt-4 text-xs font-bold uppercase tracking-widest text-[var(--soft-gold)] hover:underline">
-              Analyze Opportunity
+              {d.analyzeOpportunity}
             </button>
          </Card>
          
@@ -264,13 +264,15 @@ export default function HotelIntelligencePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
                <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-[var(--soft-gold)] text-white border-none">LIVE VIEW</Badge>
+                  <Badge className="bg-[var(--soft-gold)] text-white border-none">{d.liveView}</Badge>
                   <span className="text-white/80 text-sm flex items-center gap-1">
-                    <Info size={14} /> Intelligence Scan Complete
+                    <Info size={14} /> {d.scanComplete}
                   </span>
                </div>
-               <h3 className="text-xl font-bold text-white">Hilton Garden Inn - Luxury Suite Overview</h3>
-               <p className="text-white/60 text-sm mt-1">Discovered via high-resolution scraping of global OTAs.</p>
+               <h3 className="text-xl font-bold text-white">
+                 {d.interiorOverview.replace("{hotel}", HOTEL_DATA.name)}
+               </h3>
+               <p className="text-white/60 text-sm mt-1">{d.discoveredVia}</p>
             </div>
          </div>
       </div>
