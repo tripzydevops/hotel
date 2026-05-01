@@ -83,9 +83,12 @@ export default function HotelDetailsModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-4xl glass-modal border border-[var(--glass-border)] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div
+        className="relative w-full max-w-4xl glass-modal border border-[var(--glass-border)] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header: Tactical Briefing */}
-        <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row sm:items-start justify-between bg-[var(--glass-bg)] gap-4">
+        <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row sm:items-start justify-between bg-[var(--glass-bg)] gap-4 shrink-0">
           <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
             {hotel.image_url ? (
               <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-[var(--glass-border)] ring-2 ring-[var(--soft-gold)]/10">
@@ -130,11 +133,15 @@ export default function HotelDetailsModal({
         </div>
 
         {/* Tabs: Stream Selection */}
-        <div className="flex border-b border-[var(--glass-border)] overflow-x-auto bg-[var(--deep-ocean-card)]/30 px-2">
+        <div className="flex border-b border-[var(--glass-border)] overflow-x-auto bg-[var(--deep-ocean-card)]/30 px-2 shrink-0">
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab(tab.id);
+              }}
               className={`
                         flex items-center gap-2 px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black transition-all border-b-2 whitespace-nowrap
                         ${
