@@ -25,34 +25,40 @@ class TGAScraper:
         """
         logger.info("[TGAScraper] Starting semantic scrape via Firecrawl CLI...")
         try:
-            # Use firecrawl CLI to scrape the page content as markdown
-            import subprocess
+            import asyncio
 
             # npx -y firecrawl-cli@1.8.0 scrape <url> --only-main-content -f markdown
-            process = subprocess.run(
-                [
-                    "npx",
-                    "-y",
-                    "firecrawl-cli@1.8.0",
-                    "scrape",
-                    self.URL,
-                    "--only-main-content",
-                    "-f",
-                    "markdown",
-                ],
-                capture_output=True,
-                text=True,
-                check=False,
+            process = await asyncio.create_subprocess_exec(
+                "npx",
+                "-y",
+                "firecrawl-cli@1.8.0",
+                "scrape",
+                self.URL,
+                "--only-main-content",
+                "-f",
+                "markdown",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
 
-            if process.returncode != 0:
-                logger.error(f"[TGAScraper] Firecrawl CLI failed: {process.stderr}")
+            try:
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                logger.error("[TGAScraper] Firecrawl CLI timed out after 60 seconds.")
                 return {
                     "status": "error",
-                    "message": f"Firecrawl failed: {process.stderr}",
+                    "message": "Firecrawl timed out.",
                 }
 
-            content = process.stdout
+            if process.returncode != 0:
+                logger.error(f"[TGAScraper] Firecrawl CLI failed: {stderr.decode()}")
+                return {
+                    "status": "error",
+                    "message": f"Firecrawl failed: {stderr.decode()}",
+                }
+
+            content = stdout.decode()
 
             if not content or len(content) < 100:
                 logger.warning(f"[TGAScraper] Content too short: {len(content)} chars.")

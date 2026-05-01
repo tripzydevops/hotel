@@ -1272,8 +1272,9 @@ class ScanPersistenceService:
                 # Derive price from cheapest OTA if top-level is missing
                 try:
                     price = min(float(p.get("price") or 999999) for p in offers)
-                    if price == 999999: price = 0
-                except:
+                    if price == 999999:
+                        price = 0
+                except Exception:
                     price = 0
             
             currency = res_data.get("currency") or "TRY"
@@ -1439,7 +1440,8 @@ class ScanPersistenceService:
                     if isinstance(scraped_reviews, list) and scraped_reviews:
                         import uuid
                         for r in scraped_reviews:
-                            if not isinstance(r, dict): continue
+                            if not isinstance(r, dict):
+                                continue
                             # We only care about reviews with content or a rating
                             if not r.get("text") and not r.get("rating") and not r.get("review_text"):
                                 continue

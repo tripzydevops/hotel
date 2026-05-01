@@ -90,8 +90,6 @@ async def record_system_pulse(
         )
 
         # KAİZEN: Handle silent Failures
-        # postgrest-py execute() returns an object that might have 'error' populated
-        # but doesn't necessarily raise an exception.
         if hasattr(res, "error") and res.error:
             logger.error(f"Pulse recording failed (PostgREST Error): {res.error}")
         elif not res.data:
@@ -162,9 +160,11 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
 
         # 3. Cleanup Zombie Sessions and Tasks
         try:
-            # 3.1. Cleanup sessions (2-hour cutoff)
+            # 3.1. Cleanup sessions (4-hour cutoff, task-aware)
+            # [FIX 2026-05-01] Increased from 2h to 4h to prevent premature reaping
+            # of sessions whose DataForSEO tasks are still being processed.
             zombie_cutoff = (
-                datetime.now(timezone.utc) - timedelta(hours=2)
+                datetime.now(timezone.utc) - timedelta(hours=4)
             ).isoformat()
             zombies = (
                 insforge.table("scan_sessions")
@@ -176,15 +176,58 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
 
             if zombies.data:
                 z_ids = [z["id"] for z in zombies.data]
-                s_logger.warning(
-                    f"CRON: Cleaning up {len(z_ids)} zombie sessions: {z_ids}"
-                )
-                insforge.table("scan_sessions").update(
-                    {
-                        "status": "failed",
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                    }
-                ).in_("id", z_ids).execute()
+
+                # [FIX 2026-05-01] Task-aware cleanup: check if any tasks are
+                # still pending at the provider before force-failing the session.
+                truly_dead_ids = []
+                for z_id in z_ids:
+                    try:
+                        # Check via scan_batches -> session_id
+                        batch_res = (
+
+                            insforge.table("scan_batches")
+                            .select("id")
+                            .eq("session_id", z_id)
+                            .execute()
+                        )
+                        has_active = False
+                        if batch_res.data:
+                            b_ids = [b["id"] for b in batch_res.data]
+                            for b_id in b_ids:
+                                pending = (
+                                    insforge.table("scan_tasks")
+                                    .select("id")
+                                    .eq("status", "pending")
+                                    .eq("batch_id", b_id)
+                                    .limit(1)
+                                    .execute()
+                                )
+                                if pending.data:
+                                    has_active = True
+                                    break
+
+                        if has_active:
+                            s_logger.info(
+                                f"CRON: Session {z_id} still has active tasks — skipping zombie cleanup."
+                            )
+                        else:
+                            truly_dead_ids.append(z_id)
+                    except Exception as chk_e:
+                        # If we can't check, err on the side of cleanup
+                        s_logger.warning(f"CRON: Task check failed for session {z_id}: {chk_e}")
+                        truly_dead_ids.append(z_id)
+
+                if truly_dead_ids:
+                    s_logger.warning(
+                        f"CRON: Cleaning up {len(truly_dead_ids)} confirmed zombie sessions: {truly_dead_ids}"
+                    )
+                    insforge.table("scan_sessions").update(
+                        {
+                            "status": "failed",
+                            "completed_at": datetime.now(timezone.utc).isoformat(),
+                            "reasoning_trace": "Zombie cleanup: session exceeded 4h timeout with no active provider tasks.",
+                        }
+                    ).in_("id", truly_dead_ids).execute()
 
             # 3.2. Cleanup stale scan_tasks (6-hour cutoff)
             task_stale_cutoff = (
@@ -319,6 +362,12 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             return
 
         settings = settings_res.data[0]
+        # --- Autonomous Monitoring Protocol [KAIZEN 2026] ---
+        # 1. Scope: Only hotels marked as 'is_monitored' in user_hotels are considered.
+        # 2. Precision: Scans are strictly enforced for hotels with a 'property_token' or 'serp_api_id'.
+        #    This prevents broad/unreliable keyword searches and ensures absolute pricing accuracy.
+        # 3. Governance: Scan sessions are recorded with user_id=None for global system visibility.
+        # 4. Frequency: Defined by SCAN_PULSE_INTERVAL_HOURS.
         interval = settings.get("scan_interval_hours", SCAN_PULSE_INTERVAL_HOURS)
         currency = settings.get("default_currency", "TRY")
         last_scan = settings.get("last_global_scan_at")
@@ -376,23 +425,38 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         else:
             s_logger.info(f"Heartbeat: Found {len(monitored_res.data)} raw monitored hotel entries.")
         
-        # Deduplicate
+        # Deduplicate and validate (Must have property_token or serp_api_id)
         hotels_to_scan = []
         seen_hotels = set()
+        unmapped_hotels = []
+
         if monitored_res.data:
             for item in monitored_res.data:
                 h = item.get("hotels")
+                if not h:
+                    continue
+                
+                hid = h.get("id")
+                if hid in seen_hotels:
+                    continue
+                
+                # [PROTOCOL 2026] ENFORCE TOKEN REQUIREMENT
+                # Requirement: Hotels MUST be mapped to a provider-specific token (property_token or serp_api_id).
+                # Reason: Prevents broad city-wide keyword searches that lead to low accuracy and wasted costs.
+                # Outcome: Only high-fidelity, targeted scans are dispatched by the heartbeat.
+                if not (h.get("property_token") or h.get("serp_api_id")):
+                    unmapped_hotels.append(h.get("name", "Unknown"))
+                    continue
+
                 pref_currency = item.get("preferred_currency")
-                if h:
-                    # [AGENT_FIX] Prioritize preferred_currency from user_hotels, 
-                    # fallback to hotels.currency if not set. This ensures 
-                    # DataForSEO receives the requested currency.
-                    if pref_currency:
-                        h["currency"] = pref_currency
-                    
-                    if h.get("id") not in seen_hotels:
-                        hotels_to_scan.append(h)
-                        seen_hotels.add(h.get("id"))
+                if pref_currency:
+                    h["currency"] = pref_currency
+                
+                hotels_to_scan.append(h)
+                seen_hotels.add(hid)
+
+        if unmapped_hotels:
+            s_logger.warning(f"Heartbeat: Skipping {len(unmapped_hotels)} monitored hotels missing property tokens: {', '.join(unmapped_hotels[:5])}...")
 
         # 4. Create Monitoring Session
         session_id = str(uuid.uuid4())
@@ -463,11 +527,16 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             currency=currency
         )
 
-        insforge.table("market_heartbeat_logs").update({
-            "status": "completed",
-            "hotels_count": total,
-            "end_time": datetime.now(timezone.utc).isoformat()
-        }).eq("session_id", session_id).execute()
+        # [FIX 2026-05-01] Wrap in try/except — an unprotected failure here
+        # was preventing the critical scan_sessions completion update below.
+        try:
+            insforge.table("market_heartbeat_logs").update({
+                "status": "completed",
+                "hotels_count": total,
+                "end_time": datetime.now(timezone.utc).isoformat()
+            }).eq("session_id", session_id).execute()
+        except Exception as hb_log_e:
+            s_logger.warning(f"Heartbeat: market_heartbeat_logs update failed (non-fatal): {hb_log_e}")
 
         try:
             insforge.table("scan_sessions").update({
@@ -484,12 +553,14 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         s_logger.error(f"Heartbeat Failure: {e}")
         s_logger.error(traceback.format_exc())
         
-        # AGENT_FIX: Make sure the session doesn't linger as a zombie if the heartbeat crashes
+        # [FIX 2026-05-01] Use reasoning_trace instead of non-existent error_message column.
+        # The previous code silently failed because scan_sessions has no error_message field,
+        # leaving the session stuck in 'running' until the zombie reaper killed it 2h later.
         try:
             if 'session_id' in locals():
                 insforge.table("scan_sessions").update({
                     "status": "failed",
-                    "error_message": str(e),
+                    "reasoning_trace": f"Heartbeat crash: {str(e)[:500]}",
                     "completed_at": datetime.now(timezone.utc).isoformat()
                 }).eq("id", session_id).execute()
         except Exception as inner_e:

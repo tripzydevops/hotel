@@ -31,6 +31,8 @@ Deep dives into the platform core:
 -   **[Price Monitoring & Notifications](docs/PRICE_MONITORING_SYSTEM.md)**: Architecture of the autonomous rate pulse and parity bot.
 -   **[Database Architecture](docs/DATABASE_ARCHITECTURE_GUIDE.md)**: M2M relationship scaling and Pricing DNA.
 -   **[Discovery Engine](DISCOVERY_ENGINE.md)**: Vector-based semantic hotel mapping.
+-   **[Sentinel Protocol](SENTINEL_PROTOCOL.md)**: Autonomous Monitoring & "Token-First" Strategy.
+
 
 ## 🚀 Getting Started
 
@@ -72,4 +74,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-04-19 (DataForSEO Migration & Frontend Optimization)
+**Last Updated:** 2026-05-01 (Sentinel Protocol & Autonomous Monitoring Optimization)

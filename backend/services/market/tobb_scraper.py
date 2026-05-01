@@ -24,35 +24,42 @@ class TOBBScraper:
         """
         logger.info("[TOBBScraper] Starting scrape via Firecrawl CLI...")
         try:
-            import subprocess
+            import asyncio
 
             # Since the TOBB table is heavily JS-rendered, we use scrape with a wait-for
             # Alternatively, we could use 'agent' but 'scrape' is faster if it works.
-            process = subprocess.run(
-                [
-                    "npx",
-                    "-y",
-                    "firecrawl-cli@1.8.0",
-                    "scrape",
-                    self.URL,
-                    "--wait-for",
-                    "5000",
-                    "-f",
-                    "markdown",
-                ],
-                capture_output=True,
-                text=True,
-                check=False,
+            process = await asyncio.create_subprocess_exec(
+                "npx",
+                "-y",
+                "firecrawl-cli@1.8.0",
+                "scrape",
+                self.URL,
+                "--wait-for",
+                "5000",
+                "-f",
+                "markdown",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
 
-            if process.returncode != 0:
-                logger.error(f"[TOBBScraper] Firecrawl CLI failed: {process.stderr}")
+            try:
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                logger.error("[TOBBScraper] Firecrawl CLI timed out after 60 seconds.")
                 return {
                     "status": "error",
-                    "message": f"Firecrawl failed: {process.stderr}",
+                    "message": "Firecrawl timed out.",
                 }
 
-            content = process.stdout
+            if process.returncode != 0:
+                logger.error(f"[TOBBScraper] Firecrawl CLI failed: {stderr.decode()}")
+                return {
+                    "status": "error",
+                    "message": f"Firecrawl failed: {stderr.decode()}",
+                }
+
+            content = stdout.decode()
 
             if not content or len(content) < 500:
                 logger.warning(
