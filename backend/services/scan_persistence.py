@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import math
 import re
 import statistics
@@ -1163,6 +1164,8 @@ class ScanPersistenceService:
             task_id = item.get("scan_task_id")
             res = item.get("result", {})
             if not res or res.get("status") != "success": continue
+
+            logger.debug(f"Processing identity {identity}. room_types: {len(res.get('room_types', []))}, room_catalog: {len(res.get('room_catalog', []))}, offers: {len(res.get('offers', []))}")
             
             if identity not in identity_groups:
                 identity_groups[identity] = {
@@ -1194,29 +1197,29 @@ class ScanPersistenceService:
                         if isinstance(val, list):
                             seen = set()
                             combined = []
-                            for item in (existing_list + val):
+                            for entry in (existing_list + val):
                                 # Support both dicts (offers/rooms) and primitives (strings)
-                                if not isinstance(item, dict):
-                                    if item not in seen:
-                                        combined.append(item)
-                                        seen.add(item)
+                                if not isinstance(entry, dict):
+                                    if entry not in seen:
+                                        combined.append(entry)
+                                        seen.add(entry)
                                     continue
                                     
                                 # Use source+price+identity as unique key
                                 # We check multiple common keys for the 'title' part
                                 it_title = (
-                                    item.get('title') or 
-                                    item.get('name') or 
-                                    item.get('room_name') or 
-                                    item.get('description') or 
+                                    entry.get('title') or 
+                                    entry.get('name') or 
+                                    entry.get('room_name') or 
+                                    entry.get('description') or 
                                     ""
                                 )
-                                it_source = item.get('source') or item.get('vendor') or "unknown"
-                                it_price = item.get('price') or item.get('price_raw') or 0
+                                it_source = entry.get('source') or entry.get('vendor') or "unknown"
+                                it_price = entry.get('price') or entry.get('price_raw') or 0
                                 
                                 ident = f"{it_source}_{it_price}_{it_title}"
                                 if ident not in seen:
-                                    combined.append(item)
+                                    combined.append(entry)
                                     seen.add(ident)
                             existing[key] = combined
                     elif not existing.get(key) or (isinstance(val, (list, dict)) and len(str(val)) > len(str(existing.get(key)))):
@@ -1389,10 +1392,14 @@ class ScanPersistenceService:
                             set(p.get("source") for p in offers if p.get("source"))
                         ),
                     }
-                    # [KAIZEN 2026] Persist full offer lists for frontend availability
-                    upd["offers"] = offers
-                    upd["parity_offers"] = res_data.get("parity_offers") or offers
-                    upd["market_offers"] = res_data.get("market_offers") or offers
+                    # [FIX 2026-05-02] Deep-copy offers for hotel update to prevent
+                    # SDK .update() from mutating the original list reference.
+                    # This was the root cause of empty offers in price_logs:
+                    # hotel updates ran first and the SDK cleared/mutated the shared list,
+                    # leaving subsequent price_log assembly with empty arrays.
+                    upd["offers"] = copy.deepcopy(offers)
+                    upd["parity_offers"] = copy.deepcopy(res_data.get("parity_offers") or offers)
+                    upd["market_offers"] = copy.deepcopy(res_data.get("market_offers") or offers)
                 
                 # Room Types Fallback
                 room_types = self._normalize_room_types(
@@ -1419,6 +1426,12 @@ class ScanPersistenceService:
                         "Provider"
                     )
 
+                    # [FIX 2026-05-02] Deep-copy offers for price_log isolation.
+                    # Hotel updates execute before price_log inserts, so any SDK mutation
+                    # of the shared list references would cause empty arrays in price_logs.
+                    safe_offers = copy.deepcopy(offers) if offers else []
+                    safe_room_types = copy.deepcopy(room_types) if room_types else []
+
                     price_logs.append({
                         "hotel_id": tid,
                         "price": price,
@@ -1427,10 +1440,10 @@ class ScanPersistenceService:
                         "check_out_date": check_out,
                         "vendor": log_vendor,
                         "source": source,
-                        "parity_offers": offers,
-                        "market_offers": res_data.get("market_offers") or offers,
-                        "offers": offers,
-                        "room_types": room_types,
+                        "parity_offers": safe_offers,
+                        "market_offers": copy.deepcopy(res_data.get("market_offers") or offers),
+                        "offers": safe_offers,
+                        "room_types": safe_room_types,
                         "recorded_at": now_ts,
                         "is_anomaly": is_anomaly,
                         "metadata": {"anomaly_details": anomaly_details} if is_anomaly else None
@@ -1502,6 +1515,11 @@ class ScanPersistenceService:
             await self._resilient_insert("hotel_reviews", hotel_reviews)
 
         if price_logs:
+            # Production-level summary logging
+            total_offers = sum(len(pl.get('offers', [])) for pl in price_logs)
+            logger.info(
+                f"[Sync] Inserting {len(price_logs)} price_logs with {total_offers} total offers."
+            )
             # Explicitly requested INSERT for price_logs
             await self._resilient_insert("price_logs", price_logs)
             

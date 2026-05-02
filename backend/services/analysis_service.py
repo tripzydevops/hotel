@@ -269,7 +269,7 @@ def get_price_for_room(
         if not isinstance(r, dict):
             continue
         r_name = (r.get("name") or "").lower()
-        p = _extract_price(r.get("price"), currency=currency)
+        p = _extract_price(r.get("price"), currency=active_currency)
         if not p:
             continue
 
@@ -819,68 +819,68 @@ async def perform_market_analysis(
                             "is_historical": False,
                         }
 
-                # AGENT_FEATURE: Intraday Event Collection & Detection
-                # We compare with the previous scan for the same stay date to detect shifts.
-                prev_price = None
-                # Logs are sorted desc by recorded_at, so the 'next' log in the loop
-                # is actually the 'previous' chronological scan.
-                # Find the next log for the SAME check_in_date
-                current_index = logs_slice.index(p_log)
-                for next_log in logs_slice[current_index + 1 :]:
-                    if next_log.get("check_in_date") == p_log.get("check_in_date"):
-                        p_v, _, _ = get_price_for_room(
-                            next_log, room_type, allowed_room_names_map
-                        )
-                        if p_v:
-                            prev_price = convert_currency(
-                                float(p_v),
-                                next_log.get("currency") or "USD",
-                                display_currency,
+                    # AGENT_FEATURE: Intraday Event Collection & Detection
+                    # We compare with the previous scan for the same stay date to detect shifts.
+                    prev_price = None
+                    # Logs are sorted desc by recorded_at, so the 'next' log in the loop
+                    # is actually the 'previous' chronological scan.
+                    # Find the next log for the SAME check_in_date
+                    current_index = logs_slice.index(p_log)
+                    for next_log in logs_slice[current_index + 1 :]:
+                        if next_log.get("check_in_date") == p_log.get("check_in_date"):
+                            p_v, _, _ = get_price_for_room(
+                                next_log, room_type, allowed_room_names_map
                             )
-                        break
+                            if p_v:
+                                prev_price = convert_currency(
+                                    float(p_v),
+                                    next_log.get("currency") or "USD",
+                                    display_currency,
+                                )
+                            break
 
-                label = "Price Scan"
-                if locale == "tr":
-                    label = "Fiyat Taraması"
+                    label = "Price Scan"
+                    if locale == "tr":
+                        label = "Fiyat Taraması"
 
-                if prev_price and prev_price > 0:
-                    diff_pct = (conv_p - prev_price) / prev_price
-                    if diff_pct <= -0.10:
-                        label = "Flash Sale"
-                        if locale == "tr":
-                            label = "Flaş İndirim"
-                    elif diff_pct >= 0.15:
-                        label = "Rate Spike"
-                        if locale == "tr":
-                            label = "Fiyat Artışı"
+                    if prev_price and prev_price > 0:
+                        diff_pct = (conv_p - prev_price) / prev_price
+                        if diff_pct <= -0.10:
+                            label = "Flash Sale"
+                            if locale == "tr":
+                                label = "Flaş İndirim"
+                        elif diff_pct >= 0.15:
+                            label = "Rate Spike"
+                            if locale == "tr":
+                                label = "Fiyat Artışı"
 
-                event = {
-                    "price": float(conv_p),
-                    "recorded_at": p_log.get("recorded_at"),
-                    "vendor": normalize_vendor_name(p_log.get("vendor") or "Direct"),
-                    "label": label,
-                }
+                    event = {
+                        "price": float(conv_p),
+                        "recorded_at": p_log.get("recorded_at"),
+                        "vendor": normalize_vendor_name(p_log.get("vendor") or "Direct"),
+                        "label": label,
+                    }
 
-                if is_target:
-                    daily_snapshot_map[date_key]["target_intraday_events"].append(event)
-                    # Use the first one found (latest) as the primary price
-                    if hid not in daily_snapshot_map[date_key]["seen_ids"]:
-                        daily_snapshot_map[date_key]["target_price"] = float(conv_p)
-                        daily_snapshot_map[date_key]["is_historical"] = p_log.get(
-                            "is_historical", False
-                        )
-                else:
-                    if hid not in daily_snapshot_map[date_key]["comp_prices_map"]:
-                        daily_snapshot_map[date_key]["comp_prices_map"][hid] = {
-                            "name": h.get("name", "Competitor"),
-                            "price": float(conv_p),
-                            "intraday_events": [],
-                        }
-                    daily_snapshot_map[date_key]["comp_prices_map"][hid][
-                        "intraday_events"
-                    ].append(event)
+                    if is_target:
+                        daily_snapshot_map[date_key]["target_intraday_events"].append(event)
+                        # Use the first one found (latest) as the primary price
+                        if hid not in daily_snapshot_map[date_key]["seen_ids"]:
+                            daily_snapshot_map[date_key]["target_price"] = float(conv_p)
+                            daily_snapshot_map[date_key]["is_historical"] = p_log.get(
+                                "is_historical", False
+                            )
+                    else:
+                        if hid not in daily_snapshot_map[date_key]["comp_prices_map"]:
+                            daily_snapshot_map[date_key]["comp_prices_map"][hid] = {
+                                "name": h.get("name", "Competitor"),
+                                "price": float(conv_p),
+                                "intraday_events": [],
+                            }
+                        daily_snapshot_map[date_key]["comp_prices_map"][hid][
+                            "intraday_events"
+                        ].append(event)
 
-                daily_snapshot_map[date_key]["seen_ids"].add(hid)
+                    daily_snapshot_map[date_key]["seen_ids"].add(hid)
 
     # Convert map to ordered list for frontend (asc order for timeline)
     daily_prices: List[Dict[str, Any]] = []
@@ -1236,13 +1236,20 @@ async def get_market_intelligence_data(
         if not mapped_room_types and h_log.get("avg_price"):
             mapped_room_types.append({"name": "Standard", "price": h_log["avg_price"]})
 
+        # Resolve the correct currency for this hotel from its metadata
+        hotel_obj = next((h for h in hotels if str(h["id"]) == hid), None)
+        hist_currency = (
+            h_log.get("currency")
+            or (hotel_obj.get("preferred_currency") if hotel_obj else None)
+            or display_currency  # Safest fallback: match the requested display currency
+        )
         log_entry = {
             "hotel_id": hid,
             "check_in_date": h_log["date"],
             "check_out_date": None,
             "price": h_log.get("avg_price") or 0.0,
             "recorded_at": h_log.get("observation_date") or h_log.get("date"),
-            "currency": "TRY",
+            "currency": hist_currency,
             "room_types": mapped_room_types,
             "vendor": h_log.get("top_vendor") or h_log.get("source") or "Aggregate",
             "is_historical": True
