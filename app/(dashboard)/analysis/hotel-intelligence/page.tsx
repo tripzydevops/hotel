@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useDictionary } from "@/lib/dictionary-context";
+import { useI18n } from "@/lib/i18n";
 
 // Mock data extracted from output.txt
 const HOTEL_DATA = {
@@ -62,7 +62,7 @@ const HOTEL_DATA = {
 };
 
 export default function HotelIntelligencePage() {
-  const { dict } = useDictionary();
+  const { dict } = useI18n();
   const d = dict.hotelIntelligence;
 
   return (

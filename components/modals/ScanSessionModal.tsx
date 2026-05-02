@@ -16,6 +16,7 @@ import {
 
 import { ScanSession, QueryLog } from "@/types";
 import { api } from "@/lib/api";
+import { insforge } from "@/lib/insforge";
 import { useI18n } from "@/lib/i18n";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -108,57 +109,76 @@ export default function ScanSessionModal({
 
   // Sync liveSession when session prop changes (e.g., different scan selected)
   useEffect(() => {
-    setLiveSession(session);
-  }, [session]);
+    if (!isOpen || !session) return;
 
-  const fetchSessionLogs = useCallback(async () => {
-    if (!session) return;
-    try {
-      const result = await api.getSessionLogs(session.id);
-      setLogs(result);
-    } catch (error) {
-      console.error("Failed to fetch session logs:", error);
-    }
-  }, [session]);
+    let isSubscribed = true;
+    const sessionChannel = `session:${session.id}`;
+    const logChannel = `session_log:${session.id}`;
 
-  // EXPLANATION: Poll for session data (reasoning_trace + status) every 3s
-  // This powers the Agent Mesh step indicators and Reasoning Timeline.
-  const fetchSession = useCallback(async () => {
-    if (!session) return;
-    try {
-      const updated = await api.getSession(session.id);
-      if (updated && !updated.error) {
-        setLiveSession(updated as ScanSession);
+    const setupRealtime = async () => {
+      try {
+        // EXPLANATION: Real-time transition
+        // Replaced 3s polling with WebSocket subscriptions.
+        // This reduces server load and provides sub-second updates for the Agent Mesh.
+        
+        if (!insforge.realtime.isConnected) {
+          await insforge.realtime.connect();
+        }
+
+        // Subscribe to state updates (reasoning_trace, status)
+        await insforge.realtime.subscribe(sessionChannel);
+        
+        // Subscribe to new price logs for this session
+        await insforge.realtime.subscribe(logChannel);
+
+        if (!isSubscribed) return;
+
+        // Handle Session Updates
+        insforge.realtime.on('UPDATE_session', (payload: any) => {
+          if (payload.id === session.id) {
+            setLiveSession(prev => ({
+              ...prev,
+              ...payload,
+              // Map updated_at to last_active for consistency with UI
+              last_active: payload.updated_at
+            }));
+          }
+        });
+
+        // Handle New Logs
+        insforge.realtime.on('INSERT_log', (payload: any) => {
+          if (payload.session_id === session.id) {
+            setLogs(prev => [payload, ...prev]);
+          }
+        });
+
+        // Initial fetch
+        const [sessionData, logsData] = await Promise.all([
+          api.getSession(session.id),
+          api.getSessionLogs(session.id)
+        ]);
+
+        if (isSubscribed) {
+          setLiveSession(sessionData);
+          setLogs(logsData);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Realtime setup error:', err);
+        if (isSubscribed) setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch session:", error);
-    }
-  }, [session]);
+    };
 
-  useEffect(() => {
-    let logsIntervalId: NodeJS.Timeout | undefined;
-    let sessionIntervalId: NodeJS.Timeout | undefined;
-
-    if (isOpen && session) {
-      fetchSessionLogs();
-      fetchSession();
-
-      // Poll for updates if scan is not finished
-      const isActive = liveSession?.status === "running" || liveSession?.status === "pending" || liveSession?.status === "intelligence_pending";
-      if (isActive) {
-        logsIntervalId = setInterval(fetchSessionLogs, 3000);
-        sessionIntervalId = setInterval(fetchSession, 3000);
-      } else {
-        // Do one final fetch even for completed scans to get the latest reasoning_trace
-        fetchSession();
-      }
-    }
+    setupRealtime();
 
     return () => {
-      if (logsIntervalId) clearInterval(logsIntervalId);
-      if (sessionIntervalId) clearInterval(sessionIntervalId);
+      isSubscribed = false;
+      insforge.realtime.unsubscribe(sessionChannel);
+      insforge.realtime.unsubscribe(logChannel);
+      insforge.realtime.off('UPDATE_session');
+      insforge.realtime.off('INSERT_log');
     };
-  }, [isOpen, session, liveSession?.status, fetchSessionLogs, fetchSession]);
+  }, [isOpen, session]);
 
   // Use liveSession for rendering — it has the most up-to-date data
   const activeSession = liveSession || session;

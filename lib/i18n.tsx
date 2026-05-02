@@ -21,6 +21,7 @@ interface I18nContextType {
     key: keyof Dictionary | string,
     params?: Record<string, string | number>,
   ) => string;
+  dict: Dictionary;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -69,7 +70,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
+    <I18nContext.Provider value={{ locale, setLocale, t, dict: dictionary }}>
       {children}
     </I18nContext.Provider>
   );
