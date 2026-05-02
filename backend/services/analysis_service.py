@@ -24,13 +24,12 @@ from supabase import Client
 logger = get_logger(__name__)
 
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
-try:
-    from google import genai
-    from google.genai import types
+from backend.utils.ai_client import get_genai_client, HAS_GENAI
 
-    HAS_GENAI = True
+try:
+    from google.genai import types
 except ImportError:
-    HAS_GENAI = False
+    pass
 
 
 async def get_sentiment_trends(
@@ -343,25 +342,7 @@ def generate_synthetic_narrative(
     return f"[Commercial Health]\n{hotel_name} is market-aligned. ARI: {ari:.1f}, SentIndex: {sent_index:.1f}."
 
 
-_genai_client = None
-
-
-def get_genai_client():
-    global _genai_client
-    if _genai_client is None:
-        if not HAS_GENAI:
-            logger.warning("[AI] google-genai SDK missing. Falling back to heuristics.")
-            return None
-        try:
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if api_key:
-                # AGENT_FEATURE: Using modern genai.Client (google-genai SDK)
-                _genai_client = genai.Client(api_key=api_key)
-            else:
-                logger.warning("[AI] GOOGLE_API_KEY not found in environment.")
-        except Exception as e:
-            logger.error(f"[AI] Failed to initialize Google GenAI Client: {e}")
-    return _genai_client
+# genai_client is retrieved from centralized get_genai_client()
 
 
 def _clean_json_output(raw_text: str) -> str:

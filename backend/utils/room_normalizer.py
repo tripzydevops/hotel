@@ -1,7 +1,15 @@
 import re
-from typing import Dict, Set, Any
+import time as _time
+from typing import Dict, Optional, Set, Any
 
 from backend.services.config_service import ConfigService
+
+# ── Config Cache ──
+# Prevents redundant DB queries during batch normalization.
+# TTL: 300 seconds (5 minutes).
+_config_cache: Optional[Dict[str, Any]] = None
+_config_cache_ts: float = 0
+_CONFIG_TTL: float = 300.0
 
 
 class RoomTypeNormalizer:
@@ -153,10 +161,17 @@ class RoomTypeNormalizer:
     @classmethod
     def _get_config(cls):
         """
-        Returns the effective configuration.
+        Returns the effective configuration with 5-minute caching.
         Strategy: Start with STATIC hardcoded maps (safe fallback),
         then OVERRIDE with any values found in the Database.
+        Cache prevents redundant DB queries during batch normalization.
         """
+        global _config_cache, _config_cache_ts
+
+        now = _time.monotonic()
+        if _config_cache is not None and (now - _config_cache_ts) < _CONFIG_TTL:
+            return _config_cache
+
         # 1. Start with Static Defaults
         effective_tokens = cls.TOKEN_MAP.copy()
         effective_names = cls.CANONICAL_NAMES.copy()
@@ -174,11 +189,15 @@ class RoomTypeNormalizer:
         except Exception:
             pass
 
-        return {
+        result = {
             "token_map": effective_tokens,
             "canonical_names": effective_names,
             "category_order": effective_order,
         }
+
+        _config_cache = result
+        _config_cache_ts = now
+        return result
 
     @classmethod
     def normalize(cls, raw_string: str) -> Dict[str, Any]:

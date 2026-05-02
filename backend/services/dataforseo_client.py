@@ -15,8 +15,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-load_dotenv()
-load_dotenv(".env.local", override=True)
+# Env is loaded by db.py's load_env_standard()
 
 
 class DataForSEOClient:

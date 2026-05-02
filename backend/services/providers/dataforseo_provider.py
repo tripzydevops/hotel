@@ -1528,6 +1528,23 @@ class DataForSEOProvider(HotelDataProvider):
 
                     # [FIX 3] Only emit price if API actually returned one (not None/0)
                     raw_price = prices_data.get("price")
+
+                    # [FIX 2026-05-02] Echo check-in/check-out dates from the submitted
+                    # task payload (task["data"]) so scan_persistence.py can write them
+                    # to price_logs.check_in_date / check_out_date.  Fallback to the
+                    # prices block inside the response body (hotel_info/advanced shape).
+                    task_data = task.get("data") or {}
+                    check_in_date = (
+                        task_data.get("check_in")
+                        or task_data.get("check_in_date")
+                        or prices_data.get("check_in")
+                    )
+                    check_out_date = (
+                        task_data.get("check_out")
+                        or task_data.get("check_out_date")
+                        or prices_data.get("check_out")
+                    )
+
                     result_dict = {
                         "status": "success",
                         "task_type": "price_search",
@@ -1539,7 +1556,9 @@ class DataForSEOProvider(HotelDataProvider):
                         "reviews": reviews_data.get("votes_count", 0),
                         "room_catalog": room_catalog,
                         "room_types": room_type_names,
-                        "tag": (task.get("data") or {}).get("tag"),
+                        "tag": task_data.get("tag"),
+                        "check_in_date": check_in_date,
+                        "check_out_date": check_out_date,
                         "ota_prices": sorted_prices,
                         "all_prices": sorted_prices,
                         "parity_offers": sorted_prices,

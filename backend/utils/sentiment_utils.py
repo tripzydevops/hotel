@@ -99,6 +99,57 @@ TR_MAP = {
     "ekonomik": "Budget",  # Budget segment
 }
 
+# ── Pre-compiled Reverse Lookup ──
+# Built once at module init for O(1) TR→EN translations.
+# Eliminates the O(n) linear scan through TR_MAP in hot-path functions.
+_TR_LOOKUP: Dict[str, str] = {k.lower(): v for k, v in TR_MAP.items()}
+
+
+def _translate_name(name: str) -> str:
+    """Translate a category name from Turkish to English using O(1) lookup."""
+    name_lower = name.lower()
+    # Try exact match first (fastest path)
+    if name_lower in _TR_LOOKUP:
+        return _TR_LOOKUP[name_lower]
+    # Fallback: substring match for compound names like "Otel Hizmeti"
+    for tr_key, en_val in _TR_LOOKUP.items():
+        if tr_key in name_lower:
+            return en_val
+    return name
+
+
+# ── Pre-compiled Pillar Mappings ──
+# Built once at module init to avoid recreation per function call.
+_PILLAR_MAPPINGS = {
+    "Cleanliness": [
+        "temizlik", "cleanliness", "oda", "room", "banyo", "bathroom",
+        "hijyen", "hygiene", "housekeeping", "uyku", "sleep", "yatak",
+        "bed", "mülk", "property", "tesis", "facility", "konfor",
+        "comfort", "klima", "air conditioning", "internet", "wifi",
+        "kablosuz", "odalar", "tesisler",
+    ],
+    "Service": [
+        "hizmet", "service", "personel", "staff", "ilgi", "reception",
+        "resepsiyon", "kahvaltı", "breakfast", "karşılama", "welcoming",
+        "dining", "yemek", "restoran", "restaurant", "food", "yiyecek",
+        "içecek", "bar", "atmosfer", "atmosphere", "sağlıklı yaşam",
+        "spa", "wellness", "pool", "havuz", "fitness", "sauna",
+        "mutfak", "kitchen", "servis",
+    ],
+    "Location": [
+        "konum", "location", "yer", "place", "manzara", "view",
+        "ulaşım", "access", "çevre", "neighborhood", "merkez",
+        "gece hayatı", "nightlife", "otopark", "parking", "transport",
+        "trafik", "traffic", "bahçe", "garden", "teras", "terrace",
+    ],
+    "Value": [
+        "fiyat", "price", "değer", "value", "fiyat-performans", "cost",
+        "ucuzluk", "maliyet", "ekonomik", "pahalı", "para", "money",
+        "affordable", "ucuz", "kalite", "quality", "fırsat", "teklif",
+        "deal", "offer", "bütçe", "budget",
+    ],
+}
+
 
 def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -141,122 +192,6 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         "Value": {"positive": 0, "negative": 0, "neutral": 0, "total": 0},
     }
 
-    # Keyword-to-pillar mapping using substring matching.
-    # A category like "Oda Temizliği" (Room Cleanliness) will match "temizlik"
-    # and be routed to the Cleanliness pillar. The first match wins (break).
-    mappings = {
-        "Cleanliness": [
-            "temizlik",
-            "cleanliness",
-            "oda",
-            "room",
-            "banyo",
-            "bathroom",
-            "hijyen",
-            "hygiene",
-            "housekeeping",
-            "uyku",
-            "sleep",
-            "yatak",
-            "bed",
-            "mülk",
-            "property",
-            "tesis",
-            "facility",
-            "konfor",
-            "comfort",
-            "klima",
-            "air conditioning",
-            "internet",
-            "wifi",
-            "kablosuz",
-            "odalar",
-            "tesisler",
-        ],
-        "Service": [
-            "hizmet",
-            "service",
-            "personel",
-            "staff",
-            "ilgi",
-            "reception",
-            "resepsiyon",
-            "kahvaltı",
-            "breakfast",
-            "karşılama",
-            "welcoming",
-            "dining",
-            "yemek",
-            "restoran",
-            "restaurant",
-            "food",
-            "yiyecek",
-            "içecek",
-            "bar",
-            "atmosfer",
-            "atmosphere",
-            "sağlıklı yaşam",
-            "spa",
-            "wellness",
-            "pool",
-            "havuz",
-            "fitness",
-            "sauna",
-            "mutfak",
-            "kitchen",
-            "servis",
-        ],
-        "Location": [
-            "konum",
-            "location",
-            "yer",
-            "place",
-            "manzara",
-            "view",
-            "ulaşım",
-            "access",
-            "çevre",
-            "neighborhood",
-            "merkez",
-            "gece hayatı",
-            "nightlife",
-            "otopark",
-            "parking",
-            "transport",
-            "trafik",
-            "traffic",
-            "bahçe",
-            "garden",
-            "teras",
-            "terrace",
-        ],
-        "Value": [
-            "fiyat",
-            "price",
-            "değer",
-            "value",
-            "fiyat-performans",
-            "cost",
-            "ucuzluk",
-            "maliyet",
-            "ekonomik",
-            "pahalı",
-            "para",
-            "money",
-            "affordable",
-            "ucuz",
-            "pahalı",
-            "kalite",
-            "quality",
-            "fırsat",
-            "teklif",
-            "deal",
-            "offer",
-            "bütçe",
-            "budget",
-        ],
-    }
-
     found_pillars = set()
 
     # Iterate through every raw category from Google Reviews
@@ -268,7 +203,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         neu = int(item.get("neutral") or 0)
         total = int(item.get("total_mentioned") or 0)
 
-        for pillar, keywords in mappings.items():
+        for pillar, keywords in _PILLAR_MAPPINGS.items():
             if any(kw in name for kw in keywords):
                 pillars[pillar]["positive"] += pos
                 pillars[pillar]["negative"] += neg
@@ -357,13 +292,8 @@ def translate_breakdown(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     translated = []
     for item in breakdown:
         name = item.get("name", "")
-        # Try exact match first, then substring match against TR_MAP.
-        # This handles both "hizmet" (exact) and "Otel Hizmeti" (substring).
-        label = name
-        for tr_key, en_val in TR_MAP.items():
-            if tr_key == name.lower() or tr_key in name.lower():
-                label = en_val
-                break
+        # O(1) lookup via pre-compiled reverse dict.
+        label = _translate_name(name)
 
         translated.append(
             {
@@ -422,11 +352,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             sentiment = "negative"
 
         # Translate Turkish category names to English for display.
-        display_keyword = name
-        for tr_key, en_val in TR_MAP.items():
-            if tr_key == name.lower() or tr_key in name.lower():
-                display_keyword = en_val
-                break
+        display_keyword = _translate_name(name)
 
         mentions.append(
             {
@@ -533,11 +459,7 @@ def merge_sentiment_breakdowns(
     # because previous scans might have stored them in Turkish.
     for item in existing:
         raw_name = item.get("name") or ""
-        normalized_name = raw_name
-        for tr, en in TR_MAP.items():
-            if tr == raw_name.lower() or tr in raw_name.lower():
-                normalized_name = en
-                break
+        normalized_name = _translate_name(raw_name)
 
         if normalized_name not in primary_map:
             # Clone item data to avoid mutating the original list.
@@ -563,11 +485,7 @@ def merge_sentiment_breakdowns(
     # entry or create a new one if the category wasn't seen before.
     for item in new:
         raw_name = item.get("name") or ""
-        normalized_name = raw_name
-        for tr, en in TR_MAP.items():
-            if tr == raw_name.lower() or tr in raw_name.lower():
-                normalized_name = en
-                break
+        normalized_name = _translate_name(raw_name)
 
         if normalized_name in primary_map:
             # Category exists — accumulate counts cumulatively.

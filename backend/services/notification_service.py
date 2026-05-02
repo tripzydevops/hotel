@@ -9,9 +9,8 @@ import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from dotenv import load_dotenv
-
-load_dotenv()
+# Environment is loaded centrally via db.load_env_standard()
+# No redundant load_dotenv() call needed here.
 
 
 class NotificationService:
@@ -159,7 +158,7 @@ class NotificationService:
                   </thead>
                   <tbody>{rows}</tbody>
                 </table>
-                <p><a href="http://localhost:3000">Open Dashboard</a></p>
+                <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">Open Dashboard</a></p>
               </body>
             </html>
             """
@@ -216,9 +215,10 @@ class NotificationService:
                 }
             )
 
-            # Webpush is also IO-bound, but usually fast. 
-            # Could also use to_thread if it blocks significantly.
-            webpush(
+            # Webpush is IO-bound (network call) — offload to thread
+            # to prevent blocking the FastAPI event loop.
+            await asyncio.to_thread(
+                webpush,
                 subscription_info=subscription,
                 data=payload,
                 vapid_private_key=private_key,
@@ -267,7 +267,7 @@ class NotificationService:
                   <li><strong>Current Price:</strong> {currency} {current_price}</li>
                   <li><strong>Previous Price:</strong> {currency} {previous_price}</li>
                 </ul>
-                <p><a href="http://localhost:3000">View Dashboard</a></p>
+                <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">View Dashboard</a></p>
               </body>
             </html>
             """

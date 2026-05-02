@@ -1,5 +1,7 @@
 # InsForge/PostgREST Database Utility
 import os
+import logging
+import time
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -10,6 +12,15 @@ from supabase import Client, ClientOptions, create_client
 
 # Re-export for type hinting across the app
 InsForgeClient = Client
+
+logger = logging.getLogger(__name__)
+
+# ── Singleton Client Cache ──
+# Admin and anon clients are reused across requests to avoid
+# creating 80+ fresh TCP connections per cron cycle.
+# JWT-scoped clients are always created fresh (user-specific RLS).
+_admin_client: Optional[Client] = None
+_anon_client: Optional[Client] = None
 
 
 
@@ -26,14 +37,12 @@ def load_env_standard():
 load_env_standard()
 
 
-def get_insforge_db(
+def _create_fresh_client(
     jwt: Optional[str] = None, admin: bool = False
 ) -> Optional[Client]:
     """
-    Returns a configured InsForge client.
-
-    If admin=True, it uses the INSFORGE_SERVICE_ROLE_KEY (bypasses RLS).
-    If jwt is provided, it returns a client scoped to that user (honors RLS).
+    Internal: creates a new InsForge client instance with retry logic.
+    Called by get_insforge_db(); do not call directly.
     """
     url = os.getenv("NEXT_PUBLIC_INSFORGE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     key = (
@@ -46,38 +55,56 @@ def get_insforge_db(
     if not url or not key:
         return None
 
-    # Standard header-based authentication for RLS
     options = ClientOptions().replace(auto_refresh_token=False, persist_session=False)
 
-    import time
+    try:
+        insforge = create_client(url, key, options=options)
+        insforge.is_admin = admin  # Tag for diagnostic tracking
 
-    max_retries = 3
-    retry_delay = 0.5  # Seconds
+        if jwt:
+            insforge.postgrest.auth(jwt)
 
-    for attempt in range(max_retries):
-        try:
-            insforge = create_client(url, key, options=options)
-            insforge.is_admin = admin  # Tag for diagnostic tracking
+        # Configure base URL for database operations (InsForge compatibility override)
+        # PostgREST client requires a yarl.URL object for joinpath support.
+        clean_base = url.rstrip("/")
+        insforge.postgrest.base_url = URL(f"{clean_base}/api/database/records")
 
-            if jwt:
-                insforge.postgrest.auth(jwt)
+        return insforge
+    except Exception as e:
+        logger.critical(
+            "CRITICAL_DB_INIT_FAILED: %s",
+            str(e)
+        )
+        return None
 
-            # Configure base URL for database operations (InsForge compatibility override)
-            # PostgREST client requires a yarl.URL object for joinpath support.
-            clean_base = url.rstrip("/")
-            insforge.postgrest.base_url = URL(f"{clean_base}/api/database/records")
 
-            # AGENT_FIX: Basic connectivity check (sanity)
-            # We don't want to return a broken client that will fail on the first query.
-            return insforge
-        except Exception as e:
-            if attempt == max_retries - 1:
-                print(f"CRITICAL_DB_INIT_FAILED after {max_retries} attempts: {str(e)}")
-                # traceback.print_exc()
-                return None
-            time.sleep(retry_delay * (2**attempt))  # Exponential backoff
+def get_insforge_db(
+    jwt: Optional[str] = None, admin: bool = False
+) -> Optional[Client]:
+    """
+    Returns a configured InsForge client.
 
-    return None
+    Singleton Pattern:
+      - admin=True  → reuses a cached admin client (bypasses RLS)
+      - admin=False  → reuses a cached anon client
+      - jwt provided → always creates a fresh user-scoped client (honors RLS)
+    """
+    global _admin_client, _anon_client
+
+    # JWT-scoped clients must always be fresh (user-specific RLS context)
+    if jwt:
+        return _create_fresh_client(jwt=jwt, admin=False)
+
+    # Reuse singleton for admin role
+    if admin:
+        if _admin_client is None:
+            _admin_client = _create_fresh_client(admin=True)
+        return _admin_client
+
+    # Reuse singleton for anon role
+    if _anon_client is None:
+        _anon_client = _create_fresh_client(admin=False)
+    return _anon_client
 
 
 def get_insforge_dependency(client: Optional[Client] = Depends(get_insforge_db)):
@@ -110,5 +137,5 @@ def try_acquire_lock(db: Any, lock_key: str, expire_seconds: int = 60) -> bool:
         ).execute()
         return bool(res.data)
     except Exception as e:
-        print(f"Lock acquisition error: {e}")
+        logger.warning("Lock acquisition error: %s", e)
         return False

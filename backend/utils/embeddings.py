@@ -1,32 +1,15 @@
 import os
+import logging
 
 # from google import genai  # Moved to lazy getter
 from typing import List
 
-from dotenv import load_dotenv
+# Environment is loaded centrally via db.load_env_standard()
+# No redundant load_dotenv() call needed here.
 
-load_dotenv()
-load_dotenv(".env.local", override=True)
+logger = logging.getLogger(__name__)
 
-# Configure Gemini Client (Lazy)
-_client = None
-
-
-def get_genai_client():
-    global _client
-    if _client is None:
-        try:
-            from google import genai
-
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if api_key:
-                _client = genai.Client(api_key=api_key)
-        except ImportError:
-            # Safe for Vercel where google-genai is not installed
-            print(
-                "[Embedding] Warning: google-genai SDK missing. Using zero-vector fallback."
-            )
-    return _client
+from backend.utils.ai_client import get_genai_client
 
 
 async def get_embedding(
@@ -68,8 +51,8 @@ async def get_embeddings_batch(
             )
 
             if not result or not result.embeddings:
-                print(
-                    f"[Embedding] Warning: Embedding failed for chunk starting at {i}"
+                logger.warning(
+                    "Embedding failed for chunk starting at %d", i
                 )
                 all_embeddings.extend([[0.0] * 768 for _ in chunk])
                 continue
@@ -78,7 +61,7 @@ async def get_embeddings_batch(
 
         return all_embeddings
     except Exception as e:
-        print(f"[Embedding] Batch error with chunking: {e}")
+        logger.error("Batch embedding error with chunking: %s", e)
         return [[0.0] * 768 for _ in texts]
 
 

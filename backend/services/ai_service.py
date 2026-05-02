@@ -8,14 +8,11 @@ from dotenv import load_dotenv
 from backend.utils.logger import get_logger
 
 # Typing-safe import for Google GenAI to satisfy strict linter checks
+from backend.utils.ai_client import get_genai_client, HAS_GENAI
+
 try:
-    from google import genai
     from google.genai import types
-
-    HAS_GENAI = True
 except ImportError:
-    HAS_GENAI = False
-
     # Mock types for internal structural compatibility if library is missing
     class MockTypes:
         def __getattr__(self, name):
@@ -24,8 +21,7 @@ except ImportError:
     types = MockTypes()
 
 # Load environment variables explicitly for the service
-load_dotenv()
-load_dotenv(".env.local", override=True)
+# Env is loaded by db.py's load_env_standard()
 
 logger = get_logger(__name__)
 
@@ -37,10 +33,10 @@ class MarketIntelligenceService:
     """
 
     def __init__(self):
-        self.api_key = os.environ.get("GEMINI_API_KEY")
+        self.api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         self.model_name = "gemini-3-flash-preview"  # Upgraded to Gemini 3
-        self.client = None
-        self.sdk_available = False
+        self.client = get_genai_client()
+        self.sdk_available = self.client is not None
 
         masked_key = (
             f"{self.api_key[:4]}...{self.api_key[-4:]}"
@@ -49,15 +45,9 @@ class MarketIntelligenceService:
         )
         logger.info(f"[AI] Initializing Intelligence Service. Key: {masked_key}")
 
-        if HAS_GENAI and self.api_key:
-            try:
-                self.client = genai.Client(api_key=self.api_key)
-                self.sdk_available = True
-            except Exception as e:
-                logger.error(f"[AI] Failed to initialize GenAI client: {e}")
-        else:
+        if not self.client:
             if not self.api_key:
-                logger.warning("[AI] GEMINI_API_KEY missing - running in Safe Mode.")
+                logger.warning("[AI] API_KEY missing - running in Safe Mode.")
             if not HAS_GENAI:
                 logger.warning(
                     "[AI] google-genai SDK not found - running in Safe Mode."

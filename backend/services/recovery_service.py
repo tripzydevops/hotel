@@ -6,20 +6,9 @@ Handles AI-powered dispute generation for parity violations.
 import os
 
 from backend.utils.logger import get_logger
+from backend.utils.embeddings import get_genai_client  # Shared singleton
 
 logger = get_logger(__name__)
-
-
-def get_genai_client():
-    try:
-        from google import genai
-
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if api_key:
-            return genai.Client(api_key=api_key)
-    except ImportError:
-        logger.warning("google-genai SDK missing")
-    return None
 
 
 async def generate_dispute_letter(

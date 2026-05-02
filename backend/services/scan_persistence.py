@@ -481,8 +481,8 @@ class ScanPersistenceService:
             "price": price,
             "currency": currency,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
-            "check_in_date": result.get("check_in") or str(date.today()),
-            "check_out_date": result.get("check_out"),
+            "check_in_date": result.get("check_in_date") or result.get("check_in") or str(date.today()),
+            "check_out_date": result.get("check_out_date") or result.get("check_out"),
             "vendor": result.get("vendor", source),
             "room_types": current_room_types,
             "parity_offers": result.get("parity_offers") or result.get("offers") or [],
@@ -660,12 +660,12 @@ class ScanPersistenceService:
             # 2. Heuristic for Brands (e.g. Ramada > 3000)
             if floor == 0:
                 brand_floors = {
-                    "ramada": 3000.0,
-                    "hilton": 3000.0,
-                    "sheraton": 3000.0,
-                    "marriott": 3000.0,
-                    "wyndham": 3000.0,
-                    "holiday inn": 3000.0,
+                    "ramada": 500.0,
+                    "hilton": 1000.0,
+                    "sheraton": 1000.0,
+                    "marriott": 1000.0,
+                    "wyndham": 500.0,
+                    "holiday inn": 500.0,
                 }
                 lower_name = hotel_name.lower()
                 for brand, brand_floor in brand_floors.items():
@@ -698,16 +698,17 @@ class ScanPersistenceService:
             ]
             if recent_valid:
                 avg_baseline = sum(recent_valid) / len(recent_valid)
-                # REJECT if price deviates by more than 30% from verified baseline
-                lower_bound = avg_baseline * 0.7
-                upper_bound = avg_baseline * 1.3
+                # REJECT if price deviates by more than 50% from verified baseline
+                # [KAIZEN 2026] Relaxed from 30% to 50% for high-inflation/volatile markets
+                lower_bound = avg_baseline * 0.5
+                upper_bound = avg_baseline * 1.5
 
                 if current_price < lower_bound or current_price > upper_bound:
                     if log_reasoning_fn:
                         await log_reasoning_fn(
                             session_id,
                             "Safeguard",
-                            f"REJECTED: Price {current_price} {currency} deviates {((current_price/avg_baseline)-1)*100:.1f}% from baseline ({avg_baseline:.2f} {currency}).",
+                            f"REJECTED: Price {current_price} {currency} deviates {((current_price/avg_baseline)-1)*100:.1f}% from baseline ({avg_baseline:.2f} {currency}). Window: 50%.",
                             "warning",
                         )
                     current_price = 0.0
@@ -1305,12 +1306,13 @@ class ScanPersistenceService:
                         is_anomaly = True
                         anomaly_details = {"z_score": round(z_score, 2), "std_dev": round(std_dev, 2)}
                 else:
-                    # Fallback: REJECT if price deviates by more than 30% from verified baseline
-                    lower_bound = avg_baseline * 0.7
-                    upper_bound = avg_baseline * 1.3
+                    # Fallback: REJECT if price deviates by more than 50% from verified baseline
+                    # [KAIZEN 2026] Relaxed from 30% to 50% for consistency
+                    lower_bound = avg_baseline * 0.5
+                    upper_bound = avg_baseline * 1.5
                     if price < lower_bound or price > upper_bound:
                         is_anomaly = True
-                        anomaly_details = {"fixed_threshold": 0.3}
+                        anomaly_details = {"fixed_threshold": 0.5}
 
                 if is_anomaly:
                     logger.warning(

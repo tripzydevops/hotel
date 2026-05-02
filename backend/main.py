@@ -30,8 +30,7 @@ from backend.services.retention_service import RetentionService
 logger = get_logger(__name__)
 
 # Load environment variables
-load_dotenv()
-load_dotenv(".env.local", override=True)
+# Env is loaded by db.py's load_env_standard()
 
 # Log API key awareness (masked)
 g_key = os.environ.get("GEMINI_API_KEY")
@@ -73,74 +72,26 @@ app = FastAPI(
 )
 
 
-# Security Headers Middleware
+# Unified Middleware (CORS, Security Headers, and Logging)
 @app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = (
-        "max-age=31536000; includeSubDomains"
-    )
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.app; "
-        "connect-src 'self' https://*.insforge.app https://*.vercel.app; "
-        "img-src 'self' data: https:; "
-        "style-src 'self' 'unsafe-inline';"
-    )
-    return response
-
-
-# Request Logging Middleware
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def unified_middleware(request: Request, call_next):
     path = request.url.path
     method = request.method
-    print(f"DEBUG: Request {method} {path}")
-    response = await call_next(request)
-    print(f"DEBUG: Response {response.status_code} for {path}")
-    return response
+    logger.debug(f"Request {method} {path}")
 
-
-# ROUTE NORMALIZATION: (Deprecated /p-api stripping removed in favor of unified /api pathing)
-
-
-# Root Health Check
-@app.get("/ping")
-async def root_ping():
-    return {
-        "status": "ok",
-        "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)",
-    }
-
-
-@app.get("/api/ping")
-async def api_ping():
-    return {
-        "status": "ok",
-        "message": "Pong from /api/ping (FastAPI matched full path)",
-    }
-
-
-# CORS configuration
-# Standard CORSMiddleware can sometimes be bypassed or return 405 on OPTIONS.
-# This manual middleware ensures headers are set for all Vercel and InsForge origins.
-@app.middleware("http")
-async def manual_cors_middleware(request: Request, call_next):
-    if request.method == "OPTIONS":
+    if method == "OPTIONS":
+        from fastapi.responses import JSONResponse
         response = JSONResponse(content="OK")
     else:
         response = await call_next(request)
 
-    # Log token presence for auth debugging
+    logger.debug(f"Response {response.status_code} for {path}")
+
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
-        token_hint = f"{auth_header[:15]}..."
-        logger.info(f"Auth header detected on {request.url.path}")
-    elif request.url.path.startswith("/api/auth"):
-        logger.info(f"No auth header on sensitive path: {request.url.path}")
+        logger.info(f"Auth header detected on {path}")
+    elif path.startswith("/api/auth"):
+        logger.info(f"No auth header on sensitive path: {path}")
 
     origin = request.headers.get("origin")
     if (
@@ -162,7 +113,38 @@ async def manual_cors_middleware(request: Request, call_next):
         )
         response.headers["Access-Control-Max-Age"] = "86400"
 
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.insforge.app; "
+        "connect-src 'self' https://*.insforge.app https://*.vercel.app; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline';"
+    )
+
     return response
+
+
+# Root Health Check
+@app.get("/ping")
+async def root_ping():
+    return {
+        "status": "ok",
+        "message": "Pong from Root (FastAPI received path with stripped prefix or literal start)",
+    }
+
+
+@app.get("/api/ping")
+async def api_ping():
+    return {
+        "status": "ok",
+        "message": "Pong from /api/ping (FastAPI matched full path)",
+    }
 
 
 # Enable Gzip compression for all responses larger than 1000 bytes
@@ -300,18 +282,9 @@ app.include_router(
 app.include_router(hotel_routes.router, prefix="/api")
 app.include_router(profile_routes.router, prefix="/api")
 
-# 2. Intelligence & Reports (Defensive Loading)
-try:
-    from backend.api import analysis_routes
-
-    app.include_router(analysis_routes.router, prefix="/api")
-    ANALYSIS_ENABLED = True
-except Exception as e:
-    import traceback
-
-    print(f"CRITICAL: Analysis Routes failed to load: {e}")
-    traceback.print_exc()
-    ANALYSIS_ENABLED = False
+# 2. Intelligence & Reports
+app.include_router(analysis_routes.router, prefix="/api")
+ANALYSIS_ENABLED = True
 
 app.include_router(market_routes.router, prefix="/api")
 app.include_router(reports_routes.router, prefix="/api")
