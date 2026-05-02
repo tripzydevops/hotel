@@ -115,6 +115,24 @@ export default function ScanSessionModal({
     const sessionChannel = `session:${session.id}`;
     const logChannel = `session_log:${session.id}`;
 
+    // Define handlers at the top level of useEffect so they are accessible to the cleanup function
+    const handleSessionUpdate = (payload: any) => {
+      if (payload.id === session.id) {
+        setLiveSession(prev => ({
+          ...prev,
+          ...payload,
+          // Map updated_at to last_active for consistency with UI
+          last_active: payload.updated_at
+        }));
+      }
+    };
+
+    const handleNewLog = (payload: any) => {
+      if (payload.session_id === session.id) {
+        setLogs(prev => [payload, ...prev]);
+      }
+    };
+
     const setupRealtime = async () => {
       try {
         // EXPLANATION: Real-time transition
@@ -134,23 +152,10 @@ export default function ScanSessionModal({
         if (!isSubscribed) return;
 
         // Handle Session Updates
-        insforge.realtime.on('UPDATE_session', (payload: any) => {
-          if (payload.id === session.id) {
-            setLiveSession(prev => ({
-              ...prev,
-              ...payload,
-              // Map updated_at to last_active for consistency with UI
-              last_active: payload.updated_at
-            }));
-          }
-        });
+        insforge.realtime.on('UPDATE_session', handleSessionUpdate);
 
         // Handle New Logs
-        insforge.realtime.on('INSERT_log', (payload: any) => {
-          if (payload.session_id === session.id) {
-            setLogs(prev => [payload, ...prev]);
-          }
-        });
+        insforge.realtime.on('INSERT_log', handleNewLog);
 
         // Initial fetch
         const [sessionData, logsData] = await Promise.all([
@@ -175,8 +180,8 @@ export default function ScanSessionModal({
       isSubscribed = false;
       insforge.realtime.unsubscribe(sessionChannel);
       insforge.realtime.unsubscribe(logChannel);
-      insforge.realtime.off('UPDATE_session');
-      insforge.realtime.off('INSERT_log');
+      insforge.realtime.off('UPDATE_session', handleSessionUpdate);
+      insforge.realtime.off('INSERT_log', handleNewLog);
     };
   }, [isOpen, session]);
 

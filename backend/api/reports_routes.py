@@ -5,7 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 # LINTER FIX: Moved imports to top of file to resolve E402
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 
 from backend.models.schemas import BaseModel
 from backend.services.admin_service import export_report_logic, get_reports_logic
@@ -78,6 +79,34 @@ async def generate_briefing(
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
+
+    report_id = str(uuid.uuid4())
+    hotel_ids = [request.target_hotel_id]
+    if request.rival_hotel_id:
+        hotel_ids.append(request.rival_hotel_id)
+
+    report_title = f"Executive Briefing: {result['target']['name']}"
+    if result.get('rival'):
+        report_title += f" vs {result['rival']['name']}"
+
+    try:
+        db.table("reports").insert(
+            {
+                "id": report_id,
+                "title": report_title,
+                "report_type": "briefing",
+                "hotel_ids": hotel_ids,
+                "report_data": result,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": str(current_user.id),
+            }
+        ).execute()
+        result["id"] = report_id
+    except Exception as e:
+        # Don't fail the request if saving fails, but log it
+        from backend.utils.logger import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Failed to persist report: {e}")
 
     return result
 
