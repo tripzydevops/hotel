@@ -19,7 +19,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, API_BASE_URL } from "@/lib/api";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
 import AdvisorQuadrant from "@/components/analytics/AdvisorQuadrant";
@@ -136,7 +136,8 @@ export default function AnalysisPage() {
       }
       params.set("token", token);
 
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/market-analysis?${params.toString()}`;
+      const base = API_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+      const url = `${base}/api/v2/analysis/stream?${params.toString()}`;
       const eventSource = new EventSource(url);
 
       eventSource.addEventListener("data_init", (e: any) => {
