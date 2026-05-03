@@ -77,7 +77,7 @@ def _fetch_batch_prices(db: Client, hotel_ids: list):
     return (
         db.table("price_logs")
         .select(
-            "id, hotel_id, price, currency, room_types, offers, parity_offers, recorded_at, "
+            "id, hotel_id, price, currency, room_types, offers, parity_offers, market_offers, recorded_at, "
             "check_in_date, scan_sessions(adults, check_out_date)"
         )
         .in_("hotel_id", hotel_ids)
@@ -365,7 +365,11 @@ async def get_dashboard_logic(
             if prices:
                 # Find latest log with offers
                 for p in prices:
-                    if p.get("offers") or p.get("parity_offers") or p.get("market_offers"):
+                    has_offers = any(
+                        p.get(k) and isinstance(p.get(k), list) and len(p.get(k)) > 0
+                        for k in ["offers", "parity_offers", "market_offers", "ota_prices"]
+                    )
+                    if has_offers:
                         offers_log = p
                         break
                 
@@ -439,21 +443,27 @@ async def get_dashboard_logic(
                     # Use harvested offers_log for maximum accuracy
                     raw_offers = []
                     if offers_log:
-                        raw_offers = (
-                            offers_log.get("offers") or 
-                            offers_log.get("ota_prices") or 
-                            offers_log.get("parity_offers") or 
-                            offers_log.get("market_offers") or
-                            []
-                        )
+                        for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
+                            val = offers_log.get(key)
+                            if val and isinstance(val, list) and len(val) > 0:
+                                raw_offers = val
+                                break
 
                     # AGENT_FIX: OTA Fallback from Google Local reviews JSON (DataForSEO Resilience)
                     # When price_logs.offers is empty (standard for hourly price_search tasks which
                     # don't return per-OTA breakdown), we reconstruct the offer list from the
                     # hotel_info data stored in hotels.reviews and hotels.room_types.
+                    if not raw_offers and h.get("room_types"):
+                        for rt in h["room_types"]:
+                            if isinstance(rt, dict) and rt.get("price"):
+                                raw_offers.append({
+                                    "vendor": rt.get("source") or rt.get("vendor") or "Unknown",
+                                    "price": rt.get("price"),
+                                    "currency": rt.get("currency"),
+                                    "is_direct": "website" in str(rt.get("source", "")).lower() or "direct" in str(rt.get("source", "")).lower(),
+                                    "room_type": rt.get("name")
+                                })
 
-
-                    
                     processed_offers = []
                     for of in raw_offers:
                         if not isinstance(of, dict):
@@ -473,7 +483,8 @@ async def get_dashboard_logic(
                             "price": p_val,
                             "currency": of.get("currency") or active_currency,
                             "url": of.get("url") or of.get("link"),
-                            "is_direct": of.get("is_direct", False)
+                            "is_direct": of.get("is_direct", False),
+                            "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                         })
 
                     price_info = {
