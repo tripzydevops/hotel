@@ -888,7 +888,7 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
+                    f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=post_data,
                 )
                 res_json = response.json()
@@ -977,7 +977,7 @@ class DataForSEOProvider(HotelDataProvider):
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.api_url}/business_data/google/hotel_info/advanced/task_post",
+                    f"{self.api_url}/business_data/google/hotel_info/task_post",
                     json=tasks,
                 )
                 if response.status_code != 200 or response.json().get(
