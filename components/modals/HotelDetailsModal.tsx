@@ -354,80 +354,102 @@ export default function HotelDetailsModal({
 
           {activeTab === "offers" && (
             <div className="space-y-4">
-              {hotel?.price_info?.offers && hotel.price_info.offers.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {hotel.price_info.offers.map((offer, index) => (
-                    <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
-                          <Tag className="w-5 h-5 text-[var(--soft-gold)]" />
+              {(() => {
+                // AGENT_FIX: Full fallback chain — price_info.offers (processed by backend) -> hotel-level market_offers/parity_offers/offers (raw from DB)
+                const offers = (hotel?.price_info?.offers?.length ? hotel.price_info.offers : null)
+                  || (hotel?.market_offers?.length ? hotel.market_offers : null)
+                  || (hotel?.parity_offers?.length ? hotel.parity_offers : null)
+                  || (hotel?.offers?.length ? hotel.offers : null)
+                  || [];
+                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
+                if (offers && offers.length > 0) {
+                  return (
+                    <div className="grid grid-cols-1 gap-4">
+                      {offers.map((offer, index) => (
+                        <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
+                              <Tag className="w-5 h-5 text-[var(--soft-gold)]" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                {offer.vendor || offer.source || "Market Partner"}
+                              </h4>
+                              <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                Market Partner
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: displayCurrency,
+                              }).format(parsePrice(offer.price))}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                            {offer.vendor}
-                          </h4>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                            Market Partner
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: hotel.price_info?.currency || "USD",
-                          }).format(parsePrice(offer.price))}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
-                  No additional offers found.
-                </div>
-              )}
+                  );
+                }
+                return (
+                  <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
+                    No additional offers found.
+                  </div>
+                );
+              })()}
             </div>
           )}
 
           {activeTab === "rooms" && (
             <div className="space-y-4">
-              {hotel?.price_info?.room_types && hotel.price_info.room_types.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {hotel.price_info.room_types.map((room, index) => (
-                    <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
-                          <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
+              {(() => {
+                // AGENT_FIX: Full fallback chain for room_types
+                const room_types = (hotel?.price_info?.room_types?.length ? hotel.price_info.room_types : null)
+                  || (hotel?.room_types?.length ? hotel.room_types : null)
+                  || [];
+                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
+                if (room_types && room_types.length > 0) {
+                  return (
+                    <div className="grid grid-cols-1 gap-4">
+                      {room_types.map((room, index) => (
+                        <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
+                              <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                {room.name}
+                              </h4>
+                              <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                Verified Specification
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: displayCurrency,
+                              }).format(parsePrice(room.price))}
+                            </div>
+                            <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                              {t("common.availableNow")}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                            {room.name}
-                          </h4>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                            Verified Specification
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: hotel.price_info?.currency || "USD",
-                          }).format(parsePrice(room.price))}
-                        </div>
-                        <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                          {t("common.availableNow")}
-                        </span>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
-                  No room data available.
-                </div>
-              )}
+                  );
+                }
+                return (
+                  <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
+                    No room data available.
+                  </div>
+                );
+              })()}
             </div>
           )}
 

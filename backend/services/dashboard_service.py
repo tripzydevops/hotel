@@ -58,7 +58,8 @@ def _fetch_user_hotels(db: Client, uid: str):
         .select(
             "*, hotel:hotels(id, name, currency, room_types, stars, rating, review_count, "
             "image_url, latitude, longitude, amenities, images, reviews, other_sites_reviews, "
-            "guest_mentions, sentiment_breakdown, serp_api_id, property_token, deleted_at, address, location)"
+            "guest_mentions, sentiment_breakdown, serp_api_id, property_token, deleted_at, address, location, "
+            "market_offers, parity_offers, offers)"
         )
         .eq("user_id", uid)
         .execute()
@@ -449,10 +450,18 @@ async def get_dashboard_logic(
                                 raw_offers = val
                                 break
 
-                    # AGENT_FIX: OTA Fallback from Google Local reviews JSON (DataForSEO Resilience)
+                    # AGENT_FIX: OTA Fallback from hotels table (market_offers > parity_offers > offers)
                     # When price_logs.offers is empty (standard for hourly price_search tasks which
-                    # don't return per-OTA breakdown), we reconstruct the offer list from the
-                    # hotel_info data stored in hotels.reviews and hotels.room_types.
+                    # don't return per-OTA breakdown), we use the OTA data stored directly on the
+                    # hotels record, which is populated during hotel_info scans.
+                    if not raw_offers:
+                        for key in ["market_offers", "parity_offers", "offers"]:
+                            val = h.get(key)
+                            if val and isinstance(val, list) and len(val) > 0:
+                                raw_offers = val
+                                break
+
+                    # Secondary fallback: reconstruct from room_types if still empty
                     if not raw_offers and h.get("room_types"):
                         for rt in h["room_types"]:
                             if isinstance(rt, dict) and rt.get("price"):

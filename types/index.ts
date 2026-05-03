@@ -83,6 +83,10 @@ export interface Hotel {
     rating?: number;
     rating_max?: number;
   }>;
+  market_offers?: Array<{ vendor?: string; source?: string; site?: string; price?: number; currency?: string; url?: string; room_type?: string; is_direct?: boolean }>;
+  parity_offers?: Array<{ vendor?: string; source?: string; site?: string; price?: number; currency?: string; url?: string; room_type?: string; is_direct?: boolean }>;
+  offers?: Array<{ vendor?: string; source?: string; site?: string; price?: number; currency?: string; url?: string; room_type?: string; is_direct?: boolean }>;
+  room_types?: Array<{ name?: string; price?: number; currency?: string; source?: string }>;
 }
 
 export interface PriceInfo {
