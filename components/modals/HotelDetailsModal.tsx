@@ -57,6 +57,87 @@ export default function HotelDetailsModal({
     { id: "reviews", label: "Reviews", icon: Star },
   ];
 
+  // Fix the "reviews" type mismatch
+  const reviewsObj = hotel?.reviews as any;
+  const priceInfoReviewsObj = (hotel?.price_info as any)?.reviews as any;
+
+  // Extract other_sites_reviews
+  let other_sites_reviews: any[] = [];
+  if (Array.isArray(hotel?.other_sites_reviews) && hotel.other_sites_reviews.length > 0) {
+    other_sites_reviews = hotel.other_sites_reviews;
+  } else if (reviewsObj && Array.isArray(reviewsObj.other_sites_reviews) && reviewsObj.other_sites_reviews.length > 0) {
+    other_sites_reviews = reviewsObj.other_sites_reviews;
+  } else if (priceInfoReviewsObj && Array.isArray(priceInfoReviewsObj.other_sites_reviews) && priceInfoReviewsObj.other_sites_reviews.length > 0) {
+    other_sites_reviews = priceInfoReviewsObj.other_sites_reviews;
+  } else if (hotel?.price_info && Array.isArray((hotel.price_info as any).other_sites_reviews) && (hotel.price_info as any).other_sites_reviews.length > 0) {
+    other_sites_reviews = (hotel.price_info as any).other_sites_reviews;
+  }
+
+  // Normalize other_sites_reviews to handle nested rating objects
+  other_sites_reviews = other_sites_reviews.map(site => ({
+    ...site,
+    rating: typeof site.rating === 'object' ? site.rating.value : site.rating,
+    rating_max: typeof site.rating === 'object' ? (site.rating.max || site.rating_max || 5) : (site.rating_max || 5),
+    review_count: typeof site.rating === 'object' ? (site.rating.count || site.review_count) : site.review_count
+  }));
+
+  // Extract sentiment_breakdown
+  let sentiment_breakdown: any[] = [];
+  if (Array.isArray(hotel?.sentiment_breakdown) && hotel.sentiment_breakdown.length > 0) {
+    sentiment_breakdown = hotel.sentiment_breakdown;
+  } else if (reviewsObj && Array.isArray(reviewsObj.sentiment_breakdown) && reviewsObj.sentiment_breakdown.length > 0) {
+    sentiment_breakdown = reviewsObj.sentiment_breakdown;
+  } else if (priceInfoReviewsObj && Array.isArray(priceInfoReviewsObj.sentiment_breakdown) && priceInfoReviewsObj.sentiment_breakdown.length > 0) {
+    sentiment_breakdown = priceInfoReviewsObj.sentiment_breakdown;
+  }
+
+  // Normalize sentiment_breakdown to ensure rating exists
+  sentiment_breakdown = sentiment_breakdown.map(theme => {
+    let rating = theme.rating;
+    if (rating === undefined && theme.total > 0) {
+      rating = ((theme.positive || 0) / theme.total) * 5;
+    }
+    return { ...theme, rating: rating || 0 };
+  });
+
+  // Extract guest_mentions
+  let guest_mentions: any[] = [];
+  if (Array.isArray(hotel?.guest_mentions) && hotel.guest_mentions.length > 0) {
+    guest_mentions = hotel.guest_mentions;
+  } else if (reviewsObj && Array.isArray(reviewsObj.guest_mentions) && reviewsObj.guest_mentions.length > 0) {
+    guest_mentions = reviewsObj.guest_mentions;
+  } else if (reviewsObj && Array.isArray(reviewsObj.mentions) && reviewsObj.mentions.length > 0) {
+    guest_mentions = reviewsObj.mentions;
+  } else if (priceInfoReviewsObj && Array.isArray(priceInfoReviewsObj.guest_mentions) && priceInfoReviewsObj.guest_mentions.length > 0) {
+    guest_mentions = priceInfoReviewsObj.guest_mentions;
+  } else if (priceInfoReviewsObj && Array.isArray(priceInfoReviewsObj.mentions) && priceInfoReviewsObj.mentions.length > 0) {
+    guest_mentions = priceInfoReviewsObj.mentions;
+  }
+
+  // Normalize guest_mentions to match expected keys
+  guest_mentions = guest_mentions.map(mention => ({
+    ...mention,
+    keyword: mention.keyword || mention.title,
+    count: mention.count || mention.total_count,
+    sentiment: mention.sentiment || (
+      (mention.positive_count || 0) > (mention.negative_count || 0) ? "positive" : 
+      ((mention.negative_count || 0) > (mention.positive_count || 0) ? "negative" : "neutral")
+    )
+  }));
+
+  // Extract rating_distribution
+  let rating_distribution: any[] = [];
+  let raw_dist = hotel?.rating_distribution || reviewsObj?.rating_distribution || priceInfoReviewsObj?.rating_distribution;
+
+  if (Array.isArray(raw_dist)) {
+    rating_distribution = raw_dist;
+  } else if (raw_dist && typeof raw_dist === 'object') {
+    rating_distribution = Object.entries(raw_dist).map(([key, value]) => ({
+      rating: parseInt(key),
+      count: Number(value)
+    }));
+  }
+
   // Normalize images to always be an array of objects
   const rawImages = hotel.images || [];
   const normalizedImages = rawImages.map(img => {
@@ -175,7 +256,7 @@ export default function HotelDetailsModal({
                     <span className="text-5xl font-black text-[var(--soft-gold)] tracking-tighter italic">
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
-                        currency: hotel.price_info?.currency || "USD",
+                        currency: hotel.price_info?.currency || hotel.currency || hotel.preferred_currency || "TRY",
                       }).format(parsePrice(hotel.price_info?.current_price || 0))}
                     </span>
                     <span className="text-[var(--text-muted)] mb-2 uppercase font-bold text-[10px] tracking-widest">
@@ -190,14 +271,14 @@ export default function HotelDetailsModal({
                 </div>
 
                 {/* Rating Distribution Box */}
-                {hotel.rating_distribution && hotel.rating_distribution.length > 0 && (
+                {rating_distribution && rating_distribution.length > 0 && (
                   <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-6 rounded-xl shadow-inner-glow">
                     <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4">
                       {t("hotelDetails.ratingDistribution") || "Rating Distribution"}
                     </h3>
                     <div className="space-y-2">
-                      {hotel.rating_distribution.sort((a,b) => b.rating - a.rating).map((dist) => {
-                        const maxCount = Math.max(...(hotel.rating_distribution?.map(d => d.count) || [1]));
+                      {rating_distribution.sort((a: any, b: any) => b.rating - a.rating).map((dist: any) => {
+                        const maxCount = Math.max(...(rating_distribution?.map((d: any) => d.count) || [1]));
                         const percentage = (dist.count / maxCount) * 100;
                         return (
                           <div key={dist.rating} className="flex items-center gap-3">
@@ -361,7 +442,7 @@ export default function HotelDetailsModal({
                   || (hotel?.parity_offers?.length ? hotel.parity_offers : null)
                   || (hotel?.offers?.length ? hotel.offers : null)
                   || [];
-                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
+                const displayCurrency = hotel?.price_info?.currency || hotel?.currency || hotel?.preferred_currency || "TRY";
                 if (offers && offers.length > 0) {
                   return (
                     <div className="grid grid-cols-1 gap-4">
@@ -409,7 +490,7 @@ export default function HotelDetailsModal({
                 const room_types = (hotel?.price_info?.room_types?.length ? hotel.price_info.room_types : null)
                   || (hotel?.room_types?.length ? hotel.room_types : null)
                   || [];
-                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
+                const displayCurrency = hotel?.price_info?.currency || hotel?.currency || hotel?.preferred_currency || "TRY";
                 if (room_types && room_types.length > 0) {
                   return (
                     <div className="grid grid-cols-1 gap-4">
@@ -466,18 +547,18 @@ export default function HotelDetailsModal({
                       Synchronized market reputation data
                     </p>
                   </div>
-                  {hotel.other_sites_reviews && hotel.other_sites_reviews.length > 0 && (
+                  {other_sites_reviews && other_sites_reviews.length > 0 && (
                     <div className="px-3 py-1 bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 rounded-full">
                       <span className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest">
-                        {hotel.other_sites_reviews.length} SOURCES DETECTED
+                        {other_sites_reviews.length} SOURCES DETECTED
                       </span>
                     </div>
                   )}
                 </div>
 
-                {hotel.other_sites_reviews && hotel.other_sites_reviews.length > 0 ? (
+                {other_sites_reviews && other_sites_reviews.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {hotel.other_sites_reviews.map((site, index) => {
+                    {other_sites_reviews.map((site, index) => {
                       const normalized = site.title.toLowerCase();
                       let brandColor = "var(--soft-gold)";
                       let brandBg = "rgba(212, 175, 55, 0.1)";
@@ -609,7 +690,7 @@ export default function HotelDetailsModal({
               </div>
 
               {/* THEME SENTIMENT ANALYSIS */}
-              {(hotel.sentiment_raw_breakdown || hotel.sentiment_breakdown) && (
+              {sentiment_breakdown && sentiment_breakdown.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-[var(--glass-border)]">
                   <div>
                     <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tighter italic">
@@ -620,7 +701,7 @@ export default function HotelDetailsModal({
                     </p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {(hotel.sentiment_raw_breakdown || hotel.sentiment_breakdown)?.map((theme, index) => {
+                    {sentiment_breakdown.map((theme, index) => {
                       const hasRawData = 'summary' in theme;
                       const score = theme.rating || 0;
                       // Display percentage out of 5 stars or scale to 100
@@ -675,7 +756,7 @@ export default function HotelDetailsModal({
               )}
 
               {/* GUEST MENTIONS & KEYWORDS */}
-              {hotel.guest_mentions && hotel.guest_mentions.length > 0 && (
+              {guest_mentions && guest_mentions.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-[var(--glass-border)]">
                   <div>
                     <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tighter italic">
@@ -686,7 +767,7 @@ export default function HotelDetailsModal({
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {hotel.guest_mentions.map((mention, index) => {
+                    {guest_mentions.map((mention, index) => {
                       const mentionSentiment = (mention.sentiment || "neutral").toLowerCase();
                       let pillColor = "bg-[var(--glass-bg-accent)] text-[var(--text-primary)] border-[var(--glass-border)]";
                       let dotColor = "bg-slate-400";
