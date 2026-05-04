@@ -36,14 +36,36 @@ async def handle_dataforseo_webhook(
             logger.warning("Webhook received with no task ID")
             return {"status": "ignored", "reason": "no_task_id"}
 
-        # 2. Fetch full results from provider
-        # Try price search first
-        processed, raw = await dataforseo_provider.fetch_task_results(task_id, db=db)
-        
-        # If price search failed or returned nothing, try info results
-        if not processed or processed.get("status") != "success":
-            logger.info(f"Webhook: Result not found for hotel_searches {task_id}. Trying hotel_info...")
-            processed, raw = await dataforseo_provider.fetch_hotel_info_results(task_id, db=db)
+        # 2. Resolve task_type from DB for type-aware routing
+        # [FIX 2026-05-04] Previously called fetch_task_results (price_search) first for ALL
+        # task types, wasting API calls on hotel_info tasks. Now resolves type first.
+        task_type = None
+        try:
+            type_res = (
+                db.table("scan_tasks")
+                .select("task_type, hotel:hotels(name, property_token)")
+                .eq("external_task_id", task_id)
+                .limit(1)
+                .execute()
+            )
+            if type_res.data:
+                task_type = type_res.data[0].get("task_type")
+                hotel_meta = type_res.data[0].get("hotel")
+        except Exception as e:
+            logger.warning(f"Webhook: Could not resolve task_type from DB: {e}")
+            hotel_meta = None
+
+        # 3. Fetch results using unified type-aware method
+        target_token = hotel_meta.get("property_token") if hotel_meta else None
+        target_name = hotel_meta.get("name") if hotel_meta else None
+
+        processed, raw = await dataforseo_provider.get_task_result(
+            task_id,
+            db=db,
+            target_token=target_token,
+            target_name=target_name,
+            task_type=task_type,
+        )
 
         if not processed or processed.get("status") != "success":
             logger.warning(f"Webhook: Result fetch failed or identity mismatch for {task_id}")

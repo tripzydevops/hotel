@@ -176,6 +176,10 @@ CREATE TABLE IF NOT EXISTS room_type_catalog (
     currency TEXT DEFAULT 'TRY',
     amenities JSONB DEFAULT '[]',
     sqm FLOAT,
+    source TEXT,
+    url TEXT,
+    capacity INTEGER,
+    image_url TEXT,
     last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     -- Each hotel should only have one entry per room name

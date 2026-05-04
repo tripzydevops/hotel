@@ -514,6 +514,56 @@ async def get_dashboard_logic(
                 except Exception as e:
                     logger.warning(f"Price processing error for {hid}: {e}")
 
+            # KAİZEN 2026: Resilient Price Info Construction (Always Run)
+            # Even if no recent price_logs exist, we must provide a baseline price_info 
+            # using the cached data in the hotels table (market_offers, room_types).
+            if not price_info:
+                # Use current price from the hotels table if available
+                curr_p = h.get("price") or h.get("current_price") or 0
+                prev_p = h.get("previous_price") or curr_p
+                active_currency = h.get("currency") or display_currency or "TRY"
+                
+                # Room Types Baseline
+                raw_rooms = h.get("room_types") or []
+                
+                # Offers Baseline
+                raw_offers = []
+                for key in ["market_offers", "parity_offers", "offers"]:
+                    val = h.get(key)
+                    if val and isinstance(val, list) and len(val) > 0:
+                        raw_offers = val
+                        break
+                
+                # Process Offers for UI compatibility
+                processed_offers = []
+                for of in raw_offers:
+                    if not isinstance(of, dict): continue
+                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
+                    v_name = normalize_vendor_name(v_raw)
+                    p_val = _extract_price(of.get("price"), currency=active_currency)
+                    if p_val and p_val > 0:
+                        processed_offers.append({
+                            "vendor": v_name,
+                            "price": p_val,
+                            "currency": of.get("currency") or active_currency,
+                            "url": of.get("url") or of.get("link"),
+                            "is_direct": of.get("is_direct", False),
+                            "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
+                        })
+
+                price_info = {
+                    "current_price": curr_p,
+                    "previous_price": prev_p,
+                    "currency": active_currency,
+                    "name": h.get("name"),
+                    "trend": "stable",
+                    "change_percent": 0.0,
+                    "recorded_at": h.get("updated_at") or h.get("created_at"),
+                    "vendor": h.get("vendor") or "System",
+                    "offers": processed_offers,
+                    "room_types": raw_rooms
+                }
+
             # Sentiment Processing
             # AGENT_FIX: Sentiment Fallback (Global Pulse)
             # If the user's specific hotel record is missing sentiment (e.g. newly re-added),
@@ -544,7 +594,14 @@ async def get_dashboard_logic(
             longitude = h.get("longitude") or dir_data.get("longitude")
             amenities = h.get("amenities") or dir_data.get("amenities") or []
             images = h.get("images") or dir_data.get("images") or []
-            reviews = h.get("reviews") or dir_data.get("reviews") or []
+            reviews_raw = h.get("reviews") or dir_data.get("reviews") or {}
+            
+            # AGENT_FIX: Explicit Review Mapping for Frontend
+            # The UI expects 'other_sites_reviews' at the top level.
+            # In DB, it is often nested inside the 'reviews' object.
+            other_sites_reviews = h.get("other_sites_reviews") or []
+            if not other_sites_reviews and isinstance(reviews_raw, dict):
+                other_sites_reviews = reviews_raw.get("other_sites_reviews") or []
 
             # AGENT_LOGIC: Cross-User Recovery for Rating & Review Count (Pro Fallback)
             if (
@@ -574,7 +631,8 @@ async def get_dashboard_logic(
                     or generate_mentions(raw_breakdown),
                     "amenities": amenities,
                     "images": images,
-                    "reviews": reviews,
+                    "reviews": reviews_raw,
+                    "other_sites_reviews": other_sites_reviews,
                     "price_info": price_info,
                     "price_history": [
                         {

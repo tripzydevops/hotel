@@ -366,6 +366,7 @@ class ScanSession(BaseModel):
     check_in_date: Optional[date] = None
     check_out_date: Optional[date] = None
     adults: Optional[int] = 2
+    children_ages: Optional[List[int]] = Field(default_factory=list)
     currency: Optional[str] = "TRY"
     reasoning_trace: Optional[List[Any]] = None
 
@@ -413,6 +414,7 @@ class ScanOptions(BaseModel):
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     adults: int = Field(default=2, ge=1, le=10)
+    children_ages: Optional[List[int]] = Field(default_factory=list)
     currency: Optional[str] = "TRY"
     hotel_ids: Optional[List[UUID]] = None
     skip_intelligence: bool = Field(
@@ -592,6 +594,8 @@ class AdminSettings(BaseModel):
     default_currency: str
     system_alert_message: Optional[str] = None
     scan_interval_hours: int = 4
+    scan_adults: int = 2
+    scan_children_ages: List[int] = Field(default_factory=list)
     last_global_scan_at: Optional[datetime] = None
     next_global_scan_at: Optional[datetime] = None
     updated_at: datetime
@@ -606,6 +610,8 @@ class AdminSettingsUpdate(BaseModel):
     default_currency: Optional[str] = None
     system_alert_message: Optional[str] = None
     scan_interval_hours: Optional[int] = None
+    scan_adults: Optional[int] = None
+    scan_children_ages: Optional[List[int]] = None
     last_global_scan_at: Optional[datetime] = None
     next_global_scan_at: Optional[datetime] = None
 

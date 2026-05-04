@@ -375,6 +375,10 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         deep_scan_interval = settings.get("deep_scan_interval_hours", 168)  # Default 7 days
         last_deep_scan = settings.get("last_deep_scan_at")
         
+        # [2026-05-04] Get system occupancy defaults
+        default_adults = settings.get("default_adults", 2)
+        default_children = settings.get("default_children_ages", [])
+        
         now = datetime.now(timezone.utc)
 
         # 2. Check overlap
@@ -412,7 +416,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         # 3. Get monitored hotels first (to set explicit count in initial log)
         monitored_res = (
             insforge.table("user_hotels")
-            .select("hotel_id, preferred_currency, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude, currency)")
+            .select("hotel_id, preferred_currency, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude, currency, scan_adults, scan_children_ages)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -524,7 +528,9 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             check_out=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
             deep_scan=is_deep_scan_due,
             session_id=session_id,
-            currency=currency
+            currency=currency,
+            adults=default_adults,
+            children=default_children
         )
 
         # [FIX 2026-05-01] Wrap in try/except — an unprotected failure here
@@ -583,20 +589,20 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
             # Instead, we rely on webhooks, and use this as a recovery loop for missed tasks.
             s_logger.info("Task Processor: Running recovery check for missed webhooks...")
             
-            # [RECOVERY] check old pending tasks directly
-            # Only attempt recovery on tasks older than 10 minutes (safety buffer for webhook arrival)
-            recovery_cutoff = (
-                datetime.now(timezone.utc) - timedelta(minutes=10)
-            ).isoformat()
-            pending_res = (
+            query = (
                 insforge.table("scan_tasks")
                 .select("external_task_id, created_at")
                 .eq("status", "pending")
                 .not_.is_("external_task_id", "null")
-                .lt("created_at", recovery_cutoff)
-                .limit(100)
-                .execute()
             )
+            if not getattr(insforge, "_force_heartbeat", False):
+                recovery_cutoff = (
+                    datetime.now(timezone.utc) - timedelta(minutes=10)
+                ).isoformat()
+                query = query.lt("created_at", recovery_cutoff)
+
+            pending_res = query.limit(100).execute()
+
 
             if pending_res.data:
                 completed_ids = [t["external_task_id"] for t in pending_res.data]
@@ -647,6 +653,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
         # Parallel fetch for all completed tasks from DataForSEO
         # [KAIZEN 2026] Now passes target_token and target_name to enforce identity-aware extraction
         fetch_tasks = []
+        fetched_ids = []  # [FIX 2026-05-04] Track which IDs were actually fetched to prevent index misalignment
         for tid in completed_ids:
             meta = task_id_to_metadata.get(tid)
 
@@ -674,6 +681,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                     task_type=meta.get("task_type"),
                 )
             )
+            fetched_ids.append(tid)  # [FIX 2026-05-04] Only add ID if task was actually submitted
 
         all_results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
@@ -685,7 +693,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
         persistence = ScanPersistenceService(insforge, admin_insforge=get_insforge_db(admin=True))
 
         for i, res_tuple in enumerate(all_results):
-            tid = completed_ids[i]
+            tid = fetched_ids[i]  # [FIX 2026-05-04] Use fetched_ids instead of completed_ids
             meta = task_id_to_metadata.get(tid)
 
             # [FIX 2026-04-26] Unpack 2-tuple (processed_data, raw_json) from provider
@@ -718,7 +726,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                     fail_reason = "unknown"
                     if isinstance(result, dict):
                         fail_reason = result.get("failure_reason", result.get("status", "failed"))
-                        if fail_reason in ["identity_mismatch", "invalid_response", "provider_error"]:
+                        if fail_reason in ["identity_mismatch", "invalid_response", "provider_error", "task_error"]:
                             is_definitive_failure = True
                     elif isinstance(result, Exception):
                         fail_reason = "exception"
