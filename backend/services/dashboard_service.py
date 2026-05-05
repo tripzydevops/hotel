@@ -311,7 +311,8 @@ async def get_dashboard_logic(
                 g_res = await asyncio.to_thread(_fetch_missing_ratings, missing_rating_sids)
                 for gh in g_res.data or []:
                     sid = gh.get("serp_api_id")
-                    if not sid: continue
+                    if not sid:
+                        continue
                     if sid not in recovered_ratings_map:
                         recovered_ratings_map[sid] = {"rating": None, "review_count": None, "hids": []}
                     recovered_ratings_map[sid]["hids"].append(str(gh["id"]))
@@ -464,7 +465,8 @@ async def get_dashboard_logic(
                             val = offers_log.get(key)
                             if val and isinstance(val, list):
                                 for of in val:
-                                    if not isinstance(of, dict): continue
+                                    if not isinstance(of, dict):
+                                        continue
                                     # Create a unique key for deduplication
                                     vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
                                     price = _extract_price(of.get("price"))
@@ -479,7 +481,8 @@ async def get_dashboard_logic(
                             val = h.get(key)
                             if val and isinstance(val, list):
                                 for of in val:
-                                    if not isinstance(of, dict): continue
+                                    if not isinstance(of, dict):
+                                        continue
                                     vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
                                     price = _extract_price(of.get("price"))
                                     offer_key = f"{vendor}_{price}"
@@ -590,7 +593,8 @@ async def get_dashboard_logic(
                 # Process Offers for UI compatibility
                 processed_offers = []
                 for of in raw_offers:
-                    if not isinstance(of, dict): continue
+                    if not isinstance(of, dict):
+                        continue
                     v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                     v_name = normalize_vendor_name(v_raw)
                     

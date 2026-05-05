@@ -3,6 +3,12 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 5, 2026)
+- ✅ **Retention Aggregation Fix (Rank 1)**: Corrected the SQL jsonb aggregation in `perform_data_maintenance()` (defined in Migration 039) to verify that `room_types` is a JSON array before invoking `jsonb_array_length()`. Prevents terminal transaction aborts caused by corrupted or non-array records, securing robust `price_history_daily` rollup generation.
+- ✅ **PEP-8 Multi-line Conditional Expansion (Rank 3)**: Refactored ten inline single-line conditional statements in `dashboard_service.py` and `scan_persistence.py` into compliant multi-line blocks. Drastically improves debugger step-through ergonomics and provides accurate line-by-line coverage analysis.
+- ✅ **Ruff Linting & Syntax Alignment**: Validated all code changes via Ruff, ensuring perfect syntax and indentation.
+- ✅ **Regression-Free Verification**: Executed extensive backend integration suites (`integration_test_dashboard.py` and `test_dataforseo_normalization.py`) verifying that the refactored code correctly maps hotels, performs exchange rate calculations, computes historical trend lines, and processes DataForSEO pricing feeds without regression.
+
 ## 🕒 Recent Updates (May 4, 2026)
 > [!CAUTION]
 > **PENDING VERIFICATION**: The following updates were added by Antigravity and require verification by Claude for technical accuracy and alignment with the latest codebase.
@@ -639,6 +645,23 @@ graph TD
 **Resolution**: Run `hotel_info` scans for target hotels. The data pipeline is correct; only collection is pending.  
 **Verification**: `SELECT id, name, jsonb_array_length(other_sites_reviews) FROM hotels WHERE other_sites_reviews IS NOT NULL;`
 
+### Bug #9 — Retention Flow Inconsistency (Rank 1 Technical Debt)
+**Date**: 2026-05-05  
+**File**: `backend/migrations/039_fix_retention_logic.sql`  
+**Symptom**: `price_history_daily` records intermittently missing or fail to generate, resulting in gaps/missing daily analytics historical trends.  
+**Root Cause**: When aggregating `room_types` with `jsonb_agg()`, the ordering parameter `jsonb_array_length(room_types)` would throw a PG database exception (`jsonb value must be an array`) if any row's `room_types` was not a JSON array (e.g. `NULL` or simple strings). The single-transaction wrapped block would abort the entire day's rollup silently.  
+**Fix**: Updated the aggregation to verify that `room_types` is indeed a JSON array using `jsonb_typeof()` before reading its length:
+```sql
+(jsonb_agg(room_types ORDER BY CASE WHEN jsonb_typeof(room_types) = 'array' THEN jsonb_array_length(room_types) ELSE 0 END DESC) -> 0) as room_type_summary
+```
+
+### Bug #10 — One-Liner Conditional Statements Debugging Obstruction (Rank 3 Technical Debt)
+**Date**: 2026-05-05  
+**File**: `backend/services/dashboard_service.py`, `backend/services/scan_persistence.py`  
+**Symptom**: Breakpoints and step-through debugging on conditional paths skipped, making line coverage reporting and interactive inspection highly difficult.  
+**Root Cause**: Several critical functions used inline, single-line conditionals (such as `if not sid: continue` or `if not val: continue`).  
+**Fix**: Expanded all ten occurrences of one-liner conditionals in both services into PEP-8 compliant, multi-line blocks. Verified full compliance and regression-free behavior via Ruff and comprehensive integration test execution.
+
 ---
 
 ## 10. Current Technical Debt & Challenges
@@ -646,28 +669,19 @@ graph TD
 > [!WARNING]
 > **ACTIVE BLOCKERS**: These issues are tracked for resolution and should be considered when modifying related components.
 
-### 1. Retention Flow Inconsistency
-- **Issue**: `price_history_daily` records are not consistently created during the maintenance cron job.
-- **Impact**: Historical price analytics may show gaps or "No Data" for older periods.
-- **Suspect**: `retention_service.py` logic for aggregating `price_logs` before archiving.
-
-### 2. Broad Exception Handling
+### 1. Broad Exception Handling
 - **Issue**: Several services (notably `admin_service.py`) use broad `except Exception:` blocks.
 - **Impact**: Masks specific errors, making debugging difficult.
 - **Action**: Refactor to catch specific `PostgrestError` or `HTTPException`.
 
-### 3. One-Liner Conditionals
-- **Issue**: Excessive use of one-liner `if` statements in backend logic.
-- **Impact**: Reduced readability and harder to set breakpoints during debugging.
-
-### 4. Vector Dimensionality Workaround
+### 2. Vector Dimensionality Workaround
 - **Issue**: `gemini-embedding-001` returns 3072 dims, but DB is `vector(768)`.
 - **Status**: Currently using **Slicing** (taking first 768 elements).
 - **Long-term**: Consider re-indexing DB to 3072 if semantic precision loss is detected in Discovery Engine.
 
 ---
 
-## 10. Environment & Configuration
+## 11. Environment & Configuration
 
 ### Required Environment Variables
 

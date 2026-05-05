@@ -32,7 +32,7 @@ BEGIN
             MIN(price) as min_price,
             MAX(price) as max_price,
             -- Take the most detailed room type info from the set
-            (jsonb_agg(room_types ORDER BY jsonb_array_length(room_types) DESC) -> 0) as room_type_summary,
+            (jsonb_agg(room_types ORDER BY CASE WHEN jsonb_typeof(room_types) = 'array' THEN jsonb_array_length(room_types) ELSE 0 END DESC) -> 0) as room_type_summary,
             -- Take the most recent vendor name
             (array_agg(vendor ORDER BY recorded_at DESC))[1] as top_vendor
         FROM price_logs

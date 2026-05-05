@@ -1158,12 +1158,14 @@ class ScanPersistenceService:
         for item in batch_items:
             hid = str(item["hotel_id"])
             h_ref = hotel_ref_map.get(hid)
-            if not h_ref: continue # Hotel not found in DB
+            if not h_ref:
+                continue  # Hotel not found in DB
             
             identity = h_ref.get("property_token") or hid
             task_id = item.get("scan_task_id")
             res = item.get("result", {})
-            if not res or res.get("status") != "success": continue
+            if not res or res.get("status") != "success":
+                continue
 
             logger.debug(f"Processing identity {identity}. room_types: {len(res.get('room_types', []))}, room_catalog: {len(res.get('room_catalog', []))}, offers: {len(res.get('offers', []))}")
             
@@ -1176,12 +1178,14 @@ class ScanPersistenceService:
             else:
                 group = identity_groups[identity]
                 group["hotel_ids"].add(hid)
-                if task_id: group["task_ids"].append(task_id)
+                if task_id:
+                    group["task_ids"].append(task_id)
                 
                 # Smart merge: Priority on BEST (lowest) price and deeper metadata
                 existing = group["res"]
                 for key, val in res.items():
-                    if not val: continue
+                    if not val:
+                        continue
                     
                     if key in ["price", "best_price"]:
                         new_p = float(val) if val else 0
@@ -1193,7 +1197,8 @@ class ScanPersistenceService:
                     elif key in ["offers", "ota_prices", "room_catalog", "room_types", "market_offers", "parity_offers", "all_prices"]:
                         # Merge lists and deduplicate by 'source', 'title', or 'name'
                         existing_list = existing.get(key) or []
-                        if not isinstance(existing_list, list): existing_list = []
+                        if not isinstance(existing_list, list):
+                            existing_list = []
                         if isinstance(val, list):
                             seen = set()
                             combined = []
@@ -1240,7 +1245,8 @@ class ScanPersistenceService:
             )
             for v in (v_res.data or []):
                 tok = v["property_token"]
-                if tok not in variations_map: variations_map[tok] = []
+                if tok not in variations_map:
+                    variations_map[tok] = []
                 variations_map[tok].append(v)
         
         # 4. Prepare Vectorized Payloads
