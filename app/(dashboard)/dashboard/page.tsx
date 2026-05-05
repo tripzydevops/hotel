@@ -290,7 +290,7 @@ export default function Dashboard() {
                       onEdit={(id, hotel) => handleEditHotel(hotel)}
                       offers={data.target_hotel.price_info?.offers}
                       room_types={data.target_hotel.price_info?.room_types}
-                      onViewDetails={(hotel) => handleOpenDetails(hotel)}
+                      onViewDetails={() => data.target_hotel && handleOpenDetails(data.target_hotel)}
                       isEnterprise={isEnterprise}
                       amenities={data.target_hotel.amenities}
                       images={data.target_hotel.images}
@@ -372,8 +372,8 @@ export default function Dashboard() {
                             adults={competitor.price_info?.adults}
                             isEstimated={competitor.price_info?.is_estimated}
                             onEdit={(id, hotel) => handleEditHotel(hotel)}
-                            onViewDetails={(hotel) =>
-                              handleOpenDetails(hotel)
+                            onViewDetails={() =>
+                              handleOpenDetails(competitor)
                             }
                             onSetTarget={handleSetTargetHotel}
                             isEnterprise={isEnterprise}

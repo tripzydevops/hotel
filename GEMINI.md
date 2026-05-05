@@ -2,6 +2,9 @@
 
 This document provides stable technical context for any AI agent interacting with this repository. 
 
+> [!IMPORTANT]
+> **PRIMARY SOURCE OF TRUTH**: Always read [ProjectArchitecture.md](file:///home/tripzydevops/hotel/ProjectArchitecture.md) BEFORE performing any task. It contains the complete inventory of agents, services, API routes, and database tables.
+
 ## 🏗️ Project Identity: "HotelPlus"
 This project is an advanced hotel market intelligence and autonomous parity discovery platform.
 

@@ -1,18 +1,19 @@
-# HotelPlus — Comprehensive Architecture & Developer Guide
+# Project Architecture: HotelPlus (Tripzy) 🏨🚀
 
-> **Purpose**: This document is the single source of truth for the HotelPlus platform. Any AI agent or developer resuming work should read this **first** before touching any code.
+> [!IMPORTANT]
+> **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
----
+## 🕒 Recent Updates (May 4, 2026)
+> [!CAUTION]
+> **PENDING VERIFICATION**: The following updates were added by Antigravity and require verification by Claude for technical accuracy and alignment with the latest codebase.
 
-## Table of Contents
+- ✅ **Migration 040**: Added `source`, `url`, `capacity`, and `image_url` to `room_type_catalog` to fix PGRST204 mismatch.
+- ✅ **Currency Handling**: Implemented multi-currency normalization with Turkish/US decimal/thousand separator support.
+- ✅ **Pricing DNA**: Integrated Gemini 3 for automated strategy synthesis (Volume Leader vs Yield Seeker).
+- ✅ **Parallel Scans**: Enhanced DataForSEO provider to use `asyncio.gather` for concurrent hotel data retrieval.
+- ✅ **Discovery Engine**: Deployed HNSW-indexed vector search for semantic competitor matchmaking.
 
-1. [System Overview](#1-system-overview)
-2. [Tech Stack](#2-tech-stack)
-3. [Directory Structure](#3-directory-structure)
-4. [Database Schema](#4-database-schema)
-5. [Backend Architecture](#5-backend-architecture)
-6. [DataForSEO Scan Pipeline](#6-dataforseo-scan-pipeline)
-7. [Frontend Architecture](#7-frontend-architecture)
+## 1. System Overview
 8. [Key Data Flows](#8-key-data-flows)
 9. [Known Bugs & Fixes Log](#9-known-bugs--fixes-log)
 10. [Environment & Configuration](#10-environment--configuration)
@@ -319,6 +320,15 @@ Two task types:
 | `price_search` | `/hotels/search/task_post` | Scheduled (hourly) | `price_logs` |
 | `hotel_info` | `/hotels/info/task_post` | Scheduled (daily or on-demand) | `hotels.*` |
 
+**🚀 Optimization: Parallel Scans**
+The provider utilizes `asyncio.gather` to trigger multiple hotel scans concurrently. This reduces total session initialization time from O(n) to O(1) latency relative to the number of hotels.
+
+**🛡️ Market Selection Reliability**
+To ensure data accuracy in competitive markets, the ingestion pipeline implements:
+- **Deep Key Mapping**: Scans multiple SerpApi JSON keys (`rate_per_night`, `price`, `total_rate`) to prevent market depth restriction.
+- **Absolute Minimum Selection**: Ignores sponsored "top-level" prices if a lower vendor rate is found in the competitive set.
+- **Quota Resilience**: Differentiates between `429` (Rate Limit) and `403` (Quota Out) to maintain scan continuity across large hotel sets.
+
 **Webhook routing**: Results arrive at `/api/webhook/dataforseo`. The webhook handler reads `task_type` from `scan_tasks` and routes to the correct parser.
 
 ---
@@ -514,6 +524,32 @@ price_log.currency (from scan, e.g. "TRY")
 
 ---
 
+## 10. Current Technical Debt & Challenges
+
+> [!WARNING]
+> **ACTIVE BLOCKERS**: These issues are tracked for resolution and should be considered when modifying related components.
+
+### 1. Retention Flow Inconsistency
+- **Issue**: `price_history_daily` records are not consistently created during the maintenance cron job.
+- **Impact**: Historical price analytics may show gaps or "No Data" for older periods.
+- **Suspect**: `retention_service.py` logic for aggregating `price_logs` before archiving.
+
+### 2. Broad Exception Handling
+- **Issue**: Several services (notably `admin_service.py`) use broad `except Exception:` blocks.
+- **Impact**: Masks specific errors, making debugging difficult.
+- **Action**: Refactor to catch specific `PostgrestError` or `HTTPException`.
+
+### 3. One-Liner Conditionals
+- **Issue**: Excessive use of one-liner `if` statements in backend logic.
+- **Impact**: Reduced readability and harder to set breakpoints during debugging.
+
+### 4. Vector Dimensionality Workaround
+- **Issue**: `gemini-embedding-001` returns 3072 dims, but DB is `vector(768)`.
+- **Status**: Currently using **Slicing** (taking first 768 elements).
+- **Long-term**: Consider re-indexing DB to 3072 if semantic precision loss is detected in Discovery Engine.
+
+---
+
 ## 10. Environment & Configuration
 
 ### Required Environment Variables
@@ -606,4 +642,253 @@ The `insforge_schema_rebuild.sql` is the canonical full schema for fresh rebuild
 
 ---
 
+---
+
+## 13. Complete Service Inventory
+
+### `dashboard_service.py`
+Assembles the full dashboard payload. Entry point for all frontend data. See §5 for deep-dive.
+
+### `scan_persistence.py`
+Writes DataForSEO task results to the DB. Two paths: `price_search` → `price_logs`; `hotel_info` → `hotels.*`. See §5.
+
+### `monitor_service.py`
+Scan scheduler. Creates `scan_sessions` and `scan_tasks`, submits to DataForSEO, runs a recovery loop for stuck tasks.
+
+### `analysis_service.py`
+Complex market analysis engine combining heuristic logic with Gemini-based reasoning.
+
+#### 🔀 Deep Dive: Room-Type Matching Logic
+The system handles matching between user-defined "Target Room Types" (e.g., Standard, Suite) and raw OTA room names using a 4-tier strategy:
+1. **Exact Name Match**: Prioritizes 1:1 string matching if a specific room was previously selected.
+2. **Category Routing**: 
+   - **Standard**: Routes to top-level "Lead Price" (most reliable 'from' price).
+   - **Deluxe/Suite**: Strictly restricted to the `room_types` array.
+3. **Keyword Heuristics**: Normalized keyword sets (e.g., `standart`, `ekonomik`, `süit`) used to categorize unknown room strings.
+4. **Legacy Fallback**: Uses Lead Price as a 50% confidence baseline if granular room data is missing from older logs.
+
+#### 🧬 Deep Dive: Pricing DNA & Strategic Narrative
+Analyzes historical pricing behavior to identify a hotel's "Strategic Personality."
+- **Pipeline**: `aggregate_daily_prices.py` → `update_pricing_dna.py` (Gemini reasoning) → `embeddings.py` (768-dim slicing).
+- **DNA Synthesis**: Analyzes 30-day volatility and sentiment-to-price elasticity using Gemini 3.
+- **Archetypes**: Classifies hotels into **Volume Leaders** (aggressive price, low sentiment), **Yield Seekers** (premium price, high sentiment), or **Benchmark Followers**.
+- **Narrative Engine**: Generates real-time strategic verdicts (e.g., "Premium King", "Danger Zone") based on ARI (Average Rate Index) and Sentiment Index.
+- **Vector Storage**: Stored in `hotels.pricing_dna` for semantic comparison.
+
+#### 👻 Deep Dive: Autonomous Discovery Engine
+Proactively identifies strategic rivals using AI-powered semantic matchmaking.
+- **Architecture**: Specialized module within `AnalystAgent`.
+- **Search Space**: `hotel_directory` table, HNSW-indexed `embedding` column.
+- **Flow**: Metadata String → Gemini Embedding (3072 dims) → Slicing (768 dims) → Cosine Similarity Search (`match_hotels` RPC).
+- **Matching Criteria**: Semantic overlap of hotel name, stars, rating, location context, and snippet highlights.
+
+#### 📊 Market Intelligence (AI Reasoning)
+- Uses `gemini-3-flash-preview` for agentic reasoning traces.
+- **Behavioral Rival Detection**: Identifies which competitor most aggressively reacts to the target's price shifts.
+- **Smart Thresholds**: Dynamically suppresses noise in volatile markets to prevent alert fatigue.
+
+### `ai_service.py`
+Thin wrapper around the Google Gemini API (`google-generativeai`). Provides `get_genai_client()` and streaming/non-streaming completion helpers used by agents and analysis routes.
+
+### `admin_service.py`
+Admin panel data: user management, directory CRUD, system log queries, scan export, hotel CRUD (admin-level). Backed by `profiles`, `hotel_directory`, `maintenance_logs`, `scan_sessions`.
+
+### `auth_service.py`
+Handles user registration, login, profile creation. Syncs InsForge `auth.users` → `profiles` table on sign-up. Also manages membership plan checks.
+
+### `hotel_service.py`
+Hotel CRUD + metadata enrichment. Resolves `serp_api_id` / `property_token` from DataForSEO, merges `hotel_directory` enrichment into user hotel records.
+
+### `alert_service.py` (via `alerts_routes.py`)
+Generates parity breach alerts and price-change notifications. Writes to `alerts` table. Differentiates user-specific vs. `is_global_pulse` (anonymous network wins).
+
+### `notification_service.py`
+Multi-channel delivery: SMTP email, WhatsApp (Twilio/Meta), push notifications. `send_notifications()` dispatches based on user settings. `send_summary_email()` builds HTML digest. Singleton: `notification_service`.
+
+### `retention_service.py`
+Data lifecycle / maintenance. `run_maintenance_cycle()` archives `price_logs` older than 30 days into `price_history_daily` and purges `maintenance_logs`. Called by Vercel Cron or admin trigger.
+
+### `predictive_service.py`
+Predictive Yield: calculates market volatility and suggests dynamic alert thresholds using historical price noise from `price_history_daily`.
+
+### `pulse_service.py`
+Global Pulse Phase 2. `get_pulse_network_stats()` returns network-wide anonymized intelligence stats (total monitored hotels, avg parity score, live alerts count) for the Global Pulse widget.
+
+### `recovery_service.py`
+AI-powered dispute generation for parity violations (Revenue Recovery feature). `generate_dispute()` calls Gemini to produce a formal negotiation letter. Called from `/api/recovery/generate-dispute`.
+
+### `price_comparator.py`
+Pure utility class. `calculate_trend()`, `check_threshold_breach()`, `check_competitor_undercut()`, `build_price_with_trend()`, `analyze_all_competitors()`. No DB access — takes dicts, returns scored dicts.
+
+### `config_service.py`
+Singleton `ConfigService`. Loads room-type mappings and rate-plan config from DB (`settings` table or env). `get_mappings()` / `refresh_config()`. Used by analysis to normalize OTA room names.
+
+### `location_service.py`
+`LocationService`: resolves and upserts hotel locations into `location_registry`. `resolve_hotel_locations()` geocodes hotels missing city/country. `seed_from_hotels()` back-fills from existing hotel records.
+
+### `profile_service.py`
+User profile CRUD: fetches/updates `profiles` and `user_hotels`. Handles `preferred_currency`, `fixed_check_in/out`, `default_adults` preferences.
+
+### `subscription.py`
+Membership plan enforcement. Checks `membership_plans` table for feature gates (max hotels, scan frequency, report access). Called from routes that need plan-level authorization.
+
+### `market/sync_service.py`
+Orchestrates market data ingestion: calls `TGAScraper` + `TOBBScraper`, merges results, writes to `market_events` and `market_heartbeat_logs`.
+
+### `market/tga_scraper.py`
+`TGAScraper`: scrapes Turkish aviation authority (TGA) event data. Uses Gemini to extract structured events from raw HTML via `_extract_events_with_ai()`. Writes to `market_events`.
+
+### `market/tobb_scraper.py`
+`TOBBScraper`: scrapes TOBB (Turkish chamber of commerce) fair/event data. Same Gemini-extraction pattern as TGA. Writes to `market_events`.
+
+---
+
+## 14. Complete Agent Inventory
+
+### `AnalystAgent` (`analyst_agent.py`)
+**Role**: Price analytics, trend detection, multi-hotel correlation.  
+**Uses**: `MarketIntelligenceAgent`, `ScanPersistenceService`, `analysis_service`, vector embeddings via `get_embedding()`.  
+**Key method**: `run_analysis(hotel_id, options)` — orchestrates full market intelligence run, stores embedding in `hotel_directory`.
+
+### `MarketIntelligenceAgent` (`market_intelligence_agent.py`)
+**Role**: AI orchestrator. Thin wrapper delegating to `analysis_service` for core logic.  
+**Model**: `gemini-3-flash-preview`.  
+**Key method**: `run_analysis(hotel_data, competitor_data)` → calls `run_market_intelligence()`, `synthesize_pricing_dna()`, `generate_strategy_embedding()`.
+
+### `DemandScoringAgent` (`demand_agent.py`)
+**Role**: Aggregates localized demand signals (fairs, TGA events, aviation data) to calculate a **Market Compression Score** for a city/date pair.  
+**Key method**: `calculate_compression(city, target_date)` → queries `market_events`, returns compression score + contributing factors.
+
+### `PriceExplanatoryAgent` (`price_explanatory_agent.py`)
+**Role**: Generates natural-language "Strategic Rationals" explaining demand signals and providing actionable pricing recommendations.  
+**Key method**: `generate_rationale(compression_data, language)` → calls Gemini, returns markdown rationale string.
+
+### `NotifierAgent` (`notifier_agent.py`)
+**Role**: Multi-channel communication dispatcher (Email, WhatsApp, Push). Decoupled for async delivery + retries.  
+**Uses**: `notification_service` singleton.  
+**Key method**: `send(alert_payload)` → selects channel, buffers `log_reasoning()` entries, flushes to DB after send.
+
+### `ScraperAgent` (`scraper_agent.py`)
+**Role**: DataForSEO result parsing + global cache check. Entry point for hotel scan execution.  
+**Key methods**: `run_scan(hotels, options)` → parallel `fetch_hotel()` calls; `_check_global_cache()` → skips API call if fresh data exists in `hotel_directory`.
+
+---
+
+## 15. Complete API Route Map
+
+All routes are mounted under `/api` in `next.config.ts` rewrites (proxy to FastAPI on port 8000).
+
+| File | Prefix | Key Endpoints |
+|---|---|---|
+| `dashboard_routes.py` | — | `GET /dashboard`, `GET /global-pulse` |
+| `analysis_routes.py` | — | `GET /v1/discovery/{hotel_id}`, `POST /analysis/market`, `GET /analysis`, `POST /analysis/discovery/{hotel_id}`, `GET /analysis/{hotel_id}/sentiment-history`, `GET /v2/analysis/stream`, `GET /v1/analysis/intelligence-brief/{hotel_id}` |
+| `admin_routes.py` | `/admin` | `GET /stats`, `GET /users`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`, `GET /directory`, `POST /directory`, `PUT /directory/{id}`, `DELETE /directory/{id}`, `GET /logs`, `GET /system-logs`, `GET /feed`, `GET /hotels`, `PUT /hotels/{id}`, `DELETE /hotels/{id}`, `GET /scans`, `GET /scans/{id}`, `GET /scans/{id}/export`, `GET /providers`, `GET /debug-providers` |
+| `alerts_routes.py` | `/alerts` | `GET /`, `PATCH /{id}/read`, `DELETE /{id}`, `DELETE /user` |
+| `hotel_routes.py` | `/hotels` | Hotel CRUD for user-facing hotel management |
+| `monitor_routes.py` | `/monitor` | `GET /sessions/{id}`, `GET /sessions/{id}/logs`, `DELETE /logs/{id}`, `GET /active-tasks` |
+| `market_routes.py` | `/market` | `POST /scrape/tobb`, `POST /scrape/tga`, `POST /scrape/all`, `POST /scrape/clear`, `GET /cities`, `GET /events`, `GET /forecast` |
+| `reports_routes.py` | `/reports` | `POST /briefing`, `GET /briefing/{id}`, `GET /briefing/saved/{id}/pdf`, `GET /`, `POST /export`, `GET /{id}/pdf`, `GET /briefing/{hotel_id}/pdf` |
+| `pulse_routes.py` | `/global-pulse` | `GET /stats` |
+| `recovery_routes.py` | `/recovery` | `POST /generate-dispute` |
+| `analysis_routes.py` (v1) | — | `GET /v1/discovery/{hotel_id}`, `GET /v1/analysis/intelligence-brief/{hotel_id}` |
+| `execution_routes.py` | `/execution` | Execution bridge for long-running agent tasks |
+| `webhook_routes.py` | `/webhooks/dataforseo` | `POST /` — DataForSEO postback receiver |
+| `hotel_webhook.py` | (no prefix) | Secondary webhook handler (hotel-specific events) |
+| `profile_routes.py` | — | User profile CRUD |
+| `auth_routes.py` | — | Auth helpers (token refresh, profile sync) |
+| `landing_routes.py` | — | Public-facing landing data endpoints |
+
+---
+
+## 16. Complete Database Table Reference
+
+| Table | Purpose | Key Columns |
+|---|---|---|
+| `hotels` | Master hotel record | `id`, `serp_api_id`, `currency`★, `other_sites_reviews`, `market_offers`, `room_types` |
+| `user_hotels` | User↔hotel join + preferences | `user_id`, `hotel_id`, `is_target`, `preferred_currency`, `fixed_check_in/out` |
+| `price_logs` | Time-series price data | `hotel_id`, `price`, `currency`, `check_in_date`, `scan_session_id` |
+| `price_history_daily` | Archived aggregated price data | Created by `retention_service` from old `price_logs` |
+| `scan_sessions` | Groups scans per user | `user_id`, `hotel_id`, `status`, `target_parameters` |
+| `scan_tasks` | Individual DataForSEO tasks | `session_id`, `task_type`, `status`, `external_id`, `result_data` |
+| `scan_batches` | Batch tracking for bulk scans | Groups multiple `scan_sessions` |
+| `room_type_catalog` | Canonical room types per hotel | `hotel_id`, `name`, `source`★, `url`★, `capacity`★, `image_url`★ |
+| `room_aliases` | Room name → canonical mapping | Normalization for OTA room name variants |
+| `room_tokens` | Tokenized room identifiers | Used for embedding-based room matching |
+| `hotel_directory` | Shared enrichment cache | Cross-user hotel metadata, sentiment, embeddings |
+| `alerts` | Parity & price alerts | `user_id`, `hotel_id`, `message`, `is_read`, `is_global_pulse` |
+| `profiles` | User profile data | Mirrors `auth.users`, extended with plan/preferences |
+| `user_profiles` | Extended profile (legacy alias) | May overlap with `profiles` |
+| `settings` | Per-user dashboard settings | `display_currency`, `notification_prefs`, scan schedule |
+| `admin_settings` | Platform-wide admin config | Feature flags, global limits |
+| `membership_plans` | SaaS plan definitions | `name`, `max_hotels`, `scan_interval_hours`, `features` |
+| `market_events` | TGA + TOBB scraped events | `city`, `event_date`, `event_type`, `demand_impact` |
+| `market_heartbeat_logs` | Market sync audit log | Timestamps and result counts per scrape run |
+| `sentiment_history` | Historical sentiment snapshots | Per-hotel sentiment scores over time |
+| `reports` | Saved intelligence briefs | `target_hotel_id`, `pdf_url`, `generated_at` |
+| `query_logs` | Agent reasoning traces | `session_id`, `message`, `level`, `created_at` |
+| `maintenance_logs` | Retention cycle audit | Timestamps, rows archived/deleted |
+| `location_registry` | Resolved hotel locations | `country`, `city`, `district`, geocoordinates |
+
+★ = columns added in migration `040_room_catalog_add_columns.sql`
+
+---
+
+## 17. Complete Frontend Page Reference
+
+All pages live under `app/(dashboard)/` (authenticated) or `app/(landing)/` (public).
+
+### Dashboard
+| Route | File | Purpose |
+|---|---|---|
+| `/dashboard` | `(dashboard)/dashboard/page.tsx` | Main hotel dashboard — target + competitors, price cards, alerts |
+| `/dashboard/market-intelligence` | `(dashboard)/dashboard/market-intelligence/page.tsx` | Market intelligence brief page |
+| `/parity-monitor` | `(dashboard)/parity-monitor/page.tsx` | Dedicated parity monitoring view |
+| `/reports` | `(dashboard)/reports/page.tsx` | Saved reports + PDF export |
+
+### Analysis
+| Route | File | Purpose |
+|---|---|---|
+| `/analysis` | `(dashboard)/analysis/page.tsx` | Analysis hub landing |
+| `/analysis/discovery` | `(dashboard)/analysis/discovery/page.tsx` | Hotel discovery — find competitors by location |
+| `/analysis/hotel-intelligence` | `(dashboard)/analysis/hotel-intelligence/page.tsx` | Single-hotel deep AI analysis |
+| `/analysis/parity` | `(dashboard)/analysis/parity/page.tsx` | Parity analysis charts |
+| `/analysis/sentiment` | `(dashboard)/analysis/sentiment/page.tsx` | Guest sentiment theme breakdown |
+| `/analysis/calendar` | `(dashboard)/analysis/calendar/page.tsx` | Demand calendar — market compression by date |
+
+### Admin Panel
+| Route | File | Purpose |
+|---|---|---|
+| `/admin` | `(dashboard)/admin/page.tsx` | Admin overview |
+| `/admin/list` | `(dashboard)/admin/list/page.tsx` | User + hotel directory management |
+| `/admin/scans` | `(dashboard)/admin/scans/page.tsx` | Scan task monitor |
+| `/admin/settings` | `(dashboard)/admin/settings/page.tsx` | Platform settings |
+| `/admin/inspector` | `(dashboard)/admin/inspector/page.tsx` | Raw data inspector / debug tool |
+
+### Other
+| Route | File | Purpose |
+|---|---|---|
+| `/debug` | `(dashboard)/debug/page.tsx` | Developer debug panel |
+| `/help` | `app/help/page.tsx` | Help center |
+| `/login` | `app/login/page.tsx` | Auth page |
+| `/` (landing) | `app/(landing)/page.tsx` | Public landing page |
+| `/pricing` | `app/(landing)/pricing/page.tsx` | Pricing / plan comparison |
+| `/about` | `app/(landing)/about/page.tsx` | About page |
+| `/contact` | `app/(landing)/contact/page.tsx` | Contact form |
+
+### Key Shared Components
+
+| Component | Location | Purpose |
+|---|---|---|
+| `HotelDetailsModal` | `components/modals/` | 6-tab hotel detail popup (Overview, Gallery, Amenities, Offers, Rooms, Reviews) |
+| Analytics charts | `components/analytics/` | Recharts-based price trend, parity, sentiment charts |
+| Dashboard tiles | `components/tiles/` | KPI tiles for price, parity score, sentiment |
+| Dashboard layout | `components/dashboard/` | Sidebar, header, nav |
+| Market widgets | `components/market/` | Market compression, events widgets |
+| Feature components | `components/features/` | Feature-specific complex components |
+| UI primitives | `components/ui/` | Buttons, badges, cards, modals |
+| Admin components | `components/admin/` | Admin tables, forms |
+
+---
+
 *Last Updated: 2026-05-04 | Maintained by: AI Agent / DevOps Team*
+

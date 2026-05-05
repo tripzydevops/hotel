@@ -427,20 +427,30 @@ const ScansPanel = () => {
                 </h3>
                 <div className="flex items-center gap-3">
                   {scans.find((s) => s.id === selectedScanId)?.has_payload && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          toast.success("Preparing CSV export...");
-                          await api.exportAdminScanCsv(selectedScanId);
-                        } catch (err: any) {
-                          toast.error("Export failed: " + err.message);
-                        }
-                      }}
-                      className="flex items-center gap-2 bg-[var(--deep-ocean)] hover:bg-[var(--deep-ocean)]/80 text-[var(--soft-gold)] text-[10px] font-black px-4 py-2 rounded-lg transition-all border border-[var(--soft-gold)]/30 hover:scale-105 active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--soft-gold)]/5"
-                    >
-                      <Database className="w-3.5 h-3.5" />
-                      Export Data Vault
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={async () => {
+                          try {
+                            toast.success("Preparing CSV export...");
+                            await api.exportAdminScanCsv(selectedScanId);
+                          } catch (err: any) {
+                            toast.error("Export failed: " + err.message);
+                          }
+                        }}
+                        className="flex items-center gap-2 bg-[var(--deep-ocean)] hover:bg-[var(--deep-ocean)]/80 text-[var(--soft-gold)] text-[10px] font-black px-4 py-2 rounded-lg transition-all border border-[var(--soft-gold)]/30 hover:scale-105 active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--soft-gold)]/5"
+                      >
+                        <Database className="w-3.5 h-3.5" />
+                        Export Data Vault
+                      </button>
+
+                      <button
+                        onClick={() => router.push(`/admin/scans/${selectedScanId}/results`)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black px-4 py-2 rounded-lg transition-all shadow-lg shadow-blue-600/20 uppercase tracking-widest hover:scale-105 active:scale-95"
+                      >
+                        <Activity className="w-3.5 h-3.5" />
+                        View Extraction Results
+                      </button>
+                    </div>
                   )}
                   <button
                     onClick={() => setSelectedScanId(null)}

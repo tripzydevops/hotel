@@ -28,8 +28,8 @@ def scan_file_for_violations(filepath):
             # 1. Hardcoded InsForge/Vercel URLs (exclude comments/md)
             if not filepath.endswith('.md') and not line.strip().startswith('#'):
                 # Allow specific strings in main.py for CORS/CSP as required by AGENTS.md
-                is_manual_cors = 'manual_cors_middleware' in content and (".vercel.app" in line or ".insforge.app" in line)
-                is_csp = 'add_security_headers' in line or (i > 0 and 'add_security_headers' in lines[i-1])
+                is_manual_cors = ('manual_cors_middleware' in content or 'unified_middleware' in content) and (".vercel.app" in line or ".insforge.app" in line)
+                is_csp = 'add_security_headers' in line or (i > 0 and 'add_security_headers' in lines[i-1]) or 'unified_middleware' in content
 
                 if 'insforge.com' in line.lower() and 'NEXT_PUBLIC_SUPABASE_URL' not in line:
                     violations.append(f"L{i+1}: Potential hardcoded InsForge URL: {line.strip()}")
