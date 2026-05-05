@@ -1,3 +1,6 @@
+import json
+import time
+import urllib.request
 from datetime import date
 from typing import Optional
 
@@ -7,7 +10,7 @@ from uuid import UUID, uuid4
 
 from supabase import Client  # type: ignore
 
-# Exchange rates to USD (approximate, update periodically or use API)
+# Exchange rates to USD (stable hardcoded fallbacks, updated periodically)
 EXCHANGE_RATES_TO_USD = {
     "USD": 1.0,
     "EUR": 1.08,  # 1 EUR = 1.08 USD
@@ -16,18 +19,73 @@ EXCHANGE_RATES_TO_USD = {
     "TL": 0.029,   # Alias for TRY
 }
 
+# Dynamic in-memory caching for exchange rates
+_EXCHANGE_RATE_CACHE = dict(EXCHANGE_RATES_TO_USD)
+_LAST_FETCH_TIME = 0.0
+_CACHE_TTL_SECONDS = 14400  # 4 hours cache lifetime
+
+
+def _update_exchange_rates_live() -> None:
+    """Fetch live exchange rates from public API and update cache, falling back gracefully on failure."""
+    global _LAST_FETCH_TIME, _EXCHANGE_RATE_CACHE
+    now = time.time()
+
+    # Only fetch if cache has expired
+    if now - _LAST_FETCH_TIME < _CACHE_TTL_SECONDS:
+        return
+
+    try:
+        req = urllib.request.Request(
+            "https://open.er-api.com/v6/latest/USD",
+            headers={"User-Agent": "HotelPlus-Exchange-Rate-Fetcher/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+            if data.get("result") == "success" and "rates" in data:
+                rates = data["rates"]
+                new_cache = {"USD": 1.0}
+
+                # API returns rates as units per 1 USD (e.g. TRY = 45.2).
+                # We need 1 unit in USD (e.g. 1 TRY = 1 / 45.2 = 0.0221 USD).
+                for currency, rate_val in rates.items():
+                    if rate_val and rate_val > 0:
+                        new_cache[currency.upper()] = 1.0 / rate_val
+
+                # Ensure Turkish Lira alias is correctly updated
+                if "TRY" in new_cache:
+                    new_cache["TL"] = new_cache["TRY"]
+
+                _EXCHANGE_RATE_CACHE = new_cache
+                _LAST_FETCH_TIME = now
+    except Exception as e:
+        # Gracefully handle network/API failures by printing a warning and continuing with cached rates
+        print(f"[CURRENCY API WARNING] Failed to fetch live exchange rates: {e}. Using cached/static fallbacks.")
+        # Delay the next retry by 5 minutes to prevent spamming
+        _LAST_FETCH_TIME = now - _CACHE_TTL_SECONDS + 300
+
 
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
-    """Convert amount from one currency to another via USD."""
+    """Convert amount from one currency to another via USD using dynamic cached rates."""
     from_currency = from_currency.upper()
     to_currency = to_currency.upper()
     if from_currency == to_currency:
         return amount
-    # Convert to USD first
-    usd_rate = EXCHANGE_RATES_TO_USD.get(from_currency, 1.0)
+
+    # Update exchange rates if expired
+    _update_exchange_rates_live()
+
+    # Convert to USD first (using cache with static fallback)
+    usd_rate = _EXCHANGE_RATE_CACHE.get(
+        from_currency, EXCHANGE_RATES_TO_USD.get(from_currency, 1.0)
+    )
     usd_amount = amount * usd_rate
-    # Convert from USD to target
-    usd_to_target = EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
+
+    # Convert from USD to target (using cache with static fallback)
+    usd_to_target = _EXCHANGE_RATE_CACHE.get(
+        to_currency, EXCHANGE_RATES_TO_USD.get(to_currency, 1.0)
+    )
+
     # Manual rounding to 2 decimals to satisfy strict linting requirements
     return round(usd_amount / usd_to_target * 100) / 100.0
 
