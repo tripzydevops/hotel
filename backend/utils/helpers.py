@@ -13,6 +13,7 @@ EXCHANGE_RATES_TO_USD = {
     "EUR": 1.08,  # 1 EUR = 1.08 USD
     "GBP": 1.26,  # 1 GBP = 1.26 USD
     "TRY": 0.029,  # 1 TRY = 0.029 USD
+    "TL": 0.029,   # Alias for TRY
 }
 
 

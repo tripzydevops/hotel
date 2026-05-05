@@ -171,14 +171,15 @@ export default function Dashboard() {
 
   const activeCurrency = useMemo(
     () =>
+      userSettings?.currency ||
       data?.target_hotel?.price_info?.currency ||
       data?.competitors?.find((c) => c.price_info?.currency)?.price_info
         ?.currency ||
-      userSettings?.currency ||
       "TRY",
     [
       data?.target_hotel?.price_info?.currency,
       data?.competitors,
+      userSettings?.currency,
     ],
   );
 
@@ -264,9 +265,9 @@ export default function Dashboard() {
                         data.target_hotel.price_info?.previous_price
                       }
                       currency={
+                        userSettings?.currency ||
                         data.target_hotel.price_info?.currency ||
                         data.competitors?.[0]?.price_info?.currency ||
-                        userSettings?.currency ||
                         "TRY"
                       }
                       trend={data.target_hotel.price_info?.trend || "stable"}
@@ -349,7 +350,7 @@ export default function Dashboard() {
                             previousPrice={
                               competitor.price_info?.previous_price
                             }
-                            currency={competitor.price_info?.currency || "TRY"}
+                            currency={userSettings?.currency || competitor.price_info?.currency || "TRY"}
                             trend={competitor.price_info?.trend || "stable"}
                             changePercent={
                               competitor.price_info?.change_percent || 0

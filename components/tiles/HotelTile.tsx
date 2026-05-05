@@ -229,7 +229,7 @@ export default function HotelTile(props: HotelTileProps) {
                       {offer.vendor || offer.source || "Other"}
                     </span>
                     <span className="text-[10px] font-bold text-[var(--text-primary)]">
-                      {formatCurrency(parsePrice(offer.price || 0), offer.currency || currency)}
+                      {formatCurrency(parsePrice(offer.price || 0), currency)}
                     </span>
                   </motion.div>
                 ))}

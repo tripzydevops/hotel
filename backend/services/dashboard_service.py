@@ -455,26 +455,37 @@ async def get_dashboard_logic(
                     # Use harvested rooms_log first, then master hotel record
                     raw_rooms = rooms_log.get("room_types") if (rooms_log and rooms_log.get("room_types") and len(rooms_log.get("room_types")) > 0) else (h.get("room_types") or [])
                     
-                    # Offers Extraction with Vendor Logic
-                    # Use harvested offers_log for maximum accuracy
+                    # Offers Extraction with Vendor Logic - AGGREGATE all available sources
                     raw_offers = []
+                    seen_offers = set()
+                    
                     if offers_log:
                         for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
                             val = offers_log.get(key)
-                            if val and isinstance(val, list) and len(val) > 0:
-                                raw_offers = val
-                                break
+                            if val and isinstance(val, list):
+                                for of in val:
+                                    if not isinstance(of, dict): continue
+                                    # Create a unique key for deduplication
+                                    vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
+                                    price = _extract_price(of.get("price"))
+                                    offer_key = f"{vendor}_{price}"
+                                    if offer_key not in seen_offers:
+                                        raw_offers.append(of)
+                                        seen_offers.add(offer_key)
 
                     # AGENT_FIX: OTA Fallback from hotels table (market_offers > parity_offers > offers)
-                    # When price_logs.offers is empty (standard for hourly price_search tasks which
-                    # don't return per-OTA breakdown), we use the OTA data stored directly on the
-                    # hotels record, which is populated during hotel_info scans.
                     if not raw_offers:
                         for key in ["market_offers", "parity_offers", "offers"]:
                             val = h.get(key)
-                            if val and isinstance(val, list) and len(val) > 0:
-                                raw_offers = val
-                                break
+                            if val and isinstance(val, list):
+                                for of in val:
+                                    if not isinstance(of, dict): continue
+                                    vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
+                                    price = _extract_price(of.get("price"))
+                                    offer_key = f"{vendor}_{price}"
+                                    if offer_key not in seen_offers:
+                                        raw_offers.append(of)
+                                        seen_offers.add(offer_key)
 
                     # Secondary fallback: reconstruct from room_types if still empty
                     if not raw_offers and h.get("room_types"):
@@ -496,7 +507,13 @@ async def get_dashboard_logic(
                         # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
                         v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                         v_name = normalize_vendor_name(v_raw)
-                        p_val = _extract_price(of.get("price"), currency=active_currency)
+                        
+                        of_cur = of.get("currency") or active_currency
+                        p_raw = of.get("price")
+                        p_val_extracted = _extract_price(p_raw, currency=of_cur)
+                        
+                        # AGENT_FIX: Convert offer price to user preference (Fix for USD showing instead of TL)
+                        p_val = convert_currency(p_val_extracted, of_cur, display_currency) if p_val_extracted and p_val_extracted > 0 else 0
                         
                         # AGENT_FIX: Filter out offers with no valid price (Fix for 0 price entries in UI)
                         if p_val is None or p_val <= 0:
@@ -505,11 +522,27 @@ async def get_dashboard_logic(
                         processed_offers.append({
                             "vendor": v_name,
                             "price": p_val,
-                            "currency": of.get("currency") or active_currency,
+                            "currency": display_currency,
                             "url": of.get("url") or of.get("link"),
                             "is_direct": of.get("is_direct", False),
                             "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                         })
+
+                    # AGENT_FIX: Convert prices in raw_rooms to display_currency
+                    processed_rooms = []
+                    for rt in raw_rooms:
+                        if not isinstance(rt, dict):
+                            continue
+                        rt_copy = rt.copy()
+                        if rt_copy.get("price"):
+                            rt_cur = rt_copy.get("currency") or active_currency
+                            rt_p_raw = rt_copy.get("price")
+                            rt_p_val = _extract_price(rt_p_raw, currency=rt_cur)
+                            if rt_p_val and rt_p_val > 0:
+                                rt_copy["price"] = convert_currency(rt_p_val, rt_cur, display_currency)
+                                rt_copy["currency"] = display_currency
+                        processed_rooms.append(rt_copy)
+                    raw_rooms = processed_rooms
 
                     price_info = {
                         "current_price": curr_p,
@@ -534,9 +567,14 @@ async def get_dashboard_logic(
             # using the cached data in the hotels table (market_offers, room_types).
             if not price_info:
                 # Use current price from the hotels table if available
-                curr_p = h.get("price") or h.get("current_price") or 0
-                prev_p = h.get("previous_price") or curr_p
-                active_currency = h.get("currency") or display_currency or "TRY"
+                curr_p_raw = h.get("price") or h.get("current_price") or 0
+                prev_p_raw = h.get("previous_price") or curr_p_raw
+                h_cur = h.get("currency") or "TRY"
+                
+                # AGENT_FIX: Convert baseline prices to user preference (Fix for USD showing instead of TL)
+                curr_p = convert_currency(curr_p_raw, h_cur, display_currency)
+                prev_p = convert_currency(prev_p_raw, h_cur, display_currency)
+                active_currency = display_currency
                 
                 # Room Types Baseline
                 raw_rooms = h.get("room_types") or []
@@ -555,12 +593,19 @@ async def get_dashboard_logic(
                     if not isinstance(of, dict): continue
                     v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                     v_name = normalize_vendor_name(v_raw)
-                    p_val = _extract_price(of.get("price"), currency=active_currency)
+                    
+                    of_cur = of.get("currency") or h_cur
+                    p_raw = of.get("price")
+                    p_val_extracted = _extract_price(p_raw, currency=of_cur)
+                    
+                    # AGENT_FIX: Convert offer price to user preference
+                    p_val = convert_currency(p_val_extracted, of_cur, display_currency) if p_val_extracted > 0 else 0
+                    
                     if p_val and p_val > 0:
                         processed_offers.append({
                             "vendor": v_name,
                             "price": p_val,
-                            "currency": of.get("currency") or active_currency,
+                            "currency": display_currency,
                             "url": of.get("url") or of.get("link"),
                             "is_direct": of.get("is_direct", False),
                             "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
@@ -569,7 +614,7 @@ async def get_dashboard_logic(
                 price_info = {
                     "current_price": curr_p,
                     "previous_price": prev_p,
-                    "currency": active_currency,
+                    "currency": display_currency,
                     "name": h.get("name"),
                     "trend": "stable",
                     "change_percent": 0.0,
@@ -651,7 +696,11 @@ async def get_dashboard_logic(
                     "price_info": price_info,
                     "price_history": [
                         {
-                            "price": float(p["price"]),
+                            "price": convert_currency(
+                                float(p["price"]),
+                                p.get("currency") or "USD",
+                                display_currency,
+                            ),
                             "recorded_at": p.get("recorded_at"),
                             "check_in_date": p.get("check_in_date"),
                         }
