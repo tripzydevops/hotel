@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import urllib.request
 from datetime import date
@@ -19,9 +20,48 @@ EXCHANGE_RATES_TO_USD = {
     "TL": 0.029,   # Alias for TRY
 }
 
-# Dynamic in-memory caching for exchange rates
-_EXCHANGE_RATE_CACHE = dict(EXCHANGE_RATES_TO_USD)
-_LAST_FETCH_TIME = 0.0
+# Determine the best path for the persistent exchange rates cache
+# We try to use a persistent workspace folder first, otherwise fallback to /tmp
+_CACHE_DIR = os.path.dirname(os.path.abspath(__file__))
+_CACHE_FILE = os.path.join(_CACHE_DIR, "exchange_rates_cache.json")
+_TMP_CACHE_FILE = "/tmp/exchange_rates_cache.json"
+
+
+def _load_cache_from_disk() -> tuple[dict, float]:
+    """Load exchange rates and modification time from persistent cache file, falling back to static baseline."""
+    for path in [_CACHE_FILE, _TMP_CACHE_FILE]:
+        try:
+            if os.path.exists(path):
+                mtime = os.path.getmtime(path)
+                # Ensure mtime is sane (not in the future)
+                if mtime > time.time():
+                    mtime = time.time()
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and "USD" in data:
+                        rates = {k.upper(): float(v) for k, v in data.items() if v}
+                        return rates, mtime
+        except Exception:
+            pass
+    return dict(EXCHANGE_RATES_TO_USD), 0.0
+
+
+def _save_cache_to_disk(rates: dict) -> None:
+    """Save exchange rates to persistent cache file across local or /tmp paths."""
+    for path in [_CACHE_FILE, _TMP_CACHE_FILE]:
+        try:
+            # Ensure directories exist
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(rates, f, indent=2)
+            return  # Successfully saved, no need to write to fallback paths
+        except Exception:
+            # Continue to next path if we hit permission/readonly issues
+            pass
+
+
+# Dynamic in-memory caching for exchange rates (initialized from persistent disk cache if available)
+_EXCHANGE_RATE_CACHE, _LAST_FETCH_TIME = _load_cache_from_disk()
 _CACHE_TTL_SECONDS = 14400  # 4 hours cache lifetime
 
 
@@ -58,6 +98,7 @@ def _update_exchange_rates_live() -> None:
 
                 _EXCHANGE_RATE_CACHE = new_cache
                 _LAST_FETCH_TIME = now
+                _save_cache_to_disk(new_cache)
     except Exception as e:
         # Gracefully handle network/API failures by printing a warning and continuing with cached rates
         print(f"[CURRENCY API WARNING] Failed to fetch live exchange rates: {e}. Using cached/static fallbacks.")

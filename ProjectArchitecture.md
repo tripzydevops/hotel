@@ -8,7 +8,12 @@
 > **PENDING VERIFICATION**: The following updates were added by Antigravity and require verification by Claude for technical accuracy and alignment with the latest codebase.
 
 - ✅ **Migration 040**: Added `source`, `url`, `capacity`, and `image_url` to `room_type_catalog` to fix PGRST204 mismatch.
-- ✅ **Currency Handling**: Implemented multi-currency normalization with Turkish/US decimal/thousand separator support.
+- ✅ **Exchange Rate Cache Subsystem**: Implemented a dynamic, dual-layer persistent exchange rates caching mechanism:
+  - **Dynamic In-Memory & Static Baseline Fallbacks**: Uses a memory-resident `_EXCHANGE_RATE_CACHE` initialized from local disk cache, backed by a hardcoded static baseline (`USD: 1.0`, `EUR: 1.08`, `GBP: 1.26`, `TRY`/`TL: 0.029`) for ultimate fail-safe security.
+  - **Dual-Path Disk Persistence**: Automatically serializes rate JSON mappings to local file `exchange_rates_cache.json` in `backend/utils/` or `/tmp/exchange_rates_cache.json` to handle write-permission issues dynamically.
+  - **Live Dynamic Updates & TTL**: Fetches live exchange data from `https://open.er-api.com/v6/latest/USD` using a 4-hour (14,400 seconds) cache TTL with a 3-second request timeout.
+  - **API Error Resilience & Retry Backoff**: Gracefully handles network or API outages by outputting a warning `[CURRENCY API WARNING]`, reusing previous cached rates, and adding a 5-minute backoff delay to prevent request flooding.
+  - **Conversion Logic**: Normalizes inputs to UPPERCASE, resolves `TL` as an alias for `TRY`, processes conversions via USD intermediate rates, and rounds results to 2 decimals (`round(val * 100) / 100.0`) to prevent floating-point inaccuracies.
 - ✅ **Pricing DNA**: Integrated Gemini 3 for automated strategy synthesis (Volume Leader vs Yield Seeker).
 - ✅ **Parallel Scans**: Enhanced DataForSEO provider to use `asyncio.gather` for concurrent hotel data retrieval.
 - ✅ **Discovery Engine**: Deployed HNSW-indexed vector search for semantic competitor matchmaking.
@@ -32,6 +37,53 @@ HotelPlus is a **hotel market intelligence and autonomous rate parity discovery 
 - **Sentiment Analysis**: Aggregates and themes guest reviews across platforms.
 - **Parity Alerts**: Notifies when OTA rates undercut the hotel's own direct rate.
 - **Multi-Hotel Dashboard**: Single view for target hotel + competitors.
+
+### Architectural Diagram
+```mermaid
+graph LR
+    subgraph Frontend ["Next.js Frontend Client"]
+        Dashboard["🏠 Dashboard App"]
+        tiles["🏨 HotelTile<br>(OTA Market Presence)"]
+        modals["📑 HotelDetailsModal<br>(6-Tab Inspection)"]
+    end
+
+    subgraph API_Router ["API Router Layer (FastAPI / backend/api/)"]
+        FASTAPI["🚀 FastAPI Service"]
+        routes_dashboard["/api/dashboard"]
+        routes_hotels["/api/hotels"]
+        routes_scans["/api/scans"]
+        routes_webhook["/api/webhook/dataforseo"]
+    end
+
+    subgraph Services ["Service Layer (backend/services/)"]
+        sub_dash["dashboard_service"]
+        sub_hotel["hotel_service"]
+        sub_scan["scan_persistence"]
+        sub_monitor["monitor_service"]
+        sub_exchange["ExchangeRateCache"]
+    end
+
+    subgraph Database ["Database Layer (InsForge)"]
+        DB["PostgreSQL (PostgREST API)"]
+        tbl_hotels["hotels table"]
+        tbl_price_logs["price_logs table"]
+        tbl_scan_tasks["scan_tasks table"]
+    end
+
+    Dashboard --> routes_dashboard
+    Dashboard --> routes_hotels
+    Dashboard --> routes_scans
+    
+    FASTAPI --> routes_dashboard & routes_hotels & routes_scans & routes_webhook
+    
+    routes_dashboard --> sub_dash
+    routes_hotels --> sub_hotel
+    routes_scans --> sub_monitor
+    routes_webhook --> sub_scan
+    
+    sub_dash & sub_hotel & sub_scan & sub_monitor --> DB
+    sub_dash -.-> sub_exchange
+```
 
 ---
 
@@ -336,22 +388,30 @@ To ensure data accuracy in competitive markets, the ingestion pipeline implement
 ## 6. DataForSEO Scan Pipeline
 
 ### Flow Diagram
-```
-Vercel Cron (/api/cron)  OR  continuous_monitor.py [LOCAL ONLY]
-         ↓
-  monitor_service.py → creates scan_session + scan_tasks (status='pending')
-         ↓
-  dataforseo_provider.py → POST to DataForSEO API → returns task ID
-         ↓
-  scan_tasks.external_id = task_id, status = 'submitted'
-         ↓
-  [DataForSEO processes async]
-         ↓
-  POST to /api/webhook/dataforseo  (postback_url)
-         ↓
-  webhook.py → reads task_type → routes to parser
-         ↓
-  scan_persistence.py → upsert to hotels + price_logs
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Cron as Vercel Cron / Local Loop
+    participant MS as monitor_service.py
+    participant Prov as dataforseo_provider.py
+    participant API as DataForSEO API
+    participant Web as FastAPI Webhook (/api/webhook)
+    participant Pers as scan_persistence.py
+    participant DB as PostgreSQL DB
+
+    Cron->>MS: Trigger check
+    MS->>DB: Query pending scans
+    MS->>DB: Create scan_session (pending) + scan_tasks (pending)
+    MS->>Prov: Request external search
+    Prov->>API: POST task submission with postback_url
+    API-->>Prov: Return external task_id
+    Prov->>DB: Update scan_tasks (status='submitted', external_id=task_id)
+    Note over API: DataForSEO processes async
+    API->>Web: POST results to webhook URL
+    Web->>DB: Verify task_type from scan_tasks table
+    Web->>Pers: Route payload to appropriate parser
+    Pers->>DB: Upsert results to hotels + price_logs tables
+    Pers->>DB: Update scan_tasks (status='completed')
 ```
 
 ### Recovery Path
@@ -380,6 +440,35 @@ monitor_service.py recovery loop
 - **No Redux** — prefer co-located state
 
 ### Key Components
+
+#### `HotelTile.tsx` (Hotel Card with OTA Market Presence)
+The core visual component representing a single hotel on the dashboard. It features a collapsible **OTA Market Presence** comparison interface.
+
+- **Lead Rate Display**: Shows the lowest rate available (lead price), formatted to the active currency, along with the corresponding vendor.
+- **Dynamic Collapsible Section**: When multiple OTA offers are available for a hotel (retrieved via `hotel_info` scans), users can expand a list showing a side-by-side rate comparison.
+- **Micro-Animations**: Uses Framer Motion's `<AnimatePresence>` and `<motion.div>` for smooth hover effects, expanded state transitions, and responsive comparison cards.
+- **Direct Link / Detail Trigger**: Clicking on the card opens `HotelDetailsModal` for multi-tab granular insights.
+
+##### Component Render & Interaction Flow:
+```mermaid
+graph TD
+    DataInput["Receive Hotel Props<br>(price_info, market_offers, etc.)"] --> ParseOffers["Parse lead rate & other OTA offers"]
+    ParseOffers --> FormatCur["Format prices using active currency"]
+    FormatCur --> RenderCard["Render Hotel Card header & Lead Rate"]
+    
+    RenderCard --> HasOTAs{"Are other OTA offers present?"}
+    HasOTAs -- "Yes" --> RenderCollapsible["Render Collapsible 'Market Presence' section"]
+    HasOTAs -- "No" --> RenderIntelGrid["Render Recency & Parity Score grid"]
+    
+    RenderCollapsible --> UserClicks{"User clicks Compare?"}
+    UserClicks -- "Yes" --> ExpandOTAs["Animate expand list<br>(motion.div with AnimatePresence)"]
+    UserClicks -- "No" --> CollapseOTAs["Animate collapse list"]
+    
+    ExpandOTAs --> RenderIntelGrid
+    CollapseOTAs --> RenderIntelGrid
+    RenderIntelGrid --> UserClicksTile{"User clicks card body?"}
+    UserClicksTile -- "Yes" --> OpenModal["Trigger onViewDetails()<br>(Opens HotelDetailsModal)"]
+```
 
 #### `HotelDetailsModal.tsx`
 The hotel detail popup. Contains 6 tabs: Overview, Gallery, Amenities, Offers, Rooms, Reviews.
@@ -462,6 +551,34 @@ price_log.currency (from scan, e.g. "TRY")
   → Fallback: hotel.preferred_currency (user preference)
   → Fallback: "TRY"
 ```
+
+### Flow 4: Currency Conversion & Persistent Cache Pipeline
+```mermaid
+graph TD
+    Start["convert_currency(amount, from_cur, to_cur)"] --> LowerUpper["Normalize to UPPERCASE"]
+    LowerUpper --> IsEqual{"from_cur == to_cur?"}
+    IsEqual -- "Yes" --> ReturnDirect["Return original amount"]
+    IsEqual -- "No" --> CheckTTL{"Cache expired?<br>(now - last_fetch >= 4 hours)"}
+    
+    CheckTTL -- "Yes" --> FetchAPI["Fetch open.er-api.com USD rates<br>(timeout = 3s)"]
+    FetchAPI -- "Success" --> ParseRates["Calculate 1 unit in USD<br>(1.0 / rate_val) & Map 'TL' = 'TRY'"]
+    ParseRates --> SaveDisk["Save to exchange_rates_cache.json<br>(Local dir -> /tmp/ fallback)"]
+    SaveDisk --> UpdateMemory["Update memory _EXCHANGE_RATE_CACHE<br>and _LAST_FETCH_TIME"]
+    UpdateMemory --> ConvertUSD
+    
+    FetchAPI -- "Failure" --> WarnLog["Print [CURRENCY API WARNING]"]
+    WarnLog --> Backoff["Postpone next retry by 5 mins<br>(_LAST_FETCH_TIME = now - TTL + 300)"]
+    Backoff --> UseCurrentRates["Use current in-memory / static rates"]
+    UseCurrentRates --> ConvertUSD
+    
+    CheckTTL -- "No" --> ConvertUSD["Convert source to USD:<br>usd_amount = amount * usd_rate"]
+    
+    ConvertUSD --> FindRates["Get from_cur & to_cur rates:<br>1. In-memory _EXCHANGE_RATE_CACHE<br>2. Hardcoded baseline (EXCHANGE_RATES_TO_USD)<br>3. Default to 1.0"]
+    FindRates --> ConvertTarget["Convert USD to target:<br>target_amount = usd_amount / usd_to_target"]
+    ConvertTarget --> RoundDecimals["Round to 2 decimal places<br>(round(val * 100) / 100.0)"]
+    RoundDecimals --> End["Return converted amount"]
+```
+
 
 ---
 

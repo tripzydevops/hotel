@@ -83,3 +83,41 @@ The system maintains persistent health and data freshness through a **Lean Serve
 - **Router Isolation:** Files are kept under 500 lines to ensure the AI can process them in a single pass.
 - **Lazy Loading Strategy:** Heavy agents and service-role DB clients are initialized only when needed.
 - **Decoupled Logic:** `main.py` size has been reduced by 95%, making IDE autocompletion and linting significantly faster.
+
+## 🤝 Component Communities & Integration Network
+
+The codebase is highly modularized into several decoupled component communities (identified via graph-theoretic classification). The **Dashboard Controllers & Integration Bridge** acts as the central coordinator, bridging data providers with autonomous agents to deliver real-time market insights.
+
+```mermaid
+graph TD
+    subgraph Frontend["Frontend & Presentation Communities"]
+        UI["UI & Interactive Modals<br>(Themes, Modals, Heatmaps, Bento Grids)"]
+    end
+
+    subgraph Controllers["Dashboard Controllers & Integration Bridge"]
+        DC["Dashboard & API Controllers<br>(Analysis Dashboard Controls, Scan Session Monitor, Scheduler)"]
+    end
+
+    subgraph Providers["Data Providers & Scraper Communities"]
+        Scrapers["Hotel Scrapers & External Connectors<br>(DataForSEO Integration, Bulk Market Scans, Scraping Resilience)"]
+    end
+
+    subgraph AI["Autonomous Agent Mesh & Sentiment Communities"]
+        Agents["Core Intelligence & Narrative Agents<br>(Market Analysis, Sentiment History, Parity Dispute Generator)"]
+    end
+
+    subgraph Directory["Core DB & Directory Maintenance Communities"]
+        DS["Hotel Directory & Normalization<br>(Geospatial Enrichment, Data Sanitization, Retention, Supabase Migration)"]
+    end
+
+    UI <--> DC
+    DC <--> Scrapers
+    DC <--> Agents
+    Scrapers --> DS
+    Agents <--> DS
+```
+
+### Key Community Interactions:
+1. **Interactive UI Presentation**: The Frontend community accesses aggregated data streams and triggers manual/automated scans via the **Dashboard Controllers & Integration Bridge**.
+2. **Scraper Orchestration**: Scraper communities (incorporating DataForSEO and Firecrawl scraper integrations) are orchestrated by the controllers to retrieve and sanitize hotel rate catalogs, writing results directly to the **Directory & Database Maintenance** layer.
+3. **Autonomous Reasoning**: The autonomous agents (using vector databases and pgvector) query hotel directory records to analyze parity violations and feed narrative reports back through the controllers to the interactive frontend.
