@@ -442,7 +442,7 @@ export default function HotelDetailsModal({
                   || (hotel?.parity_offers?.length ? hotel.parity_offers : null)
                   || (hotel?.offers?.length ? hotel.offers : null)
                   || [];
-                const displayCurrency = hotel?.price_info?.currency || hotel?.currency || hotel?.preferred_currency || "TRY";
+                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
                 if (offers && offers.length > 0) {
                   return (
                     <div className="grid grid-cols-1 gap-4">
@@ -490,7 +490,7 @@ export default function HotelDetailsModal({
                 const room_types = (hotel?.price_info?.room_types?.length ? hotel.price_info.room_types : null)
                   || (hotel?.room_types?.length ? hotel.room_types : null)
                   || [];
-                const displayCurrency = hotel?.price_info?.currency || hotel?.currency || hotel?.preferred_currency || "TRY";
+                const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
                 if (room_types && room_types.length > 0) {
                   return (
                     <div className="grid grid-cols-1 gap-4">
