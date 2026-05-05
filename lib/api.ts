@@ -717,6 +717,21 @@ class ApiClient {
     return this.fetch<HealthMetrics>("/api/admin/heartbeats");
   }
 
+  async exportAdminScan(scanId: string): Promise<Blob> {
+    const token = await this.getToken();
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const url = `${API_BASE_URL}/api/admin/scans/${scanId}/export`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("CSV Export failed");
+    return response.blob();
+  }
+
   async exportAdminScanCsv(scanId: string): Promise<void> {
     const token = await this.getToken();
     const headers: any = {};
