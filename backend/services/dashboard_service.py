@@ -364,21 +364,36 @@ async def get_dashboard_logic(
             rooms_log = current_log
             
             if prices:
-                # Find latest log with offers
-                for p in prices:
-                    has_offers = any(
-                        p.get(k) and isinstance(p.get(k), list) and len(p.get(k)) > 0
-                        for k in ["offers", "parity_offers", "market_offers", "ota_prices"]
-                    )
-                    if has_offers:
-                        offers_log = p
-                        break
+                # AGENT_FIX: Most-Complete-Log Heuristic
+                # Instead of just taking the LATEST log with any data (which might be a limited hourly price_search),
+                # we search the recent history for the most complete log (max offers/rooms).
+                max_offers_count = -1
+                max_rooms_count = -1
                 
-                # Find latest log with rooms
                 for p in prices:
-                    if p.get("room_types") and len(p.get("room_types")) > 0:
+                    # Count total offers across all possible keys
+                    p_offers_count = 0
+                    for k in ["offers", "ota_prices", "parity_offers", "market_offers"]:
+                        val = p.get(k)
+                        if val and isinstance(val, list):
+                            p_offers_count = max(p_offers_count, len(val))
+                    
+                    if p_offers_count > max_offers_count:
+                        max_offers_count = p_offers_count
+                        offers_log = p
+                    
+                    # Count room types
+                    p_rooms = p.get("room_types")
+                    p_rooms_count = len(p_rooms) if (p_rooms and isinstance(p_rooms, list)) else 0
+                    if p_rooms_count > max_rooms_count:
+                        max_rooms_count = p_rooms_count
                         rooms_log = p
-                        break
+                
+                # If even the "best" found is empty, fallback to current_log
+                if max_offers_count <= 0:
+                    offers_log = current_log
+                if max_rooms_count <= 0:
+                    rooms_log = current_log
 
             prev_log = None
             price_info = None
