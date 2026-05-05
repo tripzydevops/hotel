@@ -26,7 +26,10 @@ import {
   TrendingUp,
   Clock,
   ShieldCheck,
-  Globe
+  Globe,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -57,6 +60,25 @@ interface ScanResult {
   amenities?: string[];
   url?: string;
   metadata?: any;
+  ota_pricing?: {
+    name: string;
+    price: number;
+    currency: string;
+    url?: string;
+    is_best?: boolean;
+  }[];
+  room_types?: {
+    name: string;
+    price?: number;
+    description?: string;
+    images?: string[];
+  }[];
+  reviews_sentiment?: {
+    keyword: string;
+    positive: number;
+    negative: number;
+    score: number;
+  }[];
 }
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#f59e0b'];
@@ -71,6 +93,8 @@ export default function ScanResultsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [starFilter, setStarFilter] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "rating" | "stars">("price-asc");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -84,6 +108,30 @@ export default function ScanResultsPage() {
         if (payload && payload.tasks && payload.tasks[0]?.result) {
           const items = payload.tasks[0].result[0]?.items || [];
           items.forEach((item: any) => {
+            // Extract OTA Pricing
+            const otaPricing = item.vendors?.map((v: any) => ({
+              name: v.name,
+              price: v.price?.value,
+              currency: v.price?.currency,
+              url: v.url,
+              is_best: v.is_best
+            })) || [];
+
+            // Extract Room Types
+            const roomTypes = item.room_types?.map((r: any) => ({
+              name: r.title,
+              price: r.price?.value,
+              description: r.description
+            })) || [];
+
+            // Extract Review Sentiment (if available in metadata)
+            const sentiment = item.reviews_search_summary?.sentiment_keywords?.map((k: any) => ({
+              keyword: k.keyword,
+              positive: k.positive_reviews_count,
+              negative: k.negative_reviews_count,
+              score: k.sentiment_score
+            })) || [];
+
             parsedResults.push({
               hotel_name: item.title || "Unknown Hotel",
               price: item.price?.value || 0,
@@ -95,6 +143,9 @@ export default function ScanResultsPage() {
               image: item.image_url,
               location: item.location_name,
               url: item.url,
+              ota_pricing: otaPricing,
+              room_types: roomTypes,
+              reviews_sentiment: sentiment,
               metadata: item
             });
           });
@@ -118,22 +169,42 @@ export default function ScanResultsPage() {
   }, [id]);
 
   const filteredResults = useMemo(() => {
-    return results.filter(r => 
-      (r.hotel_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       r.vendor.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      r.price >= priceRange[0] && r.price <= priceRange[1] &&
-      (starFilter === null || r.stars === starFilter)
-    );
-  }, [results, searchQuery, priceRange, starFilter]);
+    return results
+      .filter(r => 
+        (r.hotel_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         r.vendor.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        r.price >= priceRange[0] && r.price <= priceRange[1] &&
+        (starFilter === null || r.stars === starFilter)
+      )
+      .sort((a, b) => {
+        if (sortBy === "price-asc") return a.price - b.price;
+        if (sortBy === "price-desc") return b.price - a.price;
+        if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+        if (sortBy === "stars") return (b.stars || 0) - (a.stars || 0);
+        return 0;
+      });
+  }, [results, searchQuery, priceRange, starFilter, sortBy]);
 
   const stats = useMemo(() => {
-    if (results.length === 0) return { total: 0, avgPrice: 0, minPrice: 0, maxPrice: 0 };
+    if (results.length === 0) return { total: 0, avgPrice: 0, minPrice: 0, maxPrice: 0, parityAlerts: 0 };
     const prices = results.map(r => r.price);
+    
+    // Parity Analysis
+    const alerts = results.filter(r => {
+      if (!r.ota_pricing || r.ota_pricing.length < 2) return false;
+      const otaPrices = r.ota_pricing.map(o => o.price).filter(p => p > 0);
+      if (otaPrices.length < 2) return false;
+      const max = Math.max(...otaPrices);
+      const min = Math.min(...otaPrices);
+      return (max - min) / min > 0.15; // 15% spread
+    }).length;
+
     return {
       total: results.length,
       avgPrice: prices.reduce((a, b) => a + b, 0) / results.length,
       minPrice: Math.min(...prices),
       maxPrice: Math.max(...prices),
+      parityAlerts: alerts
     };
   }, [results]);
 
@@ -354,15 +425,18 @@ export default function ScanResultsPage() {
 
         <motion.div 
           whileHover={{ y: -5 }}
-          className="glass-panel glow-card p-6 rounded-[2rem] relative overflow-hidden group transition-all bg-gradient-to-br from-blue-600/10 to-transparent"
+          className="glass-panel glow-card p-6 rounded-[2rem] relative overflow-hidden group transition-all border-rose-500/20 bg-rose-500/5"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(59,130,246,0.1),transparent)]"></div>
-          <div className="flex flex-col h-full relative z-10">
-            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Market Average</p>
+          <div className="absolute -right-4 -top-4 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+            <ShieldCheck className="w-24 h-24 text-rose-500" />
+          </div>
+          <div className="flex flex-col h-full">
+            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Parity Conflicts</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-blue-500">{scan?.currency || "$"} {stats.avgPrice.toFixed(0)}</span>
+              <span className="text-4xl font-black text-rose-500">{stats.parityAlerts}</span>
+              <span className="text-rose-500/60 text-xs font-bold uppercase tracking-widest">Active Gaps</span>
             </div>
-            <p className="mt-auto text-[9px] text-blue-400 font-black uppercase tracking-widest">Composite Index</p>
+            <p className="mt-auto text-[9px] text-rose-400 font-black uppercase tracking-widest">Autonomous Detection</p>
           </div>
         </motion.div>
       </div>
@@ -391,7 +465,7 @@ export default function ScanResultsPage() {
             {[5, 4, 3, 2].map(star => (
               <button 
                 key={star}
-                onClick={() => setStarFilter(star)}
+                onClick={() => setStarFilter(starFilter === star ? null : star)}
                 className={`flex items-center gap-1 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${starFilter === star ? "bg-blue-600 text-white" : "text-zinc-500 hover:text-zinc-400"}`}
               >
                 {star} <Star className={`w-3 h-3 ${starFilter === star ? "fill-white" : ""}`} />
@@ -399,6 +473,19 @@ export default function ScanResultsPage() {
             ))}
           </div>
           
+          <div className="flex bg-zinc-900/30 border border-zinc-800/50 rounded-full p-1 whitespace-nowrap">
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-transparent text-zinc-400 text-[9px] font-black uppercase tracking-widest px-4 py-2 focus:outline-none appearance-none cursor-pointer outline-none"
+            >
+              <option value="price-asc" className="bg-zinc-900">Sort: Price (Low)</option>
+              <option value="price-desc" className="bg-zinc-900">Sort: Price (High)</option>
+              <option value="rating" className="bg-zinc-900">Sort: Rating</option>
+              <option value="stars" className="bg-zinc-900">Sort: Stars</option>
+            </select>
+          </div>
+
           <button className="flex items-center gap-2 bg-zinc-900/30 border border-zinc-800/50 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-all">
             <Filter className="w-3.5 h-3.5" />
             Advanced
@@ -425,99 +512,239 @@ export default function ScanResultsPage() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.02 }}
-                    className="glass-panel rounded-[2.5rem] overflow-hidden group hover:border-blue-500/30 transition-all duration-500 hover:shadow-3xl hover:shadow-blue-500/10 flex flex-col"
+                    className={`glass-panel rounded-[2.5rem] overflow-hidden group hover:border-blue-500/30 transition-all duration-500 hover:shadow-3xl hover:shadow-blue-500/10 flex flex-col ${expandedId === idx ? "md:col-span-2 lg:col-span-3" : ""}`}
                   >
-                    <div className="h-64 w-full relative overflow-hidden">
-                      {result.image ? (
-                        <img 
-                          src={result.image} 
-                          alt={result.hotel_name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                          <Hotel className="w-12 h-12 text-zinc-800" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#020202] via-[#020202]/20 to-transparent"></div>
-                      
-                      <div className="absolute top-6 left-6 flex flex-col gap-2">
-                        {result.stars && (
-                          <div className="bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10">
-                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                            <span className="text-[10px] font-black text-white">{result.stars} Star</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live Parity</span>
-                          </div>
-                          <p className="text-3xl font-black text-white leading-none">
-                            {result.currency} {result.price}
-                          </p>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5">
-                          <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-0.5 text-center">Score</p>
-                          <p className="text-sm font-black text-blue-400 text-center">9.8</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-8 space-y-6 flex-1 flex flex-col">
-                      <div>
-                        <h3 className="font-black text-xl mb-3 leading-tight group-hover:text-blue-400 transition-colors line-clamp-2">
-                          {result.hotel_name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-zinc-500">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="text-xs font-medium line-clamp-1">{result.location || "Location pending verification"}</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50">
-                          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Provider</p>
-                          <div className="flex items-center gap-2">
-                            <Globe className="w-3 h-3 text-blue-500" />
-                            <span className="text-[10px] font-black text-zinc-300 uppercase truncate">{result.vendor}</span>
-                          </div>
-                        </div>
-                        <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50">
-                          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Reviews</p>
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-3 h-3 text-purple-500" />
-                            <span className="text-[10px] font-black text-zinc-300 uppercase">{result.reviews_count || 0} Votes</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-auto pt-6 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {result.rating && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-600/20">
-                                <span className="text-[10px] font-black text-blue-500">{result.rating}</span>
-                              </div>
-                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Rating</span>
+                    <div className="flex flex-col lg:flex-row h-full">
+                      {/* Left: Main Info / Image */}
+                      <div className={`${expandedId === idx ? "lg:w-1/3" : "w-full"}`}>
+                        <div className={`${expandedId === idx ? "h-full min-h-[300px]" : "h-64"} w-full relative overflow-hidden`}>
+                          {result.image ? (
+                            <img 
+                              src={result.image} 
+                              alt={result.hotel_name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+                              <Hotel className="w-12 h-12 text-zinc-800" />
                             </div>
                           )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#020202] via-[#020202]/20 to-transparent"></div>
+                          
+                          <div className="absolute top-6 left-6 flex flex-col gap-2">
+                            {result.stars && (
+                              <div className="bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10">
+                                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                <span className="text-[10px] font-black text-white">{result.stars} Star</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live Parity</span>
+                              </div>
+                              <p className="text-3xl font-black text-white leading-none">
+                                {result.currency} {result.price}
+                              </p>
+                            </div>
+                            {expandedId !== idx && (
+                              <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5">
+                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-0.5 text-center">Score</p>
+                                <p className="text-sm font-black text-blue-400 text-center">{(result.rating || 9.8).toFixed(1)}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Content & Expansion */}
+                      <div className={`p-8 space-y-6 flex-1 flex flex-col ${expandedId === idx ? "lg:w-2/3" : ""}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-black text-xl mb-3 leading-tight group-hover:text-blue-400 transition-colors line-clamp-2">
+                              {result.hotel_name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-zinc-500">
+                              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="text-xs font-medium line-clamp-1">{result.location || "Location pending verification"}</span>
+                            </div>
+                          </div>
+                          
+                          <button 
+                            onClick={() => setExpandedId(expandedId === idx ? null : idx)}
+                            className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center hover:bg-white hover:text-black transition-all"
+                          >
+                            {expandedId === idx ? <ChevronRight className="w-4 h-4 rotate-180" /> : <Info className="w-4 h-4" />}
+                          </button>
                         </div>
 
-                        {result.url && (
-                          <a 
-                            href={result.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="group/link flex items-center gap-2 bg-zinc-900 hover:bg-white text-zinc-400 hover:text-black px-4 py-2 rounded-full border border-zinc-800 transition-all text-[9px] font-black uppercase tracking-widest"
-                          >
-                            Inspection
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+                        <AnimatePresence>
+                          {expandedId === idx ? (
+                            <motion.div 
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-zinc-800"
+                            >
+                              {/* OTA Pricing Section */}
+                              <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                                  <Globe className="w-3 h-3" />
+                                  OTA Market Breakdown
+                                </h4>
+                                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                                  {result.ota_pricing && result.ota_pricing.length > 0 ? (
+                                    result.ota_pricing.map((ota, i) => (
+                                      <div key={i} className={`flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border transition-all ${ota.is_best ? "border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.05)]" : "border-zinc-800/50 hover:border-zinc-700"}`}>
+                                        <div className="flex items-center gap-3">
+                                          <div className={`w-1.5 h-1.5 rounded-full ${ota.is_best ? "bg-emerald-500 animate-pulse" : "bg-zinc-700"}`}></div>
+                                          <span className="text-[10px] font-bold text-zinc-300">{ota.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <span className={`text-[11px] font-black ${ota.is_best ? "text-emerald-400" : "text-white"}`}>
+                                            {ota.currency} {ota.price}
+                                          </span>
+                                          {ota.url && (
+                                            <a href={ota.url} target="_blank" className="text-zinc-600 hover:text-white transition-colors">
+                                              <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-[9px] text-zinc-600 uppercase font-bold italic">No OTA data found in this scan</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Room Types Section */}
+                              <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-purple-500 uppercase tracking-widest flex items-center gap-2">
+                                  <LayoutGrid className="w-3 h-3" />
+                                  Detected Room Types
+                                </h4>
+                                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                                  {result.room_types && result.room_types.length > 0 ? (
+                                    result.room_types.map((room, i) => (
+                                      <div key={i} className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:border-purple-500/20 transition-all">
+                                        <div className="flex justify-between items-center mb-1">
+                                          <span className="text-[10px] font-black text-white uppercase tracking-tight">{room.name}</span>
+                                          {room.price && <span className="text-[10px] font-bold text-purple-400">{result.currency} {room.price}</span>}
+                                        </div>
+                                        {room.description && <p className="text-[9px] text-zinc-500 line-clamp-1 italic leading-relaxed">{room.description}</p>}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-[9px] text-zinc-600 uppercase font-bold italic">No room type metadata available</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Sentiment Analysis Section */}
+                              <div className="md:col-span-2 lg:col-span-3 mt-4 pt-8 border-t border-zinc-800 space-y-6">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                    <MessageSquare className="w-3 h-3" />
+                                    Review Sentiment Intelligence
+                                  </h4>
+                                  <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-tighter text-zinc-600">
+                                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Positive</div>
+                                    <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Negative</div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                  {result.reviews_sentiment && result.reviews_sentiment.length > 0 ? (
+                                    result.reviews_sentiment.map((sent, i) => (
+                                      <motion.div 
+                                        key={i}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col gap-3 hover:bg-zinc-900/50 transition-all group/sent"
+                                      >
+                                        <div className="flex justify-between items-start">
+                                          <span className="text-[11px] font-black text-zinc-100 uppercase tracking-tight">{sent.keyword}</span>
+                                          <div className={`px-2 py-0.5 rounded-full text-[8px] font-black ${sent.score > 0.5 ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-800 text-zinc-500"}`}>
+                                            {Math.round(sent.score * 100)}% POSITIVE
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                          <div className="flex items-center gap-1.5 text-emerald-500">
+                                            <ThumbsUp className="w-3 h-3" />
+                                            <span className="text-[10px] font-bold">{sent.positive}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 text-rose-500">
+                                            <ThumbsDown className="w-3 h-3" />
+                                            <span className="text-[10px] font-bold">{sent.negative}</span>
+                                          </div>
+                                        </div>
+                                        <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-emerald-500 group-hover:brightness-125 transition-all" 
+                                            style={{ width: `${(sent.positive / (sent.positive + sent.negative || 1)) * 100}%` }}
+                                          ></div>
+                                        </div>
+                                      </motion.div>
+                                    ))
+                                  ) : (
+                                    <div className="col-span-full py-10 flex flex-col items-center justify-center bg-zinc-900/10 rounded-3xl border border-dashed border-zinc-800/50">
+                                      <MessageSquare className="w-8 h-8 text-zinc-800 mb-3" />
+                                      <p className="text-[9px] text-zinc-600 uppercase font-black italic tracking-widest">Sentiment data not available for this node</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50">
+                                  <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Provider</p>
+                                  <div className="flex items-center gap-2">
+                                    <Globe className="w-3 h-3 text-blue-500" />
+                                    <span className="text-[10px] font-black text-zinc-300 uppercase truncate">{result.vendor}</span>
+                                  </div>
+                                </div>
+                                <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50">
+                                  <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Reviews</p>
+                                  <div className="flex items-center gap-2">
+                                    <Activity className="w-3 h-3 text-purple-500" />
+                                    <span className="text-[10px] font-black text-zinc-300 uppercase">{result.reviews_count || 0} Votes</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-auto pt-6 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {result.rating && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-600/20">
+                                        <span className="text-[10px] font-black text-blue-500">{result.rating}</span>
+                                      </div>
+                                      <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Rating</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {result.url && (
+                                  <a 
+                                    href={result.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="group/link flex items-center gap-2 bg-zinc-900 hover:bg-white text-zinc-400 hover:text-black px-4 py-2 rounded-full border border-zinc-800 transition-all text-[9px] font-black uppercase tracking-widest"
+                                  >
+                                    Inspection
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </motion.div>

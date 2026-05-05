@@ -514,23 +514,27 @@ class DataForSEOProvider(HotelDataProvider):
         # Merge items from prices object and top-level items array
         raw_price_items = (prices_obj.get("items") or []) + (data.get("items") or [])
         
-        seen_sources = set()
+        seen_items = set()
         for pi in raw_price_items:
             if isinstance(pi, dict) and (pi.get("type") == "hotel_info_price" or pi.get("price")):
-                source = pi.get("title") or pi.get("source")
+                # [FIX] Prioritize source/vendor over title for the OTA name
+                source = pi.get("source") or pi.get("vendor") or pi.get("title")
+                room_title = pi.get("title") if pi.get("source") or pi.get("vendor") else None
+                
                 if not source:
                     continue
                 
-                # Deduplicate by source and price to avoid noise
+                # [FIX] Deduplicate by (source, room, price) to avoid losing different room types with same price
                 price_val = pi.get("price")
-                dedup_key = f"{source}_{price_val}"
-                if dedup_key in seen_sources:
+                dedup_key = f"{source}_{room_title}_{price_val}"
+                if dedup_key in seen_items:
                     continue
-                seen_sources.add(dedup_key)
+                seen_items.add(dedup_key)
                 
                 ota_prices.append(
                     {
                         "source": source,
+                        "room_type": room_title,
                         "price": price_val,
                         "currency": pi.get("currency"),
                         "url": pi.get("source_url") or pi.get("url"),
@@ -1533,7 +1537,16 @@ class DataForSEOProvider(HotelDataProvider):
                     reviews_data = target.get("reviews", {})
 
                     # OTA Parity / All Prices
-                    raw_prices = prices_data.get("items", []) or []
+                    raw_prices_raw = prices_data.get("items", []) or []
+                    raw_prices = []
+                    for pi in raw_prices_raw:
+                        if isinstance(pi, dict):
+                            mapped = pi.copy()
+                            # [FIX] Prioritize vendor/source over title. title is the room name.
+                            mapped["source"] = pi.get("source") or pi.get("vendor") or pi.get("title")
+                            mapped["room_type"] = pi.get("title") if (pi.get("source") or pi.get("vendor")) else None
+                            mapped["url"] = pi.get("url") or pi.get("source_url")
+                            raw_prices.append(mapped)
 
                     # [FIX 2026-04-25] Fallback: If no price items, check market_data or top-level fields
                     if not raw_prices:

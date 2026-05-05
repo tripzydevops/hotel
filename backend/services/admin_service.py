@@ -840,7 +840,7 @@ async def get_admin_scans_logic(db: Client, limit: int = 50) -> List[Dict[str, A
 
 
 async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, Any]:
-    """Fetch detailed logs and results for a specific scan."""
+    """Fetch detailed logs, tasks, and results for a specific scan."""
     try:
         session = (
             db.table("scan_sessions")
@@ -853,6 +853,7 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
         if not session:
             raise HTTPException(404, "Scan session not found")
 
+        # Get extraction results
         logs = (
             db.table("query_logs")
             .select("*")
@@ -862,9 +863,37 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
             or []
         )
 
-        return {"session": session, "logs": logs}
+        # KAİZEN 2026: Fetch individual task progress
+        # This provides visibility into pending/failed tasks that haven't produced logs yet.
+        batches = (
+            db.table("scan_batches")
+            .select("id")
+            .eq("session_id", str(scan_id))
+            .execute()
+            .data
+            or []
+        )
+        
+        batch_ids = [b["id"] for b in batches]
+        tasks = []
+        if batch_ids:
+            tasks = (
+                db.table("scan_tasks")
+                .select("*, hotels(name)")
+                .in_("batch_id", batch_ids)
+                .execute()
+                .data
+                or []
+            )
+
+        return {
+            "session": session, 
+            "logs": logs,
+            "tasks": tasks
+        }
     except Exception as e:
         raise HTTPException(500, str(e))
+
 
 
 async def get_admin_scan_export_logic(scan_id: UUID, db: Client) -> StreamingResponse:

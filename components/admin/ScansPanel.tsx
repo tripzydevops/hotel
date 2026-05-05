@@ -503,7 +503,62 @@ const ScansPanel = () => {
                     </div>
                   </div>
 
+                  {/* KAİZEN 2026: Provider Task Pipeline Overview */}
+                  {scanDetails.tasks?.length > 0 && (
+                    <div className="p-4 bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 rounded-lg">
+                      <h4 className="text-xs font-bold text-[var(--soft-gold)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Cpu className="w-3 h-3" />
+                        Provider Task Pipeline
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase">Total Targets</span>
+                          <span className="text-sm font-bold text-[var(--overlay-text)]">{scanDetails.tasks.length}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase">Validated</span>
+                          <span className="text-sm font-bold text-green-400">
+                            {scanDetails.tasks.filter((t: any) => t.status === 'success').length}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase">Failed/Error</span>
+                          <span className="text-sm font-bold text-red-400">
+                            {scanDetails.tasks.filter((t: any) => ['failed', 'provider_error', 'task_error', 'invalid_response'].includes(t.status)).length}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase">Active/Pending</span>
+                          <span className="text-sm font-bold text-blue-400">
+                            {scanDetails.tasks.filter((t: any) => ['pending', 'processing'].includes(t.status)).length}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Show failing hotels if any */}
+                      {scanDetails.tasks.some((t: any) => ['identity_mismatch', 'provider_error', 'task_error'].includes(t.status)) && (
+                        <div className="mt-3 pt-3 border-t border-[var(--soft-gold)]/10">
+                          <p className="text-[9px] text-orange-400 font-bold uppercase mb-1">Critical Issues Detected:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {scanDetails.tasks
+                              .filter((t: any) => ['identity_mismatch', 'provider_error', 'task_error'].includes(t.status))
+                              .slice(0, 5)
+                              .map((t: any, idx: number) => (
+                                <span key={idx} className="text-[8px] bg-red-500/10 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
+                                  {t.hotels?.name || 'Unknown'}: {t.status}
+                                </span>
+                              ))}
+                            {scanDetails.tasks.filter((t: any) => ['identity_mismatch', 'provider_error', 'task_error'].includes(t.status)).length > 5 && (
+                              <span className="text-[8px] text-[var(--text-muted)]">...and more</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="overflow-hidden rounded-lg border border-[var(--overlay-border)]">
+
                     <table className="w-full text-left text-xs">
                       <thead className="bg-white/5 text-[var(--text-muted)]">
                         <tr>
@@ -514,39 +569,49 @@ const ScansPanel = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {scanDetails.logs?.map((log: any) => (
-                          <tr key={log.id} className="hover:bg-white/5">
-                            <td className="p-3 text-[var(--overlay-text)] font-medium">
-                              {log.hotel_name}
-                            </td>
-                            <td className="p-3">
-                              <div className="flex flex-col gap-1">
-                                <span
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${log.status === "success"
-                                    ? "bg-green-500/20 text-green-400"
-                                    : "bg-red-500/20 text-red-400"
-                                    }`}
-                                >
-                                  {log.status.toUpperCase()}
-                                </span>
-                                {log.metadata?.is_shallow && (
-                                  <span className="flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 w-fit">
-                                    <AlertCircle className="w-3 h-3" />
-                                    SHALLOW
+                        {scanDetails.logs?.map((log: any) => {
+                          const s = log.status?.toLowerCase();
+                          const statusClass = 
+                            s === "success" ? "bg-green-500/20 text-green-400" :
+                            s === "identity_mismatch" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" :
+                            (s === "pending" || s === "processing") ? "bg-blue-500/20 text-blue-400" :
+                            "bg-red-500/20 text-red-400";
+
+                          return (
+                            <tr key={log.id} className="hover:bg-white/5">
+                              <td className="p-3 text-[var(--overlay-text)] font-medium">
+                                {log.hotel_name || "Unknown Property"}
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-col gap-1">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${statusClass}`}>
+                                    {log.status?.toUpperCase() || "UNKNOWN"}
                                   </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3 text-[var(--overlay-text)]">
-                              {log.price
-                                ? `${log.price.toLocaleString()} ${log.currency}`
-                                : "—"}
-                            </td>
-                            <td className="p-3 text-[var(--text-muted)]">
-                              {log.vendor || "—"}
-                            </td>
-                          </tr>
-                        ))}
+                                  {log.metadata?.is_shallow && (
+                                    <span className="flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 w-fit">
+                                      <AlertCircle className="w-3 h-3" />
+                                      SHALLOW
+                                    </span>
+                                  )}
+                                  {log.status_detail && (
+                                    <span className="text-[9px] text-[var(--text-muted)] italic truncate max-w-[150px]">
+                                      {log.status_detail}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 text-[var(--overlay-text)]">
+                                {log.price
+                                  ? `${log.price.toLocaleString()} ${log.currency}`
+                                  : "—"}
+                              </td>
+                              <td className="p-3 text-[var(--text-muted)]">
+                                {log.vendor || "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+
                       </tbody>
                     </table>
                   </div>
@@ -560,7 +625,11 @@ const ScansPanel = () => {
                           Scan Activity Timeline
                         </h4>
                         <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                          {scanDetails.session.reasoning_trace.map(
+                          {(Array.isArray(scanDetails.session.reasoning_trace) 
+                            ? scanDetails.session.reasoning_trace 
+                            : (scanDetails.session.reasoning_trace ? [scanDetails.session.reasoning_trace] : [])
+                          ).map(
+
                             (trace: any, i: number) => {
                               // Handle Legacy String Traces
                               if (typeof trace === "string") {
