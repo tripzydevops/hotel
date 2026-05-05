@@ -256,7 +256,7 @@ export default function HotelDetailsModal({
                     <span className="text-5xl font-black text-[var(--soft-gold)] tracking-tighter italic">
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
-                        currency: hotel.price_info?.currency || hotel.currency || hotel.preferred_currency || "TRY",
+                        currency: hotel.price_info?.currency || hotel.preferred_currency || "TRY",
                       }).format(parsePrice(hotel.price_info?.current_price || 0))}
                     </span>
                     <span className="text-[var(--text-muted)] mb-2 uppercase font-bold text-[10px] tracking-widest">
