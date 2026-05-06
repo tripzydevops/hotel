@@ -237,15 +237,18 @@ class RoomTypeNormalizer:
         clean_text = re.sub(r"[^\w\s]", " ", clean_text)
         words = clean_text.split()
 
-        # If it's empty or too short after stripping, it was likely just a vendor name/title
-        is_vendor = found_vendor or not words or (found_vendor and len(" ".join(words)) < 4)
-
-        found_tokens: Set[str] = set()
-
         # 3. Map words to tokens
+        found_tokens: Set[str] = set()
         for word in words:
             if word in token_map:
                 found_tokens.add(token_map[word])
+
+        # If it's empty or has no valid room indicators, it was likely just a vendor name/title
+        is_vendor = not words or (
+            found_vendor 
+            and not found_tokens 
+            and not any(w in {"room", "oda", "odası"} for w in words)
+        )
 
         sorted_tokens = sorted(
             list(found_tokens), key=lambda t: category_order.get(t, 99)
