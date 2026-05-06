@@ -87,6 +87,27 @@ class RoomTypeNormalizer:
         "non-smoking": "NS",
         "nonsmoking": "NS",
         "sigara": "NS",
+        # Missing high-probability tokens added in Phase 3
+        "apart": "APT",
+        "aprt": "APT",
+        "apartman": "APT",
+        "studio": "STU",
+        "stdo": "STU",
+        "villa": "VIL",
+        "vil": "VIL",
+        "bungalow": "BUN",
+        "bng": "BUN",
+        "honeymoon": "HMN",
+        "balayi": "HMN",
+        "balayı": "HMN",
+        "connected": "CON",
+        "conn": "CON",
+        "baglantili": "CON",
+        "bağlantılı": "CON",
+        "penthouse": "PNT",
+        "pnt": "PNT",
+        "duplex": "DPX",
+        "dublex": "DPX",
     }
 
     # 2. Canonical Token Definitions (for ordering and naming)
@@ -115,6 +136,15 @@ class RoomTypeNormalizer:
         "BAL": 4,
         "TER": 4,
         "CNR": 4,  # Attributes last
+        # Missing high-probability tokens added in Phase 3
+        "APT": 2,
+        "STU": 2,
+        "VIL": 2,
+        "BUN": 2,
+        "PNT": 2,
+        "DPX": 2,
+        "HMN": 4,
+        "CON": 4,
     }
 
     CANONICAL_NAMES = {
@@ -144,6 +174,15 @@ class RoomTypeNormalizer:
         "CNR": "Corner",
         "PRT": "Partial",
         "NS": "Non-Smoking",
+        # Missing high-probability tokens added in Phase 3
+        "APT": "Apart",
+        "STU": "Studio",
+        "VIL": "Villa",
+        "BUN": "Bungalow",
+        "HMN": "Honeymoon",
+        "CON": "Connected",
+        "PNT": "Penthouse",
+        "DPX": "Duplex",
     }
 
     # 3. Common OTA/Vendor names to filter out of room type catalogs

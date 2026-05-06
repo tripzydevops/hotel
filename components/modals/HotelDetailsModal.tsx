@@ -22,6 +22,29 @@ import {
 import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
 
+/** Maps raw DataForSEO source/vendor strings to recognizable OTA brand names */
+function resolveOtaName(raw: string | undefined | null): { name: string; type: string } {
+  if (!raw) return { name: "Unknown OTA", type: "Market Partner" };
+  const key = raw.toLowerCase().trim();
+  if (key === "direct search" || key === "search") return { name: "Google Hotels", type: "Meta-Search" };
+  if (key.includes("booking")) return { name: "Booking.com", type: "OTA" };
+  if (key.includes("expedia")) return { name: "Expedia", type: "OTA" };
+  if (key.includes("agoda")) return { name: "Agoda", type: "OTA" };
+  if (key.includes("hotels.com")) return { name: "Hotels.com", type: "OTA" };
+  if (key.includes("trivago")) return { name: "Trivago", type: "Meta-Search" };
+  if (key.includes("tripadvisor")) return { name: "Tripadvisor", type: "Meta-Search" };
+  if (key.includes("kayak")) return { name: "Kayak", type: "Meta-Search" };
+  if (key.includes("trip.com")) return { name: "Trip.com", type: "OTA" };
+  if (key.includes("priceline")) return { name: "Priceline", type: "OTA" };
+  if (key.includes("otelfiyat")) return { name: "OtelFiyat", type: "OTA" };
+  if (key.includes("tatilsepeti")) return { name: "TatilSepeti", type: "OTA" };
+  if (key.includes("jolly")) return { name: "Jolly", type: "OTA" };
+  if (key.includes("otelz")) return { name: "Otelz", type: "OTA" };
+  // Capitalize first letter of each word as fallback
+  const formatted = raw.replace(/\b\w/g, c => c.toUpperCase());
+  return { name: formatted, type: "Market Partner" };
+}
+
 interface HotelDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -452,14 +475,19 @@ export default function HotelDetailsModal({
                             <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
                               <Tag className="w-5 h-5 text-[var(--soft-gold)]" />
                             </div>
-                            <div>
-                              <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                                {offer.vendor || offer.source || "Market Partner"}
-                              </h4>
-                              <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                                Market Partner
-                              </p>
-                            </div>
+                            {(() => {
+                              const ota = resolveOtaName(offer.vendor || offer.source);
+                              return (
+                                <div>
+                                  <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                    {ota.name}
+                                  </h4>
+                                  <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                    {ota.type}
+                                  </p>
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="text-right">
                             <div className="text-xl font-black text-[var(--soft-gold)] italic">
@@ -500,14 +528,19 @@ export default function HotelDetailsModal({
                             <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
                               <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
                             </div>
-                            <div>
-                              <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                                {room.name}
-                              </h4>
-                              <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                                Verified Specification
-                              </p>
-                            </div>
+                            {(() => {
+                              const ota = resolveOtaName(room.source);
+                              return (
+                                <div>
+                                  <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                    {room.name}
+                                  </h4>
+                                  <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                    {ota.name} · {ota.type}
+                                  </p>
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="text-right">
                             <div className="text-xl font-black text-[var(--soft-gold)] italic">

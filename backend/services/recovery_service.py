@@ -18,6 +18,7 @@ async def generate_dispute_letter(
     target_price: float,
     currency: str,
     language: str = "tr",
+    max_retries: int = 3,
 ) -> str:
     gap = round(target_price - current_price, 2)
 
@@ -40,18 +41,24 @@ async def generate_dispute_letter(
     Do not include placeholders like [Market Manager Name], just use a generic professional greeting if name is unknown.
     """
 
+    import asyncio
+
     client = get_genai_client()
     if client:
-        try:
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview",
-                contents=prompt,
-            )
-            return response.text
-        except Exception as e:
-            logger.error(f"GenAI SDK failed: {e}")
-            # Fall back to HTTP if genai fails
-            pass
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=prompt,
+                )
+                if response and response.text:
+                    return response.text
+            except Exception as e:
+                logger.error(f"GenAI SDK attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2 ** attempt)
+                else:
+                    logger.warning("GenAI SDK failed all attempts. Falling back to HTTP.")
 
     # Fallback to HTTP API
     api_key = os.getenv("GOOGLE_API_KEY")
@@ -60,14 +67,19 @@ async def generate_dispute_letter(
 
     import httpx
 
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(url, json=payload, timeout=15.0)
-            response.raise_for_status()
-            data = response.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception as e:
-        logger.error(f"Dispute generation via HTTP failed: {e}")
-        return "Failed to generate dispute letter. Please try again later."
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient() as http_client:
+                response = await http_client.post(url, json=payload, timeout=15.0)
+                response.raise_for_status()
+                data = response.json()
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            logger.error(f"Dispute generation via HTTP attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(2 ** attempt)
+            else:
+                return "Failed to generate dispute letter. Please try again later."

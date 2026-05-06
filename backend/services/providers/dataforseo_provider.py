@@ -1387,12 +1387,36 @@ class DataForSEOProvider(HotelDataProvider):
                 response = await client.get(url)
                 res_json = response.json()
 
-                if res_json.get("status_code") != 20000:
+                s_code = res_json.get("status_code")
+                s_msg = res_json.get("status_message", "")
+                
+                if s_code != 20000:
+                    # [FIX 2026-05-06] Handle "Task Handed" (40601) and "Not Found" (40401/40406) at response level
+                    # DataForSEO sometimes returns these as the main status_code for GET requests.
+                    if s_code in [40601, 40602, 40100] or any(word in s_msg for word in ["Handed", "Accepted", "Queued"]):
+                         return {
+                            "status": "pending",
+                            "failure_reason": "not_ready",
+                            "message": f"Task not ready: {s_msg} ({s_code})",
+                            "status_code": s_code,
+                            "tag": res_json.get("tasks", [{}])[0].get("data", {}).get("tag") if res_json.get("tasks") else None
+                        }, res_json
+                    
+                    # Also handle "Not Found" as a temporary pending state (might be replication lag)
+                    if s_code in [40401, 40406] or "Not Found" in s_msg:
+                         return {
+                            "status": "pending",
+                            "failure_reason": "not_ready",
+                            "message": f"Task not indexed yet: {s_msg} ({s_code})",
+                            "status_code": s_code,
+                            "tag": res_json.get("tasks", [{}])[0].get("data", {}).get("tag") if res_json.get("tasks") else None
+                        }, res_json
+
                     return {
                         "status": "failed",
                         "failure_reason": "provider_error",
-                        "message": res_json.get("status_message", "DataForSEO API error"),
-                        "status_code": res_json.get("status_code"),
+                        "message": s_msg or "DataForSEO API error",
+                        "status_code": s_code,
                         "tag": res_json.get("tasks", [{}])[0].get("data", {}).get("tag") if res_json.get("tasks") else None
                     }, res_json
 
@@ -1412,14 +1436,15 @@ class DataForSEOProvider(HotelDataProvider):
                     # [KAIZEN 2026] However, if status_code is failed, we should report it.
                     t_status = task.get("status_code")
                     t_msg = task.get("status_message", "") or ""
-                    # 40100: Task Accepted, 40601: Task Handed.
-                    if t_status in [40100, 40601, 40602] or any(word in t_msg for word in ["Handed", "Accepted", "Queued"]):
+                    # [FIX 2026-05-06] Handle "Not Found" (40401) as pending at the task level too
+                    # This handles cases where the task exists but isn't ready for retrieval yet.
+                    if t_status in [40100, 40601, 40602, 40401, 40406] or any(word in t_msg for word in ["Handed", "Accepted", "Queued", "Not Found"]):
                         return {
                             "status": "pending",
                             "failure_reason": "not_ready",
                             "message": f"Task state: {t_msg or 'Processing'} (Code: {t_status})",
                             "status_code": t_status,
-                            "tag": (task.get("data") or {}).get("tag")
+                            "tag": task.get("data", {}).get("tag")
                         }, res_json
 
                     if t_status and t_status != 10000 and t_status != 20000:
@@ -1626,12 +1651,14 @@ class DataForSEOProvider(HotelDataProvider):
                         if not isinstance(price_item, dict):
                             continue
                         room_title = price_item.get("title") or price_item.get("type") or "Standard Room"
-                        # Deduplicate by normalized name
+                        # Deduplicate by normalized name + source so that the same
+                        # room type from different OTAs is kept as separate entries
                         normalized = self._normalize_room_name(room_title)
                         if normalized.get("is_vendor"):
                             continue
                             
-                        norm_key = normalized.get("name", "").lower()
+                        source_val = price_item.get("source") or price_item.get("vendor") or ""
+                        norm_key = f"{normalized.get('name', '').lower()}|{source_val.lower()}"
                         if norm_key and norm_key not in seen_room_names:
                             seen_room_names.add(norm_key)
                             room_catalog.append({

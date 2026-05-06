@@ -17,6 +17,7 @@ from backend.services.analysis_service import (
 from backend.services.price_comparator import price_comparator
 from backend.utils.helpers import convert_currency, log_query
 from backend.utils.vendor_normalizer import normalize_vendor_name
+from backend.utils.room_normalizer import RoomTypeNormalizer
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import (
     generate_mentions,
@@ -453,8 +454,24 @@ async def get_dashboard_logic(
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
                     # Room Types Extraction (Strict Fallback per USER request)
-                    # Use harvested rooms_log first, then master hotel record
-                    raw_rooms = rooms_log.get("room_types") if (rooms_log and rooms_log.get("room_types") and len(rooms_log.get("room_types")) > 0) else (h.get("room_types") or [])
+                    # AGENT_FIX: Aggregate room types across ALL available price logs to avoid losing any room catalog entries
+                    all_rooms_seen = {}
+                    if prices:
+                        for p in prices:
+                            for rt in (p.get("room_types") or []):
+                                if isinstance(rt, dict) and rt.get("name"):
+                                    code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
+                                    if code not in all_rooms_seen:
+                                        all_rooms_seen[code] = rt
+                    
+                    # Also include any room types from the master hotel record
+                    for rt in (h.get("room_types") or []):
+                        if isinstance(rt, dict) and rt.get("name"):
+                            code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
+                            if code not in all_rooms_seen:
+                                all_rooms_seen[code] = rt
+                                
+                    raw_rooms = list(all_rooms_seen.values())
                     
                     # Offers Extraction with Vendor Logic - AGGREGATE all available sources
                     raw_offers = []
@@ -710,7 +727,7 @@ async def get_dashboard_logic(
                         }
                         for p in prices
                         if p.get("price") is not None
-                    ],
+                    ][:7],
                 }
             )
 
