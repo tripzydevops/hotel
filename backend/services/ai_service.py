@@ -173,9 +173,14 @@ class MarketIntelligenceService:
             return None
 
         try:
-            # Using text-embedding-004 with models/ prefix
+            # Using models/gemini-embedding-2 with 768 output dimensionality
             result = self.client.models.embed_content(
-                model="models/text-embedding-004", contents=text
+                model="models/gemini-embedding-2",
+                contents=text,
+                config={
+                    "task_type": "RETRIEVAL_DOCUMENT",
+                    "output_dimensionality": 768,
+                }
             )
             return result.embeddings[0].values
         except Exception as e:

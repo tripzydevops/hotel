@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { 
   RefreshCw, 
   Users, 
@@ -16,6 +17,7 @@ import { useToast } from "@/components/ui/ToastContext";
 import { motion } from "framer-motion";
 
 const MaintenancePanel = () => {
+  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ const MaintenancePanel = () => {
         res = await api.syncAll();
         toast.success("Full system synchronization triggered successfully.");
       }
+      router.refresh();
     } catch (err: any) {
       toast.error(`Synchronization failed: ${err.message}`);
     } finally {

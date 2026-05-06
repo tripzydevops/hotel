@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Key,
   RefreshCw,
@@ -15,6 +16,7 @@ import { api } from "@/lib/api";
 import { KeyStatus } from "@/types";
 
 const ApiKeysPanel = () => {
+  const router = useRouter();
   const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null);
   const [allKeys, setAllKeys] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
@@ -49,6 +51,7 @@ const ApiKeysPanel = () => {
     try {
       await api.deleteApiKey(id);
       setAllKeys((prev) => prev.filter((k) => k.id !== id));
+      router.refresh();
       alert("Key deleted successfully.");
     } catch (err: any) {
       alert("Delete Failed: " + err.message);
@@ -63,6 +66,7 @@ const ApiKeysPanel = () => {
     try {
       const data = await api.rotateAdminKey();
       setKeyStatus(data.current_status);
+      router.refresh();
       alert(data.message);
     } catch (err: any) {
       alert("Failed: " + err.message);
@@ -79,6 +83,7 @@ const ApiKeysPanel = () => {
         curr ? { ...curr, total_keys: data.total_keys } : null,
       );
       loadKeyStatus();
+      router.refresh();
       alert("Successfully reloaded keys from environment.");
     } catch (err: any) {
       alert("Reload Failed: " + err.message);
@@ -94,6 +99,7 @@ const ApiKeysPanel = () => {
     try {
       const data = await api.resetAdminKeys();
       setKeyStatus(data.current_status);
+      router.refresh();
       alert(data.message);
     } catch (err: any) {
       alert("Failed: " + err.message);

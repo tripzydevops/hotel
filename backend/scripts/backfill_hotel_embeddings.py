@@ -7,37 +7,8 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.utils.db import get_supabase
-from backend.utils.embeddings import get_genai_client, format_hotel_for_embedding
+from backend.utils.embeddings import get_genai_client, format_hotel_for_embedding, get_embeddings_batch
 
-async def get_embeddings_batch(texts: list[str], model: str = "text-embedding-004"):
-    client = get_genai_client()
-    if not client:
-        return [[0.0] * 768 for _ in texts]
-    
-    max_retries = 5
-    for attempt in range(max_retries):
-        try:
-            # Batch embedding call
-            result = client.models.embed_content(
-                model=model,
-                contents=texts,
-                config={
-                    "task_type": "RETRIEVAL_DOCUMENT",
-                    "output_dimensionality": 768,
-                },
-            )
-            if not result or not result.embeddings:
-                return [[0.0] * 768 for _ in texts]
-            return [e.values for e in result.embeddings]
-        except Exception as e:
-            if "429" in str(e):
-                wait_time = (2 ** attempt) + 1
-                print(f"[Embedding] Rate limited (429). Retrying in {wait_time}s...")
-                await asyncio.sleep(wait_time)
-            else:
-                print(f"[Embedding] Batch Error: {e}")
-                return [[0.0] * 768 for _ in texts]
-    return [[0.0] * 768 for _ in texts]
 
 async def update_hotel_embedding(supabase, hotel_id, embedding, name):
     try:

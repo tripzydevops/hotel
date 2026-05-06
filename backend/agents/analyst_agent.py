@@ -403,6 +403,14 @@ class AnalystAgent:
             target_lat = target_data.get("latitude")
             target_lon = target_data.get("longitude")
 
+            # Extract target city for fallback matching to prevent semantic leakage
+            target_city = None
+            resolved_loc = target_data.get("resolved_location_name")
+            if resolved_loc:
+                target_city = resolved_loc.split(",")[0].strip()
+            if not target_city and target_data.get("location"):
+                target_city = target_data.get("location").split(",")[0].strip()
+
             # Handle Embedding (missing or zero-norm/broken)
             target_embedding = target_data.get("embedding")
             is_zero_vector = False
@@ -453,6 +461,7 @@ class AnalystAgent:
                     "target_lat": float(target_lat) if target_lat is not None else None,
                     "target_lon": float(target_lon) if target_lon is not None else None,
                     "max_distance_km": float(radius_km),
+                    "target_city": target_city,
                 },
             ).execute()
 

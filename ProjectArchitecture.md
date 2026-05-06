@@ -3,6 +3,10 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 6, 2026)
+- ✅ **Vector Competitor Match Target City Fallback Bugfix**: Resolved a semantic leakage bug in `AnalystAgent.discover_rivals` where omitting the `target_city` argument caused the `match_hotels` RPC fallback match to run without any city filter (resulting in hotels from different cities matching when coordinates were missing).
+- ✅ **Syntax Verification**: Completed dynamic compilation testing on all modified backend python files.
+
 ## 🕒 Recent Updates (May 5, 2026)
 - ✅ **Retention Aggregation Fix (Rank 1)**: Corrected the SQL jsonb aggregation in `perform_data_maintenance()` (defined in Migration 039) to verify that `room_types` is a JSON array before invoking `jsonb_array_length()`. Prevents terminal transaction aborts caused by corrupted or non-array records, securing robust `price_history_daily` rollup generation.
 - ✅ **PEP-8 Multi-line Conditional Expansion (Rank 3)**: Refactored ten inline single-line conditional statements in `dashboard_service.py` and `scan_persistence.py` into compliant multi-line blocks. Drastically improves debugger step-through ergonomics and provides accurate line-by-line coverage analysis.
@@ -655,12 +659,12 @@ graph TD
 (jsonb_agg(room_types ORDER BY CASE WHEN jsonb_typeof(room_types) = 'array' THEN jsonb_array_length(room_types) ELSE 0 END DESC) -> 0) as room_type_summary
 ```
 
-### Bug #10 — One-Liner Conditional Statements Debugging Obstruction (Rank 3 Technical Debt)
-**Date**: 2026-05-05  
-**File**: `backend/services/dashboard_service.py`, `backend/services/scan_persistence.py`  
-**Symptom**: Breakpoints and step-through debugging on conditional paths skipped, making line coverage reporting and interactive inspection highly difficult.  
-**Root Cause**: Several critical functions used inline, single-line conditionals (such as `if not sid: continue` or `if not val: continue`).  
-**Fix**: Expanded all ten occurrences of one-liner conditionals in both services into PEP-8 compliant, multi-line blocks. Verified full compliance and regression-free behavior via Ruff and comprehensive integration test execution.
+### Bug #11 — Semantic Leakage in Competitor Discovery Fallback
+**Date**: 2026-05-06  
+**File**: `backend/agents/analyst_agent.py`  
+**Symptom**: Hotels from completely different cities matched as close competitors during ghost discovery when coordinates were missing.  
+**Root Cause**: The `match_hotels` RPC defines a fallback matching condition: `target_city IS NULL OR h.location ILIKE '%' || target_city || '%'`. Because `target_city` was completely omitted from the RPC call arguments within the Python agent layer, it defaulted to `NULL`, rendering the city match condition universally true.  
+**Fix**: Extracted the target hotel's city from `resolved_location_name` or `location` within `discover_rivals` and passed `"target_city": target_city` in the `match_hotels` RPC.
 
 ---
 

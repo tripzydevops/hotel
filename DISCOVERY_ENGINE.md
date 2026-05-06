@@ -28,7 +28,9 @@ Hotel "Vibes" are converted into math using Gemini.
 1. **Target Identification**: The user selects a hotel and opens the Analysis page.
 2. **Signal Generation**: The backend generates (or fetches) the embedding for the target hotel.
 3. **Similarity Search**: An RPC call (`match_hotels`) identifies the top 5 properties in the global directory with the highest **Cosine Similarity**.
-4. **Filtering**: The system automatically excludes properties the user is already tracking.
+4. **Filtering & City Fallback (May 6, 2026 Bugfix)**:
+    - **Issue**: Previously, omitting the `target_city` parameter in `AnalystAgent.discover_rivals` caused the underlying `match_hotels` RPC fallback to run globally, resulting in semantic leakage where hotels from different cities were matched if geographic coordinates were missing or corrupted.
+    - **Fix**: The system now strictly enforces a city-bounded matching boundary by passing a verified `target_city` string. If coordinates are unavailable, the search correctly scopes within the same metropolitan area or municipality, eliminating cross-city matches.
 5. **UI Rendering**: The `DiscoveryShard` renders these matches with a "Match Percentage."
 
 ## 🛠️ Developer Guide

@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 
 # from google import genai  # Moved to lazy getter
 from typing import List
@@ -13,7 +14,7 @@ from backend.utils.ai_client import get_genai_client
 
 
 async def get_embedding(
-    text: str, model: str = "models/text-embedding-004"
+    text: str, model: str = "models/gemini-embedding-2"
 ) -> List[float]:
     """
     Generates a semantic embedding for the given text using the modern GenAI SDK.
@@ -25,44 +26,44 @@ async def get_embedding(
 
 
 async def get_embeddings_batch(
-    texts: List[str], model: str = "models/text-embedding-004"
+    texts: List[str], model: str = "models/gemini-embedding-2"
 ) -> List[List[float]]:
     """
     Generates multiple semantic embeddings in batches using the modern GenAI SDK.
-    This prevents API timeouts and payload limit issues for large datasets.
+    Uses asynchronous individual embedding calls gathered in parallel to ensure
+    independent embeddings are returned for each text (as the modern SDK treats
+    multiple items in a single call as a single multi-part content).
     """
     client = get_genai_client()
     if not client or not texts:
         return [[0.0] * 768 for _ in texts]
 
     try:
-        all_embeddings = []
-        chunk_size = 100  # API usually limits batches, 100 is safe
-
-        for i in range(0, len(texts), chunk_size):
-            chunk = texts[i : i + chunk_size]
-            result = client.models.embed_content(
-                model=model,
-                contents=chunk,
-                config={
-                    "task_type": "RETRIEVAL_DOCUMENT",
-                    "output_dimensionality": 768,
-                },
-            )
-
-            if not result or not result.embeddings:
-                logger.warning(
-                    "Embedding failed for chunk starting at %d", i
+        # Helper for a single async call with per-item exception handling
+        async def _get_single(text: str) -> List[float]:
+            try:
+                res = await client.aio.models.embed_content(
+                    model=model,
+                    contents=text,
+                    config={
+                        "task_type": "RETRIEVAL_DOCUMENT",
+                        "output_dimensionality": 768,
+                    },
                 )
-                all_embeddings.extend([[0.0] * 768 for _ in chunk])
-                continue
+                if res and res.embeddings:
+                    return res.embeddings[0].values
+            except Exception as e:
+                logger.warning("Single embedding failed for text '%s': %s", text[:30], e)
+            return [0.0] * 768
 
-            all_embeddings.extend([emb.values for emb in result.embeddings])
-
-        return all_embeddings
+        # Process in parallel using asyncio.gather
+        tasks = [_get_single(t) for t in texts]
+        results = await asyncio.gather(*tasks)
+        return list(results)
     except Exception as e:
-        logger.error("Batch embedding error with chunking: %s", e)
+        logger.error("Batch embedding error: %s", e)
         return [[0.0] * 768 for _ in texts]
+
 
 
 def format_hotel_for_embedding(hotel: dict) -> str:
