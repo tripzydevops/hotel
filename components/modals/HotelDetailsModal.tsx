@@ -529,7 +529,7 @@ export default function HotelDetailsModal({
                               <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
                             </div>
                             {(() => {
-                              const ota = resolveOtaName(room.source);
+                              const ota = resolveOtaName((room as any).source);
                               return (
                                 <div>
                                   <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">

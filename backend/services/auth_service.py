@@ -95,7 +95,7 @@ def get_token(request: Request) -> str:
 async def get_current_admin_user(
     request: Request,
     token: str = Depends(get_token),
-    insforge: Client = Depends(get_insforge_db),
+    insforge: Client = Depends(get_insforge_rls),
 ):
     """
     Verify that the request is made by an Admin.
@@ -135,7 +135,7 @@ async def get_current_admin_user(
 async def get_current_active_user(
     request: Request,
     token: str = Depends(get_token),
-    insforge: Client = Depends(get_insforge_db),
+    insforge: Client = Depends(get_insforge_rls),
 ):
     """
     Verify that the user is logged in AND has an active approval status.
@@ -175,9 +175,10 @@ async def get_current_active_user(
                     f"ADMIN {email} ({user_id}) initiating IMPERSONATION of {impersonate_id}"
                 )
 
-                # Fetch target user profile to "become" them
+                # Fetch target user profile to "become" them (bypass RLS using admin client)
+                admin_client = get_insforge_admin()
                 target_res = (
-                    insforge.table("user_profiles")
+                    admin_client.table("user_profiles")
                     .select("user_id, email, display_name")
                     .eq("user_id", str(impersonate_id))
                     .maybe_single()
@@ -234,9 +235,12 @@ async def get_current_active_user(
             pass
 
         try:
+            # Use admin client if impersonating to bypass RLS, otherwise use standard RLS client
+            active_client = get_insforge_admin() if getattr(user, "is_impersonating", False) else insforge
+
             # Check 'profiles' table first (legacy consistency)
             res = (
-                insforge.table("profiles")
+                active_client.table("profiles")
                 .select("role")
                 .eq("id", str(user_id))
                 .maybe_single()
@@ -249,7 +253,7 @@ async def get_current_active_user(
 
             # Now check 'user_profiles' for more accurate/recent data including 'is_verified'
             res2 = (
-                insforge.table("user_profiles")
+                active_client.table("user_profiles")
                 .select("subscription_status, is_verified, role")
                 .eq("user_id", str(user_id))
                 .maybe_single()
@@ -283,7 +287,7 @@ async def get_current_active_user(
                         get_enriched_profile_logic,
                     )
 
-                    healed_profile = await get_enriched_profile_logic(user_id, None, insforge)
+                    healed_profile = await get_enriched_profile_logic(user_id, None, active_client)
                     if healed_profile:
                         status = healed_profile.get("subscription_status") or status
                         is_verified_val = healed_profile.get("is_verified")
