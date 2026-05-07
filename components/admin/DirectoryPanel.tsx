@@ -10,12 +10,14 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { DirectoryEntry } from "@/types";
 import { useToast } from "@/components/ui/ToastContext";
 import { motion } from "framer-motion";
 
 const DirectoryPanel = () => {
+  const router = useRouter();
   const { toast } = useToast();
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);

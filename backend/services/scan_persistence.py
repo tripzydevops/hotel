@@ -221,6 +221,8 @@ class ScanPersistenceService:
         """
         KAİZEN 2026: Normalizes room type data into a consistent object structure.
         Prevents frontend errors where strings are expected to be objects (e.g. room.name).
+        Resolves duplicate room types (e.g., standard rooms with different prices)
+        by consolidating duplicates, keeping the cheapest offer per normalized name.
         """
         if not rooms or not isinstance(rooms, list):
             return []
@@ -253,8 +255,79 @@ class ScanPersistenceService:
                     if k not in entry:
                         entry[k] = v
                 normalized.append(entry)
+
+        # Deduplicate and consolidate by canonical room name (case-insensitive key)
+        grouped = {}
+        for entry in normalized:
+            raw_name = entry["name"]
+            # Standardize name using imported helper normalize_room_name
+            canonical_name = normalize_room_name(raw_name) if raw_name else "Standard Room"
+            entry["name"] = canonical_name
+            
+            key = canonical_name.strip().lower()
+            if not key:
+                continue
                 
-        return normalized
+            if key not in grouped:
+                grouped[key] = entry
+            else:
+                existing = grouped[key]
+                
+                # Check prices and keep the cheapest one
+                existing_price = existing.get("price")
+                new_price = entry.get("price")
+                
+                existing_price_val = None
+                if existing_price is not None:
+                    try:
+                        existing_price_val = float(existing_price)
+                    except (ValueError, TypeError):
+                        pass
+                        
+                new_price_val = None
+                if new_price is not None:
+                    try:
+                        new_price_val = float(new_price)
+                    except (ValueError, TypeError):
+                        pass
+                        
+                if existing_price_val is not None and new_price_val is not None:
+                    if new_price_val < existing_price_val:
+                        existing["price"] = entry["price"]
+                        existing["currency"] = entry["currency"]
+                        if entry.get("image_url"):
+                            existing["image_url"] = entry["image_url"]
+                        if entry.get("sqm"):
+                            existing["sqm"] = entry["sqm"]
+                        if entry.get("capacity"):
+                            existing["capacity"] = entry["capacity"]
+                elif existing_price_val is None and new_price_val is not None:
+                    existing["price"] = entry["price"]
+                    existing["currency"] = entry["currency"]
+                    if entry.get("image_url"):
+                        existing["image_url"] = entry["image_url"]
+                    if entry.get("sqm"):
+                        existing["sqm"] = entry["sqm"]
+                    if entry.get("capacity"):
+                        existing["capacity"] = entry["capacity"]
+                
+                # Merge amenities
+                existing_amenities = existing.get("amenities") or []
+                new_amenities = entry.get("amenities") or []
+                merged_amenities = []
+                seen_amenities = set()
+                for a in (existing_amenities + new_amenities):
+                    if a and str(a).strip().lower() not in seen_amenities:
+                        seen_amenities.add(str(a).strip().lower())
+                        merged_amenities.append(a)
+                existing["amenities"] = merged_amenities
+                
+                # Carry over other keys if not present or None in existing
+                for k, v in entry.items():
+                    if k not in existing or existing[k] is None:
+                        existing[k] = v
+                        
+        return list(grouped.values())
 
     async def update_room_type_catalog(
         self,

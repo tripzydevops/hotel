@@ -454,24 +454,55 @@ async def get_dashboard_logic(
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
                     # Room Types Extraction (Strict Fallback per USER request)
-                    # AGENT_FIX: Aggregate room types across ALL available price logs to avoid losing any room catalog entries
+                    # AGENT_FIX: Aggregate room types across ALL available price logs.
+                    # Use composite key (code|source|price) to preserve distinct offers
+                    # for the same room type from different sources or at different prices.
+                    # This ensures the ROOM TYPES tab shows all available booking options.
                     all_rooms_seen = {}
+                    
+                    # Prefer the rooms_log (most complete) first, then remaining logs
+                    logs_to_scan = []
+                    if rooms_log:
+                        logs_to_scan.append(rooms_log)
                     if prices:
                         for p in prices:
-                            for rt in (p.get("room_types") or []):
-                                if isinstance(rt, dict) and rt.get("name"):
-                                    code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
-                                    if code not in all_rooms_seen:
-                                        all_rooms_seen[code] = rt
+                            if p is not rooms_log:
+                                logs_to_scan.append(p)
+                    
+                    for p in logs_to_scan:
+                        for rt in (p.get("room_types") or []):
+                            if isinstance(rt, dict) and rt.get("name"):
+                                norm = RoomTypeNormalizer.normalize(rt.get("name"))
+                                code = norm["canonical_code"]
+                                rt_source = rt.get("source") or rt.get("vendor") or "Unknown"
+                                rt_price = rt.get("price") or 0
+                                # Composite key: same room from same source at same price = duplicate
+                                dedup_key = f"{code}|{rt_source}|{rt_price}"
+                                if dedup_key not in all_rooms_seen:
+                                    # Enrich with canonical name for better display
+                                    rt_copy = rt.copy()
+                                    if norm["canonical_name"] and norm["canonical_code"] != "ROH":
+                                        rt_copy["canonical_name"] = norm["canonical_name"]
+                                    all_rooms_seen[dedup_key] = rt_copy
                     
                     # Also include any room types from the master hotel record
                     for rt in (h.get("room_types") or []):
                         if isinstance(rt, dict) and rt.get("name"):
-                            code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
-                            if code not in all_rooms_seen:
-                                all_rooms_seen[code] = rt
+                            norm = RoomTypeNormalizer.normalize(rt.get("name"))
+                            code = norm["canonical_code"]
+                            rt_source = rt.get("source") or rt.get("vendor") or "Unknown"
+                            rt_price = rt.get("price") or 0
+                            dedup_key = f"{code}|{rt_source}|{rt_price}"
+                            if dedup_key not in all_rooms_seen:
+                                rt_copy = rt.copy()
+                                if norm["canonical_name"] and norm["canonical_code"] != "ROH":
+                                    rt_copy["canonical_name"] = norm["canonical_name"]
+                                all_rooms_seen[dedup_key] = rt_copy
                                 
-                    raw_rooms = list(all_rooms_seen.values())
+                    raw_rooms = sorted(
+                        all_rooms_seen.values(),
+                        key=lambda r: _extract_price(r.get("price")) or float("inf")
+                    )
                     
                     # Offers Extraction with Vendor Logic - AGGREGATE all available sources
                     raw_offers = []
