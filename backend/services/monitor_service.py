@@ -891,11 +891,16 @@ async def _trigger_heartbeat_notifications(
             parity_offers = event.get("parity_offers") or []
             token = event.get("property_token")
             
-            # Find relevant users for this event
-            relevant_users = [
-                u for u in users_res.data 
-                if str(u["hotel_id"]) == hid or (token and u["hotels"].get("property_token") == token)
-            ]
+            # Find relevant users for this event and deduplicate by user_id to prevent triplicate/duplicate alerts
+            seen_uids = set()
+            relevant_users = []
+            for u in users_res.data:
+                uid = str(u["user_id"])
+                if uid in seen_uids:
+                    continue
+                if str(u["hotel_id"]) == hid or (token and u["hotels"].get("property_token") == token):
+                    relevant_users.append(u)
+                    seen_uids.add(uid)
             if not relevant_users:
                 continue
             

@@ -71,12 +71,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    const allowedOrigin = process.env.NODE_ENV === "production" ? "https://hotel-gray.vercel.app" : "*";
     return [
       {
         source: "/auth/v1/:path*",
         headers: [
-          { key: "Access-Control-Allow-Origin", value: allowedOrigin },
+          { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD" },
           { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey" },
         ],
@@ -84,7 +83,7 @@ const nextConfig: NextConfig = {
       {
         source: "/rest/v1/:path*",
         headers: [
-          { key: "Access-Control-Allow-Origin", value: allowedOrigin },
+          { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD" },
           { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey, Prefer" },
         ],
