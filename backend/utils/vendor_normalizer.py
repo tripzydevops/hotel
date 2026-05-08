@@ -30,6 +30,10 @@ class VendorNormalizer:
         "ctrip": "Ctrip",
         "rakuten": "Rakuten",
         "google hotels": "Google Hotels",
+        "google": "Google Hotels",
+        "google_hotels": "Google Hotels",
+        "search": "Google Hotels",
+        "hotel_search": "Google Hotels",
         
         # Turkish OTAs
         "tatilbudur": "Tatilbudur",

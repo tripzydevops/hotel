@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
-import { parsePrice } from "@/lib/utils";
+import { parsePrice, formatCurrency, normalizeVendor } from "@/lib/utils";
 
 interface RateMatrixProps {
   targetHotel?: HotelWithPrice | null;
@@ -69,10 +69,11 @@ export default function RateMatrix({
     const targetOffers = targetHotel?.price_info?.offers || [];
     targetOffers.forEach((o) => {
       if (o.vendor) {
-        const key = o.vendor.toLowerCase();
+        const normalized = normalizeVendor(o.vendor);
+        const key = normalized.toLowerCase();
         const existing = otaMap.get(key);
         otaMap.set(key, {
-          vendor: o.vendor,
+          vendor: normalized,
           count: (existing?.count || 0) + 1,
         });
       }
@@ -83,10 +84,11 @@ export default function RateMatrix({
       const offers = comp.price_info?.offers || [];
       offers.forEach((o) => {
         if (o.vendor) {
-          const key = o.vendor.toLowerCase();
+          const normalized = normalizeVendor(o.vendor);
+          const key = normalized.toLowerCase();
           const existing = otaMap.get(key);
           otaMap.set(key, {
-            vendor: o.vendor,
+            vendor: normalized,
             count: (existing?.count || 0) + 1,
           });
         }
@@ -118,7 +120,7 @@ export default function RateMatrix({
       const prices: number[] = [];
       competitors.forEach(comp => {
         const offer = comp.price_info?.offers?.find(
-          o => o.vendor?.toLowerCase() === ota.toLowerCase()
+          o => normalizeVendor(o.vendor).toLowerCase() === ota.toLowerCase()
         );
         if (offer?.price) prices.push(offer.price);
       });
@@ -434,7 +436,7 @@ export default function RateMatrix({
                   {/* Dynamic OTA Cells */}
                   {displayedOTAs.map((ota) => {
                     const offer = offers.find(
-                      (o) => o.vendor?.toLowerCase() === ota.toLowerCase(),
+                      (o) => normalizeVendor(o.vendor).toLowerCase() === ota.toLowerCase(),
                     );
                     return (
                       <td key={ota} className="py-5 text-center">

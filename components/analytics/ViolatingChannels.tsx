@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ArrowRight, X, AlertTriangle, Wand2, Copy, Check, Loader2 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 import { api } from "@/lib/api";
-import { parsePrice } from "@/lib/utils";
+import { parsePrice, normalizeVendor } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ViolatingChannelsProps {
@@ -36,6 +36,7 @@ export default function ViolatingChannels({
       return {
         id: c.id,
         name: c.name,
+        vendor: normalizeVendor(c.price_info?.vendor || c.price_info?.source || "Other"),
         current_price: price,
         target_price: targetPrice,
         currency: c.price_info?.currency || "TRY",
@@ -55,7 +56,7 @@ export default function ViolatingChannels({
     try {
       const res = await api.generateDispute({
         hotel_id: hotelId,
-        ota_name: v.name,
+        ota_name: v.vendor, // Use normalized vendor name for dispute
         current_price: v.current_price,
         target_price: v.target_price,
         currency: v.currency,
@@ -102,9 +103,14 @@ export default function ViolatingChannels({
                 className={`absolute left-0 top-0 bottom-0 w-1 ${v.severity === "high" ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]" : "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"}`}
               ></div>
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-black text-[var(--overlay-text)] text-md tracking-tight truncate pr-2">
-                  {v.name}
-                </h4>
+                <div className="flex-1 min-w-0 pr-2">
+                  <h4 className="font-black text-[var(--overlay-text)] text-md tracking-tight truncate">
+                    {v.name}
+                  </h4>
+                  <div className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest mt-0.5">
+                    {v.vendor}
+                  </div>
+                </div>
                 <div className="flex flex-col items-end">
                   <span className={`font-black text-lg ${v.severity === "high" ? "text-rose-500" : "text-yellow-600 dark:text-yellow-500"}`}>
                     {v.diff}

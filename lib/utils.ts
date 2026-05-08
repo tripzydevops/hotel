@@ -146,3 +146,53 @@ export function getCurrencySymbol(currency: string = "USD"): string {
     return currency === "TRY" ? "₺" : "$";
   }
 }
+
+/**
+ * Standardize vendor/OTA names for consistent UI display
+ */
+export function normalizeVendor(vendor: string | null | undefined): string {
+  if (!vendor) return "Other";
+  
+  const v = vendor.toString().toLowerCase().trim();
+  
+  // Canonical Mappings
+  const map: Record<string, string> = {
+    "search": "Google Hotels",
+    "google": "Google Hotels",
+    "google search": "Google Hotels",
+    "google_search": "Google Hotels",
+    "google_hotels": "Google Hotels",
+    "google hotels": "Google Hotels",
+    "direct search": "Google Hotels",
+    "booking": "Booking.com",
+    "booking.com": "Booking.com",
+    "expedia": "Expedia",
+    "agoda": "Agoda",
+    "hotels": "Hotels.com",
+    "hotels.com": "Hotels.com",
+    "trip": "Trip.com",
+    "trip.com": "Trip.com",
+    "trivago": "Trivago",
+    "kayak": "Kayak",
+    "tripadvisor": "Tripadvisor",
+    "priceline": "Priceline",
+    "otelfiyat": "OtelFiyat",
+    "tatilsepeti": "TatilSepeti",
+    "jolly": "Jolly",
+    "otelz": "Otelz",
+  };
+
+  // Check for exact match or partial matches
+  if (map[v]) return map[v];
+  
+  for (const [key, value] of Object.entries(map)) {
+    if (v.includes(key)) return value;
+  }
+  
+  // Fallback: Title Case
+  return vendor.toString()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+

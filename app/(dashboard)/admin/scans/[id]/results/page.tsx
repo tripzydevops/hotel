@@ -95,6 +95,7 @@ export default function ScanResultsPage() {
   const [starFilter, setStarFilter] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "rating" | "stars">("price-asc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [parityFilter, setParityFilter] = useState<"all" | "violations">("all");
 
   useEffect(() => {
     async function loadData() {
@@ -170,12 +171,34 @@ export default function ScanResultsPage() {
 
   const filteredResults = useMemo(() => {
     return results
-      .filter(r => 
-        (r.hotel_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         r.vendor.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        r.price >= priceRange[0] && r.price <= priceRange[1] &&
-        (starFilter === null || r.stars === starFilter)
-      )
+      .filter(r => {
+        // Robust filtering out of invalid inputs like 0 prices
+        if (r.price <= 0) return false;
+
+        const matchesSearch = r.hotel_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          r.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesPrice = r.price >= priceRange[0] && r.price <= priceRange[1];
+        const matchesStars = starFilter === null || r.stars === starFilter;
+        
+        // Parity filter
+        let matchesParity = true;
+        if (parityFilter === "violations") {
+          if (!r.ota_pricing || r.ota_pricing.length < 2) {
+            matchesParity = false;
+          } else {
+            const otaPrices = r.ota_pricing.map(o => o.price).filter(p => p > 0);
+            if (otaPrices.length < 2) {
+              matchesParity = false;
+            } else {
+              const max = Math.max(...otaPrices);
+              const min = Math.min(...otaPrices);
+              matchesParity = (max - min) / min > 0.15;
+            }
+          }
+        }
+
+        return matchesSearch && matchesPrice && matchesStars && matchesParity;
+      })
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.price - b.price;
         if (sortBy === "price-desc") return b.price - a.price;
@@ -183,14 +206,17 @@ export default function ScanResultsPage() {
         if (sortBy === "stars") return (b.stars || 0) - (a.stars || 0);
         return 0;
       });
-  }, [results, searchQuery, priceRange, starFilter, sortBy]);
+  }, [results, searchQuery, priceRange, starFilter, sortBy, parityFilter]);
 
   const stats = useMemo(() => {
-    if (results.length === 0) return { total: 0, avgPrice: 0, minPrice: 0, maxPrice: 0, parityAlerts: 0 };
-    const prices = results.map(r => r.price);
+    // Robustly filter out invalid inputs (price <= 0) first for stats calculations
+    const validResults = results.filter(r => r.price > 0);
+    
+    if (validResults.length === 0) return { total: 0, avgPrice: 0, minPrice: 0, maxPrice: 0, parityAlerts: 0 };
+    const prices = validResults.map(r => r.price);
     
     // Parity Analysis
-    const alerts = results.filter(r => {
+    const alerts = validResults.filter(r => {
       if (!r.ota_pricing || r.ota_pricing.length < 2) return false;
       const otaPrices = r.ota_pricing.map(o => o.price).filter(p => p > 0);
       if (otaPrices.length < 2) return false;
@@ -200,8 +226,8 @@ export default function ScanResultsPage() {
     }).length;
 
     return {
-      total: results.length,
-      avgPrice: prices.reduce((a, b) => a + b, 0) / results.length,
+      total: validResults.length,
+      avgPrice: prices.reduce((a, b) => a + b, 0) / validResults.length,
       minPrice: Math.min(...prices),
       maxPrice: Math.max(...prices),
       parityAlerts: alerts
@@ -369,10 +395,10 @@ export default function ScanResultsPage() {
             <Hotel className="w-24 h-24" />
           </div>
           <div className="flex flex-col h-full">
-            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Total Inventory</p>
+            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Active Inventory</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white">{stats.total}</span>
-              <span className="text-blue-500 text-xs font-bold uppercase tracking-widest">Units</span>
+              <span className="text-4xl font-black text-white">{filteredResults.length}</span>
+              <span className="text-blue-500 text-xs font-bold uppercase tracking-widest">/ {stats.total} Units</span>
             </div>
             <div className="mt-auto pt-6 flex items-center gap-2">
               <div className="flex -space-x-2">
@@ -483,6 +509,17 @@ export default function ScanResultsPage() {
               <option value="price-desc" className="bg-zinc-900">Sort: Price (High)</option>
               <option value="rating" className="bg-zinc-900">Sort: Rating</option>
               <option value="stars" className="bg-zinc-900">Sort: Stars</option>
+            </select>
+          </div>
+
+          <div className="flex bg-zinc-900/30 border border-zinc-800/50 rounded-full p-1 whitespace-nowrap">
+            <select 
+              value={parityFilter}
+              onChange={(e) => setParityFilter(e.target.value as any)}
+              className="bg-transparent text-zinc-400 text-[9px] font-black uppercase tracking-widest px-4 py-2 focus:outline-none appearance-none cursor-pointer outline-none font-black"
+            >
+              <option value="all" className="bg-zinc-900">Parity: All</option>
+              <option value="violations" className="bg-zinc-900">Parity: Violations Only (&gt; 15%)</option>
             </select>
           </div>
 

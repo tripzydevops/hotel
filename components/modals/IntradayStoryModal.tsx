@@ -3,6 +3,7 @@
 import React from "react";
 import { X, Clock, TrendingUp, TrendingDown, Minus, Building2, Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { normalizeVendor } from "@/lib/utils";
 
 interface IntradayStoryModalProps {
   isOpen: boolean;
@@ -131,7 +132,7 @@ export default function IntradayStoryModal({
                         </span>
                         {event.vendor && (
                           <span className="px-2 py-0.5 rounded-md bg-white/5 border border-[var(--overlay-border)] text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
-                            {event.vendor}
+                            {normalizeVendor(event.vendor)}
                           </span>
                         )}
                         {event.label && (

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { ScanSession, QueryLog } from "@/types";
+import { cn, normalizeVendor } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { insforge } from "@/lib/insforge";
 import { useI18n } from "@/lib/i18n";
@@ -602,7 +603,7 @@ export default function ScanSessionModal({
                         {/* Vendor */}
                         <div className="md:col-span-3 flex items-center">
                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                            {log.vendor || "Direct"}
+                            {normalizeVendor(log.vendor)}
                           </span>
                         </div>
 

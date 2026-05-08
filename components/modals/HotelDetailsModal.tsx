@@ -1,7 +1,7 @@
 "use client";
 
 import { HotelWithPrice } from "@/types";
-import { parsePrice } from "@/lib/utils";
+import { parsePrice, normalizeVendor } from "@/lib/utils";
 import { useState } from "react";
 import {
   Building2,
@@ -24,25 +24,17 @@ import { useI18n } from "@/lib/i18n";
 
 /** Maps raw DataForSEO source/vendor strings to recognizable OTA brand names */
 function resolveOtaName(raw: string | undefined | null): { name: string; type: string } {
-  if (!raw) return { name: "Unknown OTA", type: "Market Partner" };
-  const key = raw.toLowerCase().trim();
-  if (key === "direct search" || key === "search") return { name: "Google Hotels", type: "Meta-Search" };
-  if (key.includes("booking")) return { name: "Booking.com", type: "OTA" };
-  if (key.includes("expedia")) return { name: "Expedia", type: "OTA" };
-  if (key.includes("agoda")) return { name: "Agoda", type: "OTA" };
-  if (key.includes("hotels.com")) return { name: "Hotels.com", type: "OTA" };
-  if (key.includes("trivago")) return { name: "Trivago", type: "Meta-Search" };
-  if (key.includes("tripadvisor")) return { name: "Tripadvisor", type: "Meta-Search" };
-  if (key.includes("kayak")) return { name: "Kayak", type: "Meta-Search" };
-  if (key.includes("trip.com")) return { name: "Trip.com", type: "OTA" };
-  if (key.includes("priceline")) return { name: "Priceline", type: "OTA" };
-  if (key.includes("otelfiyat")) return { name: "OtelFiyat", type: "OTA" };
-  if (key.includes("tatilsepeti")) return { name: "TatilSepeti", type: "OTA" };
-  if (key.includes("jolly")) return { name: "Jolly", type: "OTA" };
-  if (key.includes("otelz")) return { name: "Otelz", type: "OTA" };
-  // Capitalize first letter of each word as fallback
-  const formatted = raw.replace(/\b\w/g, c => c.toUpperCase());
-  return { name: formatted, type: "Market Partner" };
+  const name = normalizeVendor(raw);
+  
+  // Categorization logic
+  let type = "Market Partner";
+  const metaSearch = ["Google Hotels", "Trivago", "Tripadvisor", "Kayak"];
+  const ota = ["Booking.com", "Expedia", "Agoda", "Hotels.com", "Trip.com", "Priceline", "OtelFiyat", "TatilSepeti", "Jolly", "Otelz"];
+
+  if (metaSearch.includes(name)) type = "Meta-Search";
+  else if (ota.includes(name)) type = "OTA";
+
+  return { name, type };
 }
 
 interface HotelDetailsModalProps {
@@ -289,7 +281,7 @@ export default function HotelDetailsModal({
                   <div className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.1em] flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-optimal-green animate-pulse"></span>
                     {t("hotelDetails.foundVia")}{" "}
-                    <span className="text-[var(--text-secondary)]">{hotel.price_info?.vendor || "SerpApi"}</span>
+                    <span className="text-[var(--text-secondary)]">{resolveOtaName(hotel.price_info?.vendor || "SerpApi").name}</span>
                   </div>
                 </div>
 

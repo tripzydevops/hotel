@@ -24,6 +24,7 @@ import {
   Database,
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastContext";
+import { normalizeVendor } from "@/lib/utils";
 
 const ScansPanel = () => {
   const { toast } = useToast();
@@ -606,7 +607,7 @@ const ScansPanel = () => {
                                   : "—"}
                               </td>
                               <td className="p-3 text-[var(--text-muted)]">
-                                {log.vendor || "—"}
+                                {normalizeVendor(log.vendor) || "—"}
                               </td>
                             </tr>
                           );
@@ -782,9 +783,7 @@ const ScansPanel = () => {
                                             }`}
                                         >
                                           <p className="text-[10px] text-[var(--text-muted)] uppercase">
-                                            {offer.vendor ||
-                                              offer.source ||
-                                              "Unknown"}
+                                            {normalizeVendor(offer.vendor || offer.source) || "Unknown"}
                                           </p>
                                           <p
                                             className={`text-sm font-bold ${isLowest

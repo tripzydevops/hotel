@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatCurrency, parsePrice } from "@/lib/utils";
+import { formatCurrency, parsePrice, normalizeVendor } from "@/lib/utils";
 import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
 import { ReactNode, useState } from "react";
 
@@ -82,7 +82,8 @@ export default function HotelTile(props: HotelTileProps) {
     ? parsePrice(bestOffer.price || 0)
     : parsePrice(props.currentPrice || 0);
     
-  const displayVendor = bestOffer?.vendor || bestOffer?.source || props.vendor || "UNSPECIFIED";
+  const rawVendor = bestOffer?.vendor || bestOffer?.source || props.vendor || "UNSPECIFIED";
+  const displayVendor = normalizeVendor(rawVendor);
   const currency = props.currency || bestOffer?.currency || "TRY";
 
   const {
@@ -226,7 +227,7 @@ export default function HotelTile(props: HotelTileProps) {
                     className="flex items-center justify-between p-2 rounded bg-[var(--deep-ocean-accent)]/20 border border-[var(--glass-border)]"
                   >
                     <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate max-w-[120px]">
-                      {offer.vendor || offer.source || "Other"}
+                      {normalizeVendor(offer.vendor || offer.source || "Other")}
                     </span>
                     <span className="text-[10px] font-bold text-[var(--text-primary)]">
                       {formatCurrency(parsePrice(offer.price || 0), currency)}

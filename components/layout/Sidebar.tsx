@@ -77,7 +77,7 @@ export default function Sidebar({
 
   const navItems = [
     {
-      label: "Market Price Search",
+      label: "Google Hotels",
       href: "/dashboard",
       icon: LayoutGrid,
     },
@@ -108,7 +108,7 @@ export default function Sidebar({
 
       {/* Primary Navigation */}
       <nav className="flex-1 px-6 space-y-1.5 overflow-y-auto custom-scrollbar pb-10">
-        {/* Market Price Search */}
+        {/* Google Hotels */}
         <Link
           href="/dashboard"
           className={`group flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all relative overflow-hidden ${pathname === "/dashboard"
@@ -126,7 +126,7 @@ export default function Sidebar({
             <LayoutGrid className="w-5 h-5" />
           </div>
           <span className="text-sm font-black tracking-[0.05em] uppercase">
-            Market Search
+            Google Hotels
           </span>
           {pathname === "/dashboard" && (
             <ChevronRight className="ml-auto w-4 h-4 text-[var(--soft-gold)] opacity-50" />
