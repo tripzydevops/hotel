@@ -16,7 +16,10 @@ import {
   Layers,
   Globe,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Star,
+  Target,
+  AlertTriangle
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,19 +104,28 @@ export default function HotelTile(props: HotelTileProps) {
 
   return (
     <motion.div
-      whileHover={{ y: -5 }}
-      layout
-      className={`glass-card group cursor-pointer flex flex-col h-full overflow-hidden border border-[var(--glass-border)] ${variant === "competitor" ? "border-l-4 border-l-[var(--soft-gold)]" : "border-l-4 border-l-emerald-500"}`}
+      whileHover={{ y: -12 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`group cursor-pointer flex flex-col h-full overflow-hidden glass-card bg-[var(--deep-ocean-lighter)] border-white/5 relative ${
+        variant === "target" 
+          ? "ring-1 ring-[var(--optimal-green)]/30 shadow-[0_20px_50px_-12px_rgba(16,185,129,0.3)]" 
+          : "ring-1 ring-[var(--soft-gold)]/20 shadow-[0_20px_50px_-12px_rgba(212,175,55,0.2)]"
+      }`}
     >
+      {/* Decorative Corner Accent */}
+      <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl -mr-16 -mt-16 transition-opacity duration-500 opacity-20 group-hover:opacity-40 ${
+        variant === "target" ? "bg-emerald-500" : "bg-[var(--soft-gold)]"
+      }`} />
+
       {/* Tactical Image Header */}
-      <div className="relative aspect-video w-full overflow-hidden bg-[var(--deep-ocean-accent)]" onClick={() => onViewDetails?.(props as any)}>
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[var(--deep-ocean-accent)]" onClick={() => onViewDetails?.(props as any)}>
         {imageUrl ? (
           <FallbackImage
             src={imageUrl}
             alt={name}
             fill
             priority={props.priority}
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            className="object-cover transition-transform duration-1000 group-hover:scale-110"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
@@ -122,184 +134,194 @@ export default function HotelTile(props: HotelTileProps) {
           </div>
         )}
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-ocean)]/90 via-[var(--deep-ocean)]/20 to-transparent" />
+        {/* Premium Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-ocean)] via-[var(--deep-ocean)]/10 to-transparent opacity-90" />
         
         {/* Badges Overlay */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-           {props.headerBadges}
-           {isScanning && (
-             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-optimal-green/20 backdrop-blur-md border border-optimal-green/30 text-[9px] font-black text-optimal-green uppercase animate-pulse">
-               <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-               Scanning
-             </span>
-           )}
+        <div className="absolute top-5 left-5 right-5 flex justify-between items-start pointer-events-none">
+          <div className="flex flex-col gap-2">
+            {props.headerBadges}
+            {isScanning && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-xl border border-emerald-500/30 text-[10px] font-black text-emerald-400 uppercase tracking-widest animate-pulse shadow-lg">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Scanning
+              </span>
+            )}
+            {props.stars && props.stars > 0 && (
+              <div className="flex gap-0.5 px-2.5 py-1.5 rounded-xl bg-[var(--deep-ocean)]/60 backdrop-blur-md border border-white/10 shadow-xl">
+                {[...Array(props.stars)].map((_, i) => (
+                  <Star key={i} className="w-2.5 h-2.5 fill-[var(--soft-gold)] text-[var(--soft-gold)]" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col items-end gap-2">
+            {variant === "target" && (
+              <span className="px-3.5 py-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-white/20">
+                Primary Target
+              </span>
+            )}
+            {props.isUndercut && (
+              <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--alert-red)] text-white text-[10px] font-black uppercase tracking-widest animate-pulse border border-white/20 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Price Deficit
+              </span>
+            )}
+          </div>
         </div>
 
-        {props.isUndercut && (
-          <div className="absolute top-3 right-3 px-2 py-1 bg-optimal-green text-[var(--overlay-text)] text-[9px] font-black rounded-sm uppercase tracking-tighter shadow-lg flex items-center gap-1">
-            <TrendingDown className="w-3 h-3" />
-            Optimal Price
+        {/* Bottom Metrics Overlay */}
+        <div className="absolute bottom-5 left-5 right-5 flex justify-between items-end pointer-events-none">
+          <div className="flex gap-2">
+            {props.rating && (
+              <div className="px-3 py-1.5 bg-[var(--deep-ocean)]/70 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center gap-1.5 text-[11px] font-black text-white shadow-2xl">
+                <Star className="w-3 h-3 fill-[var(--soft-gold)] text-[var(--soft-gold)]" />
+                {props.rating.toFixed(1)}
+              </div>
+            )}
+            {props.room_types && props.room_types.length > 0 && (
+              <div className="px-3 py-1.5 bg-[var(--deep-ocean)]/70 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center gap-1.5 text-[10px] font-black text-white uppercase tracking-widest shadow-2xl">
+                <Layers className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                {props.room_types.length} Rooms
+              </div>
+            )}
           </div>
-        )}
 
-        {props.rating && (
-          <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-[var(--overlay-bg)] backdrop-blur-md rounded border border-[var(--overlay-border)] flex items-center gap-1 text-[10px] font-bold text-[var(--overlay-text)]">
-            <span className="text-[11px] text-[var(--soft-gold)]">★</span>
-            {props.rating.toFixed(1)}
+          <div className="bg-white/10 backdrop-blur-2xl border border-white/20 px-4 py-2 rounded-2xl flex items-center gap-2.5 shadow-2xl pointer-events-auto hover:bg-white/20 transition-colors">
+            <Globe className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+              {displayVendor}
+            </span>
           </div>
-        )}
-
-        {/* Room Variety Badge */}
-        {props.room_types && props.room_types.length > 0 && (
-          <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-[var(--overlay-bg)] backdrop-blur-md rounded border border-[var(--overlay-border)] flex items-center gap-1 text-[9px] font-black text-[var(--overlay-text)] uppercase tracking-widest">
-            <Layers className="w-2.5 h-2.5 text-[var(--soft-gold)]" />
-            {props.room_types.length} Varieties
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="p-5 flex flex-col flex-1 bg-[var(--glass-bg)]">
-        {/* Core Identity */}
-        <div className="flex items-start justify-between mb-4" onClick={() => onViewDetails?.(props as any)}>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-black text-[var(--text-primary)] leading-tight tracking-tighter uppercase italic group-hover:text-[var(--soft-gold)] transition-colors truncate">
+      {/* Content Section */}
+      <div className="flex-1 p-8 flex flex-col">
+        <div className="flex items-start justify-between mb-6" onClick={() => onViewDetails?.(props as any)}>
+          <div className="flex-1 min-w-0 pr-6">
+            <h3 className="text-2xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tighter uppercase italic group-hover:text-[var(--soft-gold)] transition-colors line-clamp-2 mb-2">
               {name}
             </h3>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest flex items-center gap-1 truncate">
-              <MapPin className="w-3 h-3 text-[var(--soft-gold)]/50 flex-shrink-0" />
-              {props.location || "Location Unknown"}
-            </p>
-          </div>
-          
-          <div className="text-right flex-shrink-0 ml-4">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">
-              Lead Rate
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--soft-gold)] flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--soft-gold)] animate-pulse" />
+                {props.lastUpdated || "Live Feed"}
+              </span>
             </div>
-            <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic leading-none">
+          </div>
+
+          <div className="text-right flex-shrink-0 flex flex-col items-end">
+            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-1">
+              Optimized Rate
+            </span>
+            <div className="text-3xl font-black text-[var(--soft-gold)] tracking-tighter italic leading-none mb-2">
               {displayPriceValue > 0 ? formatCurrency(displayPriceValue, currency) : "---"}
             </div>
-            <div className="text-[9px] uppercase text-[var(--text-primary)] bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-sm mt-1.5 inline-block border border-[var(--soft-gold)]/20 font-black tracking-widest">
-              {displayVendor}
-            </div>
+            {trend !== "stable" && (
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-black ${
+                trend === "down" 
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {trend === "down" ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                <span>{changePercent > 0 ? "+" : ""}{changePercent.toFixed(1)}%</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Market Presence Section (Multiple OTAs) */}
+        {/* Market Presence Visualization */}
         {allOffers.length > 0 && (
-          <div className="mb-4 pt-4 border-t border-[var(--glass-border)]">
-            <div 
-              className="flex items-center justify-between cursor-pointer group/toggle mb-2"
-              onClick={() => setShowAllOffers(!showAllOffers)}
-            >
-              <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-[0.2em] opacity-60">
-                <Globe className="w-2.5 h-2.5" />
-                Market Presence ({allOffers.length})
+          <div className="mb-8 p-1 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Ota Distribution</span>
               </div>
-              {allOffers.length > 1 && (
-                <div className="text-[9px] font-black text-[var(--soft-gold)] flex items-center gap-1 uppercase tracking-widest">
-                  {showAllOffers ? "Collapse" : "Compare"}
-                  {showAllOffers ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </div>
-              )}
+              <span className="text-[10px] font-black text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-md">
+                {allOffers.length} Sources
+              </span>
             </div>
 
-            <div className="space-y-1.5">
-              {/* Primary Offer (Visual emphasis) */}
-              <div className="flex items-center justify-between p-2 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20">
-                <span className="text-[10px] font-black text-[var(--text-primary)] uppercase truncate max-w-[120px]">
-                  {displayVendor}
-                </span>
-                <span className="text-[11px] font-black text-[var(--soft-gold)] italic">
-                  {formatCurrency(displayPriceValue, currency)}
-                </span>
-              </div>
-
-              {/* Other Offers (Animated) */}
-              <AnimatePresence>
-                {showAllOffers && otherOffers.map((offer, idx) => (
-                  <motion.div
-                    key={`${offer.vendor}-${idx}`}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center justify-between p-2 rounded bg-[var(--deep-ocean-accent)]/20 border border-[var(--glass-border)]"
-                  >
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate max-w-[120px]">
-                      {offer.vendor || offer.source || "Other"}
+            <div className="p-3 space-y-1.5">
+              {(showAllOffers ? allOffers : allOffers.slice(0, 3)).map((offer, idx) => (
+                <div 
+                  key={`${offer.vendor}-${idx}`}
+                  className={`flex items-center justify-between p-3 rounded-2xl transition-all duration-300 ${
+                    idx === 0 
+                      ? "bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 shadow-[0_0_15px_rgba(212,175,55,0.05)]" 
+                      : "bg-white/[0.01] hover:bg-white/[0.03] border border-transparent hover:border-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`w-2 h-2 rounded-full ${idx === 0 ? "bg-[var(--soft-gold)] shadow-[0_0_10px_var(--soft-gold)]" : "bg-white/10"}`} />
+                    <span className={`text-[11px] font-bold uppercase tracking-tight truncate ${idx === 0 ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+                      {offer.vendor || offer.source || "Direct"}
                     </span>
-                    <span className="text-[10px] font-bold text-[var(--text-primary)]">
-                      {formatCurrency(parsePrice(offer.price || 0), currency)}
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className={`text-xs font-black italic ${idx === 0 ? "text-[var(--soft-gold)]" : "text-[var(--text-primary)]"}`}>
+                      {formatCurrency(offer.price || 0, currency)}
                     </span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                  </div>
+                </div>
+              ))}
+              
+              {allOffers.length > 3 && !showAllOffers && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAllOffers(true);
+                  }}
+                  className="w-full py-2 text-[9px] font-black text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-colors uppercase tracking-[0.2em]"
+                >
+                  Show +{allOffers.length - 3} More Intelligence Sources
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Intelligence Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4 pt-4 border-t border-[var(--glass-border)]" onClick={() => onViewDetails?.(props as any)}>
-          <div className="p-2 rounded bg-[var(--deep-ocean-accent)]/30 border border-[var(--glass-border)]">
-            <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1.5 opacity-60">
-              <RefreshCw className="w-2.5 h-2.5" />
-              Recency
-            </div>
-            <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
-              {props.lastUpdated || "Pending Sync"}
-            </div>
-          </div>
+        {/* Premium Action Hub */}
+        <div className="flex items-center gap-3 mt-auto pt-6 border-t border-white/5">
+          {onSetTarget && variant !== "target" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetTarget(id);
+              }}
+              className="flex-1 flex items-center justify-center gap-2.5 h-12 px-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-500 font-black text-[11px] uppercase tracking-widest group/target active:scale-95 shadow-lg hover:shadow-emerald-500/20"
+            >
+              <Target className="w-4 h-4 transition-transform duration-500 group-hover/target:rotate-180" />
+              <span>Mark as Target</span>
+            </button>
+          )}
 
-          <div className="p-2 rounded bg-[var(--deep-ocean-accent)]/30 border border-[var(--glass-border)]">
-            <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1.5 opacity-60">
-              <TrendingUp className="w-2.5 h-2.5" />
-              Shift
-            </div>
-            <div className={`text-[10px] font-bold flex items-center gap-1 ${
-              changePercent > 0 ? "text-emerald-500" : changePercent < 0 ? "text-rose-500" : "text-[var(--text-muted)]"
-            }`}>
-              {changePercent > 0 ? "+" : ""}{changePercent.toFixed(1)}%
-              {trend === "up" ? <ArrowUpRight className="w-3 h-3 text-emerald-500" /> : trend === "down" ? <ArrowDownRight className="w-3 h-3 text-rose-500" /> : <Minus className="w-3 h-3" />}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Hub */}
-        <div className="flex items-center gap-2 mt-auto pt-4 border-t border-[var(--glass-border)]/50">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails?.(props as any);
-            }}
-            className="flex-1 py-2.5 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-[10px] uppercase font-black tracking-[0.2em] hover:bg-[var(--soft-gold)] transition-all hover:text-[var(--deep-ocean)] flex items-center justify-center gap-2 shadow-sm"
-          >
-            Tactical Intel
-            <ExternalLink className="w-3 h-3" />
-          </button>
+          {variant === "target" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(props as any);
+              }}
+              className="flex-1 flex items-center justify-center gap-2.5 h-12 px-6 rounded-2xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] border border-[var(--soft-gold)] hover:brightness-110 transition-all duration-500 font-black text-[11px] uppercase tracking-widest group/view active:scale-95 shadow-[0_0_20px_var(--soft-gold-glow)]"
+            >
+              <ArrowUpRight className="w-4 h-4 transition-transform duration-500 group-hover/view:translate-x-1 group-hover/view:-translate-y-1" />
+              <span>Analyze Intel</span>
+            </button>
+          )}
           
-          <div className="flex items-center gap-1.5">
-            {variant === "competitor" && onSetTarget && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSetTarget(id);
-                }}
-                className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--soft-gold)] hover:border-[var(--soft-gold)] transition-all"
-                title="Set as My Hotel"
-              >
-                <Building2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-
+          <div className="flex gap-2.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(id, props as any);
               }}
-              className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--soft-gold)] transition-all"
-              title="Edit Intel"
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.08] text-[var(--text-muted)] hover:text-[var(--soft-gold)] hover:border-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/5 transition-all duration-300 active:scale-90"
+              title="Edit Parameters"
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-4 h-4" />
             </button>
             
             <button
@@ -307,10 +329,10 @@ export default function HotelTile(props: HotelTileProps) {
                 e.stopPropagation();
                 onDelete?.(id);
               }}
-              className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-alert-red hover:border-alert-red/30 transition-all"
-              title="Purge Intel"
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.08] text-[var(--text-muted)] hover:text-[var(--alert-red)] hover:border-[var(--alert-red)]/30 hover:bg-[var(--alert-red)]/5 transition-all duration-300 active:scale-90"
+              title="Purge Intelligence"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -318,4 +340,3 @@ export default function HotelTile(props: HotelTileProps) {
     </motion.div>
   );
 }
-

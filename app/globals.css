@@ -42,6 +42,16 @@
 
   --font-montserrat: "Montserrat", sans-serif;
   --font-inter: "Inter", sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+
+  /* Premium Elevations */
+  --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 10px 30px -5px rgba(212, 175, 55, 0.2);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  /* New Accents */
+  --royal-blue: #3B82F6;
+  --royal-blue-glow: rgba(59, 130, 246, 0.2);
 }
 
 :root.light {
@@ -95,14 +105,15 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== PREMIUM UI UTILITIES ===== */
 
 .glass-card {
-  background: var(--glass-bg);
+  background: linear-gradient(135deg, rgba(21, 41, 74, 0.7) 0%, rgba(15, 31, 57, 0.8) 100%);
   backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 16px;
+  border-radius: 2.5rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card::before {
@@ -114,9 +125,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--soft-gold);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 .glass-modal {

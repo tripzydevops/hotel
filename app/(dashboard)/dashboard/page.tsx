@@ -218,6 +218,7 @@ export default function Dashboard() {
         <DashboardHeader 
           lastUpdate={data?.last_updated ? formatDateTime(data.last_updated) : undefined}
           onAddHotel={handleOpenAddHotel}
+          onRefresh={fetchData}
           loading={loading || isRefreshing}
         />
 

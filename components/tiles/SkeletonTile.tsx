@@ -3,31 +3,35 @@
 export default function SkeletonTile({ large = false }: { large?: boolean }) {
   return (
     <div
-      className={`card-blur rounded-[2rem] ${large ? "p-8 sm:col-span-2 lg:col-span-2 lg:row-span-2" : "p-5"} flex flex-col gap-4 overflow-hidden`}
+      className={`card-blur rounded-[2rem] ${large ? "sm:col-span-2 lg:col-span-2 lg:row-span-2" : ""} flex flex-col gap-0 overflow-hidden border border-white/[0.05]`}
     >
-      <div className="flex items-center gap-4">
-        <div
-          className={`${large ? "w-16 h-16" : "w-10 h-10"} rounded-xl skeleton`}
-        />
-        <div className="flex-1">
-          <div
-            className={`h-3 ${large ? "w-32 mb-3" : "w-24 mb-2"} skeleton rounded`}
-          />
-          <div className={`h-4 ${large ? "w-48" : "w-32"} skeleton rounded`} />
+      {/* Header Image Skeleton */}
+      <div className="aspect-video w-full skeleton" />
+      
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex-1">
+            <div className="h-3 w-24 mb-2 skeleton rounded" />
+            <div className="h-5 w-40 skeleton rounded" />
+          </div>
+          <div className="text-right">
+            <div className="h-3 w-12 mb-2 skeleton rounded ml-auto" />
+            <div className="h-6 w-20 skeleton rounded" />
+          </div>
         </div>
-      </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center py-6">
-        <div
-          className={`${large ? "h-16 w-48" : "h-10 w-24"} skeleton rounded-xl mb-3`}
-        />
-        <div className="h-3 w-20 skeleton rounded" />
-      </div>
+        {/* Market Presence Skeleton */}
+        <div className="space-y-2 mb-6">
+          <div className="h-3 w-32 skeleton rounded" />
+          <div className="h-10 w-full skeleton rounded-xl" />
+          <div className="h-10 w-full skeleton rounded-xl opacity-50" />
+        </div>
 
-      <div className="pt-4 border-t border-[var(--overlay-border)] flex justify-between">
-        <div className="h-4 w-12 skeleton rounded" />
-        <div className="h-4 w-12 skeleton rounded" />
-        <div className="h-4 w-12 skeleton rounded" />
+        <div className="mt-auto pt-5 border-t border-white/[0.05] flex gap-2">
+          <div className="h-11 flex-1 skeleton rounded-xl" />
+          <div className="h-11 w-11 skeleton rounded-xl" />
+          <div className="h-11 w-11 skeleton rounded-xl" />
+        </div>
       </div>
     </div>
   );
