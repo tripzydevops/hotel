@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from fastapi import HTTPException
+from postgrest import CountMethod
 
 from backend.services.analysis_service import (
     _extract_price,
@@ -15,9 +16,8 @@ from backend.services.analysis_service import (
     get_price_for_room,
 )
 from backend.services.price_comparator import price_comparator
-from backend.utils.helpers import convert_currency, log_query
+from backend.utils.helpers import convert_currency
 from backend.utils.vendor_normalizer import normalize_vendor_name
-from backend.utils.room_normalizer import RoomTypeNormalizer
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import (
     generate_mentions,
@@ -42,7 +42,7 @@ def _fetch_settings(db: Client, uid: str):
     return db.table("settings").select("*").eq("user_id", uid).maybe_single().execute()
 
 def _fetch_unread_alerts(db: Client, uid: str):
-    return db.table("alerts").select("id", count="exact").eq("user_id", uid).eq("is_read", False).execute()
+    return db.table("alerts").select("id", count=CountMethod.exact).eq("user_id", uid).eq("is_read", False).execute()
 
 def _fetch_recent_searches(db: Client, uid: str):
     return db.table("query_logs").select("*").eq("user_id", uid).order("created_at", desc=True).limit(20).execute()
@@ -51,7 +51,7 @@ def _fetch_sessions(db: Client, uid: str):
     return db.table("scan_sessions").select("*").eq("user_id", uid).order("created_at", desc=True).limit(5).execute()
 
 def _fetch_active_scans(db: Client, uid: str):
-    return db.table("scan_sessions").select("id", count="exact").eq("user_id", uid).in_("status", ["pending", "running"]).execute()
+    return db.table("scan_sessions").select("id", count=CountMethod.exact).eq("user_id", uid).in_("status", ["pending", "running"]).execute()
 
 def _fetch_user_hotels(db: Client, uid: str):
     return (
@@ -222,7 +222,7 @@ async def get_dashboard_logic(
         # We fetch the latest 10 logs across all the user's active hotels.
         scan_history = []
         if all_hotels:
-            hids = [str(h["id"]) for h in all_hotels]
+            hids = [str(h.get("id")) for h in all_hotels if isinstance(h, dict) and h.get("id") is not None]
             hist_res = (
                 db.table("price_logs")
                 .select("*")
@@ -260,10 +260,18 @@ async def get_dashboard_logic(
                 .execute()
             )
             for drecord in dir_res.data or []:
-                directory_map[drecord["serp_api_id"]] = drecord
+                if isinstance(drecord, dict):
+                    sid = drecord.get("serp_api_id")
+                    if sid is not None:
+                        directory_map[sid] = drecord
 
         # 3. Batch Fetch Price Logs for all hotels using RPC (addresses N+1 issue)
-        hotel_ids = [str(h["id"]) for h in all_hotels]
+        hotel_ids = []
+        for h in all_hotels:
+            if isinstance(h, dict):
+                hid = h.get("id")
+                if hid is not None:
+                    hotel_ids.append(str(hid))
         hotel_prices_map = {}
         
         try:
@@ -281,16 +289,20 @@ async def get_dashboard_logic(
         missing_sentiment_hids = []
         missing_rating_sids = []
         for h in all_hotels:
-            dir_data = directory_map.get(h.get("serp_api_id"), {})
-            raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown")
-            if not raw_breakdown and h.get("serp_api_id"):
-                missing_sentiment_hids.append(str(h["id"]))
-            
-            review_count = h.get("review_count") or dir_data.get("review_count")
-            rating = h.get("rating") or dir_data.get("rating")
-            if (rating is None or rating == 0 or review_count is None or review_count == 0) and h.get("serp_api_id"):
-                missing_rating_sids.append(h["serp_api_id"])
-
+            if isinstance(h, dict):
+                serp_api_id = h.get("serp_api_id")
+                dir_data = directory_map.get(serp_api_id) if serp_api_id else {}
+                if not isinstance(dir_data, dict):
+                    dir_data = {}
+                raw_breakdown = h.get("sentiment_breakdown") or dir_data.get("sentiment_breakdown")
+                hid = h.get("id")
+                if not raw_breakdown and serp_api_id and hid is not None:
+                    missing_sentiment_hids.append(str(hid))
+                
+                review_count = h.get("review_count") or dir_data.get("review_count")
+                rating = h.get("rating") or dir_data.get("rating")
+                if (rating is None or rating == 0 or review_count is None or review_count == 0) and serp_api_id:
+                    missing_rating_sids.append(serp_api_id)
         recovered_sentiment_map = {}
         if missing_sentiment_hids:
             def _fetch_missing_sentiments(hids):
@@ -361,16 +373,14 @@ async def get_dashboard_logic(
             current_log = prices[0] if prices else None
             
             # AGENT_FIX: Historical Data Harvesting (Resilience against empty recent scans)
-            # Find the most recent log that actually contains offers and room types
+            # Find the most recent log that actually contains offers
             offers_log = current_log
-            rooms_log = current_log
             
             if prices:
                 # AGENT_FIX: Most-Complete-Log Heuristic
                 # Instead of just taking the LATEST log with any data (which might be a limited hourly price_search),
-                # we search the recent history for the most complete log (max offers/rooms).
+                # we search the recent history for the most complete log (max offers).
                 max_offers_count = -1
-                max_rooms_count = -1
                 
                 for p in prices:
                     # Count total offers across all possible keys
@@ -383,19 +393,11 @@ async def get_dashboard_logic(
                     if p_offers_count > max_offers_count:
                         max_offers_count = p_offers_count
                         offers_log = p
-                    
-                    # Count room types
-                    p_rooms = p.get("room_types")
-                    p_rooms_count = len(p_rooms) if (p_rooms and isinstance(p_rooms, list)) else 0
-                    if p_rooms_count > max_rooms_count:
-                        max_rooms_count = p_rooms_count
-                        rooms_log = p
                 
                 # If even the "best" found is empty, fallback to current_log
                 if max_offers_count <= 0:
                     offers_log = current_log
-                if max_rooms_count <= 0:
-                    rooms_log = current_log
+
 
             prev_log = None
             price_info = None
@@ -453,23 +455,28 @@ async def get_dashboard_logic(
                     # KAİZEN 2026: Enhanced Price Info Extraction
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
-                    # Room Types Extraction (Strict Fallback per USER request)
-                    # AGENT_FIX: Aggregate room types across ALL available price logs to avoid losing any room catalog entries
+                    # Room Types Extraction (Resilient Multi-Variant Aggregation)
                     all_rooms_seen = {}
                     if prices:
                         for p in prices:
                             for rt in (p.get("room_types") or []):
                                 if isinstance(rt, dict) and rt.get("name"):
-                                    code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
-                                    if code not in all_rooms_seen:
-                                        all_rooms_seen[code] = rt
-                    
-                    # Also include any room types from the master hotel record
+                                    name_key = rt.get("name", "").strip().lower()
+                                    price_key = str(rt.get("price") or "").strip()
+                                    source_key = str(rt.get("source") or rt.get("vendor") or "").strip().lower()
+                                    composite_key = f"{name_key}_{price_key}_{source_key}"
+                                    if composite_key not in all_rooms_seen:
+                                        all_rooms_seen[composite_key] = rt
+
+                    # Also include any unique room types from the master hotel record
                     for rt in (h.get("room_types") or []):
                         if isinstance(rt, dict) and rt.get("name"):
-                            code = RoomTypeNormalizer.normalize(rt.get("name"))["canonical_code"]
-                            if code not in all_rooms_seen:
-                                all_rooms_seen[code] = rt
+                            name_key = rt.get("name", "").strip().lower()
+                            price_key = str(rt.get("price") or "").strip()
+                            source_key = str(rt.get("source") or rt.get("vendor") or "").strip().lower()
+                            composite_key = f"{name_key}_{price_key}_{source_key}"
+                            if composite_key not in all_rooms_seen:
+                                all_rooms_seen[composite_key] = rt
                                 
                     raw_rooms = list(all_rooms_seen.values())
                     
