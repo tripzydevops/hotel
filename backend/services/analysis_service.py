@@ -176,92 +176,125 @@ def _extract_price(raw: Any, currency: Optional[str] = None) -> Optional[float]:
 def get_price_for_room(
     price_log: Dict[str, Any],
     target_room_type: str,
-    allowed_room_names_map: Optional[Dict[str, List[str]]] = None,
+    allowed_room_names_map: Dict[str, List[str]],
+    currency: Optional[str] = None,
 ) -> Tuple[Optional[float], Optional[str], float]:
     """
-    Intelligently extracts the price for a specific room type from a price log.
-    Uses fuzzy matching and category-based resolution.
-    Returns: (Price, Room Name, Match Confidence)
+    Finds the best matching room price within a price log.
+    STRICT SOURCE ROUTING:
+    - Standard -> Lead Price (top-level 'price') is the primary source.
+    - Deluxe/Suite -> 'room_types' array is the ONLY source.
     """
-    room_types = price_log.get("room_types") or []
-    lead_p = _extract_price(price_log.get("price"), currency=price_log.get("currency"))
-
-    if not room_types:
-        # Fallback to lead price if no room type breakdown exists
-        if lead_p:
-            return lead_p, "Standard (Auto)", 0.5
+    if not price_log:
         return None, None, 0.0
 
-    t_lower = (target_room_type or "").lower().strip()
-    active_currency = price_log.get("currency")
+    t_lower = target_room_type.lower().strip()
+    r_types = price_log.get("room_types") or []
+    
+    # Use currency from price_log if not explicitly provided
+    active_currency = currency or price_log.get("currency")
 
     # 1. OPTIMIZED MATCHING: EXACT NAME FIRST
-    for r in room_types:
-        if not isinstance(r, dict):
-            continue
-        r_name = (r.get("name") or "").strip().lower()
-        if r_name == t_lower:
-            p = _extract_price(r.get("price"), currency=active_currency)
-            if p is not None and p > 0:
-                return p, r.get("name"), 1.0
+    # If the user selected a specific room name from the dropdown, find it exactly.
+    if isinstance(r_types, list) and target_room_type:
+        for r in r_types:
+            if not isinstance(r, dict):
+                continue
+            r_name = (r.get("name") or "").strip().lower()
+            if r_name == t_lower:
+                p = _extract_price(r.get("price"), currency=active_currency)
+                if p is not None and p > 0:
+                    return p, r.get("name"), 1.0
 
-    # 2. CATEGORY DETECTION
-    # Hierarchy: Suite > Family > Deluxe > Standard
-    suite_keys = ["suite", "süit", "presidential", "kral", "villa", "apartment", "rezidans", "residence", "penthouse", "loft", "dublex", "dubpleks", "balayı", "honeymoon", "başkanlık"]
-    family_keys = ["family", "aile", "connection", "connected", "bağlantılı", "geniş", "quad", "triple"]
-    deluxe_keys = ["deluxe", "superior", "premium", "corner", "executive", "business", "privilege", "signature", "king", "queen", "kng"]
-    standard_keys = ["standard", "standart", "economy", "ekonomik", "promo", "base", "classic", "klasik", "budget", "twin", "double", "single", "tek", "çift", "yan oda", "oda", "room"]
+    # 2. CATEGORY DETECTION (Fallback to Keywords)
+    # Synchronizing with frontend's roomNormalization.ts logic
+    standard_keys = [
+        "standard",
+        "standart",
+        "economy",
+        "ekonomik",
+        "promo",
+        "base",
+        "classic",
+        "klasik",
+        "double",
+        "twin",
+        "single",
+        "tek",
+        "çift",
+    ]
+    is_standard = any(s in t_lower for s in standard_keys) or not target_room_type
+    is_suite = any(s in t_lower for s in ["suite", "süit"])
+    is_deluxe = any(s in t_lower for s in ["deluxe", "superior", "premium", "corner"])
 
-    target_cat = "standard"
-    if any(k in t_lower for k in suite_keys):
-        target_cat = "suite"
-    elif any(k in t_lower for k in family_keys):
-        target_cat = "family"
-    elif any(k in t_lower for k in deluxe_keys):
-        target_cat = "deluxe"
+    # 3. HANDLE STANDARD CATEGORY
+    if is_standard and not is_suite and not is_deluxe:
+        # Lead price is the most reliable "from" price for Standard in the market logs
+        lead_p = _extract_price(price_log.get("price"), currency=active_currency)
+        if lead_p is not None and lead_p > 0:
+            return lead_p, "Standard (Main)", 1.0
 
-    # 3. EXTRACT CATEGORIZED ROOMS FROM SCAN
-    rooms_by_cat = {"standard": [], "deluxe": [], "suite": [], "family": []}
-    
-    for r in room_types:
+        # Fallback within category if lead price is null
+        if isinstance(r_types, list) and r_types:
+            valid_prices = []
+            for r in r_types:
+                if not isinstance(r, dict):
+                    continue
+                r_name = (r.get("name") or "").lower()
+                # Must match standard keys OR be a safe generic name
+                if any(k in r_name for k in standard_keys) or not any(
+                    k in r_name
+                    for k in ["suite", "süit", "deluxe", "superior", "premium"]
+                ):
+                    p = _extract_price(r.get("price"), currency=active_currency)
+                    if p:
+                        valid_prices.append((p, r.get("name") or "Standard"))
+            if valid_prices:
+                valid_prices.sort(key=lambda x: x[0])
+                return valid_prices[0][0], valid_prices[0][1], 0.8
+        return None, None, 0.0
+
+    # 4. HANDLE PREMIUM CATEGORIES (Deluxe, Suite)
+    if not isinstance(r_types, list) or not r_types:
+        # LEGACY FALLBACK: If no room_types array exists, use the top-level lead price
+        # as a baseline even for non-standard room requests. This ensures historical
+        # continuity for logs (e.g. Jan/Feb) that lacked granular room mapping.
+        lead_p = _extract_price(price_log.get("price"), currency=active_currency)
+        if lead_p is not None and lead_p > 0:
+            return lead_p, "Legacy Fallback", 0.5
+        return None, None, 0.0
+
+    matches = []
+    for r in r_types:
         if not isinstance(r, dict):
             continue
         r_name = (r.get("name") or "").lower()
         p = _extract_price(r.get("price"), currency=active_currency)
-        if p is None or p <= 0:
+        if not p:
             continue
-        
-        # Determine room category
-        if any(k in r_name for k in suite_keys):
-            rooms_by_cat["suite"].append((p, r.get("name")))
-        elif any(k in r_name for k in family_keys):
-            rooms_by_cat["family"].append((p, r.get("name")))
-        elif any(k in r_name for k in deluxe_keys):
-            rooms_by_cat["deluxe"].append((p, r.get("name")))
-        else:
-            rooms_by_cat["standard"].append((p, r.get("name")))
 
-    # Sort rooms in each category by price (lowest first)
-    for cat in rooms_by_cat:
-        rooms_by_cat[cat].sort(key=lambda x: x[0])
+        # Strict keyword matching per category
+        if is_suite and any(
+            k in r_name for k in ["suite", "süit", "presidential", "kral"]
+        ):
+            matches.append((p, r.get("name"), 0.9))
+        elif is_deluxe and any(
+            k in r_name for k in ["deluxe", "superior", "premium", "corner"]
+        ):
+            # Verification: Ensure it's not actually a 'Standard' room with some weird name
+            if (
+                any(s in r_name for s in ["standard", "standart"])
+                and "deluxe" not in r_name
+            ):
+                continue
+            matches.append((p, r.get("name"), 0.9))
 
-    # 4. HIERARCHICAL RESOLUTION
-    if target_cat == "suite":
-        if rooms_by_cat["suite"]: return rooms_by_cat["suite"][0][0], rooms_by_cat["suite"][0][1], 0.9
-        if rooms_by_cat["deluxe"]: return rooms_by_cat["deluxe"][0][0], rooms_by_cat["deluxe"][0][1], 0.7
-        if rooms_by_cat["standard"]: return rooms_by_cat["standard"][0][0], rooms_by_cat["standard"][0][1], 0.5
-    elif target_cat == "deluxe":
-        if rooms_by_cat["deluxe"]: return rooms_by_cat["deluxe"][0][0], rooms_by_cat["deluxe"][0][1], 0.9
-        if rooms_by_cat["standard"]: return rooms_by_cat["standard"][0][0], rooms_by_cat["standard"][0][1], 0.6
-    else: # Standard
-        if rooms_by_cat["standard"]: return rooms_by_cat["standard"][0][0], rooms_by_cat["standard"][0][1], 0.9
-        if lead_p: return lead_p, "Standard (Main)", 1.0
-        if rooms_by_cat["deluxe"]: return rooms_by_cat["deluxe"][0][0], rooms_by_cat["deluxe"][0][1], 0.5
+    if matches:
+        # Pick the most representative (lowest) price for the selected category
+        matches.sort(key=lambda x: x[0])
+        return matches[0][0], matches[0][1], matches[0][2]
 
-    # Final Catch-all fallback to lead price if we have nothing else
-    if lead_p:
-        return lead_p, "Standard (Main Fallback)", 0.4
-
+    # No match found for requested room or its category
     return None, None, 0.0
 
 
@@ -742,7 +775,7 @@ async def perform_market_analysis(
         # Limit to last 100 logs for better historical/stay coverage
         logs_slice: List[Dict[str, Any]] = cast(List[Dict[str, Any]], p_logs)[:100]
 
-        for idx, p_log in enumerate(logs_slice):
+        for p_log in logs_slice:
             # AGENT_FEATURE: Prioritize check_in_date for actual stay-based analysis
             # Current dashboard 'Rate Spread' expects stay dates, not scan times.
             raw_date = p_log.get("check_in_date") or p_log.get("recorded_at")
@@ -792,7 +825,8 @@ async def perform_market_analysis(
                     # Logs are sorted desc by recorded_at, so the 'next' log in the loop
                     # is actually the 'previous' chronological scan.
                     # Find the next log for the SAME check_in_date
-                    for next_log in logs_slice[idx + 1 :]:
+                    current_index = logs_slice.index(p_log)
+                    for next_log in logs_slice[current_index + 1 :]:
                         if next_log.get("check_in_date") == p_log.get("check_in_date"):
                             p_v, _, _ = get_price_for_room(
                                 next_log, room_type, allowed_room_names_map
@@ -806,7 +840,6 @@ async def perform_market_analysis(
                             break
 
                     label = "Price Scan"
-                    event_type = "info"
                     if locale == "tr":
                         label = "Fiyat Taraması"
 
@@ -821,31 +854,8 @@ async def perform_market_analysis(
                             if locale == "tr":
                                 label = "Fiyat Artışı"
 
-                    # AGENT_FEATURE: Parity Breach Detection
-                    # If target hotel and has parity_offers, check for OTA undercutting
-                    if is_target and p_log.get("parity_offers"):
-                        offers = p_log.get("parity_offers") or []
-                        vendor_prices = []
-                        for o in offers:
-                            o_p = _extract_price(o.get("price"), currency=p_log.get("currency"))
-                            if o_p:
-                                vendor_prices.append(o_p)
-                        
-                        if vendor_prices:
-                            min_vendor = min(vendor_prices)
-                            conv_min_v = convert_currency(
-                                min_vendor, p_log.get("currency") or "USD", display_currency
-                            )
-                            # If OTA is more than 3% cheaper, mark as warning
-                            if conv_min_v < conv_p * 0.97:
-                                label = "Parity Breach"
-                                event_type = "warning"
-                                if locale == "tr":
-                                    label = "Parite İhlali"
-
                     event = {
                         "price": float(conv_p),
-                        "type": event_type,
                         "recorded_at": p_log.get("recorded_at"),
                         "vendor": normalize_vendor_name(p_log.get("vendor") or "Direct"),
                         "label": label,
@@ -860,10 +870,8 @@ async def perform_market_analysis(
                                 "is_historical", False
                             )
                     else:
-                        # Competitor Mapping - Exclude target from comp_prices_map for accurate averages
                         if hid not in daily_snapshot_map[date_key]["comp_prices_map"]:
                             daily_snapshot_map[date_key]["comp_prices_map"][hid] = {
-                                "id": hid,
                                 "name": h.get("name", "Competitor"),
                                 "price": float(conv_p),
                                 "intraday_events": [],
