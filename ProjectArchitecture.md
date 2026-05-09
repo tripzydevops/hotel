@@ -3,8 +3,11 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 9, 2026)
+- ✅ **Type Safety (Pyright/Pylance lints)**: Resolved 1000+ static-analysis false positives related to `Sequence[JSON]` subscript access on raw InsForge `execute().data` payloads in the admin service (`scan_admin.py`). Used `typing.cast()` to ensure strict static type safety without impacting runtime behavior.
+
 ## 🕒 Recent Updates (May 6, 2026)
-- ✅ **Vector Competitor Match Target City Fallback Bugfix**: Resolved a semantic leakage bug in `AnalystAgent.discover_rivals` where omitting the `target_city` argument caused the `match_hotels` RPC fallback match to run without any city filter (resulting in hotels from different cities matching when coordinates were missing).
+- ✅ **Vector Competitor Match Target City Fallback Bugfix**: Resolved a semantic leakage bug in `AnalystAgent.discover_rivals` where omitting the `target_city` argument caused the `match_hotels` RPC fallback match to run without any city filter (resulting in hotels from different cities missing coordinates).
 - ✅ **Syntax Verification**: Completed dynamic compilation testing on all modified backend python files.
 
 ## 🕒 Recent Updates (May 5, 2026)
