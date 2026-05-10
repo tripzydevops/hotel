@@ -8,16 +8,22 @@ from dotenv import load_dotenv
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Load environment variables from .env
-load_dotenv()
+# Load environment variables from .env.local
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env.local"))
+load_dotenv(dotenv_path=env_path)
 
 from backend.services.providers.dataforseo_provider import dataforseo_provider
-from backend.services.insforge_client import insforge
+from backend.utils.db import get_insforge_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("repro_scan")
 
 async def test_submission():
+    insforge = get_insforge_db(admin=True)
+    if not insforge:
+        print("Failed to initialize DB client")
+        return
+
     # Get monitored hotels
     monitored_res = (
         insforge.table("user_hotels")
@@ -33,8 +39,12 @@ async def test_submission():
     hotels_to_scan = []
     seen_hotels = set()
     for item in monitored_res.data:
+        if not isinstance(item, dict):
+            continue
         h = item.get("hotels")
-        if not h or h.get("id") in seen_hotels:
+        if not isinstance(h, dict):
+            continue
+        if h.get("id") in seen_hotels:
             continue
         if h.get("property_token") or h.get("serp_api_id"):
             pref_currency = item.get("preferred_currency")

@@ -11,6 +11,7 @@ import {
   Zap,
   Globe,
   RefreshCcw,
+  Eye,
 } from "lucide-react";
 import { HotelWithPrice } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,7 @@ interface RateMatrixProps {
 const DEFAULT_OTA_COUNT = 6;
 
 import { PLAN_LIMITS } from "@/lib/constants";
+import { useModalContext } from "@/components/ui/ModalContext";
 
 export default function RateMatrix({
   targetHotel,
@@ -32,6 +34,7 @@ export default function RateMatrix({
   userPlan = "trial",
 }: RateMatrixProps) {
   const { userId } = useAuth();
+  const { handleOpenDetails } = useModalContext();
 
   const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
   const currency = targetHotel?.price_info?.currency || "TRY";
@@ -409,7 +412,10 @@ export default function RateMatrix({
                   key={comp.id || idx}
                   className={`group hover:bg-white/5 transition-all ${isTarget ? "bg-blue-500/5 hover:bg-blue-500/10" : ""}`}
                 >
-                  <td className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[#050B18]/90 backdrop-blur-sm z-10">
+                  <td
+                    onClick={() => handleOpenDetails(comp)}
+                    className="py-5 pl-4 flex items-center gap-3 sticky left-0 bg-[#050B18]/90 backdrop-blur-sm z-10 cursor-pointer hover:bg-white/10 transition-all duration-300"
+                  >
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isTarget ? "bg-blue-500/20 border-blue-500/30" : "bg-white/5 border-[var(--overlay-border)]"}`}
                     >
@@ -419,12 +425,15 @@ export default function RateMatrix({
                         #{idx + 1}
                       </span>
                     </div>
-                    <div>
-                      <p
-                        className={`font-bold text-xs ${isTarget ? "text-blue-400" : "text-[var(--overlay-text)]"}`}
-                      >
-                        {comp.name}
-                      </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className={`font-bold text-xs truncate ${isTarget ? "text-blue-400" : "text-[var(--overlay-text)]"}`}
+                        >
+                          {comp.name}
+                        </p>
+                        <Eye className="w-3.5 h-3.5 text-[var(--soft-gold)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 shrink-0" />
+                      </div>
                       <p className="text-[9px] text-slate-500 uppercase tracking-tighter">
                         {isTarget ? "My Hotel" : "Competitor"}
                       </p>

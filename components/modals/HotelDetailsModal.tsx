@@ -18,6 +18,8 @@ import {
   Info,
   Star,
   ExternalLink,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
@@ -56,6 +58,7 @@ export default function HotelDetailsModal({
   const [activeTab, setActiveTab] = useState<
     "overview" | "amenities" | "offers" | "gallery" | "rooms" | "reviews"
   >("overview");
+  const [showStandardInRooms, setShowStandardInRooms] = useState(false);
 
   if (!hotel) return null;
 
@@ -511,48 +514,179 @@ export default function HotelDetailsModal({
                   || (hotel?.room_types?.length ? hotel.room_types : null)
                   || [];
                 const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
-                if (room_types && room_types.length > 0) {
-                  return (
-                    <div className="grid grid-cols-1 gap-4">
-                      {room_types.map((room, index) => (
-                        <div key={index} className="bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border border-[var(--glass-border)] hover:border-[var(--soft-gold)]/40 rounded-xl">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] group-hover:border-[var(--soft-gold)]/30 transition-all">
-                              <Building2 className="w-5 h-5 text-[var(--soft-gold)]" />
-                            </div>
-                            {(() => {
-                              const ota = resolveOtaName((room as any).source);
-                              return (
-                                <div>
-                                  <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                                    {room.name}
-                                  </h4>
-                                  <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                                    {ota.name} · {ota.type}
-                                  </p>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-black text-[var(--soft-gold)] italic">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: displayCurrency,
-                              }).format(parsePrice(room.price))}
-                            </div>
-                            <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
-                              {t("common.availableNow")}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
+
+                const standardKeywords = [
+                  "standard", "standart", "economy", "ekonomik", "promo",
+                  "base", "classic", "klasik", "double", "twin", "single",
+                  "tek", "çift", "roh", "run of house", "basic", "budget", 
+                  "promotion", "promotional", "run of the house"
+                ];
+
+                const isStandardRoom = (name?: string) => {
+                  const lowerName = (name || "").toLowerCase();
+                  return standardKeywords.some(keyword => lowerName.includes(keyword));
+                };
+
+                const getRoomCategory = (name?: string) => {
+                  const lower = (name || "").toLowerCase();
+                  if (lower.includes("suite") || lower.includes("süit") || lower.includes("penthouse") || lower.includes("presidential") || lower.includes("royal")) {
+                    return {
+                      label: "Suite / Elite",
+                      badgeClass: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+                      glowClass: "border-amber-500/20 hover:border-amber-500/50 shadow-lg shadow-amber-500/[0.02]",
+                      iconBg: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+                    };
+                  }
+                  if (lower.includes("deluxe") || lower.includes("delüks") || lower.includes("luxury")) {
+                    return {
+                      label: "Deluxe",
+                      badgeClass: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+                      glowClass: "border-rose-500/20 hover:border-rose-500/50 shadow-lg shadow-rose-500/[0.02]",
+                      iconBg: "bg-rose-500/10 border-rose-500/30 text-rose-300",
+                    };
+                  }
+                  if (lower.includes("executive") || lower.includes("club") || lower.includes("villa")) {
+                    return {
+                      label: "Executive",
+                      badgeClass: "bg-violet-500/10 text-violet-300 border-violet-500/20",
+                      glowClass: "border-violet-500/20 hover:border-violet-500/50 shadow-lg shadow-violet-500/[0.02]",
+                      iconBg: "bg-violet-500/10 border-violet-500/30 text-violet-300",
+                    };
+                  }
+                  if (lower.includes("superior") || lower.includes("süperior") || lower.includes("premium")) {
+                    return {
+                      label: "Superior",
+                      badgeClass: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+                      glowClass: "border-indigo-500/20 hover:border-indigo-500/50 shadow-lg shadow-indigo-500/[0.02]",
+                      iconBg: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
+                    };
+                  }
+                  if (lower.includes("family") || lower.includes("aile") || lower.includes("connecting") || lower.includes("studio")) {
+                    return {
+                      label: "Family / Studio",
+                      badgeClass: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+                      glowClass: "border-emerald-500/20 hover:border-emerald-500/50 shadow-lg shadow-emerald-500/[0.02]",
+                      iconBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+                    };
+                  }
+                  const isStd = isStandardRoom(name);
+                  if (isStd) {
+                    return {
+                      label: "Base",
+                      badgeClass: "bg-slate-500/10 text-slate-300 border-slate-500/20",
+                      glowClass: "border-[var(--glass-border)] hover:border-[var(--soft-gold)]/30",
+                      iconBg: "bg-[var(--deep-ocean-accent)] border-[var(--glass-border)] text-[var(--soft-gold)] group-hover:border-[var(--soft-gold)]/30",
+                    };
+                  }
+                  return {
+                    label: "Premium Option",
+                    badgeClass: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+                    glowClass: "border-cyan-500/20 hover:border-cyan-500/50 shadow-lg shadow-cyan-500/[0.02]",
+                    iconBg: "bg-cyan-500/10 border-cyan-500/30 text-cyan-300",
+                  };
+                };
+
+                const premiumRooms = room_types.filter(room => !isStandardRoom(room.name));
+                const roomsToRender = showStandardInRooms ? room_types : premiumRooms;
+                const hasStandardRoomsFiltered = room_types.length > premiumRooms.length;
+
                 return (
-                  <div className="p-4 text-center text-slate-400 uppercase text-xs tracking-wider">
-                    No room data available.
+                  <div className="space-y-4">
+                    {/* Premium Filtering Control Banner */}
+                    {hasStandardRoomsFiltered && (
+                      <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-[var(--soft-gold)]/20 transition-all">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-[var(--soft-gold)] animate-pulse" />
+                            <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
+                              Smart Room Filtering Active
+                            </h4>
+                          </div>
+                          <p className="text-xs text-[var(--text-muted)] mt-1">
+                            {showStandardInRooms 
+                              ? "Showing all room types (including standard base rooms)." 
+                              : "Currently showing only premium upgrades and suite alternatives. Standard base rooms are hidden."}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowStandardInRooms(!showStandardInRooms)}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--deep-ocean-accent)] hover:bg-[var(--soft-gold)] hover:text-[var(--deep-ocean)] text-xs font-bold uppercase tracking-wider text-[var(--soft-gold)] transition-all border border-[var(--glass-border)] hover:border-transparent cursor-pointer"
+                        >
+                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                          {showStandardInRooms ? "Hide Standard Rooms" : "Show All Rooms"}
+                        </button>
+                      </div>
+                    )}
+
+                    {roomsToRender.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4">
+                        {roomsToRender.map((room, index) => {
+                          const category = getRoomCategory(room.name);
+                          
+                          return (
+                            <div 
+                              key={index} 
+                              className={`bg-[var(--glass-bg)] p-5 flex justify-between items-center group hover:bg-[var(--glass-bg-accent)] transition-all border rounded-xl ${category.glowClass}`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all ${category.iconBg}`}>
+                                  <Building2 className="w-5 h-5" />
+                                </div>
+                                {(() => {
+                                  const ota = resolveOtaName((room as any).source);
+                                  return (
+                                    <div>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                          {room.name}
+                                        </h4>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border rounded ${category.badgeClass}`}>
+                                          {category.label}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                        {ota.name} · {ota.type}
+                                      </p>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xl font-black text-[var(--soft-gold)] italic">
+                                  {new Intl.NumberFormat("en-US", {
+                                    style: "currency",
+                                    currency: displayCurrency,
+                                  }).format(parsePrice(room.price))}
+                                </div>
+                                <span className="text-[9px] text-optimal-green font-black uppercase tracking-widest mt-1 block">
+                                  {t("common.availableNow")}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-8 text-center rounded-xl space-y-4">
+                        <div className="w-12 h-12 rounded-full bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] mx-auto">
+                          <Building2 className="w-6 h-6 text-[var(--soft-gold)]" />
+                        </div>
+                        <div className="max-w-xs mx-auto">
+                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
+                            No Premium Upgrades Detected
+                          </h4>
+                          <p className="text-xs text-[var(--text-muted)] mt-1">
+                            Only standard room types are available for this property. Would you like to view the base room rates?
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowStandardInRooms(true)}
+                          className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black uppercase tracking-widest rounded-lg hover:bg-white transition-all cursor-pointer"
+                        >
+                          Show Base Room Rates
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })()}

@@ -32,12 +32,30 @@ class RoomTypeNormalizer:
         "double": "DBL",
         "dbl": "DBL",
         "iki": "DBL",
-        "cift": "DBL",  # Turkish 'iki' (two), 'cift' (double)
+        "cift": "DBL",
+        "çift": "DBL", # Turkish 'iki' (two), 'cift' (double)
         "twin": "TW",
         "tw": "TW",
-        "tek": "TW",  # Turkish 'tek' (single/twin context usually)
+        "tek": "TW",
+        "tekli": "TW",
+        "ayri": "TW",
+        "ayrı": "TW", # Turkish 'tek' (single/twin), 'ayri' (separate)
         "single": "SGL",
         "sgl": "SGL",
+        "triple": "TRP",
+        "trp": "TRP",
+        "uc": "TRP",
+        "üç": "TRP", # Turkish 'üç' (three)
+        "quad": "QUD",
+        "qud": "QUD",
+        "dort": "QUD",
+        "dört": "QUD", # Turkish 'dört' (four)
+        "sofa": "SOB",
+        "sofabed": "SOB",
+        "cekyat": "SOB",
+        "çekyat": "SOB",
+        "çekyatlı": "SOB",
+        "kanepe": "SOB", # Sofa beds
         # Classes / Quality
         "standard": "STD",
         "std": "STD",
@@ -46,12 +64,19 @@ class RoomTypeNormalizer:
         "dlx": "DLX",
         "superior": "SUP",
         "sup": "SUP",
+        "genis": "SUP",
+        "geniş": "SUP",
         "club": "CLB",
         "executive": "EXC",
         "exec": "EXC",
         "suite": "STE",
         "suit": "STE",
+        "süit": "STE",
         "sut": "STE",
+        "junior": "JNR",
+        "jr": "JNR",
+        "presidential": "PRS",
+        "royal": "RYL",
         "grand": "GRD",
         "premium": "PRM",
         "prm": "PRM",
@@ -60,22 +85,30 @@ class RoomTypeNormalizer:
         "economy": "ECO",
         "ekonomik": "ECO",
         "promo": "ECO",
+        "buyuk": "KNG",
+        "büyük": "KNG",
         # Views
         "sea": "SV",
         "ocean": "SV",
         "deniz": "SV",
         "city": "CV",
         "sehir": "CV",
+        "şehir": "CV",
         "garden": "GV",
         "bahce": "GV",
+        "bahçe": "GV",
         "land": "LV",
         "kara": "LV",
         "pool": "PV",
         "havuz": "PV",
         "mountain": "MV",
         "dag": "MV",
+        "dağ": "MV",
         "partial": "PRT",
-        "kismi": "PRT",  # Partial view modifier
+        "kismi": "PRT",
+        "kısmi": "PRT",
+        "manzarali": "V",
+        "manzaralı": "V", # Generic view suffix
         # Attributes
         "balcony": "BAL",
         "balkon": "BAL",
@@ -84,10 +117,17 @@ class RoomTypeNormalizer:
         "teras": "TER",
         "corner": "CNR",
         "kose": "CNR",
+        "köşe": "CNR",
         "non-smoking": "NS",
         "nonsmoking": "NS",
         "sigara": "NS",
-        # Missing high-probability tokens added in Phase 3
+        "smoking": "NS",
+        "accessible": "ACC",
+        "disabled": "ACC",
+        "wheelchair": "ACC",
+        "engelli": "ACC",
+        "uygun": "ACC", # Often used as 'engelliye uygun'
+        # Special Types
         "apart": "APT",
         "aprt": "APT",
         "apartman": "APT",
@@ -108,6 +148,7 @@ class RoomTypeNormalizer:
         "pnt": "PNT",
         "duplex": "DPX",
         "dublex": "DPX",
+        "loft": "LFT",
     }
 
     # 2. Canonical Token Definitions (for ordering and naming)
@@ -116,35 +157,45 @@ class RoomTypeNormalizer:
         "QN": 1,
         "DBL": 1,
         "TW": 1,
-        "SGL": 1,  # Beds first
+        "SGL": 1,
+        "TRP": 1,
+        "QUD": 1,
+        "SOB": 1, # Beds/Sleeping first
         "STE": 2,
         "DLX": 2,
         "SUP": 2,
         "STD": 2,
         "CLB": 2,
         "EXC": 2,
+        "JNR": 2,
+        "PRS": 2,
+        "RYL": 2,
         "GRD": 2,
         "PRM": 2,
         "FAM": 2,
-        "ECO": 2,  # Class second
-        "SV": 3,
-        "CV": 3,
-        "GV": 3,
-        "LV": 3,
-        "PV": 3,
-        "MV": 3,  # View third
-        "BAL": 4,
-        "TER": 4,
-        "CNR": 4,  # Attributes last
-        # Missing high-probability tokens added in Phase 3
+        "ECO": 2,
         "APT": 2,
         "STU": 2,
         "VIL": 2,
         "BUN": 2,
         "PNT": 2,
         "DPX": 2,
+        "LFT": 2, # Class second
+        "SV": 3,
+        "CV": 3,
+        "GV": 3,
+        "LV": 3,
+        "PV": 3,
+        "MV": 3,
+        "PRT": 3,
+        "V": 3, # View third
+        "BAL": 4,
+        "TER": 4,
+        "CNR": 4,
+        "NS": 4,
+        "ACC": 4,
         "HMN": 4,
-        "CON": 4,
+        "CON": 4, # Attributes last
     }
 
     CANONICAL_NAMES = {
@@ -153,12 +204,18 @@ class RoomTypeNormalizer:
         "DBL": "Double",
         "TW": "Twin",
         "SGL": "Single",
+        "TRP": "Triple",
+        "QUD": "Quad",
+        "SOB": "Sofa Bed",
         "STE": "Suite",
         "DLX": "Deluxe",
         "SUP": "Superior",
         "STD": "Standard",
         "CLB": "Club",
         "EXC": "Executive",
+        "JNR": "Junior",
+        "PRS": "Presidential",
+        "RYL": "Royal",
         "GRD": "Grand",
         "PRM": "Premium",
         "FAM": "Family",
@@ -169,12 +226,13 @@ class RoomTypeNormalizer:
         "LV": "Land View",
         "PV": "Pool View",
         "MV": "Mountain View",
+        "V": "View",
         "BAL": "Balcony",
         "TER": "Terrace",
         "CNR": "Corner",
         "PRT": "Partial",
         "NS": "Non-Smoking",
-        # Missing high-probability tokens added in Phase 3
+        "ACC": "Accessible",
         "APT": "Apart",
         "STU": "Studio",
         "VIL": "Villa",
@@ -183,6 +241,7 @@ class RoomTypeNormalizer:
         "CON": "Connected",
         "PNT": "Penthouse",
         "DPX": "Duplex",
+        "LFT": "Loft",
     }
 
     # 3. Common OTA/Vendor names to filter out of room type catalogs
@@ -194,7 +253,8 @@ class RoomTypeNormalizer:
         "destinia", "findhotel", "snap travel", "super.com", "nuitee", "prestigia",
         "hoteltonight", "lastminute.com", "ebookers", "opodo", "edreams", "gotogate",
         "tatilbudur", "otelz", "etstur", "jollytur", "jolly", "setur", "neredekal", "odamax",
-        "gezinomi", "eccetur", "tatilsepeti", "neredekal.com", "odamax.com", "setur.com.tr"
+        "gezinomi", "eccetur", "tatilsepeti", "neredekal.com", "odamax.com", "setur.com.tr",
+        "hotelrunner", "rezturk", "giata", "travelgate", "webbeds", "hotelbeds"
     }
 
     @classmethod
@@ -280,7 +340,7 @@ class RoomTypeNormalizer:
         found_tokens: Set[str] = set()
         for word in words:
             if word in token_map:
-                found_tokens.add(token_map[word])
+                found_tokens.add(str(token_map[word]))
 
         # If it's empty or has no valid room indicators, it was likely just a vendor name/title
         is_vendor = not words or (
@@ -293,14 +353,23 @@ class RoomTypeNormalizer:
             list(found_tokens), key=lambda t: category_order.get(t, 99)
         )
 
+        # 4. Post-processing: Remove redundant generic 'V' if specific view exists
+        if "V" in found_tokens and any(t in found_tokens for t in {"SV", "CV", "GV", "LV", "PV", "MV"}):
+            sorted_tokens = [t for t in sorted_tokens if t != "V"]
+
         if not sorted_tokens:
-            return {
-                "original": raw_string,
-                "canonical_code": "ROH",
-                "canonical_name": raw_string.strip(),
-                "tokens": [],
-                "is_vendor": is_vendor
-            }
+            # Check for generic room terms to assign STD as fallback
+            generic_terms = {"oda", "room", "standart", "standard", "odası"}
+            if any(w in words for w in generic_terms):
+                sorted_tokens = ["STD"]
+            else:
+                return {
+                    "original": raw_string,
+                    "canonical_code": "ROH",
+                    "canonical_name": raw_string.strip(),
+                    "tokens": [],
+                    "is_vendor": is_vendor
+                }
 
         canonical_code = "-".join(sorted_tokens)
 
