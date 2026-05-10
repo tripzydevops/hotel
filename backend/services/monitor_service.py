@@ -782,6 +782,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                     "result": result,
                     "scan_task_id": meta["id"],
                     "batch_id": meta.get("batch_id"),
+                    "task_type": meta.get("task_type"),  # [FIX 2026-05-10] Forward task_type for OTA protection
                 }
             )
 

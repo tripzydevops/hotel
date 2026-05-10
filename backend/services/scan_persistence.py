@@ -72,7 +72,7 @@ class ScanPersistenceService:
             }
             # Use existing RPC for atomic appending
             db.rpc("append_scan_raw_payload", {
-                "session_id": str(session_id),
+                "session_id": session_id,
                 "payload_item": vault_item
             }).execute()
         except Exception as e:
@@ -277,7 +277,7 @@ class ScanPersistenceService:
                     .maybe_single()
                     .execute()
                 )
-                hotel_context = res.data or {}
+                hotel_context = cast(Dict[str, Any], res.data or {}) if res else {}
             except Exception:
                 hotel_context = {}
 
@@ -363,7 +363,7 @@ class ScanPersistenceService:
                         continue
 
                     text = format_room_type_for_embedding(
-                        room_dict, hotel_context=hotel_ctx
+                        room_dict, hotel_context=(hotel_ctx or {})
                     )
                     rooms_to_embed.append((hotel_id, room_dict, text))
 
@@ -511,8 +511,9 @@ class ScanPersistenceService:
                     .maybe_single()
                     .execute()
                 )
-                existing_sentiment = (existing_res.data or {}).get(
-                    "sentiment_breakdown"
+                existing_sentiment = (
+                    cast(Dict[str, Any], existing_res.data or {}).get("sentiment_breakdown")
+                    if existing_res else []
                 ) or []
             except Exception:
                 existing_sentiment = []
@@ -602,7 +603,7 @@ class ScanPersistenceService:
                 .execute()
             )
 
-            for item in res.data or []:
+            for item in cast(List[Dict[str, Any]], res.data or []):
                 hid = item["hotel_id"]
                 if hid not in history_map:
                     history_map[hid] = []
@@ -623,7 +624,7 @@ class ScanPersistenceService:
                 .execute()
             )
 
-            for hotel in res.data or []:
+            for hotel in cast(List[Dict[str, Any]], res.data or []):
                 metadata_map[str(hotel["id"])] = hotel
         except Exception as e:
             logger.error(f"Failed to fetch hotel metadata: {e}")
@@ -784,6 +785,22 @@ class ScanPersistenceService:
             []
         )
         is_shallow = len(offers) < 5 and not is_estimated
+
+        # [FIX 2026-05-10] OTA Protection: Detect thin price_search results
+        # (Mirroring logic from batch_sync_extraction_results to prevent 4-hourly price updates
+        # from wiping out richer weekly hotel_info OTA offers and room catalogs.)
+        task_type = result.get("task_type") or price_data.get("task_type")
+        is_price_search = task_type == "price_search"
+        is_thin_offers = (
+            len(offers) <= 1
+            and all(
+                (o.get("source") or "").lower() in ["direct search", "direct", ""]
+                for o in offers
+            )
+        ) if offers else True
+        
+        should_protect_ota = is_price_search and is_thin_offers
+
         # Room Types Priority: Prefer rich catalog objects over simple string names
         # KAİZEN 2026: Use unified normalization helper to prevent "Target Chamber" UI bug
         current_room_types = self._normalize_room_types(
@@ -824,7 +841,7 @@ class ScanPersistenceService:
             .execute()
         )
 
-        current_hotel = hotel_data_res.data if hotel_data_res else {}
+        current_hotel = cast(Dict[str, Any], hotel_data_res.data if hotel_data_res and hotel_data_res.data else {})
         existing_breakdown = (
             current_hotel.get("sentiment_breakdown") if current_hotel else []
         ) or []
@@ -883,8 +900,8 @@ class ScanPersistenceService:
         for field in static_fields:
             new_val = price_data.get(field)
             if field == "room_types":
-                # Ensure we use rich catalog if available even if 'room_types' field exists (which is often just strings)
-                new_val = result.get("room_catalog") or price_data.get("room_types") or price_data.get("all_rooms")
+                # [KAIZEN 2026] Use normalized room types pre-calculated above
+                new_val = current_room_types
             if not new_val:
                 continue
 
@@ -909,14 +926,31 @@ class ScanPersistenceService:
             elif (
                 field == "room_types" and isinstance(new_val, list) and len(new_val) > 0
             ):
-                # Always snapshot room types if found, to keep the UI fresh
-                should_update = True
+                # [FIX 2026-05-10] Protect existing rich room types if current scan is a thin price search
+                if should_protect_ota and current_hotel and current_hotel.get("room_types"):
+                    should_update = False
+                else:
+                    should_update = True
             elif field == "currency" and new_val != existing_val:
                 # Force update currency if it changed (e.g. was None or different)
                 should_update = True
 
             if should_update:
                 meta_update[field] = new_val
+
+        # [FIX 2026-05-10] Write back aggregated offers if not protected
+        if offers and not should_protect_ota:
+            meta_update["offers"] = copy.deepcopy(offers)
+            meta_update["parity_offers"] = copy.deepcopy(
+                result.get("parity_offers") or 
+                price_data.get("parity_offers") or 
+                offers
+            )
+            meta_update["market_offers"] = copy.deepcopy(
+                result.get("market_offers") or 
+                price_data.get("market_offers") or 
+                offers
+            )
 
         # Update DB using admin_db for background reliability
         if meta_update:
@@ -933,7 +967,7 @@ class ScanPersistenceService:
         volatility = 0.0
         if current_price > 0:
             volatility = await predictive_service.calculate_market_volatility(
-                self.insforge, hotel_id
+                self.insforge, UUID(str(hotel_id))
             )
             active_threshold = predictive_service.get_smart_threshold(
                 threshold, volatility
@@ -1159,7 +1193,9 @@ class ScanPersistenceService:
             .in_("id", input_h_ids)
             .execute()
         )
-        hotel_ref_map = {str(h["id"]): h for h in (hotels_lookup_res.data or [])}
+        hotel_ref_map: Dict[str, Dict[str, Any]] = {
+            str(h["id"]): h for h in cast(List[Dict[str, Any]], hotels_lookup_res.data or [])
+        }
         
         # 1b. Bulk Fetch Price History for 5-Day Variance Baseline
         # Uses shared _fetch_history_map to ensure consistency across all sync paths
@@ -1167,7 +1203,7 @@ class ScanPersistenceService:
         
         # 2. Group and Merge Results by Identity
         # Identity is property_token if exists, otherwise hotel_id
-        identity_groups = {} # identity -> { merged_res, task_ids, hotel_ids }
+        identity_groups = {} # identity -> { merged_res, task_ids, hotel_ids, task_types }
         
         for item in batch_items:
             hid = str(item["hotel_id"])
@@ -1177,6 +1213,7 @@ class ScanPersistenceService:
             
             identity = h_ref.get("property_token") or hid
             task_id = item.get("scan_task_id")
+            task_type = item.get("task_type")  # [FIX 2026-05-10] Track task_type for OTA protection
             res = item.get("result", {})
             if not res or res.get("status") != "success":
                 continue
@@ -1187,13 +1224,16 @@ class ScanPersistenceService:
                 identity_groups[identity] = {
                     "res": res, 
                     "task_ids": [task_id] if task_id else [],
-                    "hotel_ids": {hid}
+                    "hotel_ids": {hid},
+                    "task_types": {task_type} if task_type else set()
                 }
             else:
                 group = identity_groups[identity]
                 group["hotel_ids"].add(hid)
                 if task_id:
                     group["task_ids"].append(task_id)
+                if task_type:
+                    group["task_types"].add(task_type)
                 
                 # Smart merge: Priority on BEST (lowest) price and deeper metadata
                 existing = group["res"]
@@ -1249,7 +1289,7 @@ class ScanPersistenceService:
         # Actually, tokens and IDs can both be strings. Let's just use tokens we found.
         found_tokens = list(set(h["property_token"] for h in hotel_ref_map.values() if h.get("property_token")))
         
-        variations_map = {} # identity -> [hotel_records]
+        variations_map: Dict[str, List[Dict[str, Any]]] = {} # identity -> [hotel_records]
         if found_tokens:
             v_res = (
                 self.admin_insforge.table("hotels")
@@ -1257,7 +1297,7 @@ class ScanPersistenceService:
                 .in_("property_token", found_tokens)
                 .execute()
             )
-            for v in (v_res.data or []):
+            for v in cast(List[Dict[str, Any]], v_res.data or []):
                 tok = v["property_token"]
                 if tok not in variations_map:
                     variations_map[tok] = []
@@ -1265,7 +1305,7 @@ class ScanPersistenceService:
         
         # 4. Prepare Vectorized Payloads
         hotel_updates = []
-        price_logs = []
+        price_logs: List[Dict[str, Any]] = []
         sentiment_history = []
         hotel_reviews = []
         raw_archives = []
@@ -1362,10 +1402,12 @@ class ScanPersistenceService:
             analysis_payload.append(analysis_item)
             
             for target in targets:
+                if not target:
+                    continue
                 tid = str(target["id"])
                 
                 # Hotel Update Payload
-                upd = {
+                upd: Dict[str, Any] = {
                     "id": tid,
                     "last_scanned_at": now_ts
                 }
@@ -1393,7 +1435,7 @@ class ScanPersistenceService:
                     )
 
                 # [KAIZEN 2026] Extract full list of offers using all possible keys
-                offers = (
+                offers: List[Dict[str, Any]] = (
                     res_data.get("offers")
                     or res_data.get("ota_prices")
                     or res_data.get("parity_offers")
@@ -1402,7 +1444,34 @@ class ScanPersistenceService:
                     or []
                 )
 
-                if offers:
+                # [FIX 2026-05-10] OTA Protection: Detect thin price_search results
+                # price_search tasks only return a single "Direct Search" price.
+                # If that's all we have, do NOT overwrite richer hotel_info OTA data
+                # already in the database. This prevents the 4-hourly price_search
+                # from erasing multi-OTA data that hotel_info provides weekly.
+                group_task_types = group.get("task_types", set())
+                is_price_search_only = (
+                    group_task_types == {"price_search"}
+                    or (len(group_task_types) == 1 and "price_search" in group_task_types)
+                )
+                is_thin_offers = (
+                    len(offers) <= 1
+                    and all(
+                        (o.get("source") or "").lower() in ["direct search", "direct", ""]
+                        for o in offers
+                    )
+                ) if offers else True  # Empty offers = thin
+                
+                should_protect_ota = is_price_search_only and is_thin_offers
+                
+                if should_protect_ota:
+                    logger.info(
+                        f"[OTA Protection] Skipping market_offers/room_types update for {tid} — "
+                        f"thin price_search result ({len(offers)} offers, sources: "
+                        f"{[o.get('source') for o in offers]})"
+                    )
+
+                if offers and not should_protect_ota:
                     upd["reviews"] = {
                         "ota_count": len(offers),
                         "ota_min_price": min(
@@ -1414,21 +1483,18 @@ class ScanPersistenceService:
                     }
                     # [FIX 2026-05-02] Deep-copy offers for hotel update to prevent
                     # SDK .update() from mutating the original list reference.
-                    # This was the root cause of empty offers in price_logs:
-                    # hotel updates ran first and the SDK cleared/mutated the shared list,
-                    # leaving subsequent price_log assembly with empty arrays.
                     upd["offers"] = copy.deepcopy(offers)
                     upd["parity_offers"] = copy.deepcopy(res_data.get("parity_offers") or offers)
                     upd["market_offers"] = copy.deepcopy(res_data.get("market_offers") or offers)
                 
-                # Room Types Fallback
+                # Room Types Fallback — also protected from thin price_search
                 room_types = self._normalize_room_types(
                     res_data.get("room_catalog") or 
                     res_data.get("room_types") or 
                     res_data.get("all_rooms") or 
                     []
                 )
-                if room_types:
+                if room_types and not should_protect_ota:
                     upd["room_types"] = room_types
                 
                 hotel_updates.append(upd)
