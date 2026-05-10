@@ -773,11 +773,6 @@ class ScanPersistenceService:
                             "error",
                         )
                     current_price = 0.0
-                        session_id,
-                        "Analysis",
-                        f"[FALLBACK] Using history: {current_price} {currency}",
-                        "warning",
-                    )
 
         # 3. Market Depth & Room Persistence
         offers = (

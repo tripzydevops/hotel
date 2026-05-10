@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "raw_results": {
+        "type": "hotel_search_item",
+        "stars": 4,
+        "title": "Hilton Garden Inn Balikesir",
+        "prices": {
+          "items": null,
+          "price": 4149,
+          "check_in": "2026-05-10 00:00:00 +00:00",
+          "currency": "TRY",
+          "visitors": 2,
+          "check_out": "2026-05-11 00:00:00 +00:00",
+          "discount_text": "16% less than usual",
+          "prices_by_dates": null,
+          "price_without_discount": null
+        },
+        "is_paid": false,
+        "reviews": {
+          "value": 4.6,
+          "mentions": null,
+          "votes_count": 492,
+          "other_sites_reviews": null,
+          "rating_distribution": null
+        },
+        "location": {
+          "latitude": 39.644646300000005,
+          "longitude": 27.879665
+        },
+        "overview_images": [
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGZ0fE_0R2KI2UYCadVnE9qPFgJgd2nYJcnCXL_JhJDUWYXB6QPjvGmjhHYXAL28DYGkO13zd2diHYuj-tEcTC6e2RNo-aR6jBRwuYih7gDeA5GM7_5106k-FDwwH68fykFaJyD=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFiNH2_z142WtkVJ1uzXYOt1vUafoANlIXwFiMKEQVKJib1_rnQvJpFv2dTg_pqny-i5A0cGJyh93ptjLip0iRFVSnfxh2gpB5BFOe5ieU5Qjc5SZzCgFpwrMny0s26YV7I2bKgkQ=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAH5iRi9KrzB7iZJjsHG4PBZDEHkkpAYeNrqcM39S6RPi6Mr3b11_Jp1Hzvv8Q9JmFFJnoFGHWk1SqF8avNFcz9_UpVjsypFvhmygWsXY9bj53TL-CLQ4LORurg8KSgTd2_temY=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHQh0BZ6lExZpct_uvOmu6akIWUmrGMlwZoz6XDqBwV9_bdBzj22U-TaSXdoYaDlU8DOa1YKNQZt_2e1eAjxSauO4lWu4rqP3QFNfiu_iXJoPHfHOdQP4ZbTGnJLjQr5eMt_us=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGJVdkKrzoIf3cAwE-fVqm_4N7-WIUJtX-3rddjJ2Zpaga0a7ts_05m03bYWQXJGlfIwFdpFIF4OX7wJMm3Vg6f5Be6FLy51Ztkxp9SlJgT_wzo9h682yMnWpeFL49FMsZX1E7j=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGaE3cFdzGViz3Y5aVi0ss4MgQo8lf9If2kwV5GcHJ2uBsUQhQ1U1yD7KcT5vW8UwuN9B7_I08RPversemyZhl8Rc1tg4vYoRiqVmZNVxWWuWk_Xt1wmOCTJpRFsvOxLGTMxE5_=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFT4Pbtg3ApBTEKST6UZTVT35Cy3mO5c4UkuqdH1yWbL544Yk5aOOpwzRcPMsm_r9EgP8yY35SB5i-nYLZgUJLn4onrH4aPAvbOCXZ1VaxMjACpacwh9tX0Xd1B5nH510Y9PEASdg=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/proxy/zb3v1gdfQdMaI_AH_BuLhT4u851E_RmbBRmAju7q7mS7xLbqACc_kCTOXRghhRIUE1tiClplMXQhiosWoHRyQ_wS2Ty2zynRIsSSbumlsKSmBUBYpWxThAvTEML3dbw-ilsOqlhSLenm4qD4s_asRmIZNiJp9A=s287-w287-h192-n-k-no-v1",
+          "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGW16cAeidESP5LAddwhWoqIKw-bRallQ-uyEy2ImScJUsHJO04R658xYX2fGnsaCTdaqQAsvYavT8WU9CV6d1lMglypl9QvxrH4vjV2v49hRrY4IW2sWAYbsfd_W7JAPM3yRAm=s287-w287-h192-n-k-no-v1"
+        ],
+        "hotel_identifier": "ChkItfPTzbCr0O8sGg0vZy8xMXNfNWZrdzdzEAE"
+      }
+    }
+  ],
+  "rowCount": 1,
+  "fields": [
+    {
+      "name": "raw_results",
+      "dataTypeID": 3802
+    }
+  ]
+}

@@ -1,0 +1,269 @@
+/home/tripzydevops/hotel/backend/services/dashboard_service.py
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:93:11 - error: Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths (reportGeneralTypeIssues)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: Argument of type "Literal['hotel_id']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['hotel_id']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['hotel_id']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['hotel_id']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:940:31 - error: Argument of type "Literal['hotel_id']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['hotel_id']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: "get" is not a known attribute of "None" (reportOptionalMemberAccess)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: Cannot access attribute "get" for class "bool"
+    Attribute "get" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: Cannot access attribute "get" for class "str"
+    Attribute "get" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: Cannot access attribute "get" for class "int"
+    Attribute "get" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: Cannot access attribute "get" for class "float"
+    Attribute "get" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:948:61 - error: Cannot access attribute "get" for class "Sequence[JSON]"
+    Attribute "get" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: Argument of type "Literal['id']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['id']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['id']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['id']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:27 - error: Argument of type "Literal['id']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['id']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: Argument of type "Literal['name']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['name']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['name']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['name']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:949:36 - error: Argument of type "Literal['name']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['name']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:16 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:954:35 - error: Operator ">" not supported for types "Unknown | str | JSON" and "Literal[0]"
+    Operator ">" not supported for types "str" and "Literal[0]"
+    Operator ">" not supported for types "None" and "Literal[0]"
+    Operator ">" not supported for types "str" and "Literal[0]"
+    Operator ">" not supported for types "Sequence[JSON]" and "Literal[0]"
+    Operator ">" not supported for types "Mapping[str, JSON]" and "Literal[0]" (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:20 - error: Operator ">" not supported for types "Unknown | str | JSON" and "Unknown | str | JSON"
+    Operator ">" not supported for types "str" and "None"
+    Operator ">" not supported for types "str" and "bool"
+    Operator ">" not supported for types "str" and "int"
+    Operator ">" not supported for types "str" and "float"
+    Operator ">" not supported for types "str" and "Sequence[JSON]"
+    Operator ">" not supported for types "str" and "Mapping[str, JSON]"
+    Operator ">" not supported for types "None" and "str"
+    Operator ">" not supported for types "None" and "None"
+    ... (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['new_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['new_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['new_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:957:37 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['new_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:25 - error: Operator "/" not supported for types "Unknown | int | float" and "Unknown | str | JSON"
+    Operator "/" not supported for types "int" and "str"
+    Operator "/" not supported for types "int" and "None"
+    Operator "/" not supported for types "int" and "str"
+    Operator "/" not supported for types "int" and "Sequence[JSON]"
+    Operator "/" not supported for types "int" and "Mapping[str, JSON]"
+    Operator "/" not supported for types "float" and "str"
+    Operator "/" not supported for types "float" and "None"
+    Operator "/" not supported for types "float" and "str"
+    ... (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:26 - error: Operator "-" not supported for types "Unknown | str | JSON" and "Unknown | str | JSON"
+    Operator "-" not supported for types "str" and "str"
+    Operator "-" not supported for types "str" and "None"
+    Operator "-" not supported for types "str" and "bool"
+    Operator "-" not supported for types "str" and "str"
+    Operator "-" not supported for types "str" and "int"
+    Operator "-" not supported for types "str" and "float"
+    Operator "-" not supported for types "str" and "Sequence[JSON]"
+    Operator "-" not supported for types "str" and "Mapping[str, JSON]"
+    ... (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:27 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['new_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['new_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['new_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:44 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['new_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:959:62 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:25 - error: Operator "/" not supported for types "float" and "Unknown | str | JSON"
+    Operator "/" not supported for types "float" and "str"
+    Operator "/" not supported for types "float" and "None"
+    Operator "/" not supported for types "float" and "str"
+    Operator "/" not supported for types "float" and "Sequence[JSON]"
+    Operator "/" not supported for types "float" and "Mapping[str, JSON]" (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:30 - error: Operator "-" not supported for types "Unknown | str | JSON" and "Unknown | str | JSON"
+    Operator "-" not supported for types "str" and "str" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "None" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "bool" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "str" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "int" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "float" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "Sequence[JSON]" when expected type is "SupportsAbs[float]"
+    Operator "-" not supported for types "str" and "Mapping[str, JSON]" when expected type is "SupportsAbs[float]"
+    ... (reportOperatorIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['new_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['new_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['new_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:47 - error: Argument of type "Literal['new_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['new_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['old_price']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['old_price']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['old_price']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:964:65 - error: Argument of type "Literal['old_price']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['old_price']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: Argument of type "Literal['hotel_id']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['hotel_id']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['hotel_id']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['hotel_id']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:969:54 - error: Argument of type "Literal['hotel_id']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['hotel_id']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: Argument of type "Literal['message']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['message']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['message']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['message']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:32 - error: Argument of type "Literal['message']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['message']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: "replace" is not a known attribute of "None" (reportOptionalMemberAccess)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: Cannot access attribute "replace" for class "bool"
+    Attribute "replace" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: Cannot access attribute "replace" for class "int"
+    Attribute "replace" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: Cannot access attribute "replace" for class "float"
+    Attribute "replace" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: Cannot access attribute "replace" for class "Sequence[JSON]"
+    Attribute "replace" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:971:45 - error: Cannot access attribute "replace" for class "Mapping[str, JSON]"
+    Attribute "replace" is unknown (reportAttributeAccessIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: "__getitem__" method not defined on type "bool" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: Argument of type "Literal['created_at']" cannot be assigned to parameter "key" of type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" in function "__getitem__"
+    Type "Literal['created_at']" is not assignable to type "SupportsIndex | slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]"
+      "Literal['created_at']" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+      "Literal['created_at']" is not assignable to "slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None]" (reportArgumentType)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: "__getitem__" method not defined on type "int" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: "__getitem__" method not defined on type "float" (reportIndexIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
+  /home/tripzydevops/hotel/backend/services/dashboard_service.py:972:34 - error: Argument of type "Literal['created_at']" cannot be assigned to parameter "index" of type "slice[int | None, int | None, int | None]" in function "__getitem__"
+    "Literal['created_at']" is not assignable to "slice[int | None, int | None, int | None]" (reportArgumentType)
+131 errors, 0 warnings, 0 informations
