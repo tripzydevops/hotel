@@ -733,21 +733,46 @@ class ScanPersistenceService:
         check_in_str = str(check_in)
 
         if current_price <= 0:
-            # Level 1: Same check-in date
+            now = datetime.now(timezone.utc)
+            max_age = timedelta(hours=24) # Kaizen: Tightened fallback window to 24h
+
+            def is_recent(h):
+                rec = h.get("recorded_at")
+                if not rec: return False
+                try:
+                    # Handle both datetime objects and ISO strings
+                    dt = rec if isinstance(rec, datetime) else datetime.fromisoformat(str(rec).replace('Z', '+00:00'))
+                    return (now - dt) <= max_age
+                except Exception: return False
+
+            # Level 1: Same check-in date + Recency Check
             fallback = next(
-                (h for h in history if str(h.get("check_in_date")) == check_in_str),
+                (h for h in history if str(h.get("check_in_date")) == check_in_str and is_recent(h)),
                 None,
             )
-            if not fallback:
-                # Level 2: Most recent check-in
-                fallback = history[0] if history else None
-
             if fallback:
-                current_price = float(fallback["price"])
-                currency = str(fallback["currency"])
-                is_estimated = True
-                if log_reasoning_fn:
-                    await log_reasoning_fn(
+                fallback_price = float(fallback.get("price") or 0)
+                # [KAIZEN 2026] Only fallback if the historical price is itself sane
+                if fallback_price >= max(floor, 100.0):
+                    current_price = fallback_price
+                    currency = str(fallback["currency"])
+                    is_estimated = True
+                    if log_reasoning_fn:
+                        await log_reasoning_fn(
+                            session_id,
+                            "Continuity",
+                            f"Live scan failed/rejected. Falling back to sane historical price: {current_price} {currency}.",
+                            "info",
+                        )
+                else:
+                    if log_reasoning_fn:
+                        await log_reasoning_fn(
+                            session_id,
+                            "Continuity",
+                            f"Live scan failed/rejected AND historical fallback {fallback_price} is polluted. Result discarded.",
+                            "error",
+                        )
+                    current_price = 0.0
                         session_id,
                         "Analysis",
                         f"[FALLBACK] Using history: {current_price} {currency}",
@@ -780,13 +805,8 @@ class ScanPersistenceService:
                 {"name": of.get("name") or of.get("room_type"), "price": of.get("price")} 
                 for of in offers if of.get("name") or of.get("room_type")
             ]
-        if not current_room_types and not is_estimated and status == "success":
-            # Carry forward room types if missing but scan was successful
-            for h in history:
-                if h.get("room_types"):
-                    # KAİZEN: Always normalize history fallbacks too
-                    current_room_types = self._normalize_room_types(h["room_types"])
-                    break
+        # Kaizen: Disabled carry-forward room type fallbacks to prevent data pollution as requested.
+        # Only room types from the current scan (or derived from current offers) will be persisted.
 
         # 4. Metadata & Sentiment
         meta_update = {

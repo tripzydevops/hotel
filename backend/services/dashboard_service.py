@@ -280,6 +280,26 @@ async def get_dashboard_logic(
                 lambda: db.rpc("get_batch_hotel_prices", {"p_hotel_ids": hotel_ids, "p_limit": 20}).execute()
             )
             hotel_prices_map = rpc_res.data or {}
+            
+            # [KAIZEN 2026] Last-Mile Data Quality Firewall
+            # Remove price logs that are below the hotel's floor or absolute outliers
+            # This prevents "pollution" (e.g. 10.47 for a luxury hotel) from reaching the UI charts.
+            for hid, logs in hotel_prices_map.items():
+                if not logs: continue
+                # Find hotel in user's list to get its floor
+                hotel_meta = next((h for h in all_hotels if str(h["id"]) == hid), {})
+                floor = float(hotel_meta.get("min_price_floor") or 0)
+                
+                # Filter out obvious trash
+                # 100.0 is the global absolute minimum for any valid hotel price on this platform.
+                # If a hotel has a specific floor (e.g. 3000), we use that instead.
+                filtered_logs = []
+                for log in logs:
+                    price = float(log.get("price") or 0)
+                    if price >= max(floor, 100.0):
+                        filtered_logs.append(log)
+                
+                hotel_prices_map[hid] = filtered_logs
         except Exception as e:
             logger.error(f"[Dashboard] Batch price fetch failed: {e}")
             # Fallback to empty results to prevent dashboard crash
