@@ -16,10 +16,11 @@ The `vercel.json` file uses a legacy `"builds"` array. Modern Vercel projects (N
 - **Problem**: Explicit `builds` can occasionally trigger redundant or non-optimized build pipelines.
 - **Recommendation**: Transition to "Zero Config" mode by removing the `builds` object from `vercel.json`.
 
-### Obsolete Root Scripts & Logs
-Approximately 15-20% of the files in the root directory are one-off diagnostic scripts or unrotated logs:
-- **Logs**: `backend.log`, `cron_trigger.log*`, `scheduler.log.1`, etc.
 - **Obsolete Scripts**: `verify_apis.py`, `check_api_status.py`, `test_log_suffix.py`, etc.
+
+### Python Runtime Alignment (3.12 Support)
+- **Problem**: Vercel's default Python version may differ from the locked version in `uv.lock` or `pyproject.toml`, leading to "The current Python version is not compatible" errors.
+- **Recommendation**: Ensure `requires-python = ">=3.11"` (or equivalent) is set in `pyproject.toml` and that `uv lock` has been run to regenerate `uv.lock` with the expanded version range. This allows Vercel to use its native 3.12 runtime while maintaining backward compatibility with 3.11.
 
 ---
 

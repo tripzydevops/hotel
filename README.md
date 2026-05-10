@@ -38,8 +38,8 @@ Deep dives into the platform core:
 
 ### Prerequisites
 
--   Node.js 18+
--   Python 3.11+
+-   Node.js 20+
+-   Python 3.11+ (3.12 Recommended)
 -   InsForge Account
 -   DataForSEO Credentials (Login & Password)
 
@@ -49,6 +49,10 @@ Deep dives into the platform core:
 2.  Install frontend dependencies: `npm install`
 3.  Install backend dependencies:
     ```bash
+    # Using uv (Recommended)
+    cd api && uv sync
+    
+    # Or using standard venv
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
@@ -74,4 +78,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-05-01 (Sentinel Protocol & Autonomous Monitoring Optimization)
+**Last Updated:** 2026-05-10 (Python 3.12 Support & Build Infrastructure Optimization)

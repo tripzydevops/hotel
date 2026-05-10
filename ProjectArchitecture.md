@@ -3,6 +3,15 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 10, 2026)
+- ✅ **Python 3.12 Runtime & Dependency Alignment**:
+    - Updated `api/pyproject.toml` and root `.python-version` to support Python **3.12**, resolving Vercel deployment "runtime not found" warnings.
+    - Regenerated `api/uv.lock` with `requires-python = ">=3.11"`, fixing a critical incompatibility error (`The current Python version (3.12.13) is not compatible with the locked Python requirement: ==3.11.*`) during the Vercel build phase.
+- ✅ **Deployment Infrastructure Cleanup**:
+    - Performed a purge of stale remote deployment records using the InsForge CLI to ensure accurate status tracking and reduce metadata clutter.
+- ✅ **Service Optimization & Admin Refactoring**:
+    - Continued decomposition of the admin service (`backend/services/admin/scan_admin.py`) to improve modularity and facilitate isolated testing of scan persistence logic.
+
 ## 🕒 Recent Updates (May 9, 2026)
 - ✅ **Type Safety (Pyright/Pylance lints)**: Resolved 1000+ static-analysis false positives related to `Sequence[JSON]` subscript access on raw InsForge `execute().data` payloads in the admin service (`scan_admin.py`). Used `typing.cast()` to ensure strict static type safety without impacting runtime behavior.
 

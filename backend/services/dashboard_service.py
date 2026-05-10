@@ -372,31 +372,9 @@ async def get_dashboard_logic(
             # Price Processing
             current_log = prices[0] if prices else None
             
-            # AGENT_FIX: Historical Data Harvesting (Resilience against empty recent scans)
-            # Find the most recent log that actually contains offers
-            offers_log = current_log
-            
-            if prices:
-                # AGENT_FIX: Most-Complete-Log Heuristic
-                # Instead of just taking the LATEST log with any data (which might be a limited hourly price_search),
-                # we search the recent history for the most complete log (max offers).
-                max_offers_count = -1
-                
-                for p in prices:
-                    # Count total offers across all possible keys
-                    p_offers_count = 0
-                    for k in ["offers", "ota_prices", "parity_offers", "market_offers"]:
-                        val = p.get(k)
-                        if val and isinstance(val, list):
-                            p_offers_count = max(p_offers_count, len(val))
-                    
-                    if p_offers_count > max_offers_count:
-                        max_offers_count = p_offers_count
-                        offers_log = p
-                
-                # If even the "best" found is empty, fallback to current_log
-                if max_offers_count <= 0:
-                    offers_log = current_log
+            # AGENT_FIX: Strict Latest Data Strategy
+            # Previously used a "most-complete-log" heuristic that caused price pollution.
+            # Now strictly aligns everything with the Latest Scan.
 
 
             prev_log = None
@@ -455,38 +433,39 @@ async def get_dashboard_logic(
                     # KAİZEN 2026: Enhanced Price Info Extraction
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
-                    # Room Types Extraction (Resilient Multi-Variant Aggregation)
-                    all_rooms_seen = {}
-                    if prices:
-                        for p in prices:
-                            for rt in (p.get("room_types") or []):
-                                if isinstance(rt, dict) and rt.get("name"):
-                                    name_key = rt.get("name", "").strip().lower()
-                                    price_key = str(rt.get("price") or "").strip()
-                                    source_key = str(rt.get("source") or rt.get("vendor") or "").strip().lower()
-                                    composite_key = f"{name_key}_{price_key}_{source_key}"
-                                    if composite_key not in all_rooms_seen:
-                                        all_rooms_seen[composite_key] = rt
-
-                    # Also include any unique room types from the master hotel record
-                    for rt in (h.get("room_types") or []):
-                        if isinstance(rt, dict) and rt.get("name"):
-                            name_key = rt.get("name", "").strip().lower()
-                            price_key = str(rt.get("price") or "").strip()
-                            source_key = str(rt.get("source") or rt.get("vendor") or "").strip().lower()
-                            composite_key = f"{name_key}_{price_key}_{source_key}"
-                            if composite_key not in all_rooms_seen:
-                                all_rooms_seen[composite_key] = rt
-                                
-                    raw_rooms = list(all_rooms_seen.values())
+                    # Room Types Extraction (Strict Latest Log Only - Fixed for price pollution)
+                    raw_rooms = []
+                    seen_room_keys = set()
                     
-                    # Offers Extraction with Vendor Logic - AGGREGATE all available sources
+                    # 1. Primary Source: Latest Scan (current_log)
+                    if current_log and current_log.get("room_types"):
+                        for rt in current_log["room_types"]:
+                            if not isinstance(rt, dict) or not rt.get("name"):
+                                continue
+                            # Use exact name and price for deduplication within the same scan
+                            r_key = f"{rt.get('name')}_{rt.get('price')}_{rt.get('source', '')}".strip().lower()
+                            if r_key not in seen_room_keys:
+                                raw_rooms.append(rt)
+                                seen_room_keys.add(r_key)
+                    
+                    # 2. Secondary Source (Only if current_log is empty): Master Hotel Record
+                    if not raw_rooms and h.get("room_types"):
+                        for rt in h["room_types"]:
+                            if not isinstance(rt, dict) or not rt.get("name"):
+                                continue
+                            r_key = f"{rt.get('name')}_{rt.get('price')}_{rt.get('source', '')}".strip().lower()
+                            if r_key not in seen_room_keys:
+                                raw_rooms.append(rt)
+                                seen_room_keys.add(r_key)
+
+                    
+                    # Offers Extraction (Strict Latest Log Only)
                     raw_offers = []
                     seen_offers = set()
                     
-                    if offers_log:
+                    if current_log:
                         for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
-                            val = offers_log.get(key)
+                            val = current_log.get(key)
                             if val and isinstance(val, list):
                                 for of in val:
                                     if not isinstance(of, dict):
