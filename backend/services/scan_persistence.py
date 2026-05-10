@@ -654,29 +654,28 @@ class ScanPersistenceService:
         is_valid = True
 
         # A. Minimum Floor Safeguard (User Insight 2026)
+        # 1. Check manual floor from DB
+        floor = float(metadata.get("min_price_floor") or 0)
+        # 2. Heuristic for Brands (e.g. Ramada > 3000)
+        if floor == 0:
+            brand_floors = {
+                "ramada": 500.0,
+                "hilton": 1000.0,
+                "sheraton": 1000.0,
+                "marriott": 1000.0,
+                "wyndham": 500.0,
+                "holiday inn": 500.0,
+            }
+            lower_name = hotel_name.lower()
+            for brand, brand_floor in brand_floors.items():
+                if brand in lower_name:
+                    floor = brand_floor
+                    break
+        # 3. Global absolute minimum
+        if floor == 0:
+            floor = 200.0
+
         if current_price > 0:
-            # 1. Check manual floor from DB
-            floor = float(metadata.get("min_price_floor") or 0)
-
-            # 2. Heuristic for Brands (e.g. Ramada > 3000)
-            if floor == 0:
-                brand_floors = {
-                    "ramada": 500.0,
-                    "hilton": 1000.0,
-                    "sheraton": 1000.0,
-                    "marriott": 1000.0,
-                    "wyndham": 500.0,
-                    "holiday inn": 500.0,
-                }
-                lower_name = hotel_name.lower()
-                for brand, brand_floor in brand_floors.items():
-                    if brand in lower_name:
-                        floor = brand_floor
-                        break
-
-            # 3. Global absolute minimum
-            if floor == 0:
-                floor = 200.0
 
             if current_price < floor:
                 if log_reasoning_fn:
