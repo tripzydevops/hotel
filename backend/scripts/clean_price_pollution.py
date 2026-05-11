@@ -1,114 +1,112 @@
-
 import asyncio
 import os
 import statistics
 from typing import List, Dict, Any
 from backend.utils.db import get_insforge_db
 from backend.utils.logger import get_logger
+from backend.utils.helpers import convert_currency
 
-logger = get_logger(__name__)
+logger = get_logger("cleanup_pollution")
 
-# Keywords that justify significantly higher prices
-PREMIUM_ROOM_KEYWORDS = {
-    "suite", "king", "deluxe", "villa", "president", "exec", 
-    "suit", "superior", "premium", "junior", "family", "grand"
-}
-
-def is_premium_room(room_types: list) -> bool:
-    """Checks if any room in the list has a premium keyword in its name."""
-    if not room_types:
-        return False
-    
-    for rt in room_types:
-        name = str(rt.get("name") or rt.get("original_name") or "").lower()
-        if any(keyword in name for keyword in PREMIUM_ROOM_KEYWORDS):
-            return True
-    return False
-
-async def clean_pollution():
+async def run_cleanup():
     """
-    1. Finds and deletes price logs below the hotel's floor or global absolute minimum.
-    2. Identifies and cleans high price outliers (> 2.5x median) UNLESS they are explicitly premium rooms (Suites, etc).
+    Identifies and flags anomalous price records stored during currency-mismatched intakes.
+    Sets 'is_anomaly=true' on records violating computed median distributions or absolute floors.
     """
-    db = get_insforge_db(admin=True)
-    if not db:
-        logger.error("Failed to initialize DB client.")
-        return
+    db = get_insforge_db()
+    logger.info("Starting global price pollution cleanup")
     
-    # 1. Fetch all hotels
-    logger.info("Fetching hotels data...")
-    res = db.table("hotels").select("id, name, min_price_floor").execute()
-    hotels = res.data or []
-    
-    total_purged = 0
-    
-    for hotel in hotels:
-        hid = hotel["id"]
-        name = hotel["name"]
-        floor = float(hotel["min_price_floor"]) if hotel.get("min_price_floor") else 0
+    try:
+        # Fetch all hotels.
+        res = db.table("hotels").select("id, name, min_price_floor").execute()
+        hotels = res.data or []
+        logger.info(f"Analyzing price history for {len(hotels)} hotels.")
         
-        logger.info(f"Analyzing '{name}'...")
+        total_flagged = 0
         
-        # Fetch all price logs to calculate distribution
-        logs_res = db.table("price_logs") \
-            .select("id, price, room_types, check_in_date") \
-            .eq("hotel_id", hid) \
-            .execute()
-        
-        all_logs = logs_res.data or []
-        if not all_logs:
-            continue
+        for hotel in hotels:
+            hid = hotel.get("id")
+            hotel_name = hotel.get("name")
+            if not hid:
+                continue
+
+            # The hard floor from database (in TRY theoretically, fallback to 100.0)
+            hard_floor = float(hotel.get("min_price_floor") or 100.0)
             
-        prices = [float(l["price"]) for l in all_logs if l.get("price")]
-        if not prices:
-            continue
+            # Fetch all price logs to calculate distribution. Include currency.
+            logs_res = db.table("price_logs") \
+                .select("id, price, currency, room_types, check_in_date") \
+                .eq("hotel_id", hid) \
+                .execute()
             
-        median_price = statistics.median(prices)
-        # Dynamic upper threshold to detect extreme outliers (2.5x typical price)
-        upper_threshold = median_price * 2.5
-        
-        # Intelligent lower bound: Max of (user floor, absolute system minimum, OR 30% of hotel median)
-        # This dynamically catches the 106.0 price for a 4000 median hotel.
-        dynamic_floor = median_price * 0.3 if median_price > 500 else 100.0
-        lower_threshold = max(floor, 100.0, dynamic_floor)
-        
-        logger.info(f"  - Stats: Median={median_price:.2f}, Range=[{min(prices)}, {max(prices)}]")
-        logger.info(f"  - Filtering logic: LowerBound={lower_threshold}, UpperBound={upper_threshold:.2f} (Unless Suite)")
-        
-        bad_logs = []
-        
-        for log in all_logs:
-            price = float(log.get("price") or 0)
-            room_types = log.get("room_types") or []
-            
-            # CONDITION 1: Price is below minimum valid floor
-            if price < lower_threshold:
-                bad_logs.append(log)
-                logger.warning(f"    - Caught Low Pollution: Price={price} (Below {lower_threshold})")
+            all_logs = logs_res.data or []
+            if not all_logs:
                 continue
             
-            # CONDITION 2: Price is excessively high AND it's NOT a premium room
-            if price > upper_threshold:
-                if not is_premium_room(room_types):
-                    bad_logs.append(log)
-                    logger.warning(f"    - Caught High Pollution: Price={price} (Above {upper_threshold:.2f} & No Suite keyword found). RoomTypes: {room_types}")
-                else:
-                    logger.info(f"    - Preserved Premium Pricing: Price={price} justified by RoomType verification.")
-        
-        if bad_logs:
-            log_ids = [l["id"] for l in bad_logs]
-            logger.warning(f"  -> PURGING {len(bad_logs)} polluted logs for '{name}'...")
-            try:
-                # Perform purge in chunks of 100 just in case
-                for i in range(0, len(log_ids), 100):
-                    chunk = log_ids[i:i+100]
-                    db.table("price_logs").delete().in_("id", chunk).execute()
-                total_purged += len(log_ids)
-                logger.info(f"  -> Successfully purged {len(log_ids)} logs.")
-            except Exception as e:
-                logger.error(f"  -> Failed to purge logs for '{name}': {e}")
+            # Preprocessing: Normalize all available prices to a common base (TRY) for accurate math
+            processed_logs = []
+            for log in all_logs:
+                raw_price = float(log.get("price") or 0)
+                curr = str(log.get("currency") or "TRY")
+                if raw_price <= 0:
+                    continue
+                # Safety: Normalize to TRY so mathematical comparison operates on valid range
+                try:
+                    norm_price = convert_currency(raw_price, curr, "TRY") if curr != "TRY" else raw_price
+                    log["_norm_price"] = norm_price
+                    processed_logs.append(log)
+                except Exception:
+                    # Fallback just in case of helper failure, assume raw is TRY
+                    log["_norm_price"] = raw_price
+                    processed_logs.append(log)
+
+            if not processed_logs:
+                continue
                 
-    logger.info(f"✅ Pollution cleaning complete. Total logs purged: {total_purged}")
+            prices = [l["_norm_price"] for l in processed_logs]
+            
+            # Calculate median to establish dynamic baseline
+            median_price = statistics.median(prices)
+            
+            # Ruleset:
+            # 1. Below hard floor (e.g., < 100.0 normalized)
+            # 2. Deviates > 3.0x from median (implies severe unit mismatch or garbage data)
+            lower_threshold = max(hard_floor, 100.0)
+            upper_threshold = median_price * 3.0
+            
+            flag_ids = []
+            
+            for log in processed_logs:
+                lid = log.get("id")
+                norm_price = log["_norm_price"]
+                
+                # CONDITION 1: Normalized price is below minimum valid floor
+                if norm_price < lower_threshold:
+                    flag_ids.append(lid)
+                    continue
+                
+                # CONDITION 2: Extreme outlier compared to hotel median
+                if norm_price > upper_threshold and len(prices) > 3:
+                    flag_ids.append(lid)
+                    continue
+            
+            if flag_ids:
+                logger.warning(f"Hotel '{hotel_name}': Found {len(flag_ids)} polluted price logs out of {len(all_logs)}")
+                
+                # Bulk flag as anomalies
+                for chunk_idx in range(0, len(flag_ids), 100):
+                    chunk = flag_ids[chunk_idx:chunk_idx+100]
+                    db.table("price_logs") \
+                        .update({"is_anomaly": True}) \
+                        .in_("id", chunk) \
+                        .execute()
+                
+                total_flagged += len(flag_ids)
+        
+        logger.info(f"Pollution cleanup completed. Total records flagged: {total_flagged}")
+        
+    except Exception as e:
+        logger.error(f"Cleanup script failed: {str(e)}")
 
 if __name__ == "__main__":
-    asyncio.run(clean_pollution())
+    asyncio.run(run_cleanup())

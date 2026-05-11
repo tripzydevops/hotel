@@ -678,12 +678,14 @@ class ScanPersistenceService:
 
         if current_price > 0:
 
-            if current_price < floor:
+            # Check against TRY floor, converting current price to TRY for accurate validation
+            comp_price = convert_currency(current_price, currency, "TRY") if currency != "TRY" else current_price
+            if comp_price < floor:
                 if log_reasoning_fn:
                     await log_reasoning_fn(
                         session_id,
                         "Safeguard",
-                        f"REJECTED: Price {current_price} {currency} is below floor ({floor} {currency}) for '{hotel_name}'.",
+                        f"REJECTED: Price {current_price} {currency} (Normalized: {comp_price:.2f} TRY) is below floor ({floor} TRY) for '{hotel_name}'.",
                         "warning",
                     )
                 current_price = 0.0
@@ -692,11 +694,14 @@ class ScanPersistenceService:
         # B. 30% Variance Safeguard
         if is_valid and current_price > 0:
             avg_baseline = 0.0
-            recent_valid = [
-                float(h["price"])
-                for h in history
-                if h.get("price") is not None and float(h["price"]) > 0
-            ]
+            # Normalize historical prices to current currency for consistent variance baseline
+            recent_valid = []
+            for h in history:
+                h_price = float(h.get("price") or 0)
+                if h_price > 0:
+                    h_curr = str(h.get("currency") or "TRY")
+                    norm_h_price = convert_currency(h_price, h_curr, currency) if h_curr != currency else h_price
+                    recent_valid.append(norm_h_price)
             if recent_valid:
                 avg_baseline = sum(recent_valid) / len(recent_valid)
                 # REJECT if price deviates by more than 50% from verified baseline
@@ -752,8 +757,12 @@ class ScanPersistenceService:
             )
             if fallback:
                 fallback_price = float(fallback.get("price") or 0)
+                fallback_curr = str(fallback.get("currency") or "TRY")
+                # Convert historical price to TRY to validate against system floor sanity
+                fb_comp = convert_currency(fallback_price, fallback_curr, "TRY") if fallback_curr != "TRY" else fallback_price
+                
                 # [KAIZEN 2026] Only fallback if the historical price is itself sane
-                if fallback_price >= max(floor, 100.0):
+                if fb_comp >= max(floor, 100.0):
                     current_price = fallback_price
                     currency = str(fallback["currency"])
                     is_estimated = True

@@ -60,7 +60,7 @@ def _fetch_user_hotels(db: Client, uid: str):
             "*, hotel:hotels(id, name, currency, room_types, stars, rating, review_count, "
             "image_url, latitude, longitude, amenities, images, reviews, other_sites_reviews, "
             "guest_mentions, sentiment_breakdown, serp_api_id, property_token, deleted_at, address, location, "
-            "market_offers, parity_offers, offers)"
+            "market_offers, parity_offers, offers, min_price_floor)"
         )
         .eq("user_id", uid)
         .execute()
@@ -118,21 +118,28 @@ async def get_dashboard_logic(
         return fallback_data
 
     # 1. Security Check: Ownership or Admin
-    is_authorized = str(current_user_id) == str(user_id)
+    is_authorized = current_user_id == user_id
     if not is_authorized:
         # Check if current user is admin
         profile_res = (
             db.table("user_profiles")
             .select("role")
-            .eq("user_id", str(current_user_id))
+            .eq("user_id", current_user_id)
             .limit(1)
             .execute()
         )
-        if profile_res.data and profile_res.data[0].get("role") in [
+        if (
+            profile_res 
+            and hasattr(profile_res, "data") 
+            and profile_res.data 
+            and isinstance(profile_res.data, list) 
+            and len(profile_res.data) > 0 
+            and isinstance(profile_res.data[0], dict) 
+            and profile_res.data[0].get("role") in [
             "admin",
             "market_admin",
             "market admin",
-        ]:
+        ]):
             is_authorized = True
 
     if not is_authorized:
@@ -157,7 +164,7 @@ async def get_dashboard_logic(
             "market_insight": "Market data is currently being synchronized...",
         }
 
-        uid = str(user_id)
+        uid = user_id
 
         # Phase 1: Fire all 7 independent user-scoped queries in parallel
         (
@@ -185,11 +192,13 @@ async def get_dashboard_logic(
         )
 
         # Process hotel associations
-        all_associations = hotels_res.data or []
+        all_associations = getattr(hotels_res, "data", []) or []
         all_hotels = []
         for assoc in all_associations:
+            if not isinstance(assoc, dict):
+                continue
             hotel = assoc.get("hotel")
-            if hotel and not hotel.get("deleted_at"):
+            if hotel and isinstance(hotel, dict) and not hotel.get("deleted_at"):
                 hotel["user_id"] = assoc.get("user_id")
                 hotel["is_target_hotel"] = assoc.get("is_target", False)
                 hotel["is_monitored"] = assoc.get("is_monitored", True)
@@ -200,22 +209,23 @@ async def get_dashboard_logic(
                 hotel["default_adults"] = assoc.get("default_adults", 2)
                 all_hotels.append(hotel)
 
-        user_profile = (
-            profile_res.data if profile_res and hasattr(profile_res, "data") else {}
-        )
-        user_settings = (
-            settings_res.data if settings_res and hasattr(settings_res, "data") else {}
-        )
-        display_currency = user_settings.get("currency", "TRY")
-        unread_count = (
-            alerts_res.count if alerts_res and hasattr(alerts_res, "count") else 0
-        )
-        recent_searches_raw = (
-            searches_res.data if searches_res and hasattr(searches_res, "data") else []
-        )
-        recent_sessions = (
-            sessions_res.data if sessions_res and hasattr(sessions_res, "data") else []
-        )
+        user_profile = getattr(profile_res, "data", {}) or {}
+        user_settings = getattr(settings_res, "data", {}) or {}
+
+        if isinstance(user_profile, list) and len(user_profile) > 0:
+            user_profile = user_profile[0]
+        if not isinstance(user_profile, dict):
+            user_profile = {}
+
+        if isinstance(user_settings, list) and len(user_settings) > 0:
+            user_settings = user_settings[0]
+        if not isinstance(user_settings, dict):
+            user_settings = {}
+
+        display_currency = user_settings.get("currency", "TRY") if user_settings else "TRY"
+        unread_count = getattr(alerts_res, "count", 0) or 0
+        recent_searches_raw = getattr(searches_res, "data", []) or []
+        recent_sessions = getattr(sessions_res, "data", []) or []
 
         # AGENT_FIX: Scan History Query (Mapping via Hotel IDs)
         # The price_logs table does not contain a user_id column.
@@ -275,19 +285,30 @@ async def get_dashboard_logic(
         hotel_prices_map = {}
         
         try:
-            # LATERAL JOIN RPC: Fetches top 20 logs per hotel in a single round-trip
-            rpc_res = await asyncio.to_thread(
-                lambda: db.rpc("get_batch_hotel_prices", {"p_hotel_ids": hotel_ids, "p_limit": 20}).execute()
-            )
-            hotel_prices_map = rpc_res.data or {}
+            # OPTIMIZED: Fetches recent logs safely using pre-defined static thread helper
+            batch_res = await asyncio.to_thread(_fetch_batch_prices, db, hotel_ids)
+            raw_logs = getattr(batch_res, "data", []) or []
+            
+            # Group and limit to top 20 logs per hotel programmatically
+            hotel_prices_map = {}
+            for log in raw_logs:
+                if not isinstance(log, dict): continue
+                hid = str(log.get("hotel_id"))
+                if hid not in hotel_prices_map:
+                    hotel_prices_map[hid] = []
+                if len(hotel_prices_map[hid]) < 20:
+                    hotel_prices_map[hid].append(log)
             
             # [KAIZEN 2026] Last-Mile Data Quality Firewall
             # Remove price logs that are below the hotel's floor or absolute outliers
             # This prevents "pollution" (e.g. 10.47 for a luxury hotel) from reaching the UI charts.
             for hid, logs in hotel_prices_map.items():
-                if not logs: continue
+                if not logs or not isinstance(logs, list): continue
                 # Find hotel in user's list to get its floor
-                hotel_meta = next((h for h in all_hotels if str(h["id"]) == hid), {})
+                hotel_meta = next(
+                    (h for h in all_hotels if isinstance(h, dict) and str(h.get("id")) == str(hid)), 
+                    {}
+                )
                 floor = float(hotel_meta.get("min_price_floor") or 0)
                 
                 # Filter out obvious trash
@@ -295,8 +316,15 @@ async def get_dashboard_logic(
                 # If a hotel has a specific floor (e.g. 3000), we use that instead.
                 filtered_logs = []
                 for log in logs:
-                    price = float(log.get("price") or 0)
-                    if price >= max(floor, 100.0):
+                    price_val = float(log.get("price") or 0)
+                    log_currency = str(log.get("currency") or "TRY").upper()
+                    
+                    # Kaizen 2026: Currency Parity Check
+                    # Convert log price to TRY before validating against thresholds (which assume TRY numericals).
+                    # Prevents a valid $98 USD from getting nuked by the 100.0 TRY global absolute minimum.
+                    price_in_try = convert_currency(price_val, log_currency, "TRY") if log_currency != "TRY" else price_val
+                    
+                    if price_in_try >= max(floor, 100.0):
                         filtered_logs.append(log)
                 
                 hotel_prices_map[hid] = filtered_logs
@@ -329,9 +357,12 @@ async def get_dashboard_logic(
                 return db.table("sentiment_history").select("hotel_id, sentiment_breakdown").in_("hotel_id", hids).order("recorded_at", desc=True).execute()
             try:
                 sh_res = await asyncio.to_thread(_fetch_missing_sentiments, missing_sentiment_hids)
-                for row in sh_res.data or []:
-                    hid = str(row["hotel_id"])
-                    if hid not in recovered_sentiment_map:
+                rows = getattr(sh_res, "data", []) or []
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    hid = str(row.get("hotel_id"))
+                    if hid and hid not in recovered_sentiment_map:
                         recovered_sentiment_map[hid] = row.get("sentiment_breakdown") or []
             except Exception as e:
                 logger.error(f"[GlobalPulse/Dashboard] Batch sentiment recovery failed: {e}")
@@ -342,17 +373,27 @@ async def get_dashboard_logic(
                 return db.table("hotels").select("id, serp_api_id, rating, review_count").in_("serp_api_id", sids).execute()
             try:
                 g_res = await asyncio.to_thread(_fetch_missing_ratings, missing_rating_sids)
-                for gh in g_res.data or []:
+                gh_rows = getattr(g_res, "data", []) or []
+                for gh in gh_rows:
+                    if not isinstance(gh, dict):
+                        continue
                     sid = gh.get("serp_api_id")
                     if not sid:
                         continue
                     if sid not in recovered_ratings_map:
                         recovered_ratings_map[sid] = {"rating": None, "review_count": None, "hids": []}
-                    recovered_ratings_map[sid]["hids"].append(str(gh["id"]))
-                    if gh.get("review_count") and gh["review_count"] > 0 and not recovered_ratings_map[sid]["review_count"]:
-                        recovered_ratings_map[sid]["review_count"] = gh["review_count"]
-                    if gh.get("rating") and gh["rating"] > 0 and not recovered_ratings_map[sid]["rating"]:
-                        recovered_ratings_map[sid]["rating"] = gh["rating"]
+                    
+                    gh_id = gh.get("id")
+                    if gh_id is not None:
+                        recovered_ratings_map[sid]["hids"].append(str(gh_id))
+                    
+                    gh_rc = gh.get("review_count")
+                    if gh_rc and isinstance(gh_rc, (int, float)) and gh_rc > 0 and not recovered_ratings_map[sid]["review_count"]:
+                        recovered_ratings_map[sid]["review_count"] = gh_rc
+                    
+                    gh_r = gh.get("rating")
+                    if gh_r and isinstance(gh_r, (int, float)) and gh_r > 0 and not recovered_ratings_map[sid]["rating"]:
+                        recovered_ratings_map[sid]["rating"] = gh_r
                 
                 sids_still_missing = [sid for sid, d in recovered_ratings_map.items() if not d["review_count"]]
                 if sids_still_missing:
@@ -363,14 +404,19 @@ async def get_dashboard_logic(
                         def _fetch_sh_ratings(hids):
                             return db.table("sentiment_history").select("hotel_id, rating, review_count").in_("hotel_id", hids).order("recorded_at", desc=True).execute()
                         sh_res = await asyncio.to_thread(_fetch_sh_ratings, all_hids_recovery)
-                        for row in sh_res.data or []:
-                            hid = str(row["hotel_id"])
+                        rows_sh = getattr(sh_res, "data", []) or []
+                        for row in rows_sh:
+                            if not isinstance(row, dict):
+                                continue
+                            hid = str(row.get("hotel_id"))
+                            if not hid:
+                                continue
                             for sid, d in recovered_ratings_map.items():
-                                if hid in d["hids"]:
-                                    if row.get("review_count") and not d["review_count"]:
-                                        d["review_count"] = row["review_count"]
-                                    if row.get("rating") and not d["rating"]:
-                                        d["rating"] = row["rating"]
+                                if hid in d.get("hids", []):
+                                    if row.get("review_count") and not d.get("review_count"):
+                                        d["review_count"] = row.get("review_count")
+                                    if row.get("rating") and not d.get("rating"):
+                                        d["rating"] = row.get("rating")
                                     break
             except Exception as e:
                 logger.error(f"[GlobalPulse/Dashboard] Batch rating recovery failed: {e}")
@@ -379,7 +425,9 @@ async def get_dashboard_logic(
         enriched_hotels = []
         active_prices = []
         for h in all_hotels:
-            hid = str(h["id"])
+            if not isinstance(h, dict):
+                continue
+            hid = str(h.get("id"))
             token = h.get("serp_api_id") or h.get("property_token")
             if not token:
                 logger.info(
@@ -753,7 +801,7 @@ async def get_dashboard_logic(
                     "price_history": [
                         {
                             "price": convert_currency(
-                                float(p["price"]),
+                                float(p.get("price") or 0),
                                 p.get("currency") or "USD",
                                 display_currency,
                             ),
@@ -793,7 +841,7 @@ async def get_dashboard_logic(
             # AGENT_LOGIC: Calculate Overall Sentiment Score (Average of pillars)
             if sentiment:
                 valid_pillars = [
-                    p["rating"] for p in sentiment if p.get("rating") is not None
+                    p.get("rating") for p in sentiment if isinstance(p, dict) and p.get("rating") is not None
                 ]
                 if valid_pillars:
                     hotel_data["overall_sentiment_score"] = round(
@@ -950,11 +998,11 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
             .execute()
         )
 
-        raw_alerts = res.data or []
+        raw_alerts = getattr(res, "data", []) or []
         if not raw_alerts:
             return []
 
-        hotel_ids = list(set([a["hotel_id"] for a in raw_alerts]))
+        hotel_ids = list(set([str(a.get("hotel_id")) for a in raw_alerts if isinstance(a, dict) and a.get("hotel_id")]))
         res = (
             db.table("hotels")
             .select("id, name, deleted_at")
@@ -962,31 +1010,38 @@ async def get_recent_wins(db: Client, limit: int = 10) -> List[Dict[str, Any]]:
             .execute()
         )
         # AGENT_LOGIC: Programmatic filtering (Robust)
-        hotels_data = [h for h in (res.data or []) if not h.get("deleted_at")]
-        hotel_name_map = {h["id"]: h["name"] for h in hotels_data}
+        hotels_data = [h for h in (getattr(res, "data", []) or []) if isinstance(h, dict) and not h.get("deleted_at")]
+        hotel_name_map = {str(h.get("id")): h.get("name", "Unknown") for h in hotels_data if isinstance(h, dict) and h.get("id")}
 
         wins = []
         for a in raw_alerts:
-            pct = 0
-            if a["old_price"] and a["old_price"] > 0:
+            if not isinstance(a, dict):
+                continue
+            pct = 0.0
+            old_p = a.get("old_price")
+            new_p = a.get("new_price")
+            if isinstance(old_p, (int, float)) and old_p > 0 and isinstance(new_p, (int, float)):
                 # Calculate change percentage based on price shift
                 # This works for both price drops and parity breaches (using direct/OTA prices)
-                if a["old_price"] > a["new_price"]:
+                if old_p > new_p:
                     pct = round(
-                        ((a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1
+                        ((old_p - new_p) / old_p) * 100, 1
                     )
                 else:
                     # In case of increases or complex shifts, just show absolute difference pct
                     pct = round(
-                        (abs(a["old_price"] - a["new_price"]) / a["old_price"]) * 100, 1
+                        (abs(old_p - new_p) / old_p) * 100, 1
                     )
 
+            hid_key = str(a.get("hotel_id"))
+            msg_raw = a.get("message", "") or ""
+            
             wins.append(
                 {
-                    "hotel_name": hotel_name_map.get(a["hotel_id"], "A shared hotel"),
+                    "hotel_name": hotel_name_map.get(hid_key, "A shared hotel"),
                     "reduction": f"{pct}%",
-                    "message": a["message"].replace("Global Pulse: ", ""),
-                    "timestamp": a["created_at"],
+                    "message": msg_raw.replace("Global Pulse: ", ""),
+                    "timestamp": a.get("created_at"),
                 }
             )
         return wins
