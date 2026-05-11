@@ -800,7 +800,7 @@ Assembles the full dashboard payload. Entry point for all frontend data. See §5
 Writes DataForSEO task results to the DB. Two paths: `price_search` → `price_logs`; `hotel_info` → `hotels.*`. See §5.
 
 ### `monitor_service.py`
-Scan scheduler. Creates `scan_sessions` and `scan_tasks`, submits to DataForSEO, runs a recovery loop for stuck tasks.
+Scan scheduler. Creates `scan_sessions` and `scan_tasks`, submits to DataForSEO, runs a recovery loop for stuck tasks. Also includes `trigger_global_heartbeat()` for the autonomous system heartbeat scan.
 
 ### `analysis_service.py`
 Complex market analysis engine combining heuristic logic with Gemini-based reasoning.
@@ -918,6 +918,11 @@ Orchestrates market data ingestion: calls `TGAScraper` + `TOBBScraper`, merges r
 ### `ScraperAgent` (`scraper_agent.py`)
 **Role**: DataForSEO result parsing + global cache check. Entry point for hotel scan execution.  
 **Key methods**: `run_scan(hotels, options)` → parallel `fetch_hotel()` calls; `_check_global_cache()` → skips API call if fresh data exists in `hotel_directory`.
+
+### `HeartbeatScan` (Cron Agent)
+**Role**: Autonomous cron agent responsible for periodic system heartbeat scans across the monitored hotel network.  
+**Uses**: `monitor_service.py` (`trigger_global_heartbeat()`).  
+**Key method**: Triggers routine deep and shallow scans to ensure data freshness.
 
 ---
 

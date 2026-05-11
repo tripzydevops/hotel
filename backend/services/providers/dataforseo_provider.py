@@ -62,7 +62,7 @@ class DataForSEOProvider(HotelDataProvider):
     - Cost-Optimized: Uses task-based batching instead of expensive Live endpoints.
     """
 
-    def _normalize_location(self, location: str) -> str:
+    def _normalize_location(self, location: Optional[str]) -> str:
         """
         Normalizes location for DataForSEO API.
 
@@ -114,7 +114,7 @@ class DataForSEOProvider(HotelDataProvider):
             return
 
         try:
-            # We use the RPC call to the atomic append function
+            import json
             # Capture metadata alongside raw data
             vault_item = {
                 "endpoint": endpoint,
@@ -122,16 +122,19 @@ class DataForSEOProvider(HotelDataProvider):
                 "payload": data,
             }
 
-            db.rpc(
-                "append_scan_raw_payload",
-                {"session_id": str(session_id), "payload_item": vault_item},
+            db.table("vault.secrets").insert(
+                {
+                    "name": f"dataforseo_{session_id}_{uuid.uuid4().hex[:8]}",
+                    "secret": json.dumps(vault_item),
+                    "description": f"Raw DataForSEO response for {endpoint}",
+                }
             ).execute()
         except Exception as vault_err:
             logger.error(
                 f"Everything Vault Failure for session {session_id}: {vault_err}"
             )
 
-    def _normalize_room_name(self, name: str) -> Dict[str, Any]:
+    def _normalize_room_name(self, name: Any) -> Dict[str, Any]:
         """
         Cleans room names and extracts metadata attributes using RoomTypeNormalizer.
         Returns a dict: {'name': cleaned_name, 'attributes': {...}, 'is_vendor': bool}
@@ -141,11 +144,12 @@ class DataForSEOProvider(HotelDataProvider):
         if not name:
             return {"name": "Standard Room", "attributes": {}, "is_vendor": False}
 
-        original_input = name
-        normalized_data = RoomTypeNormalizer.normalize(name)
+        name_str = str(name)
+        original_input = name_str
+        normalized_data = RoomTypeNormalizer.normalize(name_str)
         
         # === Attribute Extraction ===
-        original_lower = name.lower()
+        original_lower = name_str.lower()
         attributes = {
             "is_refundable": True,
             "has_breakfast": False,
@@ -688,8 +692,8 @@ class DataForSEOProvider(HotelDataProvider):
         hotel_id_on_provider: str,
         location_name: str,
         language_code: str = "en",
-        check_in: str = None,
-        check_out: str = None,
+        check_in: Optional[str] = None,
+        check_out: Optional[str] = None,
         adults: int = 2,
         currency: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -742,6 +746,7 @@ class DataForSEOProvider(HotelDataProvider):
 
         except Exception as e:
             logger.error(f"Advanced scan failed: {e}")
+            return {"status": "error", "message": f"Advanced scan failed: {e}"}
     async def search_hotels(
         self,
         query: str,
@@ -1152,32 +1157,36 @@ class DataForSEOProvider(HotelDataProvider):
 
             price_task_params.append(price_task)
 
-            # Info Task (Only if deep_scan)
-            if deep_scan:
-                info_uuid = str(uuid.uuid4())
-                hotel_task_map[info_uuid] = hid
+            # Info Task — ALWAYS submitted alongside price_search.
+            # [FIX 2026-05-11] The hotel_searches endpoint only returns aggregate 
+            # pricing (prices.items: null). The full OTA breakdown (per-source prices,
+            # room types, offers from Booking.com/Expedia/Agoda/etc.) is ONLY available
+            # from the hotel_info/advanced endpoint. Previously gated behind deep_scan,
+            # which meant normal heartbeat scans had zero OTA parity data.
+            info_uuid = str(uuid.uuid4())
+            hotel_task_map[info_uuid] = hid
 
-                # Correct key for hotel_info is 'hotel_identifier', not 'keyword'
-                # unless we are doing a keyword search, but with property_token it must be hotel_identifier.
-                # [FIX 2026-05-04] hotel_info task_post ONLY supports entity identification.
-                # check_in/out/currency/occupancy are NOT supported here and cause rejection.
-                info_task = {
-                    "hotel_identifier": keyword
-                    if (hotel.get("serp_api_id") or hotel.get("property_token"))
-                    else None,
-                    "keyword": None
-                    if (hotel.get("serp_api_id") or hotel.get("property_token"))
-                    else keyword,
-                    "location_name": normalized_loc,
-                    "language_name": "English",
-                    "tag": info_uuid,
-                }
-                
-                # Priority and other standard fields are okay, but not search-specific ones.
-                if location_code:
-                    info_task["location_code"] = location_code
+            # Correct key for hotel_info is 'hotel_identifier', not 'keyword'
+            # unless we are doing a keyword search, but with property_token it must be hotel_identifier.
+            # [FIX 2026-05-04] hotel_info task_post ONLY supports entity identification.
+            # check_in/out/currency/occupancy are NOT supported here and cause rejection.
+            info_task = {
+                "hotel_identifier": keyword
+                if (hotel.get("serp_api_id") or hotel.get("property_token"))
+                else None,
+                "keyword": None
+                if (hotel.get("serp_api_id") or hotel.get("property_token"))
+                else keyword,
+                "location_name": normalized_loc,
+                "language_name": "English",
+                "tag": info_uuid,
+            }
+            
+            # Priority and other standard fields are okay, but not search-specific ones.
+            if location_code:
+                info_task["location_code"] = location_code
 
-                info_task_params.append(info_task)
+            info_task_params.append(info_task)
 
         CHUNK_SIZE = 100
         total_submitted = 0
@@ -1252,7 +1261,7 @@ class DataForSEOProvider(HotelDataProvider):
                 .insert(batch_data)
                 .execute()
             )
-            batch_id = batch_res.data[0]["id"] if batch_res.data else None
+            batch_id = batch_res.data[0]["id"] if getattr(batch_res, "data", None) else None  # type: ignore
             logger.info(f"_register_scan_tasks: Created batch {batch_id} for {len(tasks)} tasks")
 
             scan_tasks = []
@@ -1657,7 +1666,7 @@ class DataForSEOProvider(HotelDataProvider):
                         if normalized.get("is_vendor"):
                             continue
                             
-                        source_val = price_item.get("source") or price_item.get("vendor") or ""
+                        source_val = str(price_item.get("source") or price_item.get("vendor") or "")
                         norm_key = f"{normalized.get('name', '').lower()}|{source_val.lower()}"
                         if norm_key and norm_key not in seen_room_names:
                             seen_room_names.add(norm_key)
@@ -1670,7 +1679,7 @@ class DataForSEOProvider(HotelDataProvider):
                                 "url": price_item.get("source_url") or price_item.get("url"),
                                 "capacity": price_item.get("capacity"),
                                 "features": price_item.get("features"),
-                                "image_url": (price_item.get("images") or [None])[0] if price_item.get("images") else None,
+                                "image_url": price_item["images"][0] if isinstance(price_item.get("images"), list) and price_item["images"] else None,
                                 "attributes": normalized.get("attributes", {}),
                             })
 
@@ -1711,7 +1720,7 @@ class DataForSEOProvider(HotelDataProvider):
                             "url": p_item.get("source_url") or p_item.get("url"),
                             "capacity": p_item.get("capacity"),
                             "features": p_item.get("features"),
-                            "image_url": (p_item.get("images") or [None])[0] if p_item.get("images") else None,
+                            "image_url": p_item["images"][0] if isinstance(p_item.get("images"), list) and p_item["images"] else None,
                             "attributes": normalized.get("attributes", {}),
                         })
 
@@ -1793,7 +1802,12 @@ class DataForSEOProvider(HotelDataProvider):
                         **parsed,
                     }
                     return info_result, res_json
-
+                    
+                return {
+                    "status": "failed",
+                    "failure_reason": "unhandled_endpoint",
+                    "message": f"Endpoint {endpoint} was not handled correctly."
+                }, res_json
 
         except Exception as e:
             logger.error(f"DataForSEO GET error ({endpoint}): {e}")

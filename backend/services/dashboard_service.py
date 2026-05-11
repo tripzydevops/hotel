@@ -453,22 +453,24 @@ async def get_dashboard_logic(
                     # KAİZEN 2026: Enhanced Price Info Extraction
                     active_currency = current_log.get("currency") or display_currency or "TRY"
                     
-                    # Room Types Extraction (Strict Latest Log Only - Fixed for price pollution)
+                    # Room Types Extraction (Scan recent logs to bypass thin scans)
                     raw_rooms = []
                     seen_room_keys = set()
                     
-                    # 1. Primary Source: Latest Scan (current_log)
-                    if current_log and current_log.get("room_types"):
-                        for rt in current_log["room_types"]:
-                            if not isinstance(rt, dict) or not rt.get("name"):
-                                continue
-                            # Use exact name and price for deduplication within the same scan
-                            r_key = f"{rt.get('name')}_{rt.get('price')}_{rt.get('source', '')}".strip().lower()
-                            if r_key not in seen_room_keys:
-                                raw_rooms.append(rt)
-                                seen_room_keys.add(r_key)
+                    # 1. Primary Source: Scan recent logs to find room_types
+                    for p_log in prices:
+                        if p_log.get("room_types"):
+                            for rt in p_log["room_types"]:
+                                if not isinstance(rt, dict) or not rt.get("name"):
+                                    continue
+                                r_key = f"{rt.get('name')}_{rt.get('price')}_{rt.get('source', '')}".strip().lower()
+                                if r_key not in seen_room_keys:
+                                    raw_rooms.append(rt)
+                                    seen_room_keys.add(r_key)
+                            if raw_rooms:
+                                break
                     
-                    # 2. Secondary Source (Only if current_log is empty): Master Hotel Record
+                    # 2. Secondary Source: Master Hotel Record
                     if not raw_rooms and h.get("room_types"):
                         for rt in h["room_types"]:
                             if not isinstance(rt, dict) or not rt.get("name"):
@@ -479,26 +481,38 @@ async def get_dashboard_logic(
                                 seen_room_keys.add(r_key)
 
                     
-                    # Offers Extraction (Strict Latest Log Only)
+                    # Offers Extraction (Scan recent logs to bypass thin scans)
                     raw_offers = []
                     seen_offers = set()
                     
-                    if current_log:
+                    for p_log in prices:
+                        log_offers = []
                         for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
-                            val = current_log.get(key)
+                            val = p_log.get(key)
                             if val and isinstance(val, list):
-                                for of in val:
-                                    if not isinstance(of, dict):
-                                        continue
-                                    # Create a unique key for deduplication
-                                    vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
-                                    price = _extract_price(of.get("price"))
-                                    offer_key = f"{vendor}_{price}"
-                                    if offer_key not in seen_offers:
-                                        raw_offers.append(of)
-                                        seen_offers.add(offer_key)
+                                log_offers.extend([of for of in val if isinstance(of, dict)])
+                        
+                        # Detect if this log is "thin" (e.g. only a single Direct Search offer)
+                        is_thin_log_offers = (
+                            len(log_offers) <= 1
+                            and all(
+                                (o.get("vendor") or o.get("source") or o.get("site") or o.get("ota_name") or o.get("name") or "").lower() in ["direct search", "direct", ""]
+                                for o in log_offers
+                            )
+                        ) if log_offers else True
+                        
+                        if not is_thin_log_offers:
+                            for of in log_offers:
+                                vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
+                                price = _extract_price(of.get("price"))
+                                offer_key = f"{vendor}_{price}"
+                                if offer_key not in seen_offers:
+                                    raw_offers.append(of)
+                                    seen_offers.add(offer_key)
+                            if raw_offers:
+                                break
 
-                    # AGENT_FIX: OTA Fallback from hotels table (market_offers > parity_offers > offers)
+                    # AGENT_FIX: OTA Fallback from hotels table
                     if not raw_offers:
                         for key in ["market_offers", "parity_offers", "offers"]:
                             val = h.get(key)
@@ -512,6 +526,21 @@ async def get_dashboard_logic(
                                     if offer_key not in seen_offers:
                                         raw_offers.append(of)
                                         seen_offers.add(offer_key)
+
+                        # Finally, if absolutely nothing, use the thin offer from current_log so we at least have a price
+                        if not raw_offers and current_log:
+                            for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
+                                val = current_log.get(key)
+                                if val and isinstance(val, list):
+                                    for of in val:
+                                        if not isinstance(of, dict):
+                                            continue
+                                        vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
+                                        price = _extract_price(of.get("price"))
+                                        offer_key = f"{vendor}_{price}"
+                                        if offer_key not in seen_offers:
+                                            raw_offers.append(of)
+                                            seen_offers.add(offer_key)
 
                     # Secondary fallback: reconstruct from room_types if still empty
                     if not raw_offers and h.get("room_types"):
