@@ -702,8 +702,8 @@ async def get_dashboard_logic(
                     p_raw = of.get("price")
                     p_val_extracted = _extract_price(p_raw, currency=of_cur)
                     
-                    # AGENT_FIX: Convert offer price to user preference
-                    p_val = convert_currency(p_val_extracted, of_cur, display_currency) if p_val_extracted > 0 else 0
+                    # AGENT_FIX: Convert offer price to user preference safely
+                    p_val = convert_currency(float(p_val_extracted), of_cur, display_currency) if (p_val_extracted is not None and p_val_extracted > 0) else 0
                     
                     if p_val and p_val > 0:
                         processed_offers.append({
