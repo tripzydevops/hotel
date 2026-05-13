@@ -3,6 +3,17 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 13, 2026)
+- ✅ **Rich Data Scraping & Nested Offers Traversal (Rank 1 Fix)**: 
+    - Resolved severe data gap where OTA entries in `price_logs` were missing room designations (`room_type: null`).
+    - Upgraded `dataforseo_provider.py` to recursively extract item arrays from the nested `offers` block inside each provider object.
+    - Leverages exact `title` and price specifics for individual room variations instead of defaulting to top-level OTA attributes.
+- ✅ **Deep Granular Deduplication Resilience**: 
+    - Refined the parser deduplication algorithm to use the composite key `"{source}_{room_type}_{price}"`. 
+    - Secures storage of multiple varying room tiers from the same external OTA, preventing aggressive deduplication collapsing and data-loss.
+- ✅ **Dynamic Scrape Integrity Verification**:
+    - Authored specialized verification harnesses (`test_parsing_output.py`) to extract live raw payloads from completed `scan_tasks` and stream them directly through the provider engine for zero-regression verification.
+
 ## 🕒 Recent Updates (May 10, 2026)
 - ✅ **Python 3.12 Runtime & Dependency Alignment**:
     - Updated `api/pyproject.toml` and root `.python-version` to support Python **3.12**, resolving Vercel deployment "runtime not found" warnings.
@@ -445,6 +456,13 @@ monitor_service.py recovery loop
   → manually routes to persistence
 ```
 
+### Rich Data Scraping & Nested Offers Extraction
+During `hotel_info` scans, the DataForSEO API provides structured hotel availability data. However, the top-level items array under `prices.items` often contains generalized OTA names (e.g. `Agoda`) with generic pricing. Detailed, actionable data is nested further:
+1. **Traversal Loop**: For each OTA provider item, the system checks for an `offers` JSON array.
+2. **Granular Parsing**: The parser extracts the true `room_type` (defined as `title` in the offer), granular `price`, `cancellation` policies, and `conditions` from each distinct offer object.
+3. **Deduplication Key**: Distinct offers are stored uniquely based on a composite deduplication signature: `"{source}_{room_type}_{price}"`. This preserves variations like "Standard King" vs "Standard Double" provided by a single vendor.
+4. **Catalog Alignment**: These parsed offers cascade to `scan_persistence.py` where they are registered under the `offers` and `room_types` arrays in `price_logs`.
+
 ### Key Bug History (see §9 for full details)
 - Race conditions from multiple `continuous_monitor.py` processes → run ONE process only
 - "Shape B" parsing: `hotel_info` responses sometimes lack `items` → guard with `if not items: return`
@@ -677,6 +695,16 @@ graph TD
 **Symptom**: Hotels from completely different cities matched as close competitors during ghost discovery when coordinates were missing.  
 **Root Cause**: The `match_hotels` RPC defines a fallback matching condition: `target_city IS NULL OR h.location ILIKE '%' || target_city || '%'`. Because `target_city` was completely omitted from the RPC call arguments within the Python agent layer, it defaulted to `NULL`, rendering the city match condition universally true.  
 **Fix**: Extracted the target hotel's city from `resolved_location_name` or `location` within `discover_rivals` and passed `"target_city": target_city` in the `match_hotels` RPC.
+
+### Bug #12 — Missing Room Types (Nested OTA Offers Trap)
+**Date**: 2026-05-13  
+**File**: `backend/services/providers/dataforseo_provider.py`  
+**Symptom**: All OTA options in `price_logs` recorded `room_type: null` inside both the dashboard UI and database.  
+**Root Cause**: The parser was reading the top-level `title` of DataForSEO's `prices.items` array (which stores OTA provider names like "Agoda", "Booking.com"). It failed to traverse the nested `offers` child-array where individual room descriptions and unique prices are actually located.  
+**Fix**: Refactored `_parse_advanced_hotel_info` to recursively scan the `offers` array. Extracted individual `title` as the room designation, captured individual prices, and built a granular list of distinct room options.  
+**Deduplication**: Replaced the basic source-based deduplication key with composite `"{source}_{room_type}_{price}"` to guarantee multiple valid room variations from a single OTA provider are not consolidated or discarded.  
+**Verification**: Validated via isolated pipeline harness `backend/scratch/test_parsing_output.py` executing against recorded production JSON payloads.
+
 
 ---
 

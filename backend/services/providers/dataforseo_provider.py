@@ -513,7 +513,6 @@ class DataForSEOProvider(HotelDataProvider):
             ]
 
         # === 6. OTA Price Items ===
-        # === 6. OTA Price Items ===
         ota_prices = []
         # Merge items from prices object and top-level items array
         raw_price_items = (prices_obj.get("items") or []) + (data.get("items") or [])
@@ -523,28 +522,66 @@ class DataForSEOProvider(HotelDataProvider):
             if isinstance(pi, dict) and (pi.get("type") == "hotel_info_price" or pi.get("price")):
                 # [FIX] Prioritize source/vendor over title for the OTA name
                 source = pi.get("source") or pi.get("vendor") or pi.get("title")
-                room_title = pi.get("title") if pi.get("source") or pi.get("vendor") else None
-                
                 if not source:
                     continue
                 
-                # [FIX] Deduplicate by (source, room, price) to avoid losing different room types with same price
-                price_val = pi.get("price")
-                dedup_key = f"{source}_{room_title}_{price_val}"
-                if dedup_key in seen_items:
-                    continue
-                seen_items.add(dedup_key)
-                
-                ota_prices.append(
-                    {
-                        "source": source,
-                        "room_type": room_title,
-                        "price": price_val,
-                        "currency": pi.get("currency"),
-                        "url": pi.get("source_url") or pi.get("url"),
-                        "type": pi.get("type", "hotel_info_price"),
-                    }
-                )
+                # Extract sub-offers if present (this holds individual room types and rates for this OTA)
+                sub_offers = pi.get("offers") or []
+                if isinstance(sub_offers, list) and len(sub_offers) > 0:
+                    for sub_off in sub_offers:
+                        if not isinstance(sub_off, dict):
+                            continue
+                        
+                        # Get price and room title from the sub-offer
+                        sub_price = sub_off.get("price")
+                        sub_room = sub_off.get("title")
+                        sub_curr = sub_off.get("currency") or pi.get("currency")
+                        sub_url = sub_off.get("url") or pi.get("source_url") or pi.get("url")
+                        
+                        if sub_price is None:
+                            continue
+                            
+                        # [FIX] Deduplicate by (source, room, price) to avoid losing different room types with same price
+                        dedup_key = f"{source}_{sub_room}_{sub_price}"
+                        if dedup_key in seen_items:
+                            continue
+                        seen_items.add(dedup_key)
+                        
+                        ota_prices.append(
+                            {
+                                "source": source,
+                                "room_type": sub_room,
+                                "price": sub_price,
+                                "currency": sub_curr,
+                                "url": sub_url,
+                                "type": sub_off.get("type", "hotel_info_price_offer"),
+                                "official_site": pi.get("official_site", False),
+                                "free_cancellation_until": sub_off.get("free_cancellation_until") or pi.get("free_cancellation_until"),
+                                "max_visitors": sub_off.get("max_visitors"),
+                            }
+                        )
+                else:
+                    # Fallback to top-level OTA item if no sub-offers
+                    room_title = pi.get("title") if pi.get("source") or pi.get("vendor") else None
+                    price_val = pi.get("price")
+                    
+                    dedup_key = f"{source}_{room_title}_{price_val}"
+                    if dedup_key in seen_items:
+                        continue
+                    seen_items.add(dedup_key)
+                    
+                    ota_prices.append(
+                        {
+                            "source": source,
+                            "room_type": room_title,
+                            "price": price_val,
+                            "currency": pi.get("currency"),
+                            "url": pi.get("source_url") or pi.get("url"),
+                            "type": pi.get("type", "hotel_info_price"),
+                            "official_site": pi.get("official_site", False),
+                            "free_cancellation_until": pi.get("free_cancellation_until"),
+                        }
+                    )
 
         # === 7. Images ===
         overview_images = data.get("overview_images") or []
