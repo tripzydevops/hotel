@@ -1168,8 +1168,9 @@ class DataForSEOProvider(HotelDataProvider):
 
             # Correct key for hotel_info is 'hotel_identifier', not 'keyword'
             # unless we are doing a keyword search, but with property_token it must be hotel_identifier.
-            # [FIX 2026-05-04] hotel_info task_post ONLY supports entity identification.
-            # check_in/out/currency/occupancy are NOT supported here and cause rejection.
+            # [FIX 2026-05-12] API DOES support dates/occupancy with hotel_identifier, 
+            # provided location_name and language_name/code are also supplied. 
+            # Restoring these allows rich OTA breakdown to line up with desired booking window.
             info_task = {
                 "hotel_identifier": keyword
                 if (hotel.get("serp_api_id") or hotel.get("property_token"))
@@ -1179,8 +1180,14 @@ class DataForSEOProvider(HotelDataProvider):
                 else keyword,
                 "location_name": normalized_loc,
                 "language_name": "English",
+                "check_in": check_in,
+                "check_out": check_out,
+                "currency": currency,
+                "adults": adults,
                 "tag": info_uuid,
             }
+            if task_children:
+                info_task["children"] = task_children
             
             # Priority and other standard fields are okay, but not search-specific ones.
             if location_code:

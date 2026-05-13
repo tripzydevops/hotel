@@ -1021,6 +1021,7 @@ async def sync_extraction_result(
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     source: str = "System",
+    task_type: Optional[str] = None,
 ) -> bool:
     """
     DRY Wrapper for Batch Sync.
@@ -1029,7 +1030,8 @@ async def sync_extraction_result(
         "hotel_id": hotel_id,
         "result": result,
         "initiator_id": user_id,
-        "scan_task_id": session_id
+        "scan_task_id": session_id,
+        "task_type": task_type
     }
     return await sync_extraction_results_batch(insforge, [batch_item], source=source)
 

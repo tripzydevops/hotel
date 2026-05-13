@@ -121,6 +121,7 @@ async def handle_dataforseo_webhook(
             user_id=user_id,
             session_id=scan_task_id,
             source="DataForSEO Webhook",
+            task_type=task_type,
         )
 
         if success:

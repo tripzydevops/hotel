@@ -534,20 +534,40 @@ async def get_dashboard_logic(
                     seen_offers = set()
                     
                     for p_log in prices:
+                        # Unique check per log to prevent multi-column bloating causing "thin" bypass
                         log_offers = []
+                        seen_in_log = set()
+                        
                         for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
                             val = p_log.get(key)
                             if val and isinstance(val, list):
-                                log_offers.extend([of for of in val if isinstance(of, dict)])
+                                for of in val:
+                                    if not isinstance(of, dict): continue
+                                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or ""
+                                    v_norm = normalize_vendor_name(v_raw)
+                                    price = _extract_price(of.get("price"))
+                                    
+                                    # Deduplicate by vendor + price key to ensure we're counting true variety
+                                    inner_key = f"{v_norm}_{price}".lower().strip()
+                                    if inner_key not in seen_in_log:
+                                        seen_in_log.add(inner_key)
+                                        log_offers.append(of)
                         
-                        # Detect if this log is "thin" (e.g. only a single Direct Search offer)
-                        is_thin_log_offers = (
-                            len(log_offers) <= 1
-                            and all(
-                                (o.get("vendor") or o.get("source") or o.get("site") or o.get("ota_name") or o.get("name") or "").lower() in ["direct search", "direct", ""]
-                                for o in log_offers
-                            )
-                        ) if log_offers else True
+                        # Detect if this log is "thin" (e.g. only one offer, and that offer is Direct Search/Google)
+                        is_thin_log_offers = True
+                        if log_offers:
+                            if len(log_offers) > 1:
+                                # Found diverse market data, NOT a thin log
+                                is_thin_log_offers = False
+                            else:
+                                # Exactly one offer: verify it isn't just a generic fallback source
+                                of = log_offers[0]
+                                v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or ""
+                                v_norm = normalize_vendor_name(v_raw).lower()
+                                
+                                # Thin list explicitly checks whitelist of known generic identifiers
+                                thin_identifiers = {"direct search", "direct", "google hotels", "unknown", ""}
+                                is_thin_log_offers = v_norm in thin_identifiers
                         
                         if not is_thin_log_offers:
                             for of in log_offers:

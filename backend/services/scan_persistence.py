@@ -36,6 +36,25 @@ class ScanPersistenceService:
         self.insforge = insforge
         self.admin_insforge = admin_insforge or insforge  # Fallback to shared if admin not provided
 
+    def _extract_review_count(self, data: Dict[str, Any]) -> Optional[int]:
+        """Safely extract review count from provider response."""
+        rc = data.get("reviews_count")
+        if rc is not None and not isinstance(rc, list):
+            try:
+                return int(rc)
+            except (ValueError, TypeError):
+                pass
+        
+        r = data.get("reviews")
+        if isinstance(r, (int, float)):
+            return int(r)
+        elif isinstance(r, list):
+            return len(r)
+        elif isinstance(r, str) and r.isdigit():
+            return int(r)
+            
+        return None
+
     async def _resilient_insert(self, table_name: str, items: List[Dict[str, Any]]):
         """Helper for batch insertion with per-item fallback on failure."""
         if not items:
@@ -527,7 +546,7 @@ class ScanPersistenceService:
 
             hotel_update = {
                 "rating": result.get("rating"),
-                "review_count": result.get("reviews_count") or result.get("reviews"),
+                "review_count": self._extract_review_count(result),
                 "stars": result.get("stars"),
                 "description": result.get("description"),
                 "amenities": result.get("amenities"),
@@ -557,8 +576,7 @@ class ScanPersistenceService:
                 sentiment_entry = {
                     "hotel_id": hotel_id,
                     "rating": result.get("rating"),
-                    "review_count": result.get("reviews_count")
-                    or result.get("reviews"),
+                    "review_count": self._extract_review_count(result),
                     "sentiment_breakdown": result.get("sentiment_breakdown"),
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                 }
@@ -1438,10 +1456,9 @@ class ScanPersistenceService:
                         upd[field] = res_data[field]
                 
                 # Reviews & OTA Summary
-                if res_data.get("reviews") or res_data.get("reviews_count"):
-                    upd["review_count"] = (
-                        res_data.get("reviews") or res_data.get("reviews_count")
-                    )
+                rev_cnt = self._extract_review_count(res_data)
+                if rev_cnt is not None:
+                    upd["review_count"] = rev_cnt
 
                 # [KAIZEN 2026] Extract full list of offers using all possible keys
                 offers: List[Dict[str, Any]] = (
@@ -1572,7 +1589,7 @@ class ScanPersistenceService:
                     sentiment_history.append({
                         "hotel_id": tid,
                         "rating": res_data.get("rating"),
-                        "review_count": res_data.get("reviews") or res_data.get("reviews_count"),
+                        "review_count": self._extract_review_count(res_data),
                         "sentiment_breakdown": res_data.get("sentiment_breakdown"),
                         "recorded_at": now_ts
                     })
