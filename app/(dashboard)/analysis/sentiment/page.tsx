@@ -880,7 +880,7 @@ export default function SentimentPage() {
                     {/* Ambient styling backdrop */}
                     <div className="absolute -top-20 -right-20 w-40 h-40 bg-sky-500/[0.04] rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
                     
-                    {guestMentions.map((mention, index) => {
+                    {guestMentions.map((mention: any, index: number) => {
                       let pillStyle = "bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-500/10 hover:border-slate-500/30";
                       let dotColor = "bg-slate-400";
                       
