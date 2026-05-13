@@ -565,6 +565,7 @@ export default function SentimentPage() {
         const count = Number(m.total_count) || Number(m.count) || 0;
         const pos = Number(m.positive_count) || 0;
         const neg = Number(m.negative_count) || 0;
+        const category = m.category || "General";
         
         let sentiment = "neutral";
         if (m.sentiment) {
@@ -575,7 +576,7 @@ export default function SentimentPage() {
           sentiment = "negative";
         }
         
-        return { keyword, count, sentiment };
+        return { keyword, count, sentiment, category };
       })
       .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
 
@@ -596,17 +597,33 @@ export default function SentimentPage() {
             sentiment = "negative";
           }
           
-          return { keyword: name, count: total, sentiment };
+          return { keyword: name, count: total, sentiment, category: name };
         })
         .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
     }
     
     return parsedMentions
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 24);
+      .sort((a: any, b: any) => b.count - a.count);
   }, [targetHotel]);
 
   // 7. Computed Visibility Toggles
+  const groupedMentions = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    guestMentions.forEach((m: any) => {
+      const cat = m.category || "General";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(m);
+    });
+    
+    return Object.entries(groups)
+      .map(([name, items]) => ({
+        name,
+        items,
+        maxCount: Math.max(...items.map((i: any) => i.count))
+      }))
+      .sort((a, b) => b.maxCount - a.maxCount);
+  }, [guestMentions]);
+
   const visibleCompetitors = useMemo(() =>
     competitors.filter((c: any) => selectedHotelIds.includes(c.id))
     , [competitors, selectedHotelIds]);
@@ -877,54 +894,69 @@ export default function SentimentPage() {
                 </h3>
               </div>
               {/* ── Premium Quantum Tactical Keyword Matrix (Guest Voice) ── */}
-              {guestMentions.length > 0 && (
+              {groupedMentions.length > 0 && (
                 <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
-                  <div className="flex flex-col mb-5">
+                  <div className="flex flex-col mb-6">
                     <p className="text-[10px] text-slate-500 dark:text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
                       <MessageSquare className="w-3 h-3 text-[var(--soft-gold)]" />
-                      Tactical Guest Mentions Matrix
+                      Categorized Tactical Guest Voice
                     </p>
                     <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">
-                      Direct guest review topics dynamically weighted by occurrence frequency & core sentiment.
+                      Specific review keywords intelligently categorized and weighted by frequency.
                     </h4>
                   </div>
-                  <div className="flex flex-wrap gap-3.5 p-6 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-slate-100 dark:border-white/[0.03] shadow-sm relative overflow-hidden group">
-                    {/* Ambient styling backdrop */}
-                    <div className="absolute -top-20 -right-20 w-40 h-40 bg-sky-500/[0.04] rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
-                    
-                    {guestMentions.map((mention: any, index: number) => {
-                      let pillStyle = "bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-500/10 hover:border-slate-500/30";
-                      let dotColor = "bg-slate-400";
-                      
-                      if (mention.sentiment === "positive") {
-                        pillStyle = "bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 hover:border-emerald-500/30";
-                        dotColor = "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
-                      } else if (mention.sentiment === "negative") {
-                        pillStyle = "bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/10 hover:border-rose-500/30";
-                        dotColor = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]";
-                      }
 
-                      return (
-                        <motion.div 
-                          key={`${mention.keyword}-${index}`}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.02, type: "spring", stiffness: 200, damping: 20 }}
-                          whileHover={{ scale: 1.04, y: -1.5 }}
-                          className={`group flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold transition-all duration-300 cursor-default backdrop-blur-[2px] select-none ${pillStyle}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full transition-transform duration-300 group-hover:scale-125 ${dotColor}`} />
-                          <span className="uppercase tracking-widest">
-                            {mention.keyword}
-                          </span>
-                          {mention.count > 0 && (
-                            <span className="ml-0.5 px-2 py-0.5 bg-slate-200 dark:bg-black/40 text-slate-600 dark:text-slate-300 rounded-md font-black tracking-wider text-[10px]">
-                              {mention.count}
-                            </span>
-                          )}
-                        </motion.div>
-                      );
-                    })}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    {groupedMentions.map((group, gIdx) => (
+                      <div 
+                        key={group.name} 
+                        className="flex flex-col p-5 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-slate-100 dark:border-white/[0.03] shadow-sm relative overflow-hidden group"
+                      >
+                        {/* Ambient styling backdrop */}
+                        <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/[0.02] rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
+                        
+                        <h5 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-4 pb-2 border-b border-slate-200/50 dark:border-white/[0.03]">
+                          <div className="w-1.5 h-1.5 bg-[var(--soft-gold)] rounded-full animate-pulse" />
+                          {group.name}
+                        </h5>
+
+                        <div className="flex flex-wrap gap-2.5">
+                          {group.items.map((mention: any, index: number) => {
+                            let pillStyle = "bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-500/10 hover:border-slate-500/30";
+                            let dotColor = "bg-slate-400";
+                            
+                            if (mention.sentiment === "positive") {
+                              pillStyle = "bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 hover:border-emerald-500/30";
+                              dotColor = "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
+                            } else if (mention.sentiment === "negative") {
+                              pillStyle = "bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/10 hover:border-rose-500/30";
+                              dotColor = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]";
+                            }
+
+                            return (
+                              <motion.div 
+                                key={`${mention.keyword}-${index}`}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: (gIdx * 0.05) + (index * 0.02), type: "spring", stiffness: 200, damping: 20 }}
+                                whileHover={{ scale: 1.04, y: -1 }}
+                                className={`group flex items-center gap-2 px-3 py-1.5 border rounded-lg text-[11px] font-bold transition-all duration-300 cursor-default backdrop-blur-[2px] select-none ${pillStyle}`}
+                              >
+                                <span className={`w-1 h-1 rounded-full transition-transform duration-300 group-hover:scale-125 ${dotColor}`} />
+                                <span className="tracking-wider leading-none uppercase">
+                                  {mention.keyword}
+                                </span>
+                                {mention.count > 0 && (
+                                  <span className="ml-0.5 px-1.5 py-0.5 bg-slate-200 dark:bg-black/40 text-slate-600 dark:text-slate-300 rounded text-[9px] font-black tracking-wider">
+                                    {mention.count}
+                                  </span>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
