@@ -636,6 +636,30 @@ class DataForSEOProvider(HotelDataProvider):
                         "image_url": r.get("image_url") or r.get("image"),
                     })
 
+        # Fallback 2: Extract unique room types from ota_prices if room_catalog is still empty
+        if not room_catalog and ota_prices:
+            seen_derived_rooms = set()
+            for op in ota_prices:
+                if isinstance(op, dict) and op.get("room_type"):
+                    r_title = op.get("room_type")
+                    normalized = self._normalize_room_name(r_title)
+                    if normalized.get("is_vendor"):
+                        continue
+                    
+                    final_name = normalized.get("name") or r_title
+                    if final_name and final_name not in seen_derived_rooms:
+                        seen_derived_rooms.add(final_name)
+                        room_catalog.append({
+                            "name": final_name,
+                            "price": op.get("price"),
+                            "currency": op.get("currency"),
+                            "source": f"{op.get('source', 'OTA')} (Derived)",
+                            "url": op.get("url"),
+                            "capacity": op.get("max_visitors"),
+                            "features": None,
+                            "image_url": None,
+                        })
+
         # === 9. Best Price from prices object ===
         best_price = prices_obj.get("price")
         currency = prices_obj.get("currency")

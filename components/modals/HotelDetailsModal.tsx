@@ -20,6 +20,9 @@ import {
   ExternalLink,
   SlidersHorizontal,
   Sparkles,
+  Wifi,
+  Coffee,
+  ShieldCheck,
 } from "lucide-react";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { useI18n } from "@/lib/i18n";
@@ -509,10 +512,29 @@ export default function HotelDetailsModal({
           {activeTab === "rooms" && (
             <div className="space-y-4">
               {(() => {
-                // AGENT_FIX: Full fallback chain for room_types
-                const room_types = (hotel?.price_info?.room_types?.length ? hotel.price_info.room_types : null)
+                // AGENT_FIX: Full fallback chain with cleaning and deduplication
+                const raw_rooms = (hotel?.price_info?.room_types?.length ? hotel.price_info.room_types : null)
                   || (hotel?.room_types?.length ? hotel.room_types : null)
                   || [];
+
+                // 1. Map and ensure fallback to "Standard Room"
+                const processedRooms = raw_rooms.map((room: any) => {
+                  let name = (room.original_name || room.name || room.room_type || "").trim();
+                  if (!name) name = "Standard Room";
+                  return { ...room, name };
+                });
+
+                // 2. Deduplicate by Name + Price + Source
+                const seenKeys = new Set<string>();
+                const room_types: any[] = [];
+                processedRooms.forEach((room: any) => {
+                  const normPrice = parsePrice(room.price);
+                  const key = `${room.name.toLowerCase()}_${normPrice}_${((room as any).source || "").toLowerCase()}`.trim();
+                  if (!seenKeys.has(key)) {
+                    seenKeys.add(key);
+                    room_types.push(room);
+                  }
+                });
                 const displayCurrency = hotel?.price_info?.currency || hotel?.preferred_currency || "TRY";
 
                 const standardKeywords = [
@@ -634,19 +656,60 @@ export default function HotelDetailsModal({
                                 </div>
                                 {(() => {
                                   const ota = resolveOtaName((room as any).source);
+                                  const r = room as any;
+                                  const nameLower = (r.name || "").toLowerCase();
+                                  
+                                  // Smart dynamic feature extraction
+                                  const hasWifi = r.attributes?.has_wifi ?? r.has_wifi ?? r.wifi ?? nameLower.includes("wifi");
+                                  const hasBreakfast = r.attributes?.has_breakfast ?? r.has_breakfast ?? r.breakfast ?? (
+                                    nameLower.includes("breakfast") || 
+                                    nameLower.includes("kahvalt") || 
+                                    nameLower.includes("bb")
+                                  );
+                                  const isRefundable = r.attributes?.is_refundable ?? r.is_refundable ?? r.refundable ?? (
+                                    nameLower.includes("refundable") || 
+                                    nameLower.includes("cancellation") || 
+                                    nameLower.includes("iade") || 
+                                    nameLower.includes("i̇ade")
+                                  );
+
                                   return (
-                                    <div>
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
-                                          {room.name}
-                                        </h4>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border rounded ${category.badgeClass}`}>
-                                          {category.label}
-                                        </span>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--soft-gold)] transition-colors">
+                                            {room.name}
+                                          </h4>
+                                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border rounded ${category.badgeClass}`}>
+                                            {category.label}
+                                          </span>
+                                        </div>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
+                                          {ota.name} · {ota.type}
+                                        </p>
                                       </div>
-                                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-tight opacity-60">
-                                        {ota.name} · {ota.type}
-                                      </p>
+
+                                      {/* High-fidelity micro-attributes */}
+                                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                                        {hasWifi && (
+                                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shadow-sm shadow-indigo-500/[0.05]">
+                                            <Wifi className="w-2.5 h-2.5" />
+                                            WiFi
+                                          </span>
+                                        )}
+                                        {hasBreakfast && (
+                                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 shadow-sm shadow-amber-500/[0.05]">
+                                            <Coffee className="w-2.5 h-2.5" />
+                                            Breakfast
+                                          </span>
+                                        )}
+                                        {isRefundable && (
+                                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-sm shadow-emerald-500/[0.05]">
+                                            <ShieldCheck className="w-2.5 h-2.5" />
+                                            Refundable
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   );
                                 })()}

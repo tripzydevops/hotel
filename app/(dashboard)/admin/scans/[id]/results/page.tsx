@@ -669,7 +669,7 @@ export default function ScanResultsPage() {
                                     result.room_types.map((room, i) => (
                                       <div key={i} className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:border-purple-500/20 transition-all">
                                         <div className="flex justify-between items-center mb-1">
-                                          <span className="text-[10px] font-black text-white uppercase tracking-tight">{room.name}</span>
+                                          <span className="text-[10px] font-black text-white uppercase tracking-tight">{room.original_name || room.name}</span>
                                           {room.price && <span className="text-[10px] font-bold text-purple-400">{result.currency} {room.price}</span>}
                                         </div>
                                         {room.description && <p className="text-[9px] text-zinc-500 line-clamp-1 italic leading-relaxed">{room.description}</p>}

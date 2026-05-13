@@ -236,10 +236,11 @@ class ScanPersistenceService:
 
         return analysis_summary
 
-    def _normalize_room_types(self, rooms: Any) -> List[Dict[str, Any]]:
+    def _normalize_room_types(self, rooms: Any, target_currency: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         KAİZEN 2026: Normalizes room type data into a consistent object structure.
         Prevents frontend errors where strings are expected to be objects (e.g. room.name).
+        [KAIZEN 2026-05] Added currency normalization to align with target scan currency.
         """
         if not rooms or not isinstance(rooms, list):
             return []
@@ -250,7 +251,7 @@ class ScanPersistenceService:
                 normalized.append({
                     "name": r,
                     "price": None,
-                    "currency": None
+                    "currency": target_currency
                 })
             elif isinstance(r, dict):
                 # Ensure we have a 'name' field
@@ -258,10 +259,25 @@ class ScanPersistenceService:
                 if not name:
                     continue
                     
+                price = r.get("price")
+                # Capture original currency for this specific room if it exists, fallback to target_currency
+                room_currency = r.get("currency") or target_currency
+                
+                if target_currency and price is not None:
+                    try:
+                        price_val = float(price)
+                        source_curr = str(r.get("currency") or target_currency)
+                        if price_val > 0 and source_curr != target_currency:
+                            price_val = convert_currency(price_val, source_curr, target_currency)
+                        price = price_val
+                        room_currency = target_currency
+                    except Exception:
+                        pass
+                    
                 entry = {
                     "name": name,
-                    "price": r.get("price"),
-                    "currency": r.get("currency"),
+                    "price": price,
+                    "currency": room_currency,
                     "amenities": r.get("amenities") or r.get("features") or [],
                     "sqm": r.get("sqm"),
                     "capacity": r.get("capacity"),
@@ -463,16 +479,22 @@ class ScanPersistenceService:
         # Room Types Priority: Prefer rich catalog objects over simple string names
         # KAİZEN 2026: Always normalize to objects to prevent frontend "Target Chamber" errors
         current_room_types = self._normalize_room_types(
-            result.get("room_catalog") or result.get("room_types") or []
+            result.get("room_catalog") or result.get("room_types") or [],
+            target_currency=currency
         )
 
         # If room_types is empty, try to derive from offers/prices (Market Depth)
         if not current_room_types and (result.get("all_prices") or result.get("offers")):
             source_offers = result.get("all_prices") or result.get("offers") or []
-            current_room_types = [
-                {"name": of.get("name") or of.get("room_type"), "price": of.get("price")} 
+            raw_derived = [
+                {
+                    "name": of.get("name") or of.get("room_type"),
+                    "price": of.get("price"),
+                    "currency": of.get("currency") or currency
+                }
                 for of in source_offers if of.get("name") or of.get("room_type")
             ]
+            current_room_types = self._normalize_room_types(raw_derived, target_currency=currency)
 
         # [KAIZEN 2026] Anomaly Detection Safeguard (30% Variance)
         # Fetch 5-day history for baseline calculation
@@ -834,15 +856,21 @@ class ScanPersistenceService:
             result.get("room_catalog") or 
             price_data.get("room_types") or 
             price_data.get("all_rooms") or 
-            []
+            [],
+            target_currency=currency
         )
         
         # If room_types is empty, try to derive from offers/prices
         if not current_room_types and offers:
-            current_room_types = [
-                {"name": of.get("name") or of.get("room_type"), "price": of.get("price")} 
+            raw_derived = [
+                {
+                    "name": of.get("name") or of.get("room_type"),
+                    "price": of.get("price"),
+                    "currency": of.get("currency") or currency
+                }
                 for of in offers if of.get("name") or of.get("room_type")
             ]
+            current_room_types = self._normalize_room_types(raw_derived, target_currency=currency)
         # Kaizen: Disabled carry-forward room type fallbacks to prevent data pollution as requested.
         # Only room types from the current scan (or derived from current offers) will be persisted.
 
@@ -1518,7 +1546,8 @@ class ScanPersistenceService:
                     res_data.get("room_catalog") or 
                     res_data.get("room_types") or 
                     res_data.get("all_rooms") or 
-                    []
+                    [],
+                    target_currency=currency
                 )
                 if room_types and not should_protect_ota:
                     upd["room_types"] = room_types
