@@ -29,7 +29,9 @@ import {
   Globe,
   ThumbsUp,
   ThumbsDown,
-  MessageSquare
+  MessageSquare,
+  Wifi,
+  Coffee
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -72,6 +74,10 @@ interface ScanResult {
     price?: number;
     description?: string;
     images?: string[];
+    original_name?: string;
+    free_wifi?: boolean;
+    free_breakfast?: boolean;
+    is_refundable?: boolean;
   }[];
   reviews_sentiment?: {
     keyword: string;
@@ -672,7 +678,30 @@ export default function ScanResultsPage() {
                                           <span className="text-[10px] font-black text-white uppercase tracking-tight">{room.original_name || room.name}</span>
                                           {room.price && <span className="text-[10px] font-bold text-purple-400">{result.currency} {room.price}</span>}
                                         </div>
-                                        {room.description && <p className="text-[9px] text-zinc-500 line-clamp-1 italic leading-relaxed">{room.description}</p>}
+                                        
+                                        {/* Smart Badges aligned with modal styling */}
+                                        <div className="flex flex-wrap gap-1 mt-1.5 mb-2">
+                                          {(room.free_wifi || (room.name && /wifi|wi-fi/i.test(room.name)) || (room.description && /wifi|wi-fi/i.test(room.description))) && (
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[8px] font-black text-blue-400 uppercase tracking-wider">
+                                              <Wifi className="w-2.5 h-2.5" />
+                                              Free Wifi
+                                            </span>
+                                          )}
+                                          {(room.free_breakfast || (room.name && /breakfast/i.test(room.name)) || (room.description && /breakfast/i.test(room.description))) && (
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-400 uppercase tracking-wider">
+                                              <Coffee className="w-2.5 h-2.5" />
+                                              Breakfast
+                                            </span>
+                                          )}
+                                          {(room.is_refundable || (room.name && /refundable|free cancellation/i.test(room.name)) || (room.description && /refundable|free cancellation/i.test(room.description))) && (
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-400 uppercase tracking-wider">
+                                              <ShieldCheck className="w-2.5 h-2.5" />
+                                              Refundable
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {room.description && <p className="text-[9px] text-zinc-500 line-clamp-2 italic leading-relaxed">{room.description}</p>}
                                       </div>
                                     ))
                                   ) : (
