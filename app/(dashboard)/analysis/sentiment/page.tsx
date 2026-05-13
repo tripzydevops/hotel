@@ -546,20 +546,21 @@ export default function SentimentPage() {
   // 6b. Premium Guest Mentions Extraction & Synthesis (KAİZEN)
   const guestMentions = useMemo(() => {
     if (!targetHotel) return [];
+    const hotel = targetHotel as any;
     let rawMentions: any[] = [];
     
     // Attempt deep extraction from multiples locations
-    if (Array.isArray(targetHotel.guest_mentions)) {
-      rawMentions = targetHotel.guest_mentions;
-    } else if (Array.isArray(targetHotel.sentiment_history?.[0]?.guest_mentions)) {
-      rawMentions = targetHotel.sentiment_history[0].guest_mentions;
-    } else if (Array.isArray((targetHotel as any).reviews?.guest_mentions)) {
-      rawMentions = (targetHotel as any).reviews.guest_mentions;
+    if (Array.isArray(hotel.guest_mentions)) {
+      rawMentions = hotel.guest_mentions;
+    } else if (Array.isArray(hotel.sentiment_history?.[0]?.guest_mentions)) {
+      rawMentions = hotel.sentiment_history[0].guest_mentions;
+    } else if (Array.isArray(hotel.reviews?.guest_mentions)) {
+      rawMentions = hotel.reviews.guest_mentions;
     }
 
     // Fallback to direct breakdown parsing if mentions empty
-    if (rawMentions.length === 0 && Array.isArray(targetHotel.sentiment_breakdown)) {
-      return targetHotel.sentiment_breakdown
+    if (rawMentions.length === 0 && Array.isArray(hotel.sentiment_breakdown)) {
+      return hotel.sentiment_breakdown
         .filter((s: any) => (s.total_mentioned || 0) > 0)
         .map((s: any) => {
           const name = s.name || s.display_name || "N/A";
