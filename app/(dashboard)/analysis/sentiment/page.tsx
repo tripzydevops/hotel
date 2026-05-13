@@ -558,38 +558,50 @@ export default function SentimentPage() {
       rawMentions = hotel.reviews.guest_mentions;
     }
 
-    // Fallback to direct breakdown parsing if mentions empty
-    if (rawMentions.length === 0 && Array.isArray(hotel.sentiment_breakdown)) {
-      return hotel.sentiment_breakdown
-        .filter((s: any) => (s.total_mentioned || 0) > 0)
+    // Format mentions securely based on DB schemas discovered (KAIZEN PRO)
+    let parsedMentions = rawMentions
+      .map((m: any) => {
+        const keyword = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
+        const count = Number(m.total_count) || Number(m.count) || 0;
+        const pos = Number(m.positive_count) || 0;
+        const neg = Number(m.negative_count) || 0;
+        
+        let sentiment = "neutral";
+        if (m.sentiment) {
+          sentiment = String(m.sentiment).toLowerCase();
+        } else if (pos > neg) {
+          sentiment = "positive";
+        } else if (neg > pos) {
+          sentiment = "negative";
+        }
+        
+        return { keyword, count, sentiment };
+      })
+      .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
+
+    // Fallback to dynamic breakdown synthesis if mentions empty or yield 0 items
+    if (parsedMentions.length === 0 && Array.isArray(hotel.sentiment_breakdown)) {
+      parsedMentions = hotel.sentiment_breakdown
         .map((s: any) => {
           const name = s.name || s.display_name || "N/A";
           const pos = Number(s.positive) || 0;
           const neg = Number(s.negative) || 0;
           const neu = Number(s.neutral) || 0;
-          const total = Number(s.total_mentioned) || (pos + neg + neu);
+          const total = Number(s.total) || Number(s.total_mentioned) || (pos + neg + neu);
+          
           let sentiment = "neutral";
-          let count = total;
           if (pos > neg && pos > neu) {
             sentiment = "positive";
-            count = pos;
           } else if (neg > pos && neg > neu) {
             sentiment = "negative";
-            count = neg;
           }
-          return { keyword: name, count, sentiment };
+          
+          return { keyword: name, count: total, sentiment };
         })
-        .sort((a: any, b: any) => b.count - a.count)
-        .slice(0, 24);
+        .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
     }
     
-    return rawMentions
-      .map((m: any) => ({
-        keyword: m.keyword || m.text || m.raw_keyword || "N/A",
-        count: Number(m.count) || 0,
-        sentiment: (m.sentiment || "neutral").toLowerCase()
-      }))
-      .filter(m => m.keyword !== "N/A")
+    return parsedMentions
       .sort((a: any, b: any) => b.count - a.count)
       .slice(0, 24);
   }, [targetHotel]);
@@ -920,11 +932,21 @@ export default function SentimentPage() {
               <SentimentBreakdown
                 items={
                   (targetHotel?.sentiment_raw_breakdown ||
-                    targetHotel?.sentiment_breakdown || [])
-                    .map((s: any) => ({
-                      ...s,
-                      description: s.description || s.summary
-                    }))
+                    (targetHotel as any)?.sentiment_breakdown || [])
+                    .map((s: any) => {
+                      const total = Number(s.total_mentioned) || Number(s.total) || 0;
+                      const pos = Number(s.positive) || 0;
+                      const neg = Number(s.negative) || 0;
+                      const neu = Number(s.neutral) || Math.max(0, total - pos - neg);
+                      return {
+                        name: s.name || s.display_name || "Unknown Signal",
+                        total_mentioned: total,
+                        positive: pos,
+                        negative: neg,
+                        neutral: neu,
+                        description: s.description || s.summary || ""
+                      };
+                    })
                     .filter((item: any) => item.total_mentioned > 0)
                     .slice(0, 24)
                 }
