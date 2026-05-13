@@ -131,3 +131,8 @@ scratch/
 
 # Scheduler logs
 backend/logs/*.log
+logs.txt
+logs_err.txt
+logs_full.txt
+pyright_full_output.txt
+task_raw_results.json

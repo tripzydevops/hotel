@@ -61,7 +61,7 @@ export default function HotelDetailsModal({
   const [activeTab, setActiveTab] = useState<
     "overview" | "amenities" | "offers" | "gallery" | "rooms" | "reviews"
   >("overview");
-  const [showStandardInRooms, setShowStandardInRooms] = useState(false);
+  const [showStandardInRooms, setShowStandardInRooms] = useState(true);
 
   if (!hotel) return null;
 
@@ -519,7 +519,13 @@ export default function HotelDetailsModal({
 
                 // 1. Map and ensure fallback to "Standard Room"
                 const processedRooms = raw_rooms.map((room: any) => {
-                  let name = (room.original_name || room.name || room.room_type || "").trim();
+                  if (typeof room === "string") {
+                    return { name: room.trim() || "Standard Room" };
+                  }
+                  if (!room) {
+                    return { name: "Standard Room" };
+                  }
+                  let name = (room.original_name || room.name || room.room_type || "").toString().trim();
                   if (!name) name = "Standard Room";
                   return { ...room, name };
                 });
@@ -736,18 +742,22 @@ export default function HotelDetailsModal({
                         </div>
                         <div className="max-w-xs mx-auto">
                           <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
-                            No Premium Upgrades Detected
+                            {room_types.length === 0 ? "No Room Data Available" : "No Premium Upgrades Detected"}
                           </h4>
                           <p className="text-xs text-[var(--text-muted)] mt-1">
-                            Only standard room types are available for this property. Would you like to view the base room rates?
+                            {room_types.length === 0 
+                              ? "We couldn't retrieve specific room types for this property yet. Please check again after the next automated scan."
+                              : "Only standard room types are available for this property. Would you like to view the base room rates?"}
                           </p>
                         </div>
-                        <button
-                          onClick={() => setShowStandardInRooms(true)}
-                          className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black uppercase tracking-widest rounded-lg hover:bg-white transition-all cursor-pointer"
-                        >
-                          Show Base Room Rates
-                        </button>
+                        {room_types.length > 0 && (
+                          <button
+                            onClick={() => setShowStandardInRooms(true)}
+                            className="px-4 py-2 bg-[var(--soft-gold)] text-[var(--deep-ocean)] text-xs font-black uppercase tracking-widest rounded-lg hover:bg-white transition-all cursor-pointer"
+                          >
+                            Show Base Room Rates
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

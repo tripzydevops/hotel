@@ -255,7 +255,7 @@ class ScanPersistenceService:
                 })
             elif isinstance(r, dict):
                 # Ensure we have a 'name' field
-                name = r.get("name") or r.get("room_type") or r.get("type")
+                name = r.get("name") or r.get("room_type") or r.get("type") or r.get("room_name") or r.get("description")
                 if not name:
                     continue
                     
@@ -1546,6 +1546,8 @@ class ScanPersistenceService:
                     res_data.get("room_catalog") or 
                     res_data.get("room_types") or 
                     res_data.get("all_rooms") or 
+                    res_data.get("offers") or
+                    offers or
                     [],
                     target_currency=currency
                 )
