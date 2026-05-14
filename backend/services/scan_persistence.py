@@ -356,6 +356,9 @@ class ScanPersistenceService:
             valid_upserts.append(catalog_entry)
 
         if valid_upserts:
+            # Deduplicate by ID before batch upsert to avoid Postgres 21000 error
+            dedup_map = {item["id"]: item for item in valid_upserts}
+            valid_upserts = list(dedup_map.values())
             try:
                 # Filter out None values
                 valid_upserts = [
@@ -437,6 +440,10 @@ class ScanPersistenceService:
 
         # 3. Resilient Bulk Persistence with Pagination
         if valid_upserts:
+            # Deduplicate by ID before batch upsert to avoid Postgres 21000 error
+            dedup_map = {item["id"]: item for item in valid_upserts}
+            valid_upserts = list(dedup_map.values())
+
             batch_size = 200 # Safe size for Postgres + Embedding payload
             for i in range(0, len(valid_upserts), batch_size):
                 batch = valid_upserts[i : i + batch_size]
@@ -581,6 +588,15 @@ class ScanPersistenceService:
                 "room_types": current_room_types,
                 "currency": result.get("currency"),
             }
+            # [FIX] Only update current_price if NOT anomalous
+            if price > 0 and not is_anomaly:
+                hotel_update["current_price"] = price
+            elif is_anomaly:
+                logger.warning(
+                    f"[Anomaly Guard] Blocking current_price update for {hotel_id}: "
+                    f"{price} {currency} flagged as anomaly in individual sync."
+                )
+
             # Add phone, website etc if present
             for field in ["phone", "website", "address", "latitude", "longitude"]:
                 if result.get(field):
@@ -763,7 +779,7 @@ class ScanPersistenceService:
         # Normalization
         target_currency = getattr(options, "currency", None) if options else None
         if not target_currency:
-            target_currency = metadata.get("currency") or "USD"
+            target_currency = metadata.get("currency") or "TRY"
         if current_price > 0 and currency != target_currency:
             current_price = convert_currency(current_price, currency, target_currency)
             currency = target_currency
@@ -1300,9 +1316,18 @@ class ScanPersistenceService:
                         new_p = float(val) if val else 0
                         old_p = float(existing.get(key) or 0)
                         if new_p > 0:
-                            # If we have no old price, or new price is better (lower)
-                            if old_p == 0 or new_p < old_p:
+                            # [FIX 2026-05-13] Currency-aware comparison
+                            new_curr = res.get("currency") or existing.get("currency") or "TRY"
+                            old_curr = existing.get("currency") or "TRY"
+                            
+                            # Normalize to TRY for comparison baseline
+                            new_norm = convert_currency(new_p, new_curr, "TRY")
+                            old_norm = convert_currency(old_p, old_curr, "TRY") if old_p > 0 else 0
+                            
+                            # If we have no old price, or new price is better (lower) in normalized terms
+                            if old_norm == 0 or new_norm < old_norm:
                                 existing[key] = new_p
+                                existing["currency"] = new_curr  # Ensure currency matches the value we just picked
                     elif key in ["offers", "ota_prices", "room_catalog", "room_types", "market_offers", "parity_offers", "all_prices"]:
                         # Merge lists and deduplicate by 'source', 'title', or 'name'
                         existing_list = existing.get(key) or []
@@ -1388,15 +1413,28 @@ class ScanPersistenceService:
             check_out = res_data.get("check_out_date") or res_data.get("check_out")
             
             if price == 0 and offers:
-                # Derive price from cheapest OTA if top-level is missing
-                try:
-                    price = min(float(p.get("price") or 999999) for p in offers)
-                    if price == 999999:
-                        price = 0
-                except Exception:
+                # [FIX 2026-05-13] Currency-aware offer selection
+                # Derive price from cheapest OTA if top-level is missing, normalizing for accurate comparison
+                best_offer = None
+                min_norm_price = float('inf')
+                for p in offers:
+                    p_val = float(p.get("price") or 0)
+                    if p_val <= 0:
+                        continue
+                    p_curr = p.get("currency") or res_data.get("currency") or "TRY"
+                    norm_val = convert_currency(p_val, p_curr, "TRY")
+                    if norm_val < min_norm_price:
+                        min_norm_price = norm_val
+                        best_offer = p
+
+                if best_offer:
+                    price = float(best_offer["price"])
+                    currency = best_offer.get("currency") or "TRY"
+                else:
                     price = 0
-            
-            currency = res_data.get("currency") or "TRY"
+                    currency = res_data.get("currency") or "TRY"
+            else:
+                currency = res_data.get("currency") or "TRY"
 
             # [KAIZEN 2026] Dynamic Anomaly Detection (Standard Deviation + Variance)
             # Calculate shift against 5-day rolling average with confidence intervals
@@ -1405,32 +1443,33 @@ class ScanPersistenceService:
             first_h_id = list(group["hotel_ids"])[0]
             hist = history_map.get(first_h_id, [])
             
-            # Filter out previous anomalies and zeros for a clean baseline
+            # Filter out previous anomalies and zeros for a clean baseline, normalizing to TRY
             recent_valid = [
-                float(h["price"])
+                convert_currency(float(h["price"]), h.get("currency") or "TRY", "TRY")
                 for h in hist
                 if h.get("price") is not None and float(h["price"]) > 0 and not h.get("is_anomaly", False)
             ]
             
             if recent_valid and price > 0:
+                # Normalize current price to TRY for accurate comparison against baseline
+                norm_price = convert_currency(price, currency, "TRY")
                 avg_baseline = sum(recent_valid) / len(recent_valid)
                 
                 # Dynamic Threshold: Use StdDev if we have enough samples (N>3)
                 if len(recent_valid) > 3:
                     std_dev = statistics.stdev(recent_valid)
                     # Z-Score check: Reject if price is > 3 sigma or > 50% shift
-                    z_score = abs(price - avg_baseline) / (std_dev or 1)
-                    if z_score > 3 or abs(price - avg_baseline) / avg_baseline > 0.5:
+                    z_score = abs(norm_price - avg_baseline) / (std_dev or 1)
+                    if z_score > 3 or abs(norm_price - avg_baseline) / avg_baseline > 0.5:
                         is_anomaly = True
                         anomaly_details = {"z_score": round(z_score, 2), "std_dev": round(std_dev, 2)}
                 else:
                     # Fallback: REJECT if price deviates by more than 50% from verified baseline
-                    # [KAIZEN 2026] Relaxed from 30% to 50% for consistency
                     lower_bound = avg_baseline * 0.5
                     upper_bound = avg_baseline * 1.5
-                    if price < lower_bound or price > upper_bound:
+                    if norm_price < lower_bound or norm_price > upper_bound:
                         is_anomaly = True
-                        anomaly_details = {"fixed_threshold": 0.5}
+                        anomaly_details = {"deviation": "Exceeds 50% baseline shift"}
 
                 if is_anomaly:
                     logger.warning(
@@ -1467,10 +1506,16 @@ class ScanPersistenceService:
                     "last_scanned_at": now_ts
                 }
                 
-                # [FIX] Only update current_price if we actually found a positive price.
-                # This prevents hotel_info (or failed scans) from overwriting valid prices with NULL.
-                if price > 0:
+                # [FIX] Only update current_price if we actually found a positive price
+                # AND the price is NOT flagged as anomalous. Anomalous prices are still logged
+                # in price_logs for auditing, but must NOT overwrite the hotel's canonical price.
+                if price > 0 and not is_anomaly:
                     upd["current_price"] = price
+                elif is_anomaly and price > 0:
+                    logger.warning(
+                        f"[Anomaly Guard] Blocking current_price update for {tid}: "
+                        f"{price} {currency} flagged as anomaly. Details: {anomaly_details}"
+                    )
                 
                 # Map rich metadata
                 metadata_fields = [
@@ -1508,13 +1553,20 @@ class ScanPersistenceService:
                     group_task_types == {"price_search"}
                     or (len(group_task_types) == 1 and "price_search" in group_task_types)
                 )
+                # [KAIZEN 2026-05] Refined Thin Detection
+                # A result is only "thin" if it's a direct search and has no other OTA offers.
+                # If the main vendor is a known OTA (like Otelfiyat), it's NOT thin even if single.
+                main_v_raw = (res_data.get("vendor") or res_data.get("source") or "").lower()
+                is_direct_main = any(kw in main_v_raw for kw in ["direct", "system", "batch"]) or main_v_raw == ""
+                
                 is_thin_offers = (
                     len(offers) <= 1
                     and all(
                         (o.get("source") or "").lower() in ["direct search", "direct", ""]
                         for o in offers
                     )
-                ) if offers else True  # Empty offers = thin
+                    and is_direct_main
+                ) if offers else is_direct_main
                 
                 should_protect_ota = is_price_search_only and is_thin_offers
                 
@@ -1529,7 +1581,7 @@ class ScanPersistenceService:
                     upd["reviews"] = {
                         "ota_count": len(offers),
                         "ota_min_price": min(
-                            (p.get("price") or 999999) for p in offers
+                            convert_currency(float(p.get("price") or 999999), p.get("currency") or "TRY", "TRY") for p in offers
                         ),
                         "ota_sources": list(
                             set(p.get("source") for p in offers if p.get("source"))
