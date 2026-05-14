@@ -77,7 +77,7 @@ class ScanPersistenceService:
                     )
 
     async def vault_log(
-        self, db: Any, session_id: str, endpoint: str, data: Any
+        self, db: Any, session_id: Optional[str], endpoint: str, data: Any
     ) -> None:
         """Log raw payload to the Everything Vault (scan_sessions.raw_payload)."""
         if not db or not session_id:

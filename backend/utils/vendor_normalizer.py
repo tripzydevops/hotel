@@ -58,6 +58,8 @@ class VendorNormalizer:
         "eccetur": "EcceTur",
         "tatilsepeti": "Tatil Sepeti",
         "tatil sepeti": "Tatil Sepeti",
+        "otelfiyat": "Otelfiyat",
+        "otelfiyat.com": "Otelfiyat",
         
         # International OTAs
         "priceline": "Priceline",

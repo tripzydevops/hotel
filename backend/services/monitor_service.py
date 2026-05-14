@@ -16,7 +16,7 @@ import logging
 import os
 import traceback
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, cast
 import uuid
 from uuid import UUID
 
@@ -175,7 +175,7 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
             )
 
             if zombies.data:
-                z_ids = [z["id"] for z in zombies.data]
+                z_ids = [cast(dict, z)["id"] for z in zombies.data]
 
                 # [FIX 2026-05-01] Task-aware cleanup: check if any tasks are
                 # still pending at the provider before force-failing the session.
@@ -192,7 +192,7 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
                         )
                         has_active = False
                         if batch_res.data:
-                            b_ids = [b["id"] for b in batch_res.data]
+                            b_ids = [cast(dict, b)["id"] for b in batch_res.data]
                             for b_id in b_ids:
                                 pending = (
                                     insforge.table("scan_tasks")
@@ -242,7 +242,7 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
             )
 
             if stale_tasks.data:
-                st_ids = [tk["id"] for tk in stale_tasks.data]
+                st_ids = [cast(dict, tk)["id"] for tk in stale_tasks.data]
                 s_logger.warning(
                     f"CRON: Cleaning up {len(st_ids)} stale scan_tasks (abandoned): {st_ids}"
                 )
@@ -257,9 +257,9 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
                 batch_ids = list(
                     set(
                         [
-                            tk["batch_id"]
+                            cast(dict, tk)["batch_id"]
                             for tk in stale_tasks.data
-                            if tk.get("batch_id")
+                            if cast(dict, tk).get("batch_id")
                         ]
                     )
                 )
@@ -299,7 +299,7 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
                     .execute()
                 )
 
-                sync_id = sync_session.data[0]["id"] if sync_session.data else None
+                sync_id = cast(dict, sync_session.data[0])["id"] if sync_session.data else None
 
                 from backend.services.market.tga_scraper import TGAScraper
                 from backend.services.market.tobb_scraper import TOBBScraper
@@ -320,7 +320,7 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
                 )
 
                 if sync_id:
-                    total_events = tobb_res.get("processed", 0) + tga_res.get("processed", 0)
+                    total_events = int(tobb_res.get("processed", 0)) + int(tga_res.get("processed", 0))
                     insforge.table("scan_sessions").update(
                         {
                             "status": status,
@@ -349,6 +349,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
     If due, submits all unique monitored hotels to the DataForSEO Task API.
     """
     s_logger = get_scheduler_logger()
+    session_id = None
     
     # AGENT_FIX: Verify if the client has elevated privileges
     is_admin = getattr(insforge, "is_admin", False)
@@ -361,7 +362,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             s_logger.warning("Heartbeat: No admin settings found. Skipping.")
             return
 
-        settings = settings_res.data[0]
+        settings = cast(dict, settings_res.data[0])
         # --- Autonomous Monitoring Protocol [KAIZEN 2026] ---
         # 1. Scope: Only hotels marked as 'is_monitored' in user_hotels are considered.
         # 2. Precision: Scans are strictly enforced for hotels with a 'property_token' or 'serp_api_id'.
@@ -416,7 +417,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         # 3. Get monitored hotels first (to set explicit count in initial log)
         monitored_res = (
             insforge.table("user_hotels")
-            .select("hotel_id, preferred_currency, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude, currency, scan_adults, scan_children_ages)")
+            .select("hotel_id, preferred_currency, hotels(id, name, location, property_token, serp_api_id, location_code, latitude, longitude, currency, scan_adults, scan_children_ages, last_rich_scan_at)")
             .eq("is_monitored", True)
             .execute()
         )
@@ -435,7 +436,8 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         unmapped_hotels = []
 
         if monitored_res.data:
-            for item in monitored_res.data:
+            for item_raw in monitored_res.data:
+                item = cast(dict, item_raw)
                 h = item.get("hotels")
                 if not h:
                     continue
@@ -553,7 +555,7 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             s_logger.warning(f"Heartbeat: Failed to complete scan_sessions: {upd_e}")
 
         s_logger.info(f"Heartbeat: Successfully submitted {total} tasks for session {session_id}")
-        return total
+        return session_id
 
     except Exception as e:
         s_logger.error(f"Heartbeat Failure: {e}")
@@ -585,6 +587,146 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
             completed_ids = [specific_task_id]
             s_logger.info(f"Task Processor: Processing targeted task {specific_task_id} (Webhook-driven)")
         else:
+            # [2026-05-14] CRITICAL FIX: Orphan Task Recovery Routine
+            # Finds tasks that were successfully persisted locally but failed submission 
+            # to the external provider (DataForSEO) due to connection drop/restart.
+            try:
+                s_logger.info("Orphan Recovery: Checking for unsubmitted pending tasks...")
+                orphan_res = (
+                    insforge.table("scan_tasks")
+                    .select(
+                        "id, task_type, batch_id, "
+                        "batch:scan_batches(session_id), "
+                        "hotel:hotels(id, name, location, serp_api_id, property_token, currency, scan_adults, scan_children_ages, latitude, longitude)"
+                    )
+                    .eq("status", "pending")
+                    .is_("external_task_id", "null")
+                    .limit(20)
+                    .execute()
+                )
+                
+                orphans_raw = orphan_res.data or []
+                if orphans_raw:
+                    s_logger.info(f"Orphan Recovery: Found {len(orphans_raw)} pending tasks without external IDs.")
+                    
+                    # Cast raw JSON list items to dictionary format for safe indexing
+                    orphans = [cast(dict, o) for o in orphans_raw]
+                    
+                    # Gather unique session IDs safely
+                    session_ids_set = set()
+                    for o in orphans:
+                        b = cast(dict, o.get("batch")) if o.get("batch") else None
+                        if b and b.get("session_id"):
+                            session_ids_set.add(b["session_id"])
+                    session_ids = list(session_ids_set)
+                    
+                    session_map = {}
+                    if session_ids:
+                        sessions_res = (
+                            insforge.table("scan_sessions")
+                            .select("id, check_in_date, check_out_date, adults, children_ages, currency")
+                            .in_("id", session_ids)
+                            .execute()
+                        )
+                        if sessions_res.data:
+                            session_map = {cast(dict, s)["id"]: cast(dict, s) for s in sessions_res.data}
+                            
+                    price_tasks_to_post = []
+                    info_tasks_to_post = []
+                    
+                    for o in orphans:
+                        local_task_id = o["id"]
+                        task_type = o["task_type"]
+                        hotel = cast(dict, o.get("hotel")) if o.get("hotel") else None
+                        if not hotel:
+                            continue
+                            
+                        batch = cast(dict, o.get("batch")) if o.get("batch") else None
+                        session_id = batch.get("session_id") if batch else None
+                        session = cast(dict, session_map.get(session_id)) if session_id else None
+                        
+                        # Dynamic parameter reconstruction matching submit_hotel_scan_batch logic
+                        check_in = session.get("check_in_date") if session and session.get("check_in_date") else (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+                        check_out = session.get("check_out_date") if session and session.get("check_out_date") else (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d")
+                        adults = session.get("adults") if session and session.get("adults") else 2
+                        children = session.get("children_ages") if session and session.get("children_ages") else []
+                        currency = session.get("currency") if session and session.get("currency") else (hotel.get("currency") or "USD")
+                        
+                        normalized_loc = dataforseo_provider._normalize_location(hotel.get("location") or "Turkiye")
+                        
+                        if task_type == "pricing":
+                            price_task = {
+                                "hotel_identifier": hotel.get("property_token") or hotel.get("serp_api_id"),
+                                "keyword": f"{hotel.get('name', '')} {hotel.get('location', '')}".strip(),
+                                "location_name": normalized_loc,
+                                "language_name": "English",
+                                "check_in": check_in,
+                                "check_out": check_out,
+                                "currency": currency,
+                                "tag": local_task_id,  # Tag MUST match scan_tasks UUID
+                            }
+                            
+                            task_adults = adults or hotel.get("scan_adults")
+                            task_children = children or hotel.get("scan_children_ages")
+                            
+                            if task_adults:
+                                price_task["adults"] = task_adults
+                            if task_children:
+                                price_task["children"] = task_children
+                            if hotel.get("latitude") and hotel.get("longitude"):
+                                price_task["location_coordinate"] = f"{hotel['latitude']},{hotel['longitude']},50"
+                                
+                            price_tasks_to_post.append(price_task)
+                            
+                        elif task_type == "hotel_info":
+                            keyword = hotel.get("property_token") or hotel.get("serp_api_id") or f"{hotel.get('name', '')} {hotel.get('location', '')}".strip()
+                            
+                            info_task = {
+                                "hotel_identifier": keyword if (hotel.get("serp_api_id") or hotel.get("property_token")) else None,
+                                "keyword": None if (hotel.get("serp_api_id") or hotel.get("property_token")) else keyword,
+                                "location_name": normalized_loc,
+                                "language_name": "English",
+                                "check_in": check_in,
+                                "check_out": check_out,
+                                "currency": currency,
+                                "adults": adults,
+                                "tag": local_task_id,  # Tag MUST match scan_tasks UUID
+                            }
+                            task_children = children or hotel.get("scan_children_ages")
+                            if task_children:
+                                info_task["children"] = task_children
+                                
+                            info_tasks_to_post.append(info_task)
+                            
+                    recovered_count = 0
+                    if price_tasks_to_post:
+                        s_logger.info(f"Orphan Recovery: Posting {len(price_tasks_to_post)} pricing tasks to provider...")
+                        posted_prices = await dataforseo_provider.post_price_tasks(price_tasks_to_post)
+                        if posted_prices:
+                            for pt in posted_prices:
+                                if pt.get("status_code") in [20000, 20100]:
+                                    task_tag = pt.get("data", {}).get("tag")
+                                    ext_id = pt.get("id")
+                                    if task_tag and ext_id:
+                                        insforge.table("scan_tasks").update({"external_task_id": ext_id}).eq("id", task_tag).execute()
+                                        recovered_count += 1
+                                        
+                    if info_tasks_to_post:
+                        s_logger.info(f"Orphan Recovery: Posting {len(info_tasks_to_post)} info tasks to provider...")
+                        posted_infos = await dataforseo_provider.post_info_tasks(info_tasks_to_post)
+                        if posted_infos:
+                            for it in posted_infos:
+                                if it.get("status_code") in [20000, 20100]:
+                                    task_tag = it.get("data", {}).get("tag")
+                                    ext_id = it.get("id")
+                                    if task_tag and ext_id:
+                                        insforge.table("scan_tasks").update({"external_task_id": ext_id}).eq("id", task_tag).execute()
+                                        recovered_count += 1
+                                        
+                    s_logger.info(f"Orphan Recovery completed: {recovered_count} tasks submitted and linked.")
+            except Exception as orphan_err:
+                s_logger.error(f"Orphan Recovery encountered an error: {orphan_err}", exc_info=True)
+
             # [REPLACEMENT] We no longer poll get_completed_tasks() (tasks_ready endpoint).
             # Instead, we rely on webhooks, and use this as a recovery loop for missed tasks.
             s_logger.info("Task Processor: Running recovery check for missed webhooks...")
@@ -605,7 +747,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
 
 
             if pending_res.data:
-                completed_ids = [t["external_task_id"] for t in pending_res.data]
+                completed_ids = [cast(dict, t)["external_task_id"] for t in pending_res.data]
                 s_logger.info(
                     f"Task Processor: Added {len(completed_ids)} recovery candidates (>{10}min old)."
                 )
@@ -640,11 +782,12 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                 .execute()
             )
 
-            for t in tasks_res.data or []:
+            for t_raw in tasks_res.data or []:
+                t = cast(dict, t_raw)
                 # Map by both IDs to ensure resolution
                 task_id_to_metadata[t["id"]] = t
                 if t.get("external_task_id"):
-                    task_id_to_metadata[t["external_task_id"]] = t
+                    task_id_to_metadata[cast(str, t["external_task_id"])] = t
 
         # Collector Buffer for Batch Processing
         batch_results = []  # List of {hotel_id, result, scan_task_id, batch_id}
@@ -666,8 +809,9 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
             token = None
             name = None
             if meta.get("hotel"):
-                token = meta["hotel"].get("property_token")
-                name = meta["hotel"].get("name")
+                hotel_meta = cast(dict, meta["hotel"])
+                token = hotel_meta.get("property_token")
+                name = hotel_meta.get("name")
 
             # [FIX 5] Pass task_type for type-aware endpoint routing
             # [KAIZEN 2026] Pass batch_id as session_id for Everything Vault logging
@@ -675,7 +819,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                 dataforseo_provider.get_task_result(
                     tid,
                     db=insforge,
-                    session_id=meta.get("batch", {}).get("session_id") if meta.get("batch") else None,
+                    session_id=cast(dict, meta.get("batch", {})).get("session_id") if meta.get("batch") else None,
                     target_token=token,
                     target_name=name,
                     task_type=meta.get("task_type"),
@@ -713,7 +857,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                     try:
                         if isinstance(meta.get("created_at"), str):
                             created_dt = datetime.fromisoformat(
-                                meta["created_at"].replace("Z", "+00:00")
+                                cast(str, meta["created_at"]).replace("Z", "+00:00")
                             )
                             task_age_minutes = (
                                 now_utc - created_dt
@@ -749,7 +893,7 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
                             
                             await persistence.vault_log(
                                 db=persistence.admin_insforge,
-                                session_id=session_id,
+                                session_id=str(session_id) if session_id else "",
                                 endpoint=f"monitor/fail/{fail_reason}",
                                 data={
                                     "task_id": tid,
@@ -855,9 +999,9 @@ async def _trigger_heartbeat_notifications(
             return
 
         # 2. Bulk Fetch Settings & Price History
-        user_ids = list(set(u["user_id"] for u in users_res.data))
+        user_ids = list(set(cast(dict, u)["user_id"] for u in users_res.data))
         settings_res = insforge.table("settings").select("*").in_("user_id", user_ids).execute()
-        settings_map = {str(s["user_id"]): s for s in settings_res.data}
+        settings_map = {str(cast(dict, s)["user_id"]): s for s in settings_res.data}
 
         # Baseline Fetch: 5-Day Rolling Window
         # We fetch all history for these hotels from exactly 5 days ago
@@ -875,7 +1019,8 @@ async def _trigger_heartbeat_notifications(
         )
         
         history_map = {}
-        for h in (history_res.data or []):
+        for h_raw in (history_res.data or []):
+            h = cast(dict, h_raw)
             hid = str(h["hotel_id"])
             if hid not in history_map:
                 history_map[hid] = []
@@ -895,17 +1040,19 @@ async def _trigger_heartbeat_notifications(
             # Find relevant users for this event and deduplicate by user_id to prevent triplicate/duplicate alerts
             seen_uids = set()
             relevant_users = []
-            for u in users_res.data:
+            for u_raw in users_res.data:
+                u = cast(dict, u_raw)
                 uid = str(u["user_id"])
                 if uid in seen_uids:
                     continue
-                if str(u["hotel_id"]) == hid or (token and u["hotels"].get("property_token") == token):
+                u_hotels = cast(dict, u.get("hotels", {}))
+                if str(u["hotel_id"]) == hid or (token and u_hotels.get("property_token") == token):
                     relevant_users.append(u)
                     seen_uids.add(uid)
             if not relevant_users:
                 continue
             
-            h_name = relevant_users[0]["hotels"]["name"]
+            h_name = cast(dict, relevant_users[0]["hotels"])["name"]
             
             # Parity Analysis
             parity_alert_meta = None
@@ -944,7 +1091,7 @@ async def _trigger_heartbeat_notifications(
             # Distribute to Users
             for u in relevant_users:
                 uid = str(u["user_id"])
-                s = settings_map.get(uid)
+                s = cast(Dict[str, Any], settings_map.get(uid))
                 if not s or not s.get("notifications_enabled"):
                     continue
                 
@@ -954,7 +1101,7 @@ async def _trigger_heartbeat_notifications(
                     prefix = f"[CRITICAL] {prefix}"
 
                 # Threshold Check (User Defined)
-                user_threshold = s.get("threshold_percent", 2.0)
+                user_threshold = s.get("threshold_percent", 2.0) if s else 2.0
                 if abs(change_pct) >= user_threshold:
                     a_type = "market_pulse" if is_global else ("price_drop" if change_pct < 0 else "price_spike")
                     
@@ -1008,7 +1155,7 @@ async def _trigger_heartbeat_notifications(
             insforge.table("alerts").insert(all_alerts).execute()
         
         for uid, data in user_to_alerts.items():
-            await notifier.notify(data["alerts"], settings_map[uid], data["names"])
+            await notifier.notify(data["alerts"], cast(Dict[str, Any], settings_map[uid]), data["names"])
 
     except Exception as e:
         logger.error(f"Batch Notifier Failure: {e}")

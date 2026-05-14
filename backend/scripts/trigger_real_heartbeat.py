@@ -61,11 +61,18 @@ async def main():
         print("Waiting 15 seconds for tasks to be registered in DB...")
         await asyncio.sleep(15)
         
-        tasks_res = db.table("scan_tasks").select("*").eq("session_id", session_id).execute()
-        tasks = tasks_res.data
-        print(f"Created {len(tasks)} tasks:")
-        for t in tasks:
-            print(f" - Task {t['id']}: Status={t['status']}, Type={t['task_type']}, Provider ID={t['provider_task_id']}")
+        # Get batches for this session
+        batches_res = db.table("scan_batches").select("id").eq("session_id", session_id).execute()
+        batch_ids = [b['id'] for b in batches_res.data]
+        
+        if batch_ids:
+            tasks_res = db.table("scan_tasks").select("*").in_("batch_id", batch_ids).execute()
+            tasks = tasks_res.data
+            print(f"Created {len(tasks)} tasks:")
+            for t in tasks:
+                print(f" - Task {t['id']}: Status={t['status']}, Type={t['task_type']}, Provider ID={t.get('external_task_id')}")
+        else:
+            print("No batches found for this session.")
             
         print("\nSUCCESS: Heartbeat initiated.")
         print("NEXT STEP: Wait 5-10 minutes, then run 'process_system_scans' to collect results.")

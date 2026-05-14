@@ -961,8 +961,10 @@ class DataForSEOProvider(HotelDataProvider):
             }
         ]
 
-        if self.postback_url:
-            post_data[0]["postback_url"] = self.postback_url
+        # [FIX 2026-05-14] hotel_info task_post does NOT support postback/pingback URLs.
+        # Sending them causes 'Invalid Field' rejection.
+        # if self.postback_url:
+        #     post_data[0]["postback_url"] = self.postback_url
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
@@ -1108,9 +1110,11 @@ class DataForSEOProvider(HotelDataProvider):
             for token in property_tokens
         ]
 
-        if self.postback_url:
-            for t in tasks:
-                t["postback_url"] = self.postback_url
+        # [FIX 2026-05-14] hotel_info task_post does NOT support postback/pingback URLs.
+        # Sending them causes 'Invalid Field' rejection.
+        # if self.postback_url:
+        #     for t in tasks:
+        #         t["postback_url"] = self.postback_url
 
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:

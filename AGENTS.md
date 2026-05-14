@@ -6,9 +6,6 @@ alwaysApply: true
 
 # InsForge SDK Documentation - Overview
 
-> [!IMPORTANT]
-> **PRIMARY SOURCE OF TRUTH**: Always read [ProjectArchitecture.md](file:///home/tripzydevops/hotel/ProjectArchitecture.md) BEFORE performing any task. It contains the complete inventory of agents, services, API routes, and database tables.
-
 ## What is InsForge?
 
 Backend-as-a-service (BaaS) platform providing:

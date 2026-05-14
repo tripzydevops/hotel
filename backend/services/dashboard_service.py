@@ -529,12 +529,12 @@ async def get_dashboard_logic(
                                 seen_room_keys.add(r_key)
 
                     
-                    # Offers Extraction (Scan recent logs to bypass thin scans)
+                    # Offers Extraction (Combine recent logs, prioritizing newest price per vendor)
                     raw_offers = []
-                    seen_offers = set()
+                    seen_offers_global = set() # tracks vendors we've seen across all logs
+                    seen_offer_keys_global = set() # tracks vendor+price to avoid exact duplicates
                     
                     for p_log in prices:
-                        # Unique check per log to prevent multi-column bloating causing "thin" bypass
                         log_offers = []
                         seen_in_log = set()
                         
@@ -543,72 +543,48 @@ async def get_dashboard_logic(
                             if val and isinstance(val, list):
                                 for of in val:
                                     if not isinstance(of, dict): continue
-                                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or ""
+                                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                                     v_norm = normalize_vendor_name(v_raw)
                                     price = _extract_price(of.get("price"))
                                     
-                                    # Deduplicate by vendor + price key to ensure we're counting true variety
+                                    # Deduplicate by vendor + price key within this log
                                     inner_key = f"{v_norm}_{price}".lower().strip()
                                     if inner_key not in seen_in_log:
                                         seen_in_log.add(inner_key)
                                         log_offers.append(of)
                         
-                        # Detect if this log is "thin" (e.g. only one offer, and that offer is Direct Search/Google)
-                        is_thin_log_offers = True
-                        if log_offers:
-                            if len(log_offers) > 1:
-                                # Found diverse market data, NOT a thin log
-                                is_thin_log_offers = False
-                            else:
-                                # Exactly one offer: verify it isn't just a generic fallback source
-                                of = log_offers[0]
-                                v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or ""
-                                v_norm = normalize_vendor_name(v_raw).lower()
-                                
-                                # Thin list explicitly checks whitelist of known generic identifiers
-                                thin_identifiers = {"direct search", "direct", "google hotels", "unknown", ""}
-                                is_thin_log_offers = v_norm in thin_identifiers
+                        # Add offers from this log if the vendor hasn't been seen in newer logs
+                        for of in log_offers:
+                            v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
+                            v_norm = normalize_vendor_name(v_raw)
+                            price = _extract_price(of.get("price"))
+                            offer_key = f"{v_norm}_{price}".lower().strip()
+                            
+                            if v_norm not in seen_offers_global and offer_key not in seen_offer_keys_global:
+                                raw_offers.append(of)
+                                seen_offer_keys_global.add(offer_key)
                         
-                        if not is_thin_log_offers:
-                            for of in log_offers:
-                                vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
-                                price = _extract_price(of.get("price"))
-                                offer_key = f"{vendor}_{price}"
-                                if offer_key not in seen_offers:
-                                    raw_offers.append(of)
-                                    seen_offers.add(offer_key)
-                            if raw_offers:
-                                break
+                        # Mark all vendors from this log as seen globally, so older logs don't override them
+                        for of in log_offers:
+                            v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
+                            v_norm = normalize_vendor_name(v_raw)
+                            seen_offers_global.add(v_norm)
 
                     # AGENT_FIX: OTA Fallback from hotels table
-                    if not raw_offers:
-                        for key in ["market_offers", "parity_offers", "offers"]:
-                            val = h.get(key)
-                            if val and isinstance(val, list):
-                                for of in val:
-                                    if not isinstance(of, dict):
-                                        continue
-                                    vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
-                                    price = _extract_price(of.get("price"))
-                                    offer_key = f"{vendor}_{price}"
-                                    if offer_key not in seen_offers:
-                                        raw_offers.append(of)
-                                        seen_offers.add(offer_key)
-
-                        # Finally, if absolutely nothing, use the thin offer from current_log so we at least have a price
-                        if not raw_offers and current_log:
-                            for key in ["offers", "ota_prices", "parity_offers", "market_offers"]:
-                                val = current_log.get(key)
-                                if val and isinstance(val, list):
-                                    for of in val:
-                                        if not isinstance(of, dict):
-                                            continue
-                                        vendor = normalize_vendor_name(of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown")
-                                        price = _extract_price(of.get("price"))
-                                        offer_key = f"{vendor}_{price}"
-                                        if offer_key not in seen_offers:
-                                            raw_offers.append(of)
-                                            seen_offers.add(offer_key)
+                    for key in ["market_offers", "parity_offers", "offers"]:
+                        val = h.get(key)
+                        if val and isinstance(val, list):
+                            for of in val:
+                                if not isinstance(of, dict): continue
+                                v_raw = of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown"
+                                v_norm = normalize_vendor_name(v_raw)
+                                price = _extract_price(of.get("price"))
+                                offer_key = f"{v_norm}_{price}".lower().strip()
+                                
+                                if v_norm not in seen_offers_global and offer_key not in seen_offer_keys_global:
+                                    raw_offers.append(of)
+                                    seen_offer_keys_global.add(offer_key)
+                                    seen_offers_global.add(v_norm)
 
                     # Secondary fallback: reconstruct from room_types if still empty
                     if not raw_offers and h.get("room_types"):
