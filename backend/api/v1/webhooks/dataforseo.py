@@ -49,23 +49,25 @@ async def handle_dataforseo_webhook(
                 .limit(1)
                 .execute()
             )
-            if type_res.data:
-                task_type = type_res.data[0].get("task_type")
-                hotel_meta = type_res.data[0].get("hotel")
+            if type_res.data and isinstance(type_res.data, list) and len(type_res.data) > 0:
+                row = type_res.data[0]
+                if isinstance(row, dict):
+                    task_type = row.get("task_type")
+                    hotel_meta = row.get("hotel")
         except Exception as e:
             logger.warning(f"Webhook: Could not resolve task_type from DB: {e}")
             hotel_meta = None
 
         # 3. Fetch results using unified type-aware method
-        target_token = hotel_meta.get("property_token") if hotel_meta else None
-        target_name = hotel_meta.get("name") if hotel_meta else None
+        target_token = hotel_meta.get("property_token") if isinstance(hotel_meta, dict) else None
+        target_name = hotel_meta.get("name") if isinstance(hotel_meta, dict) else None
 
         processed, raw = await dataforseo_provider.get_task_result(
             task_id,
             db=db,
-            target_token=target_token,
-            target_name=target_name,
-            task_type=task_type,
+            target_token=str(target_token) if target_token else None,
+            target_name=str(target_name) if target_name else None,
+            task_type=str(task_type) if task_type else None,
         )
 
         if not processed or processed.get("status") != "success":
@@ -97,16 +99,17 @@ async def handle_dataforseo_webhook(
                 task_res = (
                     db.table("scan_tasks").select("*").eq("id", scan_task_id).execute()
                 )
-                if task_res.data:
+                if task_res.data and isinstance(task_res.data, list) and len(task_res.data) > 0:
                     scan_task = task_res.data[0]
-                    h_id = h_id or scan_task.get("hotel_id")
-                    user_id = scan_task.get("initiator_id")
+                    if isinstance(scan_task, dict):
+                        h_id = h_id or scan_task.get("hotel_id")
+                        user_id = scan_task.get("initiator_id")
 
-                    if scan_task.get("status") == "completed":
-                        logger.info(
-                            f"Webhook: Task {scan_task_id} already marked completed. Skipping sync."
-                        )
-                        return {"status": "success", "detail": "already_processed"}
+                        if scan_task.get("status") == "completed":
+                            logger.info(
+                                f"Webhook: Task {scan_task_id} already marked completed. Skipping sync."
+                            )
+                            return {"status": "success", "detail": "already_processed"}
             except Exception as db_e:
                 logger.error(f"Webhook: DB resolution error for tag {tag_raw}: {db_e}")
 
@@ -117,12 +120,12 @@ async def handle_dataforseo_webhook(
         # 5. Execute unified sync
         success = await sync_extraction_result(
             insforge=db,
-            hotel_id=h_id,
+            hotel_id=str(h_id) if h_id else "",
             result=processed,
-            user_id=user_id,
+            user_id=str(user_id) if user_id else None,
             session_id=scan_task_id,
             source="DataForSEO Webhook",
-            task_type=task_type,
+            task_type=str(task_type) if task_type else None,
         )
 
         if success:
