@@ -40,6 +40,7 @@ async def handle_dataforseo_webhook(
         # [FIX 2026-05-04] Previously called fetch_task_results (price_search) first for ALL
         # task types, wasting API calls on hotel_info tasks. Now resolves type first.
         task_type = None
+        hotel_meta = None
         try:
             type_res = (
                 db.table("scan_tasks")
