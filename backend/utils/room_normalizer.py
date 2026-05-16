@@ -89,15 +89,20 @@ class RoomTypeNormalizer:
         "büyük": "KNG",
         # Views
         "sea": "SV",
-        "ocean": "SV",
+        "deniz manzarali": "SV",
+        "deniz manzara": "SV",
         "deniz": "SV",
+        "city view": "CV",
         "city": "CV",
+        "sehir manzarali": "CV",
         "sehir": "CV",
         "şehir": "CV",
         "garden": "GV",
+        "bahce manzarali": "GV",
         "bahce": "GV",
-        "bahçe": "GV",
+        "land view": "LV",
         "land": "LV",
+        "kara manzarali": "LV",
         "kara": "LV",
         "pool": "PV",
         "havuz": "PV",
@@ -107,6 +112,7 @@ class RoomTypeNormalizer:
         "partial": "PRT",
         "kismi": "PRT",
         "kısmi": "PRT",
+        "view": "V",
         "manzarali": "V",
         "manzaralı": "V", # Generic view suffix
         # Attributes
@@ -246,15 +252,9 @@ class RoomTypeNormalizer:
 
     # 3. Common OTA/Vendor names to filter out of room type catalogs
     VENDOR_NAMES = {
-        "booking.com", "expedia", "agoda", "hotels.com", "airbnb", "tripadvisor",
-        "google", "tatilbudur.com", "otelz.com", "jolly tur", "etstur", "tatil.com",
-        "trivago", "kayak", "priceline", "orbitz", "travelocity", "hotwire",
-        "trip.com", "ctrip", "rakuten", "amoma", "venere", "otel.com", "zenhotels",
-        "destinia", "findhotel", "snap travel", "super.com", "nuitee", "prestigia",
-        "hoteltonight", "lastminute.com", "ebookers", "opodo", "edreams", "gotogate",
         "tatilbudur", "otelz", "etstur", "jollytur", "jolly", "setur", "neredekal", "odamax",
-        "gezinomi", "eccetur", "tatilsepeti", "neredekal.com", "odamax.com", "setur.com.tr",
-        "hotelrunner", "rezturk", "giata", "travelgate", "webbeds", "hotelbeds"
+        "gezinomi", "mika tur", "trivago", "tripadvisor", "booking", "hotels.com", "expedia",
+        "agoda", "otelcenneti", "kultur", "turizm", "acente", "kampanya", "firsat", "ozel"
     }
 
     @classmethod

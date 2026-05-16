@@ -179,7 +179,8 @@ class DataForSEOProvider(HotelDataProvider):
             attributes["has_breakfast"] = True
 
         return {
-            "name": original_input,  # Actual roomtype name
+            "name": normalized_data["canonical_name"],  # Cleaned canonical name
+            "original_name": original_input,
             "canonical_name": normalized_data["canonical_name"],
             "attributes": attributes,
             "is_vendor": normalized_data["is_vendor"]
