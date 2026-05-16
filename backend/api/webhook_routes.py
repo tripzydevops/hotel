@@ -5,24 +5,27 @@ from fastapi import APIRouter, Depends, Request
 from backend.services.monitor_service import sync_extraction_result
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.utils.db import get_supabase_client
+from backend.utils.webhook import get_webhook_payload
 from supabase import Client
 
-router = APIRouter(prefix="/webhooks/dataforseo", tags=["webhooks"])
+router = APIRouter(prefix="/v1/webhooks", tags=["webhooks"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/task-completed")
-async def handle_task_completed(
+@router.post("/dataforseo")
+@router.post("/dataforseo/")
+@router.post("/dataforseo/task-completed")
+async def handle_dataforseo_webhook(
     request: Request, db: Client = Depends(get_supabase_client)
 ):
     """
-    Webhook handler for DataForSEO task completion notifications.
-    Standardized to handle Kaizen scan tasks and legacy pulse tasks.
+    Standard Webhook handler for DataForSEO notifications.
+    Standardized to handle Price Search and Hotel Info tasks.
+    Supports legacy pulse tags and modern scan_task_id resolution.
     """
     try:
-        # 1. Parse payload
-        # DataForSEO typically sends task_id and other metadata in a POST body
-        payload = await request.json()
+        # 1. Parse payload (Handles GZIP decompression)
+        payload = await get_webhook_payload(request)
         logger.info(f"Received DataForSEO Webhook: {payload}")
 
         # DataForSEO format: result[0].id or similar depending on the specific hook

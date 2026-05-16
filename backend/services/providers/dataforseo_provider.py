@@ -141,8 +141,18 @@ class DataForSEOProvider(HotelDataProvider):
         """
         from backend.utils.room_normalizer import RoomTypeNormalizer
 
-        if not name:
-            return {"name": "Standard Room", "attributes": {}, "is_vendor": False}
+        if not name or str(name).lower() == "hotel_info_price":
+            return {
+                "name": "Standard Room",
+                "canonical_name": "Standard Room",
+                "attributes": {
+                    "is_refundable": True,
+                    "has_breakfast": False,
+                    "has_wifi": True,
+                    "bed_type": None,
+                },
+                "is_vendor": False
+            }
 
         name_str = str(name)
         original_input = name_str
@@ -1547,7 +1557,7 @@ class DataForSEOProvider(HotelDataProvider):
                     }, res_json
 
                 result = task["result"][0]
-                items = result.get("items", [])
+                items = result.get("items") or []
                 tag = task.get("data", {}).get("tag")
 
                 # [KAIZEN 2026] AUTO-RESOLVE IDENTITY FROM DB
@@ -1639,11 +1649,11 @@ class DataForSEOProvider(HotelDataProvider):
                     "hotel_searches" in endpoint or endpoint == "hotel_search"
                 ):
 
-                    prices_data = target.get("prices", {})
-                    reviews_data = target.get("reviews", {})
+                    prices_data = target.get("prices") or {}
+                    reviews_data = target.get("reviews") or {}
 
                     # OTA Parity / All Prices
-                    raw_prices_raw = prices_data.get("items", []) or []
+                    raw_prices_raw = prices_data.get("items") or []
                     raw_prices = []
                     for pi in raw_prices_raw:
                         if isinstance(pi, dict):
@@ -1656,7 +1666,7 @@ class DataForSEOProvider(HotelDataProvider):
 
                     # [FIX 2026-04-25] Fallback: If no price items, check market_data or top-level fields
                     if not raw_prices:
-                        market_data = target.get("market_data", {})
+                        market_data = target.get("market_data") or {}
                         if market_data:
                             m_price = market_data.get("price")
                             m_currency = market_data.get("currency")
@@ -1802,9 +1812,9 @@ class DataForSEOProvider(HotelDataProvider):
                     room_type_names = [r["name"] for r in room_catalog if r.get("name")]
 
                     # Sentiment Fallback
-                    search_sentiment = target.get("reviews_breakdown", {}).get(
-                        "sentiment", []
-                    )
+                    search_sentiment = (target.get("reviews_breakdown") or {}).get(
+                        "sentiment"
+                    ) or []
 
                     # [FIX 3] Only emit price if API actually returned one (not None/0)
                     raw_price = prices_data.get("price")

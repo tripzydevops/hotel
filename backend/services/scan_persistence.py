@@ -849,7 +849,7 @@ class ScanPersistenceService:
             price_data.get("prices") or 
             []
         )
-        is_shallow = len(offers) < 5 and not is_estimated
+        is_shallow = len(offers or []) < 5 and not is_estimated
 
         # [FIX 2026-05-10] OTA Protection: Detect thin price_search results
         # (Mirroring logic from batch_sync_extraction_results to prevent 4-hourly price updates
@@ -1573,8 +1573,8 @@ class ScanPersistenceService:
                 if should_protect_ota:
                     logger.info(
                         f"[OTA Protection] Skipping market_offers/room_types update for {tid} — "
-                        f"thin price_search result ({len(offers)} offers, sources: "
-                        f"{[o.get('source') for o in offers]})"
+                        f"thin price_search result ({len(offers or [])} offers, sources: "
+                        f"{[o.get('source') for o in (offers or [])]})"
                     )
 
                 if offers and not should_protect_ota:

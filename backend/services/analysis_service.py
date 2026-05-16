@@ -122,55 +122,73 @@ def _extract_price(raw: Any, currency: Optional[str] = None) -> Optional[float]:
             return float(raw)
 
         s = str(raw).strip()
-        # Remove currency symbols and whitespace
+        # Remove everything except digits, dots, commas
         s_clean = re.sub(r"[^\d.,]", "", s)
         if not s_clean:
             return None
 
-        # Normalize currency for lookup
+        # Strip any leading/trailing dots or commas
+        s_clean = s_clean.strip(".,")
+        if not s_clean:
+            return None
+
         curr_upper = (currency or "").upper()
 
-        # Case 1: Both . and , exist (e.g. "3.825,00" or "3,825.00")
-        if "." in s_clean and "," in s_clean:
-            if s_clean.rfind(",") > s_clean.rfind("."):
-                # Turkish/European: Dot is thousand, Comma is decimal
+        # Count separators
+        dots = s_clean.count(".")
+        commas = s_clean.count(",")
+
+        # Case 1: Both exist (e.g. "3.825,00" or "3,825.00" or "1.500.000,25")
+        if dots > 0 and commas > 0:
+            last_dot = s_clean.rfind(".")
+            last_comma = s_clean.rfind(",")
+            if last_comma > last_dot:
+                # Comma is decimal separator. Remove all dots.
                 s_clean = s_clean.replace(".", "").replace(",", ".")
             else:
-                # US/UK: Comma is thousand, Dot is decimal
+                # Dot is decimal separator. Remove all commas.
                 s_clean = s_clean.replace(",", "")
 
-        # Case 2: Only Dot or Comma exists (e.g. "3.825" or "150,50")
-        else:
-            # Find all separators
-            separators = [m.start() for m in re.finditer(r"[.,]", s_clean)]
-            if separators:
-                last_sep_idx = separators[-1]
-                last_sep_char = s_clean[last_sep_idx]
-                trailing_digits = len(s_clean) - last_sep_idx - 1
-                
-                # AMBIGUITY FIX: exactly 3 trailing digits (e.g. 1.234)
-                if trailing_digits == 3:
-                    # In USD/GBP/EUR, a dot followed by 3 digits is almost ALWAYS a decimal (e.g. 1.000)
-                    # or an accidental 3-digit decimal from a scraper.
-                    # Thousand separators in these currencies are usually commas.
-                    if last_sep_char == "." and curr_upper in ["USD", "GBP", "EUR", "CAD", "AUD"]:
-                        # Treat as decimal
-                        s_clean = s_clean.replace(",", ".")
-                    elif last_sep_char == "," and curr_upper == "TRY":
-                        # In TR, comma is decimal.
-                        s_clean = s_clean.replace(",", ".")
-                    else:
-                        # Default to thousand separator for 3-digits if it's the only separator
-                        # This handles "1.234" in TR or "1,234" in US correctly.
-                        s_clean = s_clean.replace(".", "").replace(",", "")
+        # Case 2: Only dots exist
+        elif dots > 0:
+            if dots > 1:
+                # Multiple dots -> all are thousand separators (e.g. 1.500.000)
+                s_clean = s_clean.replace(".", "")
+            else:
+                # Exactly one dot. Check trailing digits.
+                idx = s_clean.find(".")
+                trailing = len(s_clean) - idx - 1
+                if trailing == 3:
+                    # Ambiguity! E.g. "1.234"
+                    # In hotel price contexts, a single separator + 3 digits is almost ALWAYS
+                    # a thousand separator, as rates like $1.234 or 1.234 TRY are extremely unlikely
+                    # to be decimals. We resolve it as thousand for consistency.
+                    s_clean = s_clean.replace(".", "")
                 else:
-                    # Assume it's a decimal separator (e.g., "150.50" or "150,50")
+                    # e.g. "120.5" or "120.50" -> treat as decimal
+                    pass
+
+        # Case 3: Only commas exist
+        elif commas > 0:
+            if commas > 1:
+                # Multiple commas -> all are thousand separators
+                s_clean = s_clean.replace(",", "")
+            else:
+                # Exactly one comma.
+                idx = s_clean.find(",")
+                trailing = len(s_clean) - idx - 1
+                if trailing == 3:
+                    # E.g. "1,234" -> thousand separator
+                    s_clean = s_clean.replace(",", "")
+                else:
+                    # E.g. "120,50" -> treat as decimal
                     s_clean = s_clean.replace(",", ".")
 
         return float(s_clean)
     except Exception:
         pass
     return None
+
 
 
 def get_price_for_room(

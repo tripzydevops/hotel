@@ -6,6 +6,7 @@ from supabase import Client
 from backend.services.monitor_service import sync_extraction_result
 from backend.services.providers.dataforseo_provider import dataforseo_provider
 from backend.utils.db import get_supabase_client
+from backend.utils.webhook import get_webhook_payload
 
 router = APIRouter(prefix="/v1/webhooks/dataforseo", tags=["webhooks"])
 logger = logging.getLogger(__name__)
@@ -22,8 +23,8 @@ async def handle_dataforseo_webhook(
     Supports legacy pulse tags and modern scan_task_id resolution.
     """
     try:
-        # 1. Parse payload
-        payload = await request.json()
+        # 1. Parse payload (Handles GZIP decompression)
+        payload = await get_webhook_payload(request)
         logger.info(f"Received DataForSEO Webhook: {payload}")
 
         # DataForSEO format: result[0].id or similar depending on the specific hook
