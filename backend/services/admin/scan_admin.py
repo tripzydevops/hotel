@@ -111,10 +111,26 @@ async def get_admin_scan_details_logic(scan_id: UUID, db: Client) -> Dict[str, A
                 or []
             ))
 
+        # KAIZEN 2026: Fetch persisted price_logs for this session.
+        # These are the SOURCE OF TRUTH for pricing data — they survive even
+        # if raw_payload is missing or malformed.
+        price_logs = cast(List[Dict[str, Any]], (
+            db.table("price_logs")
+            .select("*, hotels(name)")
+            .eq("session_id", str(scan_id))
+            .order("recorded_at", desc=True)
+            .limit(200)
+            .execute()
+            .data
+            or []
+        ))
+
         return {
             "session": session, 
             "logs": logs,
-            "tasks": tasks
+            "tasks": tasks,
+            "price_logs": price_logs,
+            "batches": batches
         }
     except HTTPException:
         raise

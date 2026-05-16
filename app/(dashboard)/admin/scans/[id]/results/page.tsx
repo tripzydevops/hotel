@@ -31,7 +31,12 @@ import {
   ThumbsDown,
   MessageSquare,
   Wifi,
-  Coffee
+  Coffee,
+  Zap,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Database
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -95,7 +100,11 @@ export default function ScanResultsPage() {
   const [loading, setLoading] = useState(true);
   const [scan, setScan] = useState<any>(null);
   const [results, setResults] = useState<ScanResult[]>([]);
-  const [activeTab, setActiveTab] = useState<"results" | "analytics" | "json">("results");
+  const [scanTasks, setScanTasks] = useState<any[]>([]);
+  const [priceLogs, setPriceLogs] = useState<any[]>([]);
+  const [queryLogs, setQueryLogs] = useState<any[]>([]);
+  const [scanBatches, setScanBatches] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"results" | "pipeline" | "analytics" | "json">("results");
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [starFilter, setStarFilter] = useState<number | null>(null);
@@ -108,6 +117,10 @@ export default function ScanResultsPage() {
       try {
         const data = await api.getAdminScanDetails(id);
         setScan(data.session);
+        setScanTasks(data.tasks || []);
+        setPriceLogs(data.price_logs || []);
+        setQueryLogs(data.logs || []);
+        setScanBatches(data.batches || []);
         
         const parsedResults: ScanResult[] = [];
         const payload = data.session?.raw_payload;
@@ -375,6 +388,7 @@ export default function ScanResultsPage() {
           <div className="flex bg-zinc-900/50 p-1 rounded-full border border-zinc-800/50 backdrop-blur-xl">
             {[
               { id: "results", label: "Properties", icon: LayoutGrid },
+              { id: "pipeline", label: `Pipeline (${scanTasks.length})`, icon: Zap },
               { id: "analytics", label: "Analytics", icon: BarChart3 },
               { id: "json", label: "Raw JSON", icon: Code }
             ].map((tab) => (
@@ -824,6 +838,216 @@ export default function ScanResultsPage() {
                   <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em]">Adjust filters to expand search scope</p>
                 </div>
               )}
+            </motion.div>
+          ) : activeTab === "pipeline" ? (
+            <motion.div
+              key="pipeline"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              {/* Pipeline Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="glass-panel p-5 rounded-2xl">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Scan Tasks</p>
+                  <span className="text-3xl font-black text-white">{scanTasks.length}</span>
+                </div>
+                <div className="glass-panel p-5 rounded-2xl">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Price Logs</p>
+                  <span className="text-3xl font-black text-emerald-500">{priceLogs.length}</span>
+                </div>
+                <div className="glass-panel p-5 rounded-2xl">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Query Logs</p>
+                  <span className="text-3xl font-black text-purple-500">{queryLogs.length}</span>
+                </div>
+                <div className="glass-panel p-5 rounded-2xl">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Batches</p>
+                  <span className="text-3xl font-black text-blue-500">{scanBatches.length}</span>
+                </div>
+              </div>
+
+              {/* Scan Tasks Table */}
+              <div className="glass-panel rounded-[2rem] border border-zinc-800/50 overflow-hidden">
+                <div className="p-6 border-b border-zinc-800/50 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase tracking-wider">Task Pipeline</h3>
+                    <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Individual extraction task status</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  {scanTasks.length > 0 ? (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-800/50 text-zinc-500">
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Hotel</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Type</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Status</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">External ID</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Retries</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Error</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Updated</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scanTasks.map((task: any, i: number) => (
+                          <tr key={task.id || i} className="border-b border-zinc-800/30 hover:bg-zinc-900/30 transition-colors">
+                            <td className="p-4 font-bold text-zinc-300 max-w-[200px] truncate">{task.hotels?.name || task.hotel_id?.substring(0, 8) || "—"}</td>
+                            <td className="p-4">
+                              <span className="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                                {task.task_type || "pricing"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                                task.status === "completed" ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" :
+                                task.status === "failed" ? "bg-rose-500/10 border border-rose-500/20 text-rose-400" :
+                                task.status === "processing" ? "bg-amber-500/10 border border-amber-500/20 text-amber-400" :
+                                "bg-zinc-800 border border-zinc-700 text-zinc-400"
+                              }`}>
+                                {task.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5" /> :
+                                 task.status === "failed" ? <XCircle className="w-2.5 h-2.5" /> :
+                                 task.status === "processing" ? <Activity className="w-2.5 h-2.5 animate-pulse" /> :
+                                 <Clock className="w-2.5 h-2.5" />}
+                                {task.status}
+                              </span>
+                            </td>
+                            <td className="p-4 font-mono text-zinc-500 text-[10px]">{task.external_task_id ? task.external_task_id.substring(0, 16) + "…" : "—"}</td>
+                            <td className="p-4 text-zinc-500">{task.retry_count || 0}/{task.max_retries || 3}</td>
+                            <td className="p-4 text-rose-400 max-w-[200px] truncate text-[10px]">{task.error_message || task.error || "—"}</td>
+                            <td className="p-4 text-zinc-600 text-[10px]">{task.updated_at ? new Date(task.updated_at).toLocaleString() : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-16 flex flex-col items-center justify-center">
+                      <Zap className="w-8 h-8 text-zinc-800 mb-3" />
+                      <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">No tasks found for this session</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Price Logs Table */}
+              <div className="glass-panel rounded-[2rem] border border-zinc-800/50 overflow-hidden">
+                <div className="p-6 border-b border-zinc-800/50 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <Database className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase tracking-wider">Persisted Price Logs</h3>
+                    <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Source of truth — pricing data written to DB</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  {priceLogs.length > 0 ? (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-800/50 text-zinc-500">
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Hotel</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Price</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Source</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Check-in</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Offers</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Rooms</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Anomaly</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Recorded</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {priceLogs.map((log: any, i: number) => {
+                          const offersCount = Array.isArray(log.offers) ? log.offers.length : 0;
+                          const roomsCount = Array.isArray(log.room_types) ? log.room_types.length : 0;
+                          return (
+                            <tr key={log.id || i} className="border-b border-zinc-800/30 hover:bg-zinc-900/30 transition-colors">
+                              <td className="p-4 font-bold text-zinc-300 max-w-[200px] truncate">{log.hotels?.name || log.hotel_id?.substring(0, 8) || "—"}</td>
+                              <td className="p-4 font-black text-emerald-400">{log.currency} {Number(log.price).toLocaleString()}</td>
+                              <td className="p-4">
+                                <span className="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                                  {log.source || "unknown"}
+                                </span>
+                              </td>
+                              <td className="p-4 text-zinc-400 text-[10px]">{log.check_in_date || "—"}</td>
+                              <td className="p-4 text-blue-400 font-bold">{offersCount}</td>
+                              <td className="p-4 text-purple-400 font-bold">{roomsCount}</td>
+                              <td className="p-4">
+                                {log.is_anomaly ? (
+                                  <span className="inline-flex items-center gap-1 text-rose-400 text-[9px] font-black"><AlertTriangle className="w-3 h-3" /> YES</span>
+                                ) : (
+                                  <span className="text-zinc-600 text-[9px] font-bold">—</span>
+                                )}
+                              </td>
+                              <td className="p-4 text-zinc-600 text-[10px]">{log.recorded_at ? new Date(log.recorded_at).toLocaleString() : "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-16 flex flex-col items-center justify-center">
+                      <Database className="w-8 h-8 text-zinc-800 mb-3" />
+                      <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">No price logs persisted for this session</p>
+                      <p className="text-[9px] text-zinc-700 mt-1">This means the sync pipeline did not write pricing data to the DB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Query Logs */}
+              <div className="glass-panel rounded-[2rem] border border-zinc-800/50 overflow-hidden">
+                <div className="p-6 border-b border-zinc-800/50 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase tracking-wider">Query Audit Log</h3>
+                    <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Backend actions and agent activity</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  {queryLogs.length > 0 ? (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-800/50 text-zinc-500">
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Hotel</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Action</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Status</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Price</th>
+                          <th className="text-left p-4 font-black text-[9px] uppercase tracking-widest">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {queryLogs.map((log: any, i: number) => (
+                          <tr key={log.id || i} className="border-b border-zinc-800/30 hover:bg-zinc-900/30 transition-colors">
+                            <td className="p-4 font-bold text-zinc-300 max-w-[200px] truncate">{log.hotel_name || "—"}</td>
+                            <td className="p-4 text-zinc-400 text-[10px]">{log.action_type || "—"}</td>
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                                log.status === "success" ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" :
+                                log.status === "error" ? "bg-rose-500/10 border border-rose-500/20 text-rose-400" :
+                                "bg-zinc-800 border border-zinc-700 text-zinc-400"
+                              }`}>
+                                {log.status || "unknown"}
+                              </span>
+                            </td>
+                            <td className="p-4 text-zinc-400">{log.price ? `${log.currency || ""} ${log.price}` : "—"}</td>
+                            <td className="p-4 text-zinc-600 text-[10px]">{log.created_at ? new Date(log.created_at).toLocaleString() : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-16 flex flex-col items-center justify-center">
+                      <Activity className="w-8 h-8 text-zinc-800 mb-3" />
+                      <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">No query logs for this session</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           ) : activeTab === "analytics" ? (
             <motion.div 
