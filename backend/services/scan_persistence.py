@@ -242,6 +242,9 @@ class ScanPersistenceService:
         Prevents frontend errors where strings are expected to be objects (e.g. room.name).
         [KAIZEN 2026-05] Added currency normalization to align with target scan currency.
         """
+        # Ensure we have a default currency to prevent downstream conversion crashes
+        target_currency = target_currency or "TRY"
+
         if not rooms or not isinstance(rooms, list):
             return []
             

@@ -108,8 +108,9 @@ def _update_exchange_rates_live() -> None:
 
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
     """Convert amount from one currency to another via USD using dynamic cached rates."""
-    from_currency = from_currency.upper()
-    to_currency = to_currency.upper()
+    # Ensure currencies are strings and uppercase to prevent NoneType crashes
+    from_currency = (from_currency or "TRY").upper()
+    to_currency = (to_currency or "TRY").upper()
     if from_currency == to_currency:
         return amount
 
