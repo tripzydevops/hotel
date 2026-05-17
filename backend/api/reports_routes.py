@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone
 
 from backend.models.schemas import BaseModel
-from backend.services.admin_service import export_report_logic, get_reports_logic
+from backend.services.report_service import export_report_logic, get_reports_logic
 from backend.services.auth_service import (
     get_current_active_user,
     get_current_admin_user,

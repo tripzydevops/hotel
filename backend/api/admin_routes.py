@@ -18,7 +18,7 @@ from backend.models.schemas import (
     SystemLogEntry,
     SystemLogsResponse,
 )
-from backend.services.admin_service import (
+from backend.services.admin import (
     add_admin_directory_entry_logic,
     admin_update_user_logic,
     cleanup_empty_scans_logic,
@@ -185,7 +185,7 @@ async def delete_admin_user(
     Deletes a user and their associated data (hotels, scans, logs).
     Used for compliance and account cleanup.
     """
-    return await delete_admin_user_logic(user_id, db)
+    return await delete_admin_user_logic(str(user_id), db)
 
 
 @router.post("/directory", response_model=dict)
@@ -234,7 +234,7 @@ async def get_admin_logs(
     """
     System activity logs. Audit trail for administrative actions.
     """
-    return await get_admin_logs_logic(limit, db)
+    return await get_admin_logs_logic(db, limit)
 
 
 @router.get("/system-logs", response_model=SystemLogsResponse)
@@ -415,7 +415,8 @@ async def update_admin_settings(
     """
     # EXPLANATION: Global Configuration
     # Controls system-wide flags like Maintenance Mode via the UI.
-    return await update_admin_settings_logic(settings, db)
+    from backend.services.admin.system_stats import AdminSettingsUpdate
+    return await update_admin_settings_logic(AdminSettingsUpdate(**settings), db)
 
 
 @router.post("/sync")

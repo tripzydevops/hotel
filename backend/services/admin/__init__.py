@@ -86,6 +86,7 @@ from backend.services.admin.market_intelligence import (
     get_price_trends_logic,
     get_competitor_matrix_logic,
     get_alert_summary_logic,
+    get_admin_market_intelligence_logic,
 )
 
 __all__ = [
@@ -143,4 +144,5 @@ __all__ = [
     "get_price_trends_logic",
     "get_competitor_matrix_logic",
     "get_alert_summary_logic",
+    "get_admin_market_intelligence_logic",
 ]
