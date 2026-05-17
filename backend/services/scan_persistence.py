@@ -1287,6 +1287,7 @@ class ScanPersistenceService:
             
             identity = h_ref.get("property_token") or hid
             task_id = item.get("scan_task_id")
+            item_session_id = item.get("session_id")  # [FIX 2026-05-17] Real scan_session ID
             task_type = item.get("task_type")  # [FIX 2026-05-10] Track task_type for OTA protection
             res = item.get("result", {})
             if not res or res.get("status") != "success":
@@ -1299,7 +1300,8 @@ class ScanPersistenceService:
                     "res": res, 
                     "task_ids": [task_id] if task_id else [],
                     "hotel_ids": {hid},
-                    "task_types": {task_type} if task_type else set()
+                    "task_types": {task_type} if task_type else set(),
+                    "session_id": item_session_id,  # [FIX 2026-05-17] Carry scan_session ID
                 }
             else:
                 group = identity_groups[identity]
@@ -1398,6 +1400,10 @@ class ScanPersistenceService:
         
         for identity, group in identity_groups.items():
             res_data = group["res"]
+            # [FIX 2026-05-17] Use the real scan_session ID, not a task_id.
+            # Previously this used task_ids[0] which caused price_logs to be orphaned
+            # from the scan session — the admin page queries by session_id and found nothing.
+            session_id = group.get("session_id") or (group["task_ids"][0] if group.get("task_ids") else None)
             
             # [FIX 2026-04-25] Robust Price & Offer Extraction
             # We look for various price/offer fields from both agent response and DataForSEO raw data.
@@ -1644,7 +1650,8 @@ class ScanPersistenceService:
                         "room_types": safe_room_types,
                         "recorded_at": now_ts,
                         "is_anomaly": is_anomaly,
-                        "metadata": {"anomaly_details": anomaly_details} if is_anomaly else None
+                        "metadata": {"anomaly_details": anomaly_details} if is_anomaly else None,
+                        "session_id": str(session_id) if session_id else None
                     })
 
                     # [KAIZEN 2026] Individual Reviews (Insert)

@@ -920,12 +920,18 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
             if not meta:
                 continue
 
+            # [FIX 2026-05-17] Extract session_id from batch metadata so price_logs
+            # are correctly linked to the scan_session, not to individual task IDs.
+            _batch_meta = meta.get("batch")
+            _session_id = _batch_meta.get("session_id") if isinstance(_batch_meta, dict) else None
+
             batch_results.append(
                 {
                     "hotel_id": meta["hotel_id"],
                     "result": result,
                     "scan_task_id": meta["id"],
                     "batch_id": meta.get("batch_id"),
+                    "session_id": _session_id,
                     "task_type": meta.get("task_type"),  # [FIX 2026-05-10] Forward task_type for OTA protection
                 }
             )
