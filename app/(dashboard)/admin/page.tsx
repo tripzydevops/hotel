@@ -6,7 +6,6 @@ import {
   Building2,
   Key,
   Database,
-  Search,
   ArrowRight,
   TrendingUp,
   Activity,

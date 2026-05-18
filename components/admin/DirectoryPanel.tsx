@@ -6,7 +6,6 @@ import {
   List,
   RefreshCw,
   Trash2,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -33,7 +32,6 @@ const DirectoryPanel = () => {
     serp_api_id: "",
   });
 
-  const [dirSuccess, setDirSuccess] = useState(false);
 
   const loadDirectory = useCallback(async () => {
     setLoading(true);
@@ -192,15 +190,7 @@ const DirectoryPanel = () => {
             </button>
           </div>
         </form>
-        {dirSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-[var(--optimal-green)] mt-4 text-xs font-bold flex items-center gap-2 bg-[var(--optimal-green)]/10 w-fit px-3 py-1 rounded-lg border border-[var(--optimal-green)]/20"
-          >
-            <CheckCircle2 className="w-4 h-4" /> Added Successfully
-          </motion.div>
-        )}
+
       </div>
 
       {/* List */}

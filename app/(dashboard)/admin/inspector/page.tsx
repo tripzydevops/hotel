@@ -22,9 +22,7 @@ export default function DebugDataPage() {
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching dashboard data for:", uid);
       const data = await api.getDashboard();
-      console.log("Dashboard Data Received:", data);
       setDashboardData(data);
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err: any) {
