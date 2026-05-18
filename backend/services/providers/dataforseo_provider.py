@@ -114,7 +114,6 @@ class DataForSEOProvider(HotelDataProvider):
             return
 
         try:
-            import json
             # Capture metadata alongside raw data
             vault_item = {
                 "endpoint": endpoint,
@@ -122,13 +121,11 @@ class DataForSEOProvider(HotelDataProvider):
                 "payload": data,
             }
 
-            db.table("vault.secrets").insert(
-                {
-                    "name": f"dataforseo_{session_id}_{uuid.uuid4().hex[:8]}",
-                    "secret": json.dumps(vault_item),
-                    "description": f"Raw DataForSEO response for {endpoint}",
-                }
-            ).execute()
+            # Use existing RPC for atomic appending to scan_sessions.raw_payload
+            db.rpc("append_scan_raw_payload", {
+                "session_id": session_id,
+                "payload_item": vault_item
+            }).execute()
         except Exception as vault_err:
             logger.error(
                 f"Everything Vault Failure for session {session_id}: {vault_err}"

@@ -171,6 +171,45 @@ export default function ScanResultsPage() {
           });
         }
         
+        // KAIZEN 2026: Fallback to using price_logs as source of truth if payload parsing yields nothing
+        if (parsedResults.length === 0 && data.price_logs && data.price_logs.length > 0) {
+          data.price_logs.forEach((log: any) => {
+            // Extract OTA pricing from offers or market_offers
+            const offers = log.offers || log.market_offers || log.parity_offers || [];
+            const otaPricing = offers.map((o: any) => ({
+              name: o.source || o.vendor || "Unknown Vendor",
+              price: o.price,
+              currency: o.currency || log.currency,
+              url: o.url,
+              is_best: false
+            }));
+
+            // Identify best price
+            if (otaPricing.length > 0) {
+              const minPrice = Math.min(...otaPricing.map((o: any) => o.price));
+              otaPricing.forEach((o: any) => {
+                if (o.price === minPrice) o.is_best = true;
+              });
+            }
+
+            const roomTypes = (log.room_types || []).map((r: any) => ({
+              name: r.name || r.room_type || "Standard",
+              price: r.price,
+              description: r.description
+            }));
+
+            parsedResults.push({
+              hotel_name: log.hotels?.name || "Unknown Hotel",
+              price: parseFloat(log.price) || 0,
+              currency: log.currency || "USD",
+              vendor: log.vendor || log.source || "System",
+              ota_pricing: otaPricing,
+              room_types: roomTypes,
+              metadata: log.metadata || {}
+            });
+          });
+        }
+        
         setResults(parsedResults);
         if (parsedResults.length > 0) {
           const maxP = Math.max(...parsedResults.map(r => r.price));
