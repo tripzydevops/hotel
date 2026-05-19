@@ -15,6 +15,25 @@ from supabase import Client
 
 logger = get_logger(__name__)
 
+# [2026-05-25] Google Hotel Searches depth is changing from 20 to 18.
+# All hotel_searches requests must use multiples of this value.
+HOTEL_SEARCH_DEPTH = 18
+
+# Fields accepted by hotel_searches/task_post (price search)
+_HOTEL_SEARCHES_ALLOWED_FIELDS = {
+    "keyword", "location_name", "location_code", "location_coordinate",
+    "language_name", "language_code", "depth", "check_in", "check_out",
+    "currency", "adults", "children", "tag", "postback_url", "pingback_url",
+    "postback_data",
+}
+
+# Fields accepted by hotel_info/task_post (metadata/OTA breakdown)
+_HOTEL_INFO_ALLOWED_FIELDS = {
+    "hotel_identifier", "location_name", "location_code",
+    "language_name", "language_code", "check_in", "check_out",
+    "currency", "adults", "children", "tag",
+}
+
 # DataForSEO requires very specific location_name formats:
 # - Country must use official API name (e.g., "Turkiye" not "Turkey")
 # - No spaces after commas: "City,Country" not "City, Country"
@@ -835,7 +854,7 @@ class DataForSEOProvider(HotelDataProvider):
             {
                 "location_name": self._normalize_location(query),
                 "language_code": "en",
-                "limit": limit,
+                "depth": limit if limit else HOTEL_SEARCH_DEPTH,
             }
         ]
         
@@ -901,7 +920,7 @@ class DataForSEOProvider(HotelDataProvider):
                     "check_out": check_out.strftime("%Y-%m-%d") if hasattr(check_out, "strftime") else check_out,
                     "currency": currency,
                     "adults": adults,
-                    "limit": 1,
+                    "depth": HOTEL_SEARCH_DEPTH,
                 }
             ]
 
@@ -1029,14 +1048,24 @@ class DataForSEOProvider(HotelDataProvider):
         auth = (self.login, self.password)
         logger.info(f"post_price_tasks: Submitting {len(task_params)} tasks to DataForSEO...")
 
-        # Map extraction_depth to limit in payload mapping
+        # [FIX 2026-05-19] hotel_searches uses 'depth' not 'limit'.
+        # Also strip 'hotel_identifier' — it is NOT a valid task_post field
+        # for hotel_searches (it's a return value from results).
         modified_params = []
         for t in task_params:
             task = t.copy()
+            # Map extraction_depth → depth (correct field name)
             if "extraction_depth" in task:
-                task["limit"] = task.pop("extraction_depth")
-            elif "limit" not in task:
-                task["limit"] = 100
+                task["depth"] = task.pop("extraction_depth")
+            # Remove legacy 'limit' and convert to 'depth'
+            if "limit" in task:
+                task["depth"] = task.pop("limit")
+            if "depth" not in task:
+                task["depth"] = HOTEL_SEARCH_DEPTH
+            # Remove hotel_identifier — invalid for hotel_searches/task_post
+            task.pop("hotel_identifier", None)
+            # Strip None values to avoid schema validation issues
+            task = {k: v for k, v in task.items() if v is not None}
             if pingback_url:
                 task["pingback_url"] = pingback_url
             if self.postback_url:
@@ -1076,23 +1105,46 @@ class DataForSEOProvider(HotelDataProvider):
         if not self.login or not self.password:
             return []
         auth = (self.login, self.password)
-        # [2026-05-04] hotel_info task_post does NOT support postback/pingback URLs.
-        # Sending them causes 'Invalid Field: postback_data' rejection.
-        # We must poll for these results instead.
-        pass
+
+        # [FIX 2026-05-19] Sanitize tasks before submission:
+        # 1. hotel_info does NOT support postback/pingback URLs
+        # 2. Strip fields not accepted by the hotel_info endpoint
+        # 3. Remove None values to prevent schema rejection
+        sanitized_tasks = []
+        for t in tasks:
+            clean = {}
+            for k, v in t.items():
+                if k in _HOTEL_INFO_ALLOWED_FIELDS and v is not None:
+                    clean[k] = v
+            if clean.get("hotel_identifier") or clean.get("keyword"):
+                sanitized_tasks.append(clean)
+            else:
+                logger.warning(f"post_info_tasks: Skipping task with no identifier: {t.get('tag', 'no-tag')}")
+
+        if not sanitized_tasks:
+            logger.warning("post_info_tasks: No valid tasks after sanitization")
+            return []
+
+        logger.info(
+            f"post_info_tasks: Submitting {len(sanitized_tasks)} sanitized tasks "
+            f"(from {len(tasks)} raw). Sample keys: {list(sanitized_tasks[0].keys()) if sanitized_tasks else 'none'}"
+        )
+
         try:
             async with httpx.AsyncClient(auth=auth, timeout=60.0) as client:
                 response = await client.post(
                     f"{self.api_url}/business_data/google/hotel_info/task_post",
-                    json=tasks,
+                    json=sanitized_tasks,
                 )
-                if response.status_code != 200 or response.json().get(
+                res_json = response.json()
+                if response.status_code != 200 or res_json.get(
                     "status_code"
                 ) not in [20000, 20100]:
                     logger.error(
-                        f"DataForSEO info POST error: {response.status_code} - {response.text}"
+                        f"DataForSEO info POST error: status={response.status_code}, "
+                        f"api_code={res_json.get('status_code')}, "
+                        f"msg={res_json.get('status_message')}"
                     )
-                res_json = response.json()
                 return res_json.get("tasks", [])
         except Exception as e:
             logger.error(f"DataForSEO info POST exception: {e}")
@@ -1198,17 +1250,17 @@ class DataForSEOProvider(HotelDataProvider):
             # Respect hotel-specific currency if set, else use batch default
             hotel_currency = hotel.get("currency") or currency
 
-            # [KAIZEN 2026] FIX: DataForSEO hotel_searches requires 'keyword'. 
-            # Even if we have a token, we MUST send the keyword to narrow the search.
-            # Otherwise, it does a broad city search and might miss our hotel if it's not in top 10.
+            # [FIX 2026-05-19] hotel_searches/task_post does NOT accept 'hotel_identifier'.
+            # That field is a RETURN value from search results, not an input parameter.
+            # Use 'keyword' to search for the specific hotel by name + location.
             price_task = {
-                "hotel_identifier": hotel.get("property_token") or hotel.get("serp_api_id"),
                 "keyword": f"{hotel['name']} {hotel['location']}",
                 "location_name": normalized_loc,
                 "language_name": "English",
                 "check_in": check_in,
                 "check_out": check_out,
                 "currency": hotel_currency,
+                "depth": HOTEL_SEARCH_DEPTH,
                 "tag": price_uuid,
             }
 
