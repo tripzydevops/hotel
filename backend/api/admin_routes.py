@@ -57,9 +57,9 @@ from backend.services.admin import (
     update_admin_settings_logic,
     get_admin_market_heartbeats_logic,
 )
-from backend.services.auth_service import get_current_admin_user
+from backend.services.auth_service import get_current_admin_user, get_supabase_admin
 from backend.services.provider_factory import ProviderFactory
-from backend.utils.db import get_supabase
+
 from supabase import Client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -88,7 +88,7 @@ async def debug_providers(admin=Depends(get_current_admin_user)):
 
 @router.get("/providers")
 async def get_admin_providers(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Returns the list of network providers and their status for the API Keys panel.
@@ -102,7 +102,7 @@ async def get_admin_providers(
 
 @router.get("/stats", response_model=AdminStats)
 async def get_admin_stats(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Fetches high-level system statistics for the Admin Dashboard.
@@ -122,7 +122,7 @@ async def admin_update_user(
     user_id: UUID,
     updates: AdminUserUpdate,
     user: Any = Depends(get_current_admin_user),
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
 ):
     """
     Directly updates a user profile from the admin interface.
@@ -136,7 +136,7 @@ async def admin_update_user(
 @router.get("/users", response_model=List[AdminUser])
 async def get_admin_users(
     q: Optional[str] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -150,7 +150,7 @@ async def get_admin_users(
 async def get_admin_directory(
     limit: int = 100,
     city: Optional[str] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -166,7 +166,7 @@ async def get_admin_directory(
 @router.post("/users", response_model=dict)
 async def create_admin_user(
     user: AdminUserCreate,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -178,7 +178,7 @@ async def create_admin_user(
 @router.delete("/users/{user_id}")
 async def delete_admin_user(
     user_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -191,7 +191,7 @@ async def delete_admin_user(
 @router.post("/directory", response_model=dict)
 async def add_admin_directory_entry(
     entry: dict,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -203,7 +203,7 @@ async def add_admin_directory_entry(
 @router.delete("/directory/{entry_id}")
 async def delete_admin_directory(
     entry_id: str,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -216,7 +216,7 @@ async def delete_admin_directory(
 async def update_admin_directory(
     entry_id: str,
     updates: dict,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -228,7 +228,7 @@ async def update_admin_directory(
 @router.get("/logs", response_model=List[AdminLog])
 async def get_admin_logs(
     limit: int = 50,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -251,7 +251,7 @@ async def get_system_logs(
 @router.get("/feed")
 async def get_admin_feed(
     limit: int = 50,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -263,7 +263,7 @@ async def get_admin_feed(
 @router.get("/hotels")
 async def get_admin_hotels(
     limit: int = 100,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -275,7 +275,7 @@ async def get_admin_hotels(
 @router.get("/scans", response_model=List[dict])
 async def get_admin_scans(
     limit: int = 50,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -287,7 +287,7 @@ async def get_admin_scans(
 @router.get("/scans/{scan_id}/export")
 async def export_admin_scan(
     scan_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -300,7 +300,7 @@ async def export_admin_scan(
 @router.get("/scans/{scan_id}")
 async def get_admin_scan_details(
     scan_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -313,7 +313,7 @@ async def get_admin_scan_details(
 async def update_admin_hotel(
     hotel_id: str,
     updates: dict,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -325,7 +325,7 @@ async def update_admin_hotel(
 @router.delete("/hotels/{hotel_id}")
 async def delete_admin_hotel(
     hotel_id: str,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -336,7 +336,7 @@ async def delete_admin_hotel(
 
 @router.get("/plans", response_model=List[MembershipPlan])
 async def get_admin_plans(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Lists all subscription plans.
@@ -347,7 +347,7 @@ async def get_admin_plans(
 @router.post("/plans", response_model=MembershipPlan)
 async def create_admin_plan(
     plan: PlanCreate,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -360,7 +360,7 @@ async def create_admin_plan(
 async def update_admin_plan(
     plan_id: UUID,
     plan: PlanUpdate,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -372,7 +372,7 @@ async def update_admin_plan(
 @router.delete("/plans/{plan_id}")
 async def delete_admin_plan(
     plan_id: UUID,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -384,7 +384,7 @@ async def delete_admin_plan(
 @router.get("/global-settings")
 @router.get("/settings")
 async def get_admin_settings(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Fetches global application parameters (maintenance mode, signup flags).
@@ -394,7 +394,7 @@ async def get_admin_settings(
 
 @router.get("/heartbeats", response_model=HealthMetrics)
 async def get_admin_heartbeats(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Retrieves system operational heartbeats for diagnostics.
@@ -407,7 +407,7 @@ async def get_admin_heartbeats(
 @router.put("/settings")
 async def update_admin_settings(
     settings: dict,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -421,7 +421,7 @@ async def update_admin_settings(
 
 @router.post("/sync")
 async def sync_directory(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Triggers a manual sync between user hotels and the global directory.
@@ -434,7 +434,7 @@ async def sync_directory(
 
 @router.post("/sync/profiles")
 async def sync_profiles(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Triggers a manual sync for user profile metadata.
@@ -444,7 +444,7 @@ async def sync_profiles(
 
 @router.post("/sync/all")
 async def sync_all_systems(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Triggers a full system sync (directory + profiles).
@@ -454,7 +454,7 @@ async def sync_all_systems(
 
 @router.post("/cleanup-test-data")
 async def cleanup_test_data(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Removes test records and artifacts from the system.
@@ -465,7 +465,7 @@ async def cleanup_test_data(
 @router.get("/market-intelligence")
 async def get_market_intelligence(
     city: Optional[str] = None,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -482,7 +482,7 @@ async def get_market_intelligence(
 
 @router.get("/scheduler/queue")
 async def get_scheduler_queue(
-    db: Client = Depends(get_supabase), admin=Depends(get_current_admin_user)
+    db: Client = Depends(get_supabase_admin), admin=Depends(get_current_admin_user)
 ):
     """
     Returns the list of users with scheduled scans for the admin Upcoming Queue tab.
@@ -506,7 +506,7 @@ async def trigger_all_overdue(admin=Depends(get_current_admin_user)):
 
 @router.delete("/scans/cleanup-empty")
 async def cleanup_empty_scans(
-    admin=Depends(get_current_admin_user), db: Client = Depends(get_supabase)
+    admin=Depends(get_current_admin_user), db: Client = Depends(get_supabase_admin)
 ):
     """
     Administrative cleanup: Removes scans that failed or have no results.
@@ -517,7 +517,7 @@ async def cleanup_empty_scans(
 @router.get("/batches")
 async def get_admin_batches(
     limit: int = 50,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -529,7 +529,7 @@ async def get_admin_batches(
 @router.get("/batches/{batch_id}")
 async def get_admin_batch_details(
     batch_id: str,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
@@ -542,10 +542,20 @@ async def get_admin_batch_details(
 @router.post("/tasks/{task_id}/rescan")
 async def rescan_batch_task(
     task_id: str,
-    db: Client = Depends(get_supabase),
+    db: Client = Depends(get_supabase_admin),
     admin=Depends(get_current_admin_user),
 ):
     """
     Manually retries a failed extraction task by resetting its state.
     """
     return await rescan_batch_task_logic(db, task_id)
+
+
+@router.post("/terminate-impersonation")
+async def terminate_impersonation(admin=Depends(get_current_admin_user)):
+    """
+    Terminates the impersonation session.
+    This is a stateless operation on the backend; the client-side terminates
+    impersonation by removing the headers/query parameters.
+    """
+    return {"status": "success", "message": "Impersonation session terminated successfully."}

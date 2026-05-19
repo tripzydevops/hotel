@@ -8,7 +8,7 @@ Exception handling hardened per §1.1 audit.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -28,74 +28,95 @@ logger = get_logger(__name__)
 async def get_admin_users_logic(db: Client, q: Optional[str] = None) -> List[AdminUser]:
     """
     Fetch all users with enriched metadata (hotel/scan counts, plans).
+    Sources from auth.users via RPC, enriches with profiles table.
     Supports optional search query 'q'.
     """
     try:
-        # 1. Fetch profiles based on search query
-        query = db.table("user_profiles").select("*")
-        if q:
-            # Multi-field search using OR logic
-            # Note: ilike is used for PostgreSQL case-insensitive search
-            query = query.or_(
-                f"email.ilike.%{q}%,display_name.ilike.%{q}%,company_name.ilike.%{q}%"
-            )
+        # 1. Fetch ALL auth users via RPC (primary source of truth)
+        # Uses SECURITY DEFINER function that reads auth.users directly,
+        # excluding system/seed accounts (admin@example.com, anon@example.com)
+        auth_res = db.rpc("get_auth_users").execute()
+        auth_users = cast(List[Dict[str, Any]], auth_res.data or [])
 
-        profiles_res = query.execute()
-        profiles_data = profiles_res.data or []
+        # 2. Fetch profiles for enrichment
+        profiles_res = db.table("profiles").select("*").execute()
+        profiles_map: Dict[str, Dict[str, Any]] = {}
+        for p in cast(List[Dict[str, Any]], profiles_res.data or []):
+            profiles_map[str(p["id"])] = p
 
-        sub_res = (
-            db.table("profiles").select("id, plan_type, subscription_status").execute()
-        )
-        sub_map = {s["id"]: s for s in (sub_res.data or [])}
+        # 3. Build unified users map from auth users
+        users_map: Dict[str, Dict[str, Any]] = {}
+        for au in auth_users:
+            uid = str(au["id"])
+            email = au.get("email", "")
+            profile = profiles_map.get(uid, {})
+            user_meta = au.get("metadata") or {}
 
-        users_map = {}
-        for p in profiles_data:
-            uid = str(p["user_id"])
-            if uid not in users_map:
-                users_map[uid] = {
-                    "id": uid,
-                    "email": p.get("email") or "Unknown",
-                    "display_name": p.get("display_name"),
-                    "company_name": p.get("company_name"),
-                    "job_title": p.get("job_title"),
-                    "phone": p.get("phone"),
-                    "timezone": p.get("timezone"),
-                    "is_verified": p.get("is_verified", False),
-                    "created_at": p.get("created_at") or datetime.now().isoformat(),
-                }
+            # Apply search filter if query provided
+            if q:
+                q_lower = q.lower()
+                searchable = f"{email} {profile.get('display_name', '')} {profile.get('company_name', '')}".lower()
+                if q_lower not in searchable:
+                    continue
 
-            sub_data = sub_map.get(uid, {})
-            users_map[uid]["plan_type"] = (
-                sub_data.get("plan_type") or p.get("plan_type") or "trial"
-            )
-            users_map[uid]["subscription_status"] = (
-                sub_data.get("subscription_status")
-                or p.get("subscription_status")
-                or "trial"
-            )
+            # Merge auth data with profile data
+            users_map[uid] = {
+                "id": uid,
+                "email": email or profile.get("email") or "Unknown",
+                "display_name": profile.get("display_name") or user_meta.get("display_name") or user_meta.get("full_name"),
+                "company_name": profile.get("company_name"),
+                "job_title": profile.get("job_title"),
+                "phone": profile.get("phone") or user_meta.get("phone"),
+                "timezone": profile.get("timezone"),
+                "is_verified": profile.get("is_verified", au.get("email_verified", False)),
+                "created_at": au.get("created_at") or profile.get("created_at") or datetime.now().isoformat(),
+                "plan_type": profile.get("plan_type") or "trial",
+                "subscription_status": profile.get("subscription_status") or "trial",
+            }
+
+        # Collect all user IDs
+        user_ids = list(users_map.keys())
+
+        # Pre-initialize counting maps
+        hotel_counts = {uid: 0 for uid in user_ids}
+        scan_counts = {uid: 0 for uid in user_ids}
+
+        if user_ids:
+            try:
+                # Bulk fetch user_hotels mapped to these user_ids
+                hotels_res = (
+                    db.table("user_hotels")
+                    .select("id, user_id")
+                    .in_("user_id", user_ids)
+                    .execute()
+                )
+                for h in (hotels_res.data or []):
+                    h_uid = str(h.get("user_id"))
+                    if h_uid in hotel_counts:
+                        hotel_counts[h_uid] += 1
+            except PostgRESTError as e:
+                logger.warning(f"Failed to bulk fetch user_hotels count: {e}")
+
+            try:
+                # Bulk fetch scan_sessions mapped to these user_ids
+                scans_res = (
+                    db.table("scan_sessions")
+                    .select("id, user_id")
+                    .in_("user_id", user_ids)
+                    .execute()
+                )
+                for s in (scans_res.data or []):
+                    s_uid = str(s.get("user_id"))
+                    if s_uid in scan_counts:
+                        scan_counts[s_uid] += 1
+            except PostgRESTError as e:
+                logger.warning(f"Failed to bulk fetch scan_sessions count: {e}")
 
         final_users = []
         for uid, udata in users_map.items():
             try:
-                # Optimized count: Hotels this user is MAPPED to
-                h_count = (
-                    db.table("user_hotels")
-                    .select("id", count="exact")
-                    .eq("user_id", uid)
-                    .execute()
-                    .count
-                    or 0
-                )
-                s_count = (
-                    db.table("scan_sessions")
-                    .select("id", count="exact")
-                    .eq("user_id", uid)
-                    .execute()
-                    .count
-                    or 0
-                )
-                udata["hotel_count"] = h_count
-                udata["scan_count"] = s_count
+                udata["hotel_count"] = hotel_counts.get(uid, 0)
+                udata["scan_count"] = scan_counts.get(uid, 0)
 
                 # EXPLANATION: Plan-Based Quota Logic
                 from backend.services.subscription import SubscriptionService
@@ -150,16 +171,9 @@ async def admin_update_user_logic(
             profile_fields["is_verified"] = updates.is_verified
 
         if profile_fields:
-            db.table("user_profiles").update(profile_fields).eq(
-                "user_id", user_id_str
+            db.table("profiles").update(profile_fields).eq(
+                "id", user_id_str
             ).execute()
-            if "plan_type" in profile_fields or "subscription_status" in profile_fields:
-                sub_update = {
-                    k: v
-                    for k, v in profile_fields.items()
-                    if k in ["plan_type", "subscription_status"]
-                }
-                db.table("profiles").update(sub_update).eq("id", user_id_str).execute()
 
         # 2. Update Settings Fields
 

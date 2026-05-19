@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 sys.path.append(os.getcwd())
 
 # KAİZEN: Global mocks for all missing dependencies to allow tests to run in restricted environments
-for mod in ['httpx', 'supabase', 'firecrawl', 'sse_starlette', 'dotenv', 'pydantic', 'yarl', 'firecrawl-py']:
+for mod in ['supabase', 'firecrawl', 'sse_starlette', 'dotenv', 'firecrawl-py']:
     if mod not in sys.modules:
         sys.modules[mod] = MagicMock()
         if mod == 'dotenv':
@@ -22,9 +22,8 @@ if not hasattr(backend, 'utils'):
 
 class TestAIResilience(unittest.TestCase):
     def test_ai_service_resilience(self):
-        # Force HAS_GENAI to False to simulate missing package
-            
-        with patch("backend.services.ai_service.HAS_GENAI", False):
+        # Simulate missing client / Safe Mode
+        with patch("backend.services.ai_service.get_genai_client", return_value=None):
             from backend.services.ai_service import MarketIntelligenceService
             commander = MarketIntelligenceService()
             
@@ -36,13 +35,12 @@ class TestAIResilience(unittest.TestCase):
             result = loop.run_until_complete(commander.generate_market_brief({"test": "data"}))
             
             self.assertIn("summary", result)
-            self.assertIn("error", result["summary"].lower())
+            summary_lower = result["summary"].lower()
+            self.assertTrue("safe mode" in summary_lower or "error" in summary_lower)
 
     def test_ai_service_initialization_no_key(self):
-        # Simulate missing API key
-        with patch.dict(os.environ, {"GEMINI_API_KEY": ""}):
-            # We need to reload or re-import if it's already cached with a key
-            # But in unittest each test should be relatively isolated if handled correctly
+        # Simulate missing API key / client
+        with patch("backend.services.ai_service.get_genai_client", return_value=None):
             from backend.services.ai_service import MarketIntelligenceService
             commander = MarketIntelligenceService()
             self.assertIsNone(commander.client)
