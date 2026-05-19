@@ -136,3 +136,6 @@ logs_err.txt
 logs_full.txt
 pyright_full_output.txt
 task_raw_results.json
+.antigravity/
+diagnose_save.py
+verify_fix.py
