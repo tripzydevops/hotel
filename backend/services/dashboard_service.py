@@ -75,18 +75,6 @@ def _fetch_scan_history(db: Client, hotel_ids: list):
 def _fetch_directory(db: Client, serp_ids: list):
     return db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()
 
-def _fetch_batch_prices(db: Client, hotel_ids: list):
-    return (
-        db.table("price_logs")
-        .select(
-            "id, hotel_id, price, currency, room_types, offers, parity_offers, market_offers, recorded_at, "
-            "check_in_date, scan_sessions(adults, check_out_date)"
-        )
-        .in_("hotel_id", hotel_ids)
-        .order("recorded_at", desc=True)
-        .limit(1000)
-        .execute()
-    )
 
 
 async def get_dashboard_logic(
@@ -285,19 +273,57 @@ async def get_dashboard_logic(
         hotel_prices_map = {}
         
         try:
-            # OPTIMIZED: Fetches recent logs safely using pre-defined static thread helper
-            batch_res = await asyncio.to_thread(_fetch_batch_prices, db, hotel_ids)
-            raw_logs = getattr(batch_res, "data", []) or []
-            
-            # Group and limit to top 20 logs per hotel programmatically
-            hotel_prices_map = {}
-            for log in raw_logs:
-                if not isinstance(log, dict): continue
-                hid = str(log.get("hotel_id"))
-                if hid not in hotel_prices_map:
-                    hotel_prices_map[hid] = []
-                if len(hotel_prices_map[hid]) < 20:
-                    hotel_prices_map[hid].append(log)
+            # OPTIMIZED 2026: Parallel Split-Query Strategy per hotel
+            # Avoids JSONB parsing bloat and data starvation across multiple properties
+            async def fetch_hotel_prices(hid):
+                # 1. Fetch latest 5 high-fidelity rich logs (includes JSONB)
+                def _fetch_rich(h_id):
+                    return (
+                        db.table("price_logs")
+                        .select(
+                            "id, hotel_id, price, currency, room_types, offers, parity_offers, market_offers, recorded_at, "
+                            "check_in_date, scan_sessions(adults, check_out_date)"
+                        )
+                        .eq("hotel_id", h_id)
+                        .order("recorded_at", desc=True)
+                        .limit(5)
+                        .execute()
+                    )
+                
+                # 2. Fetch latest 25 lightweight scalar logs (no JSONB columns)
+                def _fetch_light(h_id):
+                    return (
+                        db.table("price_logs")
+                        .select("id, hotel_id, price, currency, recorded_at, check_in_date")
+                        .eq("hotel_id", h_id)
+                        .order("recorded_at", desc=True)
+                        .limit(25)
+                        .execute()
+                    )
+                
+                # Run concurrently for the hotel
+                rich_res, light_res = await asyncio.gather(
+                    asyncio.to_thread(_fetch_rich, hid),
+                    asyncio.to_thread(_fetch_light, hid)
+                )
+                
+                rich_logs = getattr(rich_res, "data", []) or []
+                light_logs = getattr(light_res, "data", []) or []
+                
+                # Merge: Keep rich logs first, then append light logs not present in rich logs
+                rich_ids = {str(log.get("id")) for log in rich_logs if log.get("id")}
+                combined = list(rich_logs)
+                for log in light_logs:
+                    lid = str(log.get("id"))
+                    if lid not in rich_ids:
+                        combined.append(log)
+                
+                return hid, combined[:25]
+
+            # Fetch for all hotels concurrently using asyncio.gather
+            tasks = [fetch_hotel_prices(hid) for hid in hotel_ids]
+            results = await asyncio.gather(*tasks)
+            hotel_prices_map = dict(results)
             
             # [KAIZEN 2026] Last-Mile Data Quality Firewall
             # Remove price logs that are below the hotel's floor or absolute outliers
@@ -329,7 +355,7 @@ async def get_dashboard_logic(
                 
                 hotel_prices_map[hid] = filtered_logs
         except Exception as e:
-            logger.error(f"[Dashboard] Batch price fetch failed: {e}")
+            logger.error(f"[Dashboard] Parallel split-query price fetch failed: {e}")
             # Fallback to empty results to prevent dashboard crash
             hotel_prices_map = {hid: [] for hid in hotel_ids}
 
