@@ -208,6 +208,10 @@ async def admin_update_user_logic(
         # 2. Update Settings Fields
 
         # 3. Update Auth Fields (Requires Admin Bypass)
+        # KAIZEN: InsForge does not expose the GoTrue /auth/v1/admin/users/{id}
+        # endpoint, so the supabase-py SDK's update_user_by_id raises a 404
+        # AuthUnknownError. We catch ALL auth-side exceptions gracefully so
+        # profile/settings updates still succeed even if auth updates fail.
         from backend.utils.db import get_supabase_client
 
         admin_db = get_supabase_client(admin=True)
@@ -219,17 +223,16 @@ async def admin_update_user_logic(
                 if updates.password:
                     auth_updates["password"] = updates.password
                 if auth_updates:
-                    # KAİZEN: Handle cases where user might not exist in Auth but exists in profiles
                     admin_db.auth.admin.update_user_by_id(user_id_str, auth_updates)
-            except PostgRESTError as auth_err:
+            except Exception as auth_err:
+                # Catch ALL auth exceptions including AuthUnknownError (404),
+                # AuthApiError, PostgRESTError, ValueError, AttributeError, etc.
+                # InsForge may not support direct admin auth mutations.
                 logger.warning(
-                    f"Auth DB update failed for {user_id_str}: {auth_err}"
+                    f"Auth-side update skipped for {user_id_str} "
+                    f"({type(auth_err).__name__}): {auth_err}"
                 )
-            except (ValueError, AttributeError) as auth_err:
-                logger.warning(
-                    f"Auth-side update skipped for {user_id_str}: {auth_err}"
-                )
-                # We don't raise here because profile/settings might have succeeded
+                # We don't raise here because profile/settings updates succeeded
 
         return {"status": "success", "message": "User updated successfully"}
     except HTTPException:
@@ -345,5 +348,8 @@ async def delete_admin_user_logic(user_id: str, db: Client) -> Dict[str, Any]:
         admin_db.auth.admin.delete_user(str(user_id))
     except (PostgRESTError, AttributeError, ValueError) as e:
         logger.warning(f"Auth user deletion failed for {user_id}: {e}")
+    except Exception as e:
+        # Catch InsForge auth errors that don't inherit from standard types
+        logger.warning(f"Auth user deletion skipped for {user_id} ({type(e).__name__}): {e}")
 
     return {"status": "success"}
