@@ -250,30 +250,56 @@ async def update_profile_logic(
     Why: Not all users have a 'user_profiles' entry immediately on signup.
     This logic ensures a record is created or updated seamlessly.
     """
-    update_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+    # BUGFIX: Use exclude_unset=True to only send fields the user explicitly provided,
+    # preventing Pydantic defaults (e.g., theme_preference="light") from being sent
+    # to the DB when the user never set them.
+    update_data = {k: v for k, v in profile.model_dump(exclude_unset=True).items() if v is not None}
     user_id_str = str(user_id)
+
+    # SAFETY: Whitelist of columns that exist in the user_profiles table.
+    # This prevents PostgREST 400/500 errors if the Pydantic model has fields
+    # that don't exist as DB columns yet.
+    ALLOWED_COLUMNS = {
+        "display_name", "company_name", "job_title", "phone", "avatar_url",
+        "timezone", "theme_preference", "language_preference",
+        "email", "role", "plan_type", "subscription_status", "is_verified",
+        "trial_ends_at", "subscription_end_date",
+    }
+    update_data = {k: v for k, v in update_data.items() if k in ALLOWED_COLUMNS}
+
+    if not update_data:
+        # Nothing to update — just return current profile
+        return await get_enriched_profile_logic(user_id, None, db)
+
+    # Always stamp updated_at
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     # Upsert logic: Check existence first to avoid Supabase insert conflicts where possible
     existing = (
         db.table("user_profiles").select("user_id").eq("user_id", user_id_str).execute()
     )
 
-    if not existing.data:
-        result = (
-            db.table("user_profiles")
-            .insert({"user_id": user_id_str, **update_data})
-            .execute()
-        )
-    else:
-        result = (
-            db.table("user_profiles")
-            .update(update_data)
-            .eq("user_id", user_id_str)
-            .execute()
-        )
+    try:
+        if not existing.data:
+            result = (
+                db.table("user_profiles")
+                .insert({"user_id": user_id_str, **update_data})
+                .execute()
+            )
+        else:
+            result = (
+                db.table("user_profiles")
+                .update(update_data)
+                .eq("user_id", user_id_str)
+                .execute()
+            )
+    except Exception as db_err:
+        print(f"[Profile] DB error during profile upsert for {user_id_str}: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database update failed: {db_err}")
 
     if not result.data:
-        raise HTTPException(status_code=500, detail="Database update failed")
+        print(f"[Profile] Empty result after upsert for {user_id_str}. RLS may be blocking the operation.")
+        raise HTTPException(status_code=500, detail="Database update returned no data — check RLS policies")
 
     # After update, always re-enrich the data so the UI gets the correct plan status immediately
     return await get_enriched_profile_logic(user_id, result.data[0], db)

@@ -72,8 +72,13 @@ async def update_profile(
         user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
 
         return await update_profile_logic(user_uuid, profile, db)
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is (preserves specific status codes from service layer)
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[Profile Route] Unhandled error updating profile for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 
 @router.get("/settings", response_model=Settings)

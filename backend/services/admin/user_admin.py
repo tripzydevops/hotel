@@ -152,28 +152,58 @@ async def admin_update_user_logic(
     try:
         user_id_str = str(user_id)
         # 1. Update Profile Fields
-        profile_fields = {}
-        if updates.display_name is not None:
-            profile_fields["display_name"] = updates.display_name
-        if updates.company_name is not None:
-            profile_fields["company_name"] = updates.company_name
-        if updates.job_title is not None:
-            profile_fields["job_title"] = updates.job_title
-        if updates.phone is not None:
-            profile_fields["phone"] = updates.phone
-        if updates.timezone is not None:
-            profile_fields["timezone"] = updates.timezone
-        if updates.plan_type is not None:
-            profile_fields["plan_type"] = updates.plan_type
-        if updates.subscription_status is not None:
-            profile_fields["subscription_status"] = updates.subscription_status
-        if updates.is_verified is not None:
-            profile_fields["is_verified"] = updates.is_verified
+        profiles_update = {}
+        user_profiles_update = {}
 
-        if profile_fields:
-            db.table("profiles").update(profile_fields).eq(
+        # Fields common to both tables
+        if updates.display_name is not None:
+            profiles_update["display_name"] = updates.display_name
+            user_profiles_update["display_name"] = updates.display_name
+        if updates.company_name is not None:
+            profiles_update["company_name"] = updates.company_name
+            user_profiles_update["company_name"] = updates.company_name
+        if updates.job_title is not None:
+            profiles_update["job_title"] = updates.job_title
+            user_profiles_update["job_title"] = updates.job_title
+        if updates.phone is not None:
+            profiles_update["phone"] = updates.phone
+            user_profiles_update["phone"] = updates.phone
+        if updates.timezone is not None:
+            profiles_update["timezone"] = updates.timezone
+            user_profiles_update["timezone"] = updates.timezone
+        if updates.plan_type is not None:
+            profiles_update["plan_type"] = updates.plan_type
+            user_profiles_update["plan_type"] = updates.plan_type
+        if updates.subscription_status is not None:
+            profiles_update["subscription_status"] = updates.subscription_status
+            user_profiles_update["subscription_status"] = updates.subscription_status
+
+        # Fields exclusive to user_profiles
+        if updates.is_verified is not None:
+            user_profiles_update["is_verified"] = updates.is_verified
+
+        # Update profiles table (lacks is_verified)
+        if profiles_update:
+            db.table("profiles").update(profiles_update).eq(
                 "id", user_id_str
             ).execute()
+
+        # Upsert into user_profiles table (has is_verified)
+        if user_profiles_update:
+            existing = (
+                db.table("user_profiles")
+                .select("user_id")
+                .eq("user_id", user_id_str)
+                .execute()
+            )
+            if not existing.data:
+                db.table("user_profiles").insert(
+                    {"user_id": user_id_str, **user_profiles_update}
+                ).execute()
+            else:
+                db.table("user_profiles").update(user_profiles_update).eq(
+                    "user_id", user_id_str
+                ).execute()
 
         # 2. Update Settings Fields
 
