@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency, parsePrice, normalizeVendor } from "@/lib/utils";
 import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
 import { ReactNode, useState } from "react";
+import { getStandardizedRoomCategory } from "@/utils/roomNormalization";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -48,7 +49,7 @@ export interface HotelTileProps {
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];
-  offers?: { vendor?: string; source?: string; price?: number; currency?: string; url?: string }[];
+  offers?: { vendor?: string; source?: string; price?: number; currency?: string; url?: string; room_type?: string }[];
   room_types?: { name?: string; price?: number; currency?: string }[];
   isEstimated?: boolean;
   phone?: string;
@@ -69,8 +70,10 @@ export interface HotelTileProps {
 export default function HotelTile(props: HotelTileProps) {
   const [showAllOffers, setShowAllOffers] = useState(false);
   
-  // Atomic derivation of best price and vendor
-  const allOffers = props.offers || [];
+  // Atomic derivation of best price and vendor (Standard Rooms only)
+  const allOffers = (props.offers || []).filter(offer => 
+    getStandardizedRoomCategory(offer.room_type || "") === "Standard"
+  );
   const sortedOffers = [...allOffers].sort((a, b) => 
     parsePrice(a.price || 0) - parsePrice(b.price || 0)
   );
@@ -207,13 +210,20 @@ export default function HotelTile(props: HotelTileProps) {
 
             <div className="space-y-1.5">
               {/* Primary Offer (Visual emphasis) */}
-              <div className="flex items-center justify-between p-2 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20">
-                <span className="text-[10px] font-black text-[var(--text-primary)] uppercase truncate max-w-[120px]">
-                  {displayVendor}
-                </span>
-                <span className="text-[11px] font-black text-[var(--soft-gold)] italic">
-                  {formatCurrency(displayPriceValue, currency)}
-                </span>
+              <div className="flex flex-col p-2 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-[var(--text-primary)] uppercase truncate max-w-[120px]">
+                    {displayVendor}
+                  </span>
+                  <span className="text-[11px] font-black text-[var(--soft-gold)] italic">
+                    {formatCurrency(displayPriceValue, currency)}
+                  </span>
+                </div>
+                {bestOffer?.room_type && (
+                  <span className="text-[8px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5 truncate max-w-[200px]">
+                    {bestOffer.room_type}
+                  </span>
+                )}
               </div>
 
               {/* Other Offers (Animated) */}
@@ -224,14 +234,21 @@ export default function HotelTile(props: HotelTileProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center justify-between p-2 rounded bg-[var(--deep-ocean-accent)]/20 border border-[var(--glass-border)]"
+                    className="flex flex-col p-2 rounded bg-[var(--deep-ocean-accent)]/20 border border-[var(--glass-border)]"
                   >
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate max-w-[120px]">
-                      {normalizeVendor(offer.vendor || offer.source || "Other")}
-                    </span>
-                    <span className="text-[10px] font-bold text-[var(--text-primary)]">
-                      {formatCurrency(parsePrice(offer.price || 0), currency)}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate max-w-[120px]">
+                        {normalizeVendor(offer.vendor || offer.source || "Other")}
+                      </span>
+                      <span className="text-[10px] font-bold text-[var(--text-primary)]">
+                        {formatCurrency(parsePrice(offer.price || 0), currency)}
+                      </span>
+                    </div>
+                    {offer.room_type && (
+                      <span className="text-[8px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5 truncate max-w-[200px]">
+                        {offer.room_type}
+                      </span>
+                    )}
                   </motion.div>
                 ))}
               </AnimatePresence>

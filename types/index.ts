@@ -101,7 +101,7 @@ export interface PriceInfo {
   check_in?: string; // ISO Date "YYYY-MM-DD"
   check_out?: string; // ISO Date "YYYY-MM-DD"
   adults?: number;
-  offers?: { vendor?: string; source?: string; price?: number }[];
+  offers?: { vendor?: string; source?: string; site?: string; price?: number; currency?: string; url?: string; room_type?: string; is_direct?: boolean }[];
   room_types?: { name?: string; price?: number; currency?: string }[];
   is_estimated?: boolean;
 }

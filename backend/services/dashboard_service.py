@@ -76,6 +76,39 @@ def _fetch_directory(db: Client, serp_ids: list):
     return db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()
 
 
+def is_standard_room_type(room_name: str) -> bool:
+    """
+    Classifies if a room is standard based on keyword checks.
+    Synchronized with room category normalization.
+    """
+    if not room_name:
+        return True
+    
+    # Standard keywords matching frontend standardKeywords
+    standard_keywords = [
+        "standard", "standart", "economy", "ekonomik", "promo",
+        "base", "classic", "klasik", "double", "twin", "single",
+        "tek", "çift", "roh", "run of house", "basic", "budget", 
+        "promotion", "promotional", "run of the house"
+    ]
+    
+    # Premium keywords that should be excluded
+    premium_keywords = [
+        "suite", "süit", "deluxe", "delüks", "superior", "süperior",
+        "premium", "family", "aile", "executive", "club", "villa",
+        "penthouse", "presidential", "kral", "royal", "duplex", "loft",
+        "studio", "apart", "apartment", "aprt"
+    ]
+    
+    lower_name = room_name.lower()
+    
+    # If it contains any premium keyword, it's NOT a standard room
+    if any(k in lower_name for k in premium_keywords):
+        return False
+        
+    # If it contains any standard keyword or has no premium keywords, it's a standard room
+    return any(k in lower_name for k in standard_keywords) or not any(k in lower_name for k in premium_keywords)
+
 
 async def get_dashboard_logic(
     user_id: str, current_user_id: str, current_user_email: str, db: Client
@@ -667,6 +700,10 @@ async def get_dashboard_logic(
                         if not isinstance(of, dict):
                             continue
                         
+                        room_name = of.get("room_type") or of.get("room_name") or of.get("room") or ""
+                        if not is_standard_room_type(room_name):
+                            continue
+                        
                         # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
                         v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                         v_name = normalize_vendor_name(v_raw)
@@ -755,6 +792,11 @@ async def get_dashboard_logic(
                 for of in raw_offers:
                     if not isinstance(of, dict):
                         continue
+                    
+                    room_name = of.get("room_type") or of.get("room_name") or of.get("room") or ""
+                    if not is_standard_room_type(room_name):
+                        continue
+                        
                     v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
                     v_name = normalize_vendor_name(v_raw)
                     
