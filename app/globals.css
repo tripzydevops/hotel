@@ -71,6 +71,16 @@
   --overlay-text: #0F172A;
   --bg-subtle: rgba(255, 255, 255, 0.8);
   --deep-ocean-card: #FFFFFF;
+
+  /* ===== GLASSMOPHISM & DEPTH (LIGHT) ===== */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(180, 138, 58, 0.3);
+  --glass-bg-accent: rgba(255, 255, 255, 0.5);
+  --glass-blur: 20px;
+  --glass-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.1);
+  --bg-accent: #E2E8F0;
+  
+  --card-tint: rgba(255, 255, 255, 0.8);
 }
 
 /* ===== BASE STYLES ===== */
@@ -217,5 +227,3 @@ h1, h2, h3, h4, h5, h6 {
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
-
-
