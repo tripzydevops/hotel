@@ -183,6 +183,16 @@ export default function Dashboard() {
     ],
   );
 
+  // Memoize sorted competitors to prevent sorting on every render
+  const sortedCompetitors = useMemo(() => {
+    if (!data?.competitors) return [];
+    return [...data.competitors].sort(
+      (a, b) =>
+        parsePrice(a.price_info?.current_price || 0) -
+        parsePrice(b.price_info?.current_price || 0),
+    );
+  }, [data?.competitors]);
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--background)] transition-colors duration-500">
@@ -317,14 +327,8 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {data?.competitors &&
-                  [...data.competitors]
-                    .sort(
-                      (a, b) =>
-                        parsePrice(a.price_info?.current_price || 0) -
-                        parsePrice(b.price_info?.current_price || 0),
-                    )
-                    .map((competitor, index) => {
+                {sortedCompetitors.length > 0 &&
+                  sortedCompetitors.map((competitor, index) => {
                       const isUndercut =
                         competitor.price_info &&
                         parsePrice(competitor.price_info.current_price) <
@@ -419,15 +423,7 @@ export default function Dashboard() {
             className="glass-card p-6 text-center group cursor-default rounded-[2rem] border-[var(--alert-red)]/20 bg-[var(--alert-red)]/5"
           >
             <p className="text-3xl font-black text-[var(--alert-red)] tracking-tighter mb-1">
-              {
-                (data?.competitors || []).filter(
-                  (c: HotelWithPrice) => {
-                    const price = parsePrice(c.price_info?.current_price || 0);
-                    return price > 0 && price < effectiveTargetPrice;
-                  }
-                ).length
-
-              }
+              {undercuttingCount}
             </p>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--alert-red)] transition-colors">
               {t("dashboard.yieldRisk")}
@@ -439,11 +435,7 @@ export default function Dashboard() {
             className="glass-card p-6 text-center group cursor-default rounded-[2rem] border-[var(--optimal-green)]/20 bg-[var(--optimal-green)]/5"
           >
             <p className="text-3xl font-black text-[var(--optimal-green)] tracking-tighter mb-1">
-              {
-                (data?.competitors || []).filter(
-                  (c: HotelWithPrice) => c.price_info?.trend === "down",
-                ).length
-              }
+              {pricesDroppedCount}
             </p>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--optimal-green)] transition-colors">
               {t("dashboard.marketOpportunity")}
@@ -457,32 +449,7 @@ export default function Dashboard() {
             <p className="text-3xl font-black text-[var(--text-primary)] tracking-tighter mb-1">
               {data?.competitors && data.competitors.length > 0 ? (
                 <>
-                  {(() => {
-                    const activeCurrency =
-                      data.target_hotel?.price_info?.currency ||
-                      data.competitors.find(
-                        (c: HotelWithPrice) => c.price_info?.currency,
-                      )?.price_info?.currency ||
-                      userSettings?.currency ||
-                      "TRY";
-
-                    const validCompetitors = (data?.competitors || []).filter(
-                      (c: HotelWithPrice) => parsePrice(c.price_info?.current_price || 0) > 0
-                    );
-                    
-                    if (validCompetitors.length === 0) return 0;
-
-                    const avgPrice = Math.round(
-                      validCompetitors.reduce(
-                        (sum: number, c: HotelWithPrice) =>
-                          sum + parsePrice(c.price_info?.current_price || 0),
-                        0,
-                      ) / validCompetitors.length,
-                    );
-
-
-                    return formatCurrency(avgPrice, activeCurrency);
-                  })()}
+                  {avgCompetitorPrice > 0 ? formatCurrency(avgCompetitorPrice, activeCurrency) : "—"}
                 </>
               ) : (
                 "—"

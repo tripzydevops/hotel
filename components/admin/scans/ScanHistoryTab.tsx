@@ -161,6 +161,70 @@ const ScanDetailOverlay: React.FC<ScanDetailOverlayProps> = ({
 }) => {
   const { toast } = useToast();
 
+  // Synthesize logs from price_logs and tasks to show a complete picture of all targets
+  const displayLogs = React.useMemo(() => {
+    if (!scanDetails) return [];
+    
+    const logsList: any[] = [];
+    const processedHotelIds = new Set<string>();
+
+    // 1. First, add all successful extractions from price_logs
+    if (scanDetails.price_logs && scanDetails.price_logs.length > 0) {
+      scanDetails.price_logs.forEach((pl: any) => {
+        logsList.push({
+          id: pl.id,
+          hotel_id: pl.hotel_id,
+          hotel_name: pl.hotels?.name || "Unknown Property",
+          status: "success",
+          price: pl.price,
+          currency: pl.currency,
+          vendor: pl.vendor || pl.source,
+          parity_offers: pl.parity_offers || [],
+          metadata: {
+            ...pl.metadata,
+            is_anomaly: pl.is_anomaly,
+          },
+          status_detail: pl.is_anomaly ? "Anomaly Detected" : null,
+        });
+        processedHotelIds.add(pl.hotel_id);
+      });
+    }
+
+    // 2. Add any failed, pending or remaining targets from scanDetails.tasks
+    if (scanDetails.tasks && scanDetails.tasks.length > 0) {
+      scanDetails.tasks.forEach((t: any) => {
+        const isCompleted = ['success', 'completed'].includes(t.status);
+        if (!processedHotelIds.has(t.hotel_id) || !isCompleted) {
+          let s = t.status;
+          if (s === 'completed') s = 'success';
+          
+          const hasSuccessLog = logsList.some(l => l.hotel_id === t.hotel_id && l.status === 'success');
+          if (hasSuccessLog && !isCompleted) return;
+
+          logsList.push({
+            id: t.id,
+            hotel_id: t.hotel_id,
+            hotel_name: t.hotels?.name || "Unknown Property",
+            status: s || "failed",
+            price: null,
+            currency: null,
+            vendor: null,
+            parity_offers: [],
+            metadata: {},
+            status_detail: t.error_message || null,
+          });
+          processedHotelIds.add(t.hotel_id);
+        }
+      });
+    }
+
+    if (logsList.length === 0 && scanDetails.logs && scanDetails.logs.length > 0) {
+      return scanDetails.logs;
+    }
+
+    return logsList;
+  }, [scanDetails]);
+
   return (
     <div className="glass-card p-6 border border-[var(--soft-gold)]/30 animate-in fade-in slide-in-from-top-4 duration-300">
       <div className="flex items-center justify-between mb-6">
@@ -233,7 +297,7 @@ const ScanDetailOverlay: React.FC<ScanDetailOverlayProps> = ({
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[9px] text-[var(--text-muted)] uppercase">Validated</span>
-                  <span className="text-sm font-bold text-green-400">{scanDetails.tasks.filter((t: any) => t.status === 'success').length}</span>
+                  <span className="text-sm font-bold text-green-400">{scanDetails.tasks.filter((t: any) => ['success', 'completed'].includes(t.status)).length}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[9px] text-[var(--text-muted)] uppercase">Failed/Error</span>
@@ -272,7 +336,7 @@ const ScanDetailOverlay: React.FC<ScanDetailOverlayProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {scanDetails.logs?.map((log: any) => {
+                {displayLogs?.map((log: any) => {
                   const s = log.status?.toLowerCase();
                   const statusClass = s === "success" ? "bg-green-500/20 text-green-400" : s === "identity_mismatch" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : (s === "pending" || s === "processing") ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400";
                   return (
@@ -304,8 +368,8 @@ const ScanDetailOverlay: React.FC<ScanDetailOverlayProps> = ({
           )}
 
           {/* Market Parity Offers */}
-          {scanDetails.logs?.some((log: any) => log.parity_offers?.length > 0) && (
-            <ParityOffers logs={scanDetails.logs.filter((log: any) => log.parity_offers?.length > 0)} />
+          {displayLogs?.some((log: any) => log.parity_offers?.length > 0) && (
+            <ParityOffers logs={displayLogs.filter((log: any) => log.parity_offers?.length > 0)} />
           )}
         </div>
       ) : (
