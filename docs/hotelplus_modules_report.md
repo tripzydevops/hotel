@@ -66,7 +66,7 @@ The **Service Layer** encapsulates pure business logic, computing aggregations, 
 *   **Operational Workflow**:
     1.  **Phase 1**: Executes an `asyncio.gather` to concurrent-query user preferences, current active alerts, targets, and competitors.
     2.  **Phase 2 (Enrichment Loop)**:
-        *   Aggregates live prices using internal `price_logs` cache.
+        *   Aggregates price trends using a hybrid pipeline: `_fetch_trend_live()` retrieves recent raw records (last 7 days) from `price_logs`, while `_fetch_trend_historical()` retrieves historical daily rollups from `price_history_daily`.
         *   Runs dynamic parity scoring (`price_comparator.py`).
         *   Fetches platform-specific reviews (`other_sites_reviews`) and performs dynamic rating scale normalization.
 *   **Engine Rules**:

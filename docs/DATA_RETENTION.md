@@ -31,3 +31,12 @@ You can verify the results of the daily database pruning by viewing the cron tri
 ```bash
 tail -n 50 /home/tripzydevops/hotel/cron_trigger.log
 ```
+
+## 3. Daily Price Rollups (Price History Archive)
+To conserve active database storage and accelerate historical price lookups, raw time-series logs are periodically consolidated.
+
+- **Process**: Raw `price_logs` older than 7 days are aggregated into daily summary snapshots stored in the `price_history_daily` table, capturing `avg_price`, `min_price`, `max_price`, `source`, and a normalized `room_type_summary`. Once consolidated, the raw logs older than 30 days are pruned from `price_logs`.
+- **Database Function**: `perform_data_maintenance()` (PostgreSQL function defined in Migration 039).
+- **Service Orchestrator**: `RetentionService.run_maintenance_cycle()` inside `backend/services/retention_service.py` is invoked daily by the cron runner to execute database cleanup.
+- **On-Demand Execution**: Administrators can manually trigger a rollup maintenance run using the `RetentionService.trigger_daily_rollup()` static helper method.
+

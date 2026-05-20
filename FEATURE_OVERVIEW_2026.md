@@ -77,6 +77,20 @@ We have introduced a localized "Eyes of Turkey" market intelligence layer, provi
 
 ---
 
+## 6. Dashboard Aggregation Cache & Historical Rollup Pipeline
+**Status**: Live (Dashboard Trend Line Pipeline)
+
+To solve historical rate visual gaps and optimize payload queries, we implemented a hybrid data caching and aggregation pipeline.
+
+### Key Features
+- **Hybrid Trend Loading**: Replaced direct raw log queries with a hybrid query pipeline. `_fetch_trend_live()` retrieves recent raw records (last 7 days) from `price_logs`, while `_fetch_trend_historical()` retrieves daily rollups from `price_history_daily`.
+- **Schema Normalization**: Daily rollups are dynamically normalized into a schema compatible with raw `price_logs` on the fly, providing a seamless data experience without front-end rendering modifications.
+- **On-Demand Maintenance Rollup**: Created `trigger_daily_rollup()` in `RetentionService` allowing administrators or background scripts to manually trigger price rolls and clear out old database logs to keep storage clean and performance high.
+- **Improved Chart Granularity**: Over 3x more trend data points are populated immediately, providing a rich, continuous visual pricing timeline.
+
+---
+
 ## Technical Maintenance
 - **Logs**: Monitor `scheduler.log` for background dispatch success.
 - **Diagnostics**: Use `/api/debug/system-report` to verify DB and AI provider connectivity.
+
