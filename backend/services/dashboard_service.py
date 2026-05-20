@@ -4,7 +4,7 @@ Aggregates hotel data, pricing history, alerts, and scan status for the user coc
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from fastapi import HTTPException
@@ -290,35 +290,73 @@ async def get_dashboard_logic(
                         .execute()
                     )
                 
-                # 2. Fetch latest 25 lightweight scalar logs (no JSONB columns)
-                def _fetch_light(h_id):
+                # 2. Fetch trend data using ROLLUP CACHE (price_history_daily) + live recent logs
+                # OPTIMIZATION 2026: Reads pre-aggregated daily summaries for data >7 days old
+                # instead of scanning the full price_logs table. Live data (<7 days) still comes
+                # from price_logs for real-time accuracy.
+                def _fetch_trend_live(h_id):
+                    """Fetch recent live price logs (last 7 days) for trend charts."""
+                    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
                     return (
                         db.table("price_logs")
                         .select("id, hotel_id, price, currency, recorded_at, check_in_date")
                         .eq("hotel_id", h_id)
+                        .gte("recorded_at", seven_days_ago)
                         .order("recorded_at", desc=True)
-                        .limit(25)
+                        .execute()
+                    )
+
+                def _fetch_trend_historical(h_id):
+                    """Fetch pre-aggregated daily rollups for historical trend data."""
+                    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+                    return (
+                        db.table("price_history_daily")
+                        .select("hotel_id, date, avg_price, min_price, max_price, top_vendor")
+                        .eq("hotel_id", h_id)
+                        .lt("date", seven_days_ago)
+                        .order("date", desc=True)
+                        .limit(20)
                         .execute()
                     )
                 
-                # Run concurrently for the hotel
-                rich_res, light_res = await asyncio.gather(
+                # Run all three queries concurrently for the hotel
+                rich_res, live_res, hist_res = await asyncio.gather(
                     asyncio.to_thread(_fetch_rich, hid),
-                    asyncio.to_thread(_fetch_light, hid)
+                    asyncio.to_thread(_fetch_trend_live, hid),
+                    asyncio.to_thread(_fetch_trend_historical, hid),
                 )
                 
                 rich_logs = getattr(rich_res, "data", []) or []
-                light_logs = getattr(light_res, "data", []) or []
+                live_logs = getattr(live_res, "data", []) or []
+                hist_logs = getattr(hist_res, "data", []) or []
                 
-                # Merge: Keep rich logs first, then append light logs not present in rich logs
+                # Normalize historical rollup rows into price_log-compatible format
+                # so downstream processing (price cards, charts) works unchanged
+                normalized_hist = []
+                for h_row in hist_logs:
+                    normalized_hist.append({
+                        "id": f"rollup_{h_row.get('hotel_id')}_{h_row.get('date')}",
+                        "hotel_id": h_row.get("hotel_id"),
+                        "price": h_row.get("avg_price"),
+                        "currency": "TRY",  # Rollups are stored in base currency
+                        "recorded_at": h_row.get("date"),
+                        "check_in_date": h_row.get("date"),
+                        "vendor": h_row.get("top_vendor"),
+                        "_source": "rollup",  # Tag for debugging
+                    })
+                
+                # Merge: Rich logs first (full JSONB), then live trend, then historical rollups
                 rich_ids = {str(log.get("id")) for log in rich_logs if log.get("id")}
                 combined = list(rich_logs)
-                for log in light_logs:
+                for log in live_logs:
                     lid = str(log.get("id"))
                     if lid not in rich_ids:
                         combined.append(log)
+                        rich_ids.add(lid)
+                # Append historical rollups at the end (oldest data)
+                combined.extend(normalized_hist)
                 
-                return hid, combined[:25]
+                return hid, combined[:30]  # Slightly more data points for richer charts
 
             # Fetch for all hotels concurrently using asyncio.gather
             tasks = [fetch_hotel_prices(hid) for hid in hotel_ids]
