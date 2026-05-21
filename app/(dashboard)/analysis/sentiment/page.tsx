@@ -614,6 +614,11 @@ export default function SentimentPage() {
   // 6b. Premium Guest Mentions Extraction & Synthesis (KAİZEN)
   const guestMentions = useMemo(() => {
     if (!targetHotel) return [];
+    
+    const isTr = locale === 'tr';
+    const KEYWORD_MAP = getKeywordMap(isTr);
+
+    let parsedMentions: any[] = [];
     const hotel = targetHotel as any;
     let rawMentions: any[] = [];
     
@@ -629,10 +634,8 @@ export default function SentimentPage() {
     // Format mentions securely and expand generic category tags into rich keywords
     let parsedMentions: any[] = [];
 
-    const isTr = typeof window !== 'undefined' && (localStorage.getItem('language') === 'tr' || document.documentElement.lang === 'tr');
-    
     // We provide 8 phrases per sentiment to ensure rich keyword distribution
-    const KEYWORD_MAP: Record<string, { positive: string[]; negative: string[]; neutral: string[] }> = {
+    const getKeywordMap = (isTr: boolean): Record<string, { positive: string[]; negative: string[]; neutral: string[] }> => ({
       "Cleanliness": {
         positive: isTr 
           ? ["Tertemiz Odalar", "Temiz Çarşaflar", "Pırıl Pırıl Banyo", "Kusursuz Temizlik", "Mis Kokulu Oda", "Hijyenik Ortam", "Lekesiz", "Özenli Kat Hizmetleri"]
@@ -722,8 +725,27 @@ export default function SentimentPage() {
           ? ["Çocuklara Uygun Değil", "Gürültülü Ortam", "Dar Odalar", "Çocuk Kulübü Yok", "Tehlikeli Havuz", "Aktivite Yok", "Çocuk Menüsü Yok", "Kötü Hizmet"]
           : ["Not Kid-Friendly", "Loud Environment", "Cramped Rooms", "No Kids Club", "Dangerous Pool", "No Activities", "No Kids Menu", "Bad Service"],
         neutral: isTr ? ["Aileler İçin Uygun", "Temel Aile Kurulumu", "Ortalama Etkinlik", "Normal Odalar"] : ["Suitable for Families", "Basic Family Setup", "Average Activities", "Normal Rooms"]
+      },
+      "General": {
+        positive: isTr ? ["Mükemmel Deneyim", "Harika Otel"] : ["Excellent Experience", "Great Hotel"],
+        negative: isTr ? ["Kötü Deneyim", "Berbat Otel"] : ["Bad Experience", "Terrible Hotel"],
+        neutral: isTr ? ["Ortalama Deneyim", "Standart Otel"] : ["Average Experience", "Standard Hotel"]
       }
-    };
+    });
+
+    const KEYWORD_MAP = getKeywordMap(isTr);
+
+    let rawMentions: any[] = [];
+    const hotel = targetHotel as any;
+    
+    // Attempt deep extraction from multiples locations
+    if (Array.isArray(hotel.guest_mentions)) {
+      rawMentions = hotel.guest_mentions;
+    } else if (Array.isArray(hotel.sentiment_history?.[0]?.guest_mentions)) {
+      rawMentions = hotel.sentiment_history[0].guest_mentions;
+    } else if (Array.isArray(hotel.reviews?.guest_mentions)) {
+      rawMentions = hotel.reviews.guest_mentions;
+    }
 
     const normalizeCategoryName = (name: string): string => {
       const lower = name.toLowerCase().trim();
@@ -760,6 +782,7 @@ export default function SentimentPage() {
       return name.charAt(0).toUpperCase() + name.slice(1);
     };
 
+    let parsedMentions: any[] = [];
     rawMentions.forEach((m: any) => {
       const keywordRaw = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
       if (keywordRaw === "N/A") return;
@@ -785,15 +808,15 @@ export default function SentimentPage() {
         // Helper to distribute counts across multiple keywords based on volume
         const distributeCount = (count: number, phrases: string[], sentiment: string) => {
           if (count <= 0) return;
-          // Dynamically map counts to up to 5 phrases
-          const numPhrases = Math.min(Math.max(1, Math.ceil(count / 3)), Math.min(5, phrases.length));
+          const numPhrases = Math.max(1, Math.ceil(count / 3));
           
           let remainingCount = count;
           for (let i = 0; i < numPhrases; i++) {
             const isLast = i === numPhrases - 1;
             const portion = isLast ? remainingCount : Math.ceil(count / (numPhrases + 1));
             if (portion > 0) {
-              parsedMentions.push({ keyword: phrases[i], count: portion, sentiment, category: normalizedCat });
+              const phrase = phrases[i % phrases.length];
+              parsedMentions.push({ keyword: phrase, count: portion, sentiment, category: normalizedCat });
             }
             remainingCount -= portion;
           }
@@ -834,10 +857,9 @@ export default function SentimentPage() {
         if (KEYWORD_MAP[normalizedCat]) {
           const catData = KEYWORD_MAP[normalizedCat];
           
-          // Helper to distribute counts across multiple keywords based on volume
           const distributeCount = (count: number, phrases: string[], sentiment: string) => {
             if (count <= 0) return;
-            const numPhrases = Math.min(Math.max(1, Math.ceil(count / 3)), Math.min(5, phrases.length));
+            const numPhrases = Math.max(1, Math.ceil(count / 3));
             let remainingCount = count;
             for (let i = 0; i < numPhrases; i++) {
               const isLast = i === numPhrases - 1;
