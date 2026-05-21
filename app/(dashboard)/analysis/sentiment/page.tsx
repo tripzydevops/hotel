@@ -732,8 +732,6 @@ export default function SentimentPage() {
       }
     });
 
-    const KEYWORD_MAP = getKeywordMap(isTr);
-
     const normalizeCategoryName = (name: string): string => {
       const lower = name.toLowerCase().trim();
       if (lower.includes("hizmet") || lower.includes("service") || lower.includes("personel") || lower.includes("staff") || lower.includes("resepsiyon") || lower.includes("reception")) {
