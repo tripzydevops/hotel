@@ -616,7 +616,6 @@ export default function SentimentPage() {
     if (!targetHotel) return [];
     
     const isTr = locale === 'tr';
-    const KEYWORD_MAP = getKeywordMap(isTr);
 
     let parsedMentions: any[] = [];
     const hotel = targetHotel as any;
@@ -731,6 +730,8 @@ export default function SentimentPage() {
         neutral: isTr ? ["Ortalama Deneyim", "Standart Otel"] : ["Average Experience", "Standard Hotel"]
       }
     });
+
+    const KEYWORD_MAP = getKeywordMap(isTr);
 
     const normalizeCategoryName = (name: string): string => {
       const lower = name.toLowerCase().trim();
