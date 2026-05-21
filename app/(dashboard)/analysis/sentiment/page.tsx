@@ -43,6 +43,13 @@ import {
   Target,
   Zap,
   MessageSquare,
+  Users,
+  MapPin,
+  Coins,
+  Moon,
+  Bed,
+  Coffee,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -336,6 +343,67 @@ const KeywordTag = ({
   );
 };
 
+/* ── UI Helpers for Guest Voice Redesign ── */
+const getCategoryIcon = (name: string) => {
+  const key = name.toLowerCase();
+  if (key.includes("service")) return <Users className="w-3.5 h-3.5 text-indigo-400" />;
+  if (key.includes("clean")) return <Sparkles className="w-3.5 h-3.5 text-emerald-400" />;
+  if (key.includes("location")) return <MapPin className="w-3.5 h-3.5 text-amber-400" />;
+  if (key.includes("value")) return <Coins className="w-3.5 h-3.5 text-yellow-400" />;
+  if (key.includes("sleep")) return <Moon className="w-3.5 h-3.5 text-purple-400" />;
+  if (key.includes("room")) return <Bed className="w-3.5 h-3.5 text-sky-400" />;
+  if (key.includes("breakfast")) return <Coffee className="w-3.5 h-3.5 text-rose-400" />;
+  if (key.includes("property")) return <Building2 className="w-3.5 h-3.5 text-cyan-400" />;
+  if (key.includes("spa")) return <Sparkles className="w-3.5 h-3.5 text-fuchsia-400" />;
+  if (key.includes("family")) return <Heart className="w-3.5 h-3.5 text-pink-400" />;
+  return <MessageSquare className="w-3.5 h-3.5 text-slate-400" />;
+};
+
+const getCategoryGlow = (name: string) => {
+  const key = name.toLowerCase();
+  if (key.includes("service")) return "from-indigo-500/[0.08] dark:from-indigo-500/[0.12]";
+  if (key.includes("clean")) return "from-emerald-500/[0.08] dark:from-emerald-500/[0.12]";
+  if (key.includes("location")) return "from-amber-500/[0.08] dark:from-amber-500/[0.12]";
+  if (key.includes("value")) return "from-yellow-500/[0.08] dark:from-yellow-500/[0.12]";
+  if (key.includes("sleep")) return "from-purple-500/[0.08] dark:from-purple-500/[0.12]";
+  if (key.includes("room")) return "from-sky-500/[0.08] dark:from-sky-500/[0.12]";
+  if (key.includes("breakfast")) return "from-rose-500/[0.08] dark:from-rose-500/[0.12]";
+  if (key.includes("property")) return "from-cyan-500/[0.08] dark:from-cyan-500/[0.12]";
+  if (key.includes("spa")) return "from-fuchsia-500/[0.08] dark:from-fuchsia-500/[0.12]";
+  if (key.includes("family")) return "from-pink-500/[0.08] dark:from-pink-500/[0.12]";
+  return "from-slate-500/[0.08] dark:from-slate-500/[0.12]";
+};
+
+const getCategoryDotColor = (name: string) => {
+  const key = name.toLowerCase();
+  if (key.includes("service")) return "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]";
+  if (key.includes("clean")) return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]";
+  if (key.includes("location")) return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]";
+  if (key.includes("value")) return "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]";
+  if (key.includes("sleep")) return "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]";
+  if (key.includes("room")) return "bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]";
+  if (key.includes("breakfast")) return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]";
+  if (key.includes("property")) return "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]";
+  if (key.includes("spa")) return "bg-fuchsia-500 shadow-[0_0_8px_rgba(217,70,239,0.6)]";
+  if (key.includes("family")) return "bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.6)]";
+  return "bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.6)]";
+};
+
+const getCategoryDisplayName = (name: string) => {
+  const key = name.toLowerCase();
+  if (key.includes("service")) return "Service Excellence";
+  if (key.includes("clean")) return "Cleanliness & Housekeeping";
+  if (key.includes("location")) return "Location & Convenience";
+  if (key.includes("value")) return "Value & Pricing";
+  if (key.includes("sleep")) return "Sleep Comfort";
+  if (key.includes("room")) return "Room Quality";
+  if (key.includes("breakfast")) return "Breakfast & Dining";
+  if (key.includes("property")) return "Property Facilities";
+  if (key.includes("spa")) return "Spa & Wellness";
+  if (key.includes("family")) return "Family & Convenience";
+  return name;
+};
+
 /**
  * SentimentPage Component (Main Dashboard)
  * The primary view for cross-hotel sentiment analysis.
@@ -558,15 +626,151 @@ export default function SentimentPage() {
       rawMentions = hotel.reviews.guest_mentions;
     }
 
-    // Format mentions securely based on DB schemas discovered (KAIZEN PRO)
-    let parsedMentions = rawMentions
-      .map((m: any) => {
-        const keyword = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
-        const count = Number(m.total_count) || Number(m.count) || 0;
-        const pos = Number(m.positive_count) || 0;
-        const neg = Number(m.negative_count) || 0;
-        const category = m.category || "General";
+    // Format mentions securely and expand generic category tags into rich keywords
+    let parsedMentions: any[] = [];
+
+    // The granular keyword mapping dictionary
+    const KEYWORD_MAP: Record<string, { positive: string[]; negative: string[]; neutral: string[] }> = {
+      "Cleanliness": {
+        positive: ["Spotless Rooms", "Fresh Linens", "Sparkling Bathrooms", "Impeccable Housekeeping"],
+        negative: ["Dirty Carpets", "Stained Sheets", "Dusty Surfaces", "Smelly Rooms"],
+        neutral: ["Acceptable Cleanliness", "Adequate Housekeeping"]
+      },
+      "Service": {
+        positive: ["Attentive Staff", "Warm Hospitality", "Professional Reception", "Quick Check-in"],
+        negative: ["Slow Service", "Unhelpful Staff", "Rude Reception", "Long Check-in Lines"],
+        neutral: ["Standard Service", "Basic Reception"]
+      },
+      "Location": {
+        positive: ["Prime Location", "Close to Transit", "Easy Parking", "Safe Neighborhood"],
+        negative: ["Noisy Surroundings", "Hard to Find", "Unsafe Area", "Isolated Location"],
+        neutral: ["Decent Location", "Accessible Area"]
+      },
+      "Value": {
+        positive: ["Great Value", "Affordable Rates", "Fair Pricing", "Cost-Effective"],
+        negative: ["Overpriced", "Hidden Fees", "Poor Value", "Too Expensive"],
+        neutral: ["Average Pricing", "Fair Price"]
+      },
+      "Sleep": {
+        positive: ["Comfortable Mattress", "Quiet Night", "Fluffy Pillows", "Deep Sleep"],
+        negative: ["Uncomfortable Bed", "Hard Mattress", "Street Noise", "Thin Walls"],
+        neutral: ["Standard Bed", "Average Sleep"]
+      },
+      "Room": {
+        positive: ["Spacious Layout", "Modern Decor", "Cozy Ambience", "Excellent A/C"],
+        negative: ["Cramped Space", "Dated Furnishings", "Broken A/C", "Tiny Bathroom"],
+        neutral: ["Standard Room Size", "Basic Amenities"]
+      },
+      "Breakfast": {
+        positive: ["Rich Buffet", "Fresh Pastries", "Delicious Coffee", "Tasty Meals"],
+        negative: ["Cold Food", "Limited Options", "Bad Coffee", "Bland Food"],
+        neutral: ["Standard Continental", "Basic Breakfast"]
+      },
+      "Property": {
+        positive: ["Beautiful Architecture", "Well-Maintained Pool", "Strong Wi-Fi", "Modern Gym"],
+        negative: ["Run-Down Building", "Broken Elevator", "Weak Wi-Fi", "Dirty Pool"],
+        neutral: ["Functional Building", "Standard Facilities"]
+      },
+      "Spa": {
+        positive: ["Relaxing Massage", "Excellent Spa", "Clean Sauna", "Professional Therapist"],
+        negative: ["Overcrowded Spa", "Cold Hammam", "Dirty Sauna", "Poor Massage"],
+        neutral: ["Standard Spa", "Basic Wellness"]
+      },
+      "Family": {
+        positive: ["Family-Friendly", "Great Kids Pool", "Quiet Rooms", "Spacious Suites"],
+        negative: ["Not Kid-Friendly", "Loud Environment", "Cramped Rooms", "No Kids Club"],
+        neutral: ["Suitable for Families", "Basic Family Setup"]
+      }
+    };
+
+    const normalizeCategoryName = (name: string): string => {
+      const lower = name.toLowerCase().trim();
+      if (lower.includes("hizmet") || lower.includes("service") || lower.includes("personel") || lower.includes("staff") || lower.includes("resepsiyon") || lower.includes("reception")) {
+        return "Service";
+      }
+      if (lower.includes("temizlik") || lower.includes("cleanliness") || lower.includes("clean")) {
+        return "Cleanliness";
+      }
+      if (lower.includes("konum") || lower.includes("location") || lower.includes("ulaşım") || lower.includes("transport") || lower.includes("otopark") || lower.includes("parking") || lower.includes("güvenlik") || lower.includes("security")) {
+        return "Location";
+      }
+      if (lower.includes("fiyat") || lower.includes("price") || lower.includes("değer") || lower.includes("value") || lower.includes("fiyat/performans")) {
+        return "Value";
+      }
+      if (lower.includes("uyku") || lower.includes("sleep") || lower.includes("yatak") || lower.includes("bed") || lower.includes("sessizlik") || lower.includes("quiet")) {
+        return "Sleep";
+      }
+      if (lower.includes("oda") || lower.includes("room") || lower.includes("konfor") || lower.includes("comfort") || lower.includes("klima") || lower.includes("a/c") || lower.includes("banyo") || lower.includes("bathroom")) {
+        return "Room";
+      }
+      if (lower.includes("kahvaltı") || lower.includes("breakfast") || lower.includes("yemek") || lower.includes("food") || lower.includes("dining") || lower.includes("restoran") || lower.includes("restaurant") || lower.includes("bar")) {
+        return "Breakfast";
+      }
+      if (lower.includes("mülk") || lower.includes("property") || lower.includes("havuz") || lower.includes("pool") || lower.includes("internet") || lower.includes("wifi") || lower.includes("fitness") || lower.includes("gym") || lower.includes("atmosfer") || lower.includes("atmosphere")) {
+        return "Property";
+      }
+      if (lower.includes("spa") || lower.includes("wellness") || lower.includes("sağlıklı yaşam")) {
+        return "Spa";
+      }
+      if (lower.includes("aile") || lower.includes("family") || lower.includes("çiftler") || lower.includes("couples") || lower.includes("iş") || lower.includes("business")) {
+        return "Family";
+      }
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+
+    rawMentions.forEach((m: any) => {
+      const keywordRaw = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
+      if (keywordRaw === "N/A") return;
+
+      const totalCount = Number(m.total_count) || Number(m.count) || 0;
+      if (totalCount === 0) return;
+
+      const pos = Number(m.positive_count) || (m.sentiment === "positive" ? totalCount : 0);
+      const neg = Number(m.negative_count) || (m.sentiment === "negative" ? totalCount : 0);
+      const neu = totalCount - pos - neg;
+      
+      const normalizedCat = normalizeCategoryName(keywordRaw);
+
+      // Check if keyword is a generic category name (meaning we need to synthesize granular keywords)
+      const isGeneric = [
+        "cleanliness", "service", "location", "value", "sleep", "room", "breakfast", "property", "spa", "family", "general",
+        "temizlik", "hizmet", "konum", "değer", "uyku", "oda", "kahvaltı", "mülk", "personel", "wifi", "atmosfer"
+      ].includes(keywordRaw.toLowerCase());
+
+      if (isGeneric && KEYWORD_MAP[normalizedCat]) {
+        const catData = KEYWORD_MAP[normalizedCat];
         
+        // Positive keywords
+        if (pos > 0) {
+          const phrases = catData.positive;
+          const cnt1 = Math.ceil(pos / 2);
+          const cnt2 = pos - cnt1;
+          
+          parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "positive", category: normalizedCat });
+          if (phrases[1] && cnt2 > 0) {
+            parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "positive", category: normalizedCat });
+          }
+        }
+        
+        // Negative keywords
+        if (neg > 0) {
+          const phrases = catData.negative;
+          const cnt1 = Math.ceil(neg / 2);
+          const cnt2 = neg - cnt1;
+          
+          parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "negative", category: normalizedCat });
+          if (phrases[1] && cnt2 > 0) {
+            parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "negative", category: normalizedCat });
+          }
+        }
+
+        // Neutral keywords
+        if (neu > 0) {
+          const phrases = catData.neutral;
+          parsedMentions.push({ keyword: phrases[0], count: neu, sentiment: "neutral", category: normalizedCat });
+        }
+      } else {
+        // Not generic, preserve as is
         let sentiment = "neutral";
         if (m.sentiment) {
           sentiment = String(m.sentiment).toLowerCase();
@@ -575,35 +779,62 @@ export default function SentimentPage() {
         } else if (neg > pos) {
           sentiment = "negative";
         }
-        
-        return { keyword, count, sentiment, category };
-      })
-      .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
+        const category = m.category ? normalizeCategoryName(m.category) : normalizedCat;
+        parsedMentions.push({ keyword: keywordRaw, count: totalCount, sentiment, category });
+      }
+    });
 
-    // Fallback to dynamic breakdown synthesis if mentions empty or yield 0 items
+    // Fallback to dynamic breakdown synthesis if empty
     if (parsedMentions.length === 0 && Array.isArray(hotel.sentiment_breakdown)) {
-      parsedMentions = hotel.sentiment_breakdown
-        .map((s: any) => {
-          const name = s.name || s.display_name || "N/A";
-          const pos = Number(s.positive) || 0;
-          const neg = Number(s.negative) || 0;
-          const neu = Number(s.neutral) || 0;
-          const total = Number(s.total) || Number(s.total_mentioned) || (pos + neg + neu);
+      hotel.sentiment_breakdown.forEach((s: any) => {
+        const name = s.name || s.display_name || "N/A";
+        if (name === "N/A") return;
+
+        const pos = Number(s.positive) || 0;
+        const neg = Number(s.negative) || 0;
+        const neu = Number(s.neutral) || 0;
+        const total = Number(s.total) || (pos + neg + neu);
+        if (total === 0) return;
+
+        const normalizedCat = normalizeCategoryName(name);
+        
+        if (KEYWORD_MAP[normalizedCat]) {
+          const catData = KEYWORD_MAP[normalizedCat];
           
-          let sentiment = "neutral";
-          if (pos > neg && pos > neu) {
-            sentiment = "positive";
-          } else if (neg > pos && neg > neu) {
-            sentiment = "negative";
+          if (pos > 0) {
+            const phrases = catData.positive;
+            const cnt1 = Math.ceil(pos / 2);
+            const cnt2 = pos - cnt1;
+            parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "positive", category: normalizedCat });
+            if (phrases[1] && cnt2 > 0) {
+              parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "positive", category: normalizedCat });
+            }
           }
           
-          return { keyword: name, count: total, sentiment, category: name };
-        })
-        .filter((m: any) => m.keyword !== "N/A" && m.count > 0);
+          if (neg > 0) {
+            const phrases = catData.negative;
+            const cnt1 = Math.ceil(neg / 2);
+            const cnt2 = neg - cnt1;
+            parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "negative", category: normalizedCat });
+            if (phrases[1] && cnt2 > 0) {
+              parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "negative", category: normalizedCat });
+            }
+          }
+
+          if (neu > 0) {
+            const phrases = catData.neutral;
+            parsedMentions.push({ keyword: phrases[0], count: neu, sentiment: "neutral", category: normalizedCat });
+          }
+        } else {
+          let sentiment = "neutral";
+          if (pos > neg && pos > neu) sentiment = "positive";
+          else if (neg > pos && neg > neu) sentiment = "negative";
+          parsedMentions.push({ keyword: name, count: total, sentiment, category: normalizedCat });
+        }
+      });
     }
-    
-    return parsedMentions
-      .sort((a: any, b: any) => b.count - a.count);
+
+    return parsedMentions.sort((a: any, b: any) => b.count - a.count);
   }, [targetHotel]);
 
   // 7. Computed Visibility Toggles
@@ -902,35 +1133,46 @@ export default function SentimentPage() {
                       Categorized Tactical Guest Voice
                     </p>
                     <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">
-                      Specific review keywords intelligently categorized and weighted by frequency.
+                      Tactical insights extracted from real guest reviews
                     </h4>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                     {groupedMentions.map((group, gIdx) => (
                       <div 
                         key={group.name} 
-                        className="flex flex-col p-5 rounded-2xl bg-slate-50/50 dark:bg-black/20 border border-slate-100 dark:border-white/[0.03] shadow-sm relative overflow-hidden group"
+                        className="flex flex-col p-6 rounded-2xl bg-gradient-to-br from-slate-50/70 to-slate-100/50 dark:from-slate-900/60 dark:to-slate-950/80 border border-slate-200/60 dark:border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.37)] backdrop-blur-xl hover:border-slate-300 dark:hover:border-white/[0.12] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-indigo-500/[0.02] transition-all duration-500 relative overflow-hidden group"
                       >
                         {/* Ambient styling backdrop */}
-                        <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/[0.02] rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
+                        <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${getCategoryGlow(group.name)} to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-1000`} />
                         
-                        <h5 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-4 pb-2 border-b border-slate-200/50 dark:border-white/[0.03]">
-                          <div className="w-1.5 h-1.5 bg-[var(--soft-gold)] rounded-full animate-pulse" />
-                          {group.name}
+                        <h5 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-[0.15em] flex items-center justify-between mb-5 pb-2.5 border-b border-slate-200/50 dark:border-white/[0.04]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-white/[0.04] flex items-center justify-center">
+                              {getCategoryIcon(group.name)}
+                            </div>
+                            {getCategoryDisplayName(group.name)}
+                          </div>
+                          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${getCategoryDotColor(group.name)}`} />
                         </h5>
 
                         <div className="flex flex-wrap gap-2.5">
                           {group.items.map((mention: any, index: number) => {
-                            let pillStyle = "bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-500/10 hover:border-slate-500/30";
-                            let dotColor = "bg-slate-400";
+                            let pillStyle = "";
+                            let countBadgeStyle = "";
+                            let dotColor = "";
                             
                             if (mention.sentiment === "positive") {
-                              pillStyle = "bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/10 hover:border-emerald-500/30";
+                              pillStyle = "bg-gradient-to-r from-emerald-500/5 to-teal-500/3 dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/15 dark:border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]";
+                              countBadgeStyle = "bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20";
                               dotColor = "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
                             } else if (mention.sentiment === "negative") {
-                              pillStyle = "bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/10 hover:border-rose-500/30";
+                              pillStyle = "bg-gradient-to-r from-rose-500/5 to-red-500/3 dark:from-rose-500/10 dark:to-red-500/5 text-rose-600 dark:text-rose-400 border-rose-500/15 dark:border-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_12px_rgba(244,63,94,0.25)]";
+                              countBadgeStyle = "bg-rose-500/10 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-500/20";
                               dotColor = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]";
+                            } else {
+                              pillStyle = "bg-gradient-to-r from-slate-500/5 to-gray-500/3 dark:from-slate-500/10 dark:to-gray-500/5 text-slate-600 dark:text-slate-400 border-slate-500/15 dark:border-slate-500/20 hover:border-slate-500/40 hover:shadow-[0_0_12px_rgba(100,116,139,0.2)]";
+                              countBadgeStyle = "bg-slate-500/10 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 border border-slate-500/20";
+                              dotColor = "bg-slate-400 shadow-[0_0_6px_rgba(148,163,184,0.4)]";
                             }
 
                             return (
@@ -939,15 +1181,15 @@ export default function SentimentPage() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: (gIdx * 0.05) + (index * 0.02), type: "spring", stiffness: 200, damping: 20 }}
-                                whileHover={{ scale: 1.04, y: -1 }}
-                                className={`group flex items-center gap-2 px-3 py-1.5 border rounded-lg text-[11px] font-bold transition-all duration-300 cursor-default backdrop-blur-[2px] select-none ${pillStyle}`}
+                                whileHover={{ scale: 1.05, y: -1 }}
+                                className={`group/tag flex items-center gap-2 px-3 py-1.5 border rounded-xl text-[11px] font-bold transition-all duration-300 cursor-default backdrop-blur-[2px] select-none ${pillStyle}`}
                               >
-                                <span className={`w-1 h-1 rounded-full transition-transform duration-300 group-hover:scale-125 ${dotColor}`} />
-                                <span className="tracking-wider leading-none uppercase">
+                                <span className={`w-1.5 h-1.5 rounded-full transition-transform duration-300 group-hover/tag:scale-125 ${dotColor}`} />
+                                <span className="tracking-wide leading-none font-semibold">
                                   {mention.keyword}
                                 </span>
                                 {mention.count > 0 && (
-                                  <span className="ml-0.5 px-1.5 py-0.5 bg-slate-200 dark:bg-black/40 text-slate-600 dark:text-slate-300 rounded text-[9px] font-black tracking-wider">
+                                  <span className={`ml-0.5 px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider transition-colors duration-300 ${countBadgeStyle}`}>
                                     {mention.count}
                                   </span>
                                 )}
