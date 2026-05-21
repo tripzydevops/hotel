@@ -632,7 +632,6 @@ export default function SentimentPage() {
     }
 
     // Format mentions securely and expand generic category tags into rich keywords
-    let parsedMentions: any[] = [];
 
     // We provide 8 phrases per sentiment to ensure rich keyword distribution
     const getKeywordMap = (isTr: boolean): Record<string, { positive: string[]; negative: string[]; neutral: string[] }> => ({
@@ -735,18 +734,6 @@ export default function SentimentPage() {
 
     const KEYWORD_MAP = getKeywordMap(isTr);
 
-    let rawMentions: any[] = [];
-    const hotel = targetHotel as any;
-    
-    // Attempt deep extraction from multiples locations
-    if (Array.isArray(hotel.guest_mentions)) {
-      rawMentions = hotel.guest_mentions;
-    } else if (Array.isArray(hotel.sentiment_history?.[0]?.guest_mentions)) {
-      rawMentions = hotel.sentiment_history[0].guest_mentions;
-    } else if (Array.isArray(hotel.reviews?.guest_mentions)) {
-      rawMentions = hotel.reviews.guest_mentions;
-    }
-
     const normalizeCategoryName = (name: string): string => {
       const lower = name.toLowerCase().trim();
       if (lower.includes("hizmet") || lower.includes("service") || lower.includes("personel") || lower.includes("staff") || lower.includes("resepsiyon") || lower.includes("reception")) {
@@ -782,7 +769,6 @@ export default function SentimentPage() {
       return name.charAt(0).toUpperCase() + name.slice(1);
     };
 
-    let parsedMentions: any[] = [];
     rawMentions.forEach((m: any) => {
       const keywordRaw = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
       if (keywordRaw === "N/A") return;
