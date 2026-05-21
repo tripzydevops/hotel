@@ -1155,11 +1155,11 @@ export default function SentimentPage() {
               {groupedMentions.length > 0 && (
                 <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
                   <div className="flex flex-col mb-6">
-                    <p className="text-[10px] text-slate-500 dark:text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
+                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
                       <MessageSquare className="w-3 h-3 text-[var(--soft-gold)]" />
                       {locale === 'tr' ? "Kategorize Edilmiş Taktiksel Konuk Sesi" : "Categorized Tactical Guest Voice"}
                     </p>
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
                       {locale === 'tr' ? "Gerçek konuk değerlendirmelerinden çıkarılan taktiksel içgörüler" : "Tactical insights extracted from real guest reviews"}
                     </h4>
                   </div>
@@ -1172,9 +1172,9 @@ export default function SentimentPage() {
                         {/* Ambient styling backdrop */}
                         <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${getCategoryGlow(group.name)} to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-1000`} />
                         
-                        <h5 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-[0.15em] flex items-center justify-between mb-5 pb-2.5 border-b border-slate-200/50 dark:border-white/[0.04]">
+                        <h5 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-[0.15em] flex items-center justify-between mb-5 pb-2.5 border-b border-[var(--glass-border)]">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-white/[0.04] flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-md bg-[var(--glass-border)] flex items-center justify-center">
                               {getCategoryIcon(group.name)}
                             </div>
                             {getCategoryDisplayName(group.name)}
@@ -1189,16 +1189,16 @@ export default function SentimentPage() {
                             let dotColor = "";
                             
                             if (mention.sentiment === "positive") {
-                              pillStyle = "bg-gradient-to-r from-emerald-500/5 to-teal-500/3 dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/15 dark:border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]";
-                              countBadgeStyle = "bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20";
+                              pillStyle = "bg-gradient-to-r from-emerald-500/10 to-teal-500/5 text-emerald-500 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]";
+                              countBadgeStyle = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
                               dotColor = "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]";
                             } else if (mention.sentiment === "negative") {
-                              pillStyle = "bg-gradient-to-r from-rose-500/5 to-red-500/3 dark:from-rose-500/10 dark:to-red-500/5 text-rose-600 dark:text-rose-400 border-rose-500/15 dark:border-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_12px_rgba(244,63,94,0.25)]";
-                              countBadgeStyle = "bg-rose-500/10 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-500/20";
+                              pillStyle = "bg-gradient-to-r from-rose-500/10 to-red-500/5 text-rose-500 border-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_12px_rgba(244,63,94,0.25)]";
+                              countBadgeStyle = "bg-rose-500/20 text-rose-400 border border-rose-500/30";
                               dotColor = "bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]";
                             } else {
-                              pillStyle = "bg-gradient-to-r from-slate-500/5 to-gray-500/3 dark:from-slate-500/10 dark:to-gray-500/5 text-slate-600 dark:text-slate-400 border-slate-500/15 dark:border-slate-500/20 hover:border-slate-500/40 hover:shadow-[0_0_12px_rgba(100,116,139,0.2)]";
-                              countBadgeStyle = "bg-slate-500/10 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 border border-slate-500/20";
+                              pillStyle = "bg-gradient-to-r from-slate-500/10 to-gray-500/5 text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-slate-500/40 hover:shadow-[0_0_12px_rgba(100,116,139,0.2)]";
+                              countBadgeStyle = "bg-slate-500/20 text-[var(--text-primary)] border border-[var(--glass-border)]";
                               dotColor = "bg-slate-400 shadow-[0_0_6px_rgba(148,163,184,0.4)]";
                             }
 
