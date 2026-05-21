@@ -1121,63 +1121,36 @@ async def get_market_intelligence_data(
     search_query: Optional[str] = None,
     admin_db: Optional[Client] = None,
 ) -> Dict[str, Any]:
-    # AGENT_FEATURE: Analysis Service now utilizes admin_db to bypass RLS for faster intelligence
     query_db = admin_db if admin_db else db
-    # AGENT_LOGIC: Many-to-Many Migration (Kaizen 2026)
-    # Replaced 1:N query (hotels.user_id) with Many-to-Many join via user_hotels table.
-    # This allows multiple users to track/share the same hotel entities.
-    logger.info(f"[Analysis] Mapping hotels via user_hotels for userId: {user_id}")
+    rates = {}
+    try:
+        from backend.utils.helpers import _EXCHANGE_RATE_CACHE
+        rates = _EXCHANGE_RATE_CACHE
+    except ImportError:
+        pass
 
-    # AGENT_FIX: Using join table to fetch shared hotel entities with user-specific overrides
-    user_hotels_res = (
-        query_db.table("user_hotels")
-        .select("*, hotels(*)")
-        .eq("user_id", str(user_id))
-        .execute()
-    )
+    logger.info(f"[Analysis] Calling database RPC get_market_analysis_aggregates for user_id={user_id}")
+    
+    try:
+        res = query_db.rpc("get_market_analysis_aggregates", {
+            "p_user_id": str(user_id),
+            "p_room_type": room_type,
+            "p_display_currency": currency if currency else display_currency,
+            "p_start_date": start_date,
+            "p_end_date": end_date,
+            "p_exchange_rates": rates,
+            "p_exclude_hotel_ids": exclude_hotel_ids,
+            "p_search_query": search_query
+        }).execute()
+        
+        data = res.data
+    except Exception as e:
+        logger.error(f"[Analysis] RPC failed: {e}")
+        data = None
 
-    all_hotels = []
-    for mapping in user_hotels_res.data or []:
-        hotel = mapping.get("hotels")
-        if hotel:
-            # Inject user-specific overrides from user_hotels mapping table
-            # These override the global defaults in the 'hotels' table
-            hotel["is_target_hotel"] = mapping.get("is_target", False)
-            hotel["pricing_dna"] = mapping.get("pricing_dna") or hotel.get(
-                "pricing_dna"
-            )
-            hotel["preferred_currency"] = mapping.get("preferred_currency")
-            hotel["fixed_check_in"] = mapping.get("fixed_check_in")
-            hotel["fixed_check_out"] = mapping.get("fixed_check_out")
-            hotel["default_adults"] = mapping.get("default_adults")
-            hotel["user_id_override"] = mapping.get("user_id")  # For context if needed
-            all_hotels.append(hotel)
-
-    # No legacy fallback - user_id column removed from hotels table.
-    # If no hotels found in user_hotels mappings, returning empty list is correct.
-
-    hotels = [h for h in all_hotels if not h.get("deleted_at")]
-
-    # AGENT_FEATURE: Apply exclude_hotel_ids filter
-    if exclude_hotel_ids:
-        to_exclude = set(exclude_hotel_ids.split(","))
-        hotels = [h for h in hotels if str(h.get("id")) not in to_exclude]
-
-    # AGENT_FEATURE: Apply search_query filter
-    if search_query:
-        sq = search_query.lower()
-        hotels = [
-            h
-            for h in hotels
-            if sq in str(h.get("name", "")).lower()
-            or sq in str(h.get("location", "")).lower()
-        ]
-
-    logger.info(f"[Analysis] After filters: {len(hotels)} hotels remaining.")
-
-    if not hotels:
+    if not data or not isinstance(data, dict):
         logger.warning(
-            f"[Analysis] Zero hotels found for user_id {user_id}. Potential mapping issue."
+            f"[Analysis] Empty or invalid RPC response for user_id {user_id}."
         )
         return {
             "hotels": [],
@@ -1198,133 +1171,40 @@ async def get_market_intelligence_data(
             "price_history": [],
             "daily_prices": [],
             "advisory_keys": [],
-            "recommendation": f"DEBUG: user_id={user_id} | raw={len(hotels)} | check hotels_table mapping",
+            "recommendation": {"action": "no_data", "impact": 0, "reason": "No data found."},
+            "synthetic_narrative": "No data found.",
+            "audit_checklist": [],
         }
 
-    h_ids = [str(h["id"]) for h in hotels]
-    # AGENT_LOGIC: Fetch price logs with expanded window and date filtering
-    p_query = (
-        query_db.table("price_logs")
-        .select(
-            "hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor"
-        )
-        .in_("hotel_id", h_ids)
-    )
+    # Python post-processing (recommendation, synthetic narrative, audit checklist, legacy compatibility aliases)
+    ari = data.get("ari")
+    sent_index = data.get("sentiment_index")
+    target_price = data.get("target_price")
+    pricing_dna = data.get("pricing_dna")
+    hotel_name = data.get("hotel_name") or "Target"
+    market_avg_scores = data.get("market_avg_scores") or {}
 
-    # 2026-04-30: Filter by check-in date range if provided to ensure historical January/February
-    # data is retrieved instead of just the latest 1000 snapshots.
-    if start_date:
-        p_query = p_query.gte("check_in_date", start_date)
-    if end_date:
-        p_query = p_query.lte("check_in_date", end_date)
+    # recommendation
+    rec = calculate_rate_recommendation(ari, sent_index, target_price)
 
-    p_res = (
-        p_query.order("recorded_at", desc=True)
-        .limit(5000)
-        .execute()
-    )
-    logs = p_res.data or []
+    # synthetic_narrative
+    narrative = generate_synthetic_narrative(ari, sent_index, pricing_dna, hotel_name)
 
-    p_map = {}
+    # audit_checklist
+    target_h = {
+        "sentiment_breakdown": data.get("sentiment_breakdown"),
+        "pricing_dna": pricing_dna
+    }
+    checklist = generate_audit_checklist(target_h, market_avg_scores)
 
-    # Add live logs first - they are already sorted by recorded_at desc
-    # This ensures that when we process logs, the latest live data takes precedence
-    for log in logs:
-        hid = str(log["hotel_id"])
-        if hid not in p_map:
-            p_map[hid] = []
-        p_map[hid].append(log)
+    # Attach calculated fields and aliases for backward/forward compatibility
+    data["recommendation"] = rec
+    data["synthetic_narrative"] = narrative
+    data["audit_checklist"] = checklist
+    data["hotels"] = data.get("all_hotels", [])
+    data["transformed_hotels"] = data.get("all_hotels", [])
 
-    # AGENT_FIX: Always fetch historical aggregates to fill gaps in the timeline
-    history_logs = []
-    if start_date and end_date:
-        logger.info(f"[Analysis] Fetching historical aggregates for range {start_date} to {end_date}")
-        h_query = (
-            query_db.table("price_history_daily")
-            .select("*")
-            .in_("hotel_id", h_ids)
-            .gte("date", start_date)
-            .lte("date", end_date)
-            .order("date", desc=True)
-            .execute()
-        )
-        history_logs = h_query.data or []
-
-    # Map history to price_log format and append AFTER live logs
-    for h_log in history_logs:
-        hid = str(h_log["hotel_id"])
-        mapped_room_types = []
-        rt_summary = h_log.get("room_type_summary") or {}
-        for rt_name, stats in rt_summary.items():
-            if isinstance(stats, dict):
-                mapped_room_types.append({
-                    "name": rt_name,
-                    "price": stats.get("avg") or stats.get("min") or 0.0,
-                })
-
-        if not mapped_room_types and h_log.get("avg_price"):
-            mapped_room_types.append({"name": "Standard", "price": h_log["avg_price"]})
-
-        # Resolve the correct currency for this hotel from its metadata
-        hotel_obj = next((h for h in hotels if str(h["id"]) == hid), None)
-        hist_currency = (
-            h_log.get("currency")
-            or (hotel_obj.get("preferred_currency") if hotel_obj else None)
-            or display_currency  # Safest fallback: match the requested display currency
-        )
-        log_entry = {
-            "hotel_id": hid,
-            "check_in_date": h_log["date"],
-            "check_out_date": None,
-            "price": h_log.get("avg_price") or 0.0,
-            "recorded_at": h_log.get("observation_date") or h_log.get("date"),
-            "currency": hist_currency,
-            "room_types": mapped_room_types,
-            "vendor": h_log.get("top_vendor") or h_log.get("source") or "Aggregate",
-            "is_historical": True
-        }
-        if hid not in p_map:
-            p_map[hid] = []
-        p_map[hid].append(log_entry)
-
-    # Building a more robust allowed_map with synonyms
-    allowed_map = {}
-    for h in hotels:
-        # We start with the target room type
-        synonyms = [room_type]
-        rt_lower = room_type.lower()
-
-        # Add broad defaults if we're looking for standard
-        if "standard" in rt_lower or "standart" in rt_lower:
-            synonyms.extend(
-                [
-                    "Standard Room",
-                    "Standart Oda",
-                    "Double Room",
-                    "Twin Room",
-                    "Deluxe Room",
-                    "Economy Room",
-                ]
-            )
-        elif "deluxe" in rt_lower:
-            synonyms.extend(["Deluxe King", "Deluxe Twin", "Superior Room"])
-        elif "suite" in rt_lower:
-            synonyms.extend(
-                ["Junior Suite", "Executive Suite", "King Suite", "Business Suite"]
-            )
-
-        allowed_map[str(h["id"])] = list(set(synonyms))
-
-    return await perform_market_analysis(
-        user_id=str(user_id),
-        hotels=hotels,
-        hotel_prices_map=p_map,
-        display_currency=display_currency,
-        room_type=room_type,
-        start_date=start_date,
-        end_date=end_date,
-        allowed_room_names_map=allowed_map,
-    )
+    return data
 
 
 async def check_hotel_ownership(
