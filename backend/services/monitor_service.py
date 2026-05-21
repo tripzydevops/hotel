@@ -464,10 +464,21 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         if unmapped_hotels:
             s_logger.warning(f"Heartbeat: Skipping {len(unmapped_hotels)} monitored hotels missing property tokens: {', '.join(unmapped_hotels[:5])}...")
 
-        # 4. Create Monitoring Session
+        # 4. Pre-flight: Verify DataForSEO credentials are available
+        # [FIX 2026-05-20] Prevents empty ghost sessions when running in environments
+        # without provider credentials (e.g., Vercel Edge cron). Without this check,
+        # the session is created and last_global_scan_at is updated, blocking the next
+        # legitimate GitHub Actions scan from executing.
+        dfs_login = os.environ.get("DATAFORSEO_LOGIN") or os.environ.get("DATAFORSEO_API_KEY")
+        dfs_password = os.environ.get("DATAFORSEO_PASSWORD")
+        if not dfs_login or not dfs_password:
+            s_logger.warning("Heartbeat: DataForSEO credentials not available in this environment. Skipping scan to avoid ghost sessions.")
+            return
+
+        # 5. Create Monitoring Session
         session_id = str(uuid.uuid4())
         try:
-            # 2. Record Heartbeat Start
+            # Record Heartbeat Start
             # AGENT_FIX: Record in scan_sessions with NULL user_id for global dashboard visibility
             insforge.table("scan_sessions").insert({
                 "id": session_id,
@@ -507,22 +518,10 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                 
             return
 
-        # 4. Update Admin Settings immediately
-        next_scan = now + timedelta(hours=interval)
-        update_data = {
-            "last_global_scan_at": now.isoformat(),
-            "next_global_scan_at": next_scan.isoformat(),
-        }
-        if is_deep_scan_due:
-            update_data["last_deep_scan_at"] = now.isoformat()
-            
-        try:
-            insforge.table("admin_settings").update(update_data).eq("id", settings["id"]).execute()
-        except Exception as e:
-            s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
-
-
-        # 6. Submit to DataForSEO
+        # 6. Submit to DataForSEO (BEFORE updating admin settings)
+        # [FIX 2026-05-20] Moved admin_settings update to AFTER successful submission.
+        # Previously, last_global_scan_at was updated before submission, so if submission
+        # failed, the next scan would be skipped for the entire interval period.
         total = await dataforseo_provider.submit_hotel_scan_batch(
             insforge,
             hotels=hotels_to_scan,
@@ -534,6 +533,23 @@ async def run_system_heartbeat(insforge: InsForgeClient):
             adults=default_adults,
             children=default_children
         )
+
+        # 7. Update Admin Settings ONLY after confirmed submission
+        if total > 0:
+            next_scan = now + timedelta(hours=interval)
+            update_data = {
+                "last_global_scan_at": now.isoformat(),
+                "next_global_scan_at": next_scan.isoformat(),
+            }
+            if is_deep_scan_due:
+                update_data["last_deep_scan_at"] = now.isoformat()
+                
+            try:
+                insforge.table("admin_settings").update(update_data).eq("id", settings["id"]).execute()
+            except Exception as e:
+                s_logger.warning(f"Heartbeat: Failed to update admin settings timestamp: {e}")
+        else:
+            s_logger.warning(f"Heartbeat: DataForSEO returned 0 tasks for session {session_id}. NOT updating last_global_scan_at to allow retry.")
 
         # [FIX 2026-05-01] Wrap in try/except — an unprotected failure here
         # was preventing the critical scan_sessions completion update below.

@@ -1052,6 +1052,13 @@ async def perform_market_analysis(
     # Find the target hotel object for narrative context
     target_h = next((h for h in hotels if str(h["id"]) == target_hotel_id), None)
 
+    sentiment_breakdown = target_h.get("sentiment_breakdown") or [] if target_h else []
+    if isinstance(sentiment_breakdown, str):
+        try:
+            sentiment_breakdown = json.loads(sentiment_breakdown)
+        except Exception:
+            sentiment_breakdown = []
+
     # Building a consistent response object that follows the KAİZEN frontend contract
     return {
         "hotel_id": target_hotel_id,
@@ -1078,6 +1085,10 @@ async def perform_market_analysis(
         "market_rank": comp_rank,
         "ari": float(int(ari_val * 10) / 10.0),
         "sent_index": float(int(sent_val * 10) / 10.0),
+        "sentiment_index": float(int(sent_val * 10) / 10.0),
+        "sentiment_breakdown": sentiment_breakdown,
+        "target_rating": target_sentiment,
+        "market_rating": avg_sent_val,
         "quadrant_label": q_label,
         "quadrant_x": ari_val,
         "quadrant_y": sent_val,
