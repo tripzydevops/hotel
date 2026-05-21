@@ -415,7 +415,7 @@ const getCategoryDisplayName = (name: string) => {
  * - Competitive Battlefield vs. Historical Trend analysis
  */
 export default function SentimentPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { userId } = useAuth();
   const { data, loading } = useDashboard(userId, t);
   const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">(
@@ -862,7 +862,7 @@ export default function SentimentPage() {
     }
 
     return parsedMentions.sort((a: any, b: any) => b.count - a.count);
-  }, [targetHotel]);
+  }, [targetHotel, locale]);
 
   // 7. Computed Visibility Toggles
   const groupedMentions = useMemo(() => {
@@ -1157,17 +1157,17 @@ export default function SentimentPage() {
                   <div className="flex flex-col mb-6">
                     <p className="text-[10px] text-slate-500 dark:text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
                       <MessageSquare className="w-3 h-3 text-[var(--soft-gold)]" />
-                      Categorized Tactical Guest Voice
+                      {locale === 'tr' ? "Kategorize Edilmiş Taktiksel Konuk Sesi" : "Categorized Tactical Guest Voice"}
                     </p>
                     <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">
-                      Tactical insights extracted from real guest reviews
+                      {locale === 'tr' ? "Gerçek konuk değerlendirmelerinden çıkarılan taktiksel içgörüler" : "Tactical insights extracted from real guest reviews"}
                     </h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                     {groupedMentions.map((group, gIdx) => (
                       <div 
                         key={group.name} 
-                        className="flex flex-col p-6 rounded-2xl bg-white/[0.4] dark:bg-black/[0.2] border border-slate-200/60 dark:border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl hover:border-slate-300 dark:hover:border-white/[0.1] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-500 relative overflow-hidden group"
+                        className="flex flex-col p-6 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl hover:border-[var(--overlay-border)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-500 relative overflow-hidden group"
                       >
                         {/* Ambient styling backdrop */}
                         <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${getCategoryGlow(group.name)} to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-1000`} />

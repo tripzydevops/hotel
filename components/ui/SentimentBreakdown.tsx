@@ -13,6 +13,7 @@ interface SentimentItem {
 }
 
 import { ExternalLink } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface SentimentBreakdownProps {
   items: SentimentItem[];
@@ -21,6 +22,8 @@ interface SentimentBreakdownProps {
 export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
   items,
 }) => {
+  const { locale } = useI18n();
+
   if (!items || items.length === 0) return null;
 
   return (
@@ -35,10 +38,10 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
         </div>
         <div>
           <h3 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none mb-2">
-            Intelligence Sentiment Breakdown
+            {locale === 'tr' ? "Zeka Duyarlılık Analizi" : "Intelligence Sentiment Breakdown"}
           </h3>
           <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.3em] opacity-80">
-            Automated linguistic analysis of tactical review streams
+            {locale === 'tr' ? "Taktiksel inceleme akışlarının otomatik dilsel analizi" : "Automated linguistic analysis of tactical review streams"}
           </p>
         </div>
       </div>
@@ -69,7 +72,7 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
                     {item.name}
                   </h4>
                   <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">
-                    {item.total_mentioned} SIGNAL DETECTIONS
+                    {item.total_mentioned} {locale === 'tr' ? "SİNYAL TESPİTİ" : "SIGNAL DETECTIONS"}
                   </span>
                 </div>
 
